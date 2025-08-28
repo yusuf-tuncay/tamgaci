@@ -7,7 +7,6 @@ import '../../data/datasources/contact_dao.dart';
 import '../../data/repositories/contact_repository_impl.dart';
 import '../../domain/entities/contact.dart';
 import '../../domain/repositories/contact_repository.dart';
-import '../../../../core/database/tamgaci_database.dart';
 
 /// Contact DAO provider
 final contactDaoProvider = Provider<ContactDao?>((ref) {

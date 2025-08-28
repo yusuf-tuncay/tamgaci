@@ -233,7 +233,7 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               color: TamgaciConstants.errorColor,
               size: 48,
@@ -567,7 +567,7 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
         padding: const EdgeInsets.all(32),
         child: Column(
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               color: TamgaciConstants.errorColor,
               size: 48,
@@ -830,7 +830,7 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Icon(
+            const Icon(
               Icons.error_outline,
               color: TamgaciConstants.errorColor,
               size: 48,

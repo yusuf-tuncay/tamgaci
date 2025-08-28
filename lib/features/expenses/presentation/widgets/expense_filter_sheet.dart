@@ -61,7 +61,7 @@ class _ExpenseFilterSheetState extends ConsumerState<ExpenseFilterSheet> {
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.filter_list,
                   color: TamgaciConstants.primaryColor,
                   size: 24,

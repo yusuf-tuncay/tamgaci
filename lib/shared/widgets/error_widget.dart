@@ -128,7 +128,7 @@ class SmallErrorWidget extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             color: TamgaciConstants.errorColor,
             size: 20,

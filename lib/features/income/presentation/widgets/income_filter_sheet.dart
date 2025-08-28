@@ -50,7 +50,7 @@ class _IncomeFilterSheetState extends ConsumerState<IncomeFilterSheet> {
             ),
             child: Row(
               children: [
-                Icon(Icons.filter_list, color: TamgaciConstants.primaryColor),
+                const Icon(Icons.filter_list, color: TamgaciConstants.primaryColor),
                 const SizedBox(width: 12),
                 Text(
                   'Gelir Filtreleri',

@@ -263,7 +263,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             color: TamgaciConstants.errorColor,
             size: 48,
@@ -582,7 +582,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                   ],
                 ),
               ),
-              Icon(
+              const Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
                 color: TamgaciConstants.textSecondary,

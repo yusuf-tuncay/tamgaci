@@ -473,7 +473,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                       children: [
                         Row(
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.calendar_today,
                               size: 14,
                               color: TamgaciConstants.textSecondary,
@@ -636,7 +636,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.receipt_long_outlined,
             size: 80,
             color: TamgaciConstants.textDisabled,
@@ -671,7 +671,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             size: 80,
             color: TamgaciConstants.errorColor,

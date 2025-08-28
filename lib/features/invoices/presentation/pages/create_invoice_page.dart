@@ -234,7 +234,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: TamgaciConstants.errorColor),
+          const Icon(Icons.error_outline, color: TamgaciConstants.errorColor),
           const SizedBox(width: TamgaciConstants.spaceSM),
           Expanded(
             child: Text(
@@ -272,7 +272,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle_outline,
             color: TamgaciConstants.successColor,
           ),
@@ -408,7 +408,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
           Container(
             width: 40,
             height: 40,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: TamgaciConstants.primaryLight,
               shape: BoxShape.circle,
             ),
@@ -477,7 +477,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
         ),
         child: Column(
           children: [
-            Icon(
+            const Icon(
               Icons.person_add_outlined,
               size: 40,
               color: TamgaciConstants.textSecondary,
@@ -546,7 +546,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.calendar_today,
                             size: 16,
                             color: TamgaciConstants.textSecondary,
@@ -593,7 +593,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.schedule,
                             size: 16,
                             color: TamgaciConstants.textSecondary,
@@ -676,7 +676,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.inventory_2_outlined,
             size: 48,
             color: TamgaciConstants.textDisabled,
@@ -1284,7 +1284,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
         ref.invalidate(invoicesProvider);
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Fatura başarıyla güncellendi'),
             backgroundColor: TamgaciConstants.successColor,
           ),

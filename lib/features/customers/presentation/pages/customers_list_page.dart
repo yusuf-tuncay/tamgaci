@@ -157,7 +157,7 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.people_outline,
               size: 80,
               color: TamgaciConstants.textDisabled,
@@ -244,7 +244,7 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Müşteri bilgileri
                   Expanded(
@@ -273,25 +273,25 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceSM),
+                  const SizedBox(width: TamgaciConstants.spaceSM),
 
                   // Durum
                   _buildStatusChip(isActive),
                 ],
               ),
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // İletişim bilgileri
               if (customer.email != null && customer.email!.isNotEmpty)
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.email,
                       size: 16,
                       color: TamgaciConstants.textSecondary,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         customer.email!,
@@ -307,15 +307,15 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
                 ),
 
               if (customer.phone != null && customer.phone!.isNotEmpty) ...[
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.phone,
                       size: 16,
                       color: TamgaciConstants.textSecondary,
                     ),
-                    SizedBox(width: 8),
+                    const SizedBox(width: 8),
                     Text(
                       customer.phone!,
                       style: GoogleFonts.poppins(
@@ -327,7 +327,7 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
                 ),
               ],
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // Alt kısım - Adres ve tarih bilgileri
               Row(
@@ -341,7 +341,7 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Kayıt tarihi
                   Expanded(

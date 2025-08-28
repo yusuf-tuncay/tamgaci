@@ -298,7 +298,7 @@ class _CustomerReportPageState extends ConsumerState<CustomerReportPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.people_outline,
               size: 64,
               color: TamgaciConstants.textDisabled,

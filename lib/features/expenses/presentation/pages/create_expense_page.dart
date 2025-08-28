@@ -191,7 +191,7 @@ class _CreateExpensePageState extends ConsumerState<CreateExpensePage> {
             DropdownButtonFormField<String>(
               initialValue: selectedIcon,
               decoration: const InputDecoration(labelText: 'İkon'),
-              items: [
+              items: const [
                 DropdownMenuItem(value: 'business', child: Text('İş')),
                 DropdownMenuItem(value: 'people', child: Text('İnsanlar')),
                 DropdownMenuItem(value: 'home', child: Text('Ev')),
@@ -208,7 +208,7 @@ class _CreateExpensePageState extends ConsumerState<CreateExpensePage> {
             DropdownButtonFormField<String>(
               initialValue: selectedColor,
               decoration: const InputDecoration(labelText: 'Renk'),
-              items: [
+              items: const [
                 DropdownMenuItem(value: '#2196F3', child: Text('Mavi')),
                 DropdownMenuItem(value: '#4CAF50', child: Text('Yeşil')),
                 DropdownMenuItem(value: '#FF9800', child: Text('Turuncu')),

@@ -62,7 +62,7 @@ class _PermissionsPageState extends ConsumerState<PermissionsPage> {
           children: [
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.wifi,
                   color: TamgaciConstants.primaryColor,
                   size: 24,
@@ -133,7 +133,7 @@ class _PermissionsPageState extends ConsumerState<PermissionsPage> {
           children: [
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.security,
                   color: TamgaciConstants.primaryColor,
                   size: 24,
@@ -297,7 +297,7 @@ class _PermissionsPageState extends ConsumerState<PermissionsPage> {
           children: [
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.phone_android,
                   color: TamgaciConstants.primaryColor,
                   size: 24,
@@ -363,7 +363,7 @@ class _PermissionsPageState extends ConsumerState<PermissionsPage> {
           children: [
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.info,
                   color: TamgaciConstants.primaryColor,
                   size: 24,

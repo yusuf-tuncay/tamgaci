@@ -493,9 +493,9 @@ class TamgaciConstants {
 
   /// Hafif gölge - Kart elemanları için
   static List<BoxShadow> get shadowLight => [
-    BoxShadow(
+    const BoxShadow(
       color: shadowColor,
-      offset: const Offset(0, 1),
+      offset: Offset(0, 1),
       blurRadius: 3,
       spreadRadius: 0,
     ),
@@ -503,9 +503,9 @@ class TamgaciConstants {
 
   /// Orta gölge - Modal ve popup'lar için
   static List<BoxShadow> get shadowMedium => [
-    BoxShadow(
+    const BoxShadow(
       color: shadowColor,
-      offset: const Offset(0, 4),
+      offset: Offset(0, 4),
       blurRadius: 8,
       spreadRadius: 0,
     ),
@@ -513,9 +513,9 @@ class TamgaciConstants {
 
   /// Güçlü gölge - Floating action button vb. için
   static List<BoxShadow> get shadowStrong => [
-    BoxShadow(
+    const BoxShadow(
       color: shadowColor,
-      offset: const Offset(0, 8),
+      offset: Offset(0, 8),
       blurRadius: 16,
       spreadRadius: 0,
     ),

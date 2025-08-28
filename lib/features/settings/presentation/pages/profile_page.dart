@@ -402,7 +402,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 64,
                 color: TamgaciConstants.errorColor,
@@ -503,7 +503,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 right: 0,
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: TamgaciConstants.primaryColor,
                     shape: BoxShape.circle,
                   ),

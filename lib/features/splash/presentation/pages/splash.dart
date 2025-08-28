@@ -450,12 +450,12 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 // Uygulama logosu
                 _buildAppLogo(),
                 
-                SizedBox(height: TamgaciConstants.spaceLG),
+                const SizedBox(height: TamgaciConstants.spaceLG),
                 
                 // Uygulama başlığı
                 _buildAppTitle(),
                 
-                SizedBox(height: TamgaciConstants.spaceSM),
+                const SizedBox(height: TamgaciConstants.spaceSM),
                 
                 // Uygulama açıklaması
                 _buildAppDescription(),
@@ -571,7 +571,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     // İlerleme çubuğu
                     _buildProgressBar(splashData.progress),
                     
-                    SizedBox(height: TamgaciConstants.spaceMD),
+                    const SizedBox(height: TamgaciConstants.spaceMD),
                     
                     // Durum mesajı
                     _buildStatusMessage(splashData.message),
@@ -640,7 +640,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Widget _buildErrorMessage(String errorMessage) {
     return Column(
       children: [
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         Container(
           padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
           decoration: BoxDecoration(
@@ -653,13 +653,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           child: Column(
             children: [
               // Hata ikonu
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 color: TamgaciConstants.errorColor,
                 size: 32,
               ),
               
-              SizedBox(height: TamgaciConstants.spaceSM),
+              const SizedBox(height: TamgaciConstants.spaceSM),
               
               // Hata mesajı
               Text(
@@ -672,7 +672,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 textAlign: TextAlign.center,
               ),
               
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
               
               // Tekrar dene butonu
               TextButton(
@@ -708,7 +708,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           ),
         ),
         
-        SizedBox(height: TamgaciConstants.spaceXS),
+        const SizedBox(height: TamgaciConstants.spaceXS),
         
         // Copyright
         Text(
@@ -803,13 +803,13 @@ class SplashErrorWidget extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.warning_amber_outlined,
             size: 48,
             color: TamgaciConstants.errorColor,
           ),
           
-          SizedBox(height: TamgaciConstants.spaceMD),
+          const SizedBox(height: TamgaciConstants.spaceMD),
           
           Text(
             'Bir Sorun Oluştu',
@@ -821,7 +821,7 @@ class SplashErrorWidget extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           
-          SizedBox(height: TamgaciConstants.spaceSM),
+          const SizedBox(height: TamgaciConstants.spaceSM),
           
           Text(
             message,
@@ -834,7 +834,7 @@ class SplashErrorWidget extends StatelessWidget {
           ),
           
           if (onRetry != null) ...[
-            SizedBox(height: TamgaciConstants.spaceLG),
+            const SizedBox(height: TamgaciConstants.spaceLG),
             
             ElevatedButton(
               onPressed: onRetry,

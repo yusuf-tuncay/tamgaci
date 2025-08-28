@@ -125,12 +125,12 @@ class _ProductReportPageState extends ConsumerState<ProductReportPage> {
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
 
     // Mock veri
-    final totalProducts = 156;
-    final activeProducts = 142;
-    final lowStockProducts = 8;
-    final outOfStockProducts = 6;
-    final totalRevenue = 450000.0;
-    final totalCost = 320000.0;
+    const totalProducts = 156;
+    const activeProducts = 142;
+    const lowStockProducts = 8;
+    const outOfStockProducts = 6;
+    const totalRevenue = 450000.0;
+    const totalCost = 320000.0;
     final totalProfit = totalRevenue - totalCost;
     final profitMargin = (totalProfit / totalRevenue) * 100;
 

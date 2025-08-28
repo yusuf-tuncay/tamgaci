@@ -156,7 +156,7 @@ class _IncomeListPageState extends ConsumerState<IncomeListPage> {
                     child: Container(
                       width: 8,
                       height: 8,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: TamgaciConstants.primaryColor,
                         shape: BoxShape.circle,
                       ),

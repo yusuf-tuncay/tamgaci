@@ -125,8 +125,8 @@ class _IncomeExpenseReportPageState
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
 
     // Mock veri
-    final totalIncome = 125000.0;
-    final totalExpense = 85000.0;
+    const totalIncome = 125000.0;
+    const totalExpense = 85000.0;
     final netIncome = totalIncome - totalExpense;
     final profitMargin = (netIncome / totalIncome) * 100;
 
@@ -399,7 +399,7 @@ class _IncomeExpenseReportPageState
   }
 
   Widget _buildBarChartItem(String month, double income, double expense) {
-    final maxValue = 125000.0;
+    const maxValue = 125000.0;
     final incomeHeight = (income / maxValue) * 150;
     final expenseHeight = (expense / maxValue) * 150;
 

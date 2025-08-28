@@ -27,7 +27,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     return Scaffold(
       backgroundColor: TamgaciConstants.backgroundColor,
-      appBar: CustomAppBar(title: 'Ayarlar', showDrawer: true),
+      appBar: const CustomAppBar(title: 'Ayarlar', showDrawer: true),
       drawer: const TamgaciDrawerMenu(),
       body: settingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -35,7 +35,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 64,
                 color: TamgaciConstants.errorColor,
@@ -120,7 +120,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           children: [
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.security,
                   color: TamgaciConstants.primaryColor,
                   size: 24,
@@ -206,14 +206,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                         child: Image.file(
                           File(userProfile.profilePhotoUrl!),
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
+                          errorBuilder: (context, error, stackTrace) => const Icon(
                             Icons.person,
                             size: 40,
                             color: TamgaciConstants.primaryColor,
                           ),
                         ),
                       )
-                    : Icon(
+                    : const Icon(
                         Icons.person,
                         size: 40,
                         color: TamgaciConstants.primaryColor,
@@ -261,7 +261,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               IconButton(
                 onPressed: () =>
                     Navigator.pushNamed(context, '/settings/profile'),
-                icon: Icon(
+                icon: const Icon(
                   Icons.edit_outlined,
                   color: TamgaciConstants.primaryColor,
                 ),
@@ -300,7 +300,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     width: 2,
                   ),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.person,
                   size: 40,
                   color: TamgaciConstants.primaryColor,
@@ -343,7 +343,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               IconButton(
                 onPressed: () =>
                     Navigator.pushNamed(context, '/settings/profile'),
-                icon: Icon(
+                icon: const Icon(
                   Icons.edit_outlined,
                   color: TamgaciConstants.primaryColor,
                 ),
@@ -364,7 +364,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Karanlık Tema',
           subtitle: 'Uygulamayı karanlık temada kullan',
-          leading: Icon(
+          leading: const Icon(
             Icons.dark_mode_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -382,11 +382,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Dil',
           subtitle: _getLanguageName(settings.general.language),
-          leading: Icon(
+          leading: const Icon(
             Icons.language_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -396,11 +396,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Tarih Formatı',
           subtitle: settings.general.dateFormat,
-          leading: Icon(
+          leading: const Icon(
             Icons.calendar_today_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -410,11 +410,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Para Birimi',
           subtitle: _getCurrencyName(settings.general.currency),
-          leading: Icon(
+          leading: const Icon(
             Icons.attach_money_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -424,7 +424,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Otomatik Kaydetme',
           subtitle: 'Değişiklikleri otomatik kaydet',
-          leading: Icon(
+          leading: const Icon(
             Icons.save_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -452,7 +452,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Bildirimler',
           subtitle: 'Uygulama bildirimlerini al',
-          leading: Icon(
+          leading: const Icon(
             Icons.notifications_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -472,7 +472,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Fatura Hatırlatıcıları',
           subtitle: 'Vadesi yaklaşan faturalar için bildirim',
-          leading: Icon(
+          leading: const Icon(
             Icons.receipt_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -492,7 +492,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Ödeme Hatırlatıcıları',
           subtitle: 'Ödeme tarihleri için bildirim',
-          leading: Icon(
+          leading: const Icon(
             Icons.payment_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -512,7 +512,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Stok Uyarıları',
           subtitle: 'Düşük stok seviyeleri için bildirim',
-          leading: Icon(
+          leading: const Icon(
             Icons.inventory_2_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -532,7 +532,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Ses Bildirimleri',
           subtitle: 'Bildirim seslerini çal',
-          leading: Icon(
+          leading: const Icon(
             Icons.volume_up_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -552,7 +552,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Titreşim Bildirimleri',
           subtitle: 'Bildirim titreşimlerini etkinleştir',
-          leading: Icon(
+          leading: const Icon(
             Icons.vibration_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -582,11 +582,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Şifre Değiştir',
           subtitle: 'Hesap şifrenizi güncelleyin',
-          leading: Icon(
+          leading: const Icon(
             Icons.lock_outline,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -596,7 +596,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Biometrik Giriş',
           subtitle: 'Parmak izi veya yüz tanıma ile giriş',
-          leading: Icon(
+          leading: const Icon(
             Icons.fingerprint_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -616,7 +616,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'İki Faktörlü Doğrulama',
           subtitle: 'Ek güvenlik için 2FA kullanın',
-          leading: Icon(
+          leading: const Icon(
             Icons.verified_user_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -637,11 +637,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           title: 'Otomatik Kilitlenme',
           subtitle:
               '${settings.security.autoLockTimeout} dakika sonra kilitlen',
-          leading: Icon(
+          leading: const Icon(
             Icons.timer_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -661,7 +661,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Otomatik Yedekleme',
           subtitle: 'Verilerinizi otomatik olarak yedekleyin',
-          leading: Icon(
+          leading: const Icon(
             Icons.backup_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -679,11 +679,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Yedekleme Sıklığı',
           subtitle: '${settings.data.backupFrequency} günde bir',
-          leading: Icon(
+          leading: const Icon(
             Icons.schedule_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -693,7 +693,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Veri Şifreleme',
           subtitle: 'Verilerinizi şifreleyerek koruyun',
-          leading: Icon(
+          leading: const Icon(
             Icons.security_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -711,11 +711,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Veri Dışa Aktar',
           subtitle: 'Tüm verilerinizi Excel/PDF olarak indirin',
-          leading: Icon(
+          leading: const Icon(
             Icons.download_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -725,11 +725,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Veri İçe Aktar',
           subtitle: 'Dışarıdan veri yükleyin',
-          leading: Icon(
+          leading: const Icon(
             Icons.upload_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -739,11 +739,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Verileri Temizle',
           subtitle: 'Tüm verileri kalıcı olarak silin',
-          leading: Icon(
+          leading: const Icon(
             Icons.delete_forever_outlined,
             color: TamgaciConstants.errorColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -763,7 +763,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Uygulama Versiyonu',
           subtitle: 'v1.0.0',
-          leading: Icon(
+          leading: const Icon(
             Icons.apps_outlined,
             color: TamgaciConstants.primaryColor,
           ),
@@ -772,11 +772,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Lisans',
           subtitle: 'MIT License',
-          leading: Icon(
+          leading: const Icon(
             Icons.description_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -786,11 +786,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Gizlilik Politikası',
           subtitle: 'Veri kullanım koşulları',
-          leading: Icon(
+          leading: const Icon(
             Icons.privacy_tip_outlined,
             color: TamgaciConstants.primaryColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -800,11 +800,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSettingsTile(
           title: 'Çıkış Yap',
           subtitle: 'Hesabınızdan güvenli çıkış',
-          leading: Icon(
+          leading: const Icon(
             Icons.logout_outlined,
             color: TamgaciConstants.errorColor,
           ),
-          trailing: Icon(
+          trailing: const Icon(
             Icons.arrow_forward_ios,
             size: 16,
             color: TamgaciConstants.textSecondary,
@@ -922,10 +922,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Text('Uygulama dilini seçin:'),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: settings.general.language,
-              items: [
-                DropdownMenuItem(value: 'tr', child: const Text('Türkçe')),
-                DropdownMenuItem(value: 'en', child: const Text('English')),
+              initialValue: settings.general.language,
+              items: const [
+                DropdownMenuItem(value: 'tr', child: Text('Türkçe')),
+                DropdownMenuItem(value: 'en', child: Text('English')),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -962,19 +962,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Text('Tarih formatını seçin:'),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: settings.general.dateFormat,
-              items: [
+              initialValue: settings.general.dateFormat,
+              items: const [
                 DropdownMenuItem(
                   value: 'dd/MM/yyyy',
-                  child: const Text('DD/MM/YYYY'),
+                  child: Text('DD/MM/YYYY'),
                 ),
                 DropdownMenuItem(
                   value: 'MM/dd/yyyy',
-                  child: const Text('MM/DD/YYYY'),
+                  child: Text('MM/DD/YYYY'),
                 ),
                 DropdownMenuItem(
                   value: 'yyyy-MM-dd',
-                  child: const Text('YYYY-MM-DD'),
+                  child: Text('YYYY-MM-DD'),
                 ),
               ],
               onChanged: (value) {
@@ -1012,17 +1012,17 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Text('Para birimini seçin:'),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: settings.general.currency,
-              items: [
+              initialValue: settings.general.currency,
+              items: const [
                 DropdownMenuItem(
                   value: 'TRY',
-                  child: const Text('Türk Lirası (₺)'),
+                  child: Text('Türk Lirası (₺)'),
                 ),
                 DropdownMenuItem(
                   value: 'USD',
-                  child: const Text('Amerikan Doları (\$)'),
+                  child: Text('Amerikan Doları (\$)'),
                 ),
-                DropdownMenuItem(value: 'EUR', child: const Text('Euro (€)')),
+                DropdownMenuItem(value: 'EUR', child: Text('Euro (€)')),
               ],
               onChanged: (value) {
                 if (value != null) {
@@ -1195,7 +1195,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Text('Uygulama kaç dakika sonra kilitlensin?'),
             const SizedBox(height: 16),
             DropdownButtonFormField<int>(
-              value: settings.security.autoLockTimeout,
+              initialValue: settings.security.autoLockTimeout,
               items: [1, 3, 5, 10, 15, 30].map((minutes) {
                 return DropdownMenuItem(
                   value: minutes,
@@ -1237,7 +1237,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const Text('Kaç günde bir yedekleme yapılsın?'),
             const SizedBox(height: 16),
             DropdownButtonFormField<int>(
-              value: settings.data.backupFrequency,
+              initialValue: settings.data.backupFrequency,
               items: [1, 3, 7, 14, 30].map((days) {
                 return DropdownMenuItem(value: days, child: Text('$days gün'));
               }).toList(),

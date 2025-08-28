@@ -238,7 +238,7 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Şirket bilgileri
                   Expanded(
@@ -267,24 +267,24 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceSM),
+                  const SizedBox(width: TamgaciConstants.spaceSM),
 
                   // Durum
                   _buildStatusChip(isActive),
                 ],
               ),
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // İletişim bilgileri
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.email,
                     size: 16,
                     color: TamgaciConstants.textSecondary,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       supplier.email,
@@ -299,16 +299,16 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                 ],
               ),
 
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
 
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.phone,
                     size: 16,
                     color: TamgaciConstants.textSecondary,
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
                     supplier.phone,
                     style: GoogleFonts.poppins(
@@ -319,7 +319,7 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                 ],
               ),
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // Alt kısım - Finansal bilgiler
               Row(
@@ -334,7 +334,7 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Mevcut bakiye
                   Expanded(

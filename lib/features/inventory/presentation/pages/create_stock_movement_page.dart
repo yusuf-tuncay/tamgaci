@@ -27,7 +27,7 @@ class _CreateStockMovementPageState
   Warehouse? _selectedWarehouse;
   Warehouse? _selectedSourceWarehouse;
   Warehouse? _selectedDestinationWarehouse;
-  DateTime _selectedDate = DateTime.now();
+  final DateTime _selectedDate = DateTime.now();
 
   @override
   void dispose() {
@@ -61,7 +61,7 @@ class _CreateStockMovementPageState
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 64,
                 color: TamgaciConstants.errorColor,
@@ -116,7 +116,7 @@ class _CreateStockMovementPageState
                 border: Border.all(color: TamgaciConstants.borderColor),
               ),
               child: DropdownButtonFormField<StockMovementType>(
-                value: _selectedMovementType,
+                initialValue: _selectedMovementType,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
@@ -166,7 +166,7 @@ class _CreateStockMovementPageState
                   border: Border.all(color: TamgaciConstants.borderColor),
                 ),
                 child: DropdownButtonFormField<Warehouse>(
-                  value: _selectedWarehouse,
+                  initialValue: _selectedWarehouse,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
@@ -216,7 +216,7 @@ class _CreateStockMovementPageState
                   border: Border.all(color: TamgaciConstants.borderColor),
                 ),
                 child: DropdownButtonFormField<Warehouse>(
-                  value: _selectedSourceWarehouse,
+                  initialValue: _selectedSourceWarehouse,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(
@@ -264,7 +264,7 @@ class _CreateStockMovementPageState
                   border: Border.all(color: TamgaciConstants.borderColor),
                 ),
                 child: DropdownButtonFormField<Warehouse>(
-                  value: _selectedDestinationWarehouse,
+                  initialValue: _selectedDestinationWarehouse,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(

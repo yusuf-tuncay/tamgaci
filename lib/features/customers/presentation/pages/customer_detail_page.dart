@@ -403,7 +403,7 @@ class _CustomerDetailView extends ConsumerWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
+                const Icon(
                   Icons.location_on_outlined,
                   size: 20,
                   color: TamgaciConstants.textSecondary,

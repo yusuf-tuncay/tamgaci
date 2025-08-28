@@ -108,7 +108,7 @@ class DateTimeService {
         final utcTime = DateTime.parse(dateTimeString);
 
         // Türkiye saatine çevir (UTC+3)
-        return utcTime.add(Duration(hours: 3));
+        return utcTime.add(const Duration(hours: 3));
       }
     } catch (e) {
       // Hata durumunda null döndür
@@ -138,7 +138,7 @@ class DateTimeService {
         final utcTime = DateTime.parse(dateTimeString);
 
         // Türkiye saatine çevir (UTC+3)
-        return utcTime.add(Duration(hours: 3));
+        return utcTime.add(const Duration(hours: 3));
       }
     } catch (e) {
       // Hata durumunda null döndür
@@ -168,7 +168,7 @@ class DateTimeService {
         final utcTime = DateTime.parse(dateTimeString);
 
         // Türkiye saatine çevir (UTC+3)
-        return utcTime.add(Duration(hours: 3));
+        return utcTime.add(const Duration(hours: 3));
       }
     } catch (e) {
       // Hata durumunda null döndür

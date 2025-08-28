@@ -343,7 +343,7 @@ class _SupplierReportPageState extends ConsumerState<SupplierReportPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.business_outlined,
               size: 64,
               color: TamgaciConstants.textDisabled,

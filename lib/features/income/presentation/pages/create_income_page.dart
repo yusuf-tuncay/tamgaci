@@ -172,7 +172,7 @@ class _CreateIncomePageState extends ConsumerState<CreateIncomePage> {
             DropdownButtonFormField<String>(
               initialValue: selectedIcon,
               decoration: const InputDecoration(labelText: 'İkon'),
-              items: [
+              items: const [
                 DropdownMenuItem(value: 'business', child: Text('İş')),
                 DropdownMenuItem(
                   value: 'shopping_cart',
@@ -190,7 +190,7 @@ class _CreateIncomePageState extends ConsumerState<CreateIncomePage> {
             DropdownButtonFormField<String>(
               initialValue: selectedColor,
               decoration: const InputDecoration(labelText: 'Renk'),
-              items: [
+              items: const [
                 DropdownMenuItem(value: '#2196F3', child: Text('Mavi')),
                 DropdownMenuItem(value: '#4CAF50', child: Text('Yeşil')),
                 DropdownMenuItem(value: '#FF9800', child: Text('Turuncu')),

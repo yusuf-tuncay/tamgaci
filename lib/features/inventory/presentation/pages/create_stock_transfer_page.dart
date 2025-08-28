@@ -116,21 +116,21 @@ class _CreateStockTransferPageState
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DropdownButtonFormField<int>(
-                value: _selectedProductId,
+                initialValue: _selectedProductId,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Ürün seçin',
                 ),
-                items: [
-                  const DropdownMenuItem(
+                items: const [
+                  DropdownMenuItem(
                     value: 1,
                     child: Text('Ürün 1'),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 2,
                     child: Text('Ürün 2'),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 3,
                     child: Text('Ürün 3'),
                   ),
@@ -181,17 +181,17 @@ class _CreateStockTransferPageState
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DropdownButtonFormField<int>(
-                value: _selectedSourceWarehouseId,
+                initialValue: _selectedSourceWarehouseId,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Kaynak depo seçin',
                 ),
-                items: [
-                  const DropdownMenuItem(
+                items: const [
+                  DropdownMenuItem(
                     value: 1,
                     child: Text('Ana Depo'),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 2,
                     child: Text('Şube Depo'),
                   ),
@@ -242,17 +242,17 @@ class _CreateStockTransferPageState
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DropdownButtonFormField<int>(
-                value: _selectedDestinationWarehouseId,
+                initialValue: _selectedDestinationWarehouseId,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Hedef depo seçin',
                 ),
-                items: [
-                  const DropdownMenuItem(
+                items: const [
+                  DropdownMenuItem(
                     value: 1,
                     child: Text('Ana Depo'),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 2,
                     child: Text('Şube Depo'),
                   ),

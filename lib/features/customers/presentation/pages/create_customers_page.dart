@@ -150,7 +150,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: TamgaciConstants.errorColor),
+          const Icon(Icons.error_outline, color: TamgaciConstants.errorColor),
           const SizedBox(width: TamgaciConstants.spaceSM),
           Expanded(
             child: Text(
@@ -180,7 +180,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
       ),
       child: Row(
         children: [
-          Icon(
+          const Icon(
             Icons.check_circle_outline,
             color: TamgaciConstants.successColor,
           ),

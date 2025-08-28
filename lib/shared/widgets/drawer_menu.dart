@@ -4,8 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:io';
 import '../../core/theme/constants.dart';
 import '../../core/routes/routes.dart';
+import '../../core/providers/theme_provider.dart';
 import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
 import '../../features/user_profile/domain/entities/user_profile.dart';
+import 'theme_toggle_button.dart';
 
 // ========== DRAWER MENU MODELS ==========
 
@@ -72,6 +74,14 @@ class DrawerMenuItem {
       isActive: isActive ?? this.isActive,
       isVisible: isVisible ?? this.isVisible,
       requiresAdmin: requiresAdmin ?? this.requiresAdmin,
+    );
+  }
+
+  /// Tema seçici dialog'unu gösterir
+  void _showThemeSelector(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => const ThemeSelectorDialog(),
     );
   }
 }
@@ -256,8 +266,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   /// Drawer header'ını oluşturur
   Widget _buildDrawerHeader(UserProfile userProfile) {
     return Container(
-      height:
-          widget.headerHeight ??
+      height: widget.headerHeight ??
           TamgaciConstants.getResponsiveValue(
             context,
             mobile: 250.0,
@@ -283,7 +292,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               // Kullanıcı Avatar'ı
               _buildUserAvatar(userProfile),
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // Kullanıcı Bilgileri
               _buildUserInfo(userProfile),
@@ -297,8 +306,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   /// Drawer header loading
   Widget _buildDrawerHeaderLoading() {
     return Container(
-      height:
-          widget.headerHeight ??
+      height: widget.headerHeight ??
           TamgaciConstants.getResponsiveValue(
             context,
             mobile: 250.0,
@@ -325,8 +333,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   /// Drawer header error
   Widget _buildDrawerHeaderError() {
     return Container(
-      height:
-          widget.headerHeight ??
+      height: widget.headerHeight ??
           TamgaciConstants.getResponsiveValue(
             context,
             mobile: 250.0,
@@ -352,7 +359,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               // Kullanıcı Avatar'ı
               _buildUserAvatar(null),
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // Kullanıcı Bilgileri
               _buildUserInfoError(),
@@ -440,7 +447,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             color: TamgaciConstants.textOnPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceXS),
+        const SizedBox(height: TamgaciConstants.spaceXS),
         // Kullanıcı E-posta
         Text(
           userProfile.email,
@@ -456,7 +463,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceXS),
+        const SizedBox(height: TamgaciConstants.spaceXS),
         // Kullanıcı Rolü
         Text(
           userProfile.role,
@@ -495,7 +502,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             color: TamgaciConstants.textOnPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceXS),
+        const SizedBox(height: TamgaciConstants.spaceXS),
         Text(
           'kullanici@tamgaci.com',
           style: GoogleFonts.poppins(
@@ -510,7 +517,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceXS),
+        const SizedBox(height: TamgaciConstants.spaceXS),
         Text(
           'Kullanıcı',
           style: GoogleFonts.poppins(
@@ -593,7 +600,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   Widget _buildDrawerFooter() {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: TamgaciConstants.cardColor,
         border: Border(
           top: BorderSide(color: TamgaciConstants.borderColor, width: 1),
@@ -624,7 +631,43 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               ),
             ),
           ),
-          SizedBox(height: TamgaciConstants.spaceSM),
+          const SizedBox(height: TamgaciConstants.spaceSM),
+          // Tema değiştirme butonu
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                _showThemeSelector(context, ref);
+              },
+              icon: Consumer(
+                builder: (context, ref, child) {
+                  final themeMode = ref.watch(themeProvider);
+                  final themeNotifier = ref.read(themeProvider.notifier);
+                  return Icon(themeNotifier.getThemeIcon(), size: 18);
+                },
+              ),
+              label: Consumer(
+                builder: (context, ref, child) {
+                  final themeMode = ref.watch(themeProvider);
+                  final themeNotifier = ref.read(themeProvider.notifier);
+                  return Text(
+                    'Tema: ${themeNotifier.getThemeName()}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                },
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                side: BorderSide(
+                  color: TamgaciConstants.primaryColor.withValues(alpha: 0.5),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: TamgaciConstants.spaceSM),
           // Çıkış butonu
           SizedBox(
             width: double.infinity,

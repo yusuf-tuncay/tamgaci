@@ -105,7 +105,7 @@ class _CreateCashTransactionPageState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: TamgaciConstants.backgroundColor,
-      appBar: CustomAppBar(title: 'Yeni Kasa İşlemi', showDrawer: false),
+      appBar: const CustomAppBar(title: 'Yeni Kasa İşlemi', showDrawer: false),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

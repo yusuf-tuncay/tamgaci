@@ -188,21 +188,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     _buildDescriptionField(),
                     _buildCategoryField(),
 
-                    SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Kod Bilgileri
                     _buildSectionTitle('Kod Bilgileri'),
                     _buildSkuField(),
                     _buildBarcodeField(),
 
-                    SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Fiyat Bilgileri
                     _buildSectionTitle('Fiyat Bilgileri'),
                     _buildUnitPriceField(),
                     _buildTaxRateField(),
 
-                    SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Stok Bilgileri
                     _buildSectionTitle('Stok Bilgileri'),
@@ -210,13 +210,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     _buildMinStockLevelField(),
                     _buildUnitField(),
 
-                    SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Durum
                     _buildSectionTitle('Durum'),
                     _buildActiveSwitch(),
 
-                    SizedBox(height: TamgaciConstants.spaceXL),
+                    const SizedBox(height: TamgaciConstants.spaceXL),
 
                     // Kaydet Butonu
                     SizedBox(

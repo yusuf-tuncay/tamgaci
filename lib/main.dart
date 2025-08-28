@@ -6,8 +6,8 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io' show Platform;
 import 'package:tamgaci/core/database/tamgaci_database.dart';
-import 'package:tamgaci/features/directory/data/datasources/contact_dao.dart';
 import 'package:tamgaci/features/directory/presentation/providers/contact_providers.dart';
+import 'package:tamgaci/core/services/notification_service.dart';
 
 /// Tamgaci Ön Muhasebe Uygulaması
 /// Ana uygulama giriş noktası
@@ -51,6 +51,9 @@ void main() async {
       print('Database initialization failed: $e');
     }
   }
+
+  // Notification service'i başlat
+  await NotificationService().initialize();
 
   // Test verilerini yükle (database başlatıldıktan sonra)
   // Bu işlem uygulama başladıktan sonra yapılacak

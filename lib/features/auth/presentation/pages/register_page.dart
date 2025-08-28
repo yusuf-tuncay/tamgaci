@@ -296,8 +296,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             fontSize: 14,
                             color: TamgaciConstants.textSecondary,
                           ),
-                          children: [
-                            const TextSpan(text: 'Kullanım şartlarını ve '),
+                          children: const [
+                            TextSpan(text: 'Kullanım şartlarını ve '),
                             TextSpan(
                               text: 'Gizlilik Politikası\'nı',
                               style: TextStyle(
@@ -305,7 +305,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            const TextSpan(text: ' kabul ediyorum'),
+                            TextSpan(text: ' kabul ediyorum'),
                           ],
                         ),
                       ),

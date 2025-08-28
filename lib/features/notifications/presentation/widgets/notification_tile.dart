@@ -106,7 +106,7 @@ class NotificationTile extends StatelessWidget {
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.access_time,
                     size: 12,
                     color: TamgaciConstants.textSecondary,

@@ -111,21 +111,21 @@ class _CreateStockOutPageState extends ConsumerState<CreateStockOutPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DropdownButtonFormField<int>(
-                value: _selectedProductId,
+                initialValue: _selectedProductId,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Ürün seçin',
                 ),
-                items: [
-                  const DropdownMenuItem(
+                items: const [
+                  DropdownMenuItem(
                     value: 1,
                     child: Text('Ürün 1'),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 2,
                     child: Text('Ürün 2'),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 3,
                     child: Text('Ürün 3'),
                   ),
@@ -176,17 +176,17 @@ class _CreateStockOutPageState extends ConsumerState<CreateStockOutPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: DropdownButtonFormField<int>(
-                value: _selectedWarehouseId,
+                initialValue: _selectedWarehouseId,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Depo seçin',
                 ),
-                items: [
-                  const DropdownMenuItem(
+                items: const [
+                  DropdownMenuItem(
                     value: 1,
                     child: Text('Ana Depo'),
                   ),
-                  const DropdownMenuItem(
+                  DropdownMenuItem(
                     value: 2,
                     child: Text('Şube Depo'),
                   ),

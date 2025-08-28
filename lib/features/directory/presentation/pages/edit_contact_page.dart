@@ -138,7 +138,7 @@ class _EditContactPageState extends ConsumerState<EditContactPage> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<ContactType>(
-              value: _selectedType,
+              initialValue: _selectedType,
               decoration: const InputDecoration(
                 labelText: 'Tip *',
                 border: OutlineInputBorder(),

@@ -138,7 +138,7 @@ class ExpenseCard extends StatelessWidget {
               Row(
                 children: [
                   // Tarih
-                  Icon(
+                  const Icon(
                     Icons.calendar_today,
                     size: 14,
                     color: TamgaciConstants.textSecondary,
@@ -201,7 +201,7 @@ class ExpenseCard extends StatelessWidget {
 
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.receipt,
                       size: 14,
                       color: TamgaciConstants.textSecondary,
@@ -228,7 +228,7 @@ class ExpenseCard extends StatelessWidget {
 
                 Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.business,
                       size: 14,
                       color: TamgaciConstants.textSecondary,

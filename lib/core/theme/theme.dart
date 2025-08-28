@@ -698,7 +698,7 @@ class TamgaciTheme {
 
   /// BottomSheet bileşeni teması
   static BottomSheetThemeData _getBottomSheetTheme() {
-    return BottomSheetThemeData(
+    return const BottomSheetThemeData(
       // BottomSheet arka plan rengi
       backgroundColor: TamgaciConstants.backgroundColor,
 
@@ -712,7 +712,7 @@ class TamgaciTheme {
       shadowColor: TamgaciConstants.shadowColor,
 
       // BottomSheet şekli
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(TamgaciConstants.radiusLG),
         ),
@@ -725,7 +725,7 @@ class TamgaciTheme {
       dragHandleColor: TamgaciConstants.dividerColor,
 
       // Sürüklenebilir gösterge boyutu
-      dragHandleSize: const Size(32, 4),
+      dragHandleSize: Size(32, 4),
     );
   }
 

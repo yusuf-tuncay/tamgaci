@@ -96,39 +96,39 @@ class DashboardPage extends ConsumerWidget {
               _buildWelcomeAndMarketSection(
                   currentDateTimeAsync, userName, stockMarketDataAsync),
 
-              SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: TamgaciConstants.spaceLG),
 
               // Özet kartları ve hızlı istatistikler
               dashboardSummaryAsync.when(
                 data: (summary) => Column(
                   children: [
                     _buildSummaryCards(context, summary),
-                    SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
                     _buildQuickStats(context, summary),
                   ],
                 ),
                 loading: () => Column(
                   children: [
                     _buildSummaryCardsLoading(),
-                    SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
                     _buildQuickStatsLoading(context),
                   ],
                 ),
                 error: (error, stack) => Column(
                   children: [
                     _buildSummaryCardsError(error),
-                    SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
                     _buildQuickStatsError(error),
                   ],
                 ),
               ),
 
-              SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: TamgaciConstants.spaceLG),
 
               // Hızlı işlemler
               _buildQuickActions(context),
 
-              SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: TamgaciConstants.spaceLG),
 
               // Aylık grafik
               monthlyChartDataAsync.when(
@@ -137,7 +137,7 @@ class DashboardPage extends ConsumerWidget {
                 error: (error, stack) => _buildChartError(error),
               ),
 
-              SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: TamgaciConstants.spaceLG),
 
               // Son işlemler
               recentTransactionsAsync.when(
@@ -216,7 +216,7 @@ class DashboardPage extends ConsumerWidget {
                         color: TamgaciConstants.textOnPrimary,
                       ),
                     ),
-                    SizedBox(height: TamgaciConstants.spaceSM),
+                    const SizedBox(height: TamgaciConstants.spaceSM),
                     currentDateTimeAsync.when(
                       data: (dateTime) => Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,7 +280,7 @@ class DashboardPage extends ConsumerWidget {
                               .withValues(alpha: 0.9),
                         ),
                       ),
-                      SizedBox(height: TamgaciConstants.spaceSM),
+                      const SizedBox(height: TamgaciConstants.spaceSM),
                       // Döviz kurları
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -292,7 +292,7 @@ class DashboardPage extends ConsumerWidget {
                             data.usdTryChangePercent,
                             Icons.attach_money,
                           ),
-                          SizedBox(width: TamgaciConstants.spaceSM),
+                          const SizedBox(width: TamgaciConstants.spaceSM),
                           _buildMarketItemCompact(
                             'EUR/TRY',
                             data.eurTry.toStringAsFixed(2),
@@ -302,7 +302,7 @@ class DashboardPage extends ConsumerWidget {
                           ),
                         ],
                       ),
-                      SizedBox(height: TamgaciConstants.spaceSM),
+                      const SizedBox(height: TamgaciConstants.spaceSM),
                       // Altın
                       _buildMarketItemCompact(
                         'Altın (TL)',
@@ -646,7 +646,7 @@ class DashboardPage extends ConsumerWidget {
       ),
       child: Column(
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             color: TamgaciConstants.errorColor,
             size: 48,
@@ -678,7 +678,7 @@ class DashboardPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -718,7 +718,7 @@ class DashboardPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         Container(
           padding: const EdgeInsets.all(TamgaciConstants.spaceLG),
           decoration: BoxDecoration(
@@ -728,7 +728,7 @@ class DashboardPage extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 color: TamgaciConstants.errorColor,
                 size: 48,
@@ -762,7 +762,7 @@ class DashboardPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -885,7 +885,7 @@ class DashboardPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1030,7 +1030,7 @@ class DashboardPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         Container(
           height: 200,
           padding: const EdgeInsets.all(16),
@@ -1152,7 +1152,7 @@ class DashboardPage extends ConsumerWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             Icons.error_outline,
             color: TamgaciConstants.errorColor,
             size: 48,
@@ -1221,7 +1221,7 @@ class DashboardPage extends ConsumerWidget {
             ),
           ],
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1311,7 +1311,7 @@ class DashboardPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         const Center(child: CircularProgressIndicator()),
       ],
     );
@@ -1330,7 +1330,7 @@ class DashboardPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
@@ -1340,7 +1340,7 @@ class DashboardPage extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 color: TamgaciConstants.errorColor,
                 size: 48,
@@ -1407,7 +1407,7 @@ class DashboardPage extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: TamgaciConstants.spaceLG),
               ListTile(
                 leading: const Icon(Icons.receipt_long_outlined),
                 title: const Text('Yeni Fatura Oluştur'),

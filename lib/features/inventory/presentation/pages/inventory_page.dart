@@ -43,7 +43,7 @@ class InventoryPage extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 64,
                 color: TamgaciConstants.errorColor,
@@ -101,17 +101,17 @@ class InventoryPage extends ConsumerWidget {
           // Özet kartları
           _buildSummaryCards(context, summary),
 
-          SizedBox(height: TamgaciConstants.spaceLG),
+          const SizedBox(height: TamgaciConstants.spaceLG),
 
           // Hızlı işlemler
           _buildQuickActions(context),
 
-          SizedBox(height: TamgaciConstants.spaceLG),
+          const SizedBox(height: TamgaciConstants.spaceLG),
 
           // Stok istatistikleri
           _buildStockStats(context, statsAsync),
 
-          SizedBox(height: TamgaciConstants.spaceLG),
+          const SizedBox(height: TamgaciConstants.spaceLG),
 
           // Son stok hareketleri
           _buildRecentMovements(context, ref),
@@ -133,7 +133,7 @@ class InventoryPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -276,7 +276,7 @@ class InventoryPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -426,13 +426,13 @@ class InventoryPage extends ConsumerWidget {
             color: TamgaciConstants.textPrimary,
           ),
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         statsAsync.when(
           data: (stats) => Column(
             children: [
               // En değerli ürünler
               _buildTopValueItems(context, stats.topValueItems),
-              SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: TamgaciConstants.spaceLG),
               // En çok stoklu ürünler
               _buildTopQuantityItems(context, stats.topQuantityItems),
             ],
@@ -469,7 +469,7 @@ class InventoryPage extends ConsumerWidget {
               color: TamgaciConstants.textPrimary,
             ),
           ),
-          SizedBox(height: TamgaciConstants.spaceMD),
+          const SizedBox(height: TamgaciConstants.spaceMD),
           if (items.isEmpty)
             Center(
               child: Text(
@@ -544,7 +544,7 @@ class InventoryPage extends ConsumerWidget {
               color: TamgaciConstants.textPrimary,
             ),
           ),
-          SizedBox(height: TamgaciConstants.spaceMD),
+          const SizedBox(height: TamgaciConstants.spaceMD),
           if (items.isEmpty)
             Center(
               child: Text(
@@ -632,7 +632,7 @@ class InventoryPage extends ConsumerWidget {
             ),
           ],
         ),
-        SizedBox(height: TamgaciConstants.spaceMD),
+        const SizedBox(height: TamgaciConstants.spaceMD),
         recentMovementsAsync.when(
           data: (movements) => Container(
             padding: const EdgeInsets.all(TamgaciConstants.spaceMD),

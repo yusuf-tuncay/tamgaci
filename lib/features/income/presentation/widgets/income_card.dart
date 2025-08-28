@@ -48,14 +48,14 @@ class IncomeCard extends StatelessWidget {
                         TamgaciConstants.radiusSM,
                       ),
                     ),
-                    child: Icon(
+                    child: const Icon(
                       Icons.attach_money_outlined,
                       color: TamgaciConstants.successColor,
                       size: 24,
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Başlık ve açıklama
                   Expanded(
@@ -88,7 +88,7 @@ class IncomeCard extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceSM),
+                  const SizedBox(width: TamgaciConstants.spaceSM),
 
                   // Tutar
                   Column(
@@ -108,7 +108,7 @@ class IncomeCard extends StatelessWidget {
                 ],
               ),
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // Alt kısım - Detaylar
               Row(
@@ -122,7 +122,7 @@ class IncomeCard extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Tarih
                   Expanded(
@@ -136,7 +136,7 @@ class IncomeCard extends StatelessWidget {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Ödeme yöntemi
                   Expanded(
@@ -151,7 +151,7 @@ class IncomeCard extends StatelessWidget {
 
               // Müşteri bilgisi (varsa)
               if (income.customerName != null) ...[
-                SizedBox(height: TamgaciConstants.spaceSM),
+                const SizedBox(height: TamgaciConstants.spaceSM),
                 _buildDetailItem(
                   icon: Icons.person_outline,
                   label: 'Müşteri: ${income.customerName}',
@@ -161,7 +161,7 @@ class IncomeCard extends StatelessWidget {
 
               // Fatura numarası (varsa)
               if (income.invoiceNumber != null) ...[
-                SizedBox(height: TamgaciConstants.spaceSM),
+                const SizedBox(height: TamgaciConstants.spaceSM),
                 _buildDetailItem(
                   icon: Icons.receipt_outlined,
                   label: 'Fatura: ${income.invoiceNumber}',
@@ -222,7 +222,7 @@ class IncomeCard extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: color),
-        SizedBox(width: TamgaciConstants.spaceXS),
+        const SizedBox(width: TamgaciConstants.spaceXS),
         Expanded(
           child: Text(
             label,

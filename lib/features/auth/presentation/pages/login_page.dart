@@ -38,27 +38,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: TamgaciConstants.spaceXL),
                 
                 // Logo ve başlık
                 _buildHeader(),
                 
-                SizedBox(height: TamgaciConstants.spaceXXL),
+                const SizedBox(height: TamgaciConstants.spaceXXL),
                 
                 // Giriş formu
                 _buildLoginForm(),
                 
-                SizedBox(height: TamgaciConstants.spaceLG),
+                const SizedBox(height: TamgaciConstants.spaceLG),
                 
                 // Giriş butonu
                 _buildLoginButton(),
                 
-                SizedBox(height: TamgaciConstants.spaceMD),
+                const SizedBox(height: TamgaciConstants.spaceMD),
                 
                 // Şifremi unuttum
                 _buildForgotPassword(),
                 
-                SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: TamgaciConstants.spaceXL),
                 
                 // Kayıt ol linki
                 _buildRegisterLink(),
@@ -89,7 +89,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
         
-        SizedBox(height: TamgaciConstants.spaceLG),
+        const SizedBox(height: TamgaciConstants.spaceLG),
         
         // Başlık
         Text(
@@ -101,7 +101,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ),
         ),
         
-        SizedBox(height: TamgaciConstants.spaceSM),
+        const SizedBox(height: TamgaciConstants.spaceSM),
         
         // Alt başlık
         Text(
@@ -139,7 +139,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           },
         ),
         
-        SizedBox(height: TamgaciConstants.spaceLG),
+        const SizedBox(height: TamgaciConstants.spaceLG),
         
         // Şifre alanı
         TextFormField(

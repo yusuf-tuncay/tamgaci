@@ -555,7 +555,7 @@ class TamgaciRoutes {
         debugPrint('❌ Route not found: $routeName');
         return _createRoute(
           const NotFoundPage(),
-          settings: RouteSettings(name: notFound),
+          settings: const RouteSettings(name: notFound),
         );
     }
   }

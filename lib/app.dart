@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamgaci/core/routes/routes.dart';
-import 'package:tamgaci/core/theme/theme.dart';
+import 'package:tamgaci/core/theme/app_theme.dart';
+import 'package:tamgaci/core/providers/theme_provider.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/shared/pages/not_found_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:tamgaci/core/database/tamgaci_database.dart';
-import 'package:tamgaci/features/directory/data/datasources/contact_dao.dart';
-import 'package:tamgaci/features/directory/presentation/providers/contact_providers.dart';
 
 class TamgaciApp extends ConsumerWidget {
   const TamgaciApp({super.key});
@@ -26,13 +24,13 @@ class TamgaciApp extends ConsumerWidget {
       // ========== TEMA AYARLARI ==========
 
       /// Açık tema
-      theme: TamgaciTheme.getLightTheme(),
+      theme: AppTheme.lightTheme,
 
-      /// Koyu tema (gelecek kullanım için)
-      darkTheme: TamgaciTheme.getDarkTheme(),
+      /// Koyu tema
+      darkTheme: AppTheme.darkTheme,
 
-      /// Tema modu (sistem ayarını takip et)
-      themeMode: ThemeMode.light, // Şimdilik sadece açık tema
+      /// Tema modu (provider'dan al)
+      themeMode: ref.watch(themeProvider),
       // ========== NAVİGASYON AYARLARI ==========
 
       /// İlk açılacak sayfa

@@ -137,12 +137,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
     } catch (e) {
       return Scaffold(
         backgroundColor: TamgaciConstants.backgroundColor,
-        appBar: CustomAppBar(title: 'Ürün Detayı', showBackButton: true),
+        appBar: const CustomAppBar(title: 'Ürün Detayı', showBackButton: true),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 80,
                 color: TamgaciConstants.errorColor,
@@ -191,28 +191,28 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           // Ürün kartı
           _buildProductCard(product, currencyFormat),
 
-          SizedBox(height: TamgaciConstants.spaceLG),
+          const SizedBox(height: TamgaciConstants.spaceLG),
 
           // Detay bilgileri
           _buildDetailSection(product, currencyFormat),
 
-          SizedBox(height: TamgaciConstants.spaceLG),
+          const SizedBox(height: TamgaciConstants.spaceLG),
 
           // Stok bilgileri
           _buildStockSection(product),
 
-          SizedBox(height: TamgaciConstants.spaceLG),
+          const SizedBox(height: TamgaciConstants.spaceLG),
 
           // Fiyat bilgileri
           _buildPriceSection(product, currencyFormat),
 
           if (product.description != null &&
               product.description!.isNotEmpty) ...[
-            SizedBox(height: TamgaciConstants.spaceLG),
+            const SizedBox(height: TamgaciConstants.spaceLG),
             _buildDescriptionSection(product),
           ],
 
-          SizedBox(height: TamgaciConstants.spaceLG),
+          const SizedBox(height: TamgaciConstants.spaceLG),
 
           // İşlem butonları
           _buildActionButtons(),
@@ -258,7 +258,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               ),
             ),
 
-            SizedBox(height: TamgaciConstants.spaceMD),
+            const SizedBox(height: TamgaciConstants.spaceMD),
 
             // Ürün adı
             Text(
@@ -272,7 +272,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             ),
 
             if (product.category != null) ...[
-              SizedBox(height: TamgaciConstants.spaceSM),
+              const SizedBox(height: TamgaciConstants.spaceSM),
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -293,7 +293,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               ),
             ],
 
-            SizedBox(height: TamgaciConstants.spaceMD),
+            const SizedBox(height: TamgaciConstants.spaceMD),
 
             // Fiyat
             Text(
@@ -330,7 +330,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 color: TamgaciConstants.textPrimary,
               ),
             ),
-            SizedBox(height: TamgaciConstants.spaceMD),
+            const SizedBox(height: TamgaciConstants.spaceMD),
             _buildDetailRow('Ürün Adı', product.name),
             if (product.sku != null) _buildDetailRow('SKU', product.sku!),
             if (product.barcode != null)
@@ -370,7 +370,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                           ? TamgaciConstants.warningColor
                           : TamgaciConstants.successColor,
                 ),
-                SizedBox(width: TamgaciConstants.spaceSM),
+                const SizedBox(width: TamgaciConstants.spaceSM),
                 Text(
                   'Stok Bilgileri',
                   style: GoogleFonts.poppins(
@@ -381,7 +381,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 ),
               ],
             ),
-            SizedBox(height: TamgaciConstants.spaceMD),
+            const SizedBox(height: TamgaciConstants.spaceMD),
             _buildDetailRow(
               'Mevcut Stok',
               '${product.stockQuantity} ${product.unit}',
@@ -390,7 +390,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               'Minimum Stok',
               '${product.minStockLevel} ${product.unit}',
             ),
-            SizedBox(height: TamgaciConstants.spaceSM),
+            const SizedBox(height: TamgaciConstants.spaceSM),
             _buildStockStatusChip(product),
           ],
         ),
@@ -412,8 +412,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.attach_money, color: TamgaciConstants.successColor),
-                SizedBox(width: TamgaciConstants.spaceSM),
+                const Icon(Icons.attach_money, color: TamgaciConstants.successColor),
+                const SizedBox(width: TamgaciConstants.spaceSM),
                 Text(
                   'Fiyat Bilgileri',
                   style: GoogleFonts.poppins(
@@ -424,7 +424,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 ),
               ],
             ),
-            SizedBox(height: TamgaciConstants.spaceMD),
+            const SizedBox(height: TamgaciConstants.spaceMD),
             _buildDetailRow(
               'Birim Fiyat',
               currencyFormat.format(product.unitPrice),
@@ -453,8 +453,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.description, color: TamgaciConstants.textSecondary),
-                SizedBox(width: TamgaciConstants.spaceSM),
+                const Icon(Icons.description, color: TamgaciConstants.textSecondary),
+                const SizedBox(width: TamgaciConstants.spaceSM),
                 Text(
                   'Açıklama',
                   style: GoogleFonts.poppins(
@@ -465,7 +465,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 ),
               ],
             ),
-            SizedBox(height: TamgaciConstants.spaceMD),
+            const SizedBox(height: TamgaciConstants.spaceMD),
             Text(
               product.description!,
               style: GoogleFonts.poppins(
@@ -495,7 +495,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
             ),
           ),
         ),
-        SizedBox(width: TamgaciConstants.spaceMD),
+        const SizedBox(width: TamgaciConstants.spaceMD),
         Expanded(
           child: ElevatedButton.icon(
             onPressed: _deleteProduct,

@@ -108,7 +108,7 @@ class _UnderConstructionPageState extends State<UnderConstructionPage>
                   },
                 ),
 
-                SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: TamgaciConstants.spaceXL),
 
                 // Yapım aşamasında başlık
                 Text(
@@ -127,7 +127,7 @@ class _UnderConstructionPageState extends State<UnderConstructionPage>
                   textAlign: TextAlign.center,
                 ),
 
-                SizedBox(height: TamgaciConstants.spaceMD),
+                const SizedBox(height: TamgaciConstants.spaceMD),
 
                 // Açıklama metni
                 Text(
@@ -147,12 +147,12 @@ class _UnderConstructionPageState extends State<UnderConstructionPage>
                   textAlign: TextAlign.center,
                 ),
 
-                SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: TamgaciConstants.spaceXL),
 
                 // Özellik listesi
                 _buildFeaturesList(),
 
-                SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: TamgaciConstants.spaceXL),
 
                 // Ana sayfaya dön butonu
                 SizedBox(
@@ -217,12 +217,12 @@ class _UnderConstructionPageState extends State<UnderConstructionPage>
             ),
           ),
 
-          SizedBox(height: TamgaciConstants.spaceSM),
+          const SizedBox(height: TamgaciConstants.spaceSM),
 
           // Özellik listesi
           ...features.map(
             (feature) => Padding(
-              padding: EdgeInsets.only(bottom: TamgaciConstants.spaceXS),
+              padding: const EdgeInsets.only(bottom: TamgaciConstants.spaceXS),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

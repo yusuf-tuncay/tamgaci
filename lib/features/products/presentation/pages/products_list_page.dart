@@ -206,7 +206,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               Icons.inventory_2_outlined,
               size: 80,
               color: TamgaciConstants.textDisabled,
@@ -300,7 +300,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Ürün bilgileri
                   Expanded(
@@ -330,14 +330,14 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceSM),
+                  const SizedBox(width: TamgaciConstants.spaceSM),
 
                   // Stok durumu
                   _buildStockStatusChip(product),
                 ],
               ),
 
-              SizedBox(height: TamgaciConstants.spaceMD),
+              const SizedBox(height: TamgaciConstants.spaceMD),
 
               // Fiyat ve stok bilgileri
               Row(
@@ -351,7 +351,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                     ),
                   ),
 
-                  SizedBox(width: TamgaciConstants.spaceMD),
+                  const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Stok miktarı
                   Expanded(
@@ -370,16 +370,16 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
               // SKU ve barkod bilgileri
               if (product.sku != null || product.barcode != null) ...[
-                SizedBox(height: TamgaciConstants.spaceSM),
+                const SizedBox(height: TamgaciConstants.spaceSM),
                 Row(
                   children: [
                     if (product.sku != null) ...[
-                      Icon(
+                      const Icon(
                         Icons.qr_code,
                         size: 16,
                         color: TamgaciConstants.textSecondary,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         product.sku!,
                         style: GoogleFonts.poppins(
@@ -389,14 +389,14 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                       ),
                     ],
                     if (product.sku != null && product.barcode != null)
-                      SizedBox(width: 16),
+                      const SizedBox(width: 16),
                     if (product.barcode != null) ...[
-                      Icon(
+                      const Icon(
                         Icons.barcode_reader,
                         size: 16,
                         color: TamgaciConstants.textSecondary,
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Text(
                         product.barcode!,
                         style: GoogleFonts.poppins(

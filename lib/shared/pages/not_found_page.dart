@@ -33,7 +33,7 @@ class NotFoundPage extends StatelessWidget {
                   color: TamgaciConstants.textDisabled,
                 ),
                 
-                SizedBox(height: TamgaciConstants.spaceLG),
+                const SizedBox(height: TamgaciConstants.spaceLG),
                 
                 // 404 Başlık
                 Text(
@@ -51,7 +51,7 @@ class NotFoundPage extends StatelessWidget {
                   ),
                 ),
                 
-                SizedBox(height: TamgaciConstants.spaceMD),
+                const SizedBox(height: TamgaciConstants.spaceMD),
                 
                 // Sayfa bulunamadı mesajı
                 Text(
@@ -70,7 +70,7 @@ class NotFoundPage extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 
-                SizedBox(height: TamgaciConstants.spaceSM),
+                const SizedBox(height: TamgaciConstants.spaceSM),
                 
                 // Açıklama metni
                 Text(
@@ -89,7 +89,7 @@ class NotFoundPage extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 
-                SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: TamgaciConstants.spaceXL),
                 
                 // Ana sayfaya git butonu
                 SizedBox(
@@ -118,7 +118,7 @@ class NotFoundPage extends StatelessWidget {
                   ),
                 ),
                 
-                SizedBox(height: TamgaciConstants.spaceMD),
+                const SizedBox(height: TamgaciConstants.spaceMD),
                 
                 // Geri git butonu
                 TextButton.icon(

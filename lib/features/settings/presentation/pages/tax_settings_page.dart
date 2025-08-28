@@ -377,7 +377,7 @@ class _TaxSettingsPageState extends ConsumerState<TaxSettingsPage> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                  const Icon(Icons.info_outline, color: Colors.blue, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
