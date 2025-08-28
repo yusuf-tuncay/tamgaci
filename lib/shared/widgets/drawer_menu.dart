@@ -7,7 +7,7 @@ import '../../core/routes/routes.dart';
 import '../../core/providers/theme_provider.dart';
 import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
 import '../../features/user_profile/domain/entities/user_profile.dart';
-import 'theme_toggle_button.dart';
+import 'theme_selector_dialog.dart';
 
 // ========== DRAWER MENU MODELS ==========
 
@@ -74,14 +74,6 @@ class DrawerMenuItem {
       isActive: isActive ?? this.isActive,
       isVisible: isVisible ?? this.isVisible,
       requiresAdmin: requiresAdmin ?? this.requiresAdmin,
-    );
-  }
-
-  /// Tema seçici dialog'unu gösterir
-  void _showThemeSelector(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => const ThemeSelectorDialog(),
     );
   }
 }
@@ -699,6 +691,14 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Tema seçici dialog'unu gösterir
+  void _showThemeSelector(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => const ThemeSelectorDialog(),
     );
   }
 }

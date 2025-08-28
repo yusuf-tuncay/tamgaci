@@ -15,15 +15,16 @@ class ExportImportService {
   ExportImportService._internal();
 
   /// Veriyi JSON formatında export eder
-  Future<String?> exportToJson(Map<String, dynamic> data, String fileName) async {
+  Future<String?> exportToJson(
+      Map<String, dynamic> data, String fileName) async {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final filePath = path.join(directory.path, '$fileName.json');
-      
+
       final jsonString = jsonEncode(data);
       final file = File(filePath);
       await file.writeAsString(jsonString);
-      
+
       return filePath;
     } catch (e) {
       debugPrint('JSON export failed: $e');
@@ -32,13 +33,14 @@ class ExportImportService {
   }
 
   /// Veriyi Excel formatında export eder
-  Future<String?> exportToExcel(Map<String, List<Map<String, dynamic>>> data, String fileName) async {
+  Future<String?> exportToExcel(
+      Map<String, List<Map<String, dynamic>>> data, String fileName) async {
     try {
       final excel = Excel.createExcel();
-      
+
       data.forEach((sheetName, rows) {
         final sheet = excel[sheetName];
-        
+
         if (rows.isNotEmpty) {
           // Header'ları ekle
           final headers = rows.first.keys.toList();
@@ -51,26 +53,26 @@ class ExportImportService {
                 backgroundColorHex: '#E0E0E0',
               );
           }
-          
+
           // Verileri ekle
           for (int rowIndex = 0; rowIndex < rows.length; rowIndex++) {
             final row = rows[rowIndex];
             for (int colIndex = 0; colIndex < headers.length; colIndex++) {
               final value = row[headers[colIndex]];
-              sheet.cell(CellIndex.indexByColumnRow(
-                columnIndex: colIndex, 
-                rowIndex: rowIndex + 1
-              )).value = value?.toString() ?? '';
+              sheet
+                  .cell(CellIndex.indexByColumnRow(
+                      columnIndex: colIndex, rowIndex: rowIndex + 1))
+                  .value = value?.toString() ?? '';
             }
           }
         }
       });
-      
+
       final directory = await getApplicationDocumentsDirectory();
       final filePath = path.join(directory.path, '$fileName.xlsx');
       final file = File(filePath);
       await file.writeAsBytes(excel.encode()!);
-      
+
       return filePath;
     } catch (e) {
       debugPrint('Excel export failed: $e');
@@ -79,10 +81,11 @@ class ExportImportService {
   }
 
   /// Veriyi PDF formatında export eder
-  Future<String?> exportToPdf(Map<String, List<Map<String, dynamic>>> data, String fileName) async {
+  Future<String?> exportToPdf(
+      Map<String, List<Map<String, dynamic>>> data, String fileName) async {
     try {
       final pdf = pw.Document();
-      
+
       data.forEach((sectionName, items) {
         pdf.addPage(
           pw.MultiPage(
@@ -100,11 +103,13 @@ class ExportImportService {
               ),
               pw.SizedBox(height: 20),
               if (items.isNotEmpty) ...[
-                pw.Table.fromTextArray(
+                pw.TableHelper.fromTextArray(
                   headers: items.first.keys.map((key) => pw.Text(key)).toList(),
-                  data: items.map((item) => 
-                    item.values.map((value) => pw.Text(value?.toString() ?? '')).toList()
-                  ).toList(),
+                  data: items
+                      .map((item) => item.values
+                          .map((value) => pw.Text(value?.toString() ?? ''))
+                          .toList())
+                      .toList(),
                 ),
               ] else ...[
                 pw.Text('Bu bölümde veri bulunmamaktadır.'),
@@ -113,12 +118,12 @@ class ExportImportService {
           ),
         );
       });
-      
+
       final directory = await getApplicationDocumentsDirectory();
       final filePath = path.join(directory.path, '$fileName.pdf');
       final file = File(filePath);
       await file.writeAsBytes(await pdf.save());
-      
+
       return filePath;
     } catch (e) {
       debugPrint('PDF export failed: $e');
@@ -133,13 +138,13 @@ class ExportImportService {
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
-      
+
       if (result != null && result.files.isNotEmpty) {
         final file = File(result.files.first.path!);
         final jsonString = await file.readAsString();
         return jsonDecode(jsonString) as Map<String, dynamic>;
       }
-      
+
       return null;
     } catch (e) {
       debugPrint('JSON import failed: $e');
@@ -154,55 +159,57 @@ class ExportImportService {
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
       );
-      
+
       if (result != null && result.files.isNotEmpty) {
         final file = File(result.files.first.path!);
         final bytes = await file.readAsBytes();
         final excel = Excel.decodeBytes(bytes);
-        
+
         final Map<String, List<Map<String, dynamic>>> data = {};
-        
+
         for (final sheetName in excel.tables.keys) {
           final sheet = excel.tables[sheetName]!;
           final List<Map<String, dynamic>> rows = [];
-          
+
           if (sheet.maxRows > 0) {
             final headers = <String>[];
-            
+
             // Header'ları al
             for (int col = 0; col < sheet.maxCols; col++) {
-              final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0));
+              final cell = sheet.cell(
+                  CellIndex.indexByColumnRow(columnIndex: col, rowIndex: 0));
               if (cell.value != null) {
                 headers.add(cell.value.toString());
               }
             }
-            
+
             // Verileri al
             for (int row = 1; row < sheet.maxRows; row++) {
               final Map<String, dynamic> rowData = {};
               bool hasData = false;
-              
+
               for (int col = 0; col < headers.length; col++) {
-                final cell = sheet.cell(CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row));
+                final cell = sheet.cell(CellIndex.indexByColumnRow(
+                    columnIndex: col, rowIndex: row));
                 final value = cell.value;
                 if (value != null) {
                   rowData[headers[col]] = value;
                   hasData = true;
                 }
               }
-              
+
               if (hasData) {
                 rows.add(rowData);
               }
             }
           }
-          
+
           data[sheetName] = rows;
         }
-        
+
         return data;
       }
-      
+
       return null;
     } catch (e) {
       debugPrint('Excel import failed: $e');
@@ -228,7 +235,8 @@ class ExportImportService {
   String formatFileSize(int bytes) {
     if (bytes < 1024) return '$bytes B';
     if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    if (bytes < 1024 * 1024 * 1024) return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
+    if (bytes < 1024 * 1024 * 1024)
+      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 

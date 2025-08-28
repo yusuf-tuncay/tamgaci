@@ -3,6 +3,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -18,6 +20,9 @@ class NotificationService {
   /// Notification servisini başlatır
   Future<void> initialize() async {
     try {
+      // Timezone'u başlat
+      tz_data.initializeTimeZones();
+      
       // Firebase'i başlat
       await Firebase.initializeApp();
 
@@ -50,14 +55,14 @@ class NotificationService {
       await _getFCMToken();
 
       // Background message handler
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      FirebaseMessaging.onBackgroundMessage(
+          _firebaseMessagingBackgroundHandler);
 
       // Foreground message handler
       FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
       // Notification tap handler
       FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
-
     } catch (e) {
       debugPrint('Notification service initialization failed: $e');
     }
@@ -66,7 +71,8 @@ class NotificationService {
   /// FCM izinlerini ister
   Future<void> _requestPermissions() async {
     try {
-      NotificationSettings settings = await _firebaseMessaging.requestPermission(
+      NotificationSettings settings =
+          await _firebaseMessaging.requestPermission(
         alert: true,
         announcement: false,
         badge: true,
@@ -122,7 +128,8 @@ class NotificationService {
     required String title,
     required String body,
     String? payload,
-    NotificationImportance importance = NotificationImportance.defaultImportance,
+    NotificationImportance importance =
+        NotificationImportance.defaultImportance,
   }) async {
     try {
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -187,13 +194,16 @@ class NotificationService {
         iOS: iOSPlatformChannelSpecifics,
       );
 
+      // DateTime'ı TZDateTime'a çevir
+      final tzDateTime = tz.TZDateTime.from(scheduledDate, tz.local);
+
       await _localNotifications.zonedSchedule(
         id,
         title,
         body,
-        scheduledDate,
+        tzDateTime,
         platformChannelSpecifics,
-        androidAllowWhileIdle: true,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
         payload: payload,
@@ -233,8 +243,9 @@ class NotificationService {
     debugPrint('Message data: ${message.data}');
 
     if (message.notification != null) {
-      debugPrint('Message also contained a notification: ${message.notification}');
-      
+      debugPrint(
+          'Message also contained a notification: ${message.notification}');
+
       // Local notification göster
       showLocalNotification(
         id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
