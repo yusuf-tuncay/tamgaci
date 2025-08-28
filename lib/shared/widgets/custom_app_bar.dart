@@ -1,0 +1,103 @@
+// ========== CUSTOM APP BAR WIDGET ==========
+// lib/shared/widgets/custom_app_bar.dart
+
+import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../core/theme/constants.dart';
+
+/// Özel AppBar widget'ı
+class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
+  /// Başlık
+  final String title;
+
+  /// Geri butonu gösterilsin mi?
+  final bool showBackButton;
+
+  /// Drawer menü gösterilsin mi?
+  final bool showDrawer;
+
+  /// Aksiyonlar
+  final List<Widget>? actions;
+
+  /// Geri butonu callback'i
+  final VoidCallback? onBackPressed;
+
+  /// Otomatik geri butonu
+  final bool automaticallyImplyLeading;
+
+  /// Arka plan rengi
+  final Color? backgroundColor;
+
+  /// Gölge gösterilsin mi?
+  final bool showShadow;
+
+  /// Yükseklik
+  final double? height;
+
+  const CustomAppBar({
+    super.key,
+    required this.title,
+    this.showBackButton = false,
+    this.showDrawer = false,
+    this.actions,
+    this.onBackPressed,
+    this.automaticallyImplyLeading = true,
+    this.backgroundColor,
+    this.showShadow = true,
+    this.height,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Text(
+        title,
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: TamgaciConstants.textPrimary,
+        ),
+      ),
+      backgroundColor: backgroundColor ?? TamgaciConstants.backgroundColor,
+      elevation: showShadow ? 2 : 0,
+      shadowColor: showShadow
+          ? Colors.black.withOpacity(0.1)
+          : Colors.transparent,
+      leading: _buildLeadingWidget(context),
+      automaticallyImplyLeading:
+          automaticallyImplyLeading && (showBackButton || showDrawer),
+      actions: actions,
+      centerTitle: true,
+      shape: showShadow
+          ? const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+            )
+          : null,
+    );
+  }
+
+  /// Leading widget'ını oluşturur
+  Widget? _buildLeadingWidget(BuildContext context) {
+    if (showDrawer) {
+      return IconButton(
+        onPressed: () => Scaffold.of(context).openDrawer(),
+        icon: const Icon(Icons.menu, color: TamgaciConstants.textPrimary),
+      );
+    }
+
+    if (showBackButton) {
+      return IconButton(
+        onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
+        icon: const Icon(
+          Icons.arrow_back_ios,
+          color: TamgaciConstants.textPrimary,
+        ),
+      );
+    }
+
+    return null;
+  }
+
+  @override
+  Size get preferredSize => Size.fromHeight(height ?? kToolbarHeight);
+}

@@ -1,0 +1,417 @@
+// ========== lib/features/customers/presentation/pages/customers_list_page.dart ==========
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import '../../../../core/theme/constants.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/drawer_menu.dart';
+import '../../data/models/customer_entity.dart';
+import '../providers/customer_providers.dart';
+import '../../domain/entities/customer.dart';
+
+/// Müşteri listesi sayfası
+class CustomersListPage extends ConsumerStatefulWidget {
+  const CustomersListPage({super.key});
+
+  @override
+  ConsumerState<CustomersListPage> createState() => _CustomersListPageState();
+}
+
+class _CustomersListPageState extends ConsumerState<CustomersListPage> {
+  final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+    _loadCustomers();
+  }
+
+  void _loadCustomers() {
+    // Müşteriler zaten provider'da yüklü olmalı
+    // Eğer yüklü değilse yükle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final operationsState = ref.read(customerOperationsProvider);
+      if (operationsState.customers.isEmpty && !operationsState.isLoading) {
+        ref.read(customerOperationsProvider.notifier).loadCustomers();
+      }
+    });
+  }
+
+  void _onSearchChanged() {
+    setState(() {});
+  }
+
+  void _navigateToDetail(String customerId) {
+    Navigator.of(context).pushNamed('/customers/detail', arguments: customerId);
+  }
+
+  void _navigateToCreate() {
+    Navigator.of(context).pushNamed('/customers/create');
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final operationsState = ref.watch(customerOperationsProvider);
+    final searchQuery = _searchController.text;
+
+    return Scaffold(
+      backgroundColor: TamgaciConstants.backgroundColor,
+      appBar: CustomAppBar(
+        title: 'Müşteriler',
+        showDrawer: true,
+        actions: [
+          IconButton(
+            onPressed: _navigateToCreate,
+            icon: const Icon(Icons.add),
+            tooltip: 'Yeni Müşteri',
+          ),
+        ],
+      ),
+      drawer: const TamgaciDrawerMenu(),
+      body: Column(
+        children: [
+          // Arama çubuğu
+          Container(
+            padding: TamgaciConstants.paddingMedium(context),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Müşteri ara...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        onPressed: () => _searchController.clear(),
+                        icon: const Icon(Icons.clear),
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    TamgaciConstants.radiusMD,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Müşteri listesi
+          Expanded(child: _buildCustomersList(operationsState, searchQuery)),
+        ],
+      ),
+    );
+  }
+
+  /// Müşteri listesini oluşturur
+  Widget _buildCustomersList(
+    CustomerOperationsState operationsState,
+    String searchQuery,
+  ) {
+    if (operationsState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (operationsState.errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Hata: ${operationsState.errorMessage}'),
+            ElevatedButton(
+              onPressed: _loadCustomers,
+              child: const Text('Tekrar Dene'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final customers = operationsState.customers;
+
+    // Arama filtresi uygula
+    List<Customer> filteredCustomers = customers;
+    if (searchQuery.isNotEmpty) {
+      filteredCustomers = customers.where((customer) {
+        return customer.name.toLowerCase().contains(
+              searchQuery.toLowerCase(),
+            ) ||
+            (customer.email?.toLowerCase().contains(
+                  searchQuery.toLowerCase(),
+                ) ==
+                true) ||
+            (customer.phone?.contains(searchQuery) == true);
+      }).toList();
+    }
+
+    if (filteredCustomers.isEmpty && !operationsState.isLoading) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 80,
+              color: TamgaciConstants.textDisabled,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              searchQuery.isNotEmpty
+                  ? '"$searchQuery" için sonuç bulunamadı'
+                  : 'Henüz müşteri eklenmemiş',
+              style: GoogleFonts.poppins(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: TamgaciConstants.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _navigateToCreate,
+              icon: const Icon(Icons.person_add),
+              label: const Text('Yeni Müşteri Ekle'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.read(customerOperationsProvider.notifier).loadCustomers();
+      },
+      child: ListView.builder(
+        controller: _scrollController,
+        padding: TamgaciConstants.paddingMedium(context),
+        itemCount: filteredCustomers.length,
+        itemBuilder: (context, index) {
+          final customer = filteredCustomers[index];
+          return _buildCustomerCard(customer);
+        },
+      ),
+    );
+  }
+
+  /// Müşteri kartı oluşturur
+  Widget _buildCustomerCard(Customer customer) {
+    final isActive = customer.isActive;
+    final isCompany = customer.customerType == CustomerType.company;
+
+    return Card(
+      elevation: 2,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+      ),
+      child: InkWell(
+        onTap: () => _navigateToDetail(customer.id),
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+        child: Padding(
+          padding: TamgaciConstants.cardPadding(context),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Üst kısım - Müşteri adı ve durum
+              Row(
+                children: [
+                  // Müşteri ikonu
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? TamgaciConstants.successColor.withValues(alpha: 0.1)
+                          : TamgaciConstants.errorColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(
+                        TamgaciConstants.radiusSM,
+                      ),
+                    ),
+                    child: Icon(
+                      isCompany ? Icons.business : Icons.person,
+                      color: isActive
+                          ? TamgaciConstants.successColor
+                          : TamgaciConstants.errorColor,
+                      size: 24,
+                    ),
+                  ),
+
+                  SizedBox(width: TamgaciConstants.spaceMD),
+
+                  // Müşteri bilgileri
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          customer.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: TamgaciConstants.textPrimary,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          customer.customerType.displayName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w400,
+                            color: TamgaciConstants.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(width: TamgaciConstants.spaceSM),
+
+                  // Durum
+                  _buildStatusChip(isActive),
+                ],
+              ),
+
+              SizedBox(height: TamgaciConstants.spaceMD),
+
+              // İletişim bilgileri
+              if (customer.email != null && customer.email!.isNotEmpty)
+                Row(
+                  children: [
+                    Icon(
+                      Icons.email,
+                      size: 16,
+                      color: TamgaciConstants.textSecondary,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        customer.email!,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: TamgaciConstants.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+
+              if (customer.phone != null && customer.phone!.isNotEmpty) ...[
+                SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.phone,
+                      size: 16,
+                      color: TamgaciConstants.textSecondary,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      customer.phone!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: TamgaciConstants.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              SizedBox(height: TamgaciConstants.spaceMD),
+
+              // Alt kısım - Adres ve tarih bilgileri
+              Row(
+                children: [
+                  // Şehir
+                  Expanded(
+                    child: _buildInfoItem(
+                      label: 'Şehir',
+                      value: customer.city ?? 'Belirtilmemiş',
+                      color: TamgaciConstants.textSecondary,
+                    ),
+                  ),
+
+                  SizedBox(width: TamgaciConstants.spaceMD),
+
+                  // Kayıt tarihi
+                  Expanded(
+                    child: _buildInfoItem(
+                      label: 'Kayıt Tarihi',
+                      value: DateFormat(
+                        'dd.MM.yy',
+                        'tr_TR',
+                      ).format(customer.createdAt),
+                      color: TamgaciConstants.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Durum chip'i oluşturur
+  Widget _buildStatusChip(bool isActive) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: isActive
+            ? TamgaciConstants.successColor.withValues(alpha: 0.1)
+            : TamgaciConstants.errorColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        isActive ? 'Aktif' : 'Pasif',
+        style: GoogleFonts.poppins(
+          fontSize: 10,
+          fontWeight: FontWeight.w500,
+          color: isActive
+              ? TamgaciConstants.successColor
+              : TamgaciConstants.errorColor,
+        ),
+      ),
+    );
+  }
+
+  /// Bilgi öğesi widget'ı oluşturur
+  Widget _buildInfoItem({
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            fontWeight: FontWeight.w400,
+            color: TamgaciConstants.textSecondary,
+          ),
+        ),
+        Text(
+          value,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}

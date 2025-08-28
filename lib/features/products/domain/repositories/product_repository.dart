@@ -1,0 +1,55 @@
+import '../entities/product.dart';
+
+/// Ürün repository interface'i
+abstract class ProductRepository {
+  /// Tüm ürünleri getir
+  Stream<List<Product>> getAllProducts();
+
+  /// Aktif ürünleri getir
+  Stream<List<Product>> getActiveProducts();
+
+  /// ID'ye göre ürün getir
+  Future<Product?> getProductById(int id);
+
+  /// SKU'ya göre ürün getir
+  Future<Product?> getProductBySku(String sku);
+
+  /// Barkoda göre ürün getir
+  Future<Product?> getProductByBarcode(String barcode);
+
+  /// Kategoriye göre ürünleri getir
+  Stream<List<Product>> getProductsByCategory(String category);
+
+  /// Düşük stoklu ürünleri getir
+  Stream<List<Product>> getLowStockProducts();
+
+  /// Stokta olmayan ürünleri getir
+  Stream<List<Product>> getOutOfStockProducts();
+
+  /// Arama yap
+  Stream<List<Product>> searchProducts(String query);
+
+  /// Ürün oluştur
+  Future<void> createProduct(Product product);
+
+  /// Ürün güncelle
+  Future<void> updateProduct(Product product);
+
+  /// Ürün sil
+  Future<void> deleteProduct(int id);
+
+  /// Stok miktarını güncelle
+  Future<void> updateStockQuantity(int id, int quantity);
+
+  /// Ürün durumunu değiştir
+  Future<void> updateProductStatus(int id, bool isActive);
+
+  /// Toplam ürün sayısı
+  Future<int> getActiveProductCount();
+
+  /// Toplam stok değeri
+  Future<double> getTotalStockValue();
+
+  /// Kategorileri getir
+  Stream<List<String>> getCategories();
+}
