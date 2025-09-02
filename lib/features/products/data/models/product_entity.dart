@@ -1,4 +1,6 @@
 import 'package:floor/floor.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../domain/entities/product.dart';
 
 /// Ürün entity modeli
 @Entity(tableName: 'products')
@@ -46,6 +48,10 @@ class ProductEntity {
   @ColumnInfo(name: 'tax_rate')
   final double taxRate;
 
+  /// Para birimi
+  @ColumnInfo(name: 'currency')
+  final String currency;
+
   /// Aktif/Pasif durumu
   @ColumnInfo(name: 'is_active')
   final bool isActive;
@@ -74,6 +80,7 @@ class ProductEntity {
     required this.minStockLevel,
     required this.unit,
     required this.taxRate,
+    this.currency = 'TRY',
     this.isActive = true,
     this.imageUrl,
     required this.createdAt,
@@ -156,6 +163,90 @@ class ProductEntity {
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  /// Firebase Firestore'dan entity oluşturma
+  factory ProductEntity.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return ProductEntity(
+      id: int.tryParse(doc.id),
+      name: data['name'] as String? ?? '',
+      description: data['description'] as String?,
+      sku: data['sku'] as String?,
+      barcode: data['barcode'] as String?,
+      category: data['category'] as String?,
+      unitPrice: (data['unitPrice'] as num?)?.toDouble() ?? 0.0,
+      stockQuantity: data['stockQuantity'] as int? ?? 0,
+      minStockLevel: data['minStockLevel'] as int? ?? 0,
+      unit: data['unit'] as String? ?? 'Adet',
+      taxRate: (data['taxRate'] as num?)?.toDouble() ?? 0.0,
+      isActive: data['isActive'] as bool? ?? true,
+      imageUrl: data['imageUrl'] as String?,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  /// Entity'yi Firebase Firestore formatına dönüştürme
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'description': description,
+      'sku': sku,
+      'barcode': barcode,
+      'category': category,
+      'unitPrice': unitPrice,
+      'stockQuantity': stockQuantity,
+      'minStockLevel': minStockLevel,
+      'unit': unit,
+      'taxRate': taxRate,
+      'isActive': isActive,
+      'imageUrl': imageUrl,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+
+  /// Domain modeline dönüştürme
+  Product toDomain() {
+    return Product(
+      id: id,
+      name: name,
+      description: description,
+      sku: sku,
+      barcode: barcode,
+      category: category,
+      unitPrice: unitPrice,
+      stockQuantity: stockQuantity,
+      minStockLevel: minStockLevel,
+      unit: unit,
+      taxRate: taxRate,
+      isActive: isActive,
+      imageUrl: imageUrl,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
+  /// Domain modelinden entity oluşturma
+  factory ProductEntity.fromDomain(Product product) {
+    return ProductEntity(
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      sku: product.sku,
+      barcode: product.barcode,
+      category: product.category,
+      unitPrice: product.unitPrice,
+      stockQuantity: product.stockQuantity,
+      minStockLevel: product.minStockLevel,
+      unit: product.unit,
+      taxRate: product.taxRate,
+      isActive: product.isActive,
+      imageUrl: product.imageUrl,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
     );
   }
 }

@@ -122,13 +122,11 @@ class _IncomeExpenseReportPageState
   }
 
   Widget _buildSummaryView() {
-    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
-
     // Mock veri
     const totalIncome = 125000.0;
     const totalExpense = 85000.0;
-    final netIncome = totalIncome - totalExpense;
-    final profitMargin = (netIncome / totalIncome) * 100;
+    const netIncome = totalIncome - totalExpense;
+    const profitMargin = (netIncome / totalIncome) * 100;
 
     return SingleChildScrollView(
       padding: TamgaciConstants.paddingMedium(context),
@@ -195,7 +193,7 @@ class _IncomeExpenseReportPageState
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -257,8 +255,8 @@ class _IncomeExpenseReportPageState
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 color: isPositive
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.red.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -456,25 +454,24 @@ class _IncomeExpenseReportPageState
         title: const Text('Dönem Seç'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children:
-              [
-                'Bu Ay',
-                'Geçen Ay',
-                'Bu Yıl',
-                'Geçen Yıl',
-                'Son 3 Ay',
-                'Son 6 Ay',
-              ].map((period) {
-                return ListTile(
-                  title: Text(period),
-                  onTap: () {
-                    setState(() {
-                      _selectedPeriod = period;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                );
-              }).toList(),
+          children: [
+            'Bu Ay',
+            'Geçen Ay',
+            'Bu Yıl',
+            'Geçen Yıl',
+            'Son 3 Ay',
+            'Son 6 Ay',
+          ].map((period) {
+            return ListTile(
+              title: Text(period),
+              onTap: () {
+                setState(() {
+                  _selectedPeriod = period;
+                });
+                Navigator.of(context).pop();
+              },
+            );
+          }).toList(),
         ),
       ),
     );

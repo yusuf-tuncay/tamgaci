@@ -113,16 +113,20 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         await ref
             .read(productOperationsProvider.notifier)
             .updateProduct(product);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ürün başarıyla güncellendi')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ürün başarıyla güncellendi')),
+          );
+        }
       } else {
         await ref
             .read(productOperationsProvider.notifier)
             .createProduct(product);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ürün başarıyla oluşturuldu')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Ürün başarıyla oluşturuldu')),
+          );
+        }
       }
 
       if (mounted) {
@@ -154,8 +158,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: _isEditing ? 'Ürün Düzenle' : 'Yeni Ürün',
         showBackButton: true,
@@ -183,7 +190,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Temel Bilgiler
-                    _buildSectionTitle('Temel Bilgiler'),
+                    _buildSectionTitle('Temel Bilgiler', isDark),
                     _buildNameField(),
                     _buildDescriptionField(),
                     _buildCategoryField(),
@@ -191,68 +198,28 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Kod Bilgileri
-                    _buildSectionTitle('Kod Bilgileri'),
+                    _buildSectionTitle('Kod Bilgileri', isDark),
                     _buildSkuField(),
                     _buildBarcodeField(),
 
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
-                    // Fiyat Bilgileri
-                    _buildSectionTitle('Fiyat Bilgileri'),
-                    _buildUnitPriceField(),
-                    _buildTaxRateField(),
+                    // Fiyat ve Stok Bilgileri
+                    _buildSectionTitle('Fiyat ve Stok Bilgileri', isDark),
+                    _buildPriceAndStockFields(),
 
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
-                    // Stok Bilgileri
-                    _buildSectionTitle('Stok Bilgileri'),
-                    _buildStockQuantityField(),
-                    _buildMinStockLevelField(),
-                    _buildUnitField(),
+                    // Diğer Bilgiler
+                    _buildSectionTitle('Diğer Bilgiler', isDark),
+                    _buildOtherFields(),
 
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Durum
-                    _buildSectionTitle('Durum'),
-                    _buildActiveSwitch(),
+                    _buildStatusField(isDark),
 
-                    const SizedBox(height: TamgaciConstants.spaceXL),
-
-                    // Kaydet Butonu
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveForm,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: TamgaciConstants.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              TamgaciConstants.radiusMD,
-                            ),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : Text(
-                                _isEditing ? 'Güncelle' : 'Kaydet',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                      ),
-                    ),
+                    const SizedBox(height: TamgaciConstants.spaceXXL),
                   ],
                 ),
               ),
@@ -261,7 +228,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   /// Bölüm başlığı oluşturur
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
@@ -269,7 +236,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: TamgaciConstants.textPrimary,
+          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
         ),
       ),
     );
@@ -279,10 +246,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildNameField() {
     return TextFormField(
       controller: _nameController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Ürün Adı *',
         hintText: 'Örn: iPhone 15 Pro',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
@@ -297,10 +270,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildDescriptionField() {
     return TextFormField(
       controller: _descriptionController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Açıklama',
         hintText: 'Ürün açıklaması...',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
       maxLines: 3,
     );
@@ -310,10 +289,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildCategoryField() {
     return TextFormField(
       controller: _categoryController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Kategori',
         hintText: 'Örn: Elektronik',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
     );
   }
@@ -322,10 +307,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildSkuField() {
     return TextFormField(
       controller: _skuController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'SKU',
         hintText: 'Örn: IPH15PRO-128',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
     );
   }
@@ -334,10 +325,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildBarcodeField() {
     return TextFormField(
       controller: _barcodeController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Barkod',
         hintText: '1234567890123',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
     );
   }
@@ -346,10 +343,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildUnitPriceField() {
     return TextFormField(
       controller: _unitPriceController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Birim Fiyat (₺) *',
         hintText: '0.00',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
         prefixText: '₺',
       ),
       keyboardType: TextInputType.number,
@@ -370,10 +373,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildTaxRateField() {
     return TextFormField(
       controller: _taxRateController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'KDV Oranı (%) *',
         hintText: '20.0',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
         suffixText: '%',
       ),
       keyboardType: TextInputType.number,
@@ -394,10 +403,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildStockQuantityField() {
     return TextFormField(
       controller: _stockQuantityController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Stok Miktarı *',
         hintText: '0',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
       keyboardType: TextInputType.number,
       validator: (value) {
@@ -417,10 +432,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildMinStockLevelField() {
     return TextFormField(
       controller: _minStockLevelController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Minimum Stok Seviyesi *',
         hintText: '5',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
       keyboardType: TextInputType.number,
       validator: (value) {
@@ -440,10 +461,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildUnitField() {
     return TextFormField(
       controller: _unitController,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Birim *',
         hintText: 'Adet, Kg, Lt...',
-        border: OutlineInputBorder(),
+        border: const OutlineInputBorder(),
+        labelStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
+        hintStyle: GoogleFonts.poppins(
+          color: TamgaciConstants.textSecondary,
+        ),
       ),
       validator: (value) {
         if (value == null || value.trim().isEmpty) {
@@ -451,6 +478,51 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         }
         return null;
       },
+    );
+  }
+
+  /// Fiyat ve stok alanları
+  Widget _buildPriceAndStockFields() {
+    return Column(
+      children: [
+        _buildUnitPriceField(),
+        const SizedBox(height: TamgaciConstants.spaceMD),
+        _buildTaxRateField(),
+        const SizedBox(height: TamgaciConstants.spaceMD),
+        _buildStockQuantityField(),
+        const SizedBox(height: TamgaciConstants.spaceMD),
+        _buildMinStockLevelField(),
+      ],
+    );
+  }
+
+  /// Diğer alanlar
+  Widget _buildOtherFields() {
+    return _buildUnitField();
+  }
+
+  /// Durum alanı
+  Widget _buildStatusField(bool isDark) {
+    return SwitchListTile(
+      title: Text(
+        'Aktif',
+        style: GoogleFonts.poppins(
+          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+        ),
+      ),
+      subtitle: Text(
+        'Ürün aktif olarak satışta',
+        style: GoogleFonts.poppins(
+          color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+        ),
+      ),
+      value: _isActive,
+      onChanged: (value) {
+        setState(() {
+          _isActive = value;
+        });
+      },
+      activeThumbColor: TamgaciConstants.primaryColor,
     );
   }
 

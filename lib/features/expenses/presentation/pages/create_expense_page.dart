@@ -278,6 +278,7 @@ class _CreateExpensePageState extends ConsumerState<CreateExpensePage> {
           ? null
           : _descriptionController.text.trim(),
       amount: double.parse(_amountController.text),
+      currency: 'TRY', // Varsayılan para birimi
       categoryId: _selectedCategoryId!,
       categoryName: selectedCategory.name,
       expenseDate: _selectedDate,
@@ -341,9 +342,13 @@ class _CreateExpensePageState extends ConsumerState<CreateExpensePage> {
   Widget build(BuildContext context) {
     final formState = ref.watch(expenseFormProvider);
     final isEditing = widget.expenseId != null;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: isEditing ? 'Gider Düzenle' : 'Yeni Gider',
         showDrawer: false,

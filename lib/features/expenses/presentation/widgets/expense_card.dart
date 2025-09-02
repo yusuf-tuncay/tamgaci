@@ -2,12 +2,16 @@
 // lib/features/expenses/presentation/widgets/expense_card.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/domain/entities/currency.dart';
+import '../../../../core/providers/currency_providers.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../domain/entities/expense.dart';
 
 /// Gider kartı widget'ı
-class ExpenseCard extends StatelessWidget {
+class ExpenseCard extends ConsumerWidget {
   /// Gider verisi
   final Expense expense;
 
@@ -29,9 +33,13 @@ class ExpenseCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       elevation: 2,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),
@@ -51,7 +59,7 @@ class ExpenseCard extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: _getCategoryColor().withOpacity(0.1),
+                      color: _getCategoryColor().withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -73,20 +81,22 @@ class ExpenseCard extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: TamgaciConstants.textPrimary,
+                            color: isDark
+                                ? TamgaciConstants.textPrimaryDark
+                                : TamgaciConstants.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-
                         const SizedBox(height: 2),
-
                         Text(
                           expense.categoryName,
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w400,
-                            color: TamgaciConstants.textSecondary,
+                            color: isDark
+                                ? TamgaciConstants.textSecondaryDark
+                                : TamgaciConstants.textSecondary,
                           ),
                         ),
                       ],
@@ -97,14 +107,7 @@ class ExpenseCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        '₺${expense.amount.toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: TamgaciConstants.errorColor,
-                        ),
-                      ),
+                      _buildAmountDisplay(ref),
 
                       const SizedBox(height: 2),
 
@@ -115,7 +118,7 @@ class ExpenseCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: _getStatusColor().withOpacity(0.1),
+                          color: _getStatusColor().withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -138,10 +141,12 @@ class ExpenseCard extends StatelessWidget {
               Row(
                 children: [
                   // Tarih
-                  const Icon(
+                  Icon(
                     Icons.calendar_today,
                     size: 14,
-                    color: TamgaciConstants.textSecondary,
+                    color: isDark
+                        ? TamgaciConstants.textSecondaryDark
+                        : TamgaciConstants.textSecondary,
                   ),
 
                   const SizedBox(width: 4),
@@ -151,7 +156,9 @@ class ExpenseCard extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: TamgaciConstants.textSecondary,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
                     ),
                   ),
 
@@ -161,7 +168,9 @@ class ExpenseCard extends StatelessWidget {
                   Icon(
                     _getPaymentMethodIcon(),
                     size: 14,
-                    color: TamgaciConstants.textSecondary,
+                    color: isDark
+                        ? TamgaciConstants.textSecondaryDark
+                        : TamgaciConstants.textSecondary,
                   ),
 
                   const SizedBox(width: 4),
@@ -171,7 +180,9 @@ class ExpenseCard extends StatelessWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: TamgaciConstants.textSecondary,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
                     ),
                   ),
                 ],
@@ -181,13 +192,14 @@ class ExpenseCard extends StatelessWidget {
               if (expense.description != null &&
                   expense.description!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-
                 Text(
                   expense.description!,
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
-                    color: TamgaciConstants.textSecondary,
+                    color: isDark
+                        ? TamgaciConstants.textSecondaryDark
+                        : TamgaciConstants.textSecondary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -198,7 +210,6 @@ class ExpenseCard extends StatelessWidget {
               if (expense.invoiceNumber != null &&
                   expense.invoiceNumber!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-
                 Row(
                   children: [
                     const Icon(
@@ -206,9 +217,7 @@ class ExpenseCard extends StatelessWidget {
                       size: 14,
                       color: TamgaciConstants.textSecondary,
                     ),
-
                     const SizedBox(width: 4),
-
                     Text(
                       'Fatura: ${expense.invoiceNumber}',
                       style: GoogleFonts.poppins(
@@ -225,7 +234,6 @@ class ExpenseCard extends StatelessWidget {
               if (expense.supplierName != null &&
                   expense.supplierName!.isNotEmpty) ...[
                 const SizedBox(height: 8),
-
                 Row(
                   children: [
                     const Icon(
@@ -233,9 +241,7 @@ class ExpenseCard extends StatelessWidget {
                       size: 14,
                       color: TamgaciConstants.textSecondary,
                     ),
-
                     const SizedBox(width: 4),
-
                     Text(
                       expense.supplierName!,
                       style: GoogleFonts.poppins(
@@ -334,6 +340,56 @@ class ExpenseCard extends StatelessWidget {
       default:
         return Icons.payment;
     }
+  }
+
+  /// Tutar gösterimi oluşturur
+  Widget _buildAmountDisplay(WidgetRef ref) {
+    final selectedCurrency = ref.watch(selectedCurrencyProvider);
+    final exchangeRatesAsync = ref.watch(exchangeRatesProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Ana tutar (gider para biriminde)
+        Text(
+          '${CurrencyHelper.getCurrencySymbol(expense.currency)}${expense.amount.toStringAsFixed(2)}',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: TamgaciConstants.errorColor,
+          ),
+        ),
+        // Varsayılan para birimi gösterimi (farklı para birimi ise)
+        if (expense.currency != selectedCurrency.code)
+          exchangeRatesAsync.when(
+            data: (exchangeRates) {
+              final currencyRate = exchangeRates.firstWhere(
+                (currency) => currency.code == expense.currency,
+                orElse: () => Currency(
+                  code: expense.currency,
+                  name: '',
+                  symbol: expense.currency,
+                  country: '',
+                  lastUpdated: DateTime.now(),
+                  exchangeRate: 1.0,
+                ),
+              );
+              final convertedAmount =
+                  expense.amount * currencyRate.exchangeRate;
+              return Text(
+                '(${CurrencyHelper.getCurrencySymbol(selectedCurrency.code)}${convertedAmount.toStringAsFixed(2)})',
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w400,
+                  color: TamgaciConstants.textSecondary,
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (error, stackTrace) => const SizedBox.shrink(),
+          ),
+      ],
+    );
   }
 
   /// Tarihi formatlar

@@ -36,13 +36,20 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
     final searchQuery = ref.watch(invoiceSearchQueryProvider);
     final selectedStatus = ref.watch(selectedInvoiceStatusProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: AppBar(
         title: const Text('Faturalar'),
         elevation: 0,
-        backgroundColor: TamgaciConstants.appBarColor,
-        foregroundColor: TamgaciConstants.textPrimary,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: isDark
+            ? TamgaciConstants.textPrimaryDark
+            : TamgaciConstants.textPrimary,
         actions: [
           // Filtreleme butonu
           PopupMenuButton<InvoiceStatus?>(
@@ -172,16 +179,29 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
 
   /// Arama çubuğu widget'ı
   Widget _buildSearchBar() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: TamgaciConstants.paddingMedium(context),
-      decoration: const BoxDecoration(
-        color: TamgaciConstants.surfaceColor,
-        border: Border(
-          bottom: BorderSide(color: TamgaciConstants.borderColor, width: 1),
+      decoration: BoxDecoration(
+        color: isDark
+            ? TamgaciConstants.surfaceColorDark
+            : TamgaciConstants.surfaceColor,
+        border: const Border(
+          bottom: BorderSide(
+            color: TamgaciConstants.borderColor,
+            width: 1,
+          ),
         ),
       ),
       child: TextField(
         controller: _searchController,
+        style: TextStyle(
+          color: isDark
+              ? TamgaciConstants.textPrimaryDark
+              : TamgaciConstants.textPrimary,
+        ),
         decoration: InputDecoration(
           hintText: 'Fatura ara (numara, açıklama)...',
           prefixIcon: const Icon(Icons.search_outlined),
@@ -199,7 +219,14 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: TamgaciConstants.backgroundColor,
+          fillColor: isDark
+              ? TamgaciConstants.backgroundColorDark
+              : TamgaciConstants.backgroundColor,
+          hintStyle: TextStyle(
+            color: isDark
+                ? TamgaciConstants.textSecondaryDark
+                : TamgaciConstants.textSecondary,
+          ),
         ),
         onChanged: (value) {
           ref.read(invoiceSearchQueryProvider.notifier).state = value;
@@ -275,10 +302,15 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
     IconData icon,
     Color color,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
       decoration: BoxDecoration(
-        color: TamgaciConstants.cardColor,
+        color: isDark
+            ? TamgaciConstants.cardColorDark
+            : TamgaciConstants.cardColor,
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         boxShadow: TamgaciConstants.shadowLight,
       ),
@@ -293,7 +325,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: TamgaciConstants.textPrimary,
+                  color: isDark
+                      ? TamgaciConstants.textPrimaryDark
+                      : TamgaciConstants.textPrimary,
                 ),
               ),
             ],
@@ -306,7 +340,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w400,
-                color: TamgaciConstants.textSecondary,
+                color: isDark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary,
               ),
             ),
           ),
@@ -317,10 +353,15 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
 
   /// Yükleme durumunda stat kartı
   Widget _buildStatCardLoading() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
       decoration: BoxDecoration(
-        color: TamgaciConstants.cardColor,
+        color: isDark
+            ? TamgaciConstants.cardColorDark
+            : TamgaciConstants.cardColor,
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         boxShadow: TamgaciConstants.shadowLight,
       ),
@@ -382,12 +423,15 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
 
   /// Fatura kartı widget'ı
   Widget _buildInvoiceCard(Invoice invoice) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final statusColor = _getStatusColor(invoice.status);
     final isOverdue = invoice.isOverdue;
 
     return Card(
       elevation: 1,
       margin: EdgeInsets.zero,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         side: isOverdue
@@ -423,7 +467,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: TamgaciConstants.textPrimary,
+                            color: isDark
+                                ? TamgaciConstants.textPrimaryDark
+                                : TamgaciConstants.textPrimary,
                           ),
                         ),
                         if (invoice.customer != null)
@@ -432,7 +478,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: TamgaciConstants.textSecondary,
+                              color: isDark
+                                  ? TamgaciConstants.textSecondaryDark
+                                  : TamgaciConstants.textSecondary,
                             ),
                           ),
                       ],
@@ -473,10 +521,12 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.calendar_today,
                               size: 14,
-                              color: TamgaciConstants.textSecondary,
+                              color: isDark
+                                  ? TamgaciConstants.textSecondaryDark
+                                  : TamgaciConstants.textSecondary,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -486,12 +536,13 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w400,
-                                color: TamgaciConstants.textSecondary,
+                                color: isDark
+                                    ? TamgaciConstants.textSecondaryDark
+                                    : TamgaciConstants.textSecondary,
                               ),
                             ),
                           ],
                         ),
-
                         if (invoice.dueDate != null)
                           Row(
                             children: [
@@ -500,7 +551,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                                 size: 14,
                                 color: isOverdue
                                     ? TamgaciConstants.errorColor
-                                    : TamgaciConstants.textSecondary,
+                                    : (isDark
+                                        ? TamgaciConstants.textSecondaryDark
+                                        : TamgaciConstants.textSecondary),
                               ),
                               const SizedBox(width: 4),
                               Text(
@@ -510,7 +563,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                                   fontWeight: FontWeight.w400,
                                   color: isOverdue
                                       ? TamgaciConstants.errorColor
-                                      : TamgaciConstants.textSecondary,
+                                      : (isDark
+                                          ? TamgaciConstants.textSecondaryDark
+                                          : TamgaciConstants.textSecondary),
                                 ),
                               ),
                             ],
@@ -528,7 +583,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: TamgaciConstants.textPrimary,
+                          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
                         ),
                       ),
                       Text(
@@ -536,7 +591,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
-                          color: TamgaciConstants.textSecondary,
+                          color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
                         ),
                       ),
                     ],
@@ -544,9 +599,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
 
                   // İşlemler menüsü
                   PopupMenuButton<String>(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.more_vert,
-                      color: TamgaciConstants.textSecondary,
+                      color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
                     ),
                     onSelected: (action) =>
                         _handleInvoiceAction(action, invoice),

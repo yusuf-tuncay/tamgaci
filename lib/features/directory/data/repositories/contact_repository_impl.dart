@@ -89,7 +89,7 @@ class ContactRepositoryImpl implements ContactRepository {
   @override
   Future<void> deleteContact(int id) async {
     try {
-      await _contactDao.softDeleteContact(id, DateTime.now());
+      await _contactDao.softDeleteContact(id);
     } catch (e) {
       throw Exception('Kişi/kurum silinirken hata oluştu: $e');
     }
@@ -99,7 +99,7 @@ class ContactRepositoryImpl implements ContactRepository {
   Future<int> getContactCount() async {
     try {
       final count = await _contactDao.getContactCount();
-      return count ?? 0;
+      return count;
     } catch (e) {
       throw Exception('Kişi/kurum sayısı getirilirken hata oluştu: $e');
     }
@@ -109,7 +109,7 @@ class ContactRepositoryImpl implements ContactRepository {
   Future<int> getContactCountByType(ContactType type) async {
     try {
       final count = await _contactDao.getContactCountByType(type.index);
-      return count ?? 0;
+      return count;
     } catch (e) {
       throw Exception(
           'Tip\'e göre kişi/kurum sayısı getirilirken hata oluştu: $e');
@@ -120,7 +120,7 @@ class ContactRepositoryImpl implements ContactRepository {
   Future<int> getFavoriteContactCount() async {
     try {
       final count = await _contactDao.getFavoriteContactCount();
-      return count ?? 0;
+      return count;
     } catch (e) {
       throw Exception('Favori kişi/kurum sayısı getirilirken hata oluştu: $e');
     }

@@ -1,102 +1,97 @@
 // ========== CONTACT DAO ==========
 // lib/features/directory/data/datasources/contact_dao.dart
 
-import 'package:drift/drift.dart';
-import '../models/contacts_table.dart';
+import 'package:floor/floor.dart';
+import '../../domain/entities/contact.dart';
 
 /// Contact DAO sınıfı
 /// Veritabanı işlemlerini yönetir
-@DriftAccessor(tables: [Contacts])
-class ContactDao extends DatabaseAccessor<TamgaciDatabase>
-    with _$ContactDaoMixin {
-  ContactDao(TamgaciDatabase db) : super(db);
-
+@dao
+abstract class ContactDao {
   /// Tüm kişi/kurumları getir
-  Future<List<Contact>> getAllContacts() {
-    return select(contacts).get();
-  }
+  @Query('SELECT * FROM contacts WHERE isActive = 1')
+  Future<List<Contact>> getAllContacts();
 
   /// Aktif kişi/kurumları getir
-  Future<List<Contact>> getActiveContacts() {
-    return (select(contacts)..where((c) => c.isActive.equals(true))).get();
-  }
+  @Query('SELECT * FROM contacts WHERE isActive = 1')
+  Future<List<Contact>> getActiveContacts();
 
   /// ID'ye göre kişi/kurum getir
-  Future<Contact?> getContactById(int id) {
-    return (select(contacts)..where((c) => c.id.equals(id))).getSingleOrNull();
-  }
+  @Query('SELECT * FROM contacts WHERE id = :id')
+  Future<Contact?> getContactById(int id);
 
   /// Tip'e göre kişi/kurumları getir
-  Future<List<Contact>> getContactsByType(ContactType type) {
-    return (select(contacts)..where((c) => c.type.equals(type))).get();
-  }
+  @Query('SELECT * FROM contacts WHERE type = :type AND isActive = 1')
+  Future<List<Contact>> getContactsByType(int type);
 
   /// Favori kişi/kurumları getir
-  Future<List<Contact>> getFavoriteContacts() {
-    return (select(contacts)..where((c) => c.isFavorite.equals(true))).get();
-  }
+  @Query('SELECT * FROM contacts WHERE isFavorite = 1 AND isActive = 1')
+  Future<List<Contact>> getFavoriteContacts();
 
   /// Son eklenen kişi/kurumları getir
-  Future<List<Contact>> getRecentContacts(int limit) {
-    return (select(contacts)
-          ..orderBy([(c) => OrderingTerm.desc(c.createdAt)])
-          ..limit(limit))
-        .get();
-  }
+  @Query(
+      'SELECT * FROM contacts WHERE isActive = 1 ORDER BY createdAt DESC LIMIT :limit')
+  Future<List<Contact>> getRecentContacts(int limit);
 
   /// Kişi/kurum ara
-  Future<List<Contact>> searchContacts(String query) {
-    final searchQuery = '%$query%';
-    return (select(contacts)
-          ..where((c) =>
-              c.name.like(searchQuery) |
-              c.email.like(searchQuery) |
-              c.phone.like(searchQuery) |
-              c.address.like(searchQuery) |
-              c.city.like(searchQuery)))
-        .get();
-  }
+  @Query('''
+    SELECT * FROM contacts 
+    WHERE isActive = 1 
+    AND (name LIKE :query OR email LIKE :query OR phone LIKE :query OR address LIKE :query OR city LIKE :query)
+  ''')
+  Future<List<Contact>> searchContacts(String query);
 
   /// Yeni kişi/kurum ekle
-  Future<int> insertContact(ContactsCompanion contact) {
-    return into(contacts).insert(contact);
-  }
+  @insert
+  Future<int> insertContact(Contact contact);
 
   /// Kişi/kurum güncelle
-  Future<bool> updateContact(ContactsCompanion contact) {
-    return update(contacts).replace(contact);
-  }
+  @update
+  Future<int> updateContact(Contact contact);
 
   /// Kişi/kurum sil
-  Future<int> deleteContact(int id) {
-    return (delete(contacts)..where((c) => c.id.equals(id))).go();
-  }
+  @delete
+  Future<int> deleteContact(Contact contact);
+
+  /// Soft delete - kişi/kurumu pasif yap
+  @Query('UPDATE contacts SET isActive = 0 WHERE id = :id')
+  Future<int> softDeleteContact(int id);
 
   /// Kişi/kurum sayısını getir
-  Future<int> getContactCount() {
-    return (select(contacts)..where((c) => c.isActive.equals(true)))
-        .get()
-        .then((contacts) => contacts.length);
-  }
+  @Query('SELECT COUNT(*) FROM contacts WHERE isActive = 1')
+  Future<int> getContactCount();
 
-  /// Kişi/kurum istatistiklerini getir
-  Future<Map<String, dynamic>> getContactStatistics() {
-    return Future.wait([
-      getContactCount(),
-      getFavoriteContacts().then((contacts) => contacts.length),
-      getContactsByType(ContactType.customer)
-          .then((contacts) => contacts.length),
-      getContactsByType(ContactType.supplier)
-          .then((contacts) => contacts.length),
-      getContactsByType(ContactType.both).then((contacts) => contacts.length),
-    ]).then((results) {
-      return {
-        'total': results[0],
-        'favorites': results[1],
-        'customers': results[2],
-        'suppliers': results[3],
-        'both': results[4],
-      };
-    });
-  }
+  /// Tip'e göre kişi/kurum sayısını getir
+  @Query('SELECT COUNT(*) FROM contacts WHERE type = :type AND isActive = 1')
+  Future<int> getContactCountByType(int type);
+
+  /// Favori kişi/kurum sayısını getir
+  @Query('SELECT COUNT(*) FROM contacts WHERE isFavorite = 1 AND isActive = 1')
+  Future<int> getFavoriteContactCount();
+
+  /// E-posta ile kişi/kurum getir
+  @Query('SELECT * FROM contacts WHERE email = :email AND isActive = 1')
+  Future<Contact?> getContactByEmail(String email);
+
+  /// Telefon ile kişi/kurum getir
+  @Query('SELECT * FROM contacts WHERE phone = :phone AND isActive = 1')
+  Future<Contact?> getContactByPhone(String phone);
+
+  /// Vergi numarası ile kişi/kurum getir
+  @Query('SELECT * FROM contacts WHERE taxNumber = :taxNumber AND isActive = 1')
+  Future<Contact?> getContactByTaxNumber(String taxNumber);
+
+  /// Şehir'e göre kişi/kurumları getir
+  @Query('SELECT * FROM contacts WHERE city = :city AND isActive = 1')
+  Future<List<Contact>> getContactsByCity(String city);
+
+  /// Ülke'ye göre kişi/kurumları getir
+  @Query('SELECT * FROM contacts WHERE country = :country AND isActive = 1')
+  Future<List<Contact>> getContactsByCountry(String country);
+
+  /// Tarih aralığına göre kişi/kurumları getir
+  @Query(
+      'SELECT * FROM contacts WHERE createdAt BETWEEN :startDate AND :endDate AND isActive = 1')
+  Future<List<Contact>> getContactsByDateRange(
+      DateTime startDate, DateTime endDate);
 }

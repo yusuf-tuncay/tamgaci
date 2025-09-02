@@ -131,8 +131,8 @@ class _ProductReportPageState extends ConsumerState<ProductReportPage> {
     const outOfStockProducts = 6;
     const totalRevenue = 450000.0;
     const totalCost = 320000.0;
-    final totalProfit = totalRevenue - totalCost;
-    final profitMargin = (totalProfit / totalRevenue) * 100;
+    const totalProfit = totalRevenue - totalCost;
+    const profitMargin = (totalProfit / totalRevenue) * 100;
 
     return SingleChildScrollView(
       padding: TamgaciConstants.paddingMedium(context),
@@ -227,7 +227,7 @@ class _ProductReportPageState extends ConsumerState<ProductReportPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -283,7 +283,6 @@ class _ProductReportPageState extends ConsumerState<ProductReportPage> {
               ),
             ),
             const SizedBox(height: 16),
-
             _buildCategoryItem('Elektronik', 45, 180000.0, 0.4),
             _buildCategoryItem('Ofis Ekipmanları', 32, 120000.0, 0.27),
             _buildCategoryItem('Kırtasiye', 28, 80000.0, 0.18),
@@ -369,7 +368,6 @@ class _ProductReportPageState extends ConsumerState<ProductReportPage> {
               ),
             ),
             const SizedBox(height: 16),
-
             _buildProductItem('Laptop Bilgisayar', 25, 375000.0, 1),
             _buildProductItem('Mouse Kablosuz', 100, 15000.0, 2),
             _buildProductItem('Klavye Mekanik', 3, 2400.0, 3),
@@ -460,7 +458,6 @@ class _ProductReportPageState extends ConsumerState<ProductReportPage> {
               ),
             ),
             const SizedBox(height: 16),
-
             _buildStockItem('Yeterli Stok', 134, Colors.green),
             _buildStockItem('Düşük Stok', 8, Colors.orange),
             _buildStockItem('Stok Tükendi', 6, Colors.red),
@@ -530,25 +527,24 @@ class _ProductReportPageState extends ConsumerState<ProductReportPage> {
         title: const Text('Dönem Seç'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children:
-              [
-                'Bu Ay',
-                'Geçen Ay',
-                'Bu Yıl',
-                'Geçen Yıl',
-                'Son 3 Ay',
-                'Son 6 Ay',
-              ].map((period) {
-                return ListTile(
-                  title: Text(period),
-                  onTap: () {
-                    setState(() {
-                      _selectedPeriod = period;
-                    });
-                    Navigator.of(context).pop();
-                  },
-                );
-              }).toList(),
+          children: [
+            'Bu Ay',
+            'Geçen Ay',
+            'Bu Yıl',
+            'Geçen Yıl',
+            'Son 3 Ay',
+            'Son 6 Ay',
+          ].map((period) {
+            return ListTile(
+              title: Text(period),
+              onTap: () {
+                setState(() {
+                  _selectedPeriod = period;
+                });
+                Navigator.of(context).pop();
+              },
+            );
+          }).toList(),
         ),
       ),
     );

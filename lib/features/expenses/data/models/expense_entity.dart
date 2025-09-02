@@ -17,6 +17,9 @@ class ExpenseEntity {
   @ColumnInfo(name: 'amount')
   final double amount;
 
+  @ColumnInfo(name: 'currency')
+  final String currency;
+
   @ColumnInfo(name: 'categoryId')
   final int categoryId;
 
@@ -46,6 +49,7 @@ class ExpenseEntity {
     required this.title,
     this.description,
     required this.amount,
+    required this.currency,
     required this.categoryId,
     required this.date,
     required this.status,
@@ -62,6 +66,7 @@ class ExpenseEntity {
     String? title,
     String? description,
     double? amount,
+    String? currency,
     int? categoryId,
     DateTime? date,
     String? status,
@@ -76,6 +81,7 @@ class ExpenseEntity {
       title: title ?? this.title,
       description: description ?? this.description,
       amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
       categoryId: categoryId ?? this.categoryId,
       date: date ?? this.date,
       status: status ?? this.status,
@@ -94,6 +100,7 @@ class ExpenseEntity {
       title: json['title'] as String,
       description: json['description'] as String?,
       amount: (json['amount'] as num).toDouble(),
+      currency: json['currency'] as String,
       categoryId: json['categoryId'] as int,
       date: DateTime.parse(json['date'] as String),
       status: json['status'] as String,
@@ -112,6 +119,7 @@ class ExpenseEntity {
       'title': title,
       'description': description,
       'amount': amount,
+      'currency': currency,
       'categoryId': categoryId,
       'date': date.toIso8601String(),
       'status': status,
@@ -131,6 +139,7 @@ class ExpenseEntity {
         other.title == title &&
         other.description == description &&
         other.amount == amount &&
+        other.currency == currency &&
         other.categoryId == categoryId &&
         other.date == date &&
         other.status == status &&
@@ -147,6 +156,7 @@ class ExpenseEntity {
         title.hashCode ^
         description.hashCode ^
         amount.hashCode ^
+        currency.hashCode ^
         categoryId.hashCode ^
         date.hashCode ^
         status.hashCode ^

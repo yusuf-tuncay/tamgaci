@@ -1,176 +1,132 @@
+// ========== STOCK MOVEMENT DATA MODEL ==========
+// lib/features/inventory/data/models/stock_movement_entity.dart
+
 import 'package:floor/floor.dart';
-import '../../domain/entities/stock_movement.dart';
 
 /// Stok hareket entity modeli
 @Entity(tableName: 'stock_movements')
 class StockMovementEntity {
   @PrimaryKey(autoGenerate: true)
-  final int? id;
+  final int id;
 
-  /// Ürün ID'si
-  @ColumnInfo(name: 'product_id')
-  final int productId;
+  @ColumnInfo(name: 'stockId')
+  final int stockId;
 
-  /// Hareket türü
-  @ColumnInfo(name: 'movement_type')
-  final StockMovementType movementType;
+  @ColumnInfo(name: 'type')
+  final String type;
 
-  /// Miktar
   @ColumnInfo(name: 'quantity')
-  final int quantity;
+  final double quantity;
 
-  /// Birim fiyat
-  @ColumnInfo(name: 'unit_price')
-  final double unitPrice;
+  @ColumnInfo(name: 'previousQuantity')
+  final double? previousQuantity;
 
-  /// Toplam tutar
-  @ColumnInfo(name: 'total_amount')
-  final double totalAmount;
+  @ColumnInfo(name: 'newQuantity')
+  final double? newQuantity;
 
-  /// Açıklama
-  @ColumnInfo(name: 'description')
-  final String? description;
+  @ColumnInfo(name: 'reason')
+  final String? reason;
 
-  /// Referans numarası (fatura, sipariş vb.)
-  @ColumnInfo(name: 'reference_number')
-  final String? referenceNumber;
+  @ColumnInfo(name: 'reference')
+  final String? reference;
 
-  /// Referans türü
-  @ColumnInfo(name: 'reference_type')
-  final String? referenceType;
+  @ColumnInfo(name: 'notes')
+  final String? notes;
 
-  /// Depo ID'si (giriş/çıkış için)
-  @ColumnInfo(name: 'warehouse_id')
-  final int? warehouseId;
-
-  /// Kaynak depo ID'si (transfer için)
-  @ColumnInfo(name: 'source_warehouse_id')
-  final int? sourceWarehouseId;
-
-  /// Hedef depo ID'si (transfer için)
-  @ColumnInfo(name: 'destination_warehouse_id')
-  final int? destinationWarehouseId;
-
-  /// Hareket tarihi
-  @ColumnInfo(name: 'movement_date')
-  final DateTime movementDate;
-
-  /// Oluşturan kullanıcı ID'si
-  @ColumnInfo(name: 'created_by')
-  final int? createdBy;
-
-  /// Oluşturulma tarihi
-  @ColumnInfo(name: 'created_at')
+  @ColumnInfo(name: 'createdAt')
   final DateTime createdAt;
 
-  /// Güncellenme tarihi
-  @ColumnInfo(name: 'updated_at')
-  final DateTime updatedAt;
+  @ColumnInfo(name: 'createdBy')
+  final String? createdBy;
 
-  StockMovementEntity({
-    this.id,
-    required this.productId,
-    required this.movementType,
+  const StockMovementEntity({
+    required this.id,
+    required this.stockId,
+    required this.type,
     required this.quantity,
-    required this.unitPrice,
-    required this.totalAmount,
-    this.description,
-    this.referenceNumber,
-    this.referenceType,
-    this.warehouseId,
-    this.sourceWarehouseId,
-    this.destinationWarehouseId,
-    required this.movementDate,
-    this.createdBy,
+    this.previousQuantity,
+    this.newQuantity,
+    this.reason,
+    this.reference,
+    this.notes,
     required this.createdAt,
-    required this.updatedAt,
+    this.createdBy,
   });
 
-  /// Entity'den domain modeline dönüştürme
+  /// Map'ten StockMovementEntity oluşturur
+  factory StockMovementEntity.fromMap(Map<String, dynamic> map) {
+    return StockMovementEntity(
+      id: map['id']?.toInt() ?? 0,
+      stockId: map['stockId']?.toInt() ?? 0,
+      type: map['type'] ?? '',
+      quantity: map['quantity']?.toDouble() ?? 0.0,
+      previousQuantity: map['previousQuantity']?.toDouble(),
+      newQuantity: map['newQuantity']?.toDouble(),
+      reason: map['reason'],
+      reference: map['reference'],
+      notes: map['notes'],
+      createdAt: DateTime.parse(map['createdAt']),
+      createdBy: map['createdBy'],
+    );
+  }
+
+  /// StockMovementEntity'yi Map'e çevirir
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'productId': productId,
-      'movementType': movementType.name,
+      'stockId': stockId,
+      'type': type,
       'quantity': quantity,
-      'unitPrice': unitPrice,
-      'totalAmount': totalAmount,
-      'description': description,
-      'referenceNumber': referenceNumber,
-      'referenceType': referenceType,
-      'warehouseId': warehouseId,
-      'sourceWarehouseId': sourceWarehouseId,
-      'destinationWarehouseId': destinationWarehouseId,
-      'movementDate': movementDate.millisecondsSinceEpoch,
+      'previousQuantity': previousQuantity,
+      'newQuantity': newQuantity,
+      'reason': reason,
+      'reference': reference,
+      'notes': notes,
+      'createdAt': createdAt.toIso8601String(),
       'createdBy': createdBy,
-      'createdAt': createdAt.millisecondsSinceEpoch,
-      'updatedAt': updatedAt.millisecondsSinceEpoch,
     };
   }
 
-  /// Map'ten entity oluşturma
-  factory StockMovementEntity.fromMap(Map<String, dynamic> map) {
-    return StockMovementEntity(
-      id: map['id'] as int?,
-      productId: map['productId'] as int,
-      movementType: StockMovementType.values.firstWhere(
-        (e) => e.name == map['movementType'],
-      ),
-      quantity: map['quantity'] as int,
-      unitPrice: (map['unitPrice'] as num).toDouble(),
-      totalAmount: (map['totalAmount'] as num).toDouble(),
-      description: map['description'] as String?,
-      referenceNumber: map['referenceNumber'] as String?,
-      referenceType: map['referenceType'] as String?,
-      warehouseId: map['warehouseId'] as int?,
-      sourceWarehouseId: map['sourceWarehouseId'] as int?,
-      destinationWarehouseId: map['destinationWarehouseId'] as int?,
-      movementDate: DateTime.fromMillisecondsSinceEpoch(
-        map['movementDate'] as int,
-      ),
-      createdBy: map['createdBy'] as int?,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(map['updatedAt'] as int),
-    );
-  }
-
-  /// Kopyalama metodu
+  /// Copy with method
   StockMovementEntity copyWith({
     int? id,
-    int? productId,
-    StockMovementType? movementType,
-    int? quantity,
-    double? unitPrice,
-    double? totalAmount,
-    String? description,
-    String? referenceNumber,
-    String? referenceType,
-    int? warehouseId,
-    int? sourceWarehouseId,
-    int? destinationWarehouseId,
-    DateTime? movementDate,
-    int? createdBy,
+    int? stockId,
+    String? type,
+    double? quantity,
+    double? previousQuantity,
+    double? newQuantity,
+    String? reason,
+    String? reference,
+    String? notes,
     DateTime? createdAt,
-    DateTime? updatedAt,
+    String? createdBy,
   }) {
     return StockMovementEntity(
       id: id ?? this.id,
-      productId: productId ?? this.productId,
-      movementType: movementType ?? this.movementType,
+      stockId: stockId ?? this.stockId,
+      type: type ?? this.type,
       quantity: quantity ?? this.quantity,
-      unitPrice: unitPrice ?? this.unitPrice,
-      totalAmount: totalAmount ?? this.totalAmount,
-      description: description ?? this.description,
-      referenceNumber: referenceNumber ?? this.referenceNumber,
-      referenceType: referenceType ?? this.referenceType,
-      warehouseId: warehouseId ?? this.warehouseId,
-      sourceWarehouseId: sourceWarehouseId ?? this.sourceWarehouseId,
-      destinationWarehouseId:
-          destinationWarehouseId ?? this.destinationWarehouseId,
-      movementDate: movementDate ?? this.movementDate,
-      createdBy: createdBy ?? this.createdBy,
+      previousQuantity: previousQuantity ?? this.previousQuantity,
+      newQuantity: newQuantity ?? this.newQuantity,
+      reason: reason ?? this.reason,
+      reference: reference ?? this.reference,
+      notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
+
+  @override
+  String toString() {
+    return 'StockMovementEntity(id: $id, stockId: $stockId, type: $type, quantity: $quantity)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is StockMovementEntity && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

@@ -82,12 +82,12 @@ class _IncomeListPageState extends ConsumerState<IncomeListPage> {
       filteredIncomes = incomes.where((income) {
         return income.title.toLowerCase().contains(searchQuery.toLowerCase()) ||
             (income.description?.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ??
+                      searchQuery.toLowerCase(),
+                    ) ??
                 false) ||
             (income.customerName?.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ??
+                      searchQuery.toLowerCase(),
+                    ) ??
                 false);
       }).toList();
     }
@@ -137,8 +137,13 @@ class _IncomeListPageState extends ConsumerState<IncomeListPage> {
     final selectedCategory = ref.watch(selectedIncomeCategoryProvider);
     final selectedDateRange = ref.watch(incomeDateRangeProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Gelirler',
         showDrawer: true,
@@ -193,6 +198,19 @@ class _IncomeListPageState extends ConsumerState<IncomeListPage> {
                     TamgaciConstants.radiusMD,
                   ),
                 ),
+                filled: true,
+                fillColor:
+                    isDark ? TamgaciConstants.cardColorDark : Colors.white,
+                hintStyle: TextStyle(
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
+                ),
+              ),
+              style: TextStyle(
+                color: isDark
+                    ? TamgaciConstants.textPrimaryDark
+                    : TamgaciConstants.textPrimary,
               ),
             ),
           ),
@@ -209,9 +227,8 @@ class _IncomeListPageState extends ConsumerState<IncomeListPage> {
                       label: Text(selectedCategory.name),
                       onDeleted: () {
                         ref
-                                .read(selectedIncomeCategoryProvider.notifier)
-                                .state =
-                            null;
+                            .read(selectedIncomeCategoryProvider.notifier)
+                            .state = null;
                       },
                     ),
                   if (selectedDateRange != null)

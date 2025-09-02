@@ -23,16 +23,10 @@ import 'package:tamgaci/features/income/data/models/income_entity.dart';
 import 'package:tamgaci/features/income/data/models/income_category_entity.dart';
 import 'package:tamgaci/features/income/data/datasources/income_dao.dart';
 import 'package:tamgaci/features/income/data/datasources/income_category_dao.dart';
-import 'package:tamgaci/features/inventory/data/models/stock_movement_entity.dart';
-import 'package:tamgaci/features/inventory/domain/entities/stock_movement.dart';
-import 'package:tamgaci/features/inventory/data/models/warehouse_entity.dart';
-import 'package:tamgaci/features/inventory/data/models/stock_status_entity.dart';
-import 'package:tamgaci/features/inventory/data/datasources/stock_movement_dao.dart';
-import 'package:tamgaci/features/inventory/data/datasources/warehouse_dao.dart';
-import 'package:tamgaci/features/inventory/data/datasources/stock_status_dao.dart';
-import 'package:tamgaci/features/directory/domain/entities/contact.dart';
-import 'package:tamgaci/features/directory/data/datasources/contact_dao.dart';
-import 'package:tamgaci/features/directory/data/models/contacts_table.dart';
+import '../../features/inventory/data/models/warehouse_entity.dart';
+import '../../features/inventory/data/datasources/warehouse_dao.dart';
+import '../../features/inventory/data/models/stock_entity.dart';
+import '../../features/inventory/data/datasources/stock_dao.dart';
 
 // Floor code generation için gerekli import
 part 'tamgaci_database.g.dart';
@@ -40,7 +34,7 @@ part 'tamgaci_database.g.dart';
 /// Tamgaci uygulaması ana database sınıfı
 /// Floor ile SQLite database yönetimi
 @Database(
-  version: 6,
+  version: 7,
   entities: [
     CustomerEntity,
     InvoiceEntity,
@@ -50,10 +44,9 @@ part 'tamgaci_database.g.dart';
     ExpenseCategoryEntity,
     IncomeEntity,
     IncomeCategoryEntity,
-    StockMovementEntity,
     WarehouseEntity,
-    StockStatusEntity,
-    Contact,
+    StockEntity,
+
     // Gelecekte diğer entity'ler buraya eklenecek:
     // SupplierEntity, vs.
   ],
@@ -69,10 +62,9 @@ abstract class TamgaciDatabase extends FloorDatabase {
   ExpenseCategoryDao get expenseCategoryDao;
   IncomeDao get incomeDao;
   IncomeCategoryDao get incomeCategoryDao;
-  StockMovementDao get stockMovementDao;
   WarehouseDao get warehouseDao;
-  StockStatusDao get stockStatusDao;
-  ContactDao get contactDao;
+  StockDao get stockDao;
+
   // Gelecekte diğer DAO'lar buraya eklenecek:
   // SupplierDao get supplierDao;
 }

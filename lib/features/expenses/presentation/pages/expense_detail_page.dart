@@ -58,7 +58,8 @@ class _ExpenseDetailPageState extends ConsumerState<ExpenseDetailPage> {
               await ref
                   .read(expenseFormProvider.notifier)
                   .deleteExpense(widget.expenseId);
-              if (mounted) {
+              // Widget dispose edilmişse navigator'a erişmeye çalışma
+              if (mounted && Navigator.canPop(context)) {
                 Navigator.of(context).pop(); // Detay sayfasından çık
               }
             },
@@ -78,9 +79,11 @@ class _ExpenseDetailPageState extends ConsumerState<ExpenseDetailPage> {
     ref
         .read(expenseFormProvider.notifier)
         .updateExpenseStatus(widget.expenseId, newStatus);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Durum güncellendi: ${newStatus.name}')),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Durum güncellendi: ${newStatus.name}')),
+      );
+    }
   }
 
   /// Durum seçici dialog
@@ -241,7 +244,7 @@ class _ExpenseDetailPageState extends ConsumerState<ExpenseDetailPage> {
               ),
               _buildDetailRow(
                 'Ödeme Yöntemi',
-                expense.paymentMethod ?? 'Belirtilmemiş',
+                expense.paymentMethod,
               ),
             ],
           ),

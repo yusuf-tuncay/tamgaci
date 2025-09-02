@@ -8,15 +8,16 @@ import '../../domain/entities/income.dart';
 import '../../domain/entities/income_category.dart';
 import '../../domain/repositories/income_repository.dart';
 import '../../data/repositories/income_repository_impl.dart';
+import '../../data/repositories/firebase_income_repository.dart';
 import '../../../../core/database/tamgaci_database.dart';
 
 // ========== BASE PROVIDERS ==========
 
 /// Income repository provider
 final incomeRepositoryProvider = Provider<IncomeRepository>((ref) {
-  // Web platformunda boş repository döndür
+  // Web platformunda Firebase kullan
   if (kIsWeb) {
-    return _EmptyIncomeRepository();
+    return FirebaseIncomeRepository();
   }
 
   try {
@@ -126,9 +127,8 @@ final filteredIncomesProvider = FutureProvider<List<Income>>((ref) async {
 
   // Durum filtresi
   if (selectedStatus != null) {
-    incomes = incomes
-        .where((income) => income.status == selectedStatus)
-        .toList();
+    incomes =
+        incomes.where((income) => income.status == selectedStatus).toList();
   }
 
   // Tarih aralığı filtresi
@@ -151,16 +151,16 @@ final filteredIncomesProvider = FutureProvider<List<Income>>((ref) async {
 /// Gelir formu state provider'ı
 final incomeFormProvider =
     StateNotifierProvider<IncomeFormNotifier, IncomeFormState>((ref) {
-      final repository = ref.watch(incomeRepositoryProvider);
-      return IncomeFormNotifier(repository);
-    });
+  final repository = ref.watch(incomeRepositoryProvider);
+  return IncomeFormNotifier(repository);
+});
 
 /// Gelir operasyonları provider'ı
 final incomeOperationsProvider =
     StateNotifierProvider<IncomeOperations, IncomeOperationsState>((ref) {
-      final repository = ref.watch(incomeRepositoryProvider);
-      return IncomeOperations(repository);
-    });
+  final repository = ref.watch(incomeRepositoryProvider);
+  return IncomeOperations(repository);
+});
 
 /// Gelir operasyonları state sınıfı
 class IncomeOperationsState {

@@ -2,13 +2,16 @@
 // lib/features/income/presentation/widgets/income_card.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/providers/currency_providers.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../domain/entities/income.dart';
 
 /// Gelir kartı widget'ı
-class IncomeCard extends StatelessWidget {
+class IncomeCard extends ConsumerWidget {
   /// Gelir verisi
   final Income income;
 
@@ -18,10 +21,14 @@ class IncomeCard extends StatelessWidget {
   const IncomeCard({super.key, required this.income, this.onTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),
@@ -67,7 +74,9 @@ class IncomeCard extends StatelessWidget {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: TamgaciConstants.textPrimary,
+                            color: isDark
+                                ? TamgaciConstants.textPrimaryDark
+                                : TamgaciConstants.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -79,7 +88,9 @@ class IncomeCard extends StatelessWidget {
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: TamgaciConstants.textSecondary,
+                              color: isDark
+                                  ? TamgaciConstants.textSecondaryDark
+                                  : TamgaciConstants.textSecondary,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
@@ -94,14 +105,7 @@ class IncomeCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
-                        '₺${NumberFormat('#,##0.00', 'tr_TR').format(income.amount)}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: TamgaciConstants.successColor,
-                        ),
-                      ),
+                      _buildAmountDisplay(ref),
                       _buildStatusChip(),
                     ],
                   ),
@@ -119,6 +123,7 @@ class IncomeCard extends StatelessWidget {
                       icon: Icons.category_outlined,
                       label: income.categoryName,
                       color: TamgaciConstants.primaryColor,
+                      isDark: isDark,
                     ),
                   ),
 
@@ -132,7 +137,10 @@ class IncomeCard extends StatelessWidget {
                         'dd.MM.yyyy',
                         'tr_TR',
                       ).format(income.incomeDate),
-                      color: TamgaciConstants.textSecondary,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
+                      isDark: isDark,
                     ),
                   ),
 
@@ -143,7 +151,10 @@ class IncomeCard extends StatelessWidget {
                     child: _buildDetailItem(
                       icon: Icons.payment_outlined,
                       label: income.paymentMethod,
-                      color: TamgaciConstants.textSecondary,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
+                      isDark: isDark,
                     ),
                   ),
                 ],
@@ -155,7 +166,10 @@ class IncomeCard extends StatelessWidget {
                 _buildDetailItem(
                   icon: Icons.person_outline,
                   label: 'Müşteri: ${income.customerName}',
-                  color: TamgaciConstants.textSecondary,
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
+                  isDark: isDark,
                 ),
               ],
 
@@ -165,7 +179,10 @@ class IncomeCard extends StatelessWidget {
                 _buildDetailItem(
                   icon: Icons.receipt_outlined,
                   label: 'Fatura: ${income.invoiceNumber}',
-                  color: TamgaciConstants.textSecondary,
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
+                  isDark: isDark,
                 ),
               ],
             ],
@@ -213,11 +230,54 @@ class IncomeCard extends StatelessWidget {
     );
   }
 
+  /// Tutar gösterimi oluşturur
+  Widget _buildAmountDisplay(WidgetRef ref) {
+    final selectedCurrency = ref.watch(selectedCurrencyProvider);
+    final exchangeRatesAsync = ref.watch(exchangeRatesProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Text(
+          CurrencyHelper.formatAmount(income.amount, income.currency),
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: TamgaciConstants.successColor,
+          ),
+        ),
+        // Varsayılan para birimi gösterimi
+        if (income.currency != selectedCurrency.code)
+          exchangeRatesAsync.when(
+            data: (exchangeRates) {
+              final convertedAmount = CurrencyHelper.convertCurrency(
+                amount: income.amount,
+                fromCurrencyCode: income.currency,
+                toCurrencyCode: selectedCurrency.code,
+                exchangeRates: exchangeRates,
+              );
+              return Text(
+                '(${convertedAmount.toStringAsFixed(2)} ${selectedCurrency.symbol})',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w400,
+                  color: TamgaciConstants.textSecondary,
+                ),
+              );
+            },
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+      ],
+    );
+  }
+
   /// Detay öğesi oluşturur
   Widget _buildDetailItem({
     required IconData icon,
     required String label,
     required Color color,
+    bool isDark = false,
   }) {
     return Row(
       children: [

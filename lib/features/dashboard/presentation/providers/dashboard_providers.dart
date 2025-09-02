@@ -9,7 +9,7 @@ import '../../../../features/invoices/presentation/providers/invoice_providers.d
 import '../../../../features/customers/presentation/providers/customer_providers.dart';
 import '../../../../features/suppliers/presentation/providers/supplier_providers.dart';
 import '../../../../features/products/presentation/providers/product_providers.dart';
-import '../../../../features/inventory/presentation/providers/inventory_providers.dart';
+
 import '../../data/services/date_time_service.dart';
 import '../../data/services/stock_market_service.dart';
 
@@ -47,9 +47,6 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
     final customersAsync = await ref.read(customersProvider.future);
     final suppliersAsync = await ref.read(suppliersProvider.future);
     final productsAsync = await ref.read(productsStreamProvider.future);
-    final inventorySummaryAsync = await ref.read(
-      inventorySummaryProvider.future,
-    );
 
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month);
@@ -147,12 +144,12 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
       incomeChangePercent: incomeChangePercent,
       expenseChangePercent: expenseChangePercent,
       netProfitChangePercent: netProfitChangePercent,
-      // Inventory gerçek verileri
-      lowStockCount: inventorySummaryAsync.lowStockCount,
-      outOfStockCount: inventorySummaryAsync.outOfStockCount,
-      totalStockValue: inventorySummaryAsync.totalStockValue,
-      warehouseCount: inventorySummaryAsync.warehouseCount,
-      recentMovementCount: inventorySummaryAsync.recentMovementCount,
+      // Inventory test verileri (geçici)
+      lowStockCount: 5,
+      outOfStockCount: 2,
+      totalStockValue: 125000.0,
+      warehouseCount: 3,
+      recentMovementCount: 8,
     );
   } catch (e) {
     // Hata durumunda test verileri döndür

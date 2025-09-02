@@ -215,6 +215,12 @@ class Invoice {
     return '${totalAmount.toStringAsFixed(2)} $currencySymbol';
   }
 
+  /// Formatlanmış toplam tutar (varsayılan para birimi ile)
+  String get formattedTotalAmountWithDefault {
+    // TODO: Bu metod varsayılan para birimi provider'ından gelen kurları kullanacak
+    return '${totalAmount.toStringAsFixed(2)} $currencySymbol';
+  }
+
   /// Formatlanmış alt toplam
   String get formattedSubtotal {
     return '${subtotal.toStringAsFixed(2)} $currencySymbol';

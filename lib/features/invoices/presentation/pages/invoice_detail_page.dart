@@ -50,13 +50,20 @@ class _InvoiceDetailView extends ConsumerWidget {
           orElse: () => invoice, // Fallback olarak eski veriyi kullan
         );
 
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+
         return Scaffold(
-          backgroundColor: TamgaciConstants.backgroundColor,
+          backgroundColor: isDark
+              ? TamgaciConstants.backgroundColorDark
+              : TamgaciConstants.backgroundColor,
           appBar: AppBar(
             title: Text(updatedInvoice.invoiceNumber),
             elevation: 0,
-            backgroundColor: TamgaciConstants.appBarColor,
-            foregroundColor: TamgaciConstants.textPrimary,
+            backgroundColor: theme.appBarTheme.backgroundColor,
+            foregroundColor: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
             leading: IconButton(
               onPressed: () => Navigator.of(context).pop(),
               icon: const Icon(Icons.arrow_back_ios),
@@ -161,7 +168,7 @@ class _InvoiceDetailView extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Fatura başlık kartı
-                _buildHeaderCard(updatedInvoice),
+                _buildHeaderCard(context, updatedInvoice),
 
                 const SizedBox(height: TamgaciConstants.spaceLG),
 
@@ -208,10 +215,13 @@ class _InvoiceDetailView extends ConsumerWidget {
   }
 
   /// Başlık kartı
-  Widget _buildHeaderCard(Invoice invoice) {
+  Widget _buildHeaderCard(BuildContext context, Invoice invoice) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final statusColor = _getStatusColor(invoice.status);
 
     return Card(
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       child: Padding(
         padding: const EdgeInsets.all(TamgaciConstants.spaceLG),
         child: Column(
@@ -226,7 +236,9 @@ class _InvoiceDetailView extends ConsumerWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
-                      color: TamgaciConstants.textPrimary,
+                      color: isDark
+                          ? TamgaciConstants.textPrimaryDark
+                          : TamgaciConstants.textPrimary,
                     ),
                   ),
                 ),
@@ -261,7 +273,9 @@ class _InvoiceDetailView extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w400,
-                  color: TamgaciConstants.textSecondary,
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
                 ),
               ),
             ],
@@ -283,7 +297,9 @@ class _InvoiceDetailView extends ConsumerWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
-                      color: TamgaciConstants.textSecondary,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -323,7 +339,6 @@ class _InvoiceDetailView extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: TamgaciConstants.spaceMD),
-
             Row(
               children: [
                 Container(
@@ -352,15 +367,13 @@ class _InvoiceDetailView extends ConsumerWidget {
                               fontWeight: FontWeight.w600,
                               color:
                                   customer.customerType == CustomerType.company
-                                  ? TamgaciConstants.primaryColor
-                                  : TamgaciConstants.secondaryColor,
+                                      ? TamgaciConstants.primaryColor
+                                      : TamgaciConstants.secondaryColor,
                             ),
                           ),
                   ),
                 ),
-
                 const SizedBox(width: TamgaciConstants.spaceMD),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,31 +432,25 @@ class _InvoiceDetailView extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: TamgaciConstants.spaceMD),
-
             _buildInfoRow(
               'Fatura Tarihi',
               DateFormat('dd/MM/yyyy').format(invoice.invoiceDate),
             ),
-
             if (invoice.dueDate != null)
               _buildInfoRow(
                 'Vade Tarihi',
                 DateFormat('dd/MM/yyyy').format(invoice.dueDate!),
               ),
-
             _buildInfoRow('Durum', invoice.statusDisplayName),
-
             if (invoice.isPaid && invoice.paidDate != null)
               _buildInfoRow(
                 'Ödeme Tarihi',
                 DateFormat('dd/MM/yyyy').format(invoice.paidDate!),
               ),
-
             _buildInfoRow(
               'Oluşturulma Tarihi',
               DateFormat('dd/MM/yyyy HH:mm').format(invoice.createdAt),
             ),
-
             if (invoice.createdAt != invoice.updatedAt)
               _buildInfoRow(
                 'Güncellenme Tarihi',
@@ -652,10 +659,8 @@ class _InvoiceDetailView extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: TamgaciConstants.spaceMD),
-
             if (invoice.paymentTerms != null)
               _buildInfoRow('Ödeme Koşulları', invoice.paymentTerms!),
-
             if (invoice.notes != null) ...[
               const SizedBox(height: TamgaciConstants.spaceMD),
               Text(

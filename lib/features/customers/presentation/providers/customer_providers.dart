@@ -7,6 +7,7 @@ import '../../../../core/database/tamgaci_database.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../../data/repositories/customer_repository_impl.dart';
+import '../../data/repositories/firebase_customer_repository.dart';
 
 // ========== BASE PROVIDERS ==========
 
@@ -17,16 +18,22 @@ final databaseProvider = FutureProvider<TamgaciDatabase>((ref) async {
 
 /// Customer repository provider
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
-  // Web platformunda boş repository döndür
-  if (kIsWeb) {
-    return _EmptyCustomerRepository();
+  try {
+    // Web platformunda Firebase kullan
+    if (kIsWeb) {
+      return FirebaseCustomerRepository();
+    }
+    
+    // Diğer platformlarda SQLite kullan
+    final databaseAsync = ref.watch(databaseProvider);
+    return databaseAsync.when(
+      data: (database) => CustomerRepositoryImpl(database),
+      loading: () => throw Exception('Database loading'),
+      error: (error, stack) => throw Exception('Database error: $error'),
+    );
+  } catch (e) {
+    throw Exception('Customer repository initialization failed: $e');
   }
-
-  final database = ref.watch(databaseProvider).value;
-  if (database == null) {
-    throw Exception('Database not initialized');
-  }
-  return CustomerRepositoryImpl(database);
 });
 
 // ========== DATA PROVIDERS ==========
@@ -494,7 +501,6 @@ class _EmptyCustomerRepository implements CustomerRepository {
     return _mockCustomers.where((customer) => customer.isActive).toList();
   }
 
-  @override
   Future<List<Customer>> getInactiveCustomers() async {
     return _mockCustomers.where((customer) => !customer.isActive).toList();
   }
@@ -544,7 +550,6 @@ class _EmptyCustomerRepository implements CustomerRepository {
     return stats;
   }
 
-  @override
   Future<Map<String, int>> getCityCustomerStats() async {
     final stats = <String, int>{};
     for (final customer in _mockCustomers) {

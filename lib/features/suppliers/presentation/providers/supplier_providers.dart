@@ -5,14 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../domain/entities/supplier.dart';
 import '../../domain/repositories/supplier_repository.dart';
+import '../../data/repositories/firebase_supplier_repository.dart';
 
 // ========== BASE PROVIDERS ==========
 
 /// Supplier repository provider
 final supplierRepositoryProvider = Provider<SupplierRepository>((ref) {
-  // Web platformunda boş repository döndür
+  // Web platformunda Firebase kullan
   if (kIsWeb) {
-    return _EmptySupplierRepository();
+    return FirebaseSupplierRepository();
   }
 
   // TODO: Gerçek repository implementasyonu eklenecek
@@ -56,16 +57,16 @@ final supplierStreamProvider = StreamProvider.family<Supplier?, String>((
 /// Tedarikçi formu state provider'ı
 final supplierFormProvider =
     StateNotifierProvider<SupplierFormNotifier, SupplierFormState>((ref) {
-      final repository = ref.watch(supplierRepositoryProvider);
-      return SupplierFormNotifier(repository);
-    });
+  final repository = ref.watch(supplierRepositoryProvider);
+  return SupplierFormNotifier(repository);
+});
 
 /// Tedarikçi operasyonları provider'ı
 final supplierOperationsProvider =
     StateNotifierProvider<SupplierOperations, SupplierOperationsState>((ref) {
-      final repository = ref.watch(supplierRepositoryProvider);
-      return SupplierOperations(repository);
-    });
+  final repository = ref.watch(supplierRepositoryProvider);
+  return SupplierOperations(repository);
+});
 
 // ========== STATE CLASSES ==========
 
@@ -324,6 +325,7 @@ class _EmptySupplierRepository implements SupplierRepository {
       bankAccount: 'TR12 3456 7890 1234 5678 90',
       creditLimit: 50000.0,
       currentBalance: 15000.0,
+      currency: 'TRY',
       status: SupplierStatus.active,
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
       updatedAt: DateTime.now(),
@@ -341,6 +343,7 @@ class _EmptySupplierRepository implements SupplierRepository {
       bankAccount: 'TR98 7654 3210 9876 5432 10',
       creditLimit: 75000.0,
       currentBalance: 25000.0,
+      currency: 'TRY',
       status: SupplierStatus.active,
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
       updatedAt: DateTime.now(),

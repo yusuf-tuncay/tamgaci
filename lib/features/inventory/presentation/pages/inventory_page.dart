@@ -1,743 +1,375 @@
+// ========== INVENTORY PAGE ==========
+// lib/features/inventory/presentation/pages/inventory_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
-import '../providers/inventory_providers.dart';
+import '../../../../core/utils/currency_helper.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../core/providers/currency_providers.dart';
+import '../providers/warehouse_providers.dart';
+import '../providers/stock_providers.dart';
+import 'warehouse_list_page.dart';
+import 'stock_list_page.dart';
 
+/// Inventory Sayfası
 class InventoryPage extends ConsumerWidget {
   const InventoryPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final inventorySummaryAsync = ref.watch(inventorySummaryProvider);
-    final inventoryStatsAsync = ref.watch(inventoryStatsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Depo Stok Yönetimi',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
-          ),
-        ),
-        backgroundColor: TamgaciConstants.backgroundColor,
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: () {
-              ref.invalidate(inventorySummaryProvider);
-              ref.invalidate(inventoryStatsProvider);
-            },
-            icon: const Icon(Icons.refresh),
-            color: TamgaciConstants.primaryColor,
-          ),
-        ],
-      ),
-      body: inventorySummaryAsync.when(
-        data: (summary) =>
-            _buildContent(context, ref, summary, inventoryStatsAsync),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: TamgaciConstants.errorColor,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Hata oluştu',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: TamgaciConstants.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: TamgaciConstants.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
+      appBar: const CustomAppBar(title: 'Depo Stok', showDrawer: true),
+      drawer: const TamgaciDrawerMenu(),
+      body: _buildBody(isDark, ref, context),
+      floatingActionButton: FloatingActionButton(
         onPressed: () {
-          TamgaciRoutes.pushNamed(context, TamgaciRoutes.createStockMovement);
+          // TODO: Stok işlemi ekleme
         },
         backgroundColor: TamgaciConstants.primaryColor,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          'Stok Hareketi',
-          style: GoogleFonts.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildContent(
-    BuildContext context,
-    WidgetRef ref,
-    InventorySummary summary,
-    AsyncValue<InventoryStats> statsAsync,
-  ) {
+  Widget _buildBody(bool isDark, WidgetRef ref, BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Özet kartları
-          _buildSummaryCards(context, summary),
-
-          const SizedBox(height: TamgaciConstants.spaceLG),
-
-          // Hızlı işlemler
-          _buildQuickActions(context),
-
-          const SizedBox(height: TamgaciConstants.spaceLG),
-
-          // Stok istatistikleri
-          _buildStockStats(context, statsAsync),
-
-          const SizedBox(height: TamgaciConstants.spaceLG),
-
-          // Son stok hareketleri
-          _buildRecentMovements(context, ref),
+          _buildWelcomeCard(isDark),
+          const SizedBox(height: 16),
+          _buildQuickActions(isDark, context),
+          const SizedBox(height: 16),
+          _buildStockOverview(isDark, ref),
         ],
       ),
     );
   }
 
-  /// Özet kartları
-  Widget _buildSummaryCards(BuildContext context, InventorySummary summary) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Stok Özeti',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
-          ),
+  Widget _buildWelcomeCard(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [Colors.orange.withOpacity(0.8), Colors.orange]
+              : [Colors.orange, Colors.orange.withOpacity(0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(height: TamgaciConstants.spaceMD),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: TamgaciConstants.isMobile(context) ? 2 : 4,
-            crossAxisSpacing: TamgaciConstants.spaceMD,
-            mainAxisSpacing: TamgaciConstants.spaceMD,
-            childAspectRatio: 1.2,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          itemCount: 4,
-          itemBuilder: (context, index) {
-            final cards = [
-              {
-                'title': 'Toplam Stok Değeri',
-                'amount': summary.formattedTotalStockValue,
-                'icon': Icons.attach_money,
-                'color': TamgaciConstants.successColor,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.successColor.withValues(alpha: 0.15),
-                    TamgaciConstants.successColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-              {
-                'title': 'Düşük Stok',
-                'amount': summary.formattedLowStockCount,
-                'icon': Icons.warning,
-                'color': TamgaciConstants.warningColor,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.warningColor.withValues(alpha: 0.15),
-                    TamgaciConstants.warningColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-              {
-                'title': 'Stokta Olmayan',
-                'amount': summary.formattedOutOfStockCount,
-                'icon': Icons.remove_shopping_cart,
-                'color': TamgaciConstants.errorColor,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.errorColor.withValues(alpha: 0.15),
-                    TamgaciConstants.errorColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-              {
-                'title': 'Depo Sayısı',
-                'amount': summary.formattedWarehouseCount,
-                'icon': Icons.warehouse,
-                'color': TamgaciConstants.primaryColor,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.primaryColor.withValues(alpha: 0.15),
-                    TamgaciConstants.primaryColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-            ];
-
-            final card = cards[index];
-            return Container(
-              padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
-              decoration: BoxDecoration(
-                gradient: card['gradient'] as LinearGradient,
-                borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-                border: Border.all(
-                  color: (card['color'] as Color).withValues(alpha: 0.2),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: (card['color'] as Color).withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: (card['color'] as Color).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      card['icon'] as IconData,
-                      color: card['color'] as Color,
-                      size: 20,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    card['amount'] as String,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: TamgaciConstants.textPrimary,
-                    ),
-                  ),
-                  Text(
-                    card['title'] as String,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: TamgaciConstants.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  /// Hızlı işlemler
-  Widget _buildQuickActions(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Hızlı İşlemler',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
-          ),
-        ),
-        const SizedBox(height: TamgaciConstants.spaceMD),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: TamgaciConstants.isMobile(context) ? 2 : 4,
-            crossAxisSpacing: TamgaciConstants.spaceMD,
-            mainAxisSpacing: TamgaciConstants.spaceMD,
-            childAspectRatio: 1.5,
-          ),
-          itemCount: 4,
-          itemBuilder: (context, index) {
-            final actions = [
-              {
-                'title': 'Stok Girişi',
-                'icon': Icons.input,
-                'color': TamgaciConstants.successColor,
-                'route': TamgaciRoutes.createStockIn,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.successColor.withValues(alpha: 0.15),
-                    TamgaciConstants.successColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-              {
-                'title': 'Stok Çıkışı',
-                'icon': Icons.output,
-                'color': TamgaciConstants.errorColor,
-                'route': TamgaciRoutes.createStockOut,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.errorColor.withValues(alpha: 0.15),
-                    TamgaciConstants.errorColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-              {
-                'title': 'Stok Düzeltme',
-                'icon': Icons.edit,
-                'color': TamgaciConstants.warningColor,
-                'route': TamgaciRoutes.createStockAdjustment,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.warningColor.withValues(alpha: 0.15),
-                    TamgaciConstants.warningColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-              {
-                'title': 'Depo Transfer',
-                'icon': Icons.swap_horiz,
-                'color': TamgaciConstants.primaryColor,
-                'route': TamgaciRoutes.createStockTransfer,
-                'gradient': LinearGradient(
-                  colors: [
-                    TamgaciConstants.primaryColor.withValues(alpha: 0.15),
-                    TamgaciConstants.primaryColor.withValues(alpha: 0.05),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              },
-            ];
-
-            final action = actions[index];
-            return InkWell(
-              onTap: () {
-                // Şimdilik products list'e yönlendir
-                TamgaciRoutes.pushNamed(context, TamgaciRoutes.productsList);
-              },
-              borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-              child: Container(
-                padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
-                decoration: BoxDecoration(
-                  gradient: action['gradient'] as LinearGradient,
-                  borderRadius: BorderRadius.circular(
-                    TamgaciConstants.radiusMD,
-                  ),
-                  border: Border.all(
-                    color: (action['color'] as Color).withValues(alpha: 0.2),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (action['color'] as Color).withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: (action['color'] as Color).withValues(
-                          alpha: 0.15,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        action['icon'] as IconData,
-                        color: action['color'] as Color,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      action['title'] as String,
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: TamgaciConstants.textPrimary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  /// Stok istatistikleri
-  Widget _buildStockStats(
-    BuildContext context,
-    AsyncValue<InventoryStats> statsAsync,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Stok İstatistikleri',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
-          ),
-        ),
-        const SizedBox(height: TamgaciConstants.spaceMD),
-        statsAsync.when(
-          data: (stats) => Column(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              // En değerli ürünler
-              _buildTopValueItems(context, stats.topValueItems),
-              const SizedBox(height: TamgaciConstants.spaceLG),
-              // En çok stoklu ürünler
-              _buildTopQuantityItems(context, stats.topQuantityItems),
+              const Icon(
+                Icons.warehouse,
+                color: Colors.white,
+                size: 32,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Depo Stok Yönetimi',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
             ],
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Text(
-              'İstatistikler yüklenemedi: $error',
-              style: GoogleFonts.poppins(color: TamgaciConstants.errorColor),
+          const SizedBox(height: 8),
+          Text(
+            'Stok hareketlerini takip edin ve yönetin',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              color: Colors.white.withOpacity(0.9),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions(bool isDark, BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
         ),
-      ],
-    );
-  }
-
-  /// En değerli ürünler
-  Widget _buildTopValueItems(BuildContext context, List<dynamic> items) {
-    return Container(
-      padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
-      decoration: BoxDecoration(
-        color: TamgaciConstants.cardColor,
-        borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-        boxShadow: TamgaciConstants.shadowLight,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'En Değerli Ürünler',
+            'Hızlı İşlemler',
             style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: TamgaciConstants.textPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : TamgaciConstants.textPrimary,
             ),
           ),
-          const SizedBox(height: TamgaciConstants.spaceMD),
-          if (items.isEmpty)
-            Center(
-              child: Text(
-                'Henüz stok verisi bulunmuyor',
-                style: GoogleFonts.poppins(
-                  color: TamgaciConstants.textSecondary,
-                ),
-              ),
-            )
-          else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length > 5 ? 5 : items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: TamgaciConstants.primaryColor.withValues(
-                      alpha: 0.1,
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: GoogleFonts.poppins(
-                        color: TamgaciConstants.primaryColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    'Ürün ${item.productId}',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-                  ),
-                  subtitle: Text(
-                    'Miktar: ${item.currentQuantity}',
-                    style: GoogleFonts.poppins(
-                      color: TamgaciConstants.textSecondary,
-                    ),
-                  ),
-                  trailing: Text(
-                    '₺${(item.currentQuantity * item.averageCost).toStringAsFixed(2)}',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: TamgaciConstants.successColor,
-                    ),
+          const SizedBox(height: 16),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.2,
+            children: [
+              _buildActionCard('Stok Girişi', Icons.add_box, Colors.green, () {
+                // TODO: Stok girişi
+              }, isDark),
+              _buildActionCard('Stok Çıkışı', Icons.remove_circle, Colors.red,
+                  () {
+                // TODO: Stok çıkışı
+              }, isDark),
+              _buildActionCard('Stok Düzeltme', Icons.edit, Colors.blue, () {
+                // TODO: Stok düzeltme
+              }, isDark),
+              _buildActionCard('Depo Listesi', Icons.list, Colors.purple, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WarehouseListPage(),
                   ),
                 );
-              },
-            ),
+              }, isDark),
+              _buildActionCard('Stok Listesi', Icons.inventory, Colors.teal, () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StockListPage(),
+                  ),
+                );
+              }, isDark),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  /// En çok stoklu ürünler
-  Widget _buildTopQuantityItems(BuildContext context, List<dynamic> items) {
-    return Container(
-      padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
-      decoration: BoxDecoration(
-        color: TamgaciConstants.cardColor,
-        borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-        boxShadow: TamgaciConstants.shadowLight,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'En Çok Stoklu Ürünler',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: TamgaciConstants.textPrimary,
-            ),
-          ),
-          const SizedBox(height: TamgaciConstants.spaceMD),
-          if (items.isEmpty)
-            Center(
-              child: Text(
-                'Henüz stok verisi bulunmuyor',
-                style: GoogleFonts.poppins(
-                  color: TamgaciConstants.textSecondary,
-                ),
-              ),
-            )
-          else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: items.length > 5 ? 5 : items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: TamgaciConstants.warningColor.withValues(
-                      alpha: 0.1,
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: GoogleFonts.poppins(
-                        color: TamgaciConstants.warningColor,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    'Ürün ${item.productId}',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-                  ),
-                  subtitle: Text(
-                    'Ortalama Maliyet: ₺${item.averageCost.toStringAsFixed(2)}',
-                    style: GoogleFonts.poppins(
-                      color: TamgaciConstants.textSecondary,
-                    ),
-                  ),
-                  trailing: Text(
-                    '${item.currentQuantity} adet',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: TamgaciConstants.primaryColor,
-                    ),
-                  ),
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
-  /// Son stok hareketleri
-  Widget _buildRecentMovements(BuildContext context, WidgetRef ref) {
-    final recentMovementsAsync = ref.watch(recentStockMovementsProvider);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildActionCard(String title, IconData icon, Color color,
+      VoidCallback onTap, bool isDark) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
             Text(
-              'Son Stok Hareketleri',
+              title,
+              textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: TamgaciConstants.textPrimary,
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // Şimdilik products list'e yönlendir
-                TamgaciRoutes.pushNamed(context, TamgaciRoutes.productsList);
-              },
-              child: Text(
-                'Tümünü Gör',
-                style: GoogleFonts.poppins(
-                  color: TamgaciConstants.primaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
               ),
             ),
           ],
         ),
-        const SizedBox(height: TamgaciConstants.spaceMD),
-        recentMovementsAsync.when(
-          data: (movements) => Container(
-            padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
-            decoration: BoxDecoration(
-              color: TamgaciConstants.cardColor,
-              borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-              boxShadow: TamgaciConstants.shadowLight,
-            ),
-            child: movements.isEmpty
-                ? Center(
-                    child: Text(
-                      'Henüz stok hareketi bulunmuyor',
-                      style: GoogleFonts.poppins(
-                        color: TamgaciConstants.textSecondary,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: movements.length > 5 ? 5 : movements.length,
-                    itemBuilder: (context, index) {
-                      final movement = movements[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: _getMovementTypeColor(
-                            movement.movementType,
-                          ).withValues(alpha: 0.1),
-                          child: Icon(
-                            _getMovementTypeIcon(movement.movementType),
-                            color: _getMovementTypeColor(movement.movementType),
-                            size: 20,
-                          ),
-                        ),
-                        title: Text(
-                          '${movement.movementType.displayName} - ${movement.quantity} adet',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Ürün ID: ${movement.productId}',
-                          style: GoogleFonts.poppins(
-                            color: TamgaciConstants.textSecondary,
-                          ),
-                        ),
-                        trailing: Text(
-                          '₺${movement.totalAmount.toStringAsFixed(2)}',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: _getMovementTypeColor(movement.movementType),
-                          ),
-                        ),
-                        onTap: () {
-                          // Şimdilik products list'e yönlendir
-                          TamgaciRoutes.pushNamed(
-                            context,
-                            TamgaciRoutes.productsList,
-                          );
-                        },
-                      );
-                    },
+      ),
+    );
+  }
+
+  Widget _buildStockOverview(bool isDark, WidgetRef ref) {
+    final selectedCurrency = ref.watch(selectedCurrencyProvider);
+    final warehousesAsync = ref.watch(warehousesProvider);
+    final stocksAsync = ref.watch(stocksProvider);
+    final lowStocksAsync = ref.watch(lowStocksProvider);
+    final totalStockValueAsync = ref.watch(totalStockValueProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Depo Durumu',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                ),
+              ),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.currency_exchange,
+                    size: 16,
+                    color: TamgaciConstants.primaryColor,
                   ),
+                  const SizedBox(width: 4),
+                  Text(
+                    CurrencyHelper.getCurrencySymbol(selectedCurrency.code),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: TamgaciConstants.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Center(
-            child: Text(
-              'Hareketler yüklenemedi: $error',
-              style: GoogleFonts.poppins(color: TamgaciConstants.errorColor),
+          const SizedBox(height: 16),
+          warehousesAsync.when(
+            data: (warehouses) => stocksAsync.when(
+              data: (stocks) => lowStocksAsync.when(
+                data: (lowStocks) => totalStockValueAsync.when(
+                  data: (totalStockValue) {
+                    final totalCapacity = warehouses.fold<double>(
+                        0, (sum, warehouse) => sum + (warehouse.capacity ?? 0));
+                    final activeWarehouses =
+                        warehouses.where((w) => w.isActive).length;
+                    final defaultWarehouse =
+                        warehouses.where((w) => w.isDefault).firstOrNull;
+
+                    return Column(
+                      children: [
+                        _buildStockItem(
+                            'Toplam Depo',
+                            warehouses.length.toString(),
+                            Icons.warehouse,
+                            Colors.blue,
+                            isDark),
+                        const SizedBox(height: 8),
+                        _buildStockItem(
+                            'Aktif Depo',
+                            activeWarehouses.toString(),
+                            Icons.check_circle,
+                            Colors.green,
+                            isDark),
+                        const SizedBox(height: 8),
+                        _buildStockItem(
+                            'Toplam Kapasite',
+                            '${totalCapacity.toStringAsFixed(0)} m²',
+                            Icons.straighten,
+                            Colors.orange,
+                            isDark),
+                        const SizedBox(height: 8),
+                        _buildStockItem(
+                            'Varsayılan Depo',
+                            defaultWarehouse?.name ?? 'Yok',
+                            Icons.star,
+                            Colors.purple,
+                            isDark),
+                        const SizedBox(height: 8),
+                        _buildStockItem('Toplam Stok', stocks.length.toString(),
+                            Icons.inventory, Colors.indigo, isDark),
+                        const SizedBox(height: 8),
+                        _buildStockItem(
+                            'Düşük Stok',
+                            lowStocks.length.toString(),
+                            Icons.warning,
+                            Colors.red,
+                            isDark),
+                        const SizedBox(height: 8),
+                        _buildStockItem(
+                            'Toplam Değer',
+                            '₺${totalStockValue.toStringAsFixed(0)}',
+                            Icons.attach_money,
+                            Colors.teal,
+                            isDark),
+                      ],
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Text('Hata: $error'),
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Text('Hata: $error'),
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Text('Hata: $error'),
             ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Text('Hata: $error'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStockItem(
+      String title, String value, IconData icon, Color color, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
-  }
-
-  /// Hareket türüne göre renk döndür
-  Color _getMovementTypeColor(dynamic movementType) {
-    switch (movementType.name) {
-      case 'in_':
-        return TamgaciConstants.successColor;
-      case 'out':
-        return TamgaciConstants.errorColor;
-      case 'adjustment':
-        return TamgaciConstants.warningColor;
-      case 'transfer':
-        return TamgaciConstants.primaryColor;
-      default:
-        return TamgaciConstants.textSecondary;
-    }
-  }
-
-  /// Hareket türüne göre ikon döndür
-  IconData _getMovementTypeIcon(dynamic movementType) {
-    switch (movementType.name) {
-      case 'in_':
-        return Icons.input;
-      case 'out':
-        return Icons.output;
-      case 'adjustment':
-        return Icons.edit;
-      case 'transfer':
-        return Icons.swap_horiz;
-      default:
-        return Icons.inventory;
-    }
   }
 }

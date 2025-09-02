@@ -7,7 +7,6 @@ class ThemeToggleButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
 
     return IconButton(
@@ -15,7 +14,8 @@ class ThemeToggleButton extends ConsumerWidget {
         themeNotifier.toggleTheme();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tema ${themeNotifier.getThemeName()} moduna değiştirildi'),
+            content: Text(
+                'Tema ${themeNotifier.getThemeName()} moduna değiştirildi'),
             duration: const Duration(seconds: 2),
             behavior: SnackBarBehavior.floating,
           ),
@@ -109,7 +109,7 @@ class ThemeSelectorDialog extends ConsumerWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
           color: isSelected
-              ? Theme.of(context).colorScheme.primary.withOpacity(0.1)
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
               : Colors.transparent,
           border: isSelected
               ? Border.all(
@@ -134,7 +134,8 @@ class ThemeSelectorDialog extends ConsumerWidget {
                   Text(
                     title,
                     style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? Theme.of(context).colorScheme.primary
                           : Theme.of(context).colorScheme.onSurface,
@@ -143,7 +144,10 @@ class ThemeSelectorDialog extends ConsumerWidget {
                   Text(
                     description,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.7),
                         ),
                   ),
                 ],

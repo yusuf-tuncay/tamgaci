@@ -30,8 +30,8 @@ class IncomeRepositoryImpl implements IncomeRepository {
   Stream<List<Income>> watchAllIncomes() {
     try {
       return _database.incomeDao.getAllIncomes().map(
-        (entities) => entities.map((entity) => entity.toDomain()).toList(),
-      );
+            (entities) => entities.map((entity) => entity.toDomain()).toList(),
+          );
     } catch (e) {
       throw Exception('Gelirler izlenirken hata oluştu: $e');
     }
@@ -57,11 +57,11 @@ class IncomeRepositoryImpl implements IncomeRepository {
       if (intId == null) return Stream.value(null);
 
       return _database.incomeDao.getAllIncomes().map(
-        (entities) => entities
-            .where((entity) => entity.id == intId)
-            .firstOrNull
-            ?.toDomain(),
-      );
+            (entities) => entities
+                .where((entity) => entity.id == intId)
+                .firstOrNull
+                ?.toDomain(),
+          );
     } catch (e) {
       throw Exception('Gelir izlenirken hata oluştu: $e');
     }
@@ -115,40 +115,34 @@ class IncomeRepositoryImpl implements IncomeRepository {
   @override
   Future<List<Income>> searchIncomes(String query) async {
     try {
-      final entities = await _database.incomeDao
-          .searchIncomes('%$query%')
-          .first;
+      final entities =
+          await _database.incomeDao.searchIncomes('%$query%').first;
       return entities.map((entity) => entity.toDomain()).toList();
     } catch (e) {
       throw Exception('Gelir arama yapılırken hata oluştu: $e');
     }
   }
 
-  @override
   Future<List<Income>> getIncomesByCategory(String categoryId) async {
     try {
-      final entities = await _database.incomeDao
-          .getIncomesByCategory(categoryId)
-          .first;
+      final entities =
+          await _database.incomeDao.getIncomesByCategory(categoryId).first;
       return entities.map((entity) => entity.toDomain()).toList();
     } catch (e) {
       throw Exception('Kategoriye göre gelirler getirilirken hata oluştu: $e');
     }
   }
 
-  @override
   Future<List<Income>> getIncomesByStatus(IncomeStatus status) async {
     try {
-      final entities = await _database.incomeDao
-          .getIncomesByStatus(status.value)
-          .first;
+      final entities =
+          await _database.incomeDao.getIncomesByStatus(status.value).first;
       return entities.map((entity) => entity.toDomain()).toList();
     } catch (e) {
       throw Exception('Duruma göre gelirler getirilirken hata oluştu: $e');
     }
   }
 
-  @override
   Future<List<Income>> getIncomesByDateRange(
     DateTime startDate,
     DateTime endDate,
@@ -170,9 +164,8 @@ class IncomeRepositoryImpl implements IncomeRepository {
   @override
   Future<List<IncomeCategory>> getAllIncomeCategories() async {
     try {
-      final categoryEntities = await _database.incomeCategoryDao
-          .getAllCategories()
-          .first;
+      final categoryEntities =
+          await _database.incomeCategoryDao.getAllCategories().first;
       return categoryEntities.map((entity) => entity.toDomain()).toList();
     } catch (e) {
       throw Exception('Gelir kategorileri getirilirken hata oluştu: $e');
@@ -183,14 +176,13 @@ class IncomeRepositoryImpl implements IncomeRepository {
   Stream<List<IncomeCategory>> watchAllIncomeCategories() {
     try {
       return _database.incomeCategoryDao.getAllCategories().map(
-        (entities) => entities.map((entity) => entity.toDomain()).toList(),
-      );
+            (entities) => entities.map((entity) => entity.toDomain()).toList(),
+          );
     } catch (e) {
       throw Exception('Gelir kategorileri izlenirken hata oluştu: $e');
     }
   }
 
-  @override
   Future<IncomeCategory?> getIncomeCategoryById(String id) async {
     try {
       final intId = int.tryParse(id);
@@ -237,7 +229,6 @@ class IncomeRepositoryImpl implements IncomeRepository {
 
   // ========== STATISTICS OPERATIONS ==========
 
-  @override
   Future<double> getTotalIncome() async {
     try {
       final total = await _database.incomeDao.getTotalIncome();
@@ -247,7 +238,6 @@ class IncomeRepositoryImpl implements IncomeRepository {
     }
   }
 
-  @override
   Future<double> getTotalIncomeByCategory(String categoryId) async {
     try {
       final total = await _database.incomeDao.getTotalIncomeByCategory(
@@ -261,7 +251,6 @@ class IncomeRepositoryImpl implements IncomeRepository {
     }
   }
 
-  @override
   Future<double> getTotalIncomeByDateRange(
     DateTime startDate,
     DateTime endDate,
@@ -279,7 +268,6 @@ class IncomeRepositoryImpl implements IncomeRepository {
     }
   }
 
-  @override
   Future<int> getIncomeCount() async {
     try {
       final count = await _database.incomeDao.getIncomeCount();
@@ -289,7 +277,6 @@ class IncomeRepositoryImpl implements IncomeRepository {
     }
   }
 
-  @override
   Future<int> getIncomeCountByStatus(IncomeStatus status) async {
     try {
       final count = await _database.incomeDao.getIncomeCountByStatus(

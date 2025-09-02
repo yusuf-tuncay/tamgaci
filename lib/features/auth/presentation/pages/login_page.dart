@@ -28,8 +28,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: TamgaciConstants.pagePadding(context),
@@ -39,29 +44,29 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: TamgaciConstants.spaceXL),
-                
+
                 // Logo ve başlık
-                _buildHeader(),
-                
+                _buildHeader(isDark),
+
                 const SizedBox(height: TamgaciConstants.spaceXXL),
-                
+
                 // Giriş formu
-                _buildLoginForm(),
-                
+                _buildLoginForm(isDark),
+
                 const SizedBox(height: TamgaciConstants.spaceLG),
-                
+
                 // Giriş butonu
                 _buildLoginButton(),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceMD),
-                
+
                 // Şifremi unuttum
-                _buildForgotPassword(),
-                
+                _buildForgotPassword(isDark),
+
                 const SizedBox(height: TamgaciConstants.spaceXL),
-                
+
                 // Kayıt ol linki
-                _buildRegisterLink(),
+                _buildRegisterLink(isDark),
               ],
             ),
           ),
@@ -70,7 +75,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isDark) {
     return Column(
       children: [
         // Logo
@@ -78,7 +83,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           width: 100,
           height: 100,
           decoration: BoxDecoration(
-            color: TamgaciConstants.primaryColor,
+            color: isDark
+                ? TamgaciConstants.primaryColorDark
+                : TamgaciConstants.primaryColor,
             borderRadius: BorderRadius.circular(TamgaciConstants.radiusLG),
             boxShadow: TamgaciConstants.shadowMedium,
           ),
@@ -88,63 +95,92 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             color: TamgaciConstants.textOnPrimary,
           ),
         ),
-        
+
         const SizedBox(height: TamgaciConstants.spaceLG),
-        
+
         // Başlık
         Text(
           TamgaciConstants.appName,
           style: GoogleFonts.poppins(
             fontSize: 32,
             fontWeight: FontWeight.w700,
-            color: TamgaciConstants.primaryColor,
+            color: isDark
+                ? TamgaciConstants.primaryColorDark
+                : TamgaciConstants.primaryColor,
           ),
         ),
-        
+
         const SizedBox(height: TamgaciConstants.spaceSM),
-        
+
         // Alt başlık
         Text(
           'Hesabınıza giriş yapın',
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w400,
-            color: TamgaciConstants.textSecondary,
+            color: isDark
+                ? TamgaciConstants.textSecondaryDark
+                : TamgaciConstants.textSecondary,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildLoginForm() {
+  Widget _buildLoginForm(bool isDark) {
     return Column(
       children: [
         // E-posta alanı
         TextFormField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
+          style: TextStyle(
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
+          ),
+          decoration: InputDecoration(
             labelText: 'E-posta',
             hintText: 'ornek@email.com',
-            prefixIcon: Icon(Icons.email_outlined),
+            prefixIcon: const Icon(Icons.email_outlined),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+            ),
+            filled: true,
+            fillColor: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+            labelStyle: TextStyle(
+              color: isDark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary,
+            ),
+            hintStyle: TextStyle(
+              color: isDark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary,
+            ),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'E-posta adresini giriniz';
+              return 'E-posta adresi gerekli';
             }
-            if (!value.contains('@')) {
-              return 'Geçerli bir e-posta adresi giriniz';
+            if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+              return 'Geçerli bir e-posta adresi girin';
             }
             return null;
           },
         ),
-        
+
         const SizedBox(height: TamgaciConstants.spaceLG),
-        
+
         // Şifre alanı
         TextFormField(
           controller: _passwordController,
           obscureText: !_isPasswordVisible,
+          style: TextStyle(
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
+          ),
           decoration: InputDecoration(
             labelText: 'Şifre',
             hintText: '••••••••',
@@ -161,13 +197,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     : Icons.visibility_outlined,
               ),
             ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+            ),
+            filled: true,
+            fillColor: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+            labelStyle: TextStyle(
+              color: isDark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary,
+            ),
+            hintStyle: TextStyle(
+              color: isDark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary,
+            ),
           ),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Şifrenizi giriniz';
+              return 'Şifre gerekli';
             }
             if (value.length < 6) {
-              return 'Şifre en az 6 karakter olmalıdır';
+              return 'Şifre en az 6 karakter olmalı';
             }
             return null;
           },
@@ -198,7 +249,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  Widget _buildForgotPassword() {
+  Widget _buildForgotPassword(bool isDark) {
     return TextButton(
       onPressed: () {
         TamgaciRoutes.pushNamed(context, TamgaciRoutes.forgotPassword);
@@ -208,13 +259,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         style: GoogleFonts.poppins(
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: TamgaciConstants.primaryColor,
+          color: isDark
+              ? TamgaciConstants.primaryColorDark
+              : TamgaciConstants.primaryColor,
         ),
       ),
     );
   }
 
-  Widget _buildRegisterLink() {
+  Widget _buildRegisterLink(bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -222,7 +275,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           'Hesabınız yok mu? ',
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: TamgaciConstants.textSecondary,
+            color: isDark
+                ? TamgaciConstants.textSecondaryDark
+                : TamgaciConstants.textSecondary,
           ),
         ),
         TextButton(
@@ -234,7 +289,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: TamgaciConstants.primaryColor,
+              color: isDark
+                  ? TamgaciConstants.primaryColorDark
+                  : TamgaciConstants.primaryColor,
             ),
           ),
         ),

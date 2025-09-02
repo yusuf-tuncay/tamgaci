@@ -86,10 +86,12 @@ class _EditCustomerPageState extends ConsumerState<EditCustomerPage> {
     _isActive = customer.isActive;
     _isInitialized = true;
 
-    // Form state'ini güncelle
-    ref
-        .read(customerFormProvider.notifier)
-        .initializeForEdit(widget.customerId);
+    // Form state'ini güncelle - build sırasında değil, sonrasında
+    Future.microtask(() {
+      ref
+          .read(customerFormProvider.notifier)
+          .initializeForEdit(widget.customerId);
+    });
   }
 
   /// Düzenleme formu
@@ -288,9 +290,8 @@ class _EditCustomerPageState extends ConsumerState<EditCustomerPage> {
                         type.displayName,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected
                               ? TamgaciConstants.primaryColor
                               : TamgaciConstants.textPrimary,

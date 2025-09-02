@@ -11,6 +11,7 @@ class Product {
   final int minStockLevel;
   final String unit;
   final double taxRate;
+  final String currency;
   final bool isActive;
   final String? imageUrl;
   final DateTime createdAt;
@@ -28,6 +29,7 @@ class Product {
     required this.minStockLevel,
     required this.unit,
     required this.taxRate,
+    this.currency = 'TRY',
     this.isActive = true,
     this.imageUrl,
     required this.createdAt,
@@ -60,6 +62,7 @@ class Product {
     int? minStockLevel,
     String? unit,
     double? taxRate,
+    String? currency,
     bool? isActive,
     String? imageUrl,
     DateTime? createdAt,
@@ -77,6 +80,7 @@ class Product {
       minStockLevel: minStockLevel ?? this.minStockLevel,
       unit: unit ?? this.unit,
       taxRate: taxRate ?? this.taxRate,
+      currency: currency ?? this.currency,
       isActive: isActive ?? this.isActive,
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,

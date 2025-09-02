@@ -8,6 +8,9 @@ import '../../core/providers/theme_provider.dart';
 import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
 import '../../features/user_profile/domain/entities/user_profile.dart';
 import 'theme_selector_dialog.dart';
+import '../../core/providers/currency_providers.dart';
+import '../../core/domain/entities/currency.dart';
+import '../../core/services/exchange_rate_service.dart';
 
 // ========== DRAWER MENU MODELS ==========
 
@@ -184,6 +187,20 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       route: TamgaciRoutes.inventory,
     ),
 
+    // Depo Listesi
+    const DrawerMenuItem(
+      id: 'warehouse-list',
+      title: 'Depo Listesi',
+      icon: Icons.list_alt_outlined,
+      route: TamgaciRoutes.warehouseList,
+    ),
+    const DrawerMenuItem(
+      id: 'stock-list',
+      title: 'Stok Listesi',
+      icon: Icons.inventory_outlined,
+      route: TamgaciRoutes.stockList,
+    ),
+
     // Raporlar
     const DrawerMenuItem(
       id: 'reports',
@@ -233,9 +250,14 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     final userProfileAsync = ref.watch(userProfileProvider);
     final menuItems = ref.watch(drawerMenuItemsProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Drawer(
       width: widget.width ?? TamgaciConstants.sidebarWidth(context),
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       child: Column(
         children: [
           // Drawer Header
@@ -257,6 +279,9 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
   /// Drawer header'ını oluşturur
   Widget _buildDrawerHeader(UserProfile userProfile) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       height: widget.headerHeight ??
           TamgaciConstants.getResponsiveValue(
@@ -267,11 +292,16 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             wideDesktop: 280.0,
           ),
       width: double.infinity,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [TamgaciConstants.primaryColor, TamgaciConstants.primaryDark],
+          colors: isDark
+              ? [
+                  TamgaciConstants.primaryColorDark,
+                  TamgaciConstants.primaryDarkDark
+                ]
+              : [TamgaciConstants.primaryColor, TamgaciConstants.primaryDark],
         ),
       ),
       child: SafeArea(
@@ -281,6 +311,11 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Üst kısım - Kurlar
+              _buildCurrencyRates(),
+
+              const SizedBox(height: TamgaciConstants.spaceMD),
+
               // Kullanıcı Avatar'ı
               _buildUserAvatar(userProfile),
 
@@ -528,12 +563,82 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     );
   }
 
+  /// Kurlar widget'ı
+  Widget _buildCurrencyRates() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final usdEurRates = ref.watch(usdEurRatesProvider);
+        final selectedCurrency = ref.watch(selectedCurrencyProvider);
+
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            _buildCurrencyRateItem(usdEurRates['USD']!, selectedCurrency),
+            const SizedBox(width: 8),
+            _buildCurrencyRateItem(usdEurRates['EUR']!, selectedCurrency),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Tek kur öğesi
+  Widget _buildCurrencyRateItem(Currency currency, Currency selectedCurrency) {
+    final rateText = ExchangeRateService.formatCurrencyRate(
+      currency: currency,
+      selectedCurrency: selectedCurrency,
+      decimalPlaces: 2,
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            currency.symbol,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 2),
+          Text(
+            rateText.split('=').last.trim(),
+            style: GoogleFonts.poppins(
+              fontSize: 9,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Menü öğelerini oluşturur
   Widget _buildMenuItems(List<DrawerMenuItem> menuItems, String activeRoute) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: menuItems.length,
-      separatorBuilder: (context, index) => const Divider(height: 1),
+      separatorBuilder: (context, index) => Divider(
+        height: 1,
+        color: isDark
+            ? TamgaciConstants.textSecondaryDark
+            : TamgaciConstants.textSecondary,
+      ),
       itemBuilder: (context, index) {
         final item = menuItems[index];
         final isActive = item.route == activeRoute;
@@ -542,8 +647,12 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
           leading: Icon(
             item.icon,
             color: isActive
-                ? TamgaciConstants.primaryColor
-                : TamgaciConstants.textSecondary,
+                ? (isDark
+                    ? TamgaciConstants.primaryColorDark
+                    : TamgaciConstants.primaryColor)
+                : (isDark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary),
           ),
           title: Text(
             item.title,
@@ -551,8 +660,12 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               fontSize: 14,
               fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
               color: isActive
-                  ? TamgaciConstants.primaryColor
-                  : TamgaciConstants.textPrimary,
+                  ? (isDark
+                      ? TamgaciConstants.primaryColorDark
+                      : TamgaciConstants.primaryColor)
+                  : (isDark
+                      ? TamgaciConstants.textPrimaryDark
+                      : TamgaciConstants.textPrimary),
             ),
           ),
           trailing: item.badgeCount != null && item.badgeCount! > 0
@@ -576,7 +689,10 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 )
               : null,
           selected: isActive,
-          selectedTileColor: TamgaciConstants.primaryColor.withValues(
+          selectedTileColor: (isDark
+                  ? TamgaciConstants.primaryColorDark
+                  : TamgaciConstants.primaryColor)
+              .withValues(
             alpha: 0.1,
           ),
           onTap: () {
@@ -590,12 +706,22 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
   /// Drawer footer'ını oluşturur
   Widget _buildDrawerFooter() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: TamgaciConstants.cardColor,
+      decoration: BoxDecoration(
+        color: isDark
+            ? TamgaciConstants.cardColorDark
+            : TamgaciConstants.cardColor,
         border: Border(
-          top: BorderSide(color: TamgaciConstants.borderColor, width: 1),
+          top: BorderSide(
+            color: isDark
+                ? TamgaciConstants.textSecondaryDark
+                : TamgaciConstants.borderColor,
+            width: 1,
+          ),
         ),
       ),
       child: Column(
@@ -618,7 +744,10 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 side: BorderSide(
-                  color: TamgaciConstants.primaryColor.withValues(alpha: 0.5),
+                  color: (isDark
+                          ? TamgaciConstants.primaryColorDark
+                          : TamgaciConstants.primaryColor)
+                      .withValues(alpha: 0.5),
                 ),
               ),
             ),
@@ -633,14 +762,12 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               },
               icon: Consumer(
                 builder: (context, ref, child) {
-                  final themeMode = ref.watch(themeProvider);
                   final themeNotifier = ref.read(themeProvider.notifier);
                   return Icon(themeNotifier.getThemeIcon(), size: 18);
                 },
               ),
               label: Consumer(
                 builder: (context, ref, child) {
-                  final themeMode = ref.watch(themeProvider);
                   final themeNotifier = ref.read(themeProvider.notifier);
                   return Text(
                     'Tema: ${themeNotifier.getThemeName()}',
@@ -654,7 +781,10 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 side: BorderSide(
-                  color: TamgaciConstants.primaryColor.withValues(alpha: 0.5),
+                  color: (isDark
+                          ? TamgaciConstants.primaryColorDark
+                          : TamgaciConstants.primaryColor)
+                      .withValues(alpha: 0.5),
                 ),
               ),
             ),

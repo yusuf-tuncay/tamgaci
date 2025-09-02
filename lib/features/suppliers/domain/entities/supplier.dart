@@ -25,6 +25,7 @@ class Supplier {
   final String bankAccount;
   final double creditLimit;
   final double currentBalance;
+  final String currency;
   final SupplierStatus status;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -42,6 +43,7 @@ class Supplier {
     required this.bankAccount,
     required this.creditLimit,
     required this.currentBalance,
+    required this.currency,
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -61,6 +63,7 @@ class Supplier {
     String? bankAccount,
     double? creditLimit,
     double? currentBalance,
+    String? currency,
     SupplierStatus? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -78,6 +81,7 @@ class Supplier {
       bankAccount: bankAccount ?? this.bankAccount,
       creditLimit: creditLimit ?? this.creditLimit,
       currentBalance: currentBalance ?? this.currentBalance,
+      currency: currency ?? this.currency,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -99,6 +103,7 @@ class Supplier {
       bankAccount: json['bankAccount'] as String,
       creditLimit: (json['creditLimit'] as num).toDouble(),
       currentBalance: (json['currentBalance'] as num).toDouble(),
+      currency: json['currency'] as String,
       status: SupplierStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => SupplierStatus.active,
@@ -123,6 +128,7 @@ class Supplier {
       'bankAccount': bankAccount,
       'creditLimit': creditLimit,
       'currentBalance': currentBalance,
+      'currency': currency,
       'status': status.name,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),

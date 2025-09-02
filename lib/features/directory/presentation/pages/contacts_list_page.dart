@@ -41,19 +41,20 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
   @override
   Widget build(BuildContext context) {
     final contactState = ref.watch(contactOperationsProvider);
-    final searchQuery = ref.watch(contactSearchQueryProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
       appBar: const CustomAppBar(
         title: 'Fihrist',
         showBackButton: true,
       ),
       body: Column(
         children: [
-          _buildSearchAndFilterSection(),
+          _buildSearchAndFilterSection(isDark),
           Expanded(
-            child: _buildContactsList(contactState),
+            child: _buildContactsList(contactState, isDark),
           ),
         ],
       ),
@@ -65,7 +66,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
     );
   }
 
-  Widget _buildSearchAndFilterSection() {
+  Widget _buildSearchAndFilterSection(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -94,7 +95,13 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                 borderSide: BorderSide.none,
               ),
               filled: true,
-              fillColor: Colors.white,
+              fillColor: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+              hintStyle: TextStyle(
+                color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+              ),
+            ),
+            style: TextStyle(
+              color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
             ),
             onChanged: (value) {
               ref.read(contactSearchQueryProvider.notifier).state = value;
@@ -113,13 +120,13 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip(null, 'Tümü'),
+                _buildFilterChip(null, 'Tümü', isDark),
                 const SizedBox(width: 8),
-                _buildFilterChip(ContactType.customer, 'Müşteriler'),
+                _buildFilterChip(ContactType.customer, 'Müşteriler', isDark),
                 const SizedBox(width: 8),
-                _buildFilterChip(ContactType.supplier, 'Tedarikçiler'),
+                _buildFilterChip(ContactType.supplier, 'Tedarikçiler', isDark),
                 const SizedBox(width: 8),
-                _buildFilterChip(ContactType.both, 'Her İkisi'),
+                _buildFilterChip(ContactType.both, 'Her İkisi', isDark),
               ],
             ),
           ),
@@ -128,7 +135,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
     );
   }
 
-  Widget _buildFilterChip(ContactType? type, String label) {
+  Widget _buildFilterChip(ContactType? type, String label, bool isDark) {
     final isSelected = _selectedType == type;
 
     return FilterChip(
@@ -146,17 +153,19 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
           ref.read(contactOperationsProvider.notifier).loadContacts();
         }
       },
-      backgroundColor: Colors.white,
-      selectedColor: TamgaciConstants.primaryColor.withOpacity(0.2),
+      backgroundColor: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+      selectedColor: TamgaciConstants.primaryColor.withValues(alpha: 0.2),
       checkmarkColor: TamgaciConstants.primaryColor,
       labelStyle: TextStyle(
-        color: isSelected ? TamgaciConstants.primaryColor : Colors.grey[600],
+        color: isSelected 
+          ? TamgaciConstants.primaryColor 
+          : (isDark ? TamgaciConstants.textSecondaryDark : Colors.grey[600]),
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
   }
 
-  Widget _buildContactsList(ContactOperationsState state) {
+  Widget _buildContactsList(ContactOperationsState state, bool isDark) {
     if (state.isLoading) {
       return const LoadingWidget();
     }
@@ -186,7 +195,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
               textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: isDark ? TamgaciConstants.textSecondaryDark : Colors.grey[600],
               ),
             ),
             const SizedBox(height: 16),
@@ -219,15 +228,16 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
       itemCount: state.contacts.length,
       itemBuilder: (context, index) {
         final contact = state.contacts[index];
-        return _buildContactCard(contact);
+        return _buildContactCard(contact, isDark);
       },
     );
   }
 
-  Widget _buildContactCard(Contact contact) {
+  Widget _buildContactCard(Contact contact, bool isDark) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -241,9 +251,9 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
               // Avatar
               CircleAvatar(
                 radius: 24,
-                backgroundColor: _getContactTypeColor(contact.type),
+                backgroundColor: _getContactTypeColor(ContactType.fromValue(contact.type)),
                 child: Icon(
-                  _getContactTypeIcon(contact.type),
+                  _getContactTypeIcon(ContactType.fromValue(contact.type)),
                   color: Colors.white,
                   size: 24,
                 ),
@@ -262,7 +272,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? TamgaciConstants.textPrimaryDark : Colors.grey[800],
                             ),
                           ),
                         ),
@@ -276,10 +286,10 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      contact.type.displayName,
+                      ContactType.fromValue(contact.type).displayName,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: _getContactTypeColor(contact.type),
+                        color: _getContactTypeColor(ContactType.fromValue(contact.type)),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -290,14 +300,14 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                           Icon(
                             Icons.phone,
                             size: 14,
-                            color: Colors.grey[600],
+                            color: isDark ? TamgaciConstants.textSecondaryDark : Colors.grey[600],
                           ),
                           const SizedBox(width: 4),
                           Text(
                             contact.phone!,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: isDark ? TamgaciConstants.textSecondaryDark : Colors.grey[600],
                             ),
                           ),
                         ],
@@ -310,7 +320,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                           Icon(
                             Icons.email,
                             size: 14,
-                            color: Colors.grey[600],
+                            color: isDark ? TamgaciConstants.textSecondaryDark : Colors.grey[600],
                           ),
                           const SizedBox(width: 4),
                           Expanded(
@@ -318,7 +328,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                               contact.email!,
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: isDark ? TamgaciConstants.textSecondaryDark : Colors.grey[600],
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -339,7 +349,7 @@ class _ContactsListPageState extends ConsumerState<ContactsListPage> {
                 icon: Icon(
                   contact.isFavorite ? Icons.favorite : Icons.favorite_border,
                   color:
-                      contact.isFavorite ? Colors.red[400] : Colors.grey[400],
+                      contact.isFavorite ? Colors.red[400] : (isDark ? TamgaciConstants.textSecondaryDark : Colors.grey[400]),
                 ),
               ),
             ],

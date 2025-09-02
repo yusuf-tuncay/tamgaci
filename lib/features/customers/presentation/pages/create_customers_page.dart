@@ -56,14 +56,20 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(customerFormProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: AppBar(
         title: const Text('Yeni Müşteri'),
         elevation: 0,
-        backgroundColor: TamgaciConstants.appBarColor,
-        foregroundColor: TamgaciConstants.textPrimary,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: isDark
+            ? TamgaciConstants.textPrimaryDark
+            : TamgaciConstants.textPrimary,
         actions: [
           if (formState.isLoading)
             const Center(
@@ -87,49 +93,47 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
                   children: [
                     // Hata/Başarı mesajları
                     if (formState.errorMessage != null)
-                      _buildErrorMessage(formState.errorMessage!),
+                      _buildErrorMessage(formState.errorMessage!, isDark),
 
                     if (formState.successMessage != null)
-                      _buildSuccessMessage(formState.successMessage!),
+                      _buildSuccessMessage(formState.successMessage!, isDark),
 
                     // Müşteri tipi seçimi
-                    _buildCustomerTypeSelection(),
+                    _buildCustomerTypeSelection(isDark),
 
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Temel bilgiler
-                    _buildBasicInfoSection(),
+                    _buildBasicInfoSection(isDark),
 
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // İletişim bilgileri
-                    _buildContactInfoSection(),
+                    _buildContactInfoSection(isDark),
 
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
-                    // Vergi bilgileri (sadece kurumsal için)
-                    if (_selectedType == CustomerType.company)
-                      _buildTaxInfoSection(),
+                    // Vergi bilgileri
+                    _buildTaxInfoSection(isDark),
 
-                    if (_selectedType == CustomerType.company)
-                      const SizedBox(height: TamgaciConstants.spaceLG),
+                    const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Adres bilgileri
-                    _buildAddressInfoSection(),
+                    _buildAddressInfoSection(isDark),
 
                     const SizedBox(height: TamgaciConstants.spaceLG),
 
                     // Notlar
-                    _buildNotesSection(),
+                    _buildNotesSection(isDark),
 
-                    const SizedBox(height: TamgaciConstants.spaceXXL),
+                    const SizedBox(height: TamgaciConstants.spaceXL),
+
+                    // Kaydet butonu
+                    _buildSaveButton(),
                   ],
                 ),
               ),
             ),
-
-            // Kaydet butonu
-            _buildSaveButton(),
           ],
         ),
       ),
@@ -137,7 +141,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// Hata mesajı widget'ı
-  Widget _buildErrorMessage(String message) {
+  Widget _buildErrorMessage(String message, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: TamgaciConstants.spaceLG),
       padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
@@ -167,7 +171,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// Başarı mesajı widget'ı
-  Widget _buildSuccessMessage(String message) {
+  Widget _buildSuccessMessage(String message, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(bottom: TamgaciConstants.spaceLG),
       padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
@@ -200,7 +204,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// Müşteri tipi seçimi
-  Widget _buildCustomerTypeSelection() {
+  Widget _buildCustomerTypeSelection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -209,7 +213,9 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
           ),
         ),
         const SizedBox(height: TamgaciConstants.spaceSM),
@@ -232,14 +238,22 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
                   padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? TamgaciConstants.primaryLight.withValues(alpha: 0.1)
-                        : TamgaciConstants.surfaceColor,
+                        ? isDark
+                            ? TamgaciConstants.primaryLightDark
+                                .withValues(alpha: 0.1)
+                            : TamgaciConstants.primaryLight
+                                .withValues(alpha: 0.1)
+                        : isDark
+                            ? TamgaciConstants.surfaceColorDark
+                            : TamgaciConstants.surfaceColor,
                     borderRadius: BorderRadius.circular(
                       TamgaciConstants.radiusSM,
                     ),
                     border: Border.all(
                       color: isSelected
-                          ? TamgaciConstants.primaryColor
+                          ? isDark
+                              ? TamgaciConstants.primaryColorDark
+                              : TamgaciConstants.primaryColor
                           : TamgaciConstants.borderColor,
                       width: isSelected ? 2 : 1,
                     ),
@@ -252,20 +266,27 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
                             : Icons.person,
                         size: 32,
                         color: isSelected
-                            ? TamgaciConstants.primaryColor
-                            : TamgaciConstants.textSecondary,
+                            ? isDark
+                                ? TamgaciConstants.primaryColorDark
+                                : TamgaciConstants.primaryColor
+                            : isDark
+                                ? TamgaciConstants.textSecondaryDark
+                                : TamgaciConstants.textSecondary,
                       ),
                       const SizedBox(height: TamgaciConstants.spaceXS),
                       Text(
                         type.displayName,
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected
-                              ? TamgaciConstants.primaryColor
-                              : TamgaciConstants.textPrimary,
+                              ? isDark
+                                  ? TamgaciConstants.primaryColorDark
+                                  : TamgaciConstants.primaryColor
+                              : isDark
+                                  ? TamgaciConstants.textPrimaryDark
+                                  : TamgaciConstants.textPrimary,
                         ),
                       ),
                     ],
@@ -280,7 +301,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// Temel bilgiler bölümü
-  Widget _buildBasicInfoSection() {
+  Widget _buildBasicInfoSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -289,7 +310,9 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
           ),
         ),
         const SizedBox(height: TamgaciConstants.spaceMD),
@@ -323,7 +346,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// İletişim bilgileri bölümü
-  Widget _buildContactInfoSection() {
+  Widget _buildContactInfoSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -332,7 +355,9 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
           ),
         ),
         const SizedBox(height: TamgaciConstants.spaceMD),
@@ -372,7 +397,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// Vergi bilgileri bölümü
-  Widget _buildTaxInfoSection() {
+  Widget _buildTaxInfoSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -381,7 +406,9 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
           ),
         ),
         const SizedBox(height: TamgaciConstants.spaceMD),
@@ -418,7 +445,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// Adres bilgileri bölümü
-  Widget _buildAddressInfoSection() {
+  Widget _buildAddressInfoSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -427,7 +454,9 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
           ),
         ),
         const SizedBox(height: TamgaciConstants.spaceMD),
@@ -482,7 +511,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
   }
 
   /// Notlar bölümü
-  Widget _buildNotesSection() {
+  Widget _buildNotesSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -491,7 +520,9 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           style: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
           ),
         ),
         const SizedBox(height: TamgaciConstants.spaceMD),
@@ -620,9 +651,11 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
     }
   }
 }

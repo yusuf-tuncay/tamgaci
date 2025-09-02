@@ -4,6 +4,7 @@ import 'package:tamgaci/features/auth/presentation/pages/login_page.dart';
 import 'package:tamgaci/features/auth/presentation/pages/register_page.dart';
 import 'package:tamgaci/features/cash/presentation/pages/cash_overview_page.dart';
 import 'package:tamgaci/features/cash/presentation/pages/cash_transactions_page.dart';
+import 'package:tamgaci/features/cash/presentation/pages/cash_list_page.dart';
 import 'package:tamgaci/features/cash/presentation/pages/create_cash_transaction_page.dart';
 import 'package:tamgaci/features/customers/presentation/pages/create_customers_page.dart';
 import 'package:tamgaci/features/customers/presentation/pages/customer_detail_page.dart';
@@ -38,15 +39,14 @@ import 'package:tamgaci/shared/pages/under_construction_page.dart';
 import 'package:tamgaci/features/invoices/presentation/pages/invoice_detail_page.dart';
 import 'package:tamgaci/features/income/presentation/pages/income_detail_page.dart';
 import 'package:tamgaci/features/notifications/presentation/pages/notifications_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/create_stock_movement_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/inventory_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/stock_movements_list_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/stock_movement_detail_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/create_stock_in_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/create_stock_out_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/create_stock_adjustment_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/create_stock_transfer_page.dart';
-import 'package:tamgaci/features/inventory/domain/entities/stock_movement.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/warehouse_list_page.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/create_warehouse_page.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/warehouse_detail_page.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/stock_list_page.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/create_stock_page.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/stock_detail_page.dart';
+
 import 'package:tamgaci/features/directory/presentation/pages/contacts_list_page.dart';
 import 'package:tamgaci/features/directory/presentation/pages/create_contact_page.dart';
 import 'package:tamgaci/features/directory/presentation/pages/contact_detail_page.dart';
@@ -172,6 +172,9 @@ class TamgaciRoutes {
   /// Kasa işlemleri sayfası
   static const String cashTransactions = '/cash/transactions';
 
+  /// Kasa listesi sayfası
+  static const String cashList = '/cash/list';
+
   /// Yeni kasa işlemi oluşturma sayfası
   static const String createCashTransaction = '/cash/create-transaction';
 
@@ -211,26 +214,30 @@ class TamgaciRoutes {
   /// Depo stok ana sayfası
   static const String inventory = '/inventory';
 
-  /// Stok hareketleri listesi sayfası
-  static const String stockMovementsList = '/inventory/movements';
+  /// Depo listesi sayfası
+  static const String warehouseList = '/warehouse-list';
 
-  /// Stok hareketi detay sayfası
-  static const String stockMovementDetail = '/inventory/movements/detail';
+  /// Yeni depo oluşturma sayfası
+  static const String createWarehouse = '/warehouse/create';
 
-  /// Stok girişi oluşturma sayfası
-  static const String createStockIn = '/inventory/stock-in';
+  /// Depo düzenleme sayfası
+  static const String editWarehouse = '/warehouse/edit';
 
-  /// Stok çıkışı oluşturma sayfası
-  static const String createStockOut = '/inventory/stock-out';
+  /// Depo detay sayfası
+  static const String warehouseDetail = '/warehouse/detail';
 
-  /// Stok düzeltme oluşturma sayfası
-  static const String createStockAdjustment = '/inventory/stock-adjustment';
+  // Stock (Stok) Route'ları
+  /// Stok listesi sayfası
+  static const String stockList = '/stock-list';
 
-  /// Depo transfer oluşturma sayfası
-  static const String createStockTransfer = '/inventory/stock-transfer';
+  /// Yeni stok oluşturma sayfası
+  static const String createStock = '/stock/create';
 
-  /// Genel stok hareketi oluşturma sayfası
-  static const String createStockMovement = '/inventory/create-movement';
+  /// Stok düzenleme sayfası
+  static const String editStock = '/stock/edit';
+
+  /// Stok detay sayfası
+  static const String stockDetail = '/stock/detail';
 
   // Notifications (Bildirimler) Route'ları
   /// Bildirimler sayfası
@@ -430,6 +437,9 @@ class TamgaciRoutes {
       case cashTransactions:
         return _createRoute(const CashTransactionsPage(), settings: settings);
 
+      case cashList:
+        return _createRoute(const CashListPage(), settings: settings);
+
       case createCashTransaction:
         return _createRoute(
           const CreateCashTransactionPage(),
@@ -457,40 +467,48 @@ class TamgaciRoutes {
         return _createRoute(const ProductReportPage(), settings: settings);
 
       // ========== INVENTORY ROUTE'LARI ==========
-
       case inventory:
         return _createRoute(const InventoryPage(), settings: settings);
 
-      case stockMovementsList:
-        return _createRoute(const StockMovementsListPage(), settings: settings);
+      case warehouseList:
+        return _createRoute(const WarehouseListPage(), settings: settings);
 
-      case stockMovementDetail:
-        final movement = settings.arguments as StockMovement;
+      case createWarehouse:
+        return _createRoute(const CreateWarehousePage(), settings: settings);
+
+      case editWarehouse:
+        final warehouseId = arguments as String?;
         return _createRoute(
-          StockMovementDetailPage(movement: movement),
+          CreateWarehousePage(warehouseId: warehouseId),
           settings: settings,
         );
 
-      case createStockIn:
-        return _createRoute(const CreateStockInPage(), settings: settings);
-
-      case createStockOut:
-        return _createRoute(const CreateStockOutPage(), settings: settings);
-
-      case createStockAdjustment:
+      case warehouseDetail:
+        final warehouseId = arguments as String?;
         return _createRoute(
-          const CreateStockAdjustmentPage(),
+          WarehouseDetailPage(warehouseId: warehouseId ?? ''),
           settings: settings,
         );
 
-      case createStockTransfer:
+      case stockList:
+        return _createRoute(const StockListPage(), settings: settings);
+
+      case createStock:
+        return _createRoute(const CreateStockPage(), settings: settings);
+
+      case editStock:
+        final stockId = arguments as String?;
         return _createRoute(
-          const CreateStockTransferPage(),
+          CreateStockPage(stockId: stockId),
           settings: settings,
         );
 
-      case createStockMovement:
-        return _createRoute(const UnderConstructionPage(), settings: settings);
+      case stockDetail:
+        final stockId = arguments as String?;
+        return _createRoute(
+          StockDetailPage(stockId: stockId ?? ''),
+          settings: settings,
+        );
 
       // ========== FİHRİST ROUTE'LARI ==========
 
@@ -538,12 +556,6 @@ class TamgaciRoutes {
 
       // ========== ENVANTER ROUTE'LARI ==========
 
-      case createStockMovement:
-        return _createRoute(
-          const CreateStockMovementPage(),
-          settings: settings,
-        );
-
       // ========== SHARED ROUTE'LAR ==========
 
       case underConstruction:
@@ -551,6 +563,7 @@ class TamgaciRoutes {
 
       // ========== VARSAYILAN (404) ==========
 
+      case notFound:
       default:
         debugPrint('❌ Route not found: $routeName');
         return _createRoute(
@@ -729,14 +742,6 @@ class TamgaciRoutes {
       customerReport,
       supplierReport,
       productReport,
-      inventory,
-      stockMovementsList,
-      stockMovementDetail,
-      createStockIn,
-      createStockOut,
-      createStockAdjustment,
-      createStockTransfer,
-      createStockMovement,
       settings,
       profile,
       companySettings,
@@ -763,10 +768,7 @@ class TamgaciRoutes {
         return 'Tedarikçiler';
       case productsList:
         return 'Ürünler';
-      case inventory:
-        return 'Depo Stok';
-      case stockMovementsList:
-        return 'Stok Hareketleri';
+
       case cashOverview:
         return 'Kasa Yönetimi';
       case reportsOverview:

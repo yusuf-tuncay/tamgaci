@@ -10,6 +10,7 @@ class Warehouse {
   final String? manager;
   final double? capacity;
   final String? capacityUnit;
+  final String currency; // Para birimi desteği
   final bool isActive;
   final bool isDefault;
   final DateTime createdAt;
@@ -26,6 +27,7 @@ class Warehouse {
     this.manager,
     this.capacity,
     this.capacityUnit,
+    this.currency = 'TRY', // Varsayılan para birimi
     this.isActive = true,
     this.isDefault = false,
     required this.createdAt,
@@ -44,6 +46,7 @@ class Warehouse {
     String? manager,
     double? capacity,
     String? capacityUnit,
+    String? currency,
     bool? isActive,
     bool? isDefault,
     DateTime? createdAt,
@@ -60,6 +63,7 @@ class Warehouse {
       manager: manager ?? this.manager,
       capacity: capacity ?? this.capacity,
       capacityUnit: capacityUnit ?? this.capacityUnit,
+      currency: currency ?? this.currency,
       isActive: isActive ?? this.isActive,
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,

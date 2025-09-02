@@ -101,10 +101,6 @@ class DateTimeService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final dateTimeString = data['datetime'] as String;
-        final utcOffset = data['utc_offset'] as String;
-
-        // UTC offset'i parse et
-        final offset = _parseUtcOffset(utcOffset);
         final utcTime = DateTime.parse(dateTimeString);
 
         // Türkiye saatine çevir (UTC+3)
@@ -131,10 +127,6 @@ class DateTimeService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final dateTimeString = data['datetime'] as String;
-        final utcOffset = data['utc_offset'] as String;
-
-        // UTC offset'i parse et
-        final offset = _parseUtcOffset(utcOffset);
         final utcTime = DateTime.parse(dateTimeString);
 
         // Türkiye saatine çevir (UTC+3)
@@ -161,10 +153,6 @@ class DateTimeService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final dateTimeString = data['datetime'] as String;
-        final utcOffset = data['utc_offset'] as String;
-
-        // UTC offset'i parse et
-        final offset = _parseUtcOffset(utcOffset);
         final utcTime = DateTime.parse(dateTimeString);
 
         // Türkiye saatine çevir (UTC+3)
@@ -174,19 +162,6 @@ class DateTimeService {
       // Hata durumunda null döndür
     }
     return null;
-  }
-
-  /// UTC offset string'ini parse eder
-  static int _parseUtcOffset(String utcOffset) {
-    try {
-      // "+03:00" formatından saat kısmını al
-      final offset = utcOffset.replaceAll(':', '');
-      final sign = offset[0];
-      final hours = int.parse(offset.substring(1, 3));
-      return sign == '+' ? hours : -hours;
-    } catch (e) {
-      return 3; // Varsayılan olarak Türkiye saati (UTC+3)
-    }
   }
 
   /// Cache'i günceller

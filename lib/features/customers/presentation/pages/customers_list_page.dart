@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/providers/currency_providers.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../data/models/customer_entity.dart';
@@ -62,11 +64,16 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final operationsState = ref.watch(customerOperationsProvider);
+    final customersAsync = ref.watch(customersStreamProvider);
     final searchQuery = _searchController.text;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Müşteriler',
         showDrawer: true,
@@ -105,7 +112,7 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
           ),
 
           // Müşteri listesi
-          Expanded(child: _buildCustomersList(operationsState, searchQuery)),
+          Expanded(child: _buildCustomersList(customersAsync, searchQuery)),
         ],
       ),
     );
@@ -113,46 +120,45 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
 
   /// Müşteri listesini oluşturur
   Widget _buildCustomersList(
-    CustomerOperationsState operationsState,
+    AsyncValue<List<Customer>> customersAsync,
     String searchQuery,
   ) {
-    if (operationsState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (operationsState.errorMessage != null) {
-      return Center(
+    return customersAsync.when(
+      data: (customers) => _buildCustomersListView(customers, searchQuery),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Hata: ${operationsState.errorMessage}'),
+            Text('Hata: $error'),
             ElevatedButton(
               onPressed: _loadCustomers,
               child: const Text('Tekrar Dene'),
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    final customers = operationsState.customers;
-
+  /// Müşteri listesi view'ını oluşturur
+  Widget _buildCustomersListView(List<Customer> customers, String searchQuery) {
     // Arama filtresi uygula
     List<Customer> filteredCustomers = customers;
     if (searchQuery.isNotEmpty) {
       filteredCustomers = customers.where((customer) {
         return customer.name.toLowerCase().contains(
-              searchQuery.toLowerCase(),
-            ) ||
-            (customer.email?.toLowerCase().contains(
                   searchQuery.toLowerCase(),
-                ) ==
+                ) ||
+            (customer.email?.toLowerCase().contains(
+                      searchQuery.toLowerCase(),
+                    ) ==
                 true) ||
             (customer.phone?.contains(searchQuery) == true);
       }).toList();
     }
 
-    if (filteredCustomers.isEmpty && !operationsState.isLoading) {
+    if (filteredCustomers.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -187,7 +193,7 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        ref.read(customerOperationsProvider.notifier).loadCustomers();
+        ref.invalidate(customersStreamProvider);
       },
       child: ListView.builder(
         controller: _scrollController,
@@ -329,6 +335,11 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
 
               const SizedBox(height: TamgaciConstants.spaceMD),
 
+              // Bakiye bilgisi
+              _buildBalanceInfo(customer),
+
+              const SizedBox(height: TamgaciConstants.spaceMD),
+
               // Alt kısım - Adres ve tarih bilgileri
               Row(
                 children: [
@@ -382,6 +393,102 @@ class _CustomersListPageState extends ConsumerState<CustomersListPage> {
               ? TamgaciConstants.successColor
               : TamgaciConstants.errorColor,
         ),
+      ),
+    );
+  }
+
+  /// Bakiye bilgisi widget'ı oluşturur
+  Widget _buildBalanceInfo(Customer customer) {
+    final selectedCurrency = ref.watch(selectedCurrencyProvider);
+    final exchangeRatesAsync = ref.watch(exchangeRatesProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(TamgaciConstants.spaceSM),
+      decoration: BoxDecoration(
+        color: customer.hasPositiveBalance
+            ? TamgaciConstants.successColor.withValues(alpha: 0.1)
+            : customer.hasNegativeBalance
+                ? TamgaciConstants.errorColor.withValues(alpha: 0.1)
+                : TamgaciConstants.textSecondary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        border: Border.all(
+          color: customer.hasPositiveBalance
+              ? TamgaciConstants.successColor.withValues(alpha: 0.3)
+              : customer.hasNegativeBalance
+                  ? TamgaciConstants.errorColor.withValues(alpha: 0.3)
+                  : TamgaciConstants.textSecondary.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            customer.hasPositiveBalance
+                ? Icons.account_balance_wallet
+                : customer.hasNegativeBalance
+                    ? Icons.money_off
+                    : Icons.account_balance,
+            size: 16,
+            color: customer.hasPositiveBalance
+                ? TamgaciConstants.successColor
+                : customer.hasNegativeBalance
+                    ? TamgaciConstants.errorColor
+                    : TamgaciConstants.textSecondary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bakiye',
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w400,
+                    color: TamgaciConstants.textSecondary,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      customer.formattedBalance,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: customer.hasPositiveBalance
+                            ? TamgaciConstants.successColor
+                            : customer.hasNegativeBalance
+                                ? TamgaciConstants.errorColor
+                                : TamgaciConstants.textSecondary,
+                      ),
+                    ),
+                    // Varsayılan para birimi gösterimi
+                    if (customer.balanceCurrency != selectedCurrency.code)
+                      exchangeRatesAsync.when(
+                        data: (exchangeRates) {
+                          final convertedAmount = CurrencyHelper.convertCurrency(
+                            amount: customer.balance,
+                            fromCurrencyCode: customer.balanceCurrency,
+                            toCurrencyCode: selectedCurrency.code,
+                            exchangeRates: exchangeRates,
+                          );
+                          return Text(
+                            ' (${convertedAmount.toStringAsFixed(2)} ${selectedCurrency.symbol})',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w400,
+                              color: TamgaciConstants.textSecondary,
+                            ),
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

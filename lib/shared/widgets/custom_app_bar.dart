@@ -49,21 +49,28 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return AppBar(
       title: Text(
         title,
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: TamgaciConstants.textPrimary,
+          color: isDark
+              ? TamgaciConstants.textPrimaryDark
+              : TamgaciConstants.textPrimary,
         ),
       ),
-      backgroundColor: backgroundColor ?? TamgaciConstants.backgroundColor,
+      backgroundColor: backgroundColor ?? theme.appBarTheme.backgroundColor,
+      foregroundColor: isDark
+          ? TamgaciConstants.textPrimaryDark
+          : TamgaciConstants.textPrimary,
       elevation: showShadow ? 2 : 0,
-      shadowColor: showShadow
-          ? Colors.black.withOpacity(0.1)
-          : Colors.transparent,
-      leading: _buildLeadingWidget(context),
+      shadowColor:
+          showShadow ? Colors.black.withValues(alpha: 0.1) : Colors.transparent,
+      leading: _buildLeadingWidget(context, isDark),
       automaticallyImplyLeading:
           automaticallyImplyLeading && (showBackButton || showDrawer),
       actions: actions,
@@ -77,20 +84,24 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   /// Leading widget'ını oluşturur
-  Widget? _buildLeadingWidget(BuildContext context) {
+  Widget? _buildLeadingWidget(BuildContext context, bool isDark) {
+    final iconColor = isDark
+        ? TamgaciConstants.textPrimaryDark
+        : TamgaciConstants.textPrimary;
+
     if (showDrawer) {
       return IconButton(
         onPressed: () => Scaffold.of(context).openDrawer(),
-        icon: const Icon(Icons.menu, color: TamgaciConstants.textPrimary),
+        icon: Icon(Icons.menu, color: iconColor),
       );
     }
 
     if (showBackButton) {
       return IconButton(
         onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
-        icon: const Icon(
+        icon: Icon(
           Icons.arrow_back_ios,
-          color: TamgaciConstants.textPrimary,
+          color: iconColor,
         ),
       );
     }

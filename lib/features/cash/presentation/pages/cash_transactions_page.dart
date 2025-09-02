@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
@@ -233,12 +234,12 @@ class _CashTransactionsPageState extends ConsumerState<CashTransactionsPage> {
             : 'Henüz kasa işlemi bulunmuyor.\nYeni işlem eklemek için + butonuna tıklayın.',
         actionButton:
             _searchController.text.isEmpty && _selectedFilter == 'Tümü'
-            ? ElevatedButton.icon(
-                onPressed: _navigateToCreate,
-                icon: const Icon(Icons.add),
-                label: const Text('İşlem Ekle'),
-              )
-            : null,
+                ? ElevatedButton.icon(
+                    onPressed: _navigateToCreate,
+                    icon: const Icon(Icons.add),
+                    label: const Text('İşlem Ekle'),
+                  )
+                : null,
       );
     }
 
@@ -359,7 +360,8 @@ class _CashTransactionsPageState extends ConsumerState<CashTransactionsPage> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        currencyFormat.format(transaction['amount'].abs()),
+                        CurrencyHelper.formatAmount(transaction['amount'].abs(),
+                            transaction['currency'] ?? 'TRY'),
                         style: GoogleFonts.poppins(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

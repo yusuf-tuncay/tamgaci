@@ -70,9 +70,9 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
             // Avatar ve tip
             CircleAvatar(
               radius: 40,
-              backgroundColor: _getContactTypeColor(widget.contact.type),
+              backgroundColor: _getContactTypeColor(ContactType.fromValue(widget.contact.type)),
               child: Icon(
-                _getContactTypeIcon(widget.contact.type),
+                _getContactTypeIcon(ContactType.fromValue(widget.contact.type)),
                 color: Colors.white,
                 size: 40,
               ),
@@ -94,19 +94,19 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color:
-                    _getContactTypeColor(widget.contact.type).withOpacity(0.1),
+                    _getContactTypeColor(ContactType.fromValue(widget.contact.type)).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _getContactTypeColor(widget.contact.type),
+                  color: _getContactTypeColor(ContactType.fromValue(widget.contact.type)),
                   width: 1,
                 ),
               ),
               child: Text(
-                widget.contact.type.displayName,
+                ContactType.fromValue(widget.contact.type).displayName,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _getContactTypeColor(widget.contact.type),
+                  color: _getContactTypeColor(ContactType.fromValue(widget.contact.type)),
                 ),
               ),
             ),
@@ -148,7 +148,7 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

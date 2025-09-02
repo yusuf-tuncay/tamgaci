@@ -59,7 +59,7 @@ class _EditContactPageState extends ConsumerState<EditContactPage> {
         TextEditingController(text: widget.contact.website ?? '');
     _notesController = TextEditingController(text: widget.contact.notes ?? '');
 
-    _selectedType = widget.contact.type;
+    _selectedType = ContactType.fromValue(widget.contact.type);
     _isFavorite = widget.contact.isFavorite;
     _isActive = widget.contact.isActive;
   }
@@ -426,7 +426,7 @@ class _EditContactPageState extends ConsumerState<EditContactPage> {
     if (_formKey.currentState!.validate()) {
       final updatedContact = widget.contact.copyWith(
         name: InputValidators.formatName(_nameController.text),
-        type: _selectedType,
+        type: _selectedType.value,
         email: _emailController.text.trim().isEmpty
             ? null
             : InputValidators.formatEmail(_emailController.text),
@@ -463,15 +463,17 @@ class _EditContactPageState extends ConsumerState<EditContactPage> {
           .read(contactOperationsProvider.notifier)
           .updateContact(updatedContact)
           .then((_) {
-        final state = ref.read(contactOperationsProvider);
-        if (state.successMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.successMessage!),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context);
+        if (mounted) {
+          final state = ref.read(contactOperationsProvider);
+          if (state.successMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.successMessage!),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pop(context);
+          }
         }
       });
     }

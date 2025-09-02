@@ -98,10 +98,41 @@ class TamgaciConstants {
   /// Kart ve yükseltilmiş elemanlar için arka plan
   static const Color cardColor = Color(0xFFFFFFFF);
 
+  // ========== RENK PALETİ - KOYU TEMA ==========
+
+  // Koyu Tema Ana Renkler
+  /// Koyu tema ana rengi - Açık mavi
+  static const Color primaryColorDark = Color(0xFF64B5F6);
+
+  /// Koyu tema ana rengin açık tonu
+  static const Color primaryLightDark = Color(0xFFE3F2FD);
+
+  /// Koyu tema ana rengin koyu tonu
+  static const Color primaryDarkDark = Color(0xFF42A5F5);
+
+  /// Koyu tema ikincil renk - Açık yeşil
+  static const Color secondaryColorDark = Color(0xFF81C784);
+
+  /// Koyu tema ikincil rengin açık tonu
+  static const Color secondaryLightDark = Color(0xFFE8F5E8);
+
+  /// Koyu tema ikincil rengin koyu tonu
+  static const Color secondaryDarkDark = Color(0xFF66BB6A);
+
+  // Koyu Tema Arka Plan Renkleri
+  /// Koyu tema ana arka plan rengi - Orta koyu gri (daha açık)
+  static const Color backgroundColorDark = Color(0xFF2C2C2C);
+
+  /// Koyu tema ikincil arka plan rengi - Açık koyu gri
+  static const Color surfaceColorDark = Color(0xFF3A3A3A);
+
+  /// Koyu tema kart arka plan rengi - Orta gri
+  static const Color cardColorDark = Color(0xFF424242);
+
   /// App bar arka plan rengi
   static const Color appBarColor = Color(0xFFFFFFFF);
 
-  // Metin Renkleri
+  // Metin Renkleri - Açık Tema
   /// Birincil metin rengi - Koyu gri
   static const Color textPrimary = Color(0xFF212121);
 
@@ -113,6 +144,19 @@ class TamgaciConstants {
 
   /// Beyaz metin rengi (koyu arka planlar için)
   static const Color textOnPrimary = Color(0xFFFFFFFF);
+
+  // Metin Renkleri - Koyu Tema
+  /// Koyu tema birincil metin rengi - Beyaz
+  static const Color textPrimaryDark = Color(0xFFE0E0E0);
+
+  /// Koyu tema ikincil metin rengi - Açık gri
+  static const Color textSecondaryDark = Color(0xFFB0B0B0);
+
+  /// Koyu tema devre dışı metin rengi - Orta gri
+  static const Color textDisabledDark = Color(0xFF666666);
+
+  /// Koyu tema beyaz metin rengi
+  static const Color textOnPrimaryDark = Color(0xFF000000);
 
   // Durum Renkleri
   /// Başarı durumu rengi - Yeşil
@@ -137,6 +181,52 @@ class TamgaciConstants {
   /// Gölge rengi
   static const Color shadowColor = Color(0x1F000000);
 
+  // ========== TEMA HELPER METODLARI ==========
+
+  /// Mevcut temaya göre ana rengi döndürür
+  static Color getPrimaryColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? primaryColorDark : primaryColor;
+  }
+
+  /// Mevcut temaya göre arka plan rengini döndürür
+  static Color getBackgroundColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark
+        ? backgroundColorDark
+        : backgroundColor;
+  }
+
+  /// Mevcut temaya göre yüzey rengini döndürür
+  static Color getSurfaceColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? surfaceColorDark : surfaceColor;
+  }
+
+  /// Mevcut temaya göre kart rengini döndürür
+  static Color getCardColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? cardColorDark : cardColor;
+  }
+
+  /// Mevcut temaya göre birincil metin rengini döndürür
+  static Color getTextPrimaryColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? textPrimaryDark : textPrimary;
+  }
+
+  /// Mevcut temaya göre ikincil metin rengini döndürür
+  static Color getTextSecondaryColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? textSecondaryDark : textSecondary;
+  }
+
+  /// Mevcut temaya göre devre dışı metin rengini döndürür
+  static Color getTextDisabledColor(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return brightness == Brightness.dark ? textDisabledDark : textDisabled;
+  }
+
   // ========== TİPOGRAFİ - GOOGLE FONTS POPPINS ==========
 
   /// Başlık fontları için temel stil
@@ -150,137 +240,137 @@ class TamgaciConstants {
   // Responsive Font Boyutları
   /// H1 başlık stili - Responsive
   static TextStyle h1(BuildContext context) => _baseHeadingStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 24.0,
-      tablet: 28.0,
-      desktop: 32.0,
-      wideDesktop: 36.0,
-    ),
-    fontWeight: FontWeight.w700,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 24.0,
+          tablet: 28.0,
+          desktop: 32.0,
+          wideDesktop: 36.0,
+        ),
+        fontWeight: FontWeight.w700,
+      );
 
   /// H2 başlık stili - Responsive
   static TextStyle h2(BuildContext context) => _baseHeadingStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 22.0,
-      tablet: 24.0,
-      desktop: 28.0,
-      wideDesktop: 30.0,
-    ),
-    fontWeight: FontWeight.w600,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 22.0,
+          tablet: 24.0,
+          desktop: 28.0,
+          wideDesktop: 30.0,
+        ),
+        fontWeight: FontWeight.w600,
+      );
 
   /// H3 başlık stili - Responsive
   static TextStyle h3(BuildContext context) => _baseHeadingStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 20.0,
-      tablet: 22.0,
-      desktop: 24.0,
-      wideDesktop: 26.0,
-    ),
-    fontWeight: FontWeight.w600,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 20.0,
+          tablet: 22.0,
+          desktop: 24.0,
+          wideDesktop: 26.0,
+        ),
+        fontWeight: FontWeight.w600,
+      );
 
   /// H4 başlık stili - Responsive
   static TextStyle h4(BuildContext context) => _baseHeadingStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 18.0,
-      tablet: 20.0,
-      desktop: 22.0,
-      wideDesktop: 24.0,
-    ),
-    fontWeight: FontWeight.w500,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 18.0,
+          tablet: 20.0,
+          desktop: 22.0,
+          wideDesktop: 24.0,
+        ),
+        fontWeight: FontWeight.w500,
+      );
 
   /// H5 başlık stili - Responsive
   static TextStyle h5(BuildContext context) => _baseHeadingStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 16.0,
-      tablet: 18.0,
-      desktop: 20.0,
-      wideDesktop: 22.0,
-    ),
-    fontWeight: FontWeight.w500,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 16.0,
+          tablet: 18.0,
+          desktop: 20.0,
+          wideDesktop: 22.0,
+        ),
+        fontWeight: FontWeight.w500,
+      );
 
   /// H6 başlık stili - Responsive
   static TextStyle h6(BuildContext context) => _baseHeadingStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 14.0,
-      tablet: 16.0,
-      desktop: 18.0,
-      wideDesktop: 20.0,
-    ),
-    fontWeight: FontWeight.w500,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 16.0,
+          desktop: 18.0,
+          wideDesktop: 20.0,
+        ),
+        fontWeight: FontWeight.w500,
+      );
 
   // Gövde Metinleri
   /// Büyük gövde metni - Responsive
   static TextStyle bodyLarge(BuildContext context) => _baseBodyStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 16.0,
-      tablet: 17.0,
-      desktop: 18.0,
-      wideDesktop: 19.0,
-    ),
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 16.0,
+          tablet: 17.0,
+          desktop: 18.0,
+          wideDesktop: 19.0,
+        ),
+      );
 
   /// Orta gövde metni - Responsive
   static TextStyle bodyMedium(BuildContext context) => _baseBodyStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 14.0,
-      tablet: 15.0,
-      desktop: 16.0,
-      wideDesktop: 17.0,
-    ),
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 15.0,
+          desktop: 16.0,
+          wideDesktop: 17.0,
+        ),
+      );
 
   /// Küçük gövde metni - Responsive
   static TextStyle bodySmall(BuildContext context) => _baseBodyStyle.copyWith(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 12.0,
-      tablet: 13.0,
-      desktop: 14.0,
-      wideDesktop: 15.0,
-    ),
-    color: textSecondary,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 12.0,
+          tablet: 13.0,
+          desktop: 14.0,
+          wideDesktop: 15.0,
+        ),
+        color: textSecondary,
+      );
 
   // Özel Metin Stilleri
   /// Buton metni stili
   static TextStyle buttonText(BuildContext context) => GoogleFonts.poppins(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 14.0,
-      tablet: 15.0,
-      desktop: 16.0,
-      wideDesktop: 17.0,
-    ),
-    fontWeight: FontWeight.w500,
-    color: textOnPrimary,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 14.0,
+          tablet: 15.0,
+          desktop: 16.0,
+          wideDesktop: 17.0,
+        ),
+        fontWeight: FontWeight.w500,
+        color: textOnPrimary,
+      );
 
   /// Etiket metni stili
   static TextStyle labelText(BuildContext context) => GoogleFonts.poppins(
-    fontSize: getResponsiveValue(
-      context,
-      mobile: 12.0,
-      tablet: 13.0,
-      desktop: 14.0,
-      wideDesktop: 15.0,
-    ),
-    fontWeight: FontWeight.w400,
-    color: textSecondary,
-  );
+        fontSize: getResponsiveValue(
+          context,
+          mobile: 12.0,
+          tablet: 13.0,
+          desktop: 14.0,
+          wideDesktop: 15.0,
+        ),
+        fontWeight: FontWeight.w400,
+        color: textSecondary,
+      );
 
   /// Vurgu metni stili (kalın)
   static TextStyle emphasizedText(BuildContext context) =>
@@ -310,59 +400,59 @@ class TamgaciConstants {
   // Responsive Padding Değerleri
   /// Küçük padding - Responsive
   static EdgeInsets paddingSmall(BuildContext context) => EdgeInsets.all(
-    getResponsiveValue(
-      context,
-      mobile: spaceSM,
-      tablet: spaceSM * 1.2,
-      desktop: spaceMD,
-      wideDesktop: spaceMD * 1.2,
-    ),
-  );
+        getResponsiveValue(
+          context,
+          mobile: spaceSM,
+          tablet: spaceSM * 1.2,
+          desktop: spaceMD,
+          wideDesktop: spaceMD * 1.2,
+        ),
+      );
 
   /// Orta padding - Responsive
   static EdgeInsets paddingMedium(BuildContext context) => EdgeInsets.all(
-    getResponsiveValue(
-      context,
-      mobile: spaceMD,
-      tablet: spaceMD * 1.2,
-      desktop: spaceLG,
-      wideDesktop: spaceLG * 1.2,
-    ),
-  );
+        getResponsiveValue(
+          context,
+          mobile: spaceMD,
+          tablet: spaceMD * 1.2,
+          desktop: spaceLG,
+          wideDesktop: spaceLG * 1.2,
+        ),
+      );
 
   /// Büyük padding - Responsive
   static EdgeInsets paddingLarge(BuildContext context) => EdgeInsets.all(
-    getResponsiveValue(
-      context,
-      mobile: spaceLG,
-      tablet: spaceLG * 1.2,
-      desktop: spaceXL,
-      wideDesktop: spaceXL * 1.2,
-    ),
-  );
+        getResponsiveValue(
+          context,
+          mobile: spaceLG,
+          tablet: spaceLG * 1.2,
+          desktop: spaceXL,
+          wideDesktop: spaceXL * 1.2,
+        ),
+      );
 
   // Özel Padding'ler
   /// Sayfa padding'i (yatay) - Responsive
   static EdgeInsets pagePadding(BuildContext context) => EdgeInsets.symmetric(
-    horizontal: getResponsiveValue(
-      context,
-      mobile: spaceMD,
-      tablet: spaceLG,
-      desktop: spaceXL,
-      wideDesktop: spaceXXL,
-    ),
-  );
+        horizontal: getResponsiveValue(
+          context,
+          mobile: spaceMD,
+          tablet: spaceLG,
+          desktop: spaceXL,
+          wideDesktop: spaceXXL,
+        ),
+      );
 
   /// Kart iç padding'i - Responsive
   static EdgeInsets cardPadding(BuildContext context) => EdgeInsets.all(
-    getResponsiveValue(
-      context,
-      mobile: spaceMD,
-      tablet: spaceMD * 1.2,
-      desktop: spaceLG,
-      wideDesktop: spaceLG * 1.2,
-    ),
-  );
+        getResponsiveValue(
+          context,
+          mobile: spaceMD,
+          tablet: spaceMD * 1.2,
+          desktop: spaceLG,
+          wideDesktop: spaceLG * 1.2,
+        ),
+      );
 
   /// Liste elemanı padding'i - Responsive
   static EdgeInsets listItemPadding(BuildContext context) =>
@@ -406,120 +496,120 @@ class TamgaciConstants {
   // Responsive Border Radius'lar
   /// Kart border radius'u - Responsive
   static double cardRadius(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: radiusSM,
-    tablet: radiusMD,
-    desktop: radiusLG,
-    wideDesktop: radiusXL,
-  );
+        context,
+        mobile: radiusSM,
+        tablet: radiusMD,
+        desktop: radiusLG,
+        wideDesktop: radiusXL,
+      );
 
   /// Buton border radius'u - Responsive
   static double buttonRadius(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: radiusSM,
-    tablet: radiusMD,
-    desktop: radiusMD,
-    wideDesktop: radiusLG,
-  );
+        context,
+        mobile: radiusSM,
+        tablet: radiusMD,
+        desktop: radiusMD,
+        wideDesktop: radiusLG,
+      );
 
   /// Input field border radius'u - Responsive
   static double inputRadius(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: radiusSM,
-    tablet: radiusSM,
-    desktop: radiusMD,
-    wideDesktop: radiusMD,
-  );
+        context,
+        mobile: radiusSM,
+        tablet: radiusSM,
+        desktop: radiusMD,
+        wideDesktop: radiusMD,
+      );
 
   // ========== BOYUT SİSTEMİ ==========
 
   // Responsive Yükseklik Değerleri
   /// App bar yüksekliği - Responsive
   static double appBarHeight(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: 56.0,
-    tablet: 64.0,
-    desktop: 70.0,
-    wideDesktop: 76.0,
-  );
+        context,
+        mobile: 56.0,
+        tablet: 64.0,
+        desktop: 70.0,
+        wideDesktop: 76.0,
+      );
 
   /// Buton yüksekliği - Responsive
   static double buttonHeight(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: 48.0,
-    tablet: 52.0,
-    desktop: 56.0,
-    wideDesktop: 60.0,
-  );
+        context,
+        mobile: 48.0,
+        tablet: 52.0,
+        desktop: 56.0,
+        wideDesktop: 60.0,
+      );
 
   /// Input field yüksekliği - Responsive
   static double inputHeight(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: 48.0,
-    tablet: 52.0,
-    desktop: 56.0,
-    wideDesktop: 60.0,
-  );
+        context,
+        mobile: 48.0,
+        tablet: 52.0,
+        desktop: 56.0,
+        wideDesktop: 60.0,
+      );
 
   /// Liste elemanı minimum yüksekliği - Responsive
   static double listItemHeight(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: 56.0,
-    tablet: 64.0,
-    desktop: 72.0,
-    wideDesktop: 80.0,
-  );
+        context,
+        mobile: 56.0,
+        tablet: 64.0,
+        desktop: 72.0,
+        wideDesktop: 80.0,
+      );
 
   // Responsive Genişlik Değerleri
   /// Maksimum içerik genişliği - Responsive
   static double maxContentWidth(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: double.infinity,
-    tablet: 800.0,
-    desktop: 1200.0,
-    wideDesktop: 1400.0,
-  );
+        context,
+        mobile: double.infinity,
+        tablet: 800.0,
+        desktop: 1200.0,
+        wideDesktop: 1400.0,
+      );
 
   /// Sidebar genişliği - Responsive
   static double sidebarWidth(BuildContext context) => getResponsiveValue(
-    context,
-    mobile: 280.0,
-    tablet: 320.0,
-    desktop: 350.0,
-    wideDesktop: 380.0,
-  );
+        context,
+        mobile: 280.0,
+        tablet: 320.0,
+        desktop: 350.0,
+        wideDesktop: 380.0,
+      );
 
   // ========== GÖLGE VE ELEVATION ==========
 
   /// Hafif gölge - Kart elemanları için
   static List<BoxShadow> get shadowLight => [
-    const BoxShadow(
-      color: shadowColor,
-      offset: Offset(0, 1),
-      blurRadius: 3,
-      spreadRadius: 0,
-    ),
-  ];
+        const BoxShadow(
+          color: shadowColor,
+          offset: Offset(0, 1),
+          blurRadius: 3,
+          spreadRadius: 0,
+        ),
+      ];
 
   /// Orta gölge - Modal ve popup'lar için
   static List<BoxShadow> get shadowMedium => [
-    const BoxShadow(
-      color: shadowColor,
-      offset: Offset(0, 4),
-      blurRadius: 8,
-      spreadRadius: 0,
-    ),
-  ];
+        const BoxShadow(
+          color: shadowColor,
+          offset: Offset(0, 4),
+          blurRadius: 8,
+          spreadRadius: 0,
+        ),
+      ];
 
   /// Güçlü gölge - Floating action button vb. için
   static List<BoxShadow> get shadowStrong => [
-    const BoxShadow(
-      color: shadowColor,
-      offset: Offset(0, 8),
-      blurRadius: 16,
-      spreadRadius: 0,
-    ),
-  ];
+        const BoxShadow(
+          color: shadowColor,
+          offset: Offset(0, 8),
+          blurRadius: 16,
+          spreadRadius: 0,
+        ),
+      ];
 
   // ========== ANİMASYON SÜRELERİ ==========
 
@@ -572,7 +662,6 @@ class TamgaciConstants {
         primary: primaryColor,
         secondary: secondaryColor,
         surface: surfaceColor,
-
         error: errorColor,
         onPrimary: textOnPrimary,
         onSecondary: textOnPrimary,

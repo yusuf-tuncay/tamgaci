@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../customers/presentation/providers/customer_providers.dart';
@@ -345,9 +344,8 @@ class _CustomerReportPageState extends ConsumerState<CustomerReportPage> {
                     customer.customerType.toString().contains('company')
                         ? Icons.business
                         : Icons.person,
-                    color: customer.isActive == true
-                        ? Colors.green
-                        : Colors.grey,
+                    color:
+                        customer.isActive == true ? Colors.green : Colors.grey,
                   ),
                 ),
                 title: Text(
@@ -370,8 +368,8 @@ class _CustomerReportPageState extends ConsumerState<CustomerReportPage> {
                         fontSize: 12,
                         color:
                             customer.customerType.toString().contains('company')
-                            ? Colors.orange
-                            : Colors.purple,
+                                ? Colors.orange
+                                : Colors.purple,
                       ),
                     ),
                   ],

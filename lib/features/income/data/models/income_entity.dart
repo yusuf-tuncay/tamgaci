@@ -16,6 +16,9 @@ class IncomeEntity {
   @ColumnInfo(name: 'amount')
   final double amount;
 
+  @ColumnInfo(name: 'currency')
+  final String currency;
+
   @ColumnInfo(name: 'category_id')
   final String categoryId;
 
@@ -57,6 +60,7 @@ class IncomeEntity {
     required this.title,
     this.description,
     required this.amount,
+    required this.currency,
     required this.categoryId,
     required this.categoryName,
     required this.incomeDate,
@@ -78,6 +82,7 @@ class IncomeEntity {
       'title': title,
       'description': description,
       'amount': amount,
+      'currency': currency,
       'categoryId': categoryId,
       'categoryName': categoryName,
       'incomeDate': incomeDate.toIso8601String(),
@@ -100,6 +105,7 @@ class IncomeEntity {
       title: json['title'],
       description: json['description'],
       amount: json['amount'].toDouble(),
+      currency: json['currency'],
       categoryId: json['categoryId'],
       categoryName: json['categoryName'],
       incomeDate: DateTime.parse(json['incomeDate']),
@@ -121,6 +127,7 @@ class IncomeEntity {
     String? title,
     String? description,
     double? amount,
+    String? currency,
     String? categoryId,
     String? categoryName,
     DateTime? incomeDate,
@@ -139,6 +146,7 @@ class IncomeEntity {
       title: title ?? this.title,
       description: description ?? this.description,
       amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
       categoryId: categoryId ?? this.categoryId,
       categoryName: categoryName ?? this.categoryName,
       incomeDate: incomeDate ?? this.incomeDate,
@@ -161,6 +169,7 @@ class IncomeEntity {
       title: title,
       description: description,
       amount: amount,
+      currency: currency,
       categoryId: categoryId,
       categoryName: categoryName,
       incomeDate: incomeDate,
@@ -187,6 +196,7 @@ class IncomeEntity {
       title: income.title,
       description: income.description,
       amount: income.amount,
+      currency: income.currency,
       categoryId: income.categoryId,
       categoryName: income.categoryName,
       incomeDate: income.incomeDate,

@@ -10,18 +10,20 @@ import '../../../customers/data/models/customer_entity.dart';
 import '../../domain/entities/invoice.dart';
 import '../../domain/entities/invoice_item.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
+
 import '../../data/models/invoice_status.dart';
+import '../../../../core/database/tamgaci_database.dart' as core;
 
 // ========== BASE PROVIDERS ==========
 
 /// Invoice repository provider
 final invoiceRepositoryProvider = Provider<InvoiceRepository>((ref) {
-  // Web platformunda boş repository döndür
+  // Web platformunda boş repository döndür (geçici)
   if (kIsWeb) {
     return _EmptyInvoiceRepository();
   }
 
-  final database = ref.watch(databaseProvider).value;
+  final database = ref.watch(core.databaseProvider).value;
   final customerRepository = ref.watch(customerRepositoryProvider);
 
   if (database == null) {
@@ -614,7 +616,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
   @override
   Future<int> getTotalInvoiceCount() async => _mockInvoices.length;
 
-  @override
   Future<double> getTotalInvoiceAmount() async {
     double total = 0.0;
     for (final invoice in _mockInvoices) {
@@ -623,7 +624,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     return total;
   }
 
-  @override
   Future<double> getTotalUnpaidAmount() async {
     double total = 0.0;
     for (final invoice in _mockInvoices) {
@@ -695,7 +695,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     // Bu metod mock data için kullanılmıyor
   }
 
-  @override
   Future<List<InvoiceItem>> getInvoiceItems(String invoiceId) async {
     final invoice = _mockInvoices.firstWhere(
       (inv) => inv.id == invoiceId,
@@ -704,7 +703,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     return invoice.items;
   }
 
-  @override
   Future<InvoiceItem?> getInvoiceItem(String invoiceId, String itemId) async {
     final invoice = _mockInvoices.firstWhere(
       (inv) => inv.id == invoiceId,
@@ -717,7 +715,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     }
   }
 
-  @override
   Future<double> getInvoiceTotal(String invoiceId) async {
     final invoice = _mockInvoices.firstWhere(
       (inv) => inv.id == invoiceId,
@@ -726,7 +723,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     return invoice.totalAmount;
   }
 
-  @override
   Future<double> getInvoiceTaxTotal(String invoiceId) async {
     final invoice = _mockInvoices.firstWhere(
       (inv) => inv.id == invoiceId,
@@ -735,7 +731,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     return invoice.taxAmount;
   }
 
-  @override
   Future<double> getInvoiceSubtotal(String invoiceId) async {
     final invoice = _mockInvoices.firstWhere(
       (inv) => inv.id == invoiceId,
@@ -744,7 +739,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     return invoice.subtotal;
   }
 
-  @override
   Future<void> recalculateInvoiceTotals(String invoiceId) async {
     // Mock data için gerekli değil
   }
@@ -789,12 +783,10 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
   @override
   Future<List<int>?> generateInvoicePDF(String invoiceId) async => null;
 
-  @override
   Future<void> sendInvoiceEmail(String invoiceId, String email) async {
     // Mock implementation
   }
 
-  @override
   Future<Map<InvoiceStatus, int>> getInvoiceStatusStats() async {
     final stats = <InvoiceStatus, int>{};
     for (final status in InvoiceStatus.values) {
@@ -803,13 +795,11 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     return stats;
   }
 
-  @override
   Future<Map<String, double>> getMonthlyRevenueStats() async {
     // Basit mock implementation
     return {'2024-01': 15000.0, '2024-02': 22000.0, '2024-03': 18000.0};
   }
 
-  @override
   Future<List<Map<String, dynamic>>> getTopCustomersByInvoiceCount({
     int limit = 10,
   }) async {
@@ -830,7 +820,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     ];
   }
 
-  @override
   Future<List<Map<String, dynamic>>> getDailyRevenueReport({
     int days = 30,
   }) async {
@@ -891,7 +880,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     }
   }
 
-  @override
   Future<void> markInvoiceAsUnpaid(String invoiceId) async {
     final index = _mockInvoices.indexWhere((inv) => inv.id == invoiceId);
     if (index != -1) {
@@ -905,7 +893,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     }
   }
 
-  @override
   Future<void> markInvoiceAsCancelled(String invoiceId) async {
     final index = _mockInvoices.indexWhere((inv) => inv.id == invoiceId);
     if (index != -1) {
@@ -917,7 +904,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
     }
   }
 
-  @override
   Future<void> markInvoiceAsDraft(String invoiceId) async {
     final index = _mockInvoices.indexWhere((inv) => inv.id == invoiceId);
     if (index != -1) {
@@ -973,39 +959,3 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
   Stream<List<InvoiceItem>> watchInvoiceItems(String invoiceId) =>
       Stream.value([]);
 }
-
-// ========== DOSYA YERLEŞTİRME TALİMATLARI ==========
-
-/*
-📁 Bu dosyaların yerleştirilmesi gereken konumlar:
-
-1. 📄 invoice_repository_impl.dart (implementation)
-   → lib/features/invoices/data/repositories/invoice_repository_impl.dart
-
-2. 📄 invoice_providers.dart (Riverpod providers)
-   → lib/features/invoices/presentation/providers/invoice_providers.dart
-
-========== DATABASE GÜNCELLEME ==========
-
-tamgaci_database.dart dosyanıza DAO'ları ekleyin:
-
-```dart
-abstract class TamgaciDatabase extends FloorDatabase {
-  CustomerDao get customerDao;
-  InvoiceDao get invoiceDao;           // ✅ EKLE
-  InvoiceItemDao get invoiceItemDao;   // ✅ EKLE
-}
-```
-
-========== NEXT: UI PAGES ==========
-
-Repository ve providers hazır! 🎉
-
-Şimdi UI sayfalarını hazırlamaya geçebiliriz:
-- Invoice List Page
-- Create Invoice Page  
-- Invoice Detail Page
-- Edit Invoice Page
-
-Bu complex business logic'i handle eden tam production-ready repository! 💪
-*/

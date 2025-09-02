@@ -383,13 +383,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       }
     });
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
       body: SafeArea(
         child: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: _buildBackgroundDecoration(),
+          decoration: _buildBackgroundDecoration(isDark),
           child: _buildSplashContent(),
         ),
       ),
@@ -397,16 +400,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   /// Arka plan dekorasyonunu oluşturan metod
-  BoxDecoration _buildBackgroundDecoration() {
-    return const BoxDecoration(
+  BoxDecoration _buildBackgroundDecoration(bool isDark) {
+    return BoxDecoration(
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [
-          TamgaciConstants.backgroundColor,
-          TamgaciConstants.surfaceColor,
-        ],
-        stops: [0.0, 1.0],
+        colors: isDark 
+          ? [
+              TamgaciConstants.backgroundColorDark,
+              TamgaciConstants.surfaceColorDark,
+            ]
+          : [
+              TamgaciConstants.backgroundColor,
+              TamgaciConstants.surfaceColor,
+            ],
+        stops: const [0.0, 1.0],
       ),
     );
   }
@@ -515,6 +523,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   /// Uygulama başlığını oluşturan metod
   Widget _buildAppTitle() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Text(
       TamgaciConstants.appName,
       style: GoogleFonts.poppins(
@@ -526,7 +537,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 44.0,
         ),
         fontWeight: FontWeight.w700,
-        color: TamgaciConstants.primaryColor,
+        color: isDark ? TamgaciConstants.primaryColorDark : TamgaciConstants.primaryColor,
         letterSpacing: 1.2,
       ),
       textAlign: TextAlign.center,
@@ -535,6 +546,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   /// Uygulama açıklamasını oluşturan metod
   Widget _buildAppDescription() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Text(
       TamgaciConstants.appDescription,
       style: GoogleFonts.poppins(
@@ -546,7 +560,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 22.0,
         ),
         fontWeight: FontWeight.w400,
-        color: TamgaciConstants.textSecondary,
+        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
         letterSpacing: 0.5,
       ),
       textAlign: TextAlign.center,
@@ -619,6 +633,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   /// Durum mesajını oluşturan metod
   Widget _buildStatusMessage(String message) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Text(
       message,
       style: GoogleFonts.poppins(
@@ -630,7 +647,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 17.0,
         ),
         fontWeight: FontWeight.w500,
-        color: TamgaciConstants.textSecondary,
+        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
       ),
       textAlign: TextAlign.center,
     );
@@ -696,6 +713,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   /// Alt bilgi bölümünü oluşturan metod
   Widget _buildFooterSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Column(
       children: [
         // Versiyon bilgisi
@@ -704,7 +724,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           style: GoogleFonts.poppins(
             fontSize: 12.0,
             fontWeight: FontWeight.w400,
-            color: TamgaciConstants.textDisabled,
+            color: isDark ? TamgaciConstants.textDisabledDark : TamgaciConstants.textDisabled,
           ),
         ),
         
@@ -716,7 +736,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           style: GoogleFonts.poppins(
             fontSize: 11.0,
             fontWeight: FontWeight.w300,
-            color: TamgaciConstants.textDisabled,
+            color: isDark ? TamgaciConstants.textDisabledDark : TamgaciConstants.textDisabled,
           ),
           textAlign: TextAlign.center,
         ),

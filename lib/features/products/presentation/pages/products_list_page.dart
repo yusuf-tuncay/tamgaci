@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../providers/product_providers.dart';
@@ -65,11 +66,16 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final operationsState = ref.watch(productOperationsProvider);
+    final productsAsync = ref.watch(productsStreamProvider);
     final searchQuery = _searchController.text;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Ürünler',
         showDrawer: true,
@@ -99,6 +105,11 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
             padding: TamgaciConstants.paddingMedium(context),
             child: TextField(
               controller: _searchController,
+              style: TextStyle(
+                color: isDark
+                    ? TamgaciConstants.textPrimaryDark
+                    : TamgaciConstants.textPrimary,
+              ),
               decoration: InputDecoration(
                 hintText: 'Ürün ara...',
                 prefixIcon: const Icon(Icons.search),
@@ -113,12 +124,20 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                     TamgaciConstants.radiusMD,
                   ),
                 ),
+                filled: true,
+                fillColor:
+                    isDark ? TamgaciConstants.cardColorDark : Colors.white,
+                hintStyle: TextStyle(
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
+                ),
               ),
             ),
           ),
 
           // Ürün listesi
-          Expanded(child: _buildProductsList(operationsState, searchQuery)),
+          Expanded(child: _buildProductsList(productsAsync, searchQuery)),
         ],
       ),
     );
@@ -126,30 +145,29 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
   /// Ürün listesini oluşturur
   Widget _buildProductsList(
-    ProductOperationsState operationsState,
+    AsyncValue<List<Product>> productsAsync,
     String searchQuery,
   ) {
-    if (operationsState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (operationsState.errorMessage != null) {
-      return Center(
+    return productsAsync.when(
+      data: (products) => _buildProductsListView(products, searchQuery),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Hata: ${operationsState.errorMessage}'),
+            Text('Hata: $error'),
             ElevatedButton(
               onPressed: _loadProducts,
               child: const Text('Tekrar Dene'),
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    final products = operationsState.products;
-
+  /// Ürün listesi view'ını oluşturur
+  Widget _buildProductsListView(List<Product> products, String searchQuery) {
     // Filtreleme ve arama uygula
     List<Product> filteredProducts = products;
 
@@ -158,8 +176,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
       filteredProducts = products.where((product) {
         return product.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
             (product.description?.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ==
+                      searchQuery.toLowerCase(),
+                    ) ==
                 true) ||
             (product.sku?.toLowerCase().contains(searchQuery.toLowerCase()) ==
                 true) ||
@@ -176,9 +194,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
     // Düşük stok filtresi
     if (_showOnlyLowStock) {
-      filteredProducts = filteredProducts
-          .where((product) => product.isLowStock)
-          .toList();
+      filteredProducts =
+          filteredProducts.where((product) => product.isLowStock).toList();
     }
 
     // Sıralama - Web platformu için güvenli sıralama
@@ -201,7 +218,10 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
         break;
     }
 
-    if (filteredProducts.isEmpty && !operationsState.isLoading) {
+    if (filteredProducts.isEmpty) {
+      final theme = Theme.of(context);
+      final isDark = theme.brightness == Brightness.dark;
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -219,7 +239,9 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w500,
-                color: TamgaciConstants.textSecondary,
+                color: isDark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -236,7 +258,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
     return RefreshIndicator(
       onRefresh: () async {
-        ref.read(productOperationsProvider.notifier).loadProducts();
+        ref.invalidate(productsStreamProvider);
       },
       child: ListView.builder(
         controller: _scrollController,
@@ -252,6 +274,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
   /// Ürün kartı oluşturur
   Widget _buildProductCard(Product product) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isLowStock = product.isLowStock;
     final isOutOfStock = product.stockQuantity <= 0;
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
@@ -259,11 +283,16 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),
       child: InkWell(
-        onTap: () => _navigateToDetail(product.id!),
+        onTap: () {
+          if (product.id != null) {
+            _navigateToDetail(product.id!);
+          }
+        },
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         child: Padding(
           padding: TamgaciConstants.cardPadding(context),
@@ -281,10 +310,11 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                       color: isOutOfStock
                           ? TamgaciConstants.errorColor.withValues(alpha: 0.1)
                           : isLowStock
-                          ? TamgaciConstants.warningColor.withValues(alpha: 0.1)
-                          : TamgaciConstants.successColor.withValues(
-                              alpha: 0.1,
-                            ),
+                              ? TamgaciConstants.warningColor
+                                  .withValues(alpha: 0.1)
+                              : TamgaciConstants.successColor.withValues(
+                                  alpha: 0.1,
+                                ),
                       borderRadius: BorderRadius.circular(
                         TamgaciConstants.radiusSM,
                       ),
@@ -294,8 +324,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                       color: isOutOfStock
                           ? TamgaciConstants.errorColor
                           : isLowStock
-                          ? TamgaciConstants.warningColor
-                          : TamgaciConstants.successColor,
+                              ? TamgaciConstants.warningColor
+                              : TamgaciConstants.successColor,
                       size: 24,
                     ),
                   ),
@@ -312,7 +342,9 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: TamgaciConstants.textPrimary,
+                            color: isDark
+                                ? TamgaciConstants.textPrimaryDark
+                                : TamgaciConstants.textPrimary,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -323,7 +355,9 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w400,
-                              color: TamgaciConstants.textSecondary,
+                              color: isDark
+                                  ? TamgaciConstants.textSecondaryDark
+                                  : TamgaciConstants.textSecondary,
                             ),
                           ),
                       ],
@@ -346,7 +380,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                   Expanded(
                     child: _buildInfoItem(
                       label: 'Fiyat',
-                      value: currencyFormat.format(product.unitPrice),
+                      value: CurrencyHelper.formatAmount(
+                          product.unitPrice, product.currency),
                       color: TamgaciConstants.primaryColor,
                     ),
                   ),
@@ -361,8 +396,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                       color: isOutOfStock
                           ? TamgaciConstants.errorColor
                           : isLowStock
-                          ? TamgaciConstants.warningColor
-                          : TamgaciConstants.successColor,
+                              ? TamgaciConstants.warningColor
+                              : TamgaciConstants.successColor,
                     ),
                   ),
                 ],
@@ -384,7 +419,9 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                         product.sku!,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: TamgaciConstants.textSecondary,
+                          color: isDark
+                              ? TamgaciConstants.textSecondaryDark
+                              : TamgaciConstants.textSecondary,
                         ),
                       ),
                     ],
@@ -401,7 +438,9 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                         product.barcode!,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: TamgaciConstants.textSecondary,
+                          color: isDark
+                              ? TamgaciConstants.textSecondaryDark
+                              : TamgaciConstants.textSecondary,
                         ),
                       ),
                     ],
@@ -524,6 +563,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // ignore: deprecated_member_use
             RadioListTile<String>(
               title: const Text('İsme Göre'),
               value: 'name',
@@ -535,6 +575,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                 Navigator.of(context).pop();
               },
             ),
+            // ignore: deprecated_member_use
             RadioListTile<String>(
               title: const Text('Fiyata Göre'),
               value: 'price',
@@ -546,6 +587,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                 Navigator.of(context).pop();
               },
             ),
+            // ignore: deprecated_member_use
             RadioListTile<String>(
               title: const Text('Stok Miktarına Göre'),
               value: 'stock',
@@ -557,6 +599,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
                 Navigator.of(context).pop();
               },
             ),
+            // ignore: deprecated_member_use
             RadioListTile<String>(
               title: const Text('Kategoriye Göre'),
               value: 'category',

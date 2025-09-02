@@ -1,0 +1,31 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "tamgaci",
+          "appId": "1:545591570234:android:65ef5a0afdeaab74aaaa03",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "tamgaci",
+          "configurations": {
+            "android": "1:545591570234:android:65ef5a0afdeaab74aaaa03",
+            "ios": "1:545591570234:ios:2f15c9bac9d1a933aaaa03",
+            "macos": "1:545591570234:ios:2f15c9bac9d1a933aaaa03",
+            "web": "1:545591570234:web:ae520a51ceeb793caaaa03",
+            "windows": "1:545591570234:web:1bb5a64f11c8b88caaaa03"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "eur3",
+    "rules": "flutter run -d chrome",
+    "indexes": "Y"
+  }
+}

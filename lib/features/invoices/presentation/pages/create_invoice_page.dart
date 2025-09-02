@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/utils/currency_helper.dart';
+import '../../../../core/providers/currency_providers.dart';
 import '../../domain/entities/invoice.dart';
 import '../../domain/entities/invoice_item.dart';
 import '../../data/models/invoice_status.dart';
@@ -139,16 +141,22 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(invoiceFormProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: AppBar(
         title: Text(
           widget.invoiceId != null ? 'Fatura Düzenle' : 'Yeni Fatura',
         ),
         elevation: 0,
-        backgroundColor: TamgaciConstants.appBarColor,
-        foregroundColor: TamgaciConstants.textPrimary,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: isDark
+            ? TamgaciConstants.textPrimaryDark
+            : TamgaciConstants.textPrimary,
         actions: [
           if (formState.isLoading)
             const Center(
@@ -340,11 +348,12 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
                   labelText: 'Para Birimi',
                   prefixIcon: Icon(Icons.attach_money),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'TRY', child: Text('₺ TRY')),
-                  DropdownMenuItem(value: 'USD', child: Text('\$ USD')),
-                  DropdownMenuItem(value: 'EUR', child: Text('€ EUR')),
-                ],
+                items: CurrencyHelper.getCurrencyOptions().map((currency) {
+                  return DropdownMenuItem(
+                    value: currency['code'],
+                    child: Text(currency['name']!),
+                  );
+                }).toList(),
                 onChanged: (value) {
                   setState(() {
                     _currencyCode = value ?? 'TRY';
@@ -648,7 +657,6 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
           ],
         ),
         const SizedBox(height: TamgaciConstants.spaceMD),
-
         if (_items.isEmpty)
           _buildEmptyItemsState()
         else
@@ -896,6 +904,10 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
     final taxAmount = _calculateTaxAmount();
     final totalAmount = subtotal + taxAmount - _discountAmount;
 
+    // Varsayılan para birimi ve kurları al
+    final selectedCurrency = ref.watch(selectedCurrencyProvider);
+    final exchangeRatesAsync = ref.watch(exchangeRatesProvider);
+
     return Container(
       padding: const EdgeInsets.all(TamgaciConstants.spaceLG),
       decoration: BoxDecoration(
@@ -962,13 +974,40 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
                   color: TamgaciConstants.primaryColor,
                 ),
               ),
-              Text(
-                '${totalAmount.toStringAsFixed(2)} ${_getCurrencySymbol()}',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: TamgaciConstants.primaryColor,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${totalAmount.toStringAsFixed(2)} ${_getCurrencySymbol()}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: TamgaciConstants.primaryColor,
+                    ),
+                  ),
+                  // Varsayılan para birimi gösterimi
+                  if (_currencyCode != selectedCurrency.code)
+                    exchangeRatesAsync.when(
+                      data: (exchangeRates) {
+                        final convertedAmount = CurrencyHelper.convertCurrency(
+                          amount: totalAmount,
+                          fromCurrencyCode: _currencyCode,
+                          toCurrencyCode: selectedCurrency.code,
+                          exchangeRates: exchangeRates,
+                        );
+                        return Text(
+                          '(${convertedAmount.toStringAsFixed(2)} ${selectedCurrency.symbol})',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: TamgaciConstants.textSecondary,
+                          ),
+                        );
+                      },
+                      loading: () => const SizedBox.shrink(),
+                      error: (_, __) => const SizedBox.shrink(),
+                    ),
+                ],
               ),
             ],
           ),
@@ -1217,8 +1256,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
     final totalAmount = subtotal + taxAmount - _discountAmount;
 
     return Invoice(
-      id:
-          widget.invoiceId ??
+      id: widget.invoiceId ??
           _uuid.v4(), // Düzenleme modunda mevcut ID'yi kullan
       invoiceNumber: _invoiceNumberController.text.trim(),
       customerId: _selectedCustomer?.id ?? '',
@@ -1273,9 +1311,8 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
 
   /// Faturayı kaydet
   Future<void> _saveInvoice(Invoice invoice, List<InvoiceItem> items) async {
-    final invoiceId = await ref
-        .read(invoiceFormProvider.notifier)
-        .saveInvoice(invoice);
+    final invoiceId =
+        await ref.read(invoiceFormProvider.notifier).saveInvoice(invoice);
 
     if (invoiceId != null && mounted) {
       // Başarılı kayıt sonrası fatura detay sayfasına git

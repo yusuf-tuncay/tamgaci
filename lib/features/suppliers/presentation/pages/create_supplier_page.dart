@@ -98,6 +98,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
         bankAccount: _bankAccountController.text.trim(),
         creditLimit: double.tryParse(_creditLimitController.text) ?? 0.0,
         currentBalance: double.tryParse(_currentBalanceController.text) ?? 0.0,
+        currency: 'TRY', // Varsayılan para birimi
         status: _getStatusFromString(_selectedStatus),
         createdAt: widget.supplierId == null ? DateTime.now() : DateTime.now(),
         updatedAt: DateTime.now(),
@@ -134,9 +135,11 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      }
     }
   }
 
@@ -417,7 +420,6 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-
                       TextFormField(
                         controller: _notesController,
                         decoration: const InputDecoration(

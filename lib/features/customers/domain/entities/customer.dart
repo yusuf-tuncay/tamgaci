@@ -37,6 +37,12 @@ class Customer {
   /// Posta kodu
   final String? postalCode;
 
+  /// Müşteri bakiyesi
+  final double balance;
+
+  /// Bakiye para birimi
+  final String balanceCurrency;
+
   /// Notlar
   final String? notes;
 
@@ -61,6 +67,8 @@ class Customer {
     this.city,
     this.country,
     this.postalCode,
+    this.balance = 0.0,
+    this.balanceCurrency = 'TRY',
     this.notes,
     this.isActive = true,
     required this.createdAt,
@@ -81,6 +89,8 @@ class Customer {
       city: entity.city,
       country: entity.country,
       postalCode: entity.postalCode,
+      balance: entity.balance / 100.0, // Kuruştan liraya
+      balanceCurrency: entity.balanceCurrency,
       notes: entity.notes,
       isActive: entity.isActive,
       createdAt: entity.createdAt,
@@ -102,6 +112,8 @@ class Customer {
       city: city,
       country: country,
       postalCode: postalCode,
+      balance: (balance * 100).round(), // Liradan kuruşa
+      balanceCurrency: balanceCurrency,
       notes: notes,
       isActive: isActive,
       createdAt: createdAt,
@@ -122,6 +134,8 @@ class Customer {
     String? city,
     String? country,
     String? postalCode,
+    double? balance,
+    String? balanceCurrency,
     String? notes,
     bool? isActive,
     DateTime? createdAt,
@@ -139,6 +153,8 @@ class Customer {
       city: city ?? this.city,
       country: country ?? this.country,
       postalCode: postalCode ?? this.postalCode,
+      balance: balance ?? this.balance,
+      balanceCurrency: balanceCurrency ?? this.balanceCurrency,
       notes: notes ?? this.notes,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
@@ -198,9 +214,61 @@ class Customer {
     return parts.join(' • ');
   }
 
+  /// Formatlanmış bakiye
+  String get formattedBalance {
+    return '${balance.toStringAsFixed(2)} $balanceCurrency';
+  }
+
+  /// Bakiye para birimi sembolü
+  String get balanceCurrencySymbol {
+    switch (balanceCurrency.toUpperCase()) {
+      case 'TRY':
+        return '₺';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'RUB':
+        return '₽';
+      case 'CNY':
+        return '¥';
+      case 'AED':
+        return 'د.إ';
+      case 'BGN':
+        return 'лв';
+      case 'CHF':
+        return 'CHF';
+      case 'CAD':
+        return 'C\$';
+      case 'AUD':
+        return 'A\$';
+      case 'JPY':
+        return '¥';
+      default:
+        return balanceCurrency;
+    }
+  }
+
+  /// Bakiye pozitif mi?
+  bool get hasPositiveBalance {
+    return balance > 0;
+  }
+
+  /// Bakiye negatif mi?
+  bool get hasNegativeBalance {
+    return balance < 0;
+  }
+
+  /// Bakiye sıfır mı?
+  bool get hasZeroBalance {
+    return balance == 0;
+  }
+
   @override
   String toString() {
-    return 'Customer(id: $id, name: $name, type: ${customerType.displayName})';
+    return 'Customer(id: $id, name: $name, type: ${customerType.displayName}, balance: $formattedBalance)';
   }
 
   @override

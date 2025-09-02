@@ -6,29 +6,26 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:uuid/uuid.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import '../../domain/entities/user_profile.dart';
 
 /// Kullanıcı profil repository implementation
 class UserProfileRepositoryImpl implements UserProfileRepository {
-  static const String _profileKey = 'user_profile';
   static const String _profilesKey = 'user_profiles';
   static const String _photoDirectory = 'profile_photos';
-  final Uuid _uuid = const Uuid();
 
   @override
   Future<UserProfile> getUserProfile(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     final profilesJson = prefs.getString(_profilesKey);
-    
+
     if (profilesJson != null) {
       final Map<String, dynamic> profilesMap = json.decode(profilesJson);
       if (profilesMap.containsKey(userId)) {
         return _fromJson(profilesMap[userId]);
       }
     }
-    
+
     // Profil bulunamadıysa varsayılan profil oluştur
     return createDefaultProfile(userId);
   }
@@ -38,11 +35,11 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
     final prefs = await SharedPreferences.getInstance();
     final profilesJson = prefs.getString(_profilesKey);
     Map<String, dynamic> profilesMap = {};
-    
+
     if (profilesJson != null) {
       profilesMap = json.decode(profilesJson);
     }
-    
+
     profilesMap[profile.id] = _toJson(profile);
     await prefs.setString(_profilesKey, json.encode(profilesMap));
   }
@@ -59,30 +56,31 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
         // Web platformu için base64 formatında saklama
         final prefs = await SharedPreferences.getInstance();
         final photoKey = 'profile_photo_$userId';
-        
+
         // Web için dosya yolu yerine base64 string kullan
         // Bu durumda filePath aslında base64 string olacak
         await prefs.setString(photoKey, filePath);
-        
+
         return 'web_photo_$userId';
       } else {
         // Mobil platform için dosya sistemi kullan
         final appDir = await getApplicationDocumentsDirectory();
         final photoDir = Directory('${appDir.path}/$_photoDirectory');
-        
+
         // Fotoğraf dizini yoksa oluştur
         if (!await photoDir.exists()) {
           await photoDir.create(recursive: true);
         }
-        
+
         // Dosya adını oluştur
-        final fileName = '${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final fileName =
+            '${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final targetPath = '${photoDir.path}/$fileName';
-        
+
         // Dosyayı kopyala
         final sourceFile = File(filePath);
         final targetFile = await sourceFile.copy(targetPath);
-        
+
         return targetFile.path;
       }
     } catch (e) {
@@ -107,7 +105,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
             await file.delete();
           }
         }
-        
+
         // Profilden fotoğraf URL'sini kaldır
         final updatedProfile = profile.copyWith(
           profilePhotoUrl: null,
@@ -124,47 +122,47 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   Future<bool> isEmailUnique(String email, {String? excludeUserId}) async {
     final prefs = await SharedPreferences.getInstance();
     final profilesJson = prefs.getString(_profilesKey);
-    
+
     if (profilesJson != null) {
       final Map<String, dynamic> profilesMap = json.decode(profilesJson);
-      
+
       for (final entry in profilesMap.entries) {
         final profileId = entry.key;
         final profileData = entry.value as Map<String, dynamic>;
-        
+
         // Kendisi hariç aynı e-posta varsa false döndür
-        if (profileId != excludeUserId && 
-            profileData['email'] == email) {
+        if (profileId != excludeUserId && profileData['email'] == email) {
           return false;
         }
       }
     }
-    
+
     return true;
   }
 
   @override
   Future<bool> isPhoneUnique(String phone, {String? excludeUserId}) async {
-    if (phone.isEmpty) return true; // Boş telefon numarası benzersiz kabul edilir
-    
+    if (phone.isEmpty) {
+      return true; // Boş telefon numarası benzersiz kabul edilir
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final profilesJson = prefs.getString(_profilesKey);
-    
+
     if (profilesJson != null) {
       final Map<String, dynamic> profilesMap = json.decode(profilesJson);
-      
+
       for (final entry in profilesMap.entries) {
         final profileId = entry.key;
         final profileData = entry.value as Map<String, dynamic>;
-        
+
         // Kendisi hariç aynı telefon numarası varsa false döndür
-        if (profileId != excludeUserId && 
-            profileData['phone'] == phone) {
+        if (profileId != excludeUserId && profileData['phone'] == phone) {
           return false;
         }
       }
     }
-    
+
     return true;
   }
 
@@ -185,7 +183,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
-    
+
     await saveUserProfile(defaultProfile);
     return defaultProfile;
   }

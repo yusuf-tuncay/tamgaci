@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../providers/reports_providers.dart';
+import '../../../../core/providers/currency_providers.dart';
 
 /// Raporlar ana sayfası
 class ReportsOverviewPage extends ConsumerStatefulWidget {
@@ -25,8 +27,11 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
   Widget build(BuildContext context) {
     final reportsSummaryAsync = ref.watch(reportsSummaryProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Raporlar',
         showDrawer: true,
@@ -83,6 +88,8 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
 
   /// Dönem seçici oluşturur
   Widget _buildPeriodSelector() {
+    final selectedCurrency = ref.watch(selectedCurrencyProvider);
+    
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(
@@ -93,13 +100,35 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Rapor Dönemi',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: TamgaciConstants.textPrimary,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Rapor Dönemi',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: TamgaciConstants.textPrimary,
+                  ),
+                ),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.currency_exchange,
+                      size: 16,
+                      color: TamgaciConstants.primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Para Birimi: ${CurrencyHelper.getCurrencySymbol(selectedCurrency.code)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: TamgaciConstants.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             Wrap(

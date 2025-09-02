@@ -64,7 +64,6 @@ class CustomErrorWidget extends StatelessWidget {
               // Hata detayı (varsa)
               if (error != null) ...[
                 const SizedBox(height: 8),
-
                 Text(
                   error!,
                   style: GoogleFonts.poppins(
@@ -79,7 +78,6 @@ class CustomErrorWidget extends StatelessWidget {
               // Tekrar dene butonu (varsa)
               if (onRetry != null) ...[
                 const SizedBox(height: 24),
-
                 ElevatedButton.icon(
                   onPressed: onRetry,
                   icon: const Icon(Icons.refresh),
@@ -122,9 +120,10 @@ class SmallErrorWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: TamgaciConstants.errorColor.withOpacity(0.1),
+        color: TamgaciConstants.errorColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-        border: Border.all(color: TamgaciConstants.errorColor.withOpacity(0.3)),
+        border: Border.all(
+            color: TamgaciConstants.errorColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -133,9 +132,7 @@ class SmallErrorWidget extends StatelessWidget {
             color: TamgaciConstants.errorColor,
             size: 20,
           ),
-
           const SizedBox(width: 12),
-
           Expanded(
             child: Text(
               message,
@@ -146,10 +143,8 @@ class SmallErrorWidget extends StatelessWidget {
               ),
             ),
           ),
-
           if (onRetry != null) ...[
             const SizedBox(width: 8),
-
             IconButton(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),

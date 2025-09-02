@@ -53,12 +53,13 @@ class _IncomeDetailPageState extends ConsumerState<IncomeDetailPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              navigator.pop();
               await ref
                   .read(incomeFormProvider.notifier)
                   .deleteIncome(widget.incomeId);
               if (mounted) {
-                Navigator.of(context).pop(); // Detay sayfasından çık
+                navigator.pop(); // Detay sayfasından çık
               }
             },
             style: ElevatedButton.styleFrom(
@@ -247,7 +248,7 @@ class _IncomeDetailPageState extends ConsumerState<IncomeDetailPage> {
               _buildDetailRow('Müşteri', income.customerName ?? 'Müşteri yok'),
               _buildDetailRow(
                 'Ödeme Yöntemi',
-                income.paymentMethod ?? 'Belirtilmemiş',
+                income.paymentMethod,
               ),
             ],
           ),

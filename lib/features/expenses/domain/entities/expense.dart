@@ -15,6 +15,9 @@ class Expense {
   /// Gider tutarı
   final double amount;
 
+  /// Gider para birimi
+  final String currency;
+
   /// Gider kategorisi
   final String categoryId;
 
@@ -59,6 +62,7 @@ class Expense {
     required this.title,
     this.description,
     required this.amount,
+    required this.currency,
     required this.categoryId,
     required this.categoryName,
     required this.expenseDate,
@@ -80,6 +84,7 @@ class Expense {
     String? title,
     String? description,
     double? amount,
+    String? currency,
     String? categoryId,
     String? categoryName,
     DateTime? expenseDate,
@@ -99,6 +104,7 @@ class Expense {
       title: title ?? this.title,
       description: description ?? this.description,
       amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
       categoryId: categoryId ?? this.categoryId,
       categoryName: categoryName ?? this.categoryName,
       expenseDate: expenseDate ?? this.expenseDate,

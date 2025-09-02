@@ -119,7 +119,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             .updateProfile(updatedProfile);
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.showSnackBar(
             const SnackBar(
               content: Text('Profil bilgileri başarıyla güncellendi'),
               backgroundColor: Colors.green,
@@ -129,7 +130,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           SnackBar(content: Text('Hata: $e')),
         );
       }
@@ -144,6 +146,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// Profil fotoğrafı seç
   Future<void> _pickProfilePhoto() async {
+    final currentContext = context;
+
     try {
       if (!kIsWeb) {
         // Mobil platform için izin kontrolü
@@ -162,7 +166,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
       // Fotoğraf seçme seçenekleri
       final ImageSource? source = await showDialog<ImageSource>(
-        context: context,
+        context: currentContext,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Fotoğraf Seç'),
@@ -215,7 +219,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               .uploadProfilePhoto(photoData);
 
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            final messenger = ScaffoldMessenger.of(currentContext);
+            messenger.showSnackBar(
               const SnackBar(
                 content: Text('Profil fotoğrafı başarıyla güncellendi'),
                 backgroundColor: Colors.green,
@@ -226,7 +231,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(currentContext);
+        messenger.showSnackBar(
           SnackBar(content: Text('Fotoğraf yüklenirken hata oluştu: $e')),
         );
       }
@@ -244,21 +250,23 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     if (_currentPasswordController.text.isEmpty ||
         _newPasswordController.text.isEmpty ||
         _confirmPasswordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         const SnackBar(content: Text('Tüm şifre alanlarını doldurun')),
       );
       return;
     }
 
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Yeni şifreler eşleşmiyor')));
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Yeni şifreler eşleşmiyor')));
       return;
     }
 
     if (_newPasswordController.text.length < 8) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(
         const SnackBar(content: Text('Yeni şifre en az 8 karakter olmalıdır')),
       );
       return;
@@ -273,7 +281,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       await Future.delayed(const Duration(seconds: 1)); // Simüle edilmiş işlem
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(
           const SnackBar(
             content: Text('Şifre başarıyla değiştirildi'),
             backgroundColor: Colors.green,
@@ -288,9 +297,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     } finally {
       if (mounted) {
@@ -305,9 +313,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
-      appBar: const CustomAppBar(title: 'Profil', showDrawer: false),
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
+      appBar: const CustomAppBar(
+          title: 'Profil', showBackButton: true, showDrawer: false),
       body: profileAsync.when(
         data: (profile) => Form(
           key: _formKey,
@@ -350,7 +364,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.05),
@@ -413,6 +427,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -420,7 +435,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 error.toString(),
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: TamgaciConstants.textSecondary,
+                  color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -555,6 +570,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// Bölüm başlığı
   Widget _buildSectionTitle(String title) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
@@ -562,7 +580,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: TamgaciConstants.textPrimary,
+          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
         ),
       ),
     );
@@ -570,7 +588,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// Kişisel bilgiler bölümü
   Widget _buildPersonalInfoSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Card(
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -607,7 +629,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// İş bilgileri bölümü
   Widget _buildWorkInfoSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Card(
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -649,7 +675,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// Şifre bölümü
   Widget _buildPasswordSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Card(
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

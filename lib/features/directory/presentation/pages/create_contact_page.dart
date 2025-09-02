@@ -397,7 +397,7 @@ class _CreateContactPageState extends ConsumerState<CreateContactPage> {
     if (_formKey.currentState!.validate()) {
       final contact = Contact(
         name: InputValidators.formatName(_nameController.text),
-        type: _selectedType,
+        type: _selectedType.value,
         email: _emailController.text.trim().isEmpty
             ? null
             : InputValidators.formatEmail(_emailController.text),
@@ -435,15 +435,17 @@ class _CreateContactPageState extends ConsumerState<CreateContactPage> {
           .read(contactOperationsProvider.notifier)
           .addContact(contact)
           .then((_) {
-        final state = ref.read(contactOperationsProvider);
-        if (state.successMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.successMessage!),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.pop(context);
+        if (mounted) {
+          final state = ref.read(contactOperationsProvider);
+          if (state.successMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.successMessage!),
+                backgroundColor: Colors.green,
+              ),
+            );
+            Navigator.pop(context);
+          }
         }
       });
     }

@@ -34,6 +34,9 @@ class Income {
   /// Gelir tutarı
   final double amount;
 
+  /// Gelir para birimi
+  final String currency;
+
   /// Gelir kategorisi ID'si
   final String categoryId;
 
@@ -75,6 +78,7 @@ class Income {
     required this.title,
     this.description,
     required this.amount,
+    this.currency = 'TRY',
     required this.categoryId,
     required this.categoryName,
     required this.incomeDate,
@@ -95,6 +99,7 @@ class Income {
     String? title,
     String? description,
     double? amount,
+    String? currency,
     String? categoryId,
     String? categoryName,
     DateTime? incomeDate,
@@ -113,6 +118,7 @@ class Income {
       title: title ?? this.title,
       description: description ?? this.description,
       amount: amount ?? this.amount,
+      currency: currency ?? this.currency,
       categoryId: categoryId ?? this.categoryId,
       categoryName: categoryName ?? this.categoryName,
       incomeDate: incomeDate ?? this.incomeDate,
@@ -135,6 +141,7 @@ class Income {
       title: json['title'] as String,
       description: json['description'] as String?,
       amount: (json['amount'] as num).toDouble(),
+      currency: json['currency'] as String,
       categoryId: json['categoryId'] as String,
       categoryName: json['categoryName'] as String,
       incomeDate: DateTime.parse(json['incomeDate'] as String),
@@ -157,6 +164,7 @@ class Income {
       'title': title,
       'description': description,
       'amount': amount,
+      'currency': currency,
       'categoryId': categoryId,
       'categoryName': categoryName,
       'incomeDate': incomeDate.toIso8601String(),

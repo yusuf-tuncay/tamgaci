@@ -29,6 +29,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
       title: expense.title,
       description: expense.description,
       amount: expense.amount,
+      currency: expense.currency,
       categoryId: int.parse(expense.categoryId),
       date: expense.expenseDate,
       status: expense.status.name,
@@ -51,6 +52,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
       title: expense.title,
       description: expense.description,
       amount: expense.amount,
+      currency: expense.currency,
       categoryId: int.parse(expense.categoryId),
       date: expense.expenseDate,
       status: expense.status.name,
@@ -347,6 +349,7 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
       title: entity.title,
       description: entity.description,
       amount: entity.amount,
+      currency: entity.currency,
       categoryId: entity.categoryId.toString(),
       categoryName: 'Kategori', // TODO: Get from category
       expenseDate: entity.date,

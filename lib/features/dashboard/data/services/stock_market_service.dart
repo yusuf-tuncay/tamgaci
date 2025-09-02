@@ -4,6 +4,7 @@
 import 'dart:convert';
 import 'dart:async';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 
 /// Piyasa verileri modeli (BIST 100 kaldırıldı)
 class StockMarketData {
@@ -108,7 +109,7 @@ class StockMarketService {
 
       return stockData;
     } catch (e) {
-      print('Stock market data error: $e');
+      debugPrint('Stock market data error: $e');
       // Hata durumunda cache'den veri al
       if (_dataCache.isNotEmpty) {
         return _getFromCache();
@@ -219,7 +220,7 @@ class StockMarketService {
         }
       }
     } catch (e) {
-      print('Currency data error: $e');
+      debugPrint('Currency data error: $e');
     }
 
     // Alternatif: Exchange Rate API
@@ -249,7 +250,7 @@ class StockMarketService {
         }
       }
     } catch (e) {
-      print('Exchange rate API error: $e');
+      debugPrint('Exchange rate API error: $e');
     }
 
     // Varsayılan değerler (gerçek veriler)
@@ -309,7 +310,7 @@ class StockMarketService {
         }
       }
     } catch (e) {
-      print('Gold data error: $e');
+      debugPrint('Gold data error: $e');
     }
 
     // Varsayılan değerler (gerçek veriler)
@@ -372,7 +373,7 @@ class StockMarketService {
         }
       }
     } catch (e) {
-      print('Currency chart data error: $e');
+      debugPrint('Currency chart data error: $e');
     }
 
     // Hata durumunda varsayılan veriler

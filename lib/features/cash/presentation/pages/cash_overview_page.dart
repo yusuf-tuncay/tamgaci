@@ -36,8 +36,9 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
         actions: [
           IconButton(
             onPressed: () =>
-                Navigator.of(context).pushNamed(TamgaciRoutes.cashTransactions),
-            icon: const Icon(Icons.history),
+                Navigator.of(context).pushNamed(TamgaciRoutes.cashList),
+            icon: const Icon(Icons.list),
+            tooltip: 'İşlem Listesi',
           ),
           IconButton(
             onPressed: () => _showAddTransactionDialog(),
@@ -98,13 +99,12 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
           ),
         ),
         const SizedBox(height: 16),
-        
         incomesAsync.when(
           data: (incomes) => expensesAsync.when(
             data: (expenses) {
               final now = DateTime.now();
               final currentMonth = DateTime(now.year, now.month);
-              
+
               // Bu ay gelirleri
               final currentMonthIncomes = incomes.where((income) {
                 final incomeDate = DateTime(
@@ -125,10 +125,12 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
 
               // Toplam hesaplamalar
               final totalIncome = currentMonthIncomes.fold<double>(
-                0, (sum, income) => sum + income.amount,
+                0,
+                (sum, income) => sum + income.amount,
               );
               final totalExpense = currentMonthExpenses.fold<double>(
-                0, (sum, expense) => sum + expense.amount,
+                0,
+                (sum, expense) => sum + expense.amount,
               );
               final netBalance = totalIncome - totalExpense;
 
@@ -165,8 +167,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                           title: 'Net Bakiye',
                           amount: netBalance,
                           icon: Icons.account_balance_wallet,
-                          color: netBalance >= 0 
-                              ? TamgaciConstants.primaryColor 
+                          color: netBalance >= 0
+                              ? TamgaciConstants.primaryColor
                               : TamgaciConstants.errorColor,
                           isPositive: netBalance >= 0,
                         ),
@@ -175,7 +177,9 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                       Expanded(
                         child: _buildBalanceCard(
                           title: 'Toplam İşlem',
-                          amount: (currentMonthIncomes.length + currentMonthExpenses.length).toDouble(),
+                          amount: (currentMonthIncomes.length +
+                                  currentMonthExpenses.length)
+                              .toDouble(),
                           icon: Icons.receipt_long,
                           color: TamgaciConstants.infoColor,
                           isPositive: true,
@@ -306,7 +310,7 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
             ),
             const SizedBox(height: 4),
             Text(
-              isCount 
+              isCount
                   ? '${amount.toInt()}'
                   : '₺${NumberFormat('#,##0.00', 'tr_TR').format(amount.abs())}',
               style: GoogleFonts.poppins(
@@ -342,7 +346,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                 title: 'Gelir Ekle',
                 icon: Icons.add_circle_outline,
                 color: TamgaciConstants.successColor,
-                onTap: () => Navigator.of(context).pushNamed(TamgaciRoutes.createIncome),
+                onTap: () =>
+                    Navigator.of(context).pushNamed(TamgaciRoutes.createIncome),
               ),
             ),
             const SizedBox(width: 16),
@@ -351,7 +356,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                 title: 'Gider Ekle',
                 icon: Icons.remove_circle_outline,
                 color: TamgaciConstants.errorColor,
-                onTap: () => Navigator.of(context).pushNamed(TamgaciRoutes.createExpense),
+                onTap: () => Navigator.of(context)
+                    .pushNamed(TamgaciRoutes.createExpense),
               ),
             ),
           ],
@@ -364,7 +370,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                 title: 'Fatura Oluştur',
                 icon: Icons.receipt_long,
                 color: TamgaciConstants.primaryColor,
-                onTap: () => Navigator.of(context).pushNamed(TamgaciRoutes.createInvoice),
+                onTap: () => Navigator.of(context)
+                    .pushNamed(TamgaciRoutes.createInvoice),
               ),
             ),
             const SizedBox(width: 16),
@@ -373,7 +380,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                 title: 'Raporlar',
                 icon: Icons.bar_chart,
                 color: TamgaciConstants.infoColor,
-                onTap: () => Navigator.of(context).pushNamed(TamgaciRoutes.reportsOverview),
+                onTap: () => Navigator.of(context)
+                    .pushNamed(TamgaciRoutes.reportsOverview),
               ),
             ),
           ],
@@ -449,8 +457,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
             ),
             const Spacer(),
             TextButton(
-              onPressed: () =>
-                  Navigator.of(context).pushNamed(TamgaciRoutes.cashTransactions),
+              onPressed: () => Navigator.of(context)
+                  .pushNamed(TamgaciRoutes.cashTransactions),
               child: Text(
                 'Tümünü Gör',
                 style: GoogleFonts.poppins(
@@ -462,13 +470,12 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
           ],
         ),
         const SizedBox(height: 16),
-        
         incomesAsync.when(
           data: (incomes) => expensesAsync.when(
             data: (expenses) {
               // Son 10 işlemi birleştir ve sırala
               final allTransactions = <Map<String, dynamic>>[];
-              
+
               // Gelirleri ekle
               for (final income in incomes.take(5)) {
                 allTransactions.add({
@@ -480,7 +487,7 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                   'type': 'Gelir',
                 });
               }
-              
+
               // Giderleri ekle
               for (final expense in expenses.take(5)) {
                 allTransactions.add({
@@ -492,18 +499,19 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                   'type': 'Gider',
                 });
               }
-              
+
               // Tarihe göre sırala (en yeni önce)
               allTransactions.sort((a, b) => b['date'].compareTo(a['date']));
-              
+
               // İlk 10 işlemi al
               final recentTransactions = allTransactions.take(10).toList();
-              
+
               if (recentTransactions.isEmpty) {
                 return Card(
                   elevation: 1,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+                    borderRadius:
+                        BorderRadius.circular(TamgaciConstants.radiusMD),
                   ),
                   child: const Padding(
                     padding: EdgeInsets.all(32),
@@ -513,11 +521,12 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                   ),
                 );
               }
-              
+
               return Card(
                 elevation: 1,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+                  borderRadius:
+                      BorderRadius.circular(TamgaciConstants.radiusMD),
                 ),
                 child: Column(
                   children: recentTransactions.map((transaction) {
@@ -600,11 +609,10 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color:
-              (isIncome
-                      ? TamgaciConstants.successColor
-                      : TamgaciConstants.errorColor)
-                  .withValues(alpha: 0.1),
+          color: (isIncome
+                  ? TamgaciConstants.successColor
+                  : TamgaciConstants.errorColor)
+              .withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
         ),
         child: Icon(
@@ -660,14 +668,13 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
           ),
         ),
         const SizedBox(height: 16),
-        
         incomesAsync.when(
           data: (incomes) => expensesAsync.when(
             data: (expenses) {
               final now = DateTime.now();
               final currentMonth = DateTime(now.year, now.month);
               final lastMonth = DateTime(now.year, now.month - 1);
-              
+
               // Bu ay gelirleri
               final currentMonthIncomes = incomes.where((income) {
                 final incomeDate = DateTime(
@@ -706,16 +713,21 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
 
               // Toplam hesaplamalar
               final currentMonthIncomeTotal = currentMonthIncomes.fold<double>(
-                0, (sum, income) => sum + income.amount,
+                0,
+                (sum, income) => sum + income.amount,
               );
-              final currentMonthExpenseTotal = currentMonthExpenses.fold<double>(
-                0, (sum, expense) => sum + expense.amount,
+              final currentMonthExpenseTotal =
+                  currentMonthExpenses.fold<double>(
+                0,
+                (sum, expense) => sum + expense.amount,
               );
               final lastMonthIncomeTotal = lastMonthIncomes.fold<double>(
-                0, (sum, income) => sum + income.amount,
+                0,
+                (sum, income) => sum + income.amount,
               );
               final lastMonthExpenseTotal = lastMonthExpenses.fold<double>(
-                0, (sum, expense) => sum + expense.amount,
+                0,
+                (sum, expense) => sum + expense.amount,
               );
 
               // Yüzde değişim hesaplamaları
@@ -730,10 +742,14 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                       100)
                   : 0.0;
 
-              final netProfit = currentMonthIncomeTotal - currentMonthExpenseTotal;
-              final lastMonthNetProfit = lastMonthIncomeTotal - lastMonthExpenseTotal;
+              final netProfit =
+                  currentMonthIncomeTotal - currentMonthExpenseTotal;
+              final lastMonthNetProfit =
+                  lastMonthIncomeTotal - lastMonthExpenseTotal;
               final netProfitChangePercent = lastMonthNetProfit > 0
-                  ? ((netProfit - lastMonthNetProfit) / lastMonthNetProfit * 100)
+                  ? ((netProfit - lastMonthNetProfit) /
+                      lastMonthNetProfit *
+                      100)
                   : 0.0;
 
               return Column(
@@ -743,8 +759,10 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                       Expanded(
                         child: _buildStatCard(
                           title: 'Toplam Gelir',
-                          value: '₺${NumberFormat('#,##0', 'tr_TR').format(currentMonthIncomeTotal)}',
-                          change: '${incomeChangePercent >= 0 ? '+' : ''}${incomeChangePercent.toStringAsFixed(1)}%',
+                          value:
+                              '₺${NumberFormat('#,##0', 'tr_TR').format(currentMonthIncomeTotal)}',
+                          change:
+                              '${incomeChangePercent >= 0 ? '+' : ''}${incomeChangePercent.toStringAsFixed(1)}%',
                           isPositive: incomeChangePercent >= 0,
                         ),
                       ),
@@ -752,9 +770,12 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                       Expanded(
                         child: _buildStatCard(
                           title: 'Toplam Gider',
-                          value: '₺${NumberFormat('#,##0', 'tr_TR').format(currentMonthExpenseTotal)}',
-                          change: '${expenseChangePercent >= 0 ? '+' : ''}${expenseChangePercent.toStringAsFixed(1)}%',
-                          isPositive: expenseChangePercent < 0, // Gider azalması pozitif
+                          value:
+                              '₺${NumberFormat('#,##0', 'tr_TR').format(currentMonthExpenseTotal)}',
+                          change:
+                              '${expenseChangePercent >= 0 ? '+' : ''}${expenseChangePercent.toStringAsFixed(1)}%',
+                          isPositive: expenseChangePercent <
+                              0, // Gider azalması pozitif
                         ),
                       ),
                     ],
@@ -765,8 +786,10 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                       Expanded(
                         child: _buildStatCard(
                           title: 'Net Kar',
-                          value: '₺${NumberFormat('#,##0', 'tr_TR').format(netProfit)}',
-                          change: '${netProfitChangePercent >= 0 ? '+' : ''}${netProfitChangePercent.toStringAsFixed(1)}%',
+                          value:
+                              '₺${NumberFormat('#,##0', 'tr_TR').format(netProfit)}',
+                          change:
+                              '${netProfitChangePercent >= 0 ? '+' : ''}${netProfitChangePercent.toStringAsFixed(1)}%',
                           isPositive: netProfitChangePercent >= 0,
                         ),
                       ),
@@ -774,7 +797,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
                       Expanded(
                         child: _buildStatCard(
                           title: 'İşlem Sayısı',
-                          value: '${currentMonthIncomes.length + currentMonthExpenses.length}',
+                          value:
+                              '${currentMonthIncomes.length + currentMonthExpenses.length}',
                           change: 'Bu ay',
                           isPositive: true,
                         ),
@@ -920,7 +944,8 @@ class _CashOverviewPageState extends ConsumerState<CashOverviewPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('İşlem Ekle'),
-        content: const Text('Gelir veya gider eklemek için ilgili sayfaya yönlendirileceksiniz.'),
+        content: const Text(
+            'Gelir veya gider eklemek için ilgili sayfaya yönlendirileceksiniz.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),

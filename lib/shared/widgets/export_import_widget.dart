@@ -173,18 +173,22 @@ class _ExportImportWidgetState extends ConsumerState<ExportImportWidget> {
 
     try {
       String? filePath;
-      final fileName = '${widget.title}_${DateTime.now().millisecondsSinceEpoch}';
+      final fileName =
+          '${widget.title}_${DateTime.now().millisecondsSinceEpoch}';
 
       switch (format) {
         case 'json':
           final jsonData = _convertToJsonFormat();
-          filePath = await _exportImportService.exportToJson(jsonData, fileName);
+          filePath =
+              await _exportImportService.exportToJson(jsonData, fileName);
           break;
         case 'excel':
-          filePath = await _exportImportService.exportToExcel(widget.data, fileName);
+          filePath =
+              await _exportImportService.exportToExcel(widget.data, fileName);
           break;
         case 'pdf':
-          filePath = await _exportImportService.exportToPdf(widget.data, fileName);
+          filePath =
+              await _exportImportService.exportToPdf(widget.data, fileName);
           break;
       }
 
@@ -192,7 +196,7 @@ class _ExportImportWidgetState extends ConsumerState<ExportImportWidget> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('$format formatında dışa aktarıldı: ${fileName}'),
+              content: Text('$format formatında dışa aktarıldı: $fileName'),
               backgroundColor: Colors.green,
               action: SnackBarAction(
                 label: 'Dosyayı Aç',
@@ -290,11 +294,11 @@ class _ExportImportWidgetState extends ConsumerState<ExportImportWidget> {
 
   Map<String, dynamic> _convertToJsonFormat() {
     final Map<String, dynamic> jsonData = {};
-    
+
     widget.data.forEach((key, value) {
       jsonData[key] = value;
     });
-    
+
     return jsonData;
   }
 

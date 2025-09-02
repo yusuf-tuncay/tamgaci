@@ -76,13 +76,18 @@ class _ExpensesListPageState extends ConsumerState<ExpensesListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final operationsState = ref.watch(expenseOperationsProvider);
+    final expensesAsync = ref.watch(expensesStreamProvider);
     final searchQuery = ref.watch(expenseSearchQueryProvider);
     final selectedCategory = ref.watch(selectedExpenseCategoryProvider);
     final selectedDateRange = ref.watch(expenseDateRangeProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Giderler',
         showDrawer: true,
@@ -154,9 +159,8 @@ class _ExpensesListPageState extends ConsumerState<ExpensesListPage> {
                       label: Text(selectedCategory.name),
                       onDeleted: () {
                         ref
-                                .read(selectedExpenseCategoryProvider.notifier)
-                                .state =
-                            null;
+                            .read(selectedExpenseCategoryProvider.notifier)
+                            .state = null;
                       },
                     ),
                   if (selectedDateRange != null)
@@ -175,30 +179,9 @@ class _ExpensesListPageState extends ConsumerState<ExpensesListPage> {
 
           // Gider listesi
           Expanded(
-            child: Consumer(
-              builder: (context, ref, child) {
-                if (operationsState.isLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (operationsState.errorMessage != null) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text('Hata: ${operationsState.errorMessage}'),
-                        ElevatedButton(
-                          onPressed: _loadExpenses,
-                          child: const Text('Tekrar Dene'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final expenses = operationsState.expenses;
-
-                if (expenses.isEmpty && !operationsState.isLoading) {
+            child: expensesAsync.when(
+              data: (expenses) {
+                if (expenses.isEmpty) {
                   return EmptyStateWidget(
                     icon: Icons.money_off_outlined,
                     title: 'Gider Bulunamadı',
@@ -217,7 +200,7 @@ class _ExpensesListPageState extends ConsumerState<ExpensesListPage> {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    ref.read(expenseOperationsProvider.notifier).loadExpenses();
+                    ref.invalidate(expensesStreamProvider);
                   },
                   child: ListView.builder(
                     controller: _scrollController,
@@ -236,6 +219,19 @@ class _ExpensesListPageState extends ConsumerState<ExpensesListPage> {
                   ),
                 );
               },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Hata: $error'),
+                    ElevatedButton(
+                      onPressed: _loadExpenses,
+                      child: const Text('Tekrar Dene'),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

@@ -91,6 +91,8 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     final operationsState = ref.watch(productOperationsProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     // Ürün bulunamadığında hata sayfası göster
     try {
@@ -100,7 +102,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
       );
 
       return Scaffold(
-        backgroundColor: TamgaciConstants.backgroundColor,
+        backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
         appBar: CustomAppBar(
           title: 'Ürün Detayı',
           showBackButton: true,
@@ -136,7 +138,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
       );
     } catch (e) {
       return Scaffold(
-        backgroundColor: TamgaciConstants.backgroundColor,
+        backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
         appBar: const CustomAppBar(title: 'Ürün Detayı', showBackButton: true),
         body: Center(
           child: Column(
@@ -148,23 +150,23 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                 color: TamgaciConstants.errorColor,
               ),
               const SizedBox(height: 16),
-              Text(
-                'Ürün bulunamadı',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: TamgaciConstants.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Aradığınız ürün mevcut değil veya silinmiş olabilir.',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: TamgaciConstants.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
+                             Text(
+                 'Ürün bulunamadı',
+                 style: GoogleFonts.poppins(
+                   fontSize: 18,
+                   fontWeight: FontWeight.w600,
+                   color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                 ),
+               ),
+               const SizedBox(height: 8),
+               Text(
+                 'Aradığınız ürün mevcut değil veya silinmiş olabilir.',
+                 style: GoogleFonts.poppins(
+                   fontSize: 14,
+                   color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                 ),
+                 textAlign: TextAlign.center,
+               ),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -180,8 +182,6 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
   /// Ürün detayını oluşturur
   Widget _buildProductDetail(Product product) {
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
-    final isLowStock = product.isLowStock;
-    final isOutOfStock = product.stockQuantity <= 0;
 
     return SingleChildScrollView(
       padding: TamgaciConstants.paddingMedium(context),
@@ -223,11 +223,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Ürün kartı oluşturur
   Widget _buildProductCard(Product product, NumberFormat currencyFormat) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isLowStock = product.isLowStock;
     final isOutOfStock = product.stockQuantity <= 0;
 
     return Card(
       elevation: 4,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusLG),
       ),
@@ -260,16 +263,16 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
             const SizedBox(height: TamgaciConstants.spaceMD),
 
-            // Ürün adı
-            Text(
-              product.name,
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: TamgaciConstants.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
+                         // Ürün adı
+             Text(
+               product.name,
+               style: GoogleFonts.poppins(
+                 fontSize: 24,
+                 fontWeight: FontWeight.w600,
+                 color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+               ),
+               textAlign: TextAlign.center,
+             ),
 
             if (product.category != null) ...[
               const SizedBox(height: TamgaciConstants.spaceSM),
@@ -312,8 +315,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Detay bölümü oluşturur
   Widget _buildDetailSection(Product product, NumberFormat currencyFormat) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Card(
       elevation: 2,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),
@@ -322,14 +329,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Ürün Bilgileri',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: TamgaciConstants.textPrimary,
-              ),
-            ),
+                         Text(
+               'Ürün Bilgileri',
+               style: GoogleFonts.poppins(
+                 fontSize: 18,
+                 fontWeight: FontWeight.w600,
+                 color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+               ),
+             ),
             const SizedBox(height: TamgaciConstants.spaceMD),
             _buildDetailRow('Ürün Adı', product.name),
             if (product.sku != null) _buildDetailRow('SKU', product.sku!),
@@ -347,11 +354,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Stok bölümü oluşturur
   Widget _buildStockSection(Product product) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final isLowStock = product.isLowStock;
     final isOutOfStock = product.stockQuantity <= 0;
 
     return Card(
       elevation: 2,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),
@@ -371,14 +381,14 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
                           : TamgaciConstants.successColor,
                 ),
                 const SizedBox(width: TamgaciConstants.spaceSM),
-                Text(
-                  'Stok Bilgileri',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: TamgaciConstants.textPrimary,
-                  ),
-                ),
+                                 Text(
+                   'Stok Bilgileri',
+                   style: GoogleFonts.poppins(
+                     fontSize: 18,
+                     fontWeight: FontWeight.w600,
+                     color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                   ),
+                 ),
               ],
             ),
             const SizedBox(height: TamgaciConstants.spaceMD),
@@ -400,8 +410,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Fiyat bölümü oluşturur
   Widget _buildPriceSection(Product product, NumberFormat currencyFormat) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Card(
       elevation: 2,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),
@@ -412,16 +426,17 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.attach_money, color: TamgaciConstants.successColor),
+                const Icon(Icons.attach_money,
+                    color: TamgaciConstants.successColor),
                 const SizedBox(width: TamgaciConstants.spaceSM),
-                Text(
-                  'Fiyat Bilgileri',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: TamgaciConstants.textPrimary,
-                  ),
-                ),
+                                 Text(
+                   'Fiyat Bilgileri',
+                   style: GoogleFonts.poppins(
+                     fontSize: 18,
+                     fontWeight: FontWeight.w600,
+                     color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                   ),
+                 ),
               ],
             ),
             const SizedBox(height: TamgaciConstants.spaceMD),
@@ -441,8 +456,12 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Açıklama bölümü oluşturur
   Widget _buildDescriptionSection(Product product) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Card(
       elevation: 2,
+      color: isDark ? TamgaciConstants.cardColorDark : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),
@@ -453,26 +472,27 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.description, color: TamgaciConstants.textSecondary),
+                const Icon(Icons.description,
+                    color: TamgaciConstants.textSecondary),
                 const SizedBox(width: TamgaciConstants.spaceSM),
-                Text(
-                  'Açıklama',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: TamgaciConstants.textPrimary,
-                  ),
-                ),
+                                 Text(
+                   'Açıklama',
+                   style: GoogleFonts.poppins(
+                     fontSize: 18,
+                     fontWeight: FontWeight.w600,
+                     color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                   ),
+                 ),
               ],
             ),
             const SizedBox(height: TamgaciConstants.spaceMD),
-            Text(
-              product.description!,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: TamgaciConstants.textSecondary,
-              ),
-            ),
+                         Text(
+               product.description!,
+               style: GoogleFonts.poppins(
+                 fontSize: 14,
+                 color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+               ),
+             ),
           ],
         ),
       ),
@@ -514,6 +534,9 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
 
   /// Detay satırı oluşturur
   Widget _buildDetailRow(String label, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -526,7 +549,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: TamgaciConstants.textSecondary,
+                color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
               ),
             ),
           ),
@@ -537,7 +560,7 @@ class _ProductDetailPageState extends ConsumerState<ProductDetailPage> {
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: TamgaciConstants.textPrimary,
+                color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
               ),
             ),
           ),

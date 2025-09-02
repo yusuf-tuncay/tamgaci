@@ -1,12 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/product_repository_impl.dart';
+import '../../data/repositories/firebase_product_repository.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../../../../core/database/tamgaci_database.dart';
+import 'package:flutter/foundation.dart';
+
 
 /// Ürün repository provider'ı
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
   try {
+    // Web platformunda Firebase kullan
+    if (kIsWeb) {
+      return FirebaseProductRepository();
+    }
+
+    // Diğer platformlarda SQLite kullan
     final databaseAsync = ref.watch(databaseProvider);
     return databaseAsync.when(
       data: (database) => ProductRepositoryImpl(database.productDao),

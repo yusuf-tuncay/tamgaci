@@ -1,5 +1,7 @@
 import 'package:floor/floor.dart';
 import 'package:tamgaci/core/database/converters/date_time_converter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../domain/entities/customer.dart';
 
 /// Müşteri varlığı - Database entity sınıfı
 @TypeConverters([DateTimeConverter])
@@ -49,6 +51,14 @@ class CustomerEntity {
   @ColumnInfo(name: 'postal_code')
   final String? postalCode;
 
+  /// Müşteri bakiyesi (kuruş cinsinden)
+  @ColumnInfo(name: 'balance')
+  final int balance;
+
+  /// Bakiye para birimi
+  @ColumnInfo(name: 'balance_currency')
+  final String balanceCurrency;
+
   /// Notlar
   @ColumnInfo(name: 'notes')
   final String? notes;
@@ -78,6 +88,8 @@ class CustomerEntity {
     this.city,
     this.country,
     this.postalCode,
+    this.balance = 0,
+    this.balanceCurrency = 'TRY',
     this.notes,
     this.isActive = true,
     required this.createdAt,
@@ -98,6 +110,8 @@ class CustomerEntity {
       city: json['city'] as String?,
       country: json['country'] as String?,
       postalCode: json['postal_code'] as String?,
+      balance: json['balance'] as int? ?? 0,
+      balanceCurrency: json['balance_currency'] as String? ?? 'TRY',
       notes: json['notes'] as String?,
       isActive: (json['is_active'] as int) == 1,
       createdAt: DateTime.fromMillisecondsSinceEpoch(json['created_at'] as int),
@@ -119,6 +133,8 @@ class CustomerEntity {
       'city': city,
       'country': country,
       'postal_code': postalCode,
+      'balance': balance,
+      'balance_currency': balanceCurrency,
       'notes': notes,
       'is_active': isActive ? 1 : 0,
       'created_at': createdAt.millisecondsSinceEpoch,
@@ -139,6 +155,8 @@ class CustomerEntity {
     String? city,
     String? country,
     String? postalCode,
+    int? balance,
+    String? balanceCurrency,
     String? notes,
     bool? isActive,
     DateTime? createdAt,
@@ -156,6 +174,8 @@ class CustomerEntity {
       city: city ?? this.city,
       country: country ?? this.country,
       postalCode: postalCode ?? this.postalCode,
+      balance: balance ?? this.balance,
+      balanceCurrency: balanceCurrency ?? this.balanceCurrency,
       notes: notes ?? this.notes,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
@@ -176,6 +196,99 @@ class CustomerEntity {
 
   @override
   int get hashCode => id.hashCode;
+
+  /// Firebase Firestore'dan entity oluşturma
+  factory CustomerEntity.fromFirestore(DocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    return CustomerEntity(
+      id: doc.id,
+      name: data['name'] as String? ?? '',
+      email: data['email'] as String?,
+      phone: data['phone'] as String?,
+      address: data['address'] as String?,
+      taxNumber: data['taxNumber'] as String?,
+      taxOffice: data['taxOffice'] as String?,
+      customerType:
+          data['customerType'] as String? ?? CustomerType.individual.value,
+      city: data['city'] as String?,
+      country: data['country'] as String?,
+      postalCode: data['postalCode'] as String?,
+      balance: data['balance'] as int? ?? 0,
+      balanceCurrency: data['balanceCurrency'] as String? ?? 'TRY',
+      notes: data['notes'] as String?,
+      isActive: data['isActive'] as bool? ?? true,
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  /// Entity'yi Firebase Firestore formatına dönüştürme
+  Map<String, dynamic> toFirestore() {
+    return {
+      'name': name,
+      'email': email,
+      'phone': phone,
+      'address': address,
+      'taxNumber': taxNumber,
+      'taxOffice': taxOffice,
+      'customerType': customerType,
+      'city': city,
+      'country': country,
+      'postalCode': postalCode,
+      'balance': balance,
+      'balanceCurrency': balanceCurrency,
+      'notes': notes,
+      'isActive': isActive,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+    };
+  }
+
+  /// Domain modeline dönüştürme
+  Customer toDomain() {
+    return Customer(
+      id: id,
+      name: name,
+      email: email,
+      phone: phone,
+      address: address,
+      taxNumber: taxNumber,
+      taxOffice: taxOffice,
+      customerType: CustomerType.fromValue(customerType),
+      city: city,
+      country: country,
+      postalCode: postalCode,
+      balance: balance / 100.0,
+      balanceCurrency: balanceCurrency,
+      notes: notes,
+      isActive: isActive,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
+  /// Domain modelinden entity oluşturma
+  factory CustomerEntity.fromDomain(Customer customer) {
+    return CustomerEntity(
+      id: customer.id,
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      address: customer.address,
+      taxNumber: customer.taxNumber,
+      taxOffice: customer.taxOffice,
+      customerType: customer.customerType.value,
+      city: customer.city,
+      country: customer.country,
+      postalCode: customer.postalCode,
+      balance: (customer.balance * 100).round(),
+      balanceCurrency: customer.balanceCurrency,
+      notes: customer.notes,
+      isActive: customer.isActive,
+      createdAt: customer.createdAt,
+      updatedAt: customer.updatedAt,
+    );
+  }
 }
 
 /// Müşteri türleri enum'u

@@ -4,8 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
@@ -69,8 +69,13 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
     final operationsState = ref.watch(supplierOperationsProvider);
     final searchQuery = _searchController.text;
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Tedarikçiler',
         showDrawer: true,
@@ -148,11 +153,11 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
     if (searchQuery.isNotEmpty) {
       filteredSuppliers = suppliers.where((supplier) {
         return supplier.name.toLowerCase().contains(
-              searchQuery.toLowerCase(),
-            ) ||
+                  searchQuery.toLowerCase(),
+                ) ||
             supplier.contactPerson.toLowerCase().contains(
-              searchQuery.toLowerCase(),
-            ) ||
+                  searchQuery.toLowerCase(),
+                ) ||
             supplier.email.toLowerCase().contains(searchQuery.toLowerCase());
       }).toList();
     }
@@ -220,11 +225,10 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color:
-                          (isActive
-                                  ? TamgaciConstants.successColor
-                                  : TamgaciConstants.errorColor)
-                              .withValues(alpha: 0.1),
+                      color: (isActive
+                              ? TamgaciConstants.successColor
+                              : TamgaciConstants.errorColor)
+                          .withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(
                         TamgaciConstants.radiusSM,
                       ),
@@ -328,8 +332,8 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                   Expanded(
                     child: _buildFinancialInfo(
                       label: 'Kredi Limiti',
-                      value:
-                          '₺${NumberFormat('#,##0', 'tr_TR').format(supplier.creditLimit)}',
+                      value: CurrencyHelper.formatAmount(
+                          supplier.creditLimit, supplier.currency),
                       color: TamgaciConstants.primaryColor,
                     ),
                   ),
@@ -340,8 +344,8 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                   Expanded(
                     child: _buildFinancialInfo(
                       label: 'Mevcut Bakiye',
-                      value:
-                          '₺${NumberFormat('#,##0', 'tr_TR').format(supplier.currentBalance)}',
+                      value: CurrencyHelper.formatAmount(
+                          supplier.currentBalance, supplier.currency),
                       color: hasOutstandingBalance
                           ? TamgaciConstants.errorColor
                           : TamgaciConstants.successColor,

@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../providers/notification_providers.dart';
 import '../widgets/notification_tile.dart';
-import '../../domain/entities/notification.dart' as app_notification;
 
 /// Bildirimler sayfası
 class NotificationsPage extends ConsumerWidget {
@@ -16,13 +15,16 @@ class NotificationsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationsProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
       appBar: AppBar(
         title: const Text('Bildirimler'),
         elevation: 0,
-        backgroundColor: TamgaciConstants.appBarColor,
-        foregroundColor: TamgaciConstants.textPrimary,
+        backgroundColor: theme.appBarTheme.backgroundColor,
+        foregroundColor: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
         actions: [
           IconButton(
             onPressed: () {
@@ -45,10 +47,10 @@ class NotificationsPage extends ConsumerWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.notifications_none,
                       size: 64,
-                      color: TamgaciConstants.textSecondary,
+                      color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -56,7 +58,7 @@ class NotificationsPage extends ConsumerWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: TamgaciConstants.textSecondary,
+                        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -64,7 +66,7 @@ class NotificationsPage extends ConsumerWidget {
                       'Yeni bildirimler burada görünecek',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: TamgaciConstants.textSecondary,
+                        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
                       ),
                     ),
                   ],

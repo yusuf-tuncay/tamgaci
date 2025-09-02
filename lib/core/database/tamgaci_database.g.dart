@@ -88,11 +88,9 @@ class _$TamgaciDatabase extends TamgaciDatabase {
 
   IncomeCategoryDao? _incomeCategoryDaoInstance;
 
-  StockMovementDao? _stockMovementDaoInstance;
-
   WarehouseDao? _warehouseDaoInstance;
 
-  StockStatusDao? _stockStatusDaoInstance;
+  StockDao? _stockDaoInstance;
 
   Future<sqflite.Database> open(
     String path,
@@ -100,7 +98,7 @@ class _$TamgaciDatabase extends TamgaciDatabase {
     Callback? callback,
   ]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 6,
+      version: 7,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
         await callback?.onConfigure?.call(database);
@@ -116,29 +114,25 @@ class _$TamgaciDatabase extends TamgaciDatabase {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `customers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `email` TEXT, `phone` TEXT, `address` TEXT, `tax_number` TEXT, `tax_office` TEXT, `customer_type` TEXT NOT NULL, `city` TEXT, `country` TEXT, `postal_code` TEXT, `notes` TEXT, `is_active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `customers` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `email` TEXT, `phone` TEXT, `address` TEXT, `tax_number` TEXT, `tax_office` TEXT, `customer_type` TEXT NOT NULL, `city` TEXT, `country` TEXT, `postal_code` TEXT, `balance` INTEGER NOT NULL, `balance_currency` TEXT NOT NULL, `notes` TEXT, `is_active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `invoices` (`id` TEXT NOT NULL, `invoice_number` TEXT NOT NULL, `customer_id` TEXT NOT NULL, `invoice_date` INTEGER NOT NULL, `due_date` INTEGER, `status` TEXT NOT NULL, `subtotal` INTEGER NOT NULL, `tax_amount` INTEGER NOT NULL, `discount_amount` INTEGER NOT NULL, `total_amount` INTEGER NOT NULL, `currency_code` TEXT NOT NULL, `payment_terms` TEXT, `notes` TEXT, `description` TEXT, `is_paid` INTEGER NOT NULL, `paid_date` INTEGER, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON UPDATE NO ACTION ON DELETE RESTRICT, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `invoice_items` (`id` TEXT NOT NULL, `invoice_id` TEXT NOT NULL, `item_order` INTEGER NOT NULL, `product_name` TEXT NOT NULL, `description` TEXT, `quantity` REAL NOT NULL, `unit` TEXT, `unit_price` INTEGER NOT NULL, `tax_rate` REAL NOT NULL, `tax_amount` INTEGER NOT NULL, `line_total` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, FOREIGN KEY (`invoice_id`) REFERENCES `invoices` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `products` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `description` TEXT, `sku` TEXT, `barcode` TEXT, `category` TEXT, `unit_price` REAL NOT NULL, `stock_quantity` INTEGER NOT NULL, `min_stock_level` INTEGER NOT NULL, `unit` TEXT NOT NULL, `tax_rate` REAL NOT NULL, `is_active` INTEGER NOT NULL, `image_url` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `products` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `description` TEXT, `sku` TEXT, `barcode` TEXT, `category` TEXT, `unit_price` REAL NOT NULL, `stock_quantity` INTEGER NOT NULL, `min_stock_level` INTEGER NOT NULL, `unit` TEXT NOT NULL, `tax_rate` REAL NOT NULL, `currency` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `image_url` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `expenses` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `description` TEXT, `amount` REAL NOT NULL, `categoryId` INTEGER NOT NULL, `date` INTEGER NOT NULL, `status` TEXT NOT NULL, `paymentMethod` TEXT, `receiptPath` TEXT, `notes` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `expenses` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `description` TEXT, `amount` REAL NOT NULL, `currency` TEXT NOT NULL, `categoryId` INTEGER NOT NULL, `date` INTEGER NOT NULL, `status` TEXT NOT NULL, `paymentMethod` TEXT, `receiptPath` TEXT, `notes` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `expense_categories` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `description` TEXT, `color` TEXT, `icon` TEXT, `isActive` INTEGER NOT NULL, `isDefault` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `incomes` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `description` TEXT, `amount` REAL NOT NULL, `category_id` TEXT NOT NULL, `category_name` TEXT NOT NULL, `income_date` INTEGER NOT NULL, `customer_id` TEXT, `customer_name` TEXT, `payment_method` TEXT NOT NULL, `invoice_number` TEXT, `status` TEXT NOT NULL, `notes` TEXT, `attachments` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `incomes` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `title` TEXT NOT NULL, `description` TEXT, `amount` REAL NOT NULL, `currency` TEXT NOT NULL, `category_id` TEXT NOT NULL, `category_name` TEXT NOT NULL, `income_date` INTEGER NOT NULL, `customer_id` TEXT, `customer_name` TEXT, `payment_method` TEXT NOT NULL, `invoice_number` TEXT, `status` TEXT NOT NULL, `notes` TEXT, `attachments` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `income_categories` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `description` TEXT, `color` TEXT, `icon` TEXT, `is_active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `stock_movements` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `product_id` INTEGER NOT NULL, `movement_type` INTEGER NOT NULL, `quantity` INTEGER NOT NULL, `unit_price` REAL NOT NULL, `total_amount` REAL NOT NULL, `description` TEXT, `reference_number` TEXT, `reference_type` TEXT, `warehouse_id` INTEGER, `source_warehouse_id` INTEGER, `destination_warehouse_id` INTEGER, `movement_date` INTEGER NOT NULL, `created_by` INTEGER, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `warehouses` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `code` TEXT, `description` TEXT, `address` TEXT, `phone` TEXT, `email` TEXT, `manager` TEXT, `capacity` REAL, `capacity_unit` TEXT, `currency` TEXT NOT NULL, `is_active` INTEGER NOT NULL, `is_default` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `warehouses` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `code` TEXT, `description` TEXT, `address` TEXT, `phone` TEXT, `email` TEXT, `manager` TEXT, `capacity` REAL, `capacity_unit` TEXT, `is_active` INTEGER NOT NULL, `is_default` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
-        await database.execute(
-            'CREATE TABLE IF NOT EXISTS `stock_status` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `product_id` INTEGER NOT NULL, `product_name` TEXT NOT NULL, `product_code` TEXT NOT NULL, `warehouse_id` INTEGER NOT NULL, `warehouse_name` TEXT NOT NULL, `current_stock` INTEGER NOT NULL, `min_stock` INTEGER NOT NULL, `max_stock` INTEGER NOT NULL, `unit_price` REAL NOT NULL, `total_value` REAL NOT NULL, `updated_at` INTEGER NOT NULL)');
-        await database.execute(
-            'CREATE TABLE IF NOT EXISTS `contacts` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` TEXT NOT NULL, `type` INTEGER NOT NULL, `email` TEXT, `phone` TEXT, `address` TEXT, `city` TEXT, `country` TEXT, `tax_number` TEXT, `tax_office` TEXT, `website` TEXT, `notes` TEXT, `is_favorite` INTEGER NOT NULL, `is_active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL)');
+            'CREATE TABLE IF NOT EXISTS `stocks` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `productId` INTEGER NOT NULL, `warehouseId` INTEGER NOT NULL, `quantity` REAL NOT NULL, `minimumQuantity` REAL NOT NULL, `maximumQuantity` REAL NOT NULL, `unit` TEXT NOT NULL, `currency` TEXT NOT NULL, `unitPrice` REAL NOT NULL, `location` TEXT, `notes` TEXT, `isActive` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, FOREIGN KEY (`productId`) REFERENCES `products` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE, FOREIGN KEY (`warehouseId`) REFERENCES `warehouses` (`id`) ON UPDATE NO ACTION ON DELETE CASCADE)');
         await database.execute(
             'CREATE INDEX `index_invoices_customer_id` ON `invoices` (`customer_id`)');
         await database.execute(
@@ -208,20 +202,13 @@ class _$TamgaciDatabase extends TamgaciDatabase {
   }
 
   @override
-  StockMovementDao get stockMovementDao {
-    return _stockMovementDaoInstance ??=
-        _$StockMovementDao(database, changeListener);
-  }
-
-  @override
   WarehouseDao get warehouseDao {
     return _warehouseDaoInstance ??= _$WarehouseDao(database, changeListener);
   }
 
   @override
-  StockStatusDao get stockStatusDao {
-    return _stockStatusDaoInstance ??=
-        _$StockStatusDao(database, changeListener);
+  StockDao get stockDao {
+    return _stockDaoInstance ??= _$StockDao(database, changeListener);
   }
 }
 
@@ -245,6 +232,8 @@ class _$CustomerDao extends CustomerDao {
                   'city': item.city,
                   'country': item.country,
                   'postal_code': item.postalCode,
+                  'balance': item.balance,
+                  'balance_currency': item.balanceCurrency,
                   'notes': item.notes,
                   'is_active': item.isActive ? 1 : 0,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -267,6 +256,8 @@ class _$CustomerDao extends CustomerDao {
                   'city': item.city,
                   'country': item.country,
                   'postal_code': item.postalCode,
+                  'balance': item.balance,
+                  'balance_currency': item.balanceCurrency,
                   'notes': item.notes,
                   'is_active': item.isActive ? 1 : 0,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -289,6 +280,8 @@ class _$CustomerDao extends CustomerDao {
                   'city': item.city,
                   'country': item.country,
                   'postal_code': item.postalCode,
+                  'balance': item.balance,
+                  'balance_currency': item.balanceCurrency,
                   'notes': item.notes,
                   'is_active': item.isActive ? 1 : 0,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -323,6 +316,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -345,6 +340,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -366,6 +363,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -389,6 +388,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -400,7 +401,7 @@ class _$CustomerDao extends CustomerDao {
   Future<List<CustomerEntity>> getCustomersByType(String type) async {
     return _queryAdapter.queryList(
         'SELECT * FROM customers WHERE customer_type = ?1 AND is_active = 1 ORDER BY name ASC',
-        mapper: (Map<String, Object?> row) => CustomerEntity(id: row['id'] as String, name: row['name'] as String, email: row['email'] as String?, phone: row['phone'] as String?, address: row['address'] as String?, taxNumber: row['tax_number'] as String?, taxOffice: row['tax_office'] as String?, customerType: row['customer_type'] as String, city: row['city'] as String?, country: row['country'] as String?, postalCode: row['postal_code'] as String?, notes: row['notes'] as String?, isActive: (row['is_active'] as int) != 0, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
+        mapper: (Map<String, Object?> row) => CustomerEntity(id: row['id'] as String, name: row['name'] as String, email: row['email'] as String?, phone: row['phone'] as String?, address: row['address'] as String?, taxNumber: row['tax_number'] as String?, taxOffice: row['tax_office'] as String?, customerType: row['customer_type'] as String, city: row['city'] as String?, country: row['country'] as String?, postalCode: row['postal_code'] as String?, balance: row['balance'] as int, balanceCurrency: row['balance_currency'] as String, notes: row['notes'] as String?, isActive: (row['is_active'] as int) != 0, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
         arguments: [type]);
   }
 
@@ -408,7 +409,7 @@ class _$CustomerDao extends CustomerDao {
   Future<List<CustomerEntity>> getCustomersByCity(String city) async {
     return _queryAdapter.queryList(
         'SELECT * FROM customers WHERE city = ?1 AND is_active = 1 ORDER BY name ASC',
-        mapper: (Map<String, Object?> row) => CustomerEntity(id: row['id'] as String, name: row['name'] as String, email: row['email'] as String?, phone: row['phone'] as String?, address: row['address'] as String?, taxNumber: row['tax_number'] as String?, taxOffice: row['tax_office'] as String?, customerType: row['customer_type'] as String, city: row['city'] as String?, country: row['country'] as String?, postalCode: row['postal_code'] as String?, notes: row['notes'] as String?, isActive: (row['is_active'] as int) != 0, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
+        mapper: (Map<String, Object?> row) => CustomerEntity(id: row['id'] as String, name: row['name'] as String, email: row['email'] as String?, phone: row['phone'] as String?, address: row['address'] as String?, taxNumber: row['tax_number'] as String?, taxOffice: row['tax_office'] as String?, customerType: row['customer_type'] as String, city: row['city'] as String?, country: row['country'] as String?, postalCode: row['postal_code'] as String?, balance: row['balance'] as int, balanceCurrency: row['balance_currency'] as String, notes: row['notes'] as String?, isActive: (row['is_active'] as int) != 0, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
         arguments: [city]);
   }
 
@@ -428,6 +429,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -451,6 +454,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -474,6 +479,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -505,7 +512,7 @@ class _$CustomerDao extends CustomerDao {
   Future<List<CustomerEntity>> getRecentCustomers(int limit) async {
     return _queryAdapter.queryList(
         'SELECT * FROM customers WHERE is_active = 1 ORDER BY created_at DESC LIMIT ?1',
-        mapper: (Map<String, Object?> row) => CustomerEntity(id: row['id'] as String, name: row['name'] as String, email: row['email'] as String?, phone: row['phone'] as String?, address: row['address'] as String?, taxNumber: row['tax_number'] as String?, taxOffice: row['tax_office'] as String?, customerType: row['customer_type'] as String, city: row['city'] as String?, country: row['country'] as String?, postalCode: row['postal_code'] as String?, notes: row['notes'] as String?, isActive: (row['is_active'] as int) != 0, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
+        mapper: (Map<String, Object?> row) => CustomerEntity(id: row['id'] as String, name: row['name'] as String, email: row['email'] as String?, phone: row['phone'] as String?, address: row['address'] as String?, taxNumber: row['tax_number'] as String?, taxOffice: row['tax_office'] as String?, customerType: row['customer_type'] as String, city: row['city'] as String?, country: row['country'] as String?, postalCode: row['postal_code'] as String?, balance: row['balance'] as int, balanceCurrency: row['balance_currency'] as String, notes: row['notes'] as String?, isActive: (row['is_active'] as int) != 0, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
         arguments: [limit]);
   }
 
@@ -564,6 +571,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -588,6 +597,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -612,6 +623,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -635,6 +648,8 @@ class _$CustomerDao extends CustomerDao {
             city: row['city'] as String?,
             country: row['country'] as String?,
             postalCode: row['postal_code'] as String?,
+            balance: row['balance'] as int,
+            balanceCurrency: row['balance_currency'] as String,
             notes: row['notes'] as String?,
             isActive: (row['is_active'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1473,6 +1488,7 @@ class _$ProductDao extends ProductDao {
                   'min_stock_level': item.minStockLevel,
                   'unit': item.unit,
                   'tax_rate': item.taxRate,
+                  'currency': item.currency,
                   'is_active': item.isActive ? 1 : 0,
                   'image_url': item.imageUrl,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -1495,6 +1511,7 @@ class _$ProductDao extends ProductDao {
                   'min_stock_level': item.minStockLevel,
                   'unit': item.unit,
                   'tax_rate': item.taxRate,
+                  'currency': item.currency,
                   'is_active': item.isActive ? 1 : 0,
                   'image_url': item.imageUrl,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -1517,6 +1534,7 @@ class _$ProductDao extends ProductDao {
                   'min_stock_level': item.minStockLevel,
                   'unit': item.unit,
                   'tax_rate': item.taxRate,
+                  'currency': item.currency,
                   'is_active': item.isActive ? 1 : 0,
                   'image_url': item.imageUrl,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -1552,6 +1570,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1576,6 +1595,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1599,6 +1619,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1621,6 +1642,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1643,6 +1665,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1666,6 +1689,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1691,6 +1715,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1715,6 +1740,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1739,6 +1765,7 @@ class _$ProductDao extends ProductDao {
             minStockLevel: row['min_stock_level'] as int,
             unit: row['unit'] as String,
             taxRate: row['tax_rate'] as double,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             imageUrl: row['image_url'] as String?,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -1824,6 +1851,7 @@ class _$ExpenseDao extends ExpenseDao {
                   'title': item.title,
                   'description': item.description,
                   'amount': item.amount,
+                  'currency': item.currency,
                   'categoryId': item.categoryId,
                   'date': _dateTimeConverter.encode(item.date),
                   'status': item.status,
@@ -1843,6 +1871,7 @@ class _$ExpenseDao extends ExpenseDao {
                   'title': item.title,
                   'description': item.description,
                   'amount': item.amount,
+                  'currency': item.currency,
                   'categoryId': item.categoryId,
                   'date': _dateTimeConverter.encode(item.date),
                   'status': item.status,
@@ -1862,6 +1891,7 @@ class _$ExpenseDao extends ExpenseDao {
                   'title': item.title,
                   'description': item.description,
                   'amount': item.amount,
+                  'currency': item.currency,
                   'categoryId': item.categoryId,
                   'date': _dateTimeConverter.encode(item.date),
                   'status': item.status,
@@ -1894,6 +1924,7 @@ class _$ExpenseDao extends ExpenseDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['categoryId'] as int,
             date: _dateTimeConverter.decode(row['date'] as int),
             status: row['status'] as String,
@@ -1915,6 +1946,7 @@ class _$ExpenseDao extends ExpenseDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['categoryId'] as int,
             date: _dateTimeConverter.decode(row['date'] as int),
             status: row['status'] as String,
@@ -1935,6 +1967,7 @@ class _$ExpenseDao extends ExpenseDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['categoryId'] as int,
             date: _dateTimeConverter.decode(row['date'] as int),
             status: row['status'] as String,
@@ -1955,6 +1988,7 @@ class _$ExpenseDao extends ExpenseDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['categoryId'] as int,
             date: _dateTimeConverter.decode(row['date'] as int),
             status: row['status'] as String,
@@ -1980,6 +2014,7 @@ class _$ExpenseDao extends ExpenseDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['categoryId'] as int,
             date: _dateTimeConverter.decode(row['date'] as int),
             status: row['status'] as String,
@@ -2005,6 +2040,7 @@ class _$ExpenseDao extends ExpenseDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['categoryId'] as int,
             date: _dateTimeConverter.decode(row['date'] as int),
             status: row['status'] as String,
@@ -2027,6 +2063,7 @@ class _$ExpenseDao extends ExpenseDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['categoryId'] as int,
             date: _dateTimeConverter.decode(row['date'] as int),
             status: row['status'] as String,
@@ -2317,6 +2354,7 @@ class _$IncomeDao extends IncomeDao {
                   'title': item.title,
                   'description': item.description,
                   'amount': item.amount,
+                  'currency': item.currency,
                   'category_id': item.categoryId,
                   'category_name': item.categoryName,
                   'income_date': _dateTimeConverter.encode(item.incomeDate),
@@ -2340,6 +2378,7 @@ class _$IncomeDao extends IncomeDao {
                   'title': item.title,
                   'description': item.description,
                   'amount': item.amount,
+                  'currency': item.currency,
                   'category_id': item.categoryId,
                   'category_name': item.categoryName,
                   'income_date': _dateTimeConverter.encode(item.incomeDate),
@@ -2363,6 +2402,7 @@ class _$IncomeDao extends IncomeDao {
                   'title': item.title,
                   'description': item.description,
                   'amount': item.amount,
+                  'currency': item.currency,
                   'category_id': item.categoryId,
                   'category_name': item.categoryName,
                   'income_date': _dateTimeConverter.encode(item.incomeDate),
@@ -2399,6 +2439,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2424,6 +2465,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2448,6 +2490,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2471,6 +2514,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2495,6 +2539,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2521,6 +2566,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2550,6 +2596,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2579,6 +2626,7 @@ class _$IncomeDao extends IncomeDao {
             title: row['title'] as String,
             description: row['description'] as String?,
             amount: row['amount'] as double,
+            currency: row['currency'] as String,
             categoryId: row['category_id'] as String,
             categoryName: row['category_name'] as String,
             incomeDate: _dateTimeConverter.decode(row['income_date'] as int),
@@ -2822,266 +2870,6 @@ class _$IncomeCategoryDao extends IncomeCategoryDao {
   }
 }
 
-class _$StockMovementDao extends StockMovementDao {
-  _$StockMovementDao(
-    this.database,
-    this.changeListener,
-  )   : _queryAdapter = QueryAdapter(database),
-        _stockMovementEntityInsertionAdapter = InsertionAdapter(
-            database,
-            'stock_movements',
-            (StockMovementEntity item) => <String, Object?>{
-                  'id': item.id,
-                  'product_id': item.productId,
-                  'movement_type': item.movementType.index,
-                  'quantity': item.quantity,
-                  'unit_price': item.unitPrice,
-                  'total_amount': item.totalAmount,
-                  'description': item.description,
-                  'reference_number': item.referenceNumber,
-                  'reference_type': item.referenceType,
-                  'warehouse_id': item.warehouseId,
-                  'source_warehouse_id': item.sourceWarehouseId,
-                  'destination_warehouse_id': item.destinationWarehouseId,
-                  'movement_date': _dateTimeConverter.encode(item.movementDate),
-                  'created_by': item.createdBy,
-                  'created_at': _dateTimeConverter.encode(item.createdAt),
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
-                }),
-        _stockMovementEntityUpdateAdapter = UpdateAdapter(
-            database,
-            'stock_movements',
-            ['id'],
-            (StockMovementEntity item) => <String, Object?>{
-                  'id': item.id,
-                  'product_id': item.productId,
-                  'movement_type': item.movementType.index,
-                  'quantity': item.quantity,
-                  'unit_price': item.unitPrice,
-                  'total_amount': item.totalAmount,
-                  'description': item.description,
-                  'reference_number': item.referenceNumber,
-                  'reference_type': item.referenceType,
-                  'warehouse_id': item.warehouseId,
-                  'source_warehouse_id': item.sourceWarehouseId,
-                  'destination_warehouse_id': item.destinationWarehouseId,
-                  'movement_date': _dateTimeConverter.encode(item.movementDate),
-                  'created_by': item.createdBy,
-                  'created_at': _dateTimeConverter.encode(item.createdAt),
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
-                }),
-        _stockMovementEntityDeletionAdapter = DeletionAdapter(
-            database,
-            'stock_movements',
-            ['id'],
-            (StockMovementEntity item) => <String, Object?>{
-                  'id': item.id,
-                  'product_id': item.productId,
-                  'movement_type': item.movementType.index,
-                  'quantity': item.quantity,
-                  'unit_price': item.unitPrice,
-                  'total_amount': item.totalAmount,
-                  'description': item.description,
-                  'reference_number': item.referenceNumber,
-                  'reference_type': item.referenceType,
-                  'warehouse_id': item.warehouseId,
-                  'source_warehouse_id': item.sourceWarehouseId,
-                  'destination_warehouse_id': item.destinationWarehouseId,
-                  'movement_date': _dateTimeConverter.encode(item.movementDate),
-                  'created_by': item.createdBy,
-                  'created_at': _dateTimeConverter.encode(item.createdAt),
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
-                });
-
-  final sqflite.DatabaseExecutor database;
-
-  final StreamController<String> changeListener;
-
-  final QueryAdapter _queryAdapter;
-
-  final InsertionAdapter<StockMovementEntity>
-      _stockMovementEntityInsertionAdapter;
-
-  final UpdateAdapter<StockMovementEntity> _stockMovementEntityUpdateAdapter;
-
-  final DeletionAdapter<StockMovementEntity>
-      _stockMovementEntityDeletionAdapter;
-
-  @override
-  Future<List<StockMovementEntity>> getAllStockMovements() async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_movements ORDER BY movement_date DESC',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(
-            id: row['id'] as int?,
-            productId: row['product_id'] as int,
-            movementType: StockMovementType.values[row['movement_type'] as int],
-            quantity: row['quantity'] as int,
-            unitPrice: row['unit_price'] as double,
-            totalAmount: row['total_amount'] as double,
-            description: row['description'] as String?,
-            referenceNumber: row['reference_number'] as String?,
-            referenceType: row['reference_type'] as String?,
-            warehouseId: row['warehouse_id'] as int?,
-            sourceWarehouseId: row['source_warehouse_id'] as int?,
-            destinationWarehouseId: row['destination_warehouse_id'] as int?,
-            movementDate:
-                _dateTimeConverter.decode(row['movement_date'] as int),
-            createdBy: row['created_by'] as int?,
-            createdAt: _dateTimeConverter.decode(row['created_at'] as int),
-            updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)));
-  }
-
-  @override
-  Future<List<StockMovementEntity>> getStockMovementsByProduct(
-      int productId) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_movements WHERE product_id = ?1 ORDER BY movement_date DESC',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(id: row['id'] as int?, productId: row['product_id'] as int, movementType: StockMovementType.values[row['movement_type'] as int], quantity: row['quantity'] as int, unitPrice: row['unit_price'] as double, totalAmount: row['total_amount'] as double, description: row['description'] as String?, referenceNumber: row['reference_number'] as String?, referenceType: row['reference_type'] as String?, warehouseId: row['warehouse_id'] as int?, sourceWarehouseId: row['source_warehouse_id'] as int?, destinationWarehouseId: row['destination_warehouse_id'] as int?, movementDate: _dateTimeConverter.decode(row['movement_date'] as int), createdBy: row['created_by'] as int?, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
-        arguments: [productId]);
-  }
-
-  @override
-  Future<List<StockMovementEntity>> getStockMovementsByWarehouse(
-      int warehouseId) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_movements WHERE warehouse_id = ?1 ORDER BY movement_date DESC',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(id: row['id'] as int?, productId: row['product_id'] as int, movementType: StockMovementType.values[row['movement_type'] as int], quantity: row['quantity'] as int, unitPrice: row['unit_price'] as double, totalAmount: row['total_amount'] as double, description: row['description'] as String?, referenceNumber: row['reference_number'] as String?, referenceType: row['reference_type'] as String?, warehouseId: row['warehouse_id'] as int?, sourceWarehouseId: row['source_warehouse_id'] as int?, destinationWarehouseId: row['destination_warehouse_id'] as int?, movementDate: _dateTimeConverter.decode(row['movement_date'] as int), createdBy: row['created_by'] as int?, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
-        arguments: [warehouseId]);
-  }
-
-  @override
-  Future<List<StockMovementEntity>> getStockMovementsByDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_movements WHERE movement_date BETWEEN ?1 AND ?2 ORDER BY movement_date DESC',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(id: row['id'] as int?, productId: row['product_id'] as int, movementType: StockMovementType.values[row['movement_type'] as int], quantity: row['quantity'] as int, unitPrice: row['unit_price'] as double, totalAmount: row['total_amount'] as double, description: row['description'] as String?, referenceNumber: row['reference_number'] as String?, referenceType: row['reference_type'] as String?, warehouseId: row['warehouse_id'] as int?, sourceWarehouseId: row['source_warehouse_id'] as int?, destinationWarehouseId: row['destination_warehouse_id'] as int?, movementDate: _dateTimeConverter.decode(row['movement_date'] as int), createdBy: row['created_by'] as int?, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
-        arguments: [
-          _dateTimeConverter.encode(startDate),
-          _dateTimeConverter.encode(endDate)
-        ]);
-  }
-
-  @override
-  Future<List<StockMovementEntity>> getStockMovementsByType(
-      String movementType) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_movements WHERE movement_type = ?1 ORDER BY movement_date DESC',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(id: row['id'] as int?, productId: row['product_id'] as int, movementType: StockMovementType.values[row['movement_type'] as int], quantity: row['quantity'] as int, unitPrice: row['unit_price'] as double, totalAmount: row['total_amount'] as double, description: row['description'] as String?, referenceNumber: row['reference_number'] as String?, referenceType: row['reference_type'] as String?, warehouseId: row['warehouse_id'] as int?, sourceWarehouseId: row['source_warehouse_id'] as int?, destinationWarehouseId: row['destination_warehouse_id'] as int?, movementDate: _dateTimeConverter.decode(row['movement_date'] as int), createdBy: row['created_by'] as int?, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
-        arguments: [movementType]);
-  }
-
-  @override
-  Future<List<StockMovementEntity>> getStockMovementsByReference(
-      String referenceNumber) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_movements WHERE reference_number = ?1 ORDER BY movement_date DESC',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(id: row['id'] as int?, productId: row['product_id'] as int, movementType: StockMovementType.values[row['movement_type'] as int], quantity: row['quantity'] as int, unitPrice: row['unit_price'] as double, totalAmount: row['total_amount'] as double, description: row['description'] as String?, referenceNumber: row['reference_number'] as String?, referenceType: row['reference_type'] as String?, warehouseId: row['warehouse_id'] as int?, sourceWarehouseId: row['source_warehouse_id'] as int?, destinationWarehouseId: row['destination_warehouse_id'] as int?, movementDate: _dateTimeConverter.decode(row['movement_date'] as int), createdBy: row['created_by'] as int?, createdAt: _dateTimeConverter.decode(row['created_at'] as int), updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
-        arguments: [referenceNumber]);
-  }
-
-  @override
-  Future<List<StockMovementEntity>> getRecentStockMovements(int limit) async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_movements ORDER BY movement_date DESC LIMIT ?1',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(
-            id: row['id'] as int?,
-            productId: row['product_id'] as int,
-            movementType: StockMovementType.values[row['movement_type'] as int],
-            quantity: row['quantity'] as int,
-            unitPrice: row['unit_price'] as double,
-            totalAmount: row['total_amount'] as double,
-            description: row['description'] as String?,
-            referenceNumber: row['reference_number'] as String?,
-            referenceType: row['reference_type'] as String?,
-            warehouseId: row['warehouse_id'] as int?,
-            sourceWarehouseId: row['source_warehouse_id'] as int?,
-            destinationWarehouseId: row['destination_warehouse_id'] as int?,
-            movementDate:
-                _dateTimeConverter.decode(row['movement_date'] as int),
-            createdBy: row['created_by'] as int?,
-            createdAt: _dateTimeConverter.decode(row['created_at'] as int),
-            updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
-        arguments: [limit]);
-  }
-
-  @override
-  Future<StockMovementEntity?> getStockMovementById(int id) async {
-    return _queryAdapter.query('SELECT * FROM stock_movements WHERE id = ?1',
-        mapper: (Map<String, Object?> row) => StockMovementEntity(
-            id: row['id'] as int?,
-            productId: row['product_id'] as int,
-            movementType: StockMovementType.values[row['movement_type'] as int],
-            quantity: row['quantity'] as int,
-            unitPrice: row['unit_price'] as double,
-            totalAmount: row['total_amount'] as double,
-            description: row['description'] as String?,
-            referenceNumber: row['reference_number'] as String?,
-            referenceType: row['reference_type'] as String?,
-            warehouseId: row['warehouse_id'] as int?,
-            sourceWarehouseId: row['source_warehouse_id'] as int?,
-            destinationWarehouseId: row['destination_warehouse_id'] as int?,
-            movementDate:
-                _dateTimeConverter.decode(row['movement_date'] as int),
-            createdBy: row['created_by'] as int?,
-            createdAt: _dateTimeConverter.decode(row['created_at'] as int),
-            updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
-        arguments: [id]);
-  }
-
-  @override
-  Future<int?> getTotalInQuantity(
-    int productId,
-    int warehouseId,
-  ) async {
-    return _queryAdapter.query(
-        'SELECT SUM(quantity) as total_in      FROM stock_movements      WHERE product_id = ?1      AND warehouse_id = ?2      AND movement_type = \'in_\'',
-        mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [productId, warehouseId]);
-  }
-
-  @override
-  Future<int?> getTotalOutQuantity(
-    int productId,
-    int warehouseId,
-  ) async {
-    return _queryAdapter.query(
-        'SELECT SUM(quantity) as total_out      FROM stock_movements      WHERE product_id = ?1      AND warehouse_id = ?2      AND movement_type = \'out\'',
-        mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [productId, warehouseId]);
-  }
-
-  @override
-  Future<int?> getTotalAdjustmentQuantity(
-    int productId,
-    int warehouseId,
-  ) async {
-    return _queryAdapter.query(
-        'SELECT SUM(quantity) as total_adjustment      FROM stock_movements      WHERE product_id = ?1      AND warehouse_id = ?2      AND movement_type = \'adjustment\'',
-        mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [productId, warehouseId]);
-  }
-
-  @override
-  Future<int> insertStockMovement(StockMovementEntity stockMovement) {
-    return _stockMovementEntityInsertionAdapter.insertAndReturnId(
-        stockMovement, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<int> updateStockMovement(StockMovementEntity stockMovement) {
-    return _stockMovementEntityUpdateAdapter.updateAndReturnChangedRows(
-        stockMovement, OnConflictStrategy.abort);
-  }
-
-  @override
-  Future<int> deleteStockMovement(StockMovementEntity stockMovement) {
-    return _stockMovementEntityDeletionAdapter
-        .deleteAndReturnChangedRows(stockMovement);
-  }
-}
-
 class _$WarehouseDao extends WarehouseDao {
   _$WarehouseDao(
     this.database,
@@ -3101,6 +2889,7 @@ class _$WarehouseDao extends WarehouseDao {
                   'manager': item.manager,
                   'capacity': item.capacity,
                   'capacity_unit': item.capacityUnit,
+                  'currency': item.currency,
                   'is_active': item.isActive ? 1 : 0,
                   'is_default': item.isDefault ? 1 : 0,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -3121,6 +2910,7 @@ class _$WarehouseDao extends WarehouseDao {
                   'manager': item.manager,
                   'capacity': item.capacity,
                   'capacity_unit': item.capacityUnit,
+                  'currency': item.currency,
                   'is_active': item.isActive ? 1 : 0,
                   'is_default': item.isDefault ? 1 : 0,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -3141,6 +2931,7 @@ class _$WarehouseDao extends WarehouseDao {
                   'manager': item.manager,
                   'capacity': item.capacity,
                   'capacity_unit': item.capacityUnit,
+                  'currency': item.currency,
                   'is_active': item.isActive ? 1 : 0,
                   'is_default': item.isDefault ? 1 : 0,
                   'created_at': _dateTimeConverter.encode(item.createdAt),
@@ -3173,6 +2964,7 @@ class _$WarehouseDao extends WarehouseDao {
             manager: row['manager'] as String?,
             capacity: row['capacity'] as double?,
             capacityUnit: row['capacity_unit'] as String?,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             isDefault: (row['is_default'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -3194,6 +2986,7 @@ class _$WarehouseDao extends WarehouseDao {
             manager: row['manager'] as String?,
             capacity: row['capacity'] as double?,
             capacityUnit: row['capacity_unit'] as String?,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             isDefault: (row['is_default'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -3215,6 +3008,7 @@ class _$WarehouseDao extends WarehouseDao {
             manager: row['manager'] as String?,
             capacity: row['capacity'] as double?,
             capacityUnit: row['capacity_unit'] as String?,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             isDefault: (row['is_default'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -3235,6 +3029,7 @@ class _$WarehouseDao extends WarehouseDao {
             manager: row['manager'] as String?,
             capacity: row['capacity'] as double?,
             capacityUnit: row['capacity_unit'] as String?,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             isDefault: (row['is_default'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -3256,6 +3051,7 @@ class _$WarehouseDao extends WarehouseDao {
             manager: row['manager'] as String?,
             capacity: row['capacity'] as double?,
             capacityUnit: row['capacity_unit'] as String?,
+            currency: row['currency'] as String,
             isActive: (row['is_active'] as int) != 0,
             isDefault: (row['is_default'] as int) != 0,
             createdAt: _dateTimeConverter.decode(row['created_at'] as int),
@@ -3283,75 +3079,80 @@ class _$WarehouseDao extends WarehouseDao {
   }
 
   @override
-  Future<int> updateWarehouse(WarehouseEntity warehouse) {
-    return _warehouseEntityUpdateAdapter.updateAndReturnChangedRows(
+  Future<void> updateWarehouse(WarehouseEntity warehouse) async {
+    await _warehouseEntityUpdateAdapter.update(
         warehouse, OnConflictStrategy.abort);
   }
 
   @override
-  Future<int> deleteWarehouse(WarehouseEntity warehouse) {
-    return _warehouseEntityDeletionAdapter
-        .deleteAndReturnChangedRows(warehouse);
+  Future<void> deleteWarehouse(WarehouseEntity warehouse) async {
+    await _warehouseEntityDeletionAdapter.delete(warehouse);
   }
 }
 
-class _$StockStatusDao extends StockStatusDao {
-  _$StockStatusDao(
+class _$StockDao extends StockDao {
+  _$StockDao(
     this.database,
     this.changeListener,
   )   : _queryAdapter = QueryAdapter(database),
-        _stockStatusEntityInsertionAdapter = InsertionAdapter(
+        _stockEntityInsertionAdapter = InsertionAdapter(
             database,
-            'stock_status',
-            (StockStatusEntity item) => <String, Object?>{
+            'stocks',
+            (StockEntity item) => <String, Object?>{
                   'id': item.id,
-                  'product_id': item.productId,
-                  'product_name': item.productName,
-                  'product_code': item.productCode,
-                  'warehouse_id': item.warehouseId,
-                  'warehouse_name': item.warehouseName,
-                  'current_stock': item.currentStock,
-                  'min_stock': item.minStock,
-                  'max_stock': item.maxStock,
-                  'unit_price': item.unitPrice,
-                  'total_value': item.totalValue,
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
+                  'productId': item.productId,
+                  'warehouseId': item.warehouseId,
+                  'quantity': item.quantity,
+                  'minimumQuantity': item.minimumQuantity,
+                  'maximumQuantity': item.maximumQuantity,
+                  'unit': item.unit,
+                  'currency': item.currency,
+                  'unitPrice': item.unitPrice,
+                  'location': item.location,
+                  'notes': item.notes,
+                  'isActive': item.isActive ? 1 : 0,
+                  'createdAt': _dateTimeConverter.encode(item.createdAt),
+                  'updatedAt': _dateTimeConverter.encode(item.updatedAt)
                 }),
-        _stockStatusEntityUpdateAdapter = UpdateAdapter(
+        _stockEntityUpdateAdapter = UpdateAdapter(
             database,
-            'stock_status',
+            'stocks',
             ['id'],
-            (StockStatusEntity item) => <String, Object?>{
+            (StockEntity item) => <String, Object?>{
                   'id': item.id,
-                  'product_id': item.productId,
-                  'product_name': item.productName,
-                  'product_code': item.productCode,
-                  'warehouse_id': item.warehouseId,
-                  'warehouse_name': item.warehouseName,
-                  'current_stock': item.currentStock,
-                  'min_stock': item.minStock,
-                  'max_stock': item.maxStock,
-                  'unit_price': item.unitPrice,
-                  'total_value': item.totalValue,
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
+                  'productId': item.productId,
+                  'warehouseId': item.warehouseId,
+                  'quantity': item.quantity,
+                  'minimumQuantity': item.minimumQuantity,
+                  'maximumQuantity': item.maximumQuantity,
+                  'unit': item.unit,
+                  'currency': item.currency,
+                  'unitPrice': item.unitPrice,
+                  'location': item.location,
+                  'notes': item.notes,
+                  'isActive': item.isActive ? 1 : 0,
+                  'createdAt': _dateTimeConverter.encode(item.createdAt),
+                  'updatedAt': _dateTimeConverter.encode(item.updatedAt)
                 }),
-        _stockStatusEntityDeletionAdapter = DeletionAdapter(
+        _stockEntityDeletionAdapter = DeletionAdapter(
             database,
-            'stock_status',
+            'stocks',
             ['id'],
-            (StockStatusEntity item) => <String, Object?>{
+            (StockEntity item) => <String, Object?>{
                   'id': item.id,
-                  'product_id': item.productId,
-                  'product_name': item.productName,
-                  'product_code': item.productCode,
-                  'warehouse_id': item.warehouseId,
-                  'warehouse_name': item.warehouseName,
-                  'current_stock': item.currentStock,
-                  'min_stock': item.minStock,
-                  'max_stock': item.maxStock,
-                  'unit_price': item.unitPrice,
-                  'total_value': item.totalValue,
-                  'updated_at': _dateTimeConverter.encode(item.updatedAt)
+                  'productId': item.productId,
+                  'warehouseId': item.warehouseId,
+                  'quantity': item.quantity,
+                  'minimumQuantity': item.minimumQuantity,
+                  'maximumQuantity': item.maximumQuantity,
+                  'unit': item.unit,
+                  'currency': item.currency,
+                  'unitPrice': item.unitPrice,
+                  'location': item.location,
+                  'notes': item.notes,
+                  'isActive': item.isActive ? 1 : 0,
+                  'createdAt': _dateTimeConverter.encode(item.createdAt),
+                  'updatedAt': _dateTimeConverter.encode(item.updatedAt)
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -3360,121 +3161,267 @@ class _$StockStatusDao extends StockStatusDao {
 
   final QueryAdapter _queryAdapter;
 
-  final InsertionAdapter<StockStatusEntity> _stockStatusEntityInsertionAdapter;
+  final InsertionAdapter<StockEntity> _stockEntityInsertionAdapter;
 
-  final UpdateAdapter<StockStatusEntity> _stockStatusEntityUpdateAdapter;
+  final UpdateAdapter<StockEntity> _stockEntityUpdateAdapter;
 
-  final DeletionAdapter<StockStatusEntity> _stockStatusEntityDeletionAdapter;
+  final DeletionAdapter<StockEntity> _stockEntityDeletionAdapter;
 
   @override
-  Future<List<StockStatusEntity>> getAllStockStatus() async {
+  Future<List<StockEntity>> getAllStocks() async {
     return _queryAdapter.queryList(
-        'SELECT * FROM stock_status ORDER BY product_name ASC',
-        mapper: (Map<String, Object?> row) => StockStatusEntity(
-            id: row['id'] as int?,
-            productId: row['product_id'] as int,
-            productName: row['product_name'] as String,
-            productCode: row['product_code'] as String,
-            warehouseId: row['warehouse_id'] as int,
-            warehouseName: row['warehouse_name'] as String,
-            currentStock: row['current_stock'] as int,
-            minStock: row['min_stock'] as int,
-            maxStock: row['max_stock'] as int,
-            unitPrice: row['unit_price'] as double,
-            totalValue: row['total_value'] as double,
-            updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)));
+        'SELECT * FROM stocks ORDER BY updatedAt DESC',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)));
   }
 
   @override
-  Future<StockStatusEntity?> getStockStatusByProduct(int productId) async {
-    return _queryAdapter.query(
-        'SELECT * FROM stock_status WHERE product_id = ?1',
-        mapper: (Map<String, Object?> row) => StockStatusEntity(
-            id: row['id'] as int?,
-            productId: row['product_id'] as int,
-            productName: row['product_name'] as String,
-            productCode: row['product_code'] as String,
-            warehouseId: row['warehouse_id'] as int,
-            warehouseName: row['warehouse_name'] as String,
-            currentStock: row['current_stock'] as int,
-            minStock: row['min_stock'] as int,
-            maxStock: row['max_stock'] as int,
-            unitPrice: row['unit_price'] as double,
-            totalValue: row['total_value'] as double,
-            updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
+  Future<List<StockEntity>> getActiveStocks() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM stocks WHERE isActive = 1 ORDER BY updatedAt DESC',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)));
+  }
+
+  @override
+  Future<StockEntity?> getStockById(int id) async {
+    return _queryAdapter.query('SELECT * FROM stocks WHERE id = ?1',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)),
+        arguments: [id]);
+  }
+
+  @override
+  Future<List<StockEntity>> getStocksByProductId(int productId) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM stocks WHERE productId = ?1 AND isActive = 1',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)),
         arguments: [productId]);
   }
 
   @override
-  Future<List<StockStatusEntity>> getStockStatusByWarehouse(
-      int warehouseId) async {
+  Future<List<StockEntity>> getStocksByWarehouseId(int warehouseId) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM stock_status WHERE warehouse_id = ?1 ORDER BY product_name ASC',
-        mapper: (Map<String, Object?> row) => StockStatusEntity(id: row['id'] as int?, productId: row['product_id'] as int, productName: row['product_name'] as String, productCode: row['product_code'] as String, warehouseId: row['warehouse_id'] as int, warehouseName: row['warehouse_name'] as String, currentStock: row['current_stock'] as int, minStock: row['min_stock'] as int, maxStock: row['max_stock'] as int, unitPrice: row['unit_price'] as double, totalValue: row['total_value'] as double, updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)),
+        'SELECT * FROM stocks WHERE warehouseId = ?1 AND isActive = 1',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)),
         arguments: [warehouseId]);
   }
 
   @override
-  Future<List<StockStatusEntity>> getLowStockItems() async {
-    return _queryAdapter.queryList(
-        'SELECT * FROM stock_status WHERE current_stock <= min_stock ORDER BY current_stock ASC',
-        mapper: (Map<String, Object?> row) => StockStatusEntity(
-            id: row['id'] as int?,
-            productId: row['product_id'] as int,
-            productName: row['product_name'] as String,
-            productCode: row['product_code'] as String,
-            warehouseId: row['warehouse_id'] as int,
-            warehouseName: row['warehouse_name'] as String,
-            currentStock: row['current_stock'] as int,
-            minStock: row['min_stock'] as int,
-            maxStock: row['max_stock'] as int,
-            unitPrice: row['unit_price'] as double,
-            totalValue: row['total_value'] as double,
-            updatedAt: _dateTimeConverter.decode(row['updated_at'] as int)));
-  }
-
-  @override
-  Future<int?> updateStockQuantity(
+  Future<StockEntity?> getStockByProductAndWarehouse(
     int productId,
     int warehouseId,
-    int newStock,
-    int updatedAt,
   ) async {
     return _queryAdapter.query(
-        'UPDATE stock_status SET current_stock = ?3, updated_at = ?4 WHERE product_id = ?1 AND warehouse_id = ?2',
-        mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [productId, warehouseId, newStock, updatedAt]);
+        'SELECT * FROM stocks WHERE productId = ?1 AND warehouseId = ?2',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)),
+        arguments: [productId, warehouseId]);
   }
 
   @override
-  Future<int?> getStockStatusCount() async {
-    return _queryAdapter.query('SELECT COUNT(*) FROM stock_status',
+  Future<List<StockEntity>> getLowStocks() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM stocks WHERE quantity <= minimumQuantity AND isActive = 1',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)));
+  }
+
+  @override
+  Future<List<StockEntity>> getOverstockedItems() async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM stocks WHERE quantity >= maximumQuantity AND isActive = 1',
+        mapper: (Map<String, Object?> row) => StockEntity(
+            id: row['id'] as int,
+            productId: row['productId'] as int,
+            warehouseId: row['warehouseId'] as int,
+            quantity: row['quantity'] as double,
+            minimumQuantity: row['minimumQuantity'] as double,
+            maximumQuantity: row['maximumQuantity'] as double,
+            unit: row['unit'] as String,
+            currency: row['currency'] as String,
+            unitPrice: row['unitPrice'] as double,
+            location: row['location'] as String?,
+            notes: row['notes'] as String?,
+            isActive: (row['isActive'] as int) != 0,
+            createdAt: _dateTimeConverter.decode(row['createdAt'] as int),
+            updatedAt: _dateTimeConverter.decode(row['updatedAt'] as int)));
+  }
+
+  @override
+  Future<int?> getStockCount() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM stocks',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<int?> getActiveStockCount() async {
+    return _queryAdapter.query('SELECT COUNT(*) FROM stocks WHERE isActive = 1',
+        mapper: (Map<String, Object?> row) => row.values.first as int);
+  }
+
+  @override
+  Future<int?> getLowStockCount() async {
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM stocks WHERE quantity <= minimumQuantity AND isActive = 1',
         mapper: (Map<String, Object?> row) => row.values.first as int);
   }
 
   @override
   Future<double?> getTotalStockValue() async {
     return _queryAdapter.query(
-        'SELECT SUM(current_stock * unit_price) FROM stock_status',
+        'SELECT SUM(quantity * unitPrice) FROM stocks WHERE isActive = 1',
         mapper: (Map<String, Object?> row) => row.values.first as double);
   }
 
   @override
-  Future<int> insertStockStatus(StockStatusEntity stockStatus) {
-    return _stockStatusEntityInsertionAdapter.insertAndReturnId(
-        stockStatus, OnConflictStrategy.abort);
+  Future<void> deleteStockById(int id) async {
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM stocks WHERE id = ?1', arguments: [id]);
   }
 
   @override
-  Future<int> updateStockStatus(StockStatusEntity stockStatus) {
-    return _stockStatusEntityUpdateAdapter.updateAndReturnChangedRows(
-        stockStatus, OnConflictStrategy.abort);
+  Future<void> deleteStocksByProductId(int productId) async {
+    await _queryAdapter.queryNoReturn('DELETE FROM stocks WHERE productId = ?1',
+        arguments: [productId]);
   }
 
   @override
-  Future<int> deleteStockStatus(StockStatusEntity stockStatus) {
-    return _stockStatusEntityDeletionAdapter
-        .deleteAndReturnChangedRows(stockStatus);
+  Future<void> deleteStocksByWarehouseId(int warehouseId) async {
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM stocks WHERE warehouseId = ?1',
+        arguments: [warehouseId]);
+  }
+
+  @override
+  Future<void> updateStockQuantity(
+    int id,
+    double quantity,
+    DateTime updatedAt,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE stocks SET quantity = ?2, updatedAt = ?3 WHERE id = ?1',
+        arguments: [id, quantity, _dateTimeConverter.encode(updatedAt)]);
+  }
+
+  @override
+  Future<void> updateStockPrice(
+    int id,
+    double unitPrice,
+    DateTime updatedAt,
+  ) async {
+    await _queryAdapter.queryNoReturn(
+        'UPDATE stocks SET unitPrice = ?2, updatedAt = ?3 WHERE id = ?1',
+        arguments: [id, unitPrice, _dateTimeConverter.encode(updatedAt)]);
+  }
+
+  @override
+  Future<int> insertStock(StockEntity stock) {
+    return _stockEntityInsertionAdapter.insertAndReturnId(
+        stock, OnConflictStrategy.replace);
+  }
+
+  @override
+  Future<void> updateStock(StockEntity stock) async {
+    await _stockEntityUpdateAdapter.update(stock, OnConflictStrategy.abort);
+  }
+
+  @override
+  Future<void> deleteStock(StockEntity stock) async {
+    await _stockEntityDeletionAdapter.delete(stock);
   }
 }
 

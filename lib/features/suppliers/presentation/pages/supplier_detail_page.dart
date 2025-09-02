@@ -54,12 +54,13 @@ class _SupplierDetailPageState extends ConsumerState<SupplierDetailPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              navigator.pop();
               await ref
                   .read(supplierOperationsProvider.notifier)
                   .deleteSupplier(widget.supplierId);
               if (mounted) {
-                Navigator.of(context).pop(); // Detay sayfasından çık
+                navigator.pop(); // Detay sayfasından çık
               }
             },
             style: ElevatedButton.styleFrom(

@@ -42,6 +42,10 @@ class WarehouseEntity {
   @ColumnInfo(name: 'capacity_unit')
   final String? capacityUnit;
 
+  /// Para birimi
+  @ColumnInfo(name: 'currency')
+  final String currency;
+
   /// Aktif/Pasif durumu
   @ColumnInfo(name: 'is_active')
   final bool isActive;
@@ -69,6 +73,7 @@ class WarehouseEntity {
     this.manager,
     this.capacity,
     this.capacityUnit,
+    this.currency = 'TRY', // Varsayılan para birimi
     this.isActive = true,
     this.isDefault = false,
     required this.createdAt,
@@ -88,6 +93,7 @@ class WarehouseEntity {
       'manager': manager,
       'capacity': capacity,
       'capacityUnit': capacityUnit,
+      'currency': currency,
       'isActive': isActive ? 1 : 0,
       'isDefault': isDefault ? 1 : 0,
       'createdAt': createdAt.millisecondsSinceEpoch,
@@ -108,6 +114,7 @@ class WarehouseEntity {
       manager: map['manager'] as String?,
       capacity: map['capacity'] as double?,
       capacityUnit: map['capacityUnit'] as String?,
+      currency: map['currency'] as String? ?? 'TRY',
       isActive: (map['isActive'] as int) == 1,
       isDefault: (map['isDefault'] as int) == 1,
       createdAt: DateTime.fromMillisecondsSinceEpoch(map['createdAt'] as int),
@@ -127,6 +134,7 @@ class WarehouseEntity {
     String? manager,
     double? capacity,
     String? capacityUnit,
+    String? currency,
     bool? isActive,
     bool? isDefault,
     DateTime? createdAt,
@@ -143,6 +151,7 @@ class WarehouseEntity {
       manager: manager ?? this.manager,
       capacity: capacity ?? this.capacity,
       capacityUnit: capacityUnit ?? this.capacityUnit,
+      currency: currency ?? this.currency,
       isActive: isActive ?? this.isActive,
       isDefault: isDefault ?? this.isDefault,
       createdAt: createdAt ?? this.createdAt,

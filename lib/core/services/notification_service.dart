@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import '../utils/currency_helper.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -13,18 +11,12 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-
-  static const String _fcmTokenKey = 'fcm_token';
 
   /// Notification servisini başlatır
   Future<void> initialize() async {
     try {
       // Timezone'u başlat
       tz_data.initializeTimeZones();
-      
-      // Firebase'i başlat
-      await Firebase.initializeApp();
 
       // Local notifications ayarları
       const AndroidInitializationSettings initializationSettingsAndroid =
@@ -48,77 +40,9 @@ class NotificationService {
         onDidReceiveNotificationResponse: _onNotificationTapped,
       );
 
-      // Firebase Messaging izinleri
-      await _requestPermissions();
-
-      // FCM token'ı al ve kaydet
-      await _getFCMToken();
-
-      // Background message handler
-      FirebaseMessaging.onBackgroundMessage(
-          _firebaseMessagingBackgroundHandler);
-
-      // Foreground message handler
-      FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
-
-      // Notification tap handler
-      FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+      debugPrint('Notification service initialized successfully');
     } catch (e) {
       debugPrint('Notification service initialization failed: $e');
-    }
-  }
-
-  /// FCM izinlerini ister
-  Future<void> _requestPermissions() async {
-    try {
-      NotificationSettings settings =
-          await _firebaseMessaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      debugPrint('User granted permission: ${settings.authorizationStatus}');
-    } catch (e) {
-      debugPrint('Permission request failed: $e');
-    }
-  }
-
-  /// FCM token'ı alır ve kaydeder
-  Future<void> _getFCMToken() async {
-    try {
-      String? token = await _firebaseMessaging.getToken();
-      if (token != null) {
-        await _saveFCMToken(token);
-        debugPrint('FCM Token: $token');
-      }
-    } catch (e) {
-      debugPrint('Failed to get FCM token: $e');
-    }
-  }
-
-  /// FCM token'ı kaydeder
-  Future<void> _saveFCMToken(String token) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_fcmTokenKey, token);
-    } catch (e) {
-      debugPrint('Failed to save FCM token: $e');
-    }
-  }
-
-  /// Kaydedilmiş FCM token'ı döndürür
-  Future<String?> getFCMToken() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_fcmTokenKey);
-    } catch (e) {
-      debugPrint('Failed to get saved FCM token: $e');
-      return null;
     }
   }
 
@@ -237,31 +161,6 @@ class NotificationService {
     // TODO: Navigate to specific screen based on payload
   }
 
-  /// Foreground message handler
-  void _handleForegroundMessage(RemoteMessage message) {
-    debugPrint('Got a message whilst in the foreground!');
-    debugPrint('Message data: ${message.data}');
-
-    if (message.notification != null) {
-      debugPrint(
-          'Message also contained a notification: ${message.notification}');
-
-      // Local notification göster
-      showLocalNotification(
-        id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-        title: message.notification!.title ?? 'Yeni Bildirim',
-        body: message.notification!.body ?? '',
-        payload: message.data.toString(),
-      );
-    }
-  }
-
-  /// Notification tap handler
-  void _handleNotificationTap(RemoteMessage message) {
-    debugPrint('Notification tapped: ${message.data}');
-    // TODO: Navigate to specific screen based on message data
-  }
-
   /// Bildirim ayarlarını kontrol eder
   Future<bool> areNotificationsEnabled() async {
     try {
@@ -287,13 +186,45 @@ class NotificationService {
       debugPrint('Failed to open notification settings: $e');
     }
   }
-}
 
-/// Background message handler
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  debugPrint('Handling a background message: ${message.messageId}');
+  /// Para birimi değişikliği bildirimi gösterir
+  Future<void> showCurrencyChangeNotification({
+    required String oldCurrency,
+    required String newCurrency,
+    required double exchangeRate,
+  }) async {
+    final oldSymbol = CurrencyHelper.getCurrencySymbol(oldCurrency);
+    final newSymbol = CurrencyHelper.getCurrencySymbol(newCurrency);
+
+    await showLocalNotification(
+      id: 1001, // Para birimi değişikliği için özel ID
+      title: 'Para Birimi Değişikliği',
+      body:
+          'Varsayılan para birimi $oldSymbol\'den $newSymbol\'e değiştirildi. '
+          'Kur: 1 $oldSymbol = ${exchangeRate.toStringAsFixed(4)} $newSymbol',
+      importance: NotificationImportance.high,
+    );
+  }
+
+  /// Kur güncelleme bildirimi gösterir
+  Future<void> showExchangeRateUpdateNotification({
+    required String currency,
+    required double oldRate,
+    required double newRate,
+  }) async {
+    final symbol = CurrencyHelper.getCurrencySymbol(currency);
+    final changePercent = ((newRate - oldRate) / oldRate * 100);
+    final changeDirection = changePercent >= 0 ? 'artış' : 'azalış';
+
+    await showLocalNotification(
+      id: 1002, // Kur güncelleme için özel ID
+      title: '$symbol Kuru Güncellendi',
+      body:
+          '$symbol kuru %${changePercent.abs().toStringAsFixed(2)} $changeDirection gösterdi. '
+          'Yeni kur: ${newRate.toStringAsFixed(4)} TRY',
+      importance: NotificationImportance.defaultImportance,
+    );
+  }
 }
 
 /// Notification importance enum

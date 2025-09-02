@@ -8,15 +8,16 @@ import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
 import '../../data/repositories/expense_repository_impl.dart';
+import '../../data/repositories/firebase_expense_repository.dart';
 import '../../../../core/database/tamgaci_database.dart';
 
 // ========== BASE PROVIDERS ==========
 
 /// Expense repository provider
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
-  // Web platformunda boş repository döndür
+  // Web platformunda Firebase kullan
   if (kIsWeb) {
-    return _EmptyExpenseRepository();
+    return FirebaseExpenseRepository();
   }
 
   try {
@@ -194,7 +195,7 @@ final filteredExpensesProvider = FutureProvider<List<Expense>>((ref) async {
   // Kategori filtresi
   if (selectedCategory != null) {
     expenses = expenses
-        .where((expense) => expense.categoryId == selectedCategory)
+        .where((expense) => expense.categoryId == selectedCategory.name)
         .toList();
   }
 
@@ -513,6 +514,7 @@ class _EmptyExpenseRepository implements ExpenseRepository {
       title: 'Ofis Kirası',
       description: 'Aylık ofis kirası ödemesi',
       amount: 3000.0,
+      currency: 'TRY',
       categoryId: '1',
       categoryName: 'Kira',
       expenseDate: DateTime.now().subtract(const Duration(days: 5)),
@@ -527,6 +529,7 @@ class _EmptyExpenseRepository implements ExpenseRepository {
       title: 'Elektrik Faturası',
       description: 'Aylık elektrik faturası',
       amount: 500.0,
+      currency: 'TRY',
       categoryId: '2',
       categoryName: 'Faturalar',
       expenseDate: DateTime.now().subtract(const Duration(days: 2)),
@@ -541,6 +544,7 @@ class _EmptyExpenseRepository implements ExpenseRepository {
       title: 'Yazılım Lisansı',
       description: 'Yıllık yazılım lisans ücreti',
       amount: 1200.0,
+      currency: 'TRY',
       categoryId: '3',
       categoryName: 'Yazılım',
       expenseDate: DateTime.now(),

@@ -3,19 +3,17 @@
 
 import 'package:floor/floor.dart';
 
-/// Fihrist kişi/kurum varlığı
+/// Contact entity sınıfı
+/// Kişi/kurum bilgilerini temsil eder
 @Entity(tableName: 'contacts')
 class Contact {
+  /// Benzersiz ID
   @PrimaryKey(autoGenerate: true)
   final int? id;
 
-  /// Kişi/kurum adı
+  /// Ad/Unvan
   @ColumnInfo(name: 'name')
   final String name;
-
-  /// Kişi/kurum tipi (müşteri, tedarikçi, her ikisi)
-  @ColumnInfo(name: 'type')
-  final ContactType type;
 
   /// E-posta adresi
   @ColumnInfo(name: 'email')
@@ -38,41 +36,45 @@ class Contact {
   final String? country;
 
   /// Vergi numarası
-  @ColumnInfo(name: 'tax_number')
+  @ColumnInfo(name: 'taxNumber')
   final String? taxNumber;
 
   /// Vergi dairesi
-  @ColumnInfo(name: 'tax_office')
+  @ColumnInfo(name: 'taxOffice')
   final String? taxOffice;
 
   /// Web sitesi
   @ColumnInfo(name: 'website')
   final String? website;
 
+  /// Tip (0: Müşteri, 1: Tedarikçi, 2: Her ikisi)
+  @ColumnInfo(name: 'type')
+  final int type;
+
+  /// Favori mi?
+  @ColumnInfo(name: 'isFavorite')
+  final bool isFavorite;
+
+  /// Aktif mi?
+  @ColumnInfo(name: 'isActive')
+  final bool isActive;
+
   /// Notlar
   @ColumnInfo(name: 'notes')
   final String? notes;
 
-  /// Favori mi?
-  @ColumnInfo(name: 'is_favorite')
-  final bool isFavorite;
-
-  /// Aktif mi?
-  @ColumnInfo(name: 'is_active')
-  final bool isActive;
-
   /// Oluşturulma tarihi
-  @ColumnInfo(name: 'created_at')
+  @ColumnInfo(name: 'createdAt')
   final DateTime createdAt;
 
   /// Güncellenme tarihi
-  @ColumnInfo(name: 'updated_at')
+  @ColumnInfo(name: 'updatedAt')
   final DateTime updatedAt;
 
-  Contact({
+  /// Constructor
+  const Contact({
     this.id,
     required this.name,
-    required this.type,
     this.email,
     this.phone,
     this.address,
@@ -81,18 +83,18 @@ class Contact {
     this.taxNumber,
     this.taxOffice,
     this.website,
-    this.notes,
+    required this.type,
     this.isFavorite = false,
     this.isActive = true,
+    this.notes,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  /// Kopyalama metodu
+  /// Contact kopyalama metodu
   Contact copyWith({
     int? id,
     String? name,
-    ContactType? type,
     String? email,
     String? phone,
     String? address,
@@ -101,16 +103,16 @@ class Contact {
     String? taxNumber,
     String? taxOffice,
     String? website,
-    String? notes,
+    int? type,
     bool? isFavorite,
     bool? isActive,
+    String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Contact(
       id: id ?? this.id,
       name: name ?? this.name,
-      type: type ?? this.type,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
@@ -119,9 +121,10 @@ class Contact {
       taxNumber: taxNumber ?? this.taxNumber,
       taxOffice: taxOffice ?? this.taxOffice,
       website: website ?? this.website,
-      notes: notes ?? this.notes,
+      type: type ?? this.type,
       isFavorite: isFavorite ?? this.isFavorite,
       isActive: isActive ?? this.isActive,
+      notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -132,45 +135,42 @@ class Contact {
     return Contact(
       id: json['id'] as int?,
       name: json['name'] as String,
-      type: ContactType.values.firstWhere(
-        (e) => e.toString() == 'ContactType.${json['type']}',
-        orElse: () => ContactType.customer,
-      ),
       email: json['email'] as String?,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
       city: json['city'] as String?,
       country: json['country'] as String?,
-      taxNumber: json['tax_number'] as String?,
-      taxOffice: json['tax_office'] as String?,
+      taxNumber: json['taxNumber'] as String?,
+      taxOffice: json['taxOffice'] as String?,
       website: json['website'] as String?,
+      type: json['type'] as int,
+      isFavorite: json['isFavorite'] as bool? ?? false,
+      isActive: json['isActive'] as bool? ?? true,
       notes: json['notes'] as String?,
-      isFavorite: json['is_favorite'] as bool? ?? false,
-      isActive: json['is_active'] as bool? ?? true,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
 
-  /// Contact'ı JSON'a dönüştür
+  /// Contact'ı JSON'a çevir
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'name': name,
-      'type': type.toString().split('.').last,
       'email': email,
       'phone': phone,
       'address': address,
       'city': city,
       'country': country,
-      'tax_number': taxNumber,
-      'tax_office': taxOffice,
+      'taxNumber': taxNumber,
+      'taxOffice': taxOffice,
       'website': website,
+      'type': type,
+      'isFavorite': isFavorite,
+      'isActive': isActive,
       'notes': notes,
-      'is_favorite': isFavorite,
-      'is_active': isActive,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
@@ -185,22 +185,32 @@ class Contact {
 
   @override
   String toString() {
-    return 'Contact(id: $id, name: $name, type: $type)';
+    return 'Contact(id: $id, name: $name, email: $email, phone: $phone)';
   }
 }
 
-/// Kişi/kurum tipi enum'u
+/// Contact tip enum'u
 enum ContactType {
-  /// Müşteri
-  customer,
-  /// Tedarikçi
-  supplier,
-  /// Her ikisi
-  both,
-}
+  customer(0),
+  supplier(1),
+  both(2);
 
-/// ContactType için extension
-extension ContactTypeExtension on ContactType {
+  const ContactType(this.value);
+  final int value;
+
+  static ContactType fromValue(int value) {
+    switch (value) {
+      case 0:
+        return ContactType.customer;
+      case 1:
+        return ContactType.supplier;
+      case 2:
+        return ContactType.both;
+      default:
+        return ContactType.customer;
+    }
+  }
+
   /// Türkçe adını döndür
   String get displayName {
     switch (this) {
