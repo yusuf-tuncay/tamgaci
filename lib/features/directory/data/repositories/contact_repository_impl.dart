@@ -43,7 +43,7 @@ class ContactRepositoryImpl implements ContactRepository {
     try {
       return await _contactDao.getContactsByType(type.index);
     } catch (e) {
-      throw Exception('Tip\'e göre kişi/kurumlar getirilirken hata oluştu: $e');
+      throw Exception("Tip'e göre kişi/kurumlar getirilirken hata oluştu: $e");
     }
   }
 
@@ -112,7 +112,7 @@ class ContactRepositoryImpl implements ContactRepository {
       return count;
     } catch (e) {
       throw Exception(
-          'Tip\'e göre kişi/kurum sayısı getirilirken hata oluştu: $e');
+          "Tip'e göre kişi/kurum sayısı getirilirken hata oluştu: $e");
     }
   }
 
@@ -160,7 +160,7 @@ class ContactRepositoryImpl implements ContactRepository {
       return await _contactDao.getContactsByCity(city);
     } catch (e) {
       throw Exception(
-          'Şehir\'e göre kişi/kurumlar getirilirken hata oluştu: $e');
+          "Şehir'e göre kişi/kurumlar getirilirken hata oluştu: $e");
     }
   }
 
@@ -170,7 +170,7 @@ class ContactRepositoryImpl implements ContactRepository {
       return await _contactDao.getContactsByCountry(country);
     } catch (e) {
       throw Exception(
-          'Ülke\'ye göre kişi/kurumlar getirilirken hata oluştu: $e');
+          "Ülke'ye göre kişi/kurumlar getirilirken hata oluştu: $e");
     }
   }
 

@@ -133,9 +133,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         Navigator.of(context).pop();
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Hata: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Hata: $e')),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -162,7 +164,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: _isEditing ? 'Ürün Düzenle' : 'Yeni Ürün',
         showBackButton: true,
@@ -236,7 +240,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+          color: isDark
+              ? TamgaciConstants.textPrimaryDark
+              : TamgaciConstants.textPrimary,
         ),
       ),
     );
@@ -507,13 +513,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       title: Text(
         'Aktif',
         style: GoogleFonts.poppins(
-          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+          color: isDark
+              ? TamgaciConstants.textPrimaryDark
+              : TamgaciConstants.textPrimary,
         ),
       ),
       subtitle: Text(
         'Ürün aktif olarak satışta',
         style: GoogleFonts.poppins(
-          color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+          color: isDark
+              ? TamgaciConstants.textSecondaryDark
+              : TamgaciConstants.textSecondary,
         ),
       ),
       value: _isActive,
@@ -527,6 +537,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   /// Aktif/Pasif switch'i
+  // ignore: unused_element
   Widget _buildActiveSwitch() {
     return SwitchListTile(
       title: const Text('Aktif'),

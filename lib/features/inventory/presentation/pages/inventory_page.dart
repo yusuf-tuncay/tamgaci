@@ -58,15 +58,15 @@ class InventoryPage extends ConsumerWidget {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
-              ? [Colors.orange.withOpacity(0.8), Colors.orange]
-              : [Colors.orange, Colors.orange.withOpacity(0.8)],
+              ? [Colors.orange.withValues(alpha: 0.8), Colors.orange]
+              : [Colors.orange, Colors.orange.withValues(alpha: 0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.orange.withOpacity(0.3),
+            color: Colors.orange.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -100,7 +100,7 @@ class InventoryPage extends ConsumerWidget {
             'Stok hareketlerini takip edin ve yönetin',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
         ],
@@ -156,7 +156,8 @@ class InventoryPage extends ConsumerWidget {
                   ),
                 );
               }, isDark),
-              _buildActionCard('Stok Listesi', Icons.inventory, Colors.teal, () {
+              _buildActionCard('Stok Listesi', Icons.inventory, Colors.teal,
+                  () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -179,9 +180,9 @@ class InventoryPage extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -339,7 +340,7 @@ class InventoryPage extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 20),

@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/income.dart';
 import '../../domain/entities/income_category.dart';
 import '../../domain/repositories/income_repository.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Firebase Firestore tabanlı gelir repository implementasyonu
 class FirebaseIncomeRepository implements IncomeRepository {
@@ -23,7 +24,7 @@ class FirebaseIncomeRepository implements IncomeRepository {
       await docRef.set(incomeData);
       return docRef.id;
     } catch (e) {
-      print('Error creating income: $e');
+      AppLogger.error('Error creating income', e);
       rethrow;
     }
   }
@@ -36,7 +37,7 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .doc(income.id)
           .update(_incomeToMap(income));
     } catch (e) {
-      print('Error updating income: $e');
+      AppLogger.error('Error updating income', e);
       rethrow;
     }
   }
@@ -46,7 +47,7 @@ class FirebaseIncomeRepository implements IncomeRepository {
     try {
       await _firestore.collection(_collectionName).doc(id).delete();
     } catch (e) {
-      print('Error deleting income: $e');
+      AppLogger.error('Error deleting income', e);
       rethrow;
     }
   }
@@ -54,11 +55,12 @@ class FirebaseIncomeRepository implements IncomeRepository {
   @override
   Future<Income?> getIncomeById(String id) async {
     try {
-      final docSnapshot = await _firestore.collection(_collectionName).doc(id).get();
+      final docSnapshot =
+          await _firestore.collection(_collectionName).doc(id).get();
       if (!docSnapshot.exists) return null;
       return _incomeFromMap(docSnapshot);
     } catch (e) {
-      print('Error getting income by ID: $e');
+      AppLogger.error('Error getting income by ID', e);
       rethrow;
     }
   }
@@ -70,17 +72,14 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .collection(_collectionName)
           .orderBy('incomeDate', descending: true)
           .get();
-      
-      return querySnapshot.docs
-          .map((doc) => _incomeFromMap(doc))
-          .toList();
+
+      return querySnapshot.docs.map((doc) => _incomeFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting all incomes: $e');
+      AppLogger.error('Error getting all incomes', e);
       rethrow;
     }
   }
 
-  @override
   Future<List<Income>> getIncomesByCategory(String categoryId) async {
     try {
       final querySnapshot = await _firestore
@@ -88,17 +87,14 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .where('categoryId', isEqualTo: categoryId)
           .orderBy('incomeDate', descending: true)
           .get();
-      
-      return querySnapshot.docs
-          .map((doc) => _incomeFromMap(doc))
-          .toList();
+
+      return querySnapshot.docs.map((doc) => _incomeFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting incomes by category: $e');
+      AppLogger.error('Error getting incomes by category', e);
       rethrow;
     }
   }
 
-  @override
   Future<List<Income>> getIncomesByStatus(IncomeStatus status) async {
     try {
       final querySnapshot = await _firestore
@@ -106,18 +102,16 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .where('status', isEqualTo: status.name)
           .orderBy('incomeDate', descending: true)
           .get();
-      
-      return querySnapshot.docs
-          .map((doc) => _incomeFromMap(doc))
-          .toList();
+
+      return querySnapshot.docs.map((doc) => _incomeFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting incomes by status: $e');
+      AppLogger.error('Error getting incomes by status', e);
       rethrow;
     }
   }
 
-  @override
-  Future<List<Income>> getIncomesByDateRange(DateTime startDate, DateTime endDate) async {
+  Future<List<Income>> getIncomesByDateRange(
+      DateTime startDate, DateTime endDate) async {
     try {
       final querySnapshot = await _firestore
           .collection(_collectionName)
@@ -125,17 +119,14 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .where('incomeDate', isLessThanOrEqualTo: endDate)
           .orderBy('incomeDate', descending: true)
           .get();
-      
-      return querySnapshot.docs
-          .map((doc) => _incomeFromMap(doc))
-          .toList();
+
+      return querySnapshot.docs.map((doc) => _incomeFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting incomes by date range: $e');
+      AppLogger.error('Error getting incomes by date range', e);
       rethrow;
     }
   }
 
-  @override
   Future<List<Income>> getRecentIncomes({int limit = 10}) async {
     try {
       final querySnapshot = await _firestore
@@ -143,67 +134,62 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .orderBy('incomeDate', descending: true)
           .limit(limit)
           .get();
-      
-      return querySnapshot.docs
-          .map((doc) => _incomeFromMap(doc))
-          .toList();
+
+      return querySnapshot.docs.map((doc) => _incomeFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting recent incomes: $e');
+      AppLogger.error('Error getting recent incomes', e);
       rethrow;
     }
   }
 
-  @override
   Future<int> getTotalIncomeCount() async {
     try {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting total income count: $e');
+      AppLogger.error('Error getting total income count', e);
       rethrow;
     }
   }
 
-  @override
   Future<double> getTotalIncomeAmount() async {
     try {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       double total = 0;
-      
+
       for (final doc in querySnapshot.docs) {
         final data = doc.data();
         total += (data['amount'] ?? 0).toDouble();
       }
-      
+
       return total;
     } catch (e) {
-      print('Error getting total income amount: $e');
+      AppLogger.error('Error getting total income amount', e);
       rethrow;
     }
   }
 
-  @override
   Future<double> getCurrentMonthIncomeAmount() async {
     try {
       final now = DateTime.now();
       final startOfMonth = DateTime(now.year, now.month, 1);
       final endOfMonth = DateTime(now.year, now.month + 1, 0);
-      
+
       final querySnapshot = await _firestore
           .collection(_collectionName)
           .where('incomeDate', isGreaterThanOrEqualTo: startOfMonth)
           .where('incomeDate', isLessThanOrEqualTo: endOfMonth)
           .get();
-      
+
       double total = 0;
       for (final doc in querySnapshot.docs) {
         final data = doc.data();
         total += (data['amount'] ?? 0).toDouble();
       }
-      
+
       return total;
     } catch (e) {
-      print('Error getting current month income amount: $e');
+      AppLogger.error('Error getting current month income amount', e);
       rethrow;
     }
   }
@@ -211,19 +197,18 @@ class FirebaseIncomeRepository implements IncomeRepository {
   @override
   Future<List<Income>> searchIncomes(String query) async {
     try {
-      final querySnapshot = await _firestore
-          .collection(_collectionName)
-          .get();
-      
+      final querySnapshot = await _firestore.collection(_collectionName).get();
+
       final lowercaseQuery = query.toLowerCase();
       return querySnapshot.docs
           .map((doc) => _incomeFromMap(doc))
           .where((income) =>
               income.title.toLowerCase().contains(lowercaseQuery) ||
-              (income.description?.toLowerCase().contains(lowercaseQuery) ?? false))
+              (income.description?.toLowerCase().contains(lowercaseQuery) ??
+                  false))
           .toList();
     } catch (e) {
-      print('Error searching incomes: $e');
+      AppLogger.error('Error searching incomes', e);
       rethrow;
     }
   }
@@ -236,7 +221,7 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .doc(id)
           .update({'status': status.name});
     } catch (e) {
-      print('Error updating income status: $e');
+      AppLogger.error('Error updating income status', e);
       rethrow;
     }
   }
@@ -258,21 +243,18 @@ class FirebaseIncomeRepository implements IncomeRepository {
         .collection(_collectionName)
         .orderBy('incomeDate', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => _incomeFromMap(doc))
-            .toList());
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => _incomeFromMap(doc)).toList());
   }
 
-  @override
   Stream<List<Income>> watchIncomesByCategory(String categoryId) {
     return _firestore
         .collection(_collectionName)
         .where('categoryId', isEqualTo: categoryId)
         .orderBy('incomeDate', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => _incomeFromMap(doc))
-            .toList());
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => _incomeFromMap(doc)).toList());
   }
 
   // ========== CATEGORY OPERATIONS ==========
@@ -284,25 +266,23 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .collection(_categoriesCollectionName)
           .orderBy('name')
           .get();
-      
-      return querySnapshot.docs
-          .map((doc) => _categoryFromMap(doc))
-          .toList();
+
+      return querySnapshot.docs.map((doc) => _categoryFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting income categories: $e');
+      AppLogger.error('Error getting income categories', e);
       // Varsayılan kategorileri döndür
       return DefaultIncomeCategories.categories;
     }
   }
 
-  @override
   Future<IncomeCategory?> getIncomeCategoryById(String id) async {
     try {
-      final docSnapshot = await _firestore.collection(_categoriesCollectionName).doc(id).get();
+      final docSnapshot =
+          await _firestore.collection(_categoriesCollectionName).doc(id).get();
       if (!docSnapshot.exists) return null;
       return _categoryFromMap(docSnapshot);
     } catch (e) {
-      print('Error getting income category by ID: $e');
+      AppLogger.error('Error getting income category by ID', e);
       rethrow;
     }
   }
@@ -315,7 +295,7 @@ class FirebaseIncomeRepository implements IncomeRepository {
       await docRef.set(categoryData);
       return docRef.id;
     } catch (e) {
-      print('Error creating income category: $e');
+      AppLogger.error('Error creating income category', e);
       rethrow;
     }
   }
@@ -328,7 +308,7 @@ class FirebaseIncomeRepository implements IncomeRepository {
           .doc(category.id)
           .update(_categoryToMap(category));
     } catch (e) {
-      print('Error updating income category: $e');
+      AppLogger.error('Error updating income category', e);
       rethrow;
     }
   }
@@ -338,7 +318,7 @@ class FirebaseIncomeRepository implements IncomeRepository {
     try {
       await _firestore.collection(_categoriesCollectionName).doc(id).delete();
     } catch (e) {
-      print('Error deleting income category: $e');
+      AppLogger.error('Error deleting income category', e);
       rethrow;
     }
   }
@@ -349,9 +329,8 @@ class FirebaseIncomeRepository implements IncomeRepository {
         .collection(_categoriesCollectionName)
         .orderBy('name')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => _categoryFromMap(doc))
-            .toList());
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => _categoryFromMap(doc)).toList());
   }
 
   // Helper methods for data conversion

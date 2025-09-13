@@ -23,11 +23,11 @@ class ExchangeRateService {
         return _parseTCMBRates(data);
       } else {
         debugPrint('TCMB API başarısız: ${response.statusCode}');
-        return _getMockRates();
+        throw Exception("TCMB API'den veri alınamadı: ${response.statusCode}");
       }
     } catch (e) {
       debugPrint('TCMB API hatası: $e');
-      return _getMockRates();
+      throw Exception('Kur verileri alınamadı: $e');
     }
   }
 
@@ -72,7 +72,7 @@ class ExchangeRateService {
           final currency = _mapTCMBCurrency(currencyName, averageRate, now);
           if (currency != null) {
             currencies.add(currency);
-            debugPrint('TCMB Kur eklendi: $currencyName = $averageRate');
+            debugPrint('TCMB Kur eklendi: $currencyName = $averageRate TRY');
           }
         }
       } catch (e) {
@@ -81,10 +81,13 @@ class ExchangeRateService {
       }
     }
 
-    // Eksik kurları mock verilerle tamamla
-    currencies.addAll(_getAdditionalMockRates(now));
+    debugPrint("TCMB'den ${currencies.length} kur eklendi");
 
-    debugPrint('Toplam ${currencies.length} kur eklendi');
+    // Debug: Kurları yazdır
+    for (final currency in currencies) {
+      debugPrint('${currency.code}: ${currency.exchangeRate} TRY');
+    }
+
     return currencies;
   }
 
@@ -99,7 +102,8 @@ class ExchangeRateService {
           symbol: '\$',
           country: 'Amerika',
           lastUpdated: timestamp,
-          exchangeRate: rate, // 1 USD = X TRY (doğrudan kullan)
+          exchangeRate:
+              rate, // 1 USD = X TRY (TCMB'den gelen değer doğrudan kullanılır)
           changeRate: 0.8,
           isIncreasing: true,
         );
@@ -110,7 +114,8 @@ class ExchangeRateService {
           symbol: '€',
           country: 'Avrupa',
           lastUpdated: timestamp,
-          exchangeRate: rate, // 1 EUR = X TRY (doğrudan kullan)
+          exchangeRate:
+              rate, // 1 EUR = X TRY (TCMB'den gelen değer doğrudan kullanılır)
           changeRate: -0.2,
           isIncreasing: false,
         );
@@ -209,118 +214,135 @@ class ExchangeRateService {
           symbol: '¥',
           country: 'Japonya',
           lastUpdated: timestamp,
-          exchangeRate: rate, // 1 JPY = X TRY (doğrudan kullan)
+          exchangeRate: rate, // 1 JPY = X TRY
           changeRate: 0.2,
           isIncreasing: true,
         );
+      case 'NORVEÇ KRONU':
+        return Currency(
+          code: 'NOK',
+          name: 'Norveç Kronu',
+          symbol: 'kr',
+          country: 'Norveç',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 NOK = X TRY
+          changeRate: 0.1,
+          isIncreasing: true,
+        );
+      case 'İSVEÇ KRONU':
+        return Currency(
+          code: 'SEK',
+          name: 'İsveç Kronu',
+          symbol: 'kr',
+          country: 'İsveç',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 SEK = X TRY
+          changeRate: 0.2,
+          isIncreasing: true,
+        );
+      case 'DANİMARKA KRONU':
+        return Currency(
+          code: 'DKK',
+          name: 'Danimarka Kronu',
+          symbol: 'kr',
+          country: 'Danimarka',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 DKK = X TRY
+          changeRate: 0.1,
+          isIncreasing: true,
+        );
+      case 'POLONYA ZLOTİSİ':
+        return Currency(
+          code: 'PLN',
+          name: 'Polonya Zlotisi',
+          symbol: 'zł',
+          country: 'Polonya',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 PLN = X TRY
+          changeRate: 0.3,
+          isIncreasing: true,
+        );
+      case 'MACAR FORİNTİ':
+        return Currency(
+          code: 'HUF',
+          name: 'Macar Forinti',
+          symbol: 'Ft',
+          country: 'Macaristan',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 HUF = X TRY
+          changeRate: 0.4,
+          isIncreasing: true,
+        );
+      case 'ÇEK KORUNASI':
+        return Currency(
+          code: 'CZK',
+          name: 'Çek Korunası',
+          symbol: 'Kč',
+          country: 'Çekya',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 CZK = X TRY
+          changeRate: 0.2,
+          isIncreasing: true,
+        );
+      case 'GÜNEY KORE WONU':
+        return Currency(
+          code: 'KRW',
+          name: 'Güney Kore Wonu',
+          symbol: '₩',
+          country: 'Güney Kore',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 KRW = X TRY
+          changeRate: 0.1,
+          isIncreasing: true,
+        );
+      case 'HİNDİSTAN RUPİSİ':
+        return Currency(
+          code: 'INR',
+          name: 'Hindistan Rupisi',
+          symbol: '₹',
+          country: 'Hindistan',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 INR = X TRY
+          changeRate: 0.3,
+          isIncreasing: true,
+        );
+      case 'BREZİLYA REALİ':
+        return Currency(
+          code: 'BRL',
+          name: 'Brezilya Realı',
+          symbol: 'R\$',
+          country: 'Brezilya',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 BRL = X TRY
+          changeRate: 0.5,
+          isIncreasing: true,
+        );
+      case 'MEKSİKA PESOSU':
+        return Currency(
+          code: 'MXN',
+          name: 'Meksika Pesosu',
+          symbol: '\$',
+          country: 'Meksika',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 MXN = X TRY
+          changeRate: 0.2,
+          isIncreasing: true,
+        );
+      case 'GÜNEY AFRİKA RANDI':
+        return Currency(
+          code: 'ZAR',
+          name: 'Güney Afrika Randı',
+          symbol: 'R',
+          country: 'Güney Afrika',
+          lastUpdated: timestamp,
+          exchangeRate: rate, // 1 ZAR = X TRY
+          changeRate: 0.4,
+          isIncreasing: true,
+        );
       default:
+        debugPrint("TCMB'de bulunmayan para birimi: $tcmbName");
         return null;
     }
-  }
-
-  /// TCMB'de olmayan kurlar için ek mock veriler
-  static List<Currency> _getAdditionalMockRates(DateTime now) {
-    return [
-      Currency(
-        code: 'XAU',
-        name: 'Altın (Gram)',
-        symbol: 'Au',
-        country: 'Altın',
-        lastUpdated: now,
-        exchangeRate: 0.0000015, // 1 TRY = 0.0000015 gram altın
-        changeRate: 2.3,
-        isIncreasing: true,
-      ),
-    ];
-  }
-
-  /// Güncel mock kur verileri (API çalışmazsa) - 2024 Aralık güncel değerler
-  static List<Currency> _getMockRates() {
-    final now = DateTime.now();
-
-    return [
-      Currency(
-        code: 'TRY',
-        name: 'Türk Lirası',
-        symbol: '₺',
-        country: 'Türkiye',
-        isDefault: true,
-        lastUpdated: now,
-        exchangeRate: 1.0, // TRY bazlı
-        changeRate: 0.0,
-        isIncreasing: true,
-      ),
-      Currency(
-        code: 'USD',
-        name: 'Amerikan Doları',
-        symbol: '\$',
-        country: 'Amerika',
-        lastUpdated: now,
-        exchangeRate: 0.032, // 1 TRY = 0.032 USD (yaklaşık 31.25 TRY = 1 USD)
-        changeRate: 0.8,
-        isIncreasing: true,
-      ),
-      Currency(
-        code: 'EUR',
-        name: 'Euro',
-        symbol: '€',
-        country: 'Avrupa',
-        lastUpdated: now,
-        exchangeRate: 0.029, // 1 TRY = 0.029 EUR (yaklaşık 34.48 TRY = 1 EUR)
-        changeRate: -0.2,
-        isIncreasing: false,
-      ),
-      Currency(
-        code: 'RUB',
-        name: 'Rus Rublesi',
-        symbol: '₽',
-        country: 'Rusya',
-        lastUpdated: now,
-        exchangeRate: 2.95, // 1 TRY = 2.95 RUB
-        changeRate: 1.5,
-        isIncreasing: true,
-      ),
-      Currency(
-        code: 'CNY',
-        name: 'Çin Yuanı',
-        symbol: '¥',
-        country: 'Çin',
-        lastUpdated: now,
-        exchangeRate: 0.23, // 1 TRY = 0.23 CNY
-        changeRate: 0.6,
-        isIncreasing: true,
-      ),
-      Currency(
-        code: 'AED',
-        name: 'Birleşik Arap Emirlikleri Dirhemi',
-        symbol: 'د.إ',
-        country: 'Dubai',
-        lastUpdated: now,
-        exchangeRate: 0.118, // 1 TRY = 0.118 AED
-        changeRate: -0.1,
-        isIncreasing: false,
-      ),
-      Currency(
-        code: 'BGN',
-        name: 'Bulgar Levası',
-        symbol: 'лв',
-        country: 'Bulgaristan',
-        lastUpdated: now,
-        exchangeRate: 0.057, // 1 TRY = 0.057 BGN
-        changeRate: 0.4,
-        isIncreasing: true,
-      ),
-      Currency(
-        code: 'XAU',
-        name: 'Altın (Gram)',
-        symbol: 'Au',
-        country: 'Altın',
-        lastUpdated: now,
-        exchangeRate: 0.0000015, // 1 TRY = 0.0000015 gram altın
-        changeRate: 2.3,
-        isIncreasing: true,
-      ),
-    ];
   }
 
   /// Para birimi dönüştürme (seçili para birimine göre)
@@ -334,10 +356,10 @@ class ExchangeRateService {
     }
 
     // TRY'ye çevir (base currency)
-    final amountInTRY = amount / fromCurrency.exchangeRate;
+    final amountInTRY = amount * fromCurrency.exchangeRate;
 
     // Hedef para birimine çevir
-    return amountInTRY * toCurrency.exchangeRate;
+    return amountInTRY / toCurrency.exchangeRate;
   }
 
   /// Seçili para birimine göre kur gösterimi
@@ -382,8 +404,6 @@ class ExchangeRateService {
         return 'د.إ$formattedAmount';
       case 'BGN':
         return 'лв$formattedAmount';
-      case 'XAU':
-        return 'Au $formattedAmount g';
       default:
         return '$symbol$formattedAmount';
     }

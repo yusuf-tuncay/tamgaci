@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/contact.dart';
 import '../../domain/repositories/contact_repository.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Firebase Firestore tabanlı contact repository implementasyonu
 class FirebaseContactRepository implements ContactRepository {
@@ -22,7 +23,7 @@ class FirebaseContactRepository implements ContactRepository {
       await docRef.set(contactData);
       return docRef.id.hashCode;
     } catch (e) {
-      print('Error creating contact: $e');
+      AppLogger.error('Error creating contact', e);
       rethrow;
     }
   }
@@ -35,7 +36,7 @@ class FirebaseContactRepository implements ContactRepository {
           .doc(contact.id.toString())
           .update(_contactToMap(contact));
     } catch (e) {
-      print('Error updating contact: $e');
+      AppLogger.error('Error updating contact', e);
       rethrow;
     }
   }
@@ -45,7 +46,7 @@ class FirebaseContactRepository implements ContactRepository {
     try {
       await _firestore.collection(_collectionName).doc(id.toString()).delete();
     } catch (e) {
-      print('Error deleting contact: $e');
+      AppLogger.error('Error deleting contact', e);
       rethrow;
     }
   }
@@ -58,7 +59,7 @@ class FirebaseContactRepository implements ContactRepository {
       if (!docSnapshot.exists) return null;
       return _contactFromMap(docSnapshot);
     } catch (e) {
-      print('Error getting contact by ID: $e');
+      AppLogger.error('Error getting contact by ID', e);
       rethrow;
     }
   }
@@ -71,7 +72,7 @@ class FirebaseContactRepository implements ContactRepository {
 
       return querySnapshot.docs.map((doc) => _contactFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting all contacts: $e');
+      AppLogger.error('Error getting all contacts', e);
       rethrow;
     }
   }
@@ -87,7 +88,7 @@ class FirebaseContactRepository implements ContactRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting active contacts: $e');
+      AppLogger.error('Error getting active contacts', e);
       rethrow;
     }
   }
@@ -103,7 +104,7 @@ class FirebaseContactRepository implements ContactRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting favorite contacts: $e');
+      AppLogger.error('Error getting favorite contacts', e);
       rethrow;
     }
   }
@@ -119,7 +120,7 @@ class FirebaseContactRepository implements ContactRepository {
 
       return querySnapshot.docs.map((doc) => _contactFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting recent contacts: $e');
+      AppLogger.error('Error getting recent contacts', e);
       rethrow;
     }
   }
@@ -139,7 +140,7 @@ class FirebaseContactRepository implements ContactRepository {
               (contact.phone?.toLowerCase().contains(lowercaseQuery) ?? false))
           .toList();
     } catch (e) {
-      print('Error searching contacts: $e');
+      AppLogger.error('Error searching contacts', e);
       rethrow;
     }
   }
@@ -155,7 +156,7 @@ class FirebaseContactRepository implements ContactRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting contacts by type: $e');
+      AppLogger.error('Error getting contacts by type', e);
       rethrow;
     }
   }
@@ -166,7 +167,7 @@ class FirebaseContactRepository implements ContactRepository {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting contact count: $e');
+      AppLogger.error('Error getting contact count', e);
       rethrow;
     }
   }
@@ -180,7 +181,7 @@ class FirebaseContactRepository implements ContactRepository {
           .where((contact) => contact.type == type.value)
           .length;
     } catch (e) {
-      print('Error getting contact count by type: $e');
+      AppLogger.error('Error getting contact count by type', e);
       rethrow;
     }
   }
@@ -194,7 +195,7 @@ class FirebaseContactRepository implements ContactRepository {
           .where((contact) => contact.isFavorite)
           .length;
     } catch (e) {
-      print('Error getting favorite contact count: $e');
+      AppLogger.error('Error getting favorite contact count', e);
       rethrow;
     }
   }
@@ -211,7 +212,7 @@ class FirebaseContactRepository implements ContactRepository {
       if (querySnapshot.docs.isEmpty) return null;
       return _contactFromMap(querySnapshot.docs.first);
     } catch (e) {
-      print('Error getting contact by email: $e');
+      AppLogger.error('Error getting contact by email', e);
       rethrow;
     }
   }
@@ -228,7 +229,7 @@ class FirebaseContactRepository implements ContactRepository {
       if (querySnapshot.docs.isEmpty) return null;
       return _contactFromMap(querySnapshot.docs.first);
     } catch (e) {
-      print('Error getting contact by phone: $e');
+      AppLogger.error('Error getting contact by phone', e);
       rethrow;
     }
   }
@@ -245,7 +246,7 @@ class FirebaseContactRepository implements ContactRepository {
       if (querySnapshot.docs.isEmpty) return null;
       return _contactFromMap(querySnapshot.docs.first);
     } catch (e) {
-      print('Error getting contact by tax number: $e');
+      AppLogger.error('Error getting contact by tax number', e);
       rethrow;
     }
   }
@@ -261,7 +262,7 @@ class FirebaseContactRepository implements ContactRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting contacts by country: $e');
+      AppLogger.error('Error getting contacts by country', e);
       rethrow;
     }
   }
@@ -279,7 +280,7 @@ class FirebaseContactRepository implements ContactRepository {
 
       return querySnapshot.docs.map((doc) => _contactFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting contacts by date range: $e');
+      AppLogger.error('Error getting contacts by date range', e);
       rethrow;
     }
   }
@@ -296,7 +297,7 @@ class FirebaseContactRepository implements ContactRepository {
 
       return querySnapshot.docs.map((doc) => _contactFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting most used contacts: $e');
+      AppLogger.error('Error getting most used contacts', e);
       rethrow;
     }
   }
@@ -312,12 +313,11 @@ class FirebaseContactRepository implements ContactRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting contacts by city: $e');
+      AppLogger.error('Error getting contacts by city', e);
       rethrow;
     }
   }
 
-  @override
   Future<void> toggleFavorite(int id) async {
     try {
       final contact = await getContactById(id);
@@ -325,12 +325,11 @@ class FirebaseContactRepository implements ContactRepository {
         await updateContact(contact.copyWith(isFavorite: !contact.isFavorite));
       }
     } catch (e) {
-      print('Error toggling favorite: $e');
+      AppLogger.error('Error toggling favorite', e);
       rethrow;
     }
   }
 
-  @override
   Future<void> toggleActive(int id) async {
     try {
       final contact = await getContactById(id);
@@ -338,7 +337,7 @@ class FirebaseContactRepository implements ContactRepository {
         await updateContact(contact.copyWith(isActive: !contact.isActive));
       }
     } catch (e) {
-      print('Error toggling active: $e');
+      AppLogger.error('Error toggling active', e);
       rethrow;
     }
   }
@@ -366,14 +365,13 @@ class FirebaseContactRepository implements ContactRepository {
         'both': both,
       };
     } catch (e) {
-      print('Error getting contact statistics: $e');
+      AppLogger.error('Error getting contact statistics', e);
       rethrow;
     }
   }
 
   // ========== STREAM OPERATIONS ==========
 
-  @override
   Stream<Contact?> watchContactById(int id) {
     return _firestore
         .collection(_collectionName)
@@ -382,7 +380,6 @@ class FirebaseContactRepository implements ContactRepository {
         .map((doc) => doc.exists ? _contactFromMap(doc) : null);
   }
 
-  @override
   Stream<List<Contact>> watchAllContacts() {
     return _firestore
         .collection(_collectionName)
@@ -392,7 +389,6 @@ class FirebaseContactRepository implements ContactRepository {
             snapshot.docs.map((doc) => _contactFromMap(doc)).toList());
   }
 
-  @override
   Stream<List<Contact>> watchActiveContacts() {
     return _firestore.collection(_collectionName).snapshots().map((snapshot) =>
         snapshot.docs
@@ -402,7 +398,6 @@ class FirebaseContactRepository implements ContactRepository {
           ..sort((a, b) => a.name.compareTo(b.name)));
   }
 
-  @override
   Stream<List<Contact>> watchFavoriteContacts() {
     return _firestore.collection(_collectionName).snapshots().map((snapshot) =>
         snapshot.docs

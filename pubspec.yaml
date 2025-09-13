@@ -48,11 +48,13 @@ dependencies:
   # HTTP ve API
   http: ^1.2.2
   web_socket_channel: ^2.4.0
+  web: ^1.1.0
 
   # Utility
   intl: ^0.20.2
   uuid: ^4.3.3
   shared_preferences: ^2.5.3
+  logger: ^2.0.2+1
 
   # Image ve File
   image_picker: ^1.0.7

@@ -65,6 +65,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildTabletLayout(
       AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
     return RefreshIndicator(
@@ -96,6 +97,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildDesktopLayout(
       AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
     return RefreshIndicator(
@@ -140,12 +142,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         gradient: LinearGradient(
           colors: isDark
               ? [
-                  TamgaciConstants.primaryColor.withOpacity(0.8),
+                  TamgaciConstants.primaryColor.withValues(alpha: 0.8),
                   TamgaciConstants.primaryColor
                 ]
               : [
                   TamgaciConstants.primaryColor,
-                  TamgaciConstants.primaryColor.withOpacity(0.8)
+                  TamgaciConstants.primaryColor.withValues(alpha: 0.8)
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -153,7 +155,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: TamgaciConstants.primaryColor.withOpacity(0.3),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -187,7 +189,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             'Tamgaci İş Yönetim Sistemi',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
           const SizedBox(height: 16),
@@ -195,7 +197,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ],

@@ -6,7 +6,7 @@ import 'package:tamgaci/core/theme/constants.dart';
 import 'package:tamgaci/core/database/tamgaci_database.dart';
 import 'package:tamgaci/core/database/test_data_helper.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-
+import 'package:tamgaci/core/utils/logger.dart';
 
 // ========== SPLASH STATE YÖNETİMİ ==========
 
@@ -14,12 +14,16 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 enum SplashState {
   /// Yükleme başlangıcı
   loading,
+
   /// İlk kurulum kontrolleri
   initializing,
+
   /// Kullanıcı oturum kontrolü
   checkingAuth,
+
   /// Uygulama hazır
   ready,
+
   /// Hata durumu
   error,
 }
@@ -28,16 +32,16 @@ enum SplashState {
 class SplashData {
   /// Mevcut durum
   final SplashState state;
-  
+
   /// Yükleme yüzdesi (0-100)
   final int progress;
-  
+
   /// Durum mesajı
   final String message;
-  
+
   /// Hata mesajı (varsa)
   final String? errorMessage;
-  
+
   /// Splash ekranının gösterilme süresi (milisaniye)
   final int duration;
 
@@ -76,15 +80,15 @@ class SplashData {
 
 /// Splash ekranı durumunu yöneten StateNotifier
 class SplashNotifier extends StateNotifier<SplashData> {
-  
   /// SplashNotifier constructor'ı
-  SplashNotifier() : super(
-    const SplashData(
-      state: SplashState.loading,
-      progress: 0,
-      message: 'Tamgacı Yükleniyor...',
-    ),
-  );
+  SplashNotifier()
+      : super(
+          const SplashData(
+            state: SplashState.loading,
+            progress: 0,
+            message: 'Tamgacı Yükleniyor...',
+          ),
+        );
 
   /// Splash sürecini başlatan metod
   Future<void> initializeApp() async {
@@ -136,7 +140,6 @@ class SplashNotifier extends StateNotifier<SplashData> {
         'Tamgacı hazır!',
       );
       await Future.delayed(const Duration(milliseconds: 800));
-
     } catch (error) {
       // Hata durumunda state'i güncelle
       state = state.copyWith(
@@ -159,7 +162,7 @@ class SplashNotifier extends StateNotifier<SplashData> {
       progress: progress,
       message: message,
     );
-    
+
     // UI güncellemesi için kısa bir bekleme
     await Future.delayed(const Duration(milliseconds: 100));
   }
@@ -178,21 +181,21 @@ class SplashNotifier extends StateNotifier<SplashData> {
       // Web platformunda database başlatma işlemini atla
       if (kIsWeb) {
         // ignore: avoid_print
-        print('Skipping database initialization on web platform');
+        AppLogger.info('Skipping database initialization on web platform');
         await Future.delayed(const Duration(milliseconds: 500));
         return;
       }
-      
+
       // Database'i başlat
       await DatabaseHelper.getDatabase();
-      
+
       // Test verilerini yükle
       await TestDataHelper().loadTestData();
-      
+
       await Future.delayed(const Duration(milliseconds: 500));
     } catch (e) {
       // ignore: avoid_print
-      print('Database initialization failed: $e');
+      AppLogger.error('Database initialization failed', e);
       // Web platformunda hata fırlatma
       if (!kIsWeb) {
         rethrow;
@@ -253,10 +256,10 @@ final splashErrorProvider = Provider<String?>((ref) {
 class SplashScreen extends ConsumerStatefulWidget {
   /// Ana sayfa route'u
   final String homeRoute;
-  
+
   /// Login sayfa route'u
   final String? loginRoute;
-  
+
   /// Splash ekranı constructor'ı
   const SplashScreen({
     super.key,
@@ -270,24 +273,23 @@ class SplashScreen extends ConsumerStatefulWidget {
 
 class _SplashScreenState extends ConsumerState<SplashScreen>
     with TickerProviderStateMixin {
-  
   // ========== ANİMASYON KONTROLLERİ ==========
-  
+
   /// Logo fade animasyon controller'ı
   late AnimationController _fadeController;
-  
+
   /// Logo scale animasyon controller'ı
   late AnimationController _scaleController;
-  
+
   /// Progress bar animasyon controller'ı
   late AnimationController _progressController;
-  
+
   /// Logo fade animasyonu
   late Animation<double> _fadeAnimation;
-  
+
   /// Logo scale animasyonu
   late Animation<double> _scaleAnimation;
-  
+
   /// Progress bar animasyonu
   late Animation<double> _progressAnimation;
 
@@ -350,7 +352,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void _startSplashSequence() {
     // Animasyonları başlat
     _fadeController.forward();
-    
+
     Future.delayed(const Duration(milliseconds: 300), () {
       _scaleController.forward();
     });
@@ -387,7 +389,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       body: SafeArea(
         child: Container(
           width: double.infinity,
@@ -405,15 +409,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       gradient: LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: isDark 
-          ? [
-              TamgaciConstants.backgroundColorDark,
-              TamgaciConstants.surfaceColorDark,
-            ]
-          : [
-              TamgaciConstants.backgroundColor,
-              TamgaciConstants.surfaceColor,
-            ],
+        colors: isDark
+            ? [
+                TamgaciConstants.backgroundColorDark,
+                TamgaciConstants.surfaceColorDark,
+              ]
+            : [
+                TamgaciConstants.backgroundColor,
+                TamgaciConstants.surfaceColor,
+              ],
         stops: const [0.0, 1.0],
       ),
     );
@@ -426,18 +430,18 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       children: [
         // Üst boşluk
         const Spacer(flex: 2),
-        
+
         // Logo ve başlık bölümü
         _buildLogoSection(),
-        
+
         const Spacer(flex: 1),
-        
+
         // İlerleme bölümü
         _buildProgressSection(),
-        
+
         // Alt boşluk
         const Spacer(flex: 2),
-        
+
         // Alt bilgi bölümü
         _buildFooterSection(),
       ],
@@ -457,14 +461,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
               children: [
                 // Uygulama logosu
                 _buildAppLogo(),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceLG),
-                
+
                 // Uygulama başlığı
                 _buildAppTitle(),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceSM),
-                
+
                 // Uygulama açıklaması
                 _buildAppDescription(),
               ],
@@ -537,7 +541,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 44.0,
         ),
         fontWeight: FontWeight.w700,
-        color: isDark ? TamgaciConstants.primaryColorDark : TamgaciConstants.primaryColor,
+        color: isDark
+            ? TamgaciConstants.primaryColorDark
+            : TamgaciConstants.primaryColor,
         letterSpacing: 1.2,
       ),
       textAlign: TextAlign.center,
@@ -560,7 +566,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 22.0,
         ),
         fontWeight: FontWeight.w400,
-        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+        color: isDark
+            ? TamgaciConstants.textSecondaryDark
+            : TamgaciConstants.textSecondary,
         letterSpacing: 0.5,
       ),
       textAlign: TextAlign.center,
@@ -577,19 +585,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           child: Consumer(
             builder: (context, ref, child) {
               final splashData = ref.watch(splashProvider);
-              
+
               return Container(
                 padding: TamgaciConstants.paddingMedium(context),
                 child: Column(
                   children: [
                     // İlerleme çubuğu
                     _buildProgressBar(splashData.progress),
-                    
+
                     const SizedBox(height: TamgaciConstants.spaceMD),
-                    
+
                     // Durum mesajı
                     _buildStatusMessage(splashData.message),
-                    
+
                     // Hata mesajı (varsa)
                     if (splashData.errorMessage != null)
                       _buildErrorMessage(splashData.errorMessage!),
@@ -647,7 +655,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 17.0,
         ),
         fontWeight: FontWeight.w500,
-        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+        color: isDark
+            ? TamgaciConstants.textSecondaryDark
+            : TamgaciConstants.textSecondary,
       ),
       textAlign: TextAlign.center,
     );
@@ -661,10 +671,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         Container(
           padding: const EdgeInsets.all(TamgaciConstants.spaceMD),
           decoration: BoxDecoration(
-            color: TamgaciConstants.errorColor.withValues(alpha:0.1),
+            color: TamgaciConstants.errorColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
             border: Border.all(
-              color: TamgaciConstants.errorColor.withValues(alpha:0.3),
+              color: TamgaciConstants.errorColor.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -675,9 +685,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 color: TamgaciConstants.errorColor,
                 size: 32,
               ),
-              
+
               const SizedBox(height: TamgaciConstants.spaceSM),
-              
+
               // Hata mesajı
               Text(
                 errorMessage,
@@ -688,9 +698,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                 ),
                 textAlign: TextAlign.center,
               ),
-              
+
               const SizedBox(height: TamgaciConstants.spaceMD),
-              
+
               // Tekrar dene butonu
               TextButton(
                 onPressed: () {
@@ -724,19 +734,23 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           style: GoogleFonts.poppins(
             fontSize: 12.0,
             fontWeight: FontWeight.w400,
-            color: isDark ? TamgaciConstants.textDisabledDark : TamgaciConstants.textDisabled,
+            color: isDark
+                ? TamgaciConstants.textDisabledDark
+                : TamgaciConstants.textDisabled,
           ),
         ),
-        
+
         const SizedBox(height: TamgaciConstants.spaceXS),
-        
+
         // Copyright
         Text(
           '© 2024 Tamgaci. Tüm hakları saklıdır.',
           style: GoogleFonts.poppins(
             fontSize: 11.0,
             fontWeight: FontWeight.w300,
-            color: isDark ? TamgaciConstants.textDisabledDark : TamgaciConstants.textDisabled,
+            color: isDark
+                ? TamgaciConstants.textDisabledDark
+                : TamgaciConstants.textDisabled,
           ),
           textAlign: TextAlign.center,
         ),
@@ -748,7 +762,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   void _navigateToHome() {
     // Haptic feedback
     HapticFeedback.lightImpact();
-    
+
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         Navigator.of(context).pushReplacementNamed(widget.homeRoute);
@@ -763,10 +777,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 class SplashLoadingIndicator extends StatelessWidget {
   /// İlerleme yüzdesi
   final double progress;
-  
+
   /// İndikatör rengi
   final Color? color;
-  
+
   /// İndikatör boyutu
   final double size;
 
@@ -798,7 +812,7 @@ class SplashLoadingIndicator extends StatelessWidget {
 class SplashErrorWidget extends StatelessWidget {
   /// Hata mesajı
   final String message;
-  
+
   /// Tekrar dene callback'i
   final VoidCallback? onRetry;
 
@@ -814,10 +828,10 @@ class SplashErrorWidget extends StatelessWidget {
       margin: const EdgeInsets.all(TamgaciConstants.spaceLG),
       padding: const EdgeInsets.all(TamgaciConstants.spaceLG),
       decoration: BoxDecoration(
-        color: TamgaciConstants.errorColor.withValues(alpha:0.1),
+        color: TamgaciConstants.errorColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         border: Border.all(
-          color: TamgaciConstants.errorColor.withValues(alpha:0.3),
+          color: TamgaciConstants.errorColor.withValues(alpha: 0.3),
         ),
       ),
       child: Column(
@@ -828,9 +842,7 @@ class SplashErrorWidget extends StatelessWidget {
             size: 48,
             color: TamgaciConstants.errorColor,
           ),
-          
           const SizedBox(height: TamgaciConstants.spaceMD),
-          
           Text(
             'Bir Sorun Oluştu',
             style: GoogleFonts.poppins(
@@ -840,9 +852,7 @@ class SplashErrorWidget extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          
           const SizedBox(height: TamgaciConstants.spaceSM),
-          
           Text(
             message,
             style: GoogleFonts.poppins(
@@ -852,10 +862,8 @@ class SplashErrorWidget extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          
           if (onRetry != null) ...[
             const SizedBox(height: TamgaciConstants.spaceLG),
-            
             ElevatedButton(
               onPressed: onRetry,
               child: const Text('Tekrar Dene'),

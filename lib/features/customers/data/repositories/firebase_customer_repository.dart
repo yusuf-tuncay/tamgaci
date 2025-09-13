@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/repositories/customer_repository.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 import '../models/customer_entity.dart';
 
 /// Firebase Firestore tabanlı müşteri repository implementasyonu
@@ -21,7 +22,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       await docRef.set(customerEntity.toFirestore());
       return docRef.id;
     } catch (e) {
-      print('Error creating customer: $e');
+      AppLogger.error('Error creating customer', e);
       rethrow;
     }
   }
@@ -38,7 +39,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       await batch.commit();
     } catch (e) {
-      print('Error creating customers: $e');
+      AppLogger.error('Error creating customers', e);
       rethrow;
     }
   }
@@ -52,7 +53,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
           .toList();
     } catch (e) {
-      print('Error getting all customers: $e');
+      AppLogger.error('Error getting all customers', e);
       rethrow;
     }
   }
@@ -68,7 +69,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting active customers: $e');
+      AppLogger.error('Error getting active customers', e);
       rethrow;
     }
   }
@@ -84,7 +85,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting customer by ID: $e');
+      AppLogger.error('Error getting customer by ID', e);
       rethrow;
     }
   }
@@ -109,7 +110,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
                       true)))
           .toList();
     } catch (e) {
-      print('Error searching customers: $e');
+      AppLogger.error('Error searching customers', e);
       rethrow;
     }
   }
@@ -125,7 +126,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting customers by type: $e');
+      AppLogger.error('Error getting customers by type', e);
       rethrow;
     }
   }
@@ -140,7 +141,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
-      print('Error getting customers by city: $e');
+      AppLogger.error('Error getting customers by city', e);
       rethrow;
     }
   }
@@ -160,7 +161,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting customer by email: $e');
+      AppLogger.error('Error getting customer by email', e);
       rethrow;
     }
   }
@@ -180,7 +181,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting customer by phone: $e');
+      AppLogger.error('Error getting customer by phone', e);
       rethrow;
     }
   }
@@ -200,7 +201,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting customer by tax number: $e');
+      AppLogger.error('Error getting customer by tax number', e);
       rethrow;
     }
   }
@@ -211,7 +212,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting total customer count: $e');
+      AppLogger.error('Error getting total customer count', e);
       rethrow;
     }
   }
@@ -225,7 +226,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting active customer count: $e');
+      AppLogger.error('Error getting active customer count', e);
       rethrow;
     }
   }
@@ -239,7 +240,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting inactive customer count: $e');
+      AppLogger.error('Error getting inactive customer count', e);
       rethrow;
     }
   }
@@ -256,7 +257,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
           .toList();
     } catch (e) {
-      print('Error getting recent customers: $e');
+      AppLogger.error('Error getting recent customers', e);
       rethrow;
     }
   }
@@ -269,7 +270,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .doc(customer.id)
           .update(CustomerEntity.fromDomain(customer).toFirestore());
     } catch (e) {
-      print('Error updating customer: $e');
+      AppLogger.error('Error updating customer', e);
       rethrow;
     }
   }
@@ -282,7 +283,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .doc(id)
           .update({'isActive': isActive});
     } catch (e) {
-      print('Error updating customer status: $e');
+      AppLogger.error('Error updating customer status', e);
       rethrow;
     }
   }
@@ -292,7 +293,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
     try {
       await _firestore.collection(_collectionName).doc(id).delete();
     } catch (e) {
-      print('Error deleting customer: $e');
+      AppLogger.error('Error deleting customer', e);
       rethrow;
     }
   }
@@ -311,7 +312,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       await batch.commit();
     } catch (e) {
-      print('Error deleting inactive customers: $e');
+      AppLogger.error('Error deleting inactive customers', e);
       rethrow;
     }
   }
@@ -389,7 +390,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       return stats;
     } catch (e) {
-      print('Error getting customer type stats: $e');
+      AppLogger.error('Error getting customer type stats', e);
       rethrow;
     }
   }
@@ -411,7 +412,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       return stats;
     } catch (e) {
-      print('Error getting customer city stats: $e');
+      AppLogger.error('Error getting customer city stats', e);
       rethrow;
     }
   }
@@ -440,7 +441,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
       return stats;
     } catch (e) {
-      print('Error getting monthly customer stats: $e');
+      AppLogger.error('Error getting monthly customer stats', e);
       rethrow;
     }
   }

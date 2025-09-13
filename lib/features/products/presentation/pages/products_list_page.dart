@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -278,7 +277,6 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
     final isDark = theme.brightness == Brightness.dark;
     final isLowStock = product.isLowStock;
     final isOutOfStock = product.stockQuantity <= 0;
-    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
 
     return Card(
       elevation: 2,
@@ -560,58 +558,35 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Sırala'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
-              title: const Text('İsme Göre'),
-              value: 'name',
-              groupValue: _sortBy,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
-              title: const Text('Fiyata Göre'),
-              value: 'price',
-              groupValue: _sortBy,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
-              title: const Text('Stok Miktarına Göre'),
-              value: 'stock',
-              groupValue: _sortBy,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-            // ignore: deprecated_member_use
-            RadioListTile<String>(
-              title: const Text('Kategoriye Göre'),
-              value: 'category',
-              groupValue: _sortBy,
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
+        content: RadioGroup<String>(
+          groupValue: _sortBy,
+          onChanged: (value) {
+            setState(() {
+              _sortBy = value!;
+            });
+            Navigator.of(context).pop();
+          },
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              RadioListTile<String>(
+                title: Text('İsme Göre'),
+                value: 'name',
+              ),
+              RadioListTile<String>(
+                title: Text('Fiyata Göre'),
+                value: 'price',
+              ),
+              RadioListTile<String>(
+                title: Text('Stok Miktarına Göre'),
+                value: 'stock',
+              ),
+              RadioListTile<String>(
+                title: Text('Kategoriye Göre'),
+                value: 'category',
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(

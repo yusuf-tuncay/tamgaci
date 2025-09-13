@@ -181,7 +181,6 @@ class _CashListPageState extends ConsumerState<CashListPage> {
   Widget _buildTransactionCard(CashTransaction transaction, bool isDark) {
     final isIncome = transaction.type == CashTransactionType.income;
     final isExpense = transaction.type == CashTransactionType.expense;
-    final isTransfer = transaction.type == CashTransactionType.transfer;
 
     Color cardColor;
     IconData typeIcon;
@@ -324,8 +323,7 @@ class _CashListPageState extends ConsumerState<CashListPage> {
             padding: const EdgeInsets.all(TamgaciConstants.spaceLG),
             decoration: const BoxDecoration(
               color: TamgaciConstants.primaryColor,
-              borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
             child: Row(
               children: [

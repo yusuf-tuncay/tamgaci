@@ -6,7 +6,6 @@ import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
-import '../../../../core/providers/currency_providers.dart';
 import '../../../../core/routes/routes.dart';
 import '../providers/warehouse_providers.dart';
 import '../../domain/entities/warehouse.dart';
@@ -62,8 +61,6 @@ class WarehouseListPage extends ConsumerWidget {
 
   Widget _buildWarehouseCard(
       Warehouse warehouse, bool isDark, WidgetRef ref, BuildContext context) {
-    final selectedCurrency = ref.watch(selectedCurrencyProvider);
-
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -87,8 +84,8 @@ class WarehouseListPage extends ConsumerWidget {
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: warehouse.isDefault
-                          ? Colors.purple.withOpacity(0.1)
-                          : Colors.blue.withOpacity(0.1),
+                          ? Colors.purple.withValues(alpha: 0.1)
+                          : Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -121,7 +118,7 @@ class WarehouseListPage extends ConsumerWidget {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.purple.withOpacity(0.1),
+                                  color: Colors.purple.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
@@ -151,8 +148,8 @@ class WarehouseListPage extends ConsumerWidget {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: warehouse.isActive
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.red.withOpacity(0.1),
+                          ? Colors.green.withValues(alpha: 0.1)
+                          : Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

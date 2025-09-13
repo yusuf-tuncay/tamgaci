@@ -23,7 +23,7 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
     if (kIsWeb) {
       return FirebaseCustomerRepository();
     }
-    
+
     // Diğer platformlarda SQLite kullan
     final databaseAsync = ref.watch(databaseProvider);
     return databaseAsync.when(
@@ -375,6 +375,7 @@ class CustomerFormNotifier extends StateNotifier<CustomerFormState> {
 }
 
 /// Web platformu için boş müşteri repository sınıfı
+// ignore: unused_element
 class _EmptyCustomerRepository implements CustomerRepository {
   // Mock verileri saklamak için static liste
   static final List<Customer> _mockCustomers = [

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
+import '../providers/auth_providers.dart';
 
 /// Giriş sayfası
 class LoginPage extends ConsumerStatefulWidget {
@@ -17,7 +18,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -228,11 +228,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Widget _buildLoginButton() {
+    final isLoading = ref.watch(authLoadingProvider);
+
     return SizedBox(
       height: TamgaciConstants.buttonHeight(context),
       child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleLogin,
-        child: _isLoading
+        onPressed: isLoading ? null : _handleLogin,
+        child: isLoading
             ? const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(
                   TamgaciConstants.textOnPrimary,
@@ -304,23 +306,28 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
+    try {
+      await ref.read(authProvider.notifier).signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+          );
 
-    // Simulated login delay
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      // TODO: Implement actual login logic
-      TamgaciRoutes.pushNamedAndClearAll(
-        context,
-        TamgaciRoutes.dashboard,
-      );
+      if (mounted) {
+        // Başarılı giriş sonrası dashboard'a yönlendir
+        TamgaciRoutes.pushNamedAndClearAll(
+          context,
+          TamgaciRoutes.dashboard,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

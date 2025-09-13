@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../utils/currency_helper.dart';
 
 class NotificationService {
@@ -14,6 +15,11 @@ class NotificationService {
 
   /// Notification servisini başlatır
   Future<void> initialize() async {
+    // Web platformunda local notifications desteklenmez
+    if (kIsWeb) {
+      return;
+    }
+
     try {
       // Timezone'u başlat
       tz_data.initializeTimeZones();
@@ -55,6 +61,11 @@ class NotificationService {
     NotificationImportance importance =
         NotificationImportance.defaultImportance,
   }) async {
+    // Web platformunda local notifications desteklenmez
+    if (kIsWeb) {
+      return;
+    }
+
     try {
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
           AndroidNotificationDetails(
@@ -199,8 +210,7 @@ class NotificationService {
     await showLocalNotification(
       id: 1001, // Para birimi değişikliği için özel ID
       title: 'Para Birimi Değişikliği',
-      body:
-          'Varsayılan para birimi $oldSymbol\'den $newSymbol\'e değiştirildi. '
+      body: "Varsayılan para birimi $oldSymbol'den $newSymbol'e değiştirildi. "
           'Kur: 1 $oldSymbol = ${exchangeRate.toStringAsFixed(4)} $newSymbol',
       importance: NotificationImportance.high,
     );

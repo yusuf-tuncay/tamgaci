@@ -288,7 +288,7 @@ class TestDataHelper {
     final testIncomes = [
       IncomeEntity(
         title: 'Laptop Satışı',
-        description: 'ABC Şirketi\'ne laptop satışı',
+        description: "ABC Şirketi'ne laptop satışı",
         amount: 15000.0,
         currency: 'TRY',
         categoryId: '1',
@@ -318,7 +318,7 @@ class TestDataHelper {
       ),
       IncomeEntity(
         title: 'Danışmanlık Hizmeti',
-        description: 'Mehmet Kaya\'ya danışmanlık hizmeti',
+        description: "Mehmet Kaya'ya danışmanlık hizmeti",
         amount: 2500.0,
         currency: 'TRY',
         categoryId: '3',

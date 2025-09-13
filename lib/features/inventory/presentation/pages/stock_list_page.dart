@@ -10,7 +10,6 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../../core/routes/routes.dart';
-import '../../../../core/providers/currency_providers.dart';
 import '../providers/stock_providers.dart';
 import '../providers/warehouse_providers.dart';
 import '../../domain/entities/stock.dart';
@@ -33,7 +32,8 @@ class StockListPage extends ConsumerWidget {
         data: (stocks) => _buildStockList(stocks, isDark, ref),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Hata: $error', style: const TextStyle(color: Colors.red)),
+          child:
+              Text('Hata: $error', style: const TextStyle(color: Colors.red)),
         ),
       ),
       floatingActionButton: FloatingActionButton(
@@ -139,9 +139,9 @@ class StockListPage extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -179,8 +179,8 @@ class StockListPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStockCard(Stock stock, bool isDark, WidgetRef ref, BuildContext context) {
-    final selectedCurrency = ref.watch(selectedCurrencyProvider);
+  Widget _buildStockCard(
+      Stock stock, bool isDark, WidgetRef ref, BuildContext context) {
     final warehousesAsync = ref.watch(warehousesProvider);
 
     return Card(
@@ -208,14 +208,18 @@ class StockListPage extends ConsumerWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                        color: isDark
+                            ? Colors.white
+                            : TamgaciConstants.textPrimary,
                       ),
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _getStatusColor(stock.status).withOpacity(0.1),
+                      color:
+                          _getStatusColor(stock.status).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -260,20 +264,22 @@ class StockListPage extends ConsumerWidget {
 
               // Warehouse info
               warehousesAsync.when(
-                                 data: (warehouses) {
-                   final warehouse = warehouses.firstWhere(
-                     (w) => w.id == stock.warehouseId,
-                     orElse: () => warehouses.first,
-                   );
+                data: (warehouses) {
+                  final warehouse = warehouses.firstWhere(
+                    (w) => w.id == stock.warehouseId,
+                    orElse: () => warehouses.first,
+                  );
                   return _buildInfoRow(
                     'Depo',
-                    warehouse.name ?? 'Bilinmiyor',
+                    warehouse.name,
                     Icons.warehouse,
                     isDark,
                   );
                 },
-                loading: () => _buildInfoRow('Depo', '...', Icons.warehouse, isDark),
-                error: (error, stack) => _buildInfoRow('Depo', 'Hata', Icons.warehouse, isDark),
+                loading: () =>
+                    _buildInfoRow('Depo', '...', Icons.warehouse, isDark),
+                error: (error, stack) =>
+                    _buildInfoRow('Depo', 'Hata', Icons.warehouse, isDark),
               ),
               const SizedBox(height: 4),
 
@@ -330,7 +336,9 @@ class StockListPage extends ConsumerWidget {
         Icon(
           icon,
           size: 14,
-          color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+          color: isDark
+              ? TamgaciConstants.textSecondaryDark
+              : TamgaciConstants.textSecondary,
         ),
         const SizedBox(width: 4),
         Expanded(
@@ -341,7 +349,9 @@ class StockListPage extends ConsumerWidget {
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 10,
-                  color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
                 ),
               ),
               Text(

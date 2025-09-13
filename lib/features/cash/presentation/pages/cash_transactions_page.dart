@@ -270,7 +270,6 @@ class _CashTransactionsPageState extends ConsumerState<CashTransactionsPage> {
   }
 
   Widget _buildTransactionCard(Map<String, dynamic> transaction) {
-    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
     final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
     final isIncome = transaction['amount'] > 0;
 

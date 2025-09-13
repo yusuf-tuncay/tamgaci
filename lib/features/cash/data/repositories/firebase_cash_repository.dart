@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/cash_transaction.dart';
 import '../../domain/repositories/cash_repository.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Firebase Firestore tabanlı nakit repository implementasyonu
 class FirebaseCashRepository implements CashRepository {
@@ -22,7 +23,7 @@ class FirebaseCashRepository implements CashRepository {
       await docRef.set(transactionData);
       return docRef.id;
     } catch (e) {
-      print('Error creating cash transaction: $e');
+      AppLogger.error('Error creating cash transaction', e);
       rethrow;
     }
   }
@@ -35,7 +36,7 @@ class FirebaseCashRepository implements CashRepository {
           .doc(transaction.id)
           .update(_transactionToMap(transaction));
     } catch (e) {
-      print('Error updating cash transaction: $e');
+      AppLogger.error('Error updating cash transaction', e);
       rethrow;
     }
   }
@@ -45,7 +46,7 @@ class FirebaseCashRepository implements CashRepository {
     try {
       await _firestore.collection(_collectionName).doc(id).delete();
     } catch (e) {
-      print('Error deleting cash transaction: $e');
+      AppLogger.error('Error deleting cash transaction', e);
       rethrow;
     }
   }
@@ -58,7 +59,7 @@ class FirebaseCashRepository implements CashRepository {
       if (!docSnapshot.exists) return null;
       return _transactionFromMap(docSnapshot);
     } catch (e) {
-      print('Error getting cash transaction by ID: $e');
+      AppLogger.error('Error getting cash transaction by ID', e);
       rethrow;
     }
   }
@@ -73,7 +74,7 @@ class FirebaseCashRepository implements CashRepository {
 
       return querySnapshot.docs.map((doc) => _transactionFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting all cash transactions: $e');
+      AppLogger.error('Error getting all cash transactions', e);
       rethrow;
     }
   }
@@ -91,7 +92,7 @@ class FirebaseCashRepository implements CashRepository {
 
       return querySnapshot.docs.map((doc) => _transactionFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting cash transactions by date range: $e');
+      AppLogger.error('Error getting cash transactions by date range', e);
       rethrow;
     }
   }
@@ -108,7 +109,7 @@ class FirebaseCashRepository implements CashRepository {
           .toList()
         ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
     } catch (e) {
-      print('Error getting cash transactions by type: $e');
+      AppLogger.error('Error getting cash transactions by type', e);
       rethrow;
     }
   }
@@ -125,7 +126,7 @@ class FirebaseCashRepository implements CashRepository {
           .toList()
         ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
     } catch (e) {
-      print('Error getting cash transactions by category: $e');
+      AppLogger.error('Error getting cash transactions by category', e);
       rethrow;
     }
   }
@@ -141,7 +142,7 @@ class FirebaseCashRepository implements CashRepository {
 
       return querySnapshot.docs.map((doc) => _transactionFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting recent cash transactions: $e');
+      AppLogger.error('Error getting recent cash transactions', e);
       rethrow;
     }
   }
@@ -162,7 +163,7 @@ class FirebaseCashRepository implements CashRepository {
           .toList()
         ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
     } catch (e) {
-      print('Error searching cash transactions: $e');
+      AppLogger.error('Error searching cash transactions', e);
       rethrow;
     }
   }
@@ -184,7 +185,7 @@ class FirebaseCashRepository implements CashRepository {
       }
       return balance;
     } catch (e) {
-      print('Error getting total cash balance: $e');
+      AppLogger.error('Error getting total cash balance', e);
       rethrow;
     }
   }
@@ -209,7 +210,7 @@ class FirebaseCashRepository implements CashRepository {
       }
       return total;
     } catch (e) {
-      print('Error getting total income by date range: $e');
+      AppLogger.error('Error getting total income by date range', e);
       rethrow;
     }
   }
@@ -234,7 +235,7 @@ class FirebaseCashRepository implements CashRepository {
       }
       return total;
     } catch (e) {
-      print('Error getting total expense by date range: $e');
+      AppLogger.error('Error getting total expense by date range', e);
       rethrow;
     }
   }
@@ -248,15 +249,15 @@ class FirebaseCashRepository implements CashRepository {
 
       final totalIncome = transactions
           .where((t) => t.type == CashTransactionType.income)
-          .fold(0.0, (sum, t) => sum + t.amount);
+          .fold(0.0, (total, t) => total + t.amount);
 
       final totalExpense = transactions
           .where((t) => t.type == CashTransactionType.expense)
-          .fold(0.0, (sum, t) => sum + t.amount);
+          .fold(0.0, (total, t) => total + t.amount);
 
       final totalTransfer = transactions
           .where((t) => t.type == CashTransactionType.transfer)
-          .fold(0.0, (sum, t) => sum + t.amount);
+          .fold(0.0, (total, t) => total + t.amount);
 
       final balance = totalIncome - totalExpense;
 
@@ -277,7 +278,7 @@ class FirebaseCashRepository implements CashRepository {
             .length,
       };
     } catch (e) {
-      print('Error getting cash statistics: $e');
+      AppLogger.error('Error getting cash statistics', e);
       rethrow;
     }
   }

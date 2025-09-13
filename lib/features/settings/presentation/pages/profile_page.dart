@@ -146,8 +146,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   /// Profil fotoğrafı seç
   Future<void> _pickProfilePhoto() async {
-    final currentContext = context;
-
     try {
       if (!kIsWeb) {
         // Mobil platform için izin kontrolü
@@ -165,8 +163,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       final ImagePicker picker = ImagePicker();
 
       // Fotoğraf seçme seçenekleri
+      // ignore: use_build_context_synchronously
       final ImageSource? source = await showDialog<ImageSource>(
-        context: currentContext,
+        context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: const Text('Fotoğraf Seç'),
@@ -219,7 +218,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               .uploadProfilePhoto(photoData);
 
           if (mounted) {
-            final messenger = ScaffoldMessenger.of(currentContext);
+            final messenger = ScaffoldMessenger.of(context);
             messenger.showSnackBar(
               const SnackBar(
                 content: Text('Profil fotoğrafı başarıyla güncellendi'),
@@ -231,7 +230,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       }
     } catch (e) {
       if (mounted) {
-        final messenger = ScaffoldMessenger.of(currentContext);
+        final messenger = ScaffoldMessenger.of(context);
         messenger.showSnackBar(
           SnackBar(content: Text('Fotoğraf yüklenirken hata oluştu: $e')),
         );
@@ -427,7 +426,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                  color: isDark
+                      ? TamgaciConstants.textPrimaryDark
+                      : TamgaciConstants.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -435,7 +436,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 error.toString(),
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -572,7 +575,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildSectionTitle(String title) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
@@ -580,7 +583,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+          color: isDark
+              ? TamgaciConstants.textPrimaryDark
+              : TamgaciConstants.textPrimary,
         ),
       ),
     );
@@ -590,7 +595,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildPersonalInfoSection() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Card(
       color: isDark ? TamgaciConstants.cardColorDark : null,
       child: Padding(
@@ -631,7 +636,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildWorkInfoSection() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Card(
       color: isDark ? TamgaciConstants.cardColorDark : null,
       child: Padding(
@@ -677,7 +682,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildPasswordSection() {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Card(
       color: isDark ? TamgaciConstants.cardColorDark : null,
       child: Padding(

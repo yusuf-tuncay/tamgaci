@@ -159,7 +159,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
     return warehousesAsync.when(
       data: (warehouses) {
         return DropdownButtonFormField<int>(
-          value: _selectedWarehouseId,
+          initialValue: _selectedWarehouseId,
           decoration: InputDecoration(
             labelText: 'Depo',
             hintText: 'Depo seçiniz',
@@ -343,7 +343,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    value: _selectedCurrency,
+                    initialValue: _selectedCurrency,
                     decoration: InputDecoration(
                       labelText: 'Para Birimi',
                       border: OutlineInputBorder(
@@ -353,7 +353,8 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
                     items: CurrencyHelper.getCurrencyOptions().map((currency) {
                       return DropdownMenuItem<String>(
                         value: currency['code'],
-                        child: Text('${currency['code']} - ${currency['name']}'),
+                        child:
+                            Text('${currency['code']} - ${currency['name']}'),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -519,7 +520,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
     }
 
     try {
-      final stock = Stock(
+      Stock(
         id: widget.stockId != null ? int.parse(widget.stockId!) : 0,
         productId: int.parse(_productIdController.text),
         warehouseId: _selectedWarehouseId!,
@@ -529,7 +530,9 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
         unit: _unitController.text,
         currency: _selectedCurrency,
         unitPrice: double.parse(_unitPriceController.text),
-        location: _locationController.text.isNotEmpty ? _locationController.text : null,
+        location: _locationController.text.isNotEmpty
+            ? _locationController.text
+            : null,
         notes: _notesController.text.isNotEmpty ? _notesController.text : null,
         isActive: _isActive,
         createdAt: DateTime.now(),
@@ -539,7 +542,8 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
       // TODO: Implement save functionality
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.stockId != null ? 'Stok güncellendi' : 'Stok oluşturuldu'),
+          content: Text(
+              widget.stockId != null ? 'Stok güncellendi' : 'Stok oluşturuldu'),
           backgroundColor: Colors.green,
         ),
       );

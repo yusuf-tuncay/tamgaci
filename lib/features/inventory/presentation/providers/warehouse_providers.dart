@@ -144,7 +144,7 @@ class MockWarehouseRepository implements WarehouseRepositoryImpl {
   }
 
   // Mock DAO methods (not used in mock implementation)
-  @override
+  // ignore: unused_element
   WarehouseDao get _warehouseDao => throw UnimplementedError();
 }
 

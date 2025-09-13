@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 import '../models/product_entity.dart';
 
 /// Firebase Firestore tabanlı ürün repository implementasyonu
@@ -46,7 +47,7 @@ class FirebaseProductRepository implements ProductRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting product by ID: $e');
+      AppLogger.error('Error getting product by ID', e);
       rethrow;
     }
   }
@@ -65,7 +66,7 @@ class FirebaseProductRepository implements ProductRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting product by SKU: $e');
+      AppLogger.error('Error getting product by SKU', e);
       rethrow;
     }
   }
@@ -84,7 +85,7 @@ class FirebaseProductRepository implements ProductRepository {
       }
       return null;
     } catch (e) {
-      print('Error getting product by barcode: $e');
+      AppLogger.error('Error getting product by barcode', e);
       rethrow;
     }
   }
@@ -151,7 +152,7 @@ class FirebaseProductRepository implements ProductRepository {
           .copyWith(id: int.tryParse(docRef.id));
       await docRef.set(productEntity.toFirestore());
     } catch (e) {
-      print('Error creating product: $e');
+      AppLogger.error('Error creating product', e);
       rethrow;
     }
   }
@@ -164,7 +165,7 @@ class FirebaseProductRepository implements ProductRepository {
           .doc(product.id.toString())
           .update(ProductEntity.fromDomain(product).toFirestore());
     } catch (e) {
-      print('Error updating product: $e');
+      AppLogger.error('Error updating product', e);
       rethrow;
     }
   }
@@ -174,7 +175,7 @@ class FirebaseProductRepository implements ProductRepository {
     try {
       await _firestore.collection(_collectionName).doc(id.toString()).delete();
     } catch (e) {
-      print('Error deleting product: $e');
+      AppLogger.error('Error deleting product', e);
       rethrow;
     }
   }
@@ -187,7 +188,7 @@ class FirebaseProductRepository implements ProductRepository {
           .doc(id.toString())
           .update({'stockQuantity': quantity});
     } catch (e) {
-      print('Error updating stock quantity: $e');
+      AppLogger.error('Error updating stock quantity', e);
       rethrow;
     }
   }
@@ -200,7 +201,7 @@ class FirebaseProductRepository implements ProductRepository {
           .doc(id.toString())
           .update({'isActive': isActive});
     } catch (e) {
-      print('Error updating product status: $e');
+      AppLogger.error('Error updating product status', e);
       rethrow;
     }
   }
@@ -214,7 +215,7 @@ class FirebaseProductRepository implements ProductRepository {
           .get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting active product count: $e');
+      AppLogger.error('Error getting active product count', e);
       rethrow;
     }
   }
@@ -234,7 +235,7 @@ class FirebaseProductRepository implements ProductRepository {
       }
       return totalValue;
     } catch (e) {
-      print('Error calculating total stock value: $e');
+      AppLogger.error('Error calculating total stock value', e);
       rethrow;
     }
   }

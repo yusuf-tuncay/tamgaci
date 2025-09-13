@@ -8,7 +8,6 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
-import '../../../../core/providers/currency_providers.dart';
 import '../providers/stock_providers.dart';
 import '../providers/warehouse_providers.dart';
 import '../../domain/entities/stock.dart';
@@ -30,18 +29,20 @@ class StockDetailPage extends ConsumerWidget {
       ),
       drawer: const TamgaciDrawerMenu(),
       body: stockAsync.when(
-        data: (stock) => stock != null 
+        data: (stock) => stock != null
             ? _buildStockDetail(stock, isDark, ref, context)
             : _buildNotFound(isDark),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Hata: $error', style: const TextStyle(color: Colors.red)),
+          child:
+              Text('Hata: $error', style: const TextStyle(color: Colors.red)),
         ),
       ),
     );
   }
 
-  Widget _buildStockDetail(Stock stock, bool isDark, WidgetRef ref, BuildContext context) {
+  Widget _buildStockDetail(
+      Stock stock, bool isDark, WidgetRef ref, BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -73,7 +74,7 @@ class StockDetailPage extends ConsumerWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _getStatusColor(stock.status).withOpacity(0.1),
+                    color: _getStatusColor(stock.status).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -92,14 +93,18 @@ class StockDetailPage extends ConsumerWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                          color: isDark
+                              ? Colors.white
+                              : TamgaciConstants.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _getStatusColor(stock.status).withOpacity(0.1),
+                          color: _getStatusColor(stock.status)
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -142,11 +147,23 @@ class StockDetailPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            _buildInfoRow('Miktar', '${stock.quantity.toStringAsFixed(0)} ${stock.unit}', Icons.inventory, isDark),
+            _buildInfoRow(
+                'Miktar',
+                '${stock.quantity.toStringAsFixed(0)} ${stock.unit}',
+                Icons.inventory,
+                isDark),
             const SizedBox(height: 8),
-            _buildInfoRow('Birim Fiyat', '${CurrencyHelper.getCurrencySymbol(stock.currency)}${stock.unitPrice.toStringAsFixed(2)}', Icons.attach_money, isDark),
+            _buildInfoRow(
+                'Birim Fiyat',
+                '${CurrencyHelper.getCurrencySymbol(stock.currency)}${stock.unitPrice.toStringAsFixed(2)}',
+                Icons.attach_money,
+                isDark),
             const SizedBox(height: 8),
-            _buildInfoRow('Toplam Değer', '${CurrencyHelper.getCurrencySymbol(stock.currency)}${stock.totalValue.toStringAsFixed(2)}', Icons.calculate, isDark),
+            _buildInfoRow(
+                'Toplam Değer',
+                '${CurrencyHelper.getCurrencySymbol(stock.currency)}${stock.totalValue.toStringAsFixed(2)}',
+                Icons.calculate,
+                isDark),
             const SizedBox(height: 8),
             warehousesAsync.when(
               data: (warehouses) {
@@ -154,14 +171,18 @@ class StockDetailPage extends ConsumerWidget {
                   (w) => w.id == stock.warehouseId,
                   orElse: () => warehouses.first,
                 );
-                return _buildInfoRow('Depo', warehouse.name, Icons.warehouse, isDark);
+                return _buildInfoRow(
+                    'Depo', warehouse.name, Icons.warehouse, isDark);
               },
-              loading: () => _buildInfoRow('Depo', '...', Icons.warehouse, isDark),
-              error: (error, stack) => _buildInfoRow('Depo', 'Hata', Icons.warehouse, isDark),
+              loading: () =>
+                  _buildInfoRow('Depo', '...', Icons.warehouse, isDark),
+              error: (error, stack) =>
+                  _buildInfoRow('Depo', 'Hata', Icons.warehouse, isDark),
             ),
             if (stock.location != null) ...[
               const SizedBox(height: 8),
-              _buildInfoRow('Konum', stock.location!, Icons.location_on, isDark),
+              _buildInfoRow(
+                  'Konum', stock.location!, Icons.location_on, isDark),
             ],
             if (stock.notes != null) ...[
               const SizedBox(height: 8),
@@ -234,7 +255,9 @@ class StockDetailPage extends ConsumerWidget {
         Icon(
           icon,
           size: 20,
-          color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+          color: isDark
+              ? TamgaciConstants.textSecondaryDark
+              : TamgaciConstants.textSecondary,
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -245,7 +268,9 @@ class StockDetailPage extends ConsumerWidget {
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                  color: isDark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
                 ),
               ),
               Text(
@@ -263,13 +288,14 @@ class StockDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

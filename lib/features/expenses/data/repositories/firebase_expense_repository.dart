@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Firebase Firestore tabanlı gider repository implementasyonu
 class FirebaseExpenseRepository implements ExpenseRepository {
@@ -23,7 +24,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
       await docRef.set(expenseData);
       return docRef.id;
     } catch (e) {
-      print('Error creating expense: $e');
+      AppLogger.error('Error creating expense', e);
       rethrow;
     }
   }
@@ -36,7 +37,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
           .doc(expense.id)
           .update(_expenseToMap(expense));
     } catch (e) {
-      print('Error updating expense: $e');
+      AppLogger.error('Error updating expense', e);
       rethrow;
     }
   }
@@ -46,7 +47,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
     try {
       await _firestore.collection(_collectionName).doc(id).delete();
     } catch (e) {
-      print('Error deleting expense: $e');
+      AppLogger.error('Error deleting expense', e);
       rethrow;
     }
   }
@@ -59,7 +60,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
       if (!docSnapshot.exists) return null;
       return _expenseFromMap(docSnapshot);
     } catch (e) {
-      print('Error getting expense by ID: $e');
+      AppLogger.error('Error getting expense by ID', e);
       rethrow;
     }
   }
@@ -74,7 +75,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting all expenses: $e');
+      AppLogger.error('Error getting all expenses', e);
       rethrow;
     }
   }
@@ -90,7 +91,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting expenses by category: $e');
+      AppLogger.error('Error getting expenses by category', e);
       rethrow;
     }
   }
@@ -106,7 +107,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting expenses by status: $e');
+      AppLogger.error('Error getting expenses by status', e);
       rethrow;
     }
   }
@@ -124,7 +125,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting expenses by date range: $e');
+      AppLogger.error('Error getting expenses by date range', e);
       rethrow;
     }
   }
@@ -140,7 +141,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting recent expenses: $e');
+      AppLogger.error('Error getting recent expenses', e);
       rethrow;
     }
   }
@@ -151,7 +152,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting total expense count: $e');
+      AppLogger.error('Error getting total expense count', e);
       rethrow;
     }
   }
@@ -169,7 +170,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return total;
     } catch (e) {
-      print('Error getting total expense amount: $e');
+      AppLogger.error('Error getting total expense amount', e);
       rethrow;
     }
   }
@@ -195,7 +196,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return total;
     } catch (e) {
-      print('Error getting current month expense amount: $e');
+      AppLogger.error('Error getting current month expense amount', e);
       rethrow;
     }
   }
@@ -214,7 +215,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
                   false))
           .toList();
     } catch (e) {
-      print('Error searching expenses: $e');
+      AppLogger.error('Error searching expenses', e);
       rethrow;
     }
   }
@@ -227,7 +228,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
           .doc(id)
           .update({'status': status.name});
     } catch (e) {
-      print('Error updating expense status: $e');
+      AppLogger.error('Error updating expense status', e);
       rethrow;
     }
   }
@@ -276,7 +277,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
 
       return querySnapshot.docs.map((doc) => _categoryFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting expense categories: $e');
+      AppLogger.error('Error getting expense categories', e);
       // Varsayılan kategorileri döndür
       return DefaultExpenseCategories.categories;
     }
@@ -290,7 +291,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
       if (!docSnapshot.exists) return null;
       return _categoryFromMap(docSnapshot);
     } catch (e) {
-      print('Error getting expense category by ID: $e');
+      AppLogger.error('Error getting expense category by ID', e);
       rethrow;
     }
   }
@@ -303,7 +304,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
       await docRef.set(categoryData);
       return docRef.id;
     } catch (e) {
-      print('Error creating expense category: $e');
+      AppLogger.error('Error creating expense category', e);
       rethrow;
     }
   }
@@ -316,7 +317,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
           .doc(category.id)
           .update(_categoryToMap(category));
     } catch (e) {
-      print('Error updating expense category: $e');
+      AppLogger.error('Error updating expense category', e);
       rethrow;
     }
   }
@@ -326,7 +327,7 @@ class FirebaseExpenseRepository implements ExpenseRepository {
     try {
       await _firestore.collection(_categoriesCollectionName).doc(id).delete();
     } catch (e) {
-      print('Error deleting expense category: $e');
+      AppLogger.error('Error deleting expense category', e);
       rethrow;
     }
   }

@@ -54,13 +54,14 @@ class _ExpenseDetailPageState extends ConsumerState<ExpenseDetailPage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              Navigator.of(context).pop();
+              final navigator = Navigator.of(context);
+              navigator.pop();
               await ref
                   .read(expenseFormProvider.notifier)
                   .deleteExpense(widget.expenseId);
               // Widget dispose edilmişse navigator'a erişmeye çalışma
-              if (mounted && Navigator.canPop(context)) {
-                Navigator.of(context).pop(); // Detay sayfasından çık
+              if (mounted) {
+                navigator.pop(); // Detay sayfasından çık
               }
             },
             style: ElevatedButton.styleFrom(

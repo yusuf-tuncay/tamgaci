@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
+import '../providers/auth_providers.dart';
 
 /// Kayıt olma sayfası
 class RegisterPage extends ConsumerStatefulWidget {
@@ -24,7 +25,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _companyNameController = TextEditingController();
   final _phoneController = TextEditingController();
 
-  bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
@@ -50,13 +50,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      // Gerçek kayıt işlemi
-      await Future.delayed(const Duration(seconds: 1)); // Simüle edilmiş işlem
+      await ref.read(authProvider.notifier).registerWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text,
+            fullName: _nameController.text.trim(),
+            companyName: _companyNameController.text.trim(),
+            phoneNumber: _phoneController.text.trim(),
+          );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -69,15 +70,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Kayıt hatası: $e')));
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString()),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -123,7 +121,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tamgaci\'ye hoş geldiniz!',
+                      "Tamgaci'ye hoş geldiniz!",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         color: TamgaciConstants.textSecondary,
@@ -299,7 +297,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           children: const [
                             TextSpan(text: 'Kullanım şartlarını ve '),
                             TextSpan(
-                              text: 'Gizlilik Politikası\'nı',
+                              text: "Gizlilik Politikası'nı",
                               style: TextStyle(
                                 color: TamgaciConstants.primaryColor,
                                 fontWeight: FontWeight.w600,
@@ -316,34 +314,40 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 32),
 
                 // Kayıt ol butonu
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: TamgaciConstants.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          'Kayıt Ol',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+                Consumer(
+                  builder: (context, ref, child) {
+                    final isLoading = ref.watch(authLoadingProvider);
+
+                    return ElevatedButton(
+                      onPressed: isLoading ? null : _register,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: TamgaciConstants.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : Text(
+                              'Kayıt Ol',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 24),

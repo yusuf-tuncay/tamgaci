@@ -6,6 +6,36 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/entities/currency.dart';
 import '../services/exchange_rate_service.dart';
 
+/// Kur yenileme notifier'ı
+class CurrencyRefreshNotifier
+    extends StateNotifier<AsyncValue<List<Currency>>> {
+  CurrencyRefreshNotifier() : super(const AsyncValue.loading()) {
+    _loadRates();
+  }
+
+  /// Kurları yükle
+  Future<void> _loadRates() async {
+    state = const AsyncValue.loading();
+    try {
+      final rates = await ExchangeRateService.getExchangeRates();
+      state = AsyncValue.data(rates);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  /// Kurları yenile
+  Future<void> refresh() async {
+    await _loadRates();
+  }
+}
+
+final currencyRefreshNotifierProvider =
+    StateNotifierProvider<CurrencyRefreshNotifier, AsyncValue<List<Currency>>>(
+        (ref) {
+  return CurrencyRefreshNotifier();
+});
+
 /// Güncel kurlar provider'ı
 final exchangeRatesProvider = FutureProvider<List<Currency>>((ref) async {
   return await ExchangeRateService.getExchangeRates();
@@ -22,7 +52,8 @@ final activeCurrenciesProvider = Provider<List<Currency>>((ref) {
 });
 
 /// Seçili para birimi provider'ı (ayarlardan alınacak)
-final selectedCurrencyProvider = StateNotifierProvider<SelectedCurrencyNotifier, Currency>((ref) {
+final selectedCurrencyProvider =
+    StateNotifierProvider<SelectedCurrencyNotifier, Currency>((ref) {
   return SelectedCurrencyNotifier();
 });
 
@@ -33,7 +64,8 @@ final currencyConverterProvider = Provider<CurrencyConverter>((ref) {
 });
 
 /// Kur değişim geçmişi provider'ı
-final exchangeRateHistoryProvider = FutureProvider<Map<String, List<double>>>((ref) async {
+final exchangeRateHistoryProvider =
+    FutureProvider<Map<String, List<double>>>((ref) async {
   // Son 30 günlük kur geçmişi (mock veri)
   return {
     'USD': List.generate(30, (index) => 0.031 + (index * 0.0001)),
@@ -158,7 +190,8 @@ class CurrencyConverter {
 }
 
 /// Kur güncelleme provider'ı
-final currencyRefreshProvider = FutureProvider.autoDispose.family<List<Currency>, void>((ref, _) async {
+final currencyRefreshProvider =
+    FutureProvider.autoDispose.family<List<Currency>, void>((ref, _) async {
   // Kur servisini yenile
   return await ExchangeRateService.getExchangeRates();
 });
@@ -166,11 +199,11 @@ final currencyRefreshProvider = FutureProvider.autoDispose.family<List<Currency>
 /// Kur değişim oranları provider'ı
 final currencyChangeRatesProvider = Provider<Map<String, double>>((ref) {
   final rates = ref.watch(exchangeRatesProvider);
-  
+
   if (rates.value == null) return {};
 
   final changeRates = <String, double>{};
-  
+
   for (final currency in rates.value!) {
     changeRates[currency.code] = currency.changeRate;
   }
@@ -181,14 +214,14 @@ final currencyChangeRatesProvider = Provider<Map<String, double>>((ref) {
 /// En çok değişen kurlar provider'ı
 final topChangingCurrenciesProvider = Provider<List<Currency>>((ref) {
   final rates = ref.watch(exchangeRatesProvider);
-  
+
   if (rates.value == null) return [];
 
   final currencies = List<Currency>.from(rates.value!);
-  
+
   // Mutlak değişim oranına göre sırala
   currencies.sort((a, b) => b.changeRate.abs().compareTo(a.changeRate.abs()));
-  
+
   // İlk 5'i döndür
   return currencies.take(5).toList();
 });
@@ -196,7 +229,7 @@ final topChangingCurrenciesProvider = Provider<List<Currency>>((ref) {
 /// USD ve EUR kurları provider'ı (drawer için)
 final usdEurRatesProvider = Provider<Map<String, Currency>>((ref) {
   final rates = ref.watch(exchangeRatesProvider);
-  
+
   if (rates.value == null) {
     return {
       'USD': SupportedCurrencies.findByCode('USD')!,
@@ -208,7 +241,7 @@ final usdEurRatesProvider = Provider<Map<String, Currency>>((ref) {
     (c) => c.code == 'USD',
     orElse: () => SupportedCurrencies.findByCode('USD')!,
   );
-  
+
   final eurCurrency = rates.value!.firstWhere(
     (c) => c.code == 'EUR',
     orElse: () => SupportedCurrencies.findByCode('EUR')!,

@@ -3,21 +3,25 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 import '../../features/products/data/models/product_entity.dart';
 import '../../features/products/data/datasources/product_dao.dart';
 
 /// Web platformu için localStorage tabanlı veritabanı implementasyonu
 class WebDatabase {
   static const String _productsKey = 'tamgaci_products';
+  // ignore: unused_field
   static const String _customersKey = 'tamgaci_customers';
+  // ignore: unused_field
   static const String _invoicesKey = 'tamgaci_invoices';
+  // ignore: unused_field
   static const String _expensesKey = 'tamgaci_expenses';
+  // ignore: unused_field
   static const String _incomeKey = 'tamgaci_income';
 
   /// Products'ı localStorage'dan alır
   static List<Map<String, dynamic>> _getProductsData() {
-    final data = html.window.localStorage[_productsKey];
+    final data = web.window.localStorage.getItem(_productsKey);
     if (data != null) {
       final List<dynamic> jsonList = jsonDecode(data);
       return jsonList.cast<Map<String, dynamic>>();
@@ -27,12 +31,12 @@ class WebDatabase {
 
   /// Products'ı localStorage'a kaydeder
   static void _saveProductsData(List<Map<String, dynamic>> data) {
-    html.window.localStorage[_productsKey] = jsonEncode(data);
+    web.window.localStorage.setItem(_productsKey, jsonEncode(data));
   }
 
   /// Veritabanını sıfırlar
   static Future<void> resetDatabase() async {
-    html.window.localStorage.clear();
+    web.window.localStorage.clear();
   }
 }
 

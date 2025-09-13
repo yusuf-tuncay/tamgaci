@@ -116,20 +116,26 @@ class MockStockRepository implements StockRepositoryImpl {
   @override
   Future<List<Stock>> getStocksByProductId(int productId) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    return _mockStocks.where((s) => s.productId == productId && s.isActive).toList();
+    return _mockStocks
+        .where((s) => s.productId == productId && s.isActive)
+        .toList();
   }
 
   @override
   Future<List<Stock>> getStocksByWarehouseId(int warehouseId) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    return _mockStocks.where((s) => s.warehouseId == warehouseId && s.isActive).toList();
+    return _mockStocks
+        .where((s) => s.warehouseId == warehouseId && s.isActive)
+        .toList();
   }
 
   @override
-  Future<Stock?> getStockByProductAndWarehouse(int productId, int warehouseId) async {
+  Future<Stock?> getStockByProductAndWarehouse(
+      int productId, int warehouseId) async {
     await Future.delayed(const Duration(milliseconds: 200));
     try {
-      return _mockStocks.firstWhere((s) => s.productId == productId && s.warehouseId == warehouseId);
+      return _mockStocks.firstWhere(
+          (s) => s.productId == productId && s.warehouseId == warehouseId);
     } catch (e) {
       return null;
     }
@@ -230,7 +236,7 @@ class MockStockRepository implements StockRepositoryImpl {
   }
 
   // Mock DAO methods (not used in mock implementation)
-  @override
+  // ignore: unused_element
   StockDao get _stockDao => throw UnimplementedError();
 }
 
@@ -286,13 +292,15 @@ final stockByIdProvider = FutureProvider.family<Stock?, int>((ref, id) async {
 });
 
 // Stocks by product ID provider
-final stocksByProductIdProvider = FutureProvider.family<List<Stock>, int>((ref, productId) async {
+final stocksByProductIdProvider =
+    FutureProvider.family<List<Stock>, int>((ref, productId) async {
   final repository = ref.read(stockRepositoryProvider);
   return await repository.getStocksByProductId(productId);
 });
 
 // Stocks by warehouse ID provider
-final stocksByWarehouseIdProvider = FutureProvider.family<List<Stock>, int>((ref, warehouseId) async {
+final stocksByWarehouseIdProvider =
+    FutureProvider.family<List<Stock>, int>((ref, warehouseId) async {
   final repository = ref.read(stockRepositoryProvider);
   return await repository.getStocksByWarehouseId(warehouseId);
 });

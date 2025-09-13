@@ -16,7 +16,7 @@ class ExchangeRatesWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final exchangeRatesAsync = ref.watch(exchangeRatesProvider);
+    final exchangeRatesAsync = ref.watch(currencyRefreshNotifierProvider);
     final selectedCurrency = ref.watch(selectedCurrencyProvider);
 
     return Container(
@@ -60,8 +60,11 @@ class ExchangeRatesWidget extends ConsumerWidget {
         const Spacer(),
         Consumer(
           builder: (context, ref, child) {
-            final lastUpdate =
-                ref.watch(exchangeRatesProvider).value?.first.lastUpdated;
+            final lastUpdate = ref
+                .watch(currencyRefreshNotifierProvider)
+                .value
+                ?.first
+                .lastUpdated;
             if (lastUpdate == null) return const SizedBox.shrink();
 
             return Text(
@@ -71,6 +74,56 @@ class ExchangeRatesWidget extends ConsumerWidget {
                 color: isDark
                     ? TamgaciConstants.textSecondaryDark
                     : TamgaciConstants.textSecondary,
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 8),
+        Consumer(
+          builder: (context, ref, child) {
+            final isLoading =
+                ref.watch(currencyRefreshNotifierProvider).isLoading;
+
+            return GestureDetector(
+              onTap: isLoading
+                  ? null
+                  : () async {
+                      // Kurları yenile
+                      await ref
+                          .read(currencyRefreshNotifierProvider.notifier)
+                          .refresh();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Kurlar yenilendi!',
+                              style: GoogleFonts.poppins(),
+                            ),
+                            duration: const Duration(seconds: 2),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
+                      : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: AnimatedRotation(
+                  turns: isLoading ? 1 : 0,
+                  duration: const Duration(seconds: 1),
+                  child: Icon(
+                    Icons.refresh,
+                    size: 20,
+                    color: isLoading
+                        ? (isDark ? Colors.grey : Colors.grey.shade600)
+                        : TamgaciConstants.primaryColor,
+                  ),
+                ),
               ),
             );
           },
@@ -127,7 +180,7 @@ class ExchangeRatesWidget extends ConsumerWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: TamgaciConstants.primaryColor.withOpacity(0.1),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
@@ -200,6 +253,17 @@ class ExchangeRatesWidget extends ConsumerWidget {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${currency.exchangeRate.toStringAsFixed(2)} ₺',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                color: isDark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary,
+              ),
             ),
           ],
         ),

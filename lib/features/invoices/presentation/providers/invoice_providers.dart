@@ -955,7 +955,6 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
   Stream<List<Invoice>> watchInvoicesByStatus(InvoiceStatus status) =>
       Stream.value([]);
 
-  @override
   Stream<List<InvoiceItem>> watchInvoiceItems(String invoiceId) =>
       Stream.value([]);
 }

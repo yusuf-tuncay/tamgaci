@@ -3,9 +3,9 @@
 
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 import '../../domain/entities/supplier.dart';
 import '../../domain/repositories/supplier_repository.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Firebase Firestore tabanlı tedarikçi repository implementasyonu
 class FirebaseSupplierRepository implements SupplierRepository {
@@ -22,7 +22,7 @@ class FirebaseSupplierRepository implements SupplierRepository {
       await docRef.set(supplierData);
       return docRef.id;
     } catch (e) {
-      print('Error creating supplier: $e');
+      AppLogger.error('Error creating supplier', e);
       rethrow;
     }
   }
@@ -35,7 +35,7 @@ class FirebaseSupplierRepository implements SupplierRepository {
           .doc(supplier.id)
           .update(_supplierToMap(supplier));
     } catch (e) {
-      print('Error updating supplier: $e');
+      AppLogger.error('Error updating supplier', e);
       rethrow;
     }
   }
@@ -45,7 +45,7 @@ class FirebaseSupplierRepository implements SupplierRepository {
     try {
       await _firestore.collection(_collectionName).doc(id).delete();
     } catch (e) {
-      print('Error deleting supplier: $e');
+      AppLogger.error('Error deleting supplier', e);
       rethrow;
     }
   }
@@ -58,7 +58,7 @@ class FirebaseSupplierRepository implements SupplierRepository {
       if (!docSnapshot.exists) return null;
       return _supplierFromMap(docSnapshot);
     } catch (e) {
-      print('Error getting supplier by ID: $e');
+      AppLogger.error('Error getting supplier by ID', e);
       rethrow;
     }
   }
@@ -71,12 +71,11 @@ class FirebaseSupplierRepository implements SupplierRepository {
 
       return querySnapshot.docs.map((doc) => _supplierFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting all suppliers: $e');
+      AppLogger.error('Error getting all suppliers', e);
       rethrow;
     }
   }
 
-  @override
   Future<List<Supplier>> getActiveSuppliers() async {
     try {
       final querySnapshot = await _firestore
@@ -87,12 +86,11 @@ class FirebaseSupplierRepository implements SupplierRepository {
 
       return querySnapshot.docs.map((doc) => _supplierFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting active suppliers: $e');
+      AppLogger.error('Error getting active suppliers', e);
       rethrow;
     }
   }
 
-  @override
   Future<List<Supplier>> searchSuppliers(String query) async {
     try {
       final querySnapshot = await _firestore.collection(_collectionName).get();
@@ -102,17 +100,15 @@ class FirebaseSupplierRepository implements SupplierRepository {
           .map((doc) => _supplierFromMap(doc))
           .where((supplier) =>
               supplier.name.toLowerCase().contains(lowercaseQuery) ||
-              (supplier.email.toLowerCase().contains(lowercaseQuery) ??
-                  false) ||
-              (supplier.phone.toLowerCase().contains(lowercaseQuery) ?? false))
+              supplier.email.toLowerCase().contains(lowercaseQuery) ||
+              supplier.phone.toLowerCase().contains(lowercaseQuery))
           .toList();
     } catch (e) {
-      print('Error searching suppliers: $e');
+      AppLogger.error('Error searching suppliers', e);
       rethrow;
     }
   }
 
-  @override
   Future<List<Supplier>> getSuppliersByCity(String city) async {
     try {
       final querySnapshot = await _firestore
@@ -123,23 +119,21 @@ class FirebaseSupplierRepository implements SupplierRepository {
 
       return querySnapshot.docs.map((doc) => _supplierFromMap(doc)).toList();
     } catch (e) {
-      print('Error getting suppliers by city: $e');
+      AppLogger.error('Error getting suppliers by city', e);
       rethrow;
     }
   }
 
-  @override
   Future<int> getTotalSupplierCount() async {
     try {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting total supplier count: $e');
+      AppLogger.error('Error getting total supplier count', e);
       rethrow;
     }
   }
 
-  @override
   Future<int> getActiveSupplierCount() async {
     try {
       final querySnapshot = await _firestore
@@ -148,7 +142,7 @@ class FirebaseSupplierRepository implements SupplierRepository {
           .get();
       return querySnapshot.docs.length;
     } catch (e) {
-      print('Error getting active supplier count: $e');
+      AppLogger.error('Error getting active supplier count', e);
       rethrow;
     }
   }
@@ -174,7 +168,6 @@ class FirebaseSupplierRepository implements SupplierRepository {
             snapshot.docs.map((doc) => _supplierFromMap(doc)).toList());
   }
 
-  @override
   Stream<List<Supplier>> watchActiveSuppliers() {
     return _firestore
         .collection(_collectionName)

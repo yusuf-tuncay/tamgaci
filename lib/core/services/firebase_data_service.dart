@@ -3,7 +3,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Firebase veri yönetim servisi
 class FirebaseDataService {
@@ -19,7 +19,7 @@ class FirebaseDataService {
       // Mevcut ürünleri kontrol et
       final existingProducts = await productsCollection.get();
       if (existingProducts.docs.isNotEmpty) {
-        print('Ürünler zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Ürünler zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -115,9 +115,10 @@ class FirebaseDataService {
       }
 
       await batch.commit();
-      print('${mockProducts.length} adet mock ürün Firebase\'e eklendi');
+      AppLogger.info(
+          "${mockProducts.length} adet mock ürün Firebase'e eklendi");
     } catch (e) {
-      print('Mock ürün eklenirken hata: $e');
+      AppLogger.error('Mock ürün eklenirken hata', e);
     }
   }
 
@@ -130,7 +131,7 @@ class FirebaseDataService {
 
       final existingCustomers = await customersCollection.get();
       if (existingCustomers.docs.isNotEmpty) {
-        print('Müşteriler zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Müşteriler zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -225,9 +226,10 @@ class FirebaseDataService {
       }
 
       await batch.commit();
-      print('${mockCustomers.length} adet mock müşteri Firebase\'e eklendi');
+      AppLogger.info(
+          "${mockCustomers.length} adet mock müşteri Firebase'e eklendi");
     } catch (e) {
-      print('Mock müşteri eklenirken hata: $e');
+      AppLogger.error('Mock müşteri eklenirken hata', e);
     }
   }
 
@@ -238,7 +240,7 @@ class FirebaseDataService {
       final invoicesCollection = _firestore.collection('invoices');
       final existingInvoices = await invoicesCollection.get();
       if (existingInvoices.docs.isNotEmpty) {
-        print('Faturalar zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Faturalar zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -313,9 +315,9 @@ class FirebaseDataService {
       for (final invoice in mockInvoices) {
         await invoicesCollection.add(invoice);
       }
-      print('Mock fatura verileri başarıyla eklendi!');
+      AppLogger.info('Mock fatura verileri başarıyla eklendi!');
     } catch (e) {
-      print('Error adding mock invoices: $e');
+      AppLogger.error('Error adding mock invoices', e);
     }
   }
 
@@ -326,7 +328,7 @@ class FirebaseDataService {
       final expensesCollection = _firestore.collection('expenses');
       final existingExpenses = await expensesCollection.get();
       if (existingExpenses.docs.isNotEmpty) {
-        print('Giderler zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Giderler zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -399,9 +401,9 @@ class FirebaseDataService {
       for (final expense in mockExpenses) {
         await expensesCollection.add(expense);
       }
-      print('Mock gider verileri başarıyla eklendi!');
+      AppLogger.info('Mock gider verileri başarıyla eklendi!');
     } catch (e) {
-      print('Error adding mock expenses: $e');
+      AppLogger.error('Error adding mock expenses', e);
     }
   }
 
@@ -412,7 +414,7 @@ class FirebaseDataService {
       final incomesCollection = _firestore.collection('incomes');
       final existingIncomes = await incomesCollection.get();
       if (existingIncomes.docs.isNotEmpty) {
-        print('Gelirler zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Gelirler zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -482,9 +484,9 @@ class FirebaseDataService {
       for (final income in mockIncomes) {
         await incomesCollection.add(income);
       }
-      print('Mock gelir verileri başarıyla eklendi!');
+      AppLogger.info('Mock gelir verileri başarıyla eklendi!');
     } catch (e) {
-      print('Error adding mock incomes: $e');
+      AppLogger.error('Error adding mock incomes', e);
     }
   }
 
@@ -495,7 +497,7 @@ class FirebaseDataService {
       final suppliersCollection = _firestore.collection('suppliers');
       final existingSuppliers = await suppliersCollection.get();
       if (existingSuppliers.docs.isNotEmpty) {
-        print('Tedarikçiler zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Tedarikçiler zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -553,9 +555,9 @@ class FirebaseDataService {
       for (final supplier in mockSuppliers) {
         await suppliersCollection.add(supplier);
       }
-      print('Mock tedarikçi verileri başarıyla eklendi!');
+      AppLogger.info('Mock tedarikçi verileri başarıyla eklendi!');
     } catch (e) {
-      print('Error adding mock suppliers: $e');
+      AppLogger.error('Error adding mock suppliers', e);
     }
   }
 
@@ -566,7 +568,7 @@ class FirebaseDataService {
       final contactsCollection = _firestore.collection('contacts');
       final existingContacts = await contactsCollection.get();
       if (existingContacts.docs.isNotEmpty) {
-        print('Rehber verileri zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Rehber verileri zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -644,9 +646,9 @@ class FirebaseDataService {
       for (final contact in mockContacts) {
         await contactsCollection.add(contact);
       }
-      print('Mock rehber verileri başarıyla eklendi!');
+      AppLogger.info('Mock rehber verileri başarıyla eklendi!');
     } catch (e) {
-      print('Error adding mock contacts: $e');
+      AppLogger.error('Error adding mock contacts', e);
     }
   }
 
@@ -657,7 +659,7 @@ class FirebaseDataService {
       final cashCollection = _firestore.collection('cash_transactions');
       final existingTransactions = await cashCollection.get();
       if (existingTransactions.docs.isNotEmpty) {
-        print('Nakit işlemler zaten mevcut, mock veri eklenmeyecek');
+        AppLogger.info('Nakit işlemler zaten mevcut, mock veri eklenmeyecek');
         return;
       }
 
@@ -731,13 +733,11 @@ class FirebaseDataService {
       for (final transaction in mockTransactions) {
         await cashCollection.add(transaction);
       }
-      print('Mock nakit işlem verileri başarıyla eklendi!');
+      AppLogger.info('Mock nakit işlem verileri başarıyla eklendi!');
     } catch (e) {
-      print('Error adding mock cash transactions: $e');
+      AppLogger.error('Error adding mock cash transactions', e);
     }
   }
-
-
 
   /// Tüm mock verileri ekle
   static Future<void> addAllMockData() async {
@@ -750,7 +750,7 @@ class FirebaseDataService {
     await addMockContacts();
     await addMockCashTransactions();
 
-    print('Tüm mock veriler başarıyla eklendi!');
+    AppLogger.info('Tüm mock veriler başarıyla eklendi!');
   }
 
   /// Firebase'deki tüm verileri temizle
@@ -771,9 +771,9 @@ class FirebaseDataService {
         await batch.commit();
       }
 
-      print('Tüm veriler temizlendi');
+      AppLogger.info('Tüm veriler temizlendi');
     } catch (e) {
-      print('Veri temizlenirken hata: $e');
+      AppLogger.error('Veri temizlenirken hata', e);
     }
   }
 }

@@ -170,7 +170,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: DropdownButtonFormField<Currency>(
-        value: selectedCurrency,
+        initialValue: selectedCurrency,
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding:
