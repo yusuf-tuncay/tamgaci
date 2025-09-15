@@ -1,176 +1,113 @@
-// ========== lib/core/database/tamgaci_database.dart ==========
+// ========== TAMGACI DATABASE ==========
+// lib/core/database/tamgaci_database.dart
 
-import 'dart:async';
-import 'package:floor/floor.dart';
-import 'package:sqflite/sqflite.dart' as sqflite;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:tamgaci/core/database/converters/date_time_converter.dart';
-import 'package:tamgaci/features/invoices/data/datasources/invoice_dao.dart';
-import 'package:tamgaci/features/invoices/data/datasources/invoice_item_dao.dart';
-import '../../features/customers/data/models/customer_entity.dart';
-import '../../features/customers/data/datasources/customer_dao.dart';
-import 'package:tamgaci/features/customers/data/models/stats_views.dart';
-import 'package:tamgaci/features/invoices/data/models/invoice_entity.dart';
-import 'package:tamgaci/features/invoices/data/models/invoice_item_entity.dart';
-import 'package:tamgaci/features/products/data/models/product_entity.dart';
-import 'package:tamgaci/features/products/data/datasources/product_dao.dart';
-import 'package:tamgaci/features/expenses/data/models/expense_entity.dart';
-import 'package:tamgaci/features/expenses/data/models/expense_category_entity.dart';
-import 'package:tamgaci/features/expenses/data/datasources/expense_dao.dart';
-import 'package:tamgaci/features/expenses/data/datasources/expense_category_dao.dart';
-import 'package:tamgaci/features/income/data/models/income_entity.dart';
-import 'package:tamgaci/features/income/data/models/income_category_entity.dart';
-import 'package:tamgaci/features/income/data/datasources/income_dao.dart';
-import 'package:tamgaci/features/income/data/datasources/income_category_dao.dart';
-import '../../features/inventory/data/models/warehouse_entity.dart';
-import '../../features/inventory/data/datasources/warehouse_dao.dart';
-import '../../features/inventory/data/models/stock_entity.dart';
-import '../../features/inventory/data/datasources/stock_dao.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
-// Floor code generation için gerekli import
-part 'tamgaci_database.g.dart';
+/// Tamgaci Database Service
+/// Firebase Firestore database operations
+class TamgaciDatabase {
+  static final TamgaciDatabase _instance = TamgaciDatabase._internal();
+  factory TamgaciDatabase() => _instance;
+  TamgaciDatabase._internal();
 
-/// Tamgaci uygulaması ana database sınıfı
-/// Floor ile SQLite database yönetimi
-@Database(
-  version: 7,
-  entities: [
-    CustomerEntity,
-    InvoiceEntity,
-    InvoiceItemEntity,
-    ProductEntity,
-    ExpenseEntity,
-    ExpenseCategoryEntity,
-    IncomeEntity,
-    IncomeCategoryEntity,
-    WarehouseEntity,
-    StockEntity,
+  late FirebaseFirestore _firestore;
 
-    // Gelecekte diğer entity'ler buraya eklenecek:
-    // SupplierEntity, vs.
-  ],
-  views: [CustomerTypeStat, CityCustomerCount, MonthlyCustomerStat],
-)
-abstract class TamgaciDatabase extends FloorDatabase {
-  /// Customer DAO'yu döndürür
-  CustomerDao get customerDao;
-  InvoiceDao get invoiceDao;
-  InvoiceItemDao get invoiceItemDao;
-  ProductDao get productDao;
-  ExpenseDao get expenseDao;
-  ExpenseCategoryDao get expenseCategoryDao;
-  IncomeDao get incomeDao;
-  IncomeCategoryDao get incomeCategoryDao;
-  WarehouseDao get warehouseDao;
-  StockDao get stockDao;
+  /// Initialize database
+  Future<void> initialize() async {
+    try {
+      _firestore = FirebaseFirestore.instance;
 
-  // Gelecekte diğer DAO'lar buraya eklenecek:
-  // SupplierDao get supplierDao;
+      // Configure Firestore settings
+      _firestore.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+      );
+
+      AppLogger.info('Tamgaci Database initialized successfully');
+    } catch (e) {
+      AppLogger.error('Failed to initialize Tamgaci Database', e);
+      rethrow;
+    }
+  }
+
+  /// Get Firestore instance
+  FirebaseFirestore get firestore => _firestore;
+
+  /// Get collection reference
+  CollectionReference<Map<String, dynamic>> collection(String path) {
+    return _firestore.collection(path);
+  }
+
+  /// Get document reference
+  DocumentReference<Map<String, dynamic>> doc(String path) {
+    return _firestore.doc(path);
+  }
+
+  /// Batch write operations
+  WriteBatch batch() {
+    return _firestore.batch();
+  }
+
+  /// Run transaction
+  Future<T> runTransaction<T>(
+    Future<T> Function(Transaction transaction) updateFunction,
+  ) {
+    return _firestore.runTransaction(updateFunction);
+  }
+
+  /// Enable network
+  Future<void> enableNetwork() async {
+    await _firestore.enableNetwork();
+  }
+
+  /// Disable network
+  Future<void> disableNetwork() async {
+    await _firestore.disableNetwork();
+  }
+
+  /// Clear persistence
+  Future<void> clearPersistence() async {
+    await _firestore.clearPersistence();
+  }
+
+  /// Wait for pending writes
+  Future<void> waitForPendingWrites() async {
+    await _firestore.waitForPendingWrites();
+  }
+
+  /// Terminate
+  Future<void> terminate() async {
+    await _firestore.terminate();
+  }
+
+  /// Collection names
+  static const String customersCollection = 'customers';
+  static const String suppliersCollection = 'suppliers';
+  static const String productsCollection = 'products';
+  static const String salesCollection = 'sales';
+  static const String purchasesCollection = 'purchases';
+  static const String incomesCollection = 'incomes';
+  static const String expensesCollection = 'expenses';
+  static const String stocksCollection = 'stocks';
+  static const String warehousesCollection = 'warehouses';
+  static const String invoicesCollection = 'invoices';
+  static const String cashAccountsCollection = 'cash_accounts';
+  static const String cashMovementsCollection = 'cash_movements';
+  static const String reportsCollection = 'reports';
+  static const String settingsCollection = 'settings';
+  static const String usersCollection = 'users';
+  static const String notificationsCollection = 'notifications';
+  static const String auditLogsCollection = 'audit_logs';
 }
 
-/// Database singleton instance'ını yönetir
-class DatabaseHelper {
-  static TamgaciDatabase? _database;
-  static const String _databaseName = 'tamgaci_database.db';
-
-  /// Database instance'ını döndürür (singleton pattern)
-  static Future<TamgaciDatabase> getDatabase() async {
-    if (_database != null) {
-      return _database!;
-    }
-
-    _database = await _initDatabase();
-    return _database!;
-  }
-
-  /// Database'i başlatır
-  static Future<TamgaciDatabase> _initDatabase() async {
-    return await $FloorTamgaciDatabase
-        .databaseBuilder(_databaseName)
-        .addMigrations([
-      // Gelecekteki migration'lar buraya eklenecek
-    ]).build();
-  }
-
-  /// Database'i sıfırlar (dikkatli kullanın!)
-  static Future<void> resetDatabase() async {
-    if (_database != null) {
-      await _database!.close();
-      _database = null;
-    }
-
-    // Database dosyasını siler
-    final databasesPath = await sqflite.getDatabasesPath();
-    final path = '$databasesPath/$_databaseName';
-    await sqflite.deleteDatabase(path);
-  }
-
-  /// Database'i kapatır
-  static Future<void> closeDatabase() async {
-    if (_database != null) {
-      await _database!.close();
-      _database = null;
-    }
-  }
-}
-
-// ========== RIVERPOD PROVIDER ==========
-
-/// Database provider'ı
-final databaseProvider = FutureProvider<TamgaciDatabase>((ref) async {
-  // Web platformunda database kullanma
-  if (kIsWeb) {
-    throw UnsupportedError('Database is not supported on web platform');
-  }
-  return await DatabaseHelper.getDatabase();
+/// Database provider for dependency injection
+final databaseProvider = Provider<TamgaciDatabase>((ref) {
+  return TamgaciDatabase();
 });
 
-// ========== DOSYA YERLEŞTİRME TALİMATLARI ==========
-
-/*
-📁 Bu dosyaların yerleştirilmesi gereken konumlar:
-
-1. 📄 customer_entity.dart
-   → lib/features/customers/data/models/customer_entity.dart
-
-2. 📄 customer_dao.dart  
-   → lib/features/customers/data/datasources/customer_dao.dart
-
-3. 📄 tamgaci_database.dart
-   → lib/core/database/tamgaci_database.dart
-
-========== SONRAKI ADIM: CODE GENERATION ==========
-
-Dosyaları yerleştirdikten sonra şu komutu çalıştırın:
-
-flutter packages pub run build_runner build
-
-Bu komut Floor için gerekli tamgaci_database.g.dart dosyasını oluşturacak.
-
-Eğer hata alırsanız, önce şunu deneyin:
-flutter packages pub run build_runner clean
-flutter packages pub run build_runner build --delete-conflicting-outputs
-
-========== TEST VERİLERİ ==========
-
-Database hazır olduktan sonra test müşterileri eklemek için
-DatabaseHelper kullanabilirsiniz:
-
-```dart
-final database = await DatabaseHelper.getDatabase();
-final customerDao = database.customerDao;
-
-final testCustomer = CustomerEntity(
-  id: 'customer_1',
-  name: 'Ahmet Yılmaz',
-  email: 'ahmet@example.com',
-  phone: '+90 555 123 45 67',
-  customerType: CustomerType.individual.value,
-  createdAt: DateTime.now(),
-  updatedAt: DateTime.now(),
-);
-
-await customerDao.insertCustomer(testCustomer);
-```
-*/
+/// Firestore provider for dependency injection
+final firestoreProvider = Provider<FirebaseFirestore>((ref) {
+  return TamgaciDatabase().firestore;
+});

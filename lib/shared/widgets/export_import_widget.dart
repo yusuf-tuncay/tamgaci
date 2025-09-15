@@ -1,6 +1,8 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tamgaci/core/services/export_import_service.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:tamgaci/core/services/utils/export_import_service.dart';
 
 class ExportImportWidget extends ConsumerStatefulWidget {
   final Map<String, List<Map<String, dynamic>>> data;
@@ -179,16 +181,26 @@ class _ExportImportWidgetState extends ConsumerState<ExportImportWidget> {
       switch (format) {
         case 'json':
           final jsonData = _convertToJsonFormat();
-          filePath =
-              await _exportImportService.exportToJson(jsonData, fileName);
+          final fileBytes = await _exportImportService.exportToJson(jsonData);
+          filePath = await _saveFile(fileBytes, fileName);
           break;
         case 'excel':
-          filePath =
-              await _exportImportService.exportToExcel(widget.data, fileName);
+          final fileBytes = await _exportImportService.exportToExcel(
+            title: widget.title,
+            headers: _getHeaders(),
+            data: _getData(),
+          );
+          filePath = await _saveFile(fileBytes, fileName);
           break;
         case 'pdf':
-          filePath =
-              await _exportImportService.exportToPdf(widget.data, fileName);
+          final fileBytes = await _exportImportService.exportToPdf(
+            title: widget.title,
+            subtitle: 'Export Report',
+            headers: _getHeaders(),
+            data: _getData(),
+            summary: _getSummary(),
+          );
+          filePath = await _saveFile(fileBytes, fileName);
           break;
       }
 
@@ -244,10 +256,16 @@ class _ExportImportWidgetState extends ConsumerState<ExportImportWidget> {
 
       switch (format) {
         case 'json':
-          importedData = await _exportImportService.importFromJson();
+          final fileData = await _pickFile();
+          if (fileData != null) {
+            importedData = await _exportImportService.importFromJson(fileData);
+          }
           break;
         case 'excel':
-          importedData = await _exportImportService.importFromExcel();
+          final fileData = await _pickFile();
+          if (fileData != null) {
+            importedData = await _exportImportService.importFromExcel(fileData);
+          }
           break;
       }
 
@@ -300,6 +318,64 @@ class _ExportImportWidgetState extends ConsumerState<ExportImportWidget> {
     });
 
     return jsonData;
+  }
+
+  List<String> _getHeaders() {
+    if (widget.data.isEmpty) return [];
+    return widget.data.values.first
+        .map<String>((item) => item.keys.first)
+        .toList();
+  }
+
+  List<List<dynamic>> _getData() {
+    if (widget.data.isEmpty) return [];
+    final headers = _getHeaders();
+    final allData = <List<dynamic>>[];
+
+    for (final dataList in widget.data.values) {
+      for (final item in dataList) {
+        allData.add(headers.map((header) => item[header]).toList());
+      }
+    }
+
+    return allData;
+  }
+
+  Map<String, dynamic> _getSummary() {
+    return {
+      'totalRecords': _getData().length,
+      'exportedAt': DateTime.now().toIso8601String(),
+      'format': 'Export Report',
+    };
+  }
+
+  Future<Uint8List?> _pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json', 'xlsx', 'xls'],
+      );
+
+      if (result != null && result.files.isNotEmpty) {
+        return result.files.first.bytes;
+      }
+    } catch (e) {
+      debugPrint('Error picking file: $e');
+    }
+    return null;
+  }
+
+  Future<String?> _saveFile(Uint8List bytes, String fileName) async {
+    try {
+      final result = await FilePicker.platform.saveFile(
+        fileName: fileName,
+        bytes: bytes,
+      );
+      return result;
+    } catch (e) {
+      debugPrint('Error saving file: $e');
+      return null;
+    }
   }
 
   void _openFile(String filePath) {

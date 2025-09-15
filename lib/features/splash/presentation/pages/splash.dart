@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tamgaci/core/theme/constants.dart';
-import 'package:tamgaci/core/database/tamgaci_database.dart';
-import 'package:tamgaci/core/database/test_data_helper.dart';
+// import 'package:tamgaci/core/database/tamgaci_database.dart'; // Removed - using Firebase only
+// import 'package:tamgaci/core/database/test_data_helper.dart'; // Removed - using Firebase only
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:tamgaci/core/utils/logger.dart';
 
@@ -186,11 +186,11 @@ class SplashNotifier extends StateNotifier<SplashData> {
         return;
       }
 
-      // Database'i başlat
-      await DatabaseHelper.getDatabase();
+      // Database'i başlat - Removed - using Firebase only
+      // await DatabaseHelper.getDatabase();
 
       // Test verilerini yükle
-      await TestDataHelper().loadTestData();
+      // await TestDataHelper().loadTestData(); // Removed - using Firebase only
 
       await Future.delayed(const Duration(milliseconds: 500));
     } catch (e) {

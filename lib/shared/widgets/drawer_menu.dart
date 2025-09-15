@@ -1,16 +1,15 @@
+// ========== ENHANCED DRAWER MENU ==========
+// lib/shared/widgets/drawer_menu.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:io';
 import '../../core/theme/constants.dart';
 import '../../core/routes/routes.dart';
-import '../../core/providers/theme_provider.dart';
 import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
 import '../../features/user_profile/domain/entities/user_profile.dart';
 import 'theme_selector_dialog.dart';
 import '../../core/providers/currency_providers.dart';
-import '../../core/domain/entities/currency.dart';
-import '../../core/services/exchange_rate_service.dart';
 
 // ========== DRAWER MENU MODELS ==========
 
@@ -25,7 +24,7 @@ class DrawerMenuItem {
   /// Menü öğesinin ikonu
   final IconData icon;
 
-  /// Menü öğesinin route'u
+  /// Menü öğesinin route'u (alt menü varsa null olabilir)
   final String route;
 
   /// Alt menü öğeleri (varsa)
@@ -84,59 +83,63 @@ class DrawerMenuItem {
 // ========== DRAWER STATE MANAGEMENT ==========
 
 /// Drawer menü durumunu yöneten StateNotifier
-class DrawerMenuNotifier extends StateNotifier<String> {
-  /// Constructor - Başlangıç route'u
-  DrawerMenuNotifier() : super(TamgaciRoutes.dashboard);
+class DrawerMenuNotifier extends StateNotifier<Map<String, dynamic>> {
+  /// Constructor
+  DrawerMenuNotifier()
+      : super({
+          'activeRoute': TamgaciRoutes.dashboard,
+          'expandedItems': <String>{},
+        });
 
   /// Aktif route'u günceller
   void setActiveRoute(String route) {
-    state = route;
+    state = {
+      ...state,
+      'activeRoute': route,
+    };
+  }
+
+  /// Alt menüyü aç/kapat
+  void toggleExpanded(String itemId) {
+    final expandedItems = Set<String>.from(state['expandedItems'] ?? {});
+    if (expandedItems.contains(itemId)) {
+      expandedItems.remove(itemId);
+    } else {
+      expandedItems.add(itemId);
+    }
+    state = {
+      ...state,
+      'expandedItems': expandedItems,
+    };
   }
 
   /// Aktif route'u döndürür
-  String get activeRoute => state;
+  String get activeRoute => state['activeRoute'] ?? TamgaciRoutes.dashboard;
+
+  /// Alt menünün açık olup olmadığını kontrol eder
+  bool isExpanded(String itemId) {
+    final expandedItems = state['expandedItems'] ?? <String>{};
+    return expandedItems.contains(itemId);
+  }
 }
 
 // ========== PROVIDERS ==========
 
 /// Drawer menu state provider'ı
-final drawerMenuProvider = StateNotifierProvider<DrawerMenuNotifier, String>(
+final drawerMenuProvider =
+    StateNotifierProvider<DrawerMenuNotifier, Map<String, dynamic>>(
   (ref) => DrawerMenuNotifier(),
 );
 
 /// Drawer menü öğeleri provider'ı
 final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
   return [
-    // Ana Sayfa
+    // Dashboard (Ana Sayfa)
     const DrawerMenuItem(
       id: 'dashboard',
-      title: 'Ana Sayfa',
+      title: 'Dashboard',
       icon: Icons.dashboard_outlined,
       route: TamgaciRoutes.dashboard,
-    ),
-
-    // Faturalar
-    const DrawerMenuItem(
-      id: 'invoices',
-      title: 'Faturalar',
-      icon: Icons.receipt_long_outlined,
-      route: TamgaciRoutes.invoicesList,
-    ),
-
-    // Giderler
-    const DrawerMenuItem(
-      id: 'expenses',
-      title: 'Giderler',
-      icon: Icons.money_off_outlined,
-      route: TamgaciRoutes.expensesList,
-    ),
-
-    // Gelirler
-    const DrawerMenuItem(
-      id: 'income',
-      title: 'Gelirler',
-      icon: Icons.attach_money_outlined,
-      route: TamgaciRoutes.incomeList,
     ),
 
     // Müşteriler
@@ -155,89 +158,161 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       route: TamgaciRoutes.suppliersList,
     ),
 
-    // Fihrist
-    const DrawerMenuItem(
-      id: 'directory',
-      title: 'Fihrist',
-      icon: Icons.contacts_outlined,
-      route: TamgaciRoutes.contactsList,
-    ),
-
-    // Ürünler
+    // Ürünler (Açılır Menü)
     const DrawerMenuItem(
       id: 'products',
       title: 'Ürünler',
       icon: Icons.inventory_2_outlined,
-      route: TamgaciRoutes.productsList,
+      route: '', // Alt menü olduğu için boş
+      subItems: [
+        DrawerMenuItem(
+          id: 'products-list',
+          title: 'Ürün / Hizmetler',
+          icon: Icons.inventory_outlined,
+          route: TamgaciRoutes.productsList,
+        ),
+        DrawerMenuItem(
+          id: 'warehouses',
+          title: 'Depolar',
+          icon: Icons.warehouse_outlined,
+          route: TamgaciRoutes.warehouseList,
+        ),
+        DrawerMenuItem(
+          id: 'production',
+          title: 'Üretim',
+          icon: Icons.precision_manufacturing_outlined,
+          route: TamgaciRoutes.inventory,
+        ),
+        DrawerMenuItem(
+          id: 'price-lists',
+          title: 'Özel Fiyat Listeleri',
+          icon: Icons.price_check_outlined,
+          route: TamgaciRoutes.productsList, // Geçici route
+        ),
+        DrawerMenuItem(
+          id: 'product-variants',
+          title: 'Ürün Varyantları',
+          icon: Icons.style_outlined,
+          route: TamgaciRoutes.productsList, // Geçici route
+        ),
+      ],
     ),
 
-    // Kasa
+    // Satışlar
     const DrawerMenuItem(
-      id: 'cash',
-      title: 'Kasa',
+      id: 'sales',
+      title: 'Satışlar',
+      icon: Icons.sell_outlined,
+      route: TamgaciRoutes.invoicesList,
+    ),
+
+    // Alışlar
+    const DrawerMenuItem(
+      id: 'purchases',
+      title: 'Alışlar',
+      icon: Icons.shopping_cart_outlined,
+      route: TamgaciRoutes.purchasesList,
+    ),
+
+    // Nakit Yönetimi (Açılır Menü)
+    const DrawerMenuItem(
+      id: 'cash-management',
+      title: 'Nakit Yönetimi',
       icon: Icons.account_balance_wallet_outlined,
-      route: TamgaciRoutes.cashOverview,
+      route: '', // Alt menü olduğu için boş
+      subItems: [
+        DrawerMenuItem(
+          id: 'accounts',
+          title: 'Hesaplarım',
+          icon: Icons.account_balance_outlined,
+          route: TamgaciRoutes.accountsList,
+        ),
+        DrawerMenuItem(
+          id: 'employees',
+          title: 'Personeller',
+          icon: Icons.person_outline,
+          route: TamgaciRoutes.incomeList, // Geçici route
+        ),
+        DrawerMenuItem(
+          id: 'expenses',
+          title: 'Masraflar',
+          icon: Icons.money_off_outlined,
+          route: TamgaciRoutes.expensesList,
+        ),
+        DrawerMenuItem(
+          id: 'credits',
+          title: 'Krediler',
+          icon: Icons.credit_card_outlined,
+          route: TamgaciRoutes.accountsList, // Geçici route
+        ),
+        DrawerMenuItem(
+          id: 'projects',
+          title: 'Projeler',
+          icon: Icons.work_outline,
+          route: TamgaciRoutes.accountsList, // Geçici route
+        ),
+        DrawerMenuItem(
+          id: 'checks',
+          title: 'Çekler',
+          icon: Icons.receipt_long_outlined,
+          route: TamgaciRoutes.accountsList, // Geçici route
+        ),
+        DrawerMenuItem(
+          id: 'bills',
+          title: 'Senetler',
+          icon: Icons.description_outlined,
+          route: TamgaciRoutes.accountsList, // Geçici route
+        ),
+      ],
     ),
 
-    // Depo Stok
-    const DrawerMenuItem(
-      id: 'inventory',
-      title: 'Depo Stok',
-      icon: Icons.warehouse_outlined,
-      route: TamgaciRoutes.inventory,
-    ),
-
-    // Depo Listesi
-    const DrawerMenuItem(
-      id: 'warehouse-list',
-      title: 'Depo Listesi',
-      icon: Icons.list_alt_outlined,
-      route: TamgaciRoutes.warehouseList,
-    ),
-    const DrawerMenuItem(
-      id: 'stock-list',
-      title: 'Stok Listesi',
-      icon: Icons.inventory_outlined,
-      route: TamgaciRoutes.stockList,
-    ),
-
-    // Raporlar
+    // Raporlar (Açılır Menü)
     const DrawerMenuItem(
       id: 'reports',
       title: 'Raporlar',
-      icon: Icons.analytics_outlined,
-      route: TamgaciRoutes.reportsOverview,
-    ),
-
-    // Ayarlar
-    const DrawerMenuItem(
-      id: 'settings',
-      title: 'Ayarlar',
-      icon: Icons.settings_outlined,
-      route: TamgaciRoutes.settings,
+      icon: Icons.assessment_outlined,
+      route: '', // Alt menü olduğu için boş
+      subItems: [
+        DrawerMenuItem(
+          id: 'reports-list',
+          title: 'Tüm Raporlar',
+          icon: Icons.list_outlined,
+          route: TamgaciRoutes.reportsList,
+        ),
+        DrawerMenuItem(
+          id: 'sales-purchases-reports',
+          title: 'Satışlar / Alışlar',
+          icon: Icons.trending_up_outlined,
+          route: TamgaciRoutes.invoicesList, // Geçici route
+        ),
+        DrawerMenuItem(
+          id: 'financial-reports',
+          title: 'Finansal Raporlar',
+          icon: Icons.pie_chart,
+          route: TamgaciRoutes.accountsList, // Geçici route
+        ),
+        DrawerMenuItem(
+          id: 'stock-reports',
+          title: 'Stok Raporları',
+          icon: Icons.inventory_2_outlined,
+          route: TamgaciRoutes.inventory,
+        ),
+        DrawerMenuItem(
+          id: 'customer-reports',
+          title: 'Müşteri Listesi',
+          icon: Icons.people_outline,
+          route: TamgaciRoutes.customersList,
+        ),
+      ],
     ),
   ];
 });
 
 // ========== DRAWER MENU WIDGET ==========
 
-/// Tamgaci Drawer Menü Widget'ı
+/// Drawer menü widget'ı
 class TamgaciDrawerMenu extends ConsumerStatefulWidget {
-  /// Drawer genişliği
-  final double? width;
-
-  /// Header yüksekliği
-  final double? headerHeight;
-
-  /// Menü öğelerini özelleştirme
-  final List<DrawerMenuItem>? customMenuItems;
-
-  const TamgaciDrawerMenu({
-    super.key,
-    this.width,
-    this.headerHeight,
-    this.customMenuItems,
-  });
+  const TamgaciDrawerMenu({super.key});
 
   @override
   ConsumerState<TamgaciDrawerMenu> createState() => _TamgaciDrawerMenuState();
@@ -246,589 +321,414 @@ class TamgaciDrawerMenu extends ConsumerStatefulWidget {
 class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   @override
   Widget build(BuildContext context) {
-    final activeRoute = ref.watch(drawerMenuProvider);
-    final userProfileAsync = ref.watch(userProfileProvider);
     final menuItems = ref.watch(drawerMenuItemsProvider);
-
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final drawerState = ref.watch(drawerMenuProvider);
+    final activeRoute = drawerState['activeRoute'] as String;
+    final userProfile = ref.watch(userProfileProvider);
 
     return Drawer(
-      width: widget.width ?? TamgaciConstants.sidebarWidth(context),
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
       child: Column(
         children: [
-          // Drawer Header
-          userProfileAsync.when(
-            data: (userProfile) => _buildDrawerHeader(userProfile),
-            loading: () => _buildDrawerHeaderLoading(),
-            error: (_, __) => _buildDrawerHeaderError(),
+          _buildHeader(userProfile),
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.zero,
+              itemCount: menuItems.length,
+              itemBuilder: (context, index) {
+                final item = menuItems[index];
+                return _buildMenuItem(item, activeRoute);
+              },
+            ),
           ),
-
-          // Menü Öğeleri
-          Expanded(child: _buildMenuItems(menuItems, activeRoute)),
-
-          // Drawer Footer
-          _buildDrawerFooter(),
+          _buildFooter(),
         ],
       ),
     );
   }
 
-  /// Drawer header'ını oluşturur
-  Widget _buildDrawerHeader(UserProfile userProfile) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
+  Widget _buildHeader(AsyncValue<UserProfile?> userProfile) {
     return Container(
-      height: widget.headerHeight ??
-          TamgaciConstants.getResponsiveValue(
-            context,
-            mobile: 250.0,
-            tablet: 260.0,
-            desktop: 270.0,
-            wideDesktop: 280.0,
-          ),
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  TamgaciConstants.primaryColorDark,
-                  TamgaciConstants.primaryDarkDark
-                ]
-              : [TamgaciConstants.primaryColor, TamgaciConstants.primaryDark],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: TamgaciConstants.paddingMedium(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Üst kısım - Kurlar
-              _buildCurrencyRates(),
-
-              const SizedBox(height: TamgaciConstants.spaceMD),
-
-              // Kullanıcı Avatar'ı
-              _buildUserAvatar(userProfile),
-
-              const SizedBox(height: TamgaciConstants.spaceMD),
-
-              // Kullanıcı Bilgileri
-              _buildUserInfo(userProfile),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Drawer header loading
-  Widget _buildDrawerHeaderLoading() {
-    return Container(
-      height: widget.headerHeight ??
-          TamgaciConstants.getResponsiveValue(
-            context,
-            mobile: 250.0,
-            tablet: 260.0,
-            desktop: 270.0,
-            wideDesktop: 280.0,
-          ),
-      width: double.infinity,
+      height: 200,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [TamgaciConstants.primaryColor, TamgaciConstants.primaryDark],
-        ),
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-        ),
-      ),
-    );
-  }
-
-  /// Drawer header error
-  Widget _buildDrawerHeaderError() {
-    return Container(
-      height: widget.headerHeight ??
-          TamgaciConstants.getResponsiveValue(
-            context,
-            mobile: 250.0,
-            tablet: 260.0,
-            desktop: 270.0,
-            wideDesktop: 280.0,
-          ),
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [TamgaciConstants.primaryColor, TamgaciConstants.primaryDark],
+          colors: [
+            AppColors.primary,
+            AppColors.primaryDark,
+          ],
         ),
       ),
       child: SafeArea(
         child: Padding(
-          padding: TamgaciConstants.paddingMedium(context),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Kullanıcı Avatar'ı
-              _buildUserAvatar(null),
-
-              const SizedBox(height: TamgaciConstants.spaceMD),
-
-              // Kullanıcı Bilgileri
-              _buildUserInfoError(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Kullanıcı avatar'ını oluşturur
-  Widget _buildUserAvatar(UserProfile? userProfile) {
-    return Container(
-      width: TamgaciConstants.getResponsiveValue(
-        context,
-        mobile: 70.0,
-        tablet: 80.0,
-        desktop: 90.0,
-        wideDesktop: 100.0,
-      ),
-      height: TamgaciConstants.getResponsiveValue(
-        context,
-        mobile: 70.0,
-        tablet: 80.0,
-        desktop: 90.0,
-        wideDesktop: 100.0,
-      ),
-      decoration: BoxDecoration(
-        color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.2),
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
-      child: userProfile?.profilePhotoUrl != null
-          ? ClipOval(
-              child: Image.file(
-                File(userProfile!.profilePhotoUrl!),
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Icon(
-                  Icons.person,
-                  size: TamgaciConstants.getResponsiveValue(
-                    context,
-                    mobile: 35.0,
-                    tablet: 40.0,
-                    desktop: 45.0,
-                    wideDesktop: 50.0,
+              // Logo ve uygulama adı
+              Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.account_balance,
+                      color: Colors.white,
+                      size: 30,
+                    ),
                   ),
-                  color: TamgaciConstants.textOnPrimary,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'TAMGACI',
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        Text(
+                          'Ön Muhasebe',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              // Kullanıcı bilgileri
+              userProfile.when(
+                data: (profile) => _buildUserInfo(profile),
+                loading: () =>
+                    const CircularProgressIndicator(color: Colors.white),
+                error: (error, stack) => Text(
+                  'Kullanıcı bilgisi yüklenemedi',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
                 ),
               ),
-            )
-          : Icon(
-              Icons.person,
-              size: TamgaciConstants.getResponsiveValue(
-                context,
-                mobile: 35.0,
-                tablet: 40.0,
-                desktop: 45.0,
-                wideDesktop: 50.0,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserInfo(UserProfile? profile) {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 25,
+          backgroundColor: Colors.white.withValues(alpha: 0.2),
+          child: const Icon(Icons.person, color: Colors.white),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Kullanıcı',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
-              color: TamgaciConstants.textOnPrimary,
-            ),
-    );
-  }
-
-  /// Kullanıcı bilgilerini oluşturur
-  Widget _buildUserInfo(UserProfile userProfile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Kullanıcı Adı
-        Text(
-          userProfile.fullName,
-          style: GoogleFonts.poppins(
-            fontSize: TamgaciConstants.getResponsiveValue(
-              context,
-              mobile: 18.0,
-              tablet: 20.0,
-              desktop: 22.0,
-              wideDesktop: 24.0,
-            ),
-            fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textOnPrimary,
-          ),
-        ),
-        const SizedBox(height: TamgaciConstants.spaceXS),
-        // Kullanıcı E-posta
-        Text(
-          userProfile.email,
-          style: GoogleFonts.poppins(
-            fontSize: TamgaciConstants.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 13.0,
-              desktop: 14.0,
-              wideDesktop: 15.0,
-            ),
-            fontWeight: FontWeight.w400,
-            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
-          ),
-        ),
-        const SizedBox(height: TamgaciConstants.spaceXS),
-        // Kullanıcı Rolü
-        Text(
-          userProfile.role,
-          style: GoogleFonts.poppins(
-            fontSize: TamgaciConstants.getResponsiveValue(
-              context,
-              mobile: 11.0,
-              tablet: 12.0,
-              desktop: 13.0,
-              wideDesktop: 14.0,
-            ),
-            fontWeight: FontWeight.w500,
-            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.9),
+              Text(
+                'email@example.com',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  /// Kullanıcı bilgileri error
-  Widget _buildUserInfoError() {
+  Widget _buildMenuItem(DrawerMenuItem item, String activeRoute) {
+    final isActive = item.route == activeRoute;
+    final hasSubItems = item.subItems != null && item.subItems!.isNotEmpty;
+    final isExpanded =
+        ref.watch(drawerMenuProvider)['expandedItems']?.contains(item.id) ??
+            false;
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Kullanıcı',
-          style: GoogleFonts.poppins(
-            fontSize: TamgaciConstants.getResponsiveValue(
-              context,
-              mobile: 18.0,
-              tablet: 20.0,
-              desktop: 22.0,
-              wideDesktop: 24.0,
-            ),
-            fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textOnPrimary,
-          ),
-        ),
-        const SizedBox(height: TamgaciConstants.spaceXS),
-        Text(
-          'kullanici@tamgaci.com',
-          style: GoogleFonts.poppins(
-            fontSize: TamgaciConstants.getResponsiveValue(
-              context,
-              mobile: 12.0,
-              tablet: 13.0,
-              desktop: 14.0,
-              wideDesktop: 15.0,
-            ),
-            fontWeight: FontWeight.w400,
-            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
-          ),
-        ),
-        const SizedBox(height: TamgaciConstants.spaceXS),
-        Text(
-          'Kullanıcı',
-          style: GoogleFonts.poppins(
-            fontSize: TamgaciConstants.getResponsiveValue(
-              context,
-              mobile: 11.0,
-              tablet: 12.0,
-              desktop: 13.0,
-              wideDesktop: 14.0,
-            ),
-            fontWeight: FontWeight.w500,
-            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.9),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// Kurlar widget'ı
-  Widget _buildCurrencyRates() {
-    return Consumer(
-      builder: (context, ref, child) {
-        final usdEurRates = ref.watch(usdEurRatesProvider);
-        final selectedCurrency = ref.watch(selectedCurrencyProvider);
-
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            _buildCurrencyRateItem(usdEurRates['USD']!, selectedCurrency),
-            const SizedBox(width: 8),
-            _buildCurrencyRateItem(usdEurRates['EUR']!, selectedCurrency),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Tek kur öğesi
-  Widget _buildCurrencyRateItem(Currency currency, Currency selectedCurrency) {
-    final rateText = ExchangeRateService.formatCurrencyRate(
-      currency: currency,
-      selectedCurrency: selectedCurrency,
-      decimalPlaces: 2,
-    );
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            currency.symbol,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            rateText.split('=').last.trim(),
-            style: GoogleFonts.poppins(
-              fontSize: 9,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Menü öğelerini oluşturur
-  Widget _buildMenuItems(List<DrawerMenuItem> menuItems, String activeRoute) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemCount: menuItems.length,
-      separatorBuilder: (context, index) => Divider(
-        height: 1,
-        color: isDark
-            ? TamgaciConstants.textSecondaryDark
-            : TamgaciConstants.textSecondary,
-      ),
-      itemBuilder: (context, index) {
-        final item = menuItems[index];
-        final isActive = item.route == activeRoute;
-
-        return ListTile(
+        ListTile(
           leading: Icon(
             item.icon,
-            color: isActive
-                ? (isDark
-                    ? TamgaciConstants.primaryColorDark
-                    : TamgaciConstants.primaryColor)
-                : (isDark
-                    ? TamgaciConstants.textSecondaryDark
-                    : TamgaciConstants.textSecondary),
+            color: isActive ? AppColors.primary : Colors.grey[600],
+            size: 24,
           ),
           title: Text(
             item.title,
             style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-              color: isActive
-                  ? (isDark
-                      ? TamgaciConstants.primaryColorDark
-                      : TamgaciConstants.primaryColor)
-                  : (isDark
-                      ? TamgaciConstants.textPrimaryDark
-                      : TamgaciConstants.textPrimary),
+              fontSize: 16,
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+              color: isActive ? AppColors.primary : Colors.grey[800],
             ),
           ),
-          trailing: item.badgeCount != null && item.badgeCount! > 0
-              ? Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: TamgaciConstants.errorColor,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    item.badgeCount.toString(),
-                    style: GoogleFonts.poppins(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+          trailing: hasSubItems
+              ? Icon(
+                  isExpanded ? Icons.expand_less : Icons.expand_more,
+                  color: Colors.grey[600],
                 )
-              : null,
+              : item.badgeCount != null && item.badgeCount! > 0
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        item.badgeCount.toString(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    )
+                  : null,
           selected: isActive,
-          selectedTileColor: (isDark
-                  ? TamgaciConstants.primaryColorDark
-                  : TamgaciConstants.primaryColor)
-              .withValues(
-            alpha: 0.1,
-          ),
+          selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
           onTap: () {
-            ref.read(drawerMenuProvider.notifier).setActiveRoute(item.route);
-            Navigator.pushNamed(context, item.route);
+            if (hasSubItems) {
+              ref.read(drawerMenuProvider.notifier).toggleExpanded(item.id);
+            } else if (item.route.isNotEmpty) {
+              ref.read(drawerMenuProvider.notifier).setActiveRoute(item.route);
+              Navigator.pushNamed(context, item.route);
+            }
           },
-        );
-      },
+        ),
+        // Alt menü öğeleri
+        if (hasSubItems && isExpanded)
+          ...item.subItems!
+              .map((subItem) => _buildSubMenuItem(subItem, activeRoute)),
+      ],
     );
   }
 
-  /// Drawer footer'ını oluşturur
-  Widget _buildDrawerFooter() {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+  Widget _buildSubMenuItem(DrawerMenuItem subItem, String activeRoute) {
+    final isActive = subItem.route == activeRoute;
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark
-            ? TamgaciConstants.cardColorDark
-            : TamgaciConstants.cardColor,
-        border: Border(
-          top: BorderSide(
-            color: isDark
-                ? TamgaciConstants.textSecondaryDark
-                : TamgaciConstants.borderColor,
-            width: 1,
+      margin: const EdgeInsets.only(left: 20),
+      child: ListTile(
+        leading: Icon(
+          subItem.icon,
+          color: isActive ? AppColors.primary : Colors.grey[500],
+          size: 20,
+        ),
+        title: Text(
+          subItem.title,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+            color: isActive ? AppColors.primary : Colors.grey[700],
           ),
+        ),
+        trailing: subItem.badgeCount != null && subItem.badgeCount! > 0
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  subItem.badgeCount.toString(),
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              )
+            : null,
+        selected: isActive,
+        selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+        onTap: () {
+          if (subItem.route.isNotEmpty) {
+            ref.read(drawerMenuProvider.notifier).setActiveRoute(subItem.route);
+            Navigator.pushNamed(context, subItem.route);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border(
+          top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
       ),
       child: Column(
         children: [
-          // Profil düzenleme butonu
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, TamgaciRoutes.profile);
-              },
-              icon: const Icon(Icons.person_outline, size: 18),
-              label: Text(
-                'Profili Düzenle',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                side: BorderSide(
-                  color: (isDark
-                          ? TamgaciConstants.primaryColorDark
-                          : TamgaciConstants.primaryColor)
-                      .withValues(alpha: 0.5),
-                ),
-              ),
+          // Tema seçici
+          ListTile(
+            leading: const Icon(Icons.palette_outlined),
+            title: Text(
+              'Tema',
+              style: GoogleFonts.poppins(fontSize: 14),
             ),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => const ThemeSelectorDialog(),
+              );
+            },
           ),
-          const SizedBox(height: TamgaciConstants.spaceSM),
-          // Tema değiştirme butonu
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                _showThemeSelector(context, ref);
-              },
-              icon: Consumer(
-                builder: (context, ref, child) {
-                  final themeNotifier = ref.read(themeProvider.notifier);
-                  return Icon(themeNotifier.getThemeIcon(), size: 18);
-                },
-              ),
-              label: Consumer(
-                builder: (context, ref, child) {
-                  final themeNotifier = ref.read(themeProvider.notifier);
-                  return Text(
-                    'Tema: ${themeNotifier.getThemeName()}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  );
-                },
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                side: BorderSide(
-                  color: (isDark
-                          ? TamgaciConstants.primaryColorDark
-                          : TamgaciConstants.primaryColor)
-                      .withValues(alpha: 0.5),
+          // Para birimi seçici
+          Consumer(
+            builder: (context, ref, child) {
+              final selectedCurrency = ref.watch(selectedCurrencyProvider);
+              return ListTile(
+                leading: const Icon(Icons.currency_exchange_outlined),
+                title: Text(
+                  'Para Birimi',
+                  style: GoogleFonts.poppins(fontSize: 14),
                 ),
-              ),
-            ),
+                subtitle: Text(
+                  selectedCurrency.code ?? 'TRY',
+                  style: GoogleFonts.poppins(
+                      fontSize: 12, color: Colors.grey[600]),
+                ),
+                onTap: () {
+                  _showCurrencySelector(ref);
+                },
+              );
+            },
           ),
-          const SizedBox(height: TamgaciConstants.spaceSM),
-          // Çıkış butonu
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Çıkış işlemi
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  TamgaciRoutes.splash,
-                  (route) => false,
-                );
-              },
-              icon: const Icon(Icons.logout_outlined, size: 18),
-              label: Text(
-                'Çıkış Yap',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                foregroundColor: TamgaciConstants.errorColor,
-                side: BorderSide(
-                  color: TamgaciConstants.errorColor.withValues(alpha: 0.5),
-                ),
+          const Divider(),
+          // Çıkış yap
+          ListTile(
+            leading: const Icon(Icons.logout_outlined, color: Colors.red),
+            title: Text(
+              'Çıkış Yap',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.red,
+                fontWeight: FontWeight.w500,
               ),
             ),
+            onTap: () {
+              _showLogoutDialog();
+            },
           ),
         ],
       ),
     );
   }
 
-  /// Tema seçici dialog'unu gösterir
-  void _showThemeSelector(BuildContext context, WidgetRef ref) {
+  void _showCurrencySelector(WidgetRef ref) {
     showDialog(
       context: context,
-      builder: (context) => const ThemeSelectorDialog(),
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Para Birimi Seç',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Consumer(
+          builder: (context, ref, child) {
+            final currencies = ref.watch(exchangeRatesProvider);
+            final selectedCurrency = ref.watch(selectedCurrencyProvider);
+
+            return currencies.when(
+              data: (currencyList) => SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: currencyList.length,
+                  itemBuilder: (context, index) {
+                    final currency = currencyList[index];
+                    final isSelected = selectedCurrency.code == currency.code;
+
+                    return ListTile(
+                      leading: Text(
+                        currency.symbol,
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      title: Text(currency.name),
+                      subtitle: Text(currency.code),
+                      trailing: isSelected
+                          ? const Icon(Icons.check, color: AppColors.primary)
+                          : null,
+                      onTap: () {
+                        ref
+                            .read(selectedCurrencyProvider.notifier)
+                            .selectCurrency(currency);
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Text('Hata: $error'),
+            );
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Çıkış Yap',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Uygulamadan çıkmak istediğinizden emin misiniz?',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Çıkış işlemi burada yapılacak
+              // ref.read(authProvider.notifier).logout();
+            },
+            child: const Text(
+              'Çıkış Yap',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

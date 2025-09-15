@@ -169,8 +169,8 @@ class ExchangeRatesWidget extends ConsumerWidget {
 
     // Seçili para birimine göre kur formatla
     final rateText = ExchangeRateService.formatCurrencyRate(
-      currency: currency,
-      selectedCurrency: selectedCurrency,
+      currency.exchangeRate,
+      currency.code,
     );
 
     return Row(
@@ -338,7 +338,6 @@ class ExchangeRateDetailWidget extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final selectedCurrency = ref.watch(selectedCurrencyProvider);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -409,8 +408,8 @@ class ExchangeRateDetailWidget extends ConsumerWidget {
                   ),
                   Text(
                     ExchangeRateService.formatCurrencyRate(
-                      currency: currency,
-                      selectedCurrency: selectedCurrency,
+                      currency.exchangeRate,
+                      currency.code,
                     ),
                     style: GoogleFonts.poppins(
                       fontSize: 16,

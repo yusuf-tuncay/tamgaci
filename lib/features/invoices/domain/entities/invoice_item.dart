@@ -1,6 +1,6 @@
 // ========== lib/features/invoices/domain/entities/invoice_item.dart ==========
 
-import '../../data/models/invoice_item_entity.dart';
+// import '../../data/models/invoice_item_entity.dart'; // Removed - using Firebase only
 
 /// Fatura kalemi domain entity'si
 class InvoiceItem {
@@ -55,40 +55,40 @@ class InvoiceItem {
     required this.createdAt,
   });
 
-  /// InvoiceItemEntity'den InvoiceItem'a dönüştürme
-  factory InvoiceItem.fromEntity(InvoiceItemEntity entity) {
+  /// JSON'dan InvoiceItem oluştur
+  factory InvoiceItem.fromJson(Map<String, dynamic> json) {
     return InvoiceItem(
-      id: entity.id,
-      invoiceId: entity.invoiceId,
-      itemOrder: entity.itemOrder,
-      productName: entity.productName,
-      description: entity.description,
-      quantity: entity.quantity,
-      unit: entity.unit,
-      unitPrice: entity.unitPrice / 100.0, // Kuruştan liraya
-      taxRate: entity.taxRate,
-      taxAmount: entity.taxAmount / 100.0,
-      lineTotal: entity.lineTotal / 100.0,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(entity.createdAt),
+      id: json['id'] as String,
+      invoiceId: json['invoiceId'] as String,
+      itemOrder: json['itemOrder'] as int,
+      productName: json['productName'] as String,
+      description: json['description'] as String?,
+      quantity: (json['quantity'] as num).toDouble(),
+      unit: json['unit'] as String,
+      unitPrice: (json['unitPrice'] as num).toDouble(),
+      taxRate: (json['taxRate'] as num).toDouble(),
+      taxAmount: (json['taxAmount'] as num).toDouble(),
+      lineTotal: (json['lineTotal'] as num).toDouble(),
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 
-  /// InvoiceItem'dan InvoiceItemEntity'ye dönüştürme
-  InvoiceItemEntity toEntity() {
-    return InvoiceItemEntity(
-      id: id,
-      invoiceId: invoiceId,
-      itemOrder: itemOrder,
-      productName: productName,
-      description: description,
-      quantity: quantity,
-      unit: unit,
-      unitPrice: (unitPrice * 100).round(), // Liradan kuruşa
-      taxRate: taxRate,
-      taxAmount: (taxAmount * 100).round(),
-      lineTotal: (lineTotal * 100).round(),
-      createdAt: createdAt.millisecondsSinceEpoch,
-    );
+  /// InvoiceItem'ı JSON'a çevir
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'invoiceId': invoiceId,
+      'itemOrder': itemOrder,
+      'productName': productName,
+      'description': description,
+      'quantity': quantity,
+      'unit': unit,
+      'unitPrice': unitPrice,
+      'taxRate': taxRate,
+      'taxAmount': taxAmount,
+      'lineTotal': lineTotal,
+      'createdAt': createdAt.toIso8601String(),
+    };
   }
 
   /// CopyWith metodu

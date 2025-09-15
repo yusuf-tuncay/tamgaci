@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/contact.dart';
+import '../../domain/entities/contact_type.dart';
 import '../../domain/repositories/contact_repository.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 
@@ -15,13 +16,12 @@ class FirebaseContactRepository implements ContactRepository {
   // ========== CONTACT OPERATIONS ==========
 
   @override
-  Future<int> insertContact(Contact contact) async {
+  Future<String> insertContact(Contact contact) async {
     try {
       final docRef = _firestore.collection(_collectionName).doc();
-      final contactData =
-          _contactToMap(contact.copyWith(id: docRef.id.hashCode));
+      final contactData = _contactToMap(contact.copyWith(id: docRef.id));
       await docRef.set(contactData);
-      return docRef.id.hashCode;
+      return docRef.id;
     } catch (e) {
       AppLogger.error('Error creating contact', e);
       rethrow;
@@ -33,7 +33,7 @@ class FirebaseContactRepository implements ContactRepository {
     try {
       await _firestore
           .collection(_collectionName)
-          .doc(contact.id.toString())
+          .doc(contact.id)
           .update(_contactToMap(contact));
     } catch (e) {
       AppLogger.error('Error updating contact', e);
@@ -42,9 +42,9 @@ class FirebaseContactRepository implements ContactRepository {
   }
 
   @override
-  Future<void> deleteContact(int id) async {
+  Future<void> deleteContact(String id) async {
     try {
-      await _firestore.collection(_collectionName).doc(id.toString()).delete();
+      await _firestore.collection(_collectionName).doc(id).delete();
     } catch (e) {
       AppLogger.error('Error deleting contact', e);
       rethrow;
@@ -52,10 +52,10 @@ class FirebaseContactRepository implements ContactRepository {
   }
 
   @override
-  Future<Contact?> getContactById(int id) async {
+  Future<Contact?> getContactById(String id) async {
     try {
       final docSnapshot =
-          await _firestore.collection(_collectionName).doc(id.toString()).get();
+          await _firestore.collection(_collectionName).doc(id).get();
       if (!docSnapshot.exists) return null;
       return _contactFromMap(docSnapshot);
     } catch (e) {
@@ -318,7 +318,7 @@ class FirebaseContactRepository implements ContactRepository {
     }
   }
 
-  Future<void> toggleFavorite(int id) async {
+  Future<void> toggleFavorite(String id) async {
     try {
       final contact = await getContactById(id);
       if (contact != null) {
@@ -330,7 +330,7 @@ class FirebaseContactRepository implements ContactRepository {
     }
   }
 
-  Future<void> toggleActive(int id) async {
+  Future<void> toggleActive(String id) async {
     try {
       final contact = await getContactById(id);
       if (contact != null) {

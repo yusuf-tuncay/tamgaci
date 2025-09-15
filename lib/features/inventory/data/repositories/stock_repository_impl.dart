@@ -1,222 +1,322 @@
 // ========== STOCK REPOSITORY IMPLEMENTATION ==========
 // lib/features/inventory/data/repositories/stock_repository_impl.dart
 
-import '../../domain/repositories/stock_repository.dart';
-import '../../domain/entities/stock.dart';
-import '../datasources/stock_dao.dart';
-import '../models/stock_entity.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tamgaci/core/repositories/firebase_repository.dart';
+import 'package:tamgaci/features/inventory/domain/entities/stock.dart';
+import 'package:tamgaci/features/inventory/domain/repositories/stock_repository.dart';
 
-class StockRepositoryImpl implements StockRepository {
-  final StockDao _stockDao;
+/// Firebase Stock Repository Implementation
+class StockRepositoryImpl extends FirebaseRepository<Stock>
+    implements StockRepository {
+  static const String _stocksCollection = 'stocks';
 
-  StockRepositoryImpl(this._stockDao);
+  @override
+  String get collectionName => _stocksCollection;
+
+  @override
+  String get entityTypeName => 'Stock';
+
+  @override
+  Map<String, dynamic> entityToMap(Stock entity) => entity.toMap();
+
+  @override
+  Stock mapToEntity(Map<String, dynamic> map) => Stock.fromMap(map);
+
+  @override
+  String getEntityId(Stock entity) => entity.id.toString();
+
+  @override
+  Stock setEntityId(Stock entity, String id) =>
+      entity.copyWith(id: int.tryParse(id) ?? entity.id);
+
+  @override
+  DateTime getEntityCreatedAt(Stock entity) => entity.createdAt;
+
+  @override
+  DateTime getEntityUpdatedAt(Stock entity) => entity.updatedAt;
+
+  @override
+  Stock setEntityUpdatedAt(Stock entity, DateTime timestamp) =>
+      entity.copyWith(updatedAt: timestamp);
+
+  @override
+  String getEntityCreatedBy(Stock entity) => '';
+
+  @override
+  String? getEntityUpdatedBy(Stock entity) => null;
+
+  @override
+  Stock setEntityUpdatedBy(Stock entity, String userId) => entity;
 
   @override
   Future<List<Stock>> getAllStocks() async {
     try {
-      final entities = await _stockDao.getAllStocks();
-      return entities.map((entity) => _mapEntityToDomain(entity)).toList();
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => Stock.fromMap(doc.data())).toList();
     } catch (e) {
-      throw Exception('Stoklar getirilemedi: $e');
+      throw Exception('Failed to get all stocks: $e');
     }
   }
 
   @override
   Future<List<Stock>> getActiveStocks() async {
     try {
-      final entities = await _stockDao.getActiveStocks();
-      return entities.map((entity) => _mapEntityToDomain(entity)).toList();
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('isActive', isEqualTo: true)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => Stock.fromMap(doc.data())).toList();
     } catch (e) {
-      throw Exception('Aktif stoklar getirilemedi: $e');
+      throw Exception('Failed to get active stocks: $e');
     }
   }
 
   @override
   Future<Stock?> getStockById(int id) async {
     try {
-      final entity = await _stockDao.getStockById(id);
-      return entity != null ? _mapEntityToDomain(entity) : null;
+      final doc = await firestore
+          .collection(_stocksCollection)
+          .where('id', isEqualTo: id)
+          .limit(1)
+          .get();
+
+      if (doc.docs.isNotEmpty) {
+        return Stock.fromMap(doc.docs.first.data());
+      }
+      return null;
     } catch (e) {
-      throw Exception('Stok getirilemedi: $e');
+      throw Exception('Failed to get stock by id: $e');
     }
   }
 
   @override
   Future<List<Stock>> getStocksByProductId(int productId) async {
     try {
-      final entities = await _stockDao.getStocksByProductId(productId);
-      return entities.map((entity) => _mapEntityToDomain(entity)).toList();
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('productId', isEqualTo: productId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => Stock.fromMap(doc.data())).toList();
     } catch (e) {
-      throw Exception('Ürün stokları getirilemedi: $e');
+      throw Exception('Failed to get stocks by product id: $e');
     }
   }
 
   @override
   Future<List<Stock>> getStocksByWarehouseId(int warehouseId) async {
     try {
-      final entities = await _stockDao.getStocksByWarehouseId(warehouseId);
-      return entities.map((entity) => _mapEntityToDomain(entity)).toList();
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('warehouseId', isEqualTo: warehouseId)
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => Stock.fromMap(doc.data())).toList();
     } catch (e) {
-      throw Exception('Depo stokları getirilemedi: $e');
+      throw Exception('Failed to get stocks by warehouse id: $e');
     }
   }
 
   @override
-  Future<Stock?> getStockByProductAndWarehouse(int productId, int warehouseId) async {
+  Future<Stock?> getStockByProductAndWarehouse(
+      int productId, int warehouseId) async {
     try {
-      final entity = await _stockDao.getStockByProductAndWarehouse(productId, warehouseId);
-      return entity != null ? _mapEntityToDomain(entity) : null;
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('productId', isEqualTo: productId)
+          .where('warehouseId', isEqualTo: warehouseId)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        return Stock.fromMap(snapshot.docs.first.data());
+      }
+      return null;
     } catch (e) {
-      throw Exception('Stok getirilemedi: $e');
+      throw Exception('Failed to get stock by product and warehouse: $e');
     }
   }
 
   @override
   Future<List<Stock>> getLowStocks() async {
     try {
-      final entities = await _stockDao.getLowStocks();
-      return entities.map((entity) => _mapEntityToDomain(entity)).toList();
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      final stocks =
+          snapshot.docs.map((doc) => Stock.fromMap(doc.data())).toList();
+
+      // Filter low stocks based on quantity <= minimumQuantity
+      return stocks.where((stock) => stock.isCritical).toList();
     } catch (e) {
-      throw Exception('Düşük stoklar getirilemedi: $e');
+      throw Exception('Failed to get low stocks: $e');
     }
   }
 
   @override
   Future<List<Stock>> getOverstockedItems() async {
     try {
-      final entities = await _stockDao.getOverstockedItems();
-      return entities.map((entity) => _mapEntityToDomain(entity)).toList();
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      final stocks =
+          snapshot.docs.map((doc) => Stock.fromMap(doc.data())).toList();
+
+      // Filter overstocked items based on quantity >= maximumQuantity
+      return stocks.where((stock) => stock.isOverstocked).toList();
     } catch (e) {
-      throw Exception('Fazla stoklar getirilemedi: $e');
+      throw Exception('Failed to get overstocked items: $e');
     }
   }
 
   @override
   Future<Stock> createStock(Stock stock) async {
     try {
-      final entity = _mapDomainToEntity(stock);
-      final id = await _stockDao.insertStock(entity);
-      return stock.copyWith(id: id);
+      // Generate new ID
+      final newId = DateTime.now().millisecondsSinceEpoch;
+      final newStock = stock.copyWith(
+        id: newId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      await firestore
+          .collection(_stocksCollection)
+          .doc(newId.toString())
+          .set(newStock.toMap());
+
+      return newStock;
     } catch (e) {
-      throw Exception('Stok oluşturulamadı: $e');
+      throw Exception('Failed to create stock: $e');
     }
   }
 
   @override
   Future<Stock> updateStock(Stock stock) async {
     try {
-      final entity = _mapDomainToEntity(stock);
-      await _stockDao.updateStock(entity);
-      return stock;
+      final updatedStock = stock.copyWith(updatedAt: DateTime.now());
+
+      await firestore
+          .collection(_stocksCollection)
+          .doc(stock.id.toString())
+          .update(updatedStock.toMap());
+
+      return updatedStock;
     } catch (e) {
-      throw Exception('Stok güncellenemedi: $e');
+      throw Exception('Failed to update stock: $e');
     }
   }
 
   @override
   Future<void> deleteStock(int id) async {
     try {
-      await _stockDao.deleteStockById(id);
+      await firestore.collection(_stocksCollection).doc(id.toString()).delete();
     } catch (e) {
-      throw Exception('Stok silinemedi: $e');
+      throw Exception('Failed to delete stock: $e');
     }
   }
 
   @override
   Future<void> updateStockQuantity(int id, double quantity) async {
     try {
-      await _stockDao.updateStockQuantity(id, quantity, DateTime.now());
+      await firestore.collection(_stocksCollection).doc(id.toString()).update({
+        'quantity': quantity,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      throw Exception('Stok miktarı güncellenemedi: $e');
+      throw Exception('Failed to update stock quantity: $e');
     }
   }
 
   @override
   Future<void> updateStockPrice(int id, double unitPrice) async {
     try {
-      await _stockDao.updateStockPrice(id, unitPrice, DateTime.now());
+      await firestore.collection(_stocksCollection).doc(id.toString()).update({
+        'unitPrice': unitPrice,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      throw Exception('Stok fiyatı güncellenemedi: $e');
+      throw Exception('Failed to update stock price: $e');
     }
   }
 
   @override
   Future<int> getStockCount() async {
     try {
-      final count = await _stockDao.getStockCount();
-      return count ?? 0;
+      final snapshot = await firestore.collection(_stocksCollection).get();
+
+      return snapshot.docs.length;
     } catch (e) {
-      throw Exception('Stok sayısı getirilemedi: $e');
+      throw Exception('Failed to get stock count: $e');
     }
   }
 
   @override
   Future<int> getActiveStockCount() async {
     try {
-      final count = await _stockDao.getActiveStockCount();
-      return count ?? 0;
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      return snapshot.docs.length;
     } catch (e) {
-      throw Exception('Aktif stok sayısı getirilemedi: $e');
+      throw Exception('Failed to get active stock count: $e');
     }
   }
 
   @override
   Future<int> getLowStockCount() async {
     try {
-      final count = await _stockDao.getLowStockCount();
-      return count ?? 0;
+      final lowStocks = await getLowStocks();
+      return lowStocks.length;
     } catch (e) {
-      throw Exception('Düşük stok sayısı getirilemedi: $e');
+      throw Exception('Failed to get low stock count: $e');
     }
   }
 
   @override
   Future<double> getTotalStockValue() async {
     try {
-      final value = await _stockDao.getTotalStockValue();
-      return value ?? 0.0;
+      final snapshot = await firestore
+          .collection(_stocksCollection)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      double totalValue = 0.0;
+      for (final doc in snapshot.docs) {
+        final stock = Stock.fromMap(doc.data());
+        totalValue += stock.totalValue;
+      }
+
+      return totalValue;
     } catch (e) {
-      throw Exception('Toplam stok değeri getirilemedi: $e');
+      throw Exception('Failed to get total stock value: $e');
     }
   }
 
-  /// Entity'yi Domain'e çevirir
-  Stock _mapEntityToDomain(StockEntity entity) {
-    return Stock(
-      id: entity.id,
-      productId: entity.productId,
-      warehouseId: entity.warehouseId,
-      quantity: entity.quantity,
-      minimumQuantity: entity.minimumQuantity,
-      maximumQuantity: entity.maximumQuantity,
-      unit: entity.unit,
-      currency: entity.currency,
-      unitPrice: entity.unitPrice,
-      location: entity.location,
-      notes: entity.notes,
-      isActive: entity.isActive,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-    );
+  // ========== FIREBASE REPOSITORY IMPLEMENTATION ==========
+
+  @override
+  Stock fromFirestore(Map<String, dynamic> data) {
+    return Stock.fromMap(data);
   }
 
-  /// Domain'i Entity'ye çevirir
-  StockEntity _mapDomainToEntity(Stock stock) {
-    return StockEntity(
-      id: stock.id,
-      productId: stock.productId,
-      warehouseId: stock.warehouseId,
-      quantity: stock.quantity,
-      minimumQuantity: stock.minimumQuantity,
-      maximumQuantity: stock.maximumQuantity,
-      unit: stock.unit,
-      currency: stock.currency,
-      unitPrice: stock.unitPrice,
-      location: stock.location,
-      notes: stock.notes,
-      isActive: stock.isActive,
-      createdAt: stock.createdAt,
-      updatedAt: stock.updatedAt,
-    );
+  @override
+  Map<String, dynamic> toFirestore(Stock entity) {
+    return entity.toMap();
   }
 }

@@ -3,20 +3,10 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../../data/datasources/contact_dao.dart';
-import '../../data/repositories/contact_repository_impl.dart';
+import '../../domain/entities/contact_type.dart';
 import '../../data/repositories/firebase_contact_repository.dart';
 import '../../domain/entities/contact.dart';
 import '../../domain/repositories/contact_repository.dart';
-
-/// Contact DAO provider
-final contactDaoProvider = Provider<ContactDao?>((ref) {
-  if (kIsWeb) {
-    // Web platformunda database olmadığı için null döndür
-    return null;
-  }
-  throw UnimplementedError('ContactDao provider must be overridden');
-});
 
 /// Contact repository provider
 final contactRepositoryProvider = Provider<ContactRepository>((ref) {
@@ -24,13 +14,9 @@ final contactRepositoryProvider = Provider<ContactRepository>((ref) {
   if (kIsWeb) {
     return FirebaseContactRepository();
   }
-  
-  final dao = ref.watch(contactDaoProvider);
-  if (dao == null) {
-    // Web platformu için mock repository döndür
-    return _MockContactRepository();
-  }
-  return ContactRepositoryImpl(dao);
+
+  // Web platformu için mock repository döndür
+  return _MockContactRepository();
 });
 
 /// Tüm kişi/kurumlar provider
@@ -158,7 +144,7 @@ class ContactOperations extends StateNotifier<ContactOperationsState> {
   }
 
   /// Kişi/kurum sil
-  Future<void> deleteContact(int id) async {
+  Future<void> deleteContact(String id) async {
     state = state.copyWith(
         isLoading: true, errorMessage: null, successMessage: null);
 
@@ -238,6 +224,88 @@ class ContactOperations extends StateNotifier<ContactOperationsState> {
   void clearSuccess() {
     state = state.copyWith(successMessage: null);
   }
+
+  /// Kişi/kurumları sırala
+  void sortContacts(String sortBy, bool ascending) {
+    final sortedContacts = List<Contact>.from(state.contacts);
+
+    switch (sortBy) {
+      case 'name':
+        sortedContacts.sort((a, b) =>
+            ascending ? a.name.compareTo(b.name) : b.name.compareTo(a.name));
+        break;
+      case 'createdAt':
+        sortedContacts.sort((a, b) => ascending
+            ? a.createdAt.compareTo(b.createdAt)
+            : b.createdAt.compareTo(a.createdAt));
+        break;
+      case 'updatedAt':
+        sortedContacts.sort((a, b) => ascending
+            ? a.updatedAt.compareTo(b.updatedAt)
+            : b.updatedAt.compareTo(a.updatedAt));
+        break;
+    }
+
+    state = state.copyWith(contacts: sortedContacts);
+  }
+
+  /// Gelişmiş filtreleri uygula
+  Future<void> applyAdvancedFilters({
+    String? city,
+    String? country,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      List<Contact> filteredContacts = await _repository.getActiveContacts();
+
+      // Şehir filtresi
+      if (city != null && city.isNotEmpty) {
+        filteredContacts = filteredContacts
+            .where((contact) =>
+                contact.city?.toLowerCase().contains(city.toLowerCase()) ??
+                false)
+            .toList();
+      }
+
+      // Ülke filtresi
+      if (country != null && country.isNotEmpty) {
+        filteredContacts = filteredContacts
+            .where((contact) =>
+                contact.country
+                    ?.toLowerCase()
+                    .contains(country.toLowerCase()) ??
+                false)
+            .toList();
+      }
+
+      // Tarih aralığı filtresi
+      if (startDate != null && endDate != null) {
+        filteredContacts = filteredContacts
+            .where((contact) =>
+                contact.createdAt.isAfter(startDate) &&
+                contact.createdAt.isBefore(endDate))
+            .toList();
+      }
+
+      state = state.copyWith(
+        isLoading: false,
+        contacts: filteredContacts,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Filtreler uygulanırken hata oluştu: $e',
+      );
+    }
+  }
+
+  /// Gelişmiş filtreleri temizle
+  Future<void> clearAdvancedFilters() async {
+    await loadContacts();
+  }
 }
 
 /// Contact operations provider
@@ -265,7 +333,7 @@ class _MockContactRepository implements ContactRepository {
   Future<List<Contact>> getActiveContacts() async => [];
 
   @override
-  Future<Contact?> getContactById(int id) async => null;
+  Future<Contact?> getContactById(String id) async => null;
 
   @override
   Future<List<Contact>> getContactsByType(ContactType type) async => [];
@@ -280,13 +348,13 @@ class _MockContactRepository implements ContactRepository {
   Future<List<Contact>> searchContacts(String query) async => [];
 
   @override
-  Future<int> insertContact(Contact contact) async => 0;
+  Future<String> insertContact(Contact contact) async => '0';
 
   @override
   Future<void> updateContact(Contact contact) async {}
 
   @override
-  Future<void> deleteContact(int id) async {}
+  Future<void> deleteContact(String id) async {}
 
   @override
   Future<int> getContactCount() async => 0;

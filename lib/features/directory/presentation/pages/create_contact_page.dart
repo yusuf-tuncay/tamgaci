@@ -6,10 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
-import '../../../../core/validators/input_validators.dart';
+import '../../../../core/validation/input_validator.dart';
+import '../../../../core/validation/data_sanitizer.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/contact_providers.dart';
 import '../../domain/entities/contact.dart';
+import '../../domain/entities/contact_type.dart';
 
 class CreateContactPage extends ConsumerStatefulWidget {
   const CreateContactPage({super.key});
@@ -395,40 +397,78 @@ class _CreateContactPageState extends ConsumerState<CreateContactPage> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // Form validasyonu başarılı, verileri sanitize et
+      final sanitizedName = DataSanitizer.sanitizeText(_nameController.text);
+      final sanitizedEmail = _emailController.text.trim().isEmpty
+          ? null
+          : DataSanitizer.sanitizeEmail(_emailController.text);
+      final sanitizedPhone = _phoneController.text.trim().isEmpty
+          ? null
+          : DataSanitizer.sanitizePhone(_phoneController.text);
+      final sanitizedWebsite = _websiteController.text.trim().isEmpty
+          ? null
+          : DataSanitizer.sanitizeUrl(_websiteController.text);
+
+      // Ek validasyonlar
+      if (sanitizedEmail != null &&
+          !InputValidator.isValidEmail(sanitizedEmail)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Geçerli bir e-posta adresi girin'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (sanitizedPhone != null &&
+          !InputValidator.isValidPhone(sanitizedPhone)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Geçerli bir telefon numarası girin'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (sanitizedWebsite != null &&
+          !InputValidator.isValidUrl(sanitizedWebsite)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Geçerli bir web sitesi adresi girin'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       final contact = Contact(
-        name: InputValidators.formatName(_nameController.text),
-        type: _selectedType.value,
-        email: _emailController.text.trim().isEmpty
-            ? null
-            : InputValidators.formatEmail(_emailController.text),
-        phone: _phoneController.text.trim().isEmpty
-            ? null
-            : InputValidators.formatPhone(_phoneController.text),
-        address: _addressController.text.trim().isEmpty
-            ? null
-            : _addressController.text.trim(),
-        city: _cityController.text.trim().isEmpty
-            ? null
-            : _cityController.text.trim(),
-        country: _countryController.text.trim().isEmpty
-            ? null
-            : _countryController.text.trim(),
-        taxNumber: _taxNumberController.text.trim().isEmpty
-            ? null
-            : _taxNumberController.text.trim(),
-        taxOffice: _taxOfficeController.text.trim().isEmpty
-            ? null
-            : _taxOfficeController.text.trim(),
-        website: _websiteController.text.trim().isEmpty
-            ? null
-            : _websiteController.text.trim(),
-        notes: _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
+        id: '', // Will be set by repository
+        name: sanitizedName,
+        type: _selectedType,
+        email: sanitizedEmail,
+        phone: sanitizedPhone,
+        address: DataSanitizer.sanitizeText(_addressController.text),
+        city: DataSanitizer.sanitizeText(_cityController.text),
+        country: DataSanitizer.sanitizeText(_countryController.text),
+        taxNumber: DataSanitizer.sanitizeText(_taxNumberController.text),
+        taxOffice: DataSanitizer.sanitizeText(_taxOfficeController.text),
+        website: sanitizedWebsite,
+        notes: DataSanitizer.sanitizeText(_notesController.text),
         isFavorite: _isFavorite,
         isActive: _isActive,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+      );
+
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
 
       ref
@@ -436,16 +476,48 @@ class _CreateContactPageState extends ConsumerState<CreateContactPage> {
           .addContact(contact)
           .then((_) {
         if (mounted) {
+          Navigator.pop(context); // Loading dialog'u kapat
           final state = ref.read(contactOperationsProvider);
           if (state.successMessage != null) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(state.successMessage!),
                 backgroundColor: Colors.green,
+                action: SnackBarAction(
+                  label: 'Tamam',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                ),
               ),
             );
-            Navigator.pop(context);
+            Navigator.pop(context); // Sayfayı kapat
+          } else if (state.errorMessage != null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: Colors.red,
+                action: SnackBarAction(
+                  label: 'Tamam',
+                  textColor: Colors.white,
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                  },
+                ),
+              ),
+            );
           }
+        }
+      }).catchError((error) {
+        if (mounted) {
+          Navigator.pop(context); // Loading dialog'u kapat
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Hata: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       });
     }

@@ -70,4 +70,60 @@ class Warehouse {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  /// Map'ten Warehouse oluşturur
+  factory Warehouse.fromMap(Map<String, dynamic> map) {
+    return Warehouse(
+      id: map['id']?.toInt(),
+      name: map['name'] ?? '',
+      code: map['code'],
+      description: map['description'],
+      address: map['address'],
+      phone: map['phone'],
+      email: map['email'],
+      manager: map['manager'],
+      capacity: map['capacity']?.toDouble(),
+      capacityUnit: map['capacityUnit'],
+      currency: map['currency'] ?? 'TRY',
+      isActive: map['isActive'] ?? true,
+      isDefault: map['isDefault'] ?? false,
+      createdAt: DateTime.parse(map['createdAt']),
+      updatedAt: DateTime.parse(map['updatedAt']),
+    );
+  }
+
+  /// Warehouse'u Map'e çevirir
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'name': name,
+      'code': code,
+      'description': description,
+      'address': address,
+      'phone': phone,
+      'email': email,
+      'manager': manager,
+      'capacity': capacity,
+      'capacityUnit': capacityUnit,
+      'currency': currency,
+      'isActive': isActive,
+      'isDefault': isDefault,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  @override
+  String toString() {
+    return 'Warehouse(id: $id, name: $name, code: $code, isActive: $isActive)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Warehouse && other.id == id;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

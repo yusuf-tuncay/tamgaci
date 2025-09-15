@@ -8,8 +8,8 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
-import '../providers/reports_providers.dart';
 import '../../../../core/providers/currency_providers.dart';
+// import '../../presentation/providers/reports_providers.dart';
 
 /// Raporlar ana sayfası
 class ReportsOverviewPage extends ConsumerStatefulWidget {
@@ -25,13 +25,15 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final reportsSummaryAsync = ref.watch(reportsSummaryProvider);
+    final reportsSummaryAsync = AsyncValue.data(_DummyReportsSummary());
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Raporlar',
         showDrawer: true,
@@ -45,12 +47,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
       drawer: const TamgaciDrawerMenu(),
       body: RefreshIndicator(
         onRefresh: () async {
-          // Rapor verilerini yenile
-          ref.invalidate(reportsSummaryProvider);
-          ref.invalidate(incomeExpenseReportProvider);
-          ref.invalidate(customerReportProvider);
-          ref.invalidate(supplierReportProvider);
-          ref.invalidate(productReportProvider);
+          // Geçici stub: gerçek providerlar bağlanana kadar no-op
           await Future.delayed(const Duration(seconds: 1));
         },
         child: SingleChildScrollView(
@@ -89,7 +86,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
   /// Dönem seçici oluşturur
   Widget _buildPeriodSelector() {
     final selectedCurrency = ref.watch(selectedCurrencyProvider);
-    
+
     return Card(
       elevation: 1,
       shape: RoundedRectangleBorder(
@@ -164,7 +161,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
   }
 
   /// Özet kartları oluşturur
-  Widget _buildSummaryCards(ReportsSummary summary) {
+  Widget _buildSummaryCards(_DummyReportsSummary summary) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -253,7 +250,8 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 height: 120,
                 decoration: BoxDecoration(
                   color: TamgaciConstants.cardColor,
-                  borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+                  borderRadius:
+                      BorderRadius.circular(TamgaciConstants.radiusMD),
                   boxShadow: TamgaciConstants.shadowLight,
                 ),
                 child: const Center(
@@ -267,7 +265,8 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 height: 120,
                 decoration: BoxDecoration(
                   color: TamgaciConstants.cardColor,
-                  borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+                  borderRadius:
+                      BorderRadius.circular(TamgaciConstants.radiusMD),
                   boxShadow: TamgaciConstants.shadowLight,
                 ),
                 child: const Center(
@@ -350,11 +349,10 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color:
-                        (isPositive
-                                ? TamgaciConstants.successColor
-                                : TamgaciConstants.errorColor)
-                            .withValues(alpha: 0.1),
+                    color: (isPositive
+                            ? TamgaciConstants.successColor
+                            : TamgaciConstants.errorColor)
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(
                       TamgaciConstants.radiusXS,
                     ),
@@ -677,4 +675,20 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
       ),
     );
   }
+}
+
+// Temporary stub to satisfy types until real providers wired
+class _DummyReportsSummary {
+  final String formattedTotalIncome = '₺0';
+  final String formattedIncomeChange = '0%';
+  final double incomeChangePercent = 0;
+  final String formattedTotalExpense = '₺0';
+  final String formattedExpenseChange = '0%';
+  final double expenseChangePercent = 0;
+  final String formattedNetProfit = '₺0';
+  final String formattedNetProfitChange = '0%';
+  final double netProfitChangePercent = 0;
+  final int totalTransactions = 0;
+  final String formattedTransactionChange = '0%';
+  final double transactionChangePercent = 0;
 }

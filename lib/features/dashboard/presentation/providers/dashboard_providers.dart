@@ -12,6 +12,7 @@ import '../../../../features/products/presentation/providers/product_providers.d
 
 import '../../data/services/date_time_service.dart';
 import '../../data/services/stock_market_service.dart';
+import '../../domain/entities/dashboard_summary.dart';
 
 /// Güncel tarih ve saat provider'ı (her 500ms'de güncellenir)
 final currentDateTimeProvider = StreamProvider<DateTime>((ref) {
@@ -43,7 +44,7 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
   try {
     final incomesAsync = await ref.read(incomesProvider.future);
     final expensesAsync = await ref.read(expensesProvider.future);
-    final invoicesAsync = await ref.read(invoicesProvider.future);
+    // final invoicesAsync = await ref.read(invoicesProvider.future);
     final customersAsync = await ref.read(customersProvider.future);
     final suppliersAsync = await ref.read(suppliersProvider.future);
     final productsAsync = await ref.read(productsStreamProvider.future);
@@ -79,23 +80,14 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
       return incomeDate.isAtSameMomentAs(lastMonth);
     }).toList();
 
-    // Geçen ay giderleri
-    final lastMonthExpenses = expensesAsync.where((expense) {
-      final expenseDate = DateTime(
-        expense.expenseDate.year,
-        expense.expenseDate.month,
-      );
-      return expenseDate.isAtSameMomentAs(lastMonth);
-    }).toList();
-
     // Bekleyen faturalar
-    final pendingInvoices = invoicesAsync
-        .where(
-          (invoice) =>
-              invoice.status.toString().contains('sent') ||
-              invoice.status.toString().contains('unpaid'),
-        )
-        .toList();
+    // final pendingInvoices = invoicesAsync
+    //     .where(
+    //       (invoice) =>
+    //           invoice.status.toString().contains('sent') ||
+    //           invoice.status.toString().contains('unpaid'),
+    //     )
+    //     .toList();
 
     // Toplam hesaplamalar
     final currentMonthIncomeTotal = currentMonthIncomes.fold<double>(
@@ -110,10 +102,6 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
       0,
       (sum, income) => sum + income.amount,
     );
-    final lastMonthExpenseTotal = lastMonthExpenses.fold<double>(
-      0,
-      (sum, expense) => sum + expense.amount,
-    );
 
     // Yüzde değişim hesaplamaları
     final incomeChangePercent = lastMonthIncomeTotal > 0
@@ -121,55 +109,57 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
             lastMonthIncomeTotal *
             100)
         : 0.0;
-    final expenseChangePercent = lastMonthExpenseTotal > 0
-        ? ((currentMonthExpenseTotal - lastMonthExpenseTotal) /
-            lastMonthExpenseTotal *
-            100)
-        : 0.0;
+    // final expenseChangePercent = lastMonthExpenseTotal > 0
+    //     ? ((currentMonthExpenseTotal - lastMonthExpenseTotal) /
+    //         lastMonthExpenseTotal *
+    //         100)
+    //     : 0.0;
 
     final netProfit = currentMonthIncomeTotal - currentMonthExpenseTotal;
-    final lastMonthNetProfit = lastMonthIncomeTotal - lastMonthExpenseTotal;
-    final netProfitChangePercent = lastMonthNetProfit > 0
-        ? ((netProfit - lastMonthNetProfit) / lastMonthNetProfit * 100)
-        : 0.0;
 
     return DashboardSummary(
-      currentMonthIncome: currentMonthIncomeTotal,
-      currentMonthExpense: currentMonthExpenseTotal,
+      totalSales: currentMonthIncomeTotal,
+      totalPurchases: currentMonthExpenseTotal,
+      totalIncome: currentMonthIncomeTotal,
+      totalExpenses: currentMonthExpenseTotal,
       netProfit: netProfit,
-      pendingInvoicesCount: pendingInvoices.length,
+      cashBalance: 50000.0, // Mock data
+      bankBalance: 75000.0, // Mock data
+      totalBalance: 125000.0, // Mock data
+      criticalStockCount: 5,
+      pendingReceivables: 25000.0, // Mock data
+      pendingPayables: 15000.0, // Mock data
+      monthlySales: currentMonthIncomeTotal,
+      lastMonthSales: lastMonthIncomeTotal,
+      salesGrowthRate: incomeChangePercent,
       totalCustomers: customersAsync.length,
       totalSuppliers: suppliersAsync.length,
       totalProducts: productsAsync.length,
-      incomeChangePercent: incomeChangePercent,
-      expenseChangePercent: expenseChangePercent,
-      netProfitChangePercent: netProfitChangePercent,
-      // Inventory test verileri (geçici)
-      lowStockCount: 5,
-      outOfStockCount: 2,
-      totalStockValue: 125000.0,
-      warehouseCount: 3,
-      recentMovementCount: 8,
+      newCustomersThisMonth: 3, // Mock data
+      newSuppliersThisMonth: 2, // Mock data
     );
   } catch (e) {
     // Hata durumunda test verileri döndür
-    return DashboardSummary(
-      currentMonthIncome: 125000.0,
-      currentMonthExpense: 85000.0,
+    return const DashboardSummary(
+      totalSales: 125000.0,
+      totalPurchases: 85000.0,
+      totalIncome: 125000.0,
+      totalExpenses: 85000.0,
       netProfit: 40000.0,
-      pendingInvoicesCount: 5,
+      cashBalance: 50000.0,
+      bankBalance: 75000.0,
+      totalBalance: 125000.0,
+      criticalStockCount: 5,
+      pendingReceivables: 25000.0,
+      pendingPayables: 15000.0,
+      monthlySales: 125000.0,
+      lastMonthSales: 110000.0,
+      salesGrowthRate: 15.5,
       totalCustomers: 12,
       totalSuppliers: 8,
       totalProducts: 45,
-      incomeChangePercent: 15.5,
-      expenseChangePercent: -8.2,
-      netProfitChangePercent: 23.7,
-      // Inventory test verileri
-      lowStockCount: 5,
-      outOfStockCount: 2,
-      totalStockValue: 125000.0,
-      warehouseCount: 3,
-      recentMovementCount: 8,
+      newCustomersThisMonth: 3,
+      newSuppliersThisMonth: 2,
     );
   }
 });
@@ -392,80 +382,6 @@ final monthlyChartDataProvider = FutureProvider<List<MonthlyChartData>>((
     ];
   }
 });
-
-/// Dashboard özet modeli
-class DashboardSummary {
-  final double currentMonthIncome;
-  final double currentMonthExpense;
-  final double netProfit;
-  final int pendingInvoicesCount;
-  final int totalCustomers;
-  final int totalSuppliers;
-  final int totalProducts;
-  final double incomeChangePercent;
-  final double expenseChangePercent;
-  final double netProfitChangePercent;
-  // Inventory alanları
-  final int lowStockCount;
-  final int outOfStockCount;
-  final double totalStockValue;
-  final int warehouseCount;
-  final int recentMovementCount;
-
-  DashboardSummary({
-    required this.currentMonthIncome,
-    required this.currentMonthExpense,
-    required this.netProfit,
-    required this.pendingInvoicesCount,
-    required this.totalCustomers,
-    required this.totalSuppliers,
-    required this.totalProducts,
-    required this.incomeChangePercent,
-    required this.expenseChangePercent,
-    required this.netProfitChangePercent,
-    required this.lowStockCount,
-    required this.outOfStockCount,
-    required this.totalStockValue,
-    required this.warehouseCount,
-    required this.recentMovementCount,
-  });
-
-  String get formattedCurrentMonthIncome => NumberFormat.currency(
-        locale: 'tr_TR',
-        symbol: '₺',
-      ).format(currentMonthIncome);
-
-  String get formattedCurrentMonthExpense => NumberFormat.currency(
-        locale: 'tr_TR',
-        symbol: '₺',
-      ).format(currentMonthExpense);
-
-  String get formattedNetProfit =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(netProfit);
-
-  String get formattedIncomeChange =>
-      '${incomeChangePercent >= 0 ? '+' : ''}${incomeChangePercent.toStringAsFixed(1)}%';
-
-  String get formattedExpenseChange =>
-      '${expenseChangePercent >= 0 ? '+' : ''}${expenseChangePercent.toStringAsFixed(1)}%';
-
-  String get formattedNetProfitChange =>
-      '${netProfitChangePercent >= 0 ? '+' : ''}${netProfitChangePercent.toStringAsFixed(1)}%';
-
-  // Inventory formatlanmış getter'ları
-  String get formattedTotalStockValue => NumberFormat.currency(
-        locale: 'tr_TR',
-        symbol: '₺',
-      ).format(totalStockValue);
-
-  String get formattedLowStockCount => '$lowStockCount ürün';
-
-  String get formattedOutOfStockCount => '$outOfStockCount ürün';
-
-  String get formattedWarehouseCount => '$warehouseCount depo';
-
-  String get formattedRecentMovementCount => '$recentMovementCount hareket';
-}
 
 /// İşlem türü enum'u
 enum TransactionType { income, expense, invoice }

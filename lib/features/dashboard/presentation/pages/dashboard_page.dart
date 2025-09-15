@@ -13,6 +13,11 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../providers/dashboard_providers.dart';
 import '../widgets/exchange_rates_widget.dart';
+import '../widgets/dashboard_stats_card.dart';
+import '../widgets/dashboard_chart_widget.dart';
+import '../widgets/quick_actions_widget.dart';
+import '../widgets/recent_activities_widget.dart';
+import '../../domain/entities/dashboard_summary.dart';
 import '../../../inventory/presentation/providers/warehouse_providers.dart';
 import '../../../inventory/presentation/providers/stock_providers.dart';
 
@@ -29,21 +34,30 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dashboardSummaryAsync = ref.watch(dashboardSummaryProvider);
+    final recentActivitiesAsync = ref.watch(recentTransactionsProvider);
+    final monthlyChartAsync = ref.watch(monthlyChartDataProvider);
 
     return Scaffold(
       appBar: const CustomAppBar(title: 'Dashboard', showDrawer: true),
       drawer: const TamgaciDrawerMenu(),
-      body: _buildMobileLayout(dashboardSummaryAsync, isDark),
+      body: _buildMobileLayout(dashboardSummaryAsync, recentActivitiesAsync,
+          monthlyChartAsync, isDark),
     );
   }
 
   Widget _buildMobileLayout(
-      AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
+    AsyncValue<DashboardSummary> dashboardSummaryAsync,
+    AsyncValue<List<TransactionItem>> recentActivitiesAsync,
+    AsyncValue<List<MonthlyChartData>> monthlyChartAsync,
+    bool isDark,
+  ) {
     return RefreshIndicator(
       onRefresh: () async {
         // Refresh dashboard data and exchange rates
         ref.invalidate(exchangeRatesProvider);
         ref.invalidate(dashboardSummaryProvider);
+        ref.invalidate(recentTransactionsProvider);
+        ref.invalidate(monthlyChartDataProvider);
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -52,13 +66,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           children: [
             _buildWelcomeCard(isDark),
             const SizedBox(height: 16),
-            _buildQuickStats(dashboardSummaryAsync, isDark),
+            _buildStatsGrid(dashboardSummaryAsync, isDark),
             const SizedBox(height: 16),
-            _buildQuickActions(isDark),
+            const QuickActionsWidget(),
+            const SizedBox(height: 16),
+            _buildChartSection(monthlyChartAsync, isDark),
             const SizedBox(height: 16),
             const ExchangeRatesWidget(),
             const SizedBox(height: 16),
-            _buildRecentActivities(isDark),
+            _buildRecentActivitiesSection(recentActivitiesAsync, isDark),
           ],
         ),
       ),
@@ -491,5 +507,191 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ],
       ),
     );
+  }
+
+  /// İstatistik kartları grid'i
+  Widget _buildStatsGrid(
+      AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
+    return dashboardSummaryAsync.when(
+      data: (summary) => GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.5,
+        children: [
+          DashboardStatsCard(
+            title: 'Toplam Satış',
+            value: summary.totalSales,
+            currency: 'TRY',
+            icon: Icons.trending_up,
+            iconColor: Colors.green,
+            backgroundColor: Colors.green,
+            percentageChange: summary.salesGrowthRate,
+            percentageColor:
+                summary.salesGrowthRate >= 0 ? Colors.green : Colors.red,
+          ),
+          DashboardStatsCard(
+            title: 'Toplam Alış',
+            value: summary.totalPurchases,
+            currency: 'TRY',
+            icon: Icons.shopping_cart,
+            iconColor: Colors.orange,
+            backgroundColor: Colors.orange,
+          ),
+          DashboardStatsCard(
+            title: 'Net Kar/Zarar',
+            value: summary.netProfit,
+            currency: 'TRY',
+            icon: Icons.account_balance_wallet,
+            iconColor: summary.netProfit >= 0 ? Colors.green : Colors.red,
+            backgroundColor: summary.netProfit >= 0 ? Colors.green : Colors.red,
+          ),
+          DashboardStatsCard(
+            title: 'Toplam Bakiye',
+            value: summary.totalBalance,
+            currency: 'TRY',
+            icon: Icons.account_balance,
+            iconColor: Colors.blue,
+            backgroundColor: Colors.blue,
+          ),
+          DashboardStatsCard(
+            title: 'Kritik Stok',
+            value: summary.criticalStockCount.toDouble(),
+            currency: '',
+            subtitle: 'ürün',
+            icon: Icons.warning,
+            iconColor: Colors.red,
+            backgroundColor: Colors.red,
+          ),
+          DashboardStatsCard(
+            title: 'Toplam Müşteri',
+            value: summary.totalCustomers.toDouble(),
+            currency: '',
+            subtitle: 'kişi',
+            icon: Icons.people,
+            iconColor: Colors.purple,
+            backgroundColor: Colors.purple,
+          ),
+        ],
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(
+        child: Text(
+          'Veri yüklenirken hata oluştu: $error',
+          style: GoogleFonts.poppins(color: Colors.red),
+        ),
+      ),
+    );
+  }
+
+  /// Grafik bölümü
+  Widget _buildChartSection(
+      AsyncValue<List<MonthlyChartData>> monthlyChartAsync, bool isDark) {
+    return monthlyChartAsync.when(
+      data: (chartData) {
+        final chartDataList = chartData
+            .map((data) => ChartData(
+                  label: data.month,
+                  value: data.income,
+                ))
+            .toList();
+
+        return DashboardChartWidget(
+          title: 'Aylık Satış Grafiği',
+          data: chartDataList,
+          type: ChartType.bar,
+        );
+      },
+      loading: () => Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            'Grafik yüklenirken hata oluştu',
+            style: GoogleFonts.poppins(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Son aktiviteler bölümü
+  Widget _buildRecentActivitiesSection(
+      AsyncValue<List<TransactionItem>> recentActivitiesAsync, bool isDark) {
+    return recentActivitiesAsync.when(
+      data: (transactions) {
+        final activities = transactions
+            .map((transaction) => ActivityItem(
+                  title: transaction.title,
+                  description: transaction.description,
+                  icon: _getIconForTransactionType(transaction.type),
+                  color: _getColorForTransactionType(transaction.type),
+                  date: transaction.date,
+                  amount: transaction.amount,
+                  currency: 'TRY',
+                ))
+            .toList();
+
+        return RecentActivitiesWidget(activities: activities);
+      },
+      loading: () => Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        height: 200,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: Text(
+            'Aktiviteler yüklenirken hata oluştu',
+            style: GoogleFonts.poppins(color: Colors.red),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// İşlem türüne göre ikon döndürür
+  IconData _getIconForTransactionType(TransactionType type) {
+    switch (type) {
+      case TransactionType.income:
+        return Icons.attach_money;
+      case TransactionType.expense:
+        return Icons.money_off;
+      case TransactionType.invoice:
+        return Icons.receipt;
+    }
+  }
+
+  /// İşlem türüne göre renk döndürür
+  Color _getColorForTransactionType(TransactionType type) {
+    switch (type) {
+      case TransactionType.income:
+        return Colors.green;
+      case TransactionType.expense:
+        return Colors.red;
+      case TransactionType.invoice:
+        return Colors.blue;
+    }
   }
 }

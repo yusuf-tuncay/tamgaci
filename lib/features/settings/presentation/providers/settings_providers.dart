@@ -4,10 +4,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/app_settings.dart';
 import '../../data/repositories/settings_repository_impl.dart';
+import '../../data/datasources/settings_firebase_datasource.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Settings repository provider
 final settingsRepositoryProvider = Provider<SettingsRepositoryImpl>((ref) {
-  return SettingsRepositoryImpl();
+  final firestore = FirebaseFirestore.instance;
+  final auth = FirebaseAuth.instance;
+  final ds = SettingsFirebaseDataSource(firestore, auth);
+  return SettingsRepositoryImpl(dataSource: ds);
 });
 
 /// Settings state notifier
@@ -23,101 +29,101 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
   Future<void> _loadSettings() async {
     try {
       state = const AsyncValue.loading();
-      final settings = await _repository.getSettings(_defaultUserId);
-      state = AsyncValue.data(settings);
+      final settings = await _repository.getAppSettings(_defaultUserId);
+      if (settings != null) {
+        state = AsyncValue.data(settings);
+      } else {
+        // Create default settings if missing
+        final newSettings = AppSettings(
+          id: _defaultUserId,
+          userId: _defaultUserId,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        final created = await _repository.createAppSettings(newSettings);
+        state = AsyncValue.data(created);
+      }
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   /// Tema ayarlarını güncelle
-  Future<void> updateThemeSettings(ThemeSettings theme) async {
+  Future<void> updateThemeSettings(ThemeMode theme) async {
     try {
       final currentSettings = state.value;
       if (currentSettings == null) return;
 
-      await _repository.updateThemeSettings(currentSettings.userId, theme);
-      final updatedSettings = currentSettings.copyWith(
-        theme: theme,
-        updatedAt: DateTime.now(),
+      final updatedSettings = await _repository.updateThemeMode(
+        currentSettings.userId,
+        theme,
       );
-      state = AsyncValue.data(updatedSettings);
+      state = AsyncValue.data(updatedSettings.copyWith(
+        updatedAt: DateTime.now(),
+      ));
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   /// Bildirim ayarlarını güncelle
-  Future<void> updateNotificationSettings(
-    NotificationSettings notifications,
-  ) async {
+  Future<void> updateNotificationSettings(bool enabled) async {
     try {
       final currentSettings = state.value;
       if (currentSettings == null) return;
 
-      await _repository.updateNotificationSettings(
-        currentSettings.userId,
-        notifications,
-      );
-      final updatedSettings = currentSettings.copyWith(
-        notifications: notifications,
-        updatedAt: DateTime.now(),
-      );
-      state = AsyncValue.data(updatedSettings);
+      final updated = await _repository.updateNotificationSettings(
+          currentSettings.userId, enabled);
+      state = AsyncValue.data(updated);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   /// Genel ayarları güncelle
-  Future<void> updateGeneralSettings(GeneralSettings general) async {
+  Future<void> updateLanguage(Language language) async {
     try {
       final currentSettings = state.value;
       if (currentSettings == null) return;
 
-      await _repository.updateGeneralSettings(currentSettings.userId, general);
-      final updatedSettings = currentSettings.copyWith(
-        general: general,
-        updatedAt: DateTime.now(),
-      );
-      state = AsyncValue.data(updatedSettings);
+      final updated =
+          await _repository.updateLanguage(currentSettings.userId, language);
+      state = AsyncValue.data(updated);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   /// Güvenlik ayarlarını güncelle
-  Future<void> updateSecuritySettings(SecuritySettings security) async {
+  Future<void> updateBiometric(bool enabled) async {
     try {
       final currentSettings = state.value;
       if (currentSettings == null) return;
 
-      await _repository.updateSecuritySettings(
-        currentSettings.userId,
-        security,
-      );
-      final updatedSettings = currentSettings.copyWith(
-        security: security,
-        updatedAt: DateTime.now(),
-      );
-      state = AsyncValue.data(updatedSettings);
+      final updated = await _repository.updateBiometricSettings(
+          currentSettings.userId, enabled);
+      state = AsyncValue.data(updated);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
   /// Veri ayarlarını güncelle
-  Future<void> updateDataSettings(DataSettings data) async {
+  Future<void> updateBackup(
+      {required bool enableDataBackup,
+      required bool enableAutoBackup,
+      required int frequency}) async {
     try {
       final currentSettings = state.value;
       if (currentSettings == null) return;
 
-      await _repository.updateDataSettings(currentSettings.userId, data);
-      final updatedSettings = currentSettings.copyWith(
-        data: data,
-        updatedAt: DateTime.now(),
+      final updated = await _repository.updateBackupSettings(
+        currentSettings.userId,
+        enableDataBackup,
+        enableAutoBackup,
+        frequency,
       );
-      state = AsyncValue.data(updatedSettings);
+      state = AsyncValue.data(updated);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
@@ -128,8 +134,7 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
     try {
       final currentSettings = state.value;
       if (currentSettings == null) return;
-
-      await _repository.resetSettings(currentSettings.userId);
+      await _repository.deleteAppSettings(currentSettings.userId);
       await _loadSettings();
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
@@ -145,80 +150,84 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
 /// Settings provider
 final settingsProvider =
     StateNotifierProvider<SettingsNotifier, AsyncValue<AppSettings>>((ref) {
-      final repository = ref.watch(settingsRepositoryProvider);
-      return SettingsNotifier(repository);
-    });
+  final repository = ref.watch(settingsRepositoryProvider);
+  return SettingsNotifier(repository);
+});
 
 /// Tema ayarları provider
-final themeSettingsProvider = Provider<ThemeSettings>((ref) {
+final themeSettingsProvider = Provider<ThemeMode>((ref) {
   final settingsAsync = ref.watch(settingsProvider);
   return settingsAsync.when(
-    data: (settings) => settings.theme,
-    loading: () => const ThemeSettings(),
-    error: (_, __) => const ThemeSettings(),
+    data: (settings) => settings.themeMode,
+    loading: () => ThemeMode.system,
+    error: (_, __) => ThemeMode.system,
   );
 });
 
 /// Bildirim ayarları provider
-final notificationSettingsProvider = Provider<NotificationSettings>((ref) {
+final notificationSettingsProvider = Provider<bool>((ref) {
   final settingsAsync = ref.watch(settingsProvider);
   return settingsAsync.when(
-    data: (settings) => settings.notifications,
-    loading: () => const NotificationSettings(),
-    error: (_, __) => const NotificationSettings(),
+    data: (settings) => settings.enableNotifications,
+    loading: () => true,
+    error: (_, __) => true,
   );
 });
 
 /// Genel ayarlar provider
-final generalSettingsProvider = Provider<GeneralSettings>((ref) {
+final generalSettingsProvider = Provider<Language>((ref) {
   final settingsAsync = ref.watch(settingsProvider);
   return settingsAsync.when(
-    data: (settings) => settings.general,
-    loading: () => const GeneralSettings(),
-    error: (_, __) => const GeneralSettings(),
+    data: (settings) => settings.language,
+    loading: () => Language.tr,
+    error: (_, __) => Language.tr,
   );
 });
 
 /// Güvenlik ayarları provider
-final securitySettingsProvider = Provider<SecuritySettings>((ref) {
+final securitySettingsProvider = Provider<bool>((ref) {
   final settingsAsync = ref.watch(settingsProvider);
   return settingsAsync.when(
-    data: (settings) => settings.security,
-    loading: () => const SecuritySettings(),
-    error: (_, __) => const SecuritySettings(),
+    data: (settings) => settings.enableBiometric,
+    loading: () => false,
+    error: (_, __) => false,
   );
 });
 
 /// Veri ayarları provider
-final dataSettingsProvider = Provider<DataSettings>((ref) {
+final dataSettingsProvider = Provider<int>((ref) {
   final settingsAsync = ref.watch(settingsProvider);
   return settingsAsync.when(
-    data: (settings) => settings.data,
-    loading: () => const DataSettings(),
-    error: (_, __) => const DataSettings(),
+    data: (settings) => settings.backupFrequency,
+    loading: () => 7,
+    error: (_, __) => 7,
   );
 });
 
 /// Karanlık tema provider
 final isDarkModeProvider = Provider<bool>((ref) {
   final themeSettings = ref.watch(themeSettingsProvider);
-  return themeSettings.isDarkMode;
+  return themeSettings == ThemeMode.dark;
 });
 
 /// Bildirimler aktif provider
 final notificationsEnabledProvider = Provider<bool>((ref) {
   final notificationSettings = ref.watch(notificationSettingsProvider);
-  return notificationSettings.isEnabled;
+  return notificationSettings;
 });
 
 /// Dil provider
 final languageProvider = Provider<String>((ref) {
-  final generalSettings = ref.watch(generalSettingsProvider);
-  return generalSettings.language;
+  final lang = ref.watch(generalSettingsProvider);
+  return lang.name;
 });
 
 /// Para birimi provider
 final currencyProvider = Provider<String>((ref) {
-  final generalSettings = ref.watch(generalSettingsProvider);
-  return generalSettings.currency;
+  final settingsAsync = ref.watch(settingsProvider);
+  return settingsAsync.when(
+    data: (s) => s.currency.name,
+    loading: () => 'tl',
+    error: (_, __) => 'tl',
+  );
 });

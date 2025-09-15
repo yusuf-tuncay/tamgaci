@@ -1,8 +1,7 @@
 // ========== lib/features/customers/domain/repositories/customer_repository.dart ==========
 
-import 'package:tamgaci/features/customers/data/models/customer_entity.dart';
-
 import '../entities/customer.dart';
+import '../entities/customer_enums.dart';
 
 /// Müşteri repository interface'i - Domain katmanı
 abstract class CustomerRepository {
@@ -62,6 +61,15 @@ abstract class CustomerRepository {
 
   /// Müşteri durumu güncelleme
   Future<void> updateCustomerStatus(String id, bool isActive);
+
+  /// Müşteri bakiyesini güncelleme
+  Future<void> updateCustomerBalance(String id, double newBalance);
+
+  /// Müşteri bakiyesini hesaplama
+  Future<double> calculateCustomerBalance(String id);
+
+  /// Tüm müşteri bakiyelerini yeniden hesaplama
+  Future<void> recalculateAllCustomerBalances();
 
   // ========== DELETE ==========
 

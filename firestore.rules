@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function userId() { return request.auth.uid; }
+    function isOwner(resourceData) { return resourceData.createdBy == userId(); }
+    function isAdmin() { return request.auth.token.role == 'admin'; }
+
+    // Generic helpers
+    function allowRead(doc) {
+      return isSignedIn() && (isAdmin() || isOwner(doc.data));
+    }
+    function allowWrite(doc) {
+      return isSignedIn() && (isAdmin() || isOwner(doc.data));
+    }
+
+    // Products
+    match /products/{id} {
+      allow get, list: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+
+    // Customers
+    match /customers/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+
+    // Suppliers
+    match /suppliers/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+
+    // Sales
+    match /sales/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+
+    // Purchases
+    match /purchases/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+
+    // Cash accounts and transactions
+    match /cash_accounts/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+    match /cash_transactions/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+
+    // Inventory
+    match /inventory_items/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+    match /inventory_movements/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+    match /stocks/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+
+    // Reports
+    match /reports/{id} {
+      allow read: if allowRead(resource);
+      allow create: if isSignedIn() && request.resource.data.createdBy == userId();
+      allow update, delete: if allowWrite(resource);
+    }
+    match /report_templates/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Settings
+    match /app_settings/{uid} {
+      allow read, write: if isSignedIn() && uid == userId();
+    }
+    match /user_profiles/{uid} {
+      allow read: if isSignedIn() && (uid == userId() || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.id == userId();
+      allow update: if isSignedIn() && uid == userId();
+      allow delete: if isAdmin();
+    }
+  }
+}

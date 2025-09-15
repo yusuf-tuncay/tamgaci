@@ -73,6 +73,12 @@ class Income {
   /// Güncellenme tarihi
   final DateTime updatedAt;
 
+  /// Oluşturan kullanıcı ID'si
+  final String createdBy;
+
+  /// Güncelleyen kullanıcı ID'si
+  final String? updatedBy;
+
   const Income({
     required this.id,
     required this.title,
@@ -91,6 +97,8 @@ class Income {
     this.attachments = const [],
     required this.createdAt,
     required this.updatedAt,
+    required this.createdBy,
+    this.updatedBy,
   });
 
   /// Income kopyalama metodu
@@ -112,6 +120,8 @@ class Income {
     List<String>? attachments,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? createdBy,
+    String? updatedBy,
   }) {
     return Income(
       id: id ?? this.id,
@@ -131,6 +141,8 @@ class Income {
       attachments: attachments ?? this.attachments,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      updatedBy: updatedBy ?? this.updatedBy,
     );
   }
 
@@ -154,6 +166,8 @@ class Income {
       attachments: List<String>.from(json['attachments'] ?? []),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      createdBy: json['createdBy'] as String,
+      updatedBy: json['updatedBy'] as String?,
     );
   }
 
@@ -177,6 +191,8 @@ class Income {
       'attachments': attachments,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'createdBy': createdBy,
+      'updatedBy': updatedBy,
     };
   }
 

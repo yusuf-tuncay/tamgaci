@@ -1,252 +1,444 @@
-// ========== SETTINGS REPOSITORY IMPLEMENTATION ==========
-// lib/features/settings/data/repositories/settings_repository_impl.dart
+import 'package:tamgaci/features/settings/domain/entities/app_settings.dart';
+import 'package:tamgaci/features/settings/domain/entities/user_profile.dart';
+import 'package:tamgaci/features/settings/domain/repositories/settings_repository.dart';
+import 'package:tamgaci/features/settings/data/datasources/settings_firebase_datasource.dart';
+import 'package:tamgaci/features/settings/data/models/app_settings_model.dart';
+import 'package:tamgaci/features/settings/data/models/user_profile_model.dart';
 
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import '../../domain/repositories/settings_repository.dart';
-import '../../domain/entities/app_settings.dart';
-
-/// Settings repository implementation
+/// Settings repository implementasyonu
+/// Firebase Firestore işlemleri için repository
 class SettingsRepositoryImpl implements SettingsRepository {
-  static const String _settingsKey = 'app_settings';
-  static const String _themeKey = 'theme_settings';
-  static const String _notificationsKey = 'notification_settings';
-  static const String _generalKey = 'general_settings';
-  static const String _securityKey = 'security_settings';
-  static const String _dataKey = 'data_settings';
+  final SettingsFirebaseDataSource _dataSource;
+
+  SettingsRepositoryImpl({
+    required SettingsFirebaseDataSource dataSource,
+  }) : _dataSource = dataSource;
+
+  // App Settings Methods
 
   @override
-  Future<AppSettings> getSettings(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-
-      // Eğer ayarlar yoksa varsayılan ayarları oluştur
-      if (!prefs.containsKey('${_settingsKey}_$userId')) {
-        return await createDefaultSettings(userId);
-      }
-
-      final settingsJson = prefs.getString('${_settingsKey}_$userId');
-      if (settingsJson == null) {
-        return await createDefaultSettings(userId);
-      }
-
-      final settingsMap = json.decode(settingsJson) as Map<String, dynamic>;
-      return _fromJson(settingsMap);
-    } catch (e) {
-      // Hata durumunda varsayılan ayarları döndür
-      return await createDefaultSettings(userId);
-    }
+  Future<AppSettings?> getAppSettings(String userId) async {
+    final appSettingsModel = await _dataSource.getAppSettings(userId);
+    return appSettingsModel?.toEntity();
   }
 
   @override
-  Future<void> saveSettings(AppSettings settings) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final settingsJson = json.encode(_toJson(settings));
-      await prefs.setString('${_settingsKey}_${settings.userId}', settingsJson);
-    } catch (e) {
-      throw Exception('Ayarlar kaydedilemedi: $e');
-    }
+  Future<AppSettings> updateAppSettings(AppSettings appSettings) async {
+    final appSettingsModel = AppSettingsModel.fromEntity(appSettings);
+    final updatedAppSettingsModel =
+        await _dataSource.updateAppSettings(appSettingsModel);
+    return updatedAppSettingsModel.toEntity();
   }
 
   @override
-  Future<void> updateThemeSettings(String userId, ThemeSettings theme) async {
-    try {
-      final settings = await getSettings(userId);
-      final updatedSettings = settings.copyWith(
-        theme: theme,
-        updatedAt: DateTime.now(),
-      );
-      await saveSettings(updatedSettings);
-    } catch (e) {
-      throw Exception('Tema ayarları güncellenemedi: $e');
-    }
+  Future<AppSettings> createAppSettings(AppSettings appSettings) async {
+    final appSettingsModel = AppSettingsModel.fromEntity(appSettings);
+    final createdAppSettingsModel =
+        await _dataSource.createAppSettings(appSettingsModel);
+    return createdAppSettingsModel.toEntity();
   }
 
   @override
-  Future<void> updateNotificationSettings(
-    String userId,
-    NotificationSettings notifications,
-  ) async {
-    try {
-      final settings = await getSettings(userId);
-      final updatedSettings = settings.copyWith(
-        notifications: notifications,
-        updatedAt: DateTime.now(),
-      );
-      await saveSettings(updatedSettings);
-    } catch (e) {
-      throw Exception('Bildirim ayarları güncellenemedi: $e');
-    }
+  Future<void> deleteAppSettings(String userId) async {
+    await _dataSource.deleteAppSettings(userId);
+  }
+
+  // User Profile Methods
+
+  @override
+  Future<UserProfile?> getUserProfile(String userId) async {
+    final userProfileModel = await _dataSource.getUserProfile(userId);
+    return userProfileModel?.toEntity();
   }
 
   @override
-  Future<void> updateGeneralSettings(
-    String userId,
-    GeneralSettings general,
-  ) async {
-    try {
-      final settings = await getSettings(userId);
-      final updatedSettings = settings.copyWith(
-        general: general,
-        updatedAt: DateTime.now(),
-      );
-      await saveSettings(updatedSettings);
-    } catch (e) {
-      throw Exception('Genel ayarlar güncellenemedi: $e');
-    }
+  Future<UserProfile?> getUserProfileByUid(String uid) async {
+    final userProfileModel = await _dataSource.getUserProfileByUid(uid);
+    return userProfileModel?.toEntity();
   }
 
   @override
-  Future<void> updateSecuritySettings(
-    String userId,
-    SecuritySettings security,
-  ) async {
-    try {
-      final settings = await getSettings(userId);
-      final updatedSettings = settings.copyWith(
-        security: security,
-        updatedAt: DateTime.now(),
-      );
-      await saveSettings(updatedSettings);
-    } catch (e) {
-      throw Exception('Güvenlik ayarları güncellenemedi: $e');
-    }
+  Future<UserProfile?> getUserProfileByEmail(String email) async {
+    final userProfileModel = await _dataSource.getUserProfileByEmail(email);
+    return userProfileModel?.toEntity();
   }
 
   @override
-  Future<void> updateDataSettings(String userId, DataSettings data) async {
-    try {
-      final settings = await getSettings(userId);
-      final updatedSettings = settings.copyWith(
-        data: data,
-        updatedAt: DateTime.now(),
-      );
-      await saveSettings(updatedSettings);
-    } catch (e) {
-      throw Exception('Veri ayarları güncellenemedi: $e');
-    }
+  Future<UserProfile> updateUserProfile(UserProfile userProfile) async {
+    final userProfileModel = UserProfileModel.fromEntity(userProfile);
+    final updatedUserProfileModel =
+        await _dataSource.updateUserProfile(userProfileModel);
+    return updatedUserProfileModel.toEntity();
   }
 
   @override
-  Future<void> resetSettings(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('${_settingsKey}_$userId');
-      await prefs.remove('${_themeKey}_$userId');
-      await prefs.remove('${_notificationsKey}_$userId');
-      await prefs.remove('${_generalKey}_$userId');
-      await prefs.remove('${_securityKey}_$userId');
-      await prefs.remove('${_dataKey}_$userId');
-    } catch (e) {
-      throw Exception('Ayarlar sıfırlanamadı: $e');
-    }
+  Future<UserProfile> createUserProfile(UserProfile userProfile) async {
+    final userProfileModel = UserProfileModel.fromEntity(userProfile);
+    final createdUserProfileModel =
+        await _dataSource.createUserProfile(userProfileModel);
+    return createdUserProfileModel.toEntity();
   }
 
   @override
-  Future<AppSettings> createDefaultSettings(String userId) async {
-    final defaultSettings = AppSettings(
-      userId: userId,
-      theme: const ThemeSettings(),
-      notifications: const NotificationSettings(),
-      general: const GeneralSettings(),
-      security: const SecuritySettings(),
-      data: const DataSettings(),
-      createdAt: DateTime.now(),
+  Future<void> deleteUserProfile(String userId) async {
+    await _dataSource.deleteUserProfile(userId);
+  }
+
+  // Settings Update Methods
+
+  @override
+  Future<AppSettings> updateThemeMode(
+      String userId, ThemeMode themeMode) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final updatedSettings = currentSettings.copyWith(
+      themeMode: themeMode,
       updatedAt: DateTime.now(),
     );
 
-    await saveSettings(defaultSettings);
-    return defaultSettings;
+    return await updateAppSettings(updatedSettings);
   }
 
-  // JSON dönüşüm metodları
-  Map<String, dynamic> _toJson(AppSettings settings) {
-    return {
-      'userId': settings.userId,
-      'theme': {
-        'isDarkMode': settings.theme.isDarkMode,
-        'followSystem': settings.theme.followSystem,
-        'customColor': settings.theme.customColor,
-      },
-      'notifications': {
-        'isEnabled': settings.notifications.isEnabled,
-        'invoiceReminders': settings.notifications.invoiceReminders,
-        'paymentReminders': settings.notifications.paymentReminders,
-        'stockAlerts': settings.notifications.stockAlerts,
-        'soundEnabled': settings.notifications.soundEnabled,
-        'vibrationEnabled': settings.notifications.vibrationEnabled,
-      },
-      'general': {
-        'language': settings.general.language,
-        'currency': settings.general.currency,
-        'dateFormat': settings.general.dateFormat,
-        'timeFormat': settings.general.timeFormat,
-        'autoSave': settings.general.autoSave,
-        'autoBackup': settings.general.autoBackup,
-      },
-      'security': {
-        'biometricEnabled': settings.security.biometricEnabled,
-        'twoFactorEnabled': settings.security.twoFactorEnabled,
-        'autoLockTimeout': settings.security.autoLockTimeout,
-        'strongPassword': settings.security.strongPassword,
-      },
-      'data': {
-        'backupFrequency': settings.data.backupFrequency,
-        'backupRetention': settings.data.backupRetention,
-        'cloudBackup': settings.data.cloudBackup,
-        'dataEncryption': settings.data.dataEncryption,
-        'autoCleanup': settings.data.autoCleanup,
-      },
-      'createdAt': settings.createdAt.toIso8601String(),
-      'updatedAt': settings.updatedAt.toIso8601String(),
-    };
-  }
+  @override
+  Future<AppSettings> updateLanguage(String userId, Language language) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
 
-  AppSettings _fromJson(Map<String, dynamic> json) {
-    return AppSettings(
-      userId: json['userId'] as String,
-      theme: ThemeSettings(
-        isDarkMode: json['theme']['isDarkMode'] as bool? ?? false,
-        followSystem: json['theme']['followSystem'] as bool? ?? true,
-        customColor: json['theme']['customColor'] as String?,
-      ),
-      notifications: NotificationSettings(
-        isEnabled: json['notifications']['isEnabled'] as bool? ?? true,
-        invoiceReminders:
-            json['notifications']['invoiceReminders'] as bool? ?? true,
-        paymentReminders:
-            json['notifications']['paymentReminders'] as bool? ?? true,
-        stockAlerts: json['notifications']['stockAlerts'] as bool? ?? true,
-        soundEnabled: json['notifications']['soundEnabled'] as bool? ?? true,
-        vibrationEnabled:
-            json['notifications']['vibrationEnabled'] as bool? ?? true,
-      ),
-      general: GeneralSettings(
-        language: json['general']['language'] as String? ?? 'tr',
-        currency: json['general']['currency'] as String? ?? 'TRY',
-        dateFormat: json['general']['dateFormat'] as String? ?? 'dd/MM/yyyy',
-        timeFormat: json['general']['timeFormat'] as String? ?? 'HH:mm',
-        autoSave: json['general']['autoSave'] as bool? ?? true,
-        autoBackup: json['general']['autoBackup'] as bool? ?? true,
-      ),
-      security: SecuritySettings(
-        biometricEnabled:
-            json['security']['biometricEnabled'] as bool? ?? false,
-        twoFactorEnabled:
-            json['security']['twoFactorEnabled'] as bool? ?? false,
-        autoLockTimeout: json['security']['autoLockTimeout'] as int? ?? 5,
-        strongPassword: json['security']['strongPassword'] as bool? ?? true,
-      ),
-      data: DataSettings(
-        backupFrequency: json['data']['backupFrequency'] as int? ?? 7,
-        backupRetention: json['data']['backupRetention'] as int? ?? 30,
-        cloudBackup: json['data']['cloudBackup'] as bool? ?? false,
-        dataEncryption: json['data']['dataEncryption'] as bool? ?? true,
-        autoCleanup: json['data']['autoCleanup'] as bool? ?? false,
-      ),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+    final updatedSettings = currentSettings.copyWith(
+      language: language,
+      updatedAt: DateTime.now(),
     );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateCurrency(String userId, Currency currency) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final updatedSettings = currentSettings.copyWith(
+      currency: currency,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateNotificationSettings(
+      String userId, bool enableNotifications) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final updatedSettings = currentSettings.copyWith(
+      enableNotifications: enableNotifications,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateNotificationType(
+      String userId, NotificationType type, bool enabled) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final newNotificationSettings =
+        Map<NotificationType, bool>.from(currentSettings.notificationSettings);
+    newNotificationSettings[type] = enabled;
+
+    final updatedSettings = currentSettings.copyWith(
+      notificationSettings: newNotificationSettings,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateBiometricSettings(
+      String userId, bool enableBiometric) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final updatedSettings = currentSettings.copyWith(
+      enableBiometric: enableBiometric,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateAutoLockSettings(
+      String userId, bool enableAutoLock, int duration) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final updatedSettings = currentSettings.copyWith(
+      enableAutoLock: enableAutoLock,
+      autoLockDuration: duration,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateBackupSettings(
+    String userId,
+    bool enableDataBackup,
+    bool enableAutoBackup,
+    int frequency,
+  ) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final updatedSettings = currentSettings.copyWith(
+      enableDataBackup: enableDataBackup,
+      enableAutoBackup: enableAutoBackup,
+      backupFrequency: frequency,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateAnalyticsSettings(
+    String userId,
+    bool enableAnalytics,
+    bool enableCrashReporting,
+    bool enablePerformanceMonitoring,
+  ) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final updatedSettings = currentSettings.copyWith(
+      enableAnalytics: enableAnalytics,
+      enableCrashReporting: enableCrashReporting,
+      enablePerformanceMonitoring: enablePerformanceMonitoring,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  @override
+  Future<AppSettings> updateCustomSetting(
+      String userId, String key, dynamic value) async {
+    final currentSettings = await getAppSettings(userId);
+    if (currentSettings == null) {
+      throw Exception('App settings not found for user: $userId');
+    }
+
+    final newCustomSettings =
+        Map<String, dynamic>.from(currentSettings.customSettings);
+    newCustomSettings[key] = value;
+
+    final updatedSettings = currentSettings.copyWith(
+      customSettings: newCustomSettings,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateAppSettings(updatedSettings);
+  }
+
+  // User Profile Update Methods
+
+  @override
+  Future<UserProfile> updateProfilePhoto(String userId, String photoUrl) async {
+    final currentProfile = await getUserProfile(userId);
+    if (currentProfile == null) {
+      throw Exception('User profile not found: $userId');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      photoUrl: photoUrl,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateUserProfile(updatedProfile);
+  }
+
+  @override
+  Future<UserProfile> updateTwoFactorAuth(String userId, bool enabled) async {
+    final currentProfile = await getUserProfile(userId);
+    if (currentProfile == null) {
+      throw Exception('User profile not found: $userId');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      twoFactorEnabled: enabled,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateUserProfile(updatedProfile);
+  }
+
+  @override
+  Future<UserProfile> updateUserPermissions(
+      String userId, List<String> permissions) async {
+    final currentProfile = await getUserProfile(userId);
+    if (currentProfile == null) {
+      throw Exception('User profile not found: $userId');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      permissions: permissions,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateUserProfile(updatedProfile);
+  }
+
+  @override
+  Future<UserProfile> updateUserRole(String userId, UserRole role) async {
+    final currentProfile = await getUserProfile(userId);
+    if (currentProfile == null) {
+      throw Exception('User profile not found: $userId');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      role: role,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateUserProfile(updatedProfile);
+  }
+
+  @override
+  Future<UserProfile> updateUserStatus(String userId, UserStatus status) async {
+    final currentProfile = await getUserProfile(userId);
+    if (currentProfile == null) {
+      throw Exception('User profile not found: $userId');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      status: status,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateUserProfile(updatedProfile);
+  }
+
+  @override
+  Future<UserProfile> updateLastLogin(
+      String userId, DateTime loginTime, String ipAddress) async {
+    final currentProfile = await getUserProfile(userId);
+    if (currentProfile == null) {
+      throw Exception('User profile not found: $userId');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      lastLoginAt: loginTime,
+      lastLoginIp: ipAddress,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateUserProfile(updatedProfile);
+  }
+
+  @override
+  Future<UserProfile> updateUserPreferences(
+      String userId, Map<String, dynamic> preferences) async {
+    final currentProfile = await getUserProfile(userId);
+    if (currentProfile == null) {
+      throw Exception('User profile not found: $userId');
+    }
+
+    final updatedProfile = currentProfile.copyWith(
+      preferences: preferences,
+      updatedAt: DateTime.now(),
+    );
+
+    return await updateUserProfile(updatedProfile);
+  }
+
+  // Security Methods
+
+  @override
+  Future<bool> changePassword(
+      String userId, String currentPassword, String newPassword) async {
+    return await _dataSource.changePassword(
+        userId, currentPassword, newPassword);
+  }
+
+  @override
+  Future<bool> sendEmailVerification(String userId) async {
+    return await _dataSource.sendEmailVerification(userId);
+  }
+
+  @override
+  Future<bool> sendPhoneVerification(String userId, String phoneNumber) async {
+    return await _dataSource.sendPhoneVerification(userId, phoneNumber);
+  }
+
+  @override
+  Future<UserProfile> verifyEmail(String userId, String code) async {
+    final userProfileModel = await _dataSource.verifyEmail(userId, code);
+    return userProfileModel.toEntity();
+  }
+
+  @override
+  Future<UserProfile> verifyPhone(String userId, String code) async {
+    final userProfileModel = await _dataSource.verifyPhone(userId, code);
+    return userProfileModel.toEntity();
+  }
+
+  // Data Management Methods
+
+  @override
+  Future<String> createDataBackup(String userId) async {
+    return await _dataSource.createDataBackup(userId);
+  }
+
+  @override
+  Future<bool> restoreDataBackup(String userId, String backupUrl) async {
+    return await _dataSource.restoreDataBackup(userId, backupUrl);
+  }
+
+  @override
+  Future<bool> deleteAllUserData(String userId) async {
+    return await _dataSource.deleteAllUserData(userId);
+  }
+
+  @override
+  Future<String> exportUserData(String userId) async {
+    return await _dataSource.exportUserData(userId);
+  }
+
+  // System Settings Methods
+
+  @override
+  Future<Map<String, dynamic>> getSystemSettings() async {
+    return await _dataSource.getSystemSettings();
+  }
+
+  @override
+  Future<bool> updateSystemSetting(
+      String key, dynamic value, String adminUserId) async {
+    return await _dataSource.updateSystemSetting(key, value, adminUserId);
   }
 }

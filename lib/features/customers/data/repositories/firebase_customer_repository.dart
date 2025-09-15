@@ -4,21 +4,28 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/customer.dart';
+import '../../domain/entities/customer_enums.dart';
 import '../../domain/repositories/customer_repository.dart';
+import '../models/firebase_customer_entity.dart';
+import 'package:tamgaci/core/services/business/transaction_service.dart';
 import 'package:tamgaci/core/utils/logger.dart';
-import '../models/customer_entity.dart';
 
 /// Firebase Firestore tabanlı müşteri repository implementasyonu
 class FirebaseCustomerRepository implements CustomerRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collectionName = 'customers';
+  final TransactionService _transactionService = TransactionService();
 
   @override
   Future<String> createCustomer(Customer customer) async {
     try {
       final docRef = _firestore.collection(_collectionName).doc();
       final customerEntity =
-          CustomerEntity.fromDomain(customer).copyWith(id: docRef.id);
+          FirebaseCustomerEntity.fromDomain(customer).copyWith(
+        id: docRef.id,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
       await docRef.set(customerEntity.toFirestore());
       return docRef.id;
     } catch (e) {
@@ -31,10 +38,15 @@ class FirebaseCustomerRepository implements CustomerRepository {
   Future<void> createCustomers(List<Customer> customers) async {
     try {
       final batch = _firestore.batch();
+      final now = DateTime.now();
       for (final customer in customers) {
         final docRef = _firestore.collection(_collectionName).doc();
         final customerEntity =
-            CustomerEntity.fromDomain(customer).copyWith(id: docRef.id);
+            FirebaseCustomerEntity.fromDomain(customer).copyWith(
+          id: docRef.id,
+          createdAt: now,
+          updatedAt: now,
+        );
         batch.set(docRef, customerEntity.toFirestore());
       }
       await batch.commit();
@@ -50,7 +62,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       final querySnapshot =
           await _firestore.collection(_collectionName).orderBy('name').get();
       return querySnapshot.docs
-          .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+          .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
           .toList();
     } catch (e) {
       AppLogger.error('Error getting all customers', e);
@@ -64,7 +76,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       final querySnapshot = await _firestore.collection(_collectionName).get();
 
       return querySnapshot.docs
-          .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+          .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
           .where((customer) => customer.isActive)
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
@@ -81,7 +93,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           await _firestore.collection(_collectionName).doc(id).get();
 
       if (docSnapshot.exists) {
-        return CustomerEntity.fromFirestore(docSnapshot).toDomain();
+        return FirebaseCustomerEntity.fromFirestore(docSnapshot).toDomain();
       }
       return null;
     } catch (e) {
@@ -96,7 +108,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       final querySnapshot = await _firestore.collection(_collectionName).get();
 
       return querySnapshot.docs
-          .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+          .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
           .where((customer) =>
               customer.isActive &&
               (customer.name.toLowerCase().contains(query.toLowerCase()) ||
@@ -120,7 +132,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
     try {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs
-          .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+          .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
           .where(
               (customer) => customer.customerType == type && customer.isActive)
           .toList()
@@ -136,7 +148,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
     try {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs
-          .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+          .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
           .where((customer) => customer.city == city && customer.isActive)
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
@@ -156,7 +168,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        return CustomerEntity.fromFirestore(querySnapshot.docs.first)
+        return FirebaseCustomerEntity.fromFirestore(querySnapshot.docs.first)
             .toDomain();
       }
       return null;
@@ -176,7 +188,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        return CustomerEntity.fromFirestore(querySnapshot.docs.first)
+        return FirebaseCustomerEntity.fromFirestore(querySnapshot.docs.first)
             .toDomain();
       }
       return null;
@@ -196,7 +208,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .get();
 
       if (querySnapshot.docs.isNotEmpty) {
-        return CustomerEntity.fromFirestore(querySnapshot.docs.first)
+        return FirebaseCustomerEntity.fromFirestore(querySnapshot.docs.first)
             .toDomain();
       }
       return null;
@@ -254,7 +266,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .limit(limit)
           .get();
       return querySnapshot.docs
-          .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+          .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
           .toList();
     } catch (e) {
       AppLogger.error('Error getting recent customers', e);
@@ -268,7 +280,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       await _firestore
           .collection(_collectionName)
           .doc(customer.id)
-          .update(CustomerEntity.fromDomain(customer).toFirestore());
+          .update(FirebaseCustomerEntity.fromDomain(customer).toFirestore());
     } catch (e) {
       AppLogger.error('Error updating customer', e);
       rethrow;
@@ -278,12 +290,46 @@ class FirebaseCustomerRepository implements CustomerRepository {
   @override
   Future<void> updateCustomerStatus(String id, bool isActive) async {
     try {
-      await _firestore
-          .collection(_collectionName)
-          .doc(id)
-          .update({'isActive': isActive});
+      await _firestore.collection(_collectionName).doc(id).update({
+        'isActive': isActive,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
     } catch (e) {
       AppLogger.error('Error updating customer status', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> updateCustomerBalance(String id, double newBalance) async {
+    try {
+      await _firestore.collection(_collectionName).doc(id).update({
+        'currentBalance': newBalance,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+      AppLogger.info('Customer balance updated: $id, new balance: $newBalance');
+    } catch (e) {
+      AppLogger.error('Error updating customer balance', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<double> calculateCustomerBalance(String id) async {
+    try {
+      return await _transactionService.calculateCustomerBalance(id);
+    } catch (e) {
+      AppLogger.error('Error calculating customer balance', e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> recalculateAllCustomerBalances() async {
+    try {
+      await _transactionService.recalculateAllCustomerBalances();
+    } catch (e) {
+      AppLogger.error('Error recalculating all customer balances', e);
       rethrow;
     }
   }
@@ -324,7 +370,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
         .orderBy('name')
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+            .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
             .toList());
   }
 
@@ -332,7 +378,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
   Stream<List<Customer>> watchActiveCustomers() {
     return _firestore.collection(_collectionName).snapshots().map((snapshot) =>
         snapshot.docs
-            .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+            .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
             .where((customer) => customer.isActive)
             .toList()
           ..sort((a, b) => a.name.compareTo(b.name)));
@@ -346,15 +392,16 @@ class FirebaseCustomerRepository implements CustomerRepository {
         .orderBy('name')
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => CustomerEntity.fromFirestore(doc).toDomain())
+            .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
             .toList());
   }
 
   @override
   Stream<Customer?> watchCustomerById(String id) {
     return _firestore.collection(_collectionName).doc(id).snapshots().map(
-        (doc) =>
-            doc.exists ? CustomerEntity.fromFirestore(doc).toDomain() : null);
+        (doc) => doc.exists
+            ? FirebaseCustomerEntity.fromFirestore(doc).toDomain()
+            : null);
   }
 
   @override
@@ -385,7 +432,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
 
       final Map<CustomerType, int> stats = {};
       for (final doc in querySnapshot.docs) {
-        final customer = CustomerEntity.fromFirestore(doc).toDomain();
+        final customer = FirebaseCustomerEntity.fromFirestore(doc).toDomain();
         stats[customer.customerType] = (stats[customer.customerType] ?? 0) + 1;
       }
       return stats;
@@ -405,7 +452,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
 
       final Map<String, int> stats = {};
       for (final doc in querySnapshot.docs) {
-        final customer = CustomerEntity.fromFirestore(doc).toDomain();
+        final customer = FirebaseCustomerEntity.fromFirestore(doc).toDomain();
         if (customer.city != null) {
           stats[customer.city!] = (stats[customer.city!] ?? 0) + 1;
         }
@@ -434,7 +481,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
       }
 
       for (final doc in querySnapshot.docs) {
-        final customer = CustomerEntity.fromFirestore(doc).toDomain();
+        final customer = FirebaseCustomerEntity.fromFirestore(doc).toDomain();
         final month =
             '${customer.createdAt.year}-${customer.createdAt.month.toString().padLeft(2, '0')}';
         stats[month] = (stats[month] ?? 0) + 1;

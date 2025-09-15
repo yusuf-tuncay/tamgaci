@@ -100,8 +100,9 @@ class FirebaseSupplierRepository implements SupplierRepository {
           .map((doc) => _supplierFromMap(doc))
           .where((supplier) =>
               supplier.name.toLowerCase().contains(lowercaseQuery) ||
-              supplier.email.toLowerCase().contains(lowercaseQuery) ||
-              supplier.phone.toLowerCase().contains(lowercaseQuery))
+              (supplier.email?.toLowerCase().contains(lowercaseQuery) ??
+                  false) ||
+              (supplier.phone?.toLowerCase().contains(lowercaseQuery) ?? false))
           .toList();
     } catch (e) {
       AppLogger.error('Error searching suppliers', e);
@@ -220,6 +221,11 @@ class FirebaseSupplierRepository implements SupplierRepository {
         (e) => e.name == data['status'],
         orElse: () => SupplierStatus.active,
       ),
+      supplierType: SupplierType.values.firstWhere(
+        (e) => e.name == data['supplierType'],
+        orElse: () => SupplierType.individual,
+      ),
+      companyId: data['companyId'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );

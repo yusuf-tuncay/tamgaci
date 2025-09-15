@@ -3,11 +3,10 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/stock.dart';
-import '../../data/repositories/stock_repository_impl.dart';
-import '../../data/datasources/stock_dao.dart';
+import '../../domain/repositories/stock_repository.dart';
 
 // Mock stock data
-class MockStockRepository implements StockRepositoryImpl {
+class MockStockRepository implements StockRepository {
   static final List<Stock> _mockStocks = [
     Stock(
       id: 1,
@@ -236,8 +235,6 @@ class MockStockRepository implements StockRepositoryImpl {
   }
 
   // Mock DAO methods (not used in mock implementation)
-  // ignore: unused_element
-  StockDao get _stockDao => throw UnimplementedError();
 }
 
 // Providers

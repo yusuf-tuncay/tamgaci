@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:tamgaci/features/customers/data/models/customer_entity.dart';
+import 'package:tamgaci/features/customers/domain/entities/customer_enums.dart';
 import '../../../../core/theme/constants.dart';
 import '../../domain/entities/invoice.dart';
 import '../../domain/entities/invoice_item.dart';

@@ -349,9 +349,9 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
                   prefixIcon: Icon(Icons.attach_money),
                 ),
                 items: CurrencyHelper.getCurrencyOptions().map((currency) {
-                  return DropdownMenuItem(
-                    value: currency['code'],
-                    child: Text(currency['name']!),
+                  return DropdownMenuItem<String>(
+                    value: currency,
+                    child: Text(currency),
                   );
                 }).toList(),
                 onChanged: (value) {
@@ -990,10 +990,9 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
                     exchangeRatesAsync.when(
                       data: (exchangeRates) {
                         final convertedAmount = CurrencyHelper.convertCurrency(
-                          amount: totalAmount,
-                          fromCurrencyCode: _currencyCode,
-                          toCurrencyCode: selectedCurrency.code,
-                          exchangeRates: exchangeRates,
+                          totalAmount,
+                          _currencyCode,
+                          selectedCurrency.code,
                         );
                         return Text(
                           '(${convertedAmount.toStringAsFixed(2)} ${selectedCurrency.symbol})',

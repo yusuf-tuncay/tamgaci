@@ -203,10 +203,10 @@ class _SupplierDetailPageState extends ConsumerState<SupplierDetailPage> {
           _buildDetailCard(
             title: 'İletişim Bilgileri',
             children: [
-              _buildDetailRow('İletişim Kişisi', supplier.contactPerson),
-              _buildDetailRow('E-posta', supplier.email),
-              _buildDetailRow('Telefon', supplier.phone),
-              _buildDetailRow('Adres', supplier.address),
+              _buildDetailRow('İletişim Kişisi', supplier.contactPerson ?? ''),
+              _buildDetailRow('E-posta', supplier.email ?? ''),
+              _buildDetailRow('Telefon', supplier.phone ?? ''),
+              _buildDetailRow('Adres', supplier.address ?? ''),
             ],
           ),
 
@@ -216,8 +216,8 @@ class _SupplierDetailPageState extends ConsumerState<SupplierDetailPage> {
           _buildDetailCard(
             title: 'Vergi Bilgileri',
             children: [
-              _buildDetailRow('Vergi No', supplier.taxNumber),
-              _buildDetailRow('Vergi Dairesi', supplier.taxOffice),
+              _buildDetailRow('Vergi No', supplier.taxNumber ?? ''),
+              _buildDetailRow('Vergi Dairesi', supplier.taxOffice ?? ''),
             ],
           ),
 
@@ -227,8 +227,8 @@ class _SupplierDetailPageState extends ConsumerState<SupplierDetailPage> {
           _buildDetailCard(
             title: 'Banka Bilgileri',
             children: [
-              _buildDetailRow('Banka Adı', supplier.bankName),
-              _buildDetailRow('Hesap No', supplier.bankAccount),
+              _buildDetailRow('Banka Adı', supplier.bankName ?? ''),
+              _buildDetailRow('Hesap No', supplier.bankAccount ?? ''),
             ],
           ),
 

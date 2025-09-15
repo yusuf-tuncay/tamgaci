@@ -277,6 +277,7 @@ class _CreateIncomePageState extends ConsumerState<CreateIncomePage> {
           ? DateTime.now() // Düzenleme modunda mevcut tarihi koru
           : DateTime.now(),
       updatedAt: DateTime.now(),
+      createdBy: 'current_user', // TODO: Get from auth service
     );
 
     try {

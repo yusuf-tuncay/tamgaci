@@ -2,34 +2,17 @@
 // lib/features/expenses/presentation/providers/expense_providers.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
-import '../../data/repositories/expense_repository_impl.dart';
 import '../../data/repositories/firebase_expense_repository.dart';
-import '../../../../core/database/tamgaci_database.dart';
 
 // ========== BASE PROVIDERS ==========
 
-/// Expense repository provider
+/// Expense repository provider - Firebase only
 final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
-  // Web platformunda Firebase kullan
-  if (kIsWeb) {
-    return FirebaseExpenseRepository();
-  }
-
-  try {
-    final databaseAsync = ref.watch(databaseProvider);
-    return databaseAsync.when(
-      data: (database) => ExpenseRepositoryImpl(database),
-      loading: () => _EmptyExpenseRepository(),
-      error: (error, stack) => _EmptyExpenseRepository(),
-    );
-  } catch (e) {
-    return _EmptyExpenseRepository();
-  }
+  return FirebaseExpenseRepository();
 });
 
 // ========== DATA PROVIDERS ==========

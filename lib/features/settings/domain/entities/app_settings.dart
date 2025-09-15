@@ -1,378 +1,269 @@
-// ========== APP SETTINGS ENTITY ==========
-// lib/features/settings/domain/entities/app_settings.dart
+import 'package:equatable/equatable.dart';
+
+/// Tema modu
+enum ThemeMode {
+  light('Açık Tema'),
+  dark('Koyu Tema'),
+  system('Sistem');
+
+  const ThemeMode(this.displayName);
+  final String displayName;
+}
+
+/// Dil seçeneği
+enum Language {
+  tr('Türkçe'),
+  en('English');
+
+  const Language(this.displayName);
+  final String displayName;
+}
+
+/// Para birimi
+enum Currency {
+  tl('Türk Lirası', '₺'),
+  usd('Amerikan Doları', '\$'),
+  eur('Euro', '€');
+
+  const Currency(this.displayName, this.symbol);
+  final String displayName;
+  final String symbol;
+}
+
+/// Bildirim türü
+enum NotificationType {
+  sales('Satış Bildirimleri'),
+  purchases('Alış Bildirimleri'),
+  inventory('Envanter Bildirimleri'),
+  reports('Rapor Bildirimleri'),
+  system('Sistem Bildirimleri');
+
+  const NotificationType(this.displayName);
+  final String displayName;
+}
 
 /// Uygulama ayarları entity'si
-class AppSettings {
-  /// Kullanıcı ID'si
+class AppSettings extends Equatable {
+  final String id;
   final String userId;
-
-  /// Tema ayarları
-  final ThemeSettings theme;
-
-  /// Bildirim ayarları
-  final NotificationSettings notifications;
-
-  /// Genel ayarlar
-  final GeneralSettings general;
-
-  /// Güvenlik ayarları
-  final SecuritySettings security;
-
-  /// Veri yönetimi ayarları
-  final DataSettings data;
-
-  /// Oluşturulma tarihi
+  final ThemeMode themeMode;
+  final Language language;
+  final Currency currency;
+  final String timeZone;
+  final String dateFormat;
+  final String timeFormat;
+  final String numberFormat;
+  final bool enableNotifications;
+  final Map<NotificationType, bool> notificationSettings;
+  final bool enableSounds;
+  final bool enableVibration;
+  final bool enableBiometric;
+  final bool enableAutoLock;
+  final int autoLockDuration;
+  final bool enableDataBackup;
+  final bool enableAutoBackup;
+  final int backupFrequency;
+  final bool enableAnalytics;
+  final bool enableCrashReporting;
+  final bool enablePerformanceMonitoring;
+  final Map<String, dynamic> customSettings;
   final DateTime createdAt;
-
-  /// Güncellenme tarihi
   final DateTime updatedAt;
 
   const AppSettings({
+    required this.id,
     required this.userId,
-    required this.theme,
-    required this.notifications,
-    required this.general,
-    required this.security,
-    required this.data,
+    this.themeMode = ThemeMode.system,
+    this.language = Language.tr,
+    this.currency = Currency.tl,
+    this.timeZone = 'Europe/Istanbul',
+    this.dateFormat = 'dd.MM.yyyy',
+    this.timeFormat = 'HH:mm',
+    this.numberFormat = '#,##0.00',
+    this.enableNotifications = true,
+    this.notificationSettings = const {},
+    this.enableSounds = true,
+    this.enableVibration = true,
+    this.enableBiometric = false,
+    this.enableAutoLock = false,
+    this.autoLockDuration = 300, // 5 dakika
+    this.enableDataBackup = true,
+    this.enableAutoBackup = false,
+    this.backupFrequency = 7, // 7 gün
+    this.enableAnalytics = true,
+    this.enableCrashReporting = true,
+    this.enablePerformanceMonitoring = true,
+    this.customSettings = const {},
     required this.createdAt,
     required this.updatedAt,
   });
 
-  /// Kopyalama metodu
   AppSettings copyWith({
+    String? id,
     String? userId,
-    ThemeSettings? theme,
-    NotificationSettings? notifications,
-    GeneralSettings? general,
-    SecuritySettings? security,
-    DataSettings? data,
+    ThemeMode? themeMode,
+    Language? language,
+    Currency? currency,
+    String? timeZone,
+    String? dateFormat,
+    String? timeFormat,
+    String? numberFormat,
+    bool? enableNotifications,
+    Map<NotificationType, bool>? notificationSettings,
+    bool? enableSounds,
+    bool? enableVibration,
+    bool? enableBiometric,
+    bool? enableAutoLock,
+    int? autoLockDuration,
+    bool? enableDataBackup,
+    bool? enableAutoBackup,
+    int? backupFrequency,
+    bool? enableAnalytics,
+    bool? enableCrashReporting,
+    bool? enablePerformanceMonitoring,
+    Map<String, dynamic>? customSettings,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return AppSettings(
+      id: id ?? this.id,
       userId: userId ?? this.userId,
-      theme: theme ?? this.theme,
-      notifications: notifications ?? this.notifications,
-      general: general ?? this.general,
-      security: security ?? this.security,
-      data: data ?? this.data,
+      themeMode: themeMode ?? this.themeMode,
+      language: language ?? this.language,
+      currency: currency ?? this.currency,
+      timeZone: timeZone ?? this.timeZone,
+      dateFormat: dateFormat ?? this.dateFormat,
+      timeFormat: timeFormat ?? this.timeFormat,
+      numberFormat: numberFormat ?? this.numberFormat,
+      enableNotifications: enableNotifications ?? this.enableNotifications,
+      notificationSettings: notificationSettings ?? this.notificationSettings,
+      enableSounds: enableSounds ?? this.enableSounds,
+      enableVibration: enableVibration ?? this.enableVibration,
+      enableBiometric: enableBiometric ?? this.enableBiometric,
+      enableAutoLock: enableAutoLock ?? this.enableAutoLock,
+      autoLockDuration: autoLockDuration ?? this.autoLockDuration,
+      enableDataBackup: enableDataBackup ?? this.enableDataBackup,
+      enableAutoBackup: enableAutoBackup ?? this.enableAutoBackup,
+      backupFrequency: backupFrequency ?? this.backupFrequency,
+      enableAnalytics: enableAnalytics ?? this.enableAnalytics,
+      enableCrashReporting: enableCrashReporting ?? this.enableCrashReporting,
+      enablePerformanceMonitoring:
+          enablePerformanceMonitoring ?? this.enablePerformanceMonitoring,
+      customSettings: customSettings ?? this.customSettings,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is AppSettings &&
-        other.userId == userId &&
-        other.theme == theme &&
-        other.notifications == notifications &&
-        other.general == general &&
-        other.security == security &&
-        other.data == data;
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'themeMode': themeMode.name,
+      'language': language.name,
+      'currency': currency.name,
+      'timeZone': timeZone,
+      'dateFormat': dateFormat,
+      'timeFormat': timeFormat,
+      'numberFormat': numberFormat,
+      'enableNotifications': enableNotifications,
+      'notificationSettings':
+          notificationSettings.map((key, value) => MapEntry(key.name, value)),
+      'enableSounds': enableSounds,
+      'enableVibration': enableVibration,
+      'enableBiometric': enableBiometric,
+      'enableAutoLock': enableAutoLock,
+      'autoLockDuration': autoLockDuration,
+      'enableDataBackup': enableDataBackup,
+      'enableAutoBackup': enableAutoBackup,
+      'backupFrequency': backupFrequency,
+      'enableAnalytics': enableAnalytics,
+      'enableCrashReporting': enableCrashReporting,
+      'enablePerformanceMonitoring': enablePerformanceMonitoring,
+      'customSettings': customSettings,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
   }
 
-  @override
-  int get hashCode {
-    return Object.hash(userId, theme, notifications, general, security, data);
-  }
-}
+  factory AppSettings.fromJson(Map<String, dynamic> json) {
+    final notificationSettingsMap =
+        Map<String, dynamic>.from(json['notificationSettings'] ?? {});
+    final notificationSettings = <NotificationType, bool>{};
 
-/// Tema ayarları
-class ThemeSettings {
-  /// Karanlık tema aktif mi
-  final bool isDarkMode;
+    for (final entry in notificationSettingsMap.entries) {
+      final type = NotificationType.values.firstWhere(
+        (e) => e.name == entry.key,
+        orElse: () => NotificationType.system,
+      );
+      notificationSettings[type] = entry.value as bool;
+    }
 
-  /// Sistem temasını takip et
-  final bool followSystem;
-
-  /// Özel tema rengi
-  final String? customColor;
-
-  const ThemeSettings({
-    this.isDarkMode = false,
-    this.followSystem = true,
-    this.customColor,
-  });
-
-  ThemeSettings copyWith({
-    bool? isDarkMode,
-    bool? followSystem,
-    String? customColor,
-  }) {
-    return ThemeSettings(
-      isDarkMode: isDarkMode ?? this.isDarkMode,
-      followSystem: followSystem ?? this.followSystem,
-      customColor: customColor ?? this.customColor,
+    return AppSettings(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      themeMode: ThemeMode.values.firstWhere(
+        (e) => e.name == json['themeMode'],
+        orElse: () => ThemeMode.system,
+      ),
+      language: Language.values.firstWhere(
+        (e) => e.name == json['language'],
+        orElse: () => Language.tr,
+      ),
+      currency: Currency.values.firstWhere(
+        (e) => e.name == json['currency'],
+        orElse: () => Currency.tl,
+      ),
+      timeZone: json['timeZone'] as String? ?? 'Europe/Istanbul',
+      dateFormat: json['dateFormat'] as String? ?? 'dd.MM.yyyy',
+      timeFormat: json['timeFormat'] as String? ?? 'HH:mm',
+      numberFormat: json['numberFormat'] as String? ?? '#,##0.00',
+      enableNotifications: json['enableNotifications'] as bool? ?? true,
+      notificationSettings: notificationSettings,
+      enableSounds: json['enableSounds'] as bool? ?? true,
+      enableVibration: json['enableVibration'] as bool? ?? true,
+      enableBiometric: json['enableBiometric'] as bool? ?? false,
+      enableAutoLock: json['enableAutoLock'] as bool? ?? false,
+      autoLockDuration: json['autoLockDuration'] as int? ?? 300,
+      enableDataBackup: json['enableDataBackup'] as bool? ?? true,
+      enableAutoBackup: json['enableAutoBackup'] as bool? ?? false,
+      backupFrequency: json['backupFrequency'] as int? ?? 7,
+      enableAnalytics: json['enableAnalytics'] as bool? ?? true,
+      enableCrashReporting: json['enableCrashReporting'] as bool? ?? true,
+      enablePerformanceMonitoring:
+          json['enablePerformanceMonitoring'] as bool? ?? true,
+      customSettings: Map<String, dynamic>.from(json['customSettings'] ?? {}),
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
 
   @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is ThemeSettings &&
-        other.isDarkMode == isDarkMode &&
-        other.followSystem == followSystem &&
-        other.customColor == customColor;
-  }
-
-  @override
-  int get hashCode => Object.hash(isDarkMode, followSystem, customColor);
-}
-
-/// Bildirim ayarları
-class NotificationSettings {
-  /// Genel bildirimler aktif mi
-  final bool isEnabled;
-
-  /// Fatura hatırlatıcıları
-  final bool invoiceReminders;
-
-  /// Ödeme hatırlatıcıları
-  final bool paymentReminders;
-
-  /// Stok uyarıları
-  final bool stockAlerts;
-
-  /// Ses bildirimleri
-  final bool soundEnabled;
-
-  /// Titreşim bildirimleri
-  final bool vibrationEnabled;
-
-  const NotificationSettings({
-    this.isEnabled = true,
-    this.invoiceReminders = true,
-    this.paymentReminders = true,
-    this.stockAlerts = true,
-    this.soundEnabled = true,
-    this.vibrationEnabled = true,
-  });
-
-  NotificationSettings copyWith({
-    bool? isEnabled,
-    bool? invoiceReminders,
-    bool? paymentReminders,
-    bool? stockAlerts,
-    bool? soundEnabled,
-    bool? vibrationEnabled,
-  }) {
-    return NotificationSettings(
-      isEnabled: isEnabled ?? this.isEnabled,
-      invoiceReminders: invoiceReminders ?? this.invoiceReminders,
-      paymentReminders: paymentReminders ?? this.paymentReminders,
-      stockAlerts: stockAlerts ?? this.stockAlerts,
-      soundEnabled: soundEnabled ?? this.soundEnabled,
-      vibrationEnabled: vibrationEnabled ?? this.vibrationEnabled,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is NotificationSettings &&
-        other.isEnabled == isEnabled &&
-        other.invoiceReminders == invoiceReminders &&
-        other.paymentReminders == paymentReminders &&
-        other.stockAlerts == stockAlerts &&
-        other.soundEnabled == soundEnabled &&
-        other.vibrationEnabled == vibrationEnabled;
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    isEnabled,
-    invoiceReminders,
-    paymentReminders,
-    stockAlerts,
-    soundEnabled,
-    vibrationEnabled,
-  );
-}
-
-/// Genel ayarlar
-class GeneralSettings {
-  /// Dil
-  final String language;
-
-  /// Para birimi
-  final String currency;
-
-  /// Tarih formatı
-  final String dateFormat;
-
-  /// Saat formatı
-  final String timeFormat;
-
-  /// Otomatik kaydetme
-  final bool autoSave;
-
-  /// Otomatik yedekleme
-  final bool autoBackup;
-
-  const GeneralSettings({
-    this.language = 'tr',
-    this.currency = 'TRY',
-    this.dateFormat = 'dd/MM/yyyy',
-    this.timeFormat = 'HH:mm',
-    this.autoSave = true,
-    this.autoBackup = true,
-  });
-
-  GeneralSettings copyWith({
-    String? language,
-    String? currency,
-    String? dateFormat,
-    String? timeFormat,
-    bool? autoSave,
-    bool? autoBackup,
-  }) {
-    return GeneralSettings(
-      language: language ?? this.language,
-      currency: currency ?? this.currency,
-      dateFormat: dateFormat ?? this.dateFormat,
-      timeFormat: timeFormat ?? this.timeFormat,
-      autoSave: autoSave ?? this.autoSave,
-      autoBackup: autoBackup ?? this.autoBackup,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is GeneralSettings &&
-        other.language == language &&
-        other.currency == currency &&
-        other.dateFormat == dateFormat &&
-        other.timeFormat == timeFormat &&
-        other.autoSave == autoSave &&
-        other.autoBackup == autoBackup;
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    language,
-    currency,
-    dateFormat,
-    timeFormat,
-    autoSave,
-    autoBackup,
-  );
-}
-
-/// Güvenlik ayarları
-class SecuritySettings {
-  /// Biometrik giriş aktif mi
-  final bool biometricEnabled;
-
-  /// İki faktörlü doğrulama
-  final bool twoFactorEnabled;
-
-  /// Otomatik kilitlenme süresi (dakika)
-  final int autoLockTimeout;
-
-  /// Şifre karmaşıklığı
-  final bool strongPassword;
-
-  const SecuritySettings({
-    this.biometricEnabled = false,
-    this.twoFactorEnabled = false,
-    this.autoLockTimeout = 5,
-    this.strongPassword = true,
-  });
-
-  SecuritySettings copyWith({
-    bool? biometricEnabled,
-    bool? twoFactorEnabled,
-    int? autoLockTimeout,
-    bool? strongPassword,
-  }) {
-    return SecuritySettings(
-      biometricEnabled: biometricEnabled ?? this.biometricEnabled,
-      twoFactorEnabled: twoFactorEnabled ?? this.twoFactorEnabled,
-      autoLockTimeout: autoLockTimeout ?? this.autoLockTimeout,
-      strongPassword: strongPassword ?? this.strongPassword,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is SecuritySettings &&
-        other.biometricEnabled == biometricEnabled &&
-        other.twoFactorEnabled == twoFactorEnabled &&
-        other.autoLockTimeout == autoLockTimeout &&
-        other.strongPassword == strongPassword;
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    biometricEnabled,
-    twoFactorEnabled,
-    autoLockTimeout,
-    strongPassword,
-  );
-}
-
-/// Veri yönetimi ayarları
-class DataSettings {
-  /// Yedekleme sıklığı (gün)
-  final int backupFrequency;
-
-  /// Yedekleme tutma süresi (gün)
-  final int backupRetention;
-
-  /// Bulut yedekleme aktif mi
-  final bool cloudBackup;
-
-  /// Veri şifreleme
-  final bool dataEncryption;
-
-  /// Otomatik temizlik
-  final bool autoCleanup;
-
-  const DataSettings({
-    this.backupFrequency = 7,
-    this.backupRetention = 30,
-    this.cloudBackup = false,
-    this.dataEncryption = true,
-    this.autoCleanup = false,
-  });
-
-  DataSettings copyWith({
-    int? backupFrequency,
-    int? backupRetention,
-    bool? cloudBackup,
-    bool? dataEncryption,
-    bool? autoCleanup,
-  }) {
-    return DataSettings(
-      backupFrequency: backupFrequency ?? this.backupFrequency,
-      backupRetention: backupRetention ?? this.backupRetention,
-      cloudBackup: cloudBackup ?? this.cloudBackup,
-      dataEncryption: dataEncryption ?? this.dataEncryption,
-      autoCleanup: autoCleanup ?? this.autoCleanup,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is DataSettings &&
-        other.backupFrequency == backupFrequency &&
-        other.backupRetention == backupRetention &&
-        other.cloudBackup == cloudBackup &&
-        other.dataEncryption == dataEncryption &&
-        other.autoCleanup == autoCleanup;
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    backupFrequency,
-    backupRetention,
-    cloudBackup,
-    dataEncryption,
-    autoCleanup,
-  );
+  List<Object?> get props => [
+        id,
+        userId,
+        themeMode,
+        language,
+        currency,
+        timeZone,
+        dateFormat,
+        timeFormat,
+        numberFormat,
+        enableNotifications,
+        notificationSettings,
+        enableSounds,
+        enableVibration,
+        enableBiometric,
+        enableAutoLock,
+        autoLockDuration,
+        enableDataBackup,
+        enableAutoBackup,
+        backupFrequency,
+        enableAnalytics,
+        enableCrashReporting,
+        enablePerformanceMonitoring,
+        customSettings,
+        createdAt,
+        updatedAt,
+      ];
 }

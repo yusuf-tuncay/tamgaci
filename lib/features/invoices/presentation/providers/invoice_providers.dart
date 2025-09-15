@@ -2,35 +2,19 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:tamgaci/features/invoices/domain/entities/repositories/invoice_repository.dart';
-import '../../../customers/presentation/providers/customer_providers.dart';
 import '../../../customers/domain/entities/customer.dart';
-import '../../../customers/data/models/customer_entity.dart';
+import '../../../customers/domain/entities/customer_enums.dart';
+// import '../../../customers/data/models/customer_entity.dart'; // Removed - using Firebase only
 import '../../domain/entities/invoice.dart';
 import '../../domain/entities/invoice_item.dart';
-import '../../data/repositories/invoice_repository_impl.dart';
-
 import '../../data/models/invoice_status.dart';
-import '../../../../core/database/tamgaci_database.dart' as core;
 
 // ========== BASE PROVIDERS ==========
 
-/// Invoice repository provider
+/// Invoice repository provider - Mock implementation for now
 final invoiceRepositoryProvider = Provider<InvoiceRepository>((ref) {
-  // Web platformunda boş repository döndür (geçici)
-  if (kIsWeb) {
-    return _EmptyInvoiceRepository();
-  }
-
-  final database = ref.watch(core.databaseProvider).value;
-  final customerRepository = ref.watch(customerRepositoryProvider);
-
-  if (database == null) {
-    throw Exception('Database not initialized');
-  }
-
-  return InvoiceRepositoryImpl(database, customerRepository);
+  return _EmptyInvoiceRepository();
 });
 
 // ========== DATA PROVIDERS ==========
@@ -381,11 +365,14 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
         taxNumber: '1234567890',
         taxOffice: 'Kadıköy',
         customerType: CustomerType.company,
+        status: CustomerStatus.active,
+        companyId: 'default_company_id',
         city: 'İstanbul',
         country: 'Türkiye',
         isActive: true,
         createdAt: DateTime.now().subtract(const Duration(days: 30)),
         updatedAt: DateTime.now(),
+        createdBy: 'system',
       ),
       invoiceDate: DateTime.now().subtract(const Duration(days: 15)),
       dueDate: DateTime.now().add(const Duration(days: 15)),
@@ -445,11 +432,14 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
         taxNumber: '9876543210',
         taxOffice: 'Çankaya',
         customerType: CustomerType.company,
+        status: CustomerStatus.active,
+        companyId: 'default_company_id',
         city: 'Ankara',
         country: 'Türkiye',
         isActive: true,
         createdAt: DateTime.now().subtract(const Duration(days: 25)),
         updatedAt: DateTime.now(),
+        createdBy: 'system',
       ),
       invoiceDate: DateTime.now().subtract(const Duration(days: 10)),
       dueDate: DateTime.now().add(const Duration(days: 20)),
@@ -494,11 +484,14 @@ class _EmptyInvoiceRepository implements InvoiceRepository {
         phone: '+90 532 555 0789',
         address: 'İzmir, Türkiye',
         customerType: CustomerType.individual,
+        status: CustomerStatus.active,
+        companyId: 'default_company_id',
         city: 'İzmir',
         country: 'Türkiye',
         isActive: true,
         createdAt: DateTime.now().subtract(const Duration(days: 20)),
         updatedAt: DateTime.now(),
+        createdBy: 'system',
       ),
       invoiceDate: DateTime.now().subtract(const Duration(days: 5)),
       dueDate: DateTime.now().add(const Duration(days: 25)),

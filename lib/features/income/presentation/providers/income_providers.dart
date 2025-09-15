@@ -9,7 +9,6 @@ import '../../domain/entities/income_category.dart';
 import '../../domain/repositories/income_repository.dart';
 import '../../data/repositories/income_repository_impl.dart';
 import '../../data/repositories/firebase_income_repository.dart';
-import '../../../../core/database/tamgaci_database.dart';
 
 // ========== BASE PROVIDERS ==========
 
@@ -21,12 +20,7 @@ final incomeRepositoryProvider = Provider<IncomeRepository>((ref) {
   }
 
   try {
-    final databaseAsync = ref.watch(databaseProvider);
-    return databaseAsync.when(
-      data: (database) => IncomeRepositoryImpl(database),
-      loading: () => _EmptyIncomeRepository(),
-      error: (error, stack) => _EmptyIncomeRepository(),
-    );
+    return IncomeRepositoryImpl();
   } catch (e) {
     return _EmptyIncomeRepository();
   }
@@ -319,6 +313,7 @@ class _EmptyIncomeRepository implements IncomeRepository {
       status: IncomeStatus.received,
       createdAt: DateTime.now().subtract(const Duration(days: 10)),
       updatedAt: DateTime.now().subtract(const Duration(days: 5)),
+      createdBy: 'system',
     ),
     Income(
       id: '2',
@@ -332,6 +327,7 @@ class _EmptyIncomeRepository implements IncomeRepository {
       status: IncomeStatus.received,
       createdAt: DateTime.now().subtract(const Duration(days: 8)),
       updatedAt: DateTime.now().subtract(const Duration(days: 2)),
+      createdBy: 'system',
     ),
     Income(
       id: '3',
@@ -345,6 +341,7 @@ class _EmptyIncomeRepository implements IncomeRepository {
       status: IncomeStatus.pending,
       createdAt: DateTime.now().subtract(const Duration(days: 1)),
       updatedAt: DateTime.now(),
+      createdBy: 'system',
     ),
   ];
 

@@ -352,9 +352,8 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
                     ),
                     items: CurrencyHelper.getCurrencyOptions().map((currency) {
                       return DropdownMenuItem<String>(
-                        value: currency['code'],
-                        child:
-                            Text('${currency['code']} - ${currency['name']}'),
+                        value: currency,
+                        child: Text(currency),
                       );
                     }).toList(),
                     onChanged: (value) {

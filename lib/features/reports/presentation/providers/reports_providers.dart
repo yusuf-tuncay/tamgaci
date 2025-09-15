@@ -1,553 +1,197 @@
-// ========== REPORTS PROVIDERS ==========
-// lib/features/reports/presentation/providers/reports_providers.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-import '../../../../features/income/presentation/providers/income_providers.dart';
-import '../../../../features/expenses/presentation/providers/expense_providers.dart';
-import '../../../../features/invoices/presentation/providers/invoice_providers.dart';
-import '../../../../features/customers/presentation/providers/customer_providers.dart';
-import '../../../../features/suppliers/presentation/providers/supplier_providers.dart';
-import '../../../../features/products/presentation/providers/product_providers.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:tamgaci/features/reports/data/datasources/report_firebase_datasource.dart';
+import 'package:tamgaci/features/reports/data/datasources/report_template_firebase_datasource.dart';
+import 'package:tamgaci/features/reports/data/repositories/report_repository_impl.dart';
+import 'package:tamgaci/features/reports/data/repositories/report_template_repository_impl.dart';
+import 'package:tamgaci/features/reports/domain/usecases/create_report_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/get_reports_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/get_report_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/update_report_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/delete_report_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/get_reports_statistics_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/duplicate_report_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/create_report_template_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/get_report_templates_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/get_report_template_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/update_report_template_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/delete_report_template_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/get_report_templates_statistics_usecase.dart';
+import 'package:tamgaci/features/reports/domain/usecases/duplicate_report_template_usecase.dart';
+import 'package:tamgaci/features/reports/presentation/notifiers/reports_notifier.dart';
+import 'package:tamgaci/features/reports/presentation/states/reports_state.dart';
 
-/// Raporlar özet verileri için provider
-final reportsSummaryProvider = FutureProvider<ReportsSummary>((ref) async {
-  final incomesAsync = await ref.read(incomesProvider.future);
-  final expensesAsync = await ref.read(expensesProvider.future);
-  final invoicesAsync = await ref.read(invoicesProvider.future);
-  final customersAsync = await ref.read(customersProvider.future);
-  final suppliersAsync = await ref.read(suppliersProvider.future);
-  final productsAsync = await ref.read(productsStreamProvider.future);
-
-  final now = DateTime.now();
-  final currentMonth = DateTime(now.year, now.month);
-  final lastMonth = DateTime(now.year, now.month - 1);
-
-  // Bu ay verileri
-  final currentMonthIncomes = incomesAsync.where((income) {
-    final incomeDate = DateTime(
-      income.incomeDate.year,
-      income.incomeDate.month,
-    );
-    return incomeDate.isAtSameMomentAs(currentMonth);
-  }).toList();
-
-  final currentMonthExpenses = expensesAsync.where((expense) {
-    final expenseDate = DateTime(
-      expense.expenseDate.year,
-      expense.expenseDate.month,
-    );
-    return expenseDate.isAtSameMomentAs(currentMonth);
-  }).toList();
-
-  final currentMonthInvoices = invoicesAsync.where((invoice) {
-    final invoiceDate = DateTime(
-      invoice.invoiceDate.year,
-      invoice.invoiceDate.month,
-    );
-    return invoiceDate.isAtSameMomentAs(currentMonth);
-  }).toList();
-
-  // Geçen ay verileri
-  final lastMonthIncomes = incomesAsync.where((income) {
-    final incomeDate = DateTime(
-      income.incomeDate.year,
-      income.incomeDate.month,
-    );
-    return incomeDate.isAtSameMomentAs(lastMonth);
-  }).toList();
-
-  final lastMonthExpenses = expensesAsync.where((expense) {
-    final expenseDate = DateTime(
-      expense.expenseDate.year,
-      expense.expenseDate.month,
-    );
-    return expenseDate.isAtSameMomentAs(currentMonth);
-  }).toList();
-
-  // Toplam hesaplamalar
-  final currentMonthIncomeTotal = currentMonthIncomes.fold<double>(
-    0,
-    (sum, income) => sum + income.amount,
-  );
-  final currentMonthExpenseTotal = currentMonthExpenses.fold<double>(
-    0,
-    (sum, expense) => sum + expense.amount,
-  );
-  final lastMonthIncomeTotal = lastMonthIncomes.fold<double>(
-    0,
-    (sum, income) => sum + income.amount,
-  );
-  final lastMonthExpenseTotal = lastMonthExpenses.fold<double>(
-    0,
-    (sum, expense) => sum + expense.amount,
-  );
-
-  // Yüzde değişim hesaplamaları
-  final incomeChangePercent = lastMonthIncomeTotal > 0
-      ? ((currentMonthIncomeTotal - lastMonthIncomeTotal) /
-            lastMonthIncomeTotal *
-            100)
-      : 0.0;
-  final expenseChangePercent = lastMonthExpenseTotal > 0
-      ? ((currentMonthExpenseTotal - lastMonthExpenseTotal) /
-            lastMonthExpenseTotal *
-            100)
-      : 0.0;
-
-  final netProfit = currentMonthIncomeTotal - currentMonthExpenseTotal;
-  final lastMonthNetProfit = lastMonthIncomeTotal - lastMonthExpenseTotal;
-  final netProfitChangePercent = lastMonthNetProfit > 0
-      ? ((netProfit - lastMonthNetProfit) / lastMonthNetProfit * 100)
-      : 0.0;
-
-  final totalTransactions =
-      currentMonthIncomes.length +
-      currentMonthExpenses.length +
-      currentMonthInvoices.length;
-  final lastMonthTransactions =
-      lastMonthIncomes.length + lastMonthExpenses.length;
-  final transactionChangePercent = lastMonthTransactions > 0
-      ? ((totalTransactions - lastMonthTransactions) /
-            lastMonthTransactions *
-            100)
-      : 0.0;
-
-  return ReportsSummary(
-    totalIncome: currentMonthIncomeTotal,
-    totalExpense: currentMonthExpenseTotal,
-    netProfit: netProfit,
-    totalTransactions: totalTransactions,
-    totalCustomers: customersAsync.length,
-    totalSuppliers: suppliersAsync.length,
-    totalProducts: productsAsync.length,
-    incomeChangePercent: incomeChangePercent,
-    expenseChangePercent: expenseChangePercent,
-    netProfitChangePercent: netProfitChangePercent,
-    transactionChangePercent: transactionChangePercent,
-  );
+/// Firebase Firestore instance provider
+final firestoreProvider = Provider<FirebaseFirestore>((ref) {
+  return FirebaseFirestore.instance;
 });
 
-/// Gelir-gider raporu için provider
-final incomeExpenseReportProvider = FutureProvider<IncomeExpenseReport>((
-  ref,
-) async {
-  final incomesAsync = await ref.read(incomesProvider.future);
-  final expensesAsync = await ref.read(expensesProvider.future);
-
-  final now = DateTime.now();
-  final months = <MonthlyReportData>[];
-
-  // Son 12 ay için veri oluştur
-  for (int i = 11; i >= 0; i--) {
-    final month = DateTime(now.year, now.month - i);
-    final monthName = DateFormat('MMM yyyy', 'tr_TR').format(month);
-
-    // Bu ay için gelirleri topla
-    final monthIncomes = incomesAsync.where((income) {
-      final incomeDate = DateTime(
-        income.incomeDate.year,
-        income.incomeDate.month,
-      );
-      return incomeDate.isAtSameMomentAs(month);
-    }).toList();
-
-    // Bu ay için giderleri topla
-    final monthExpenses = expensesAsync.where((expense) {
-      final expenseDate = DateTime(
-        expense.expenseDate.year,
-        expense.expenseDate.month,
-      );
-      return expenseDate.isAtSameMomentAs(month);
-    }).toList();
-
-    final totalIncome = monthIncomes.fold<double>(
-      0,
-      (sum, income) => sum + income.amount,
-    );
-    final totalExpense = monthExpenses.fold<double>(
-      0,
-      (sum, expense) => sum + expense.amount,
-    );
-
-    months.add(
-      MonthlyReportData(
-        month: monthName,
-        income: totalIncome,
-        expense: totalExpense,
-        profit: totalIncome - totalExpense,
-        incomeCount: monthIncomes.length,
-        expenseCount: monthExpenses.length,
-      ),
-    );
-  }
-
-  // Kategori bazlı analiz
-  final incomeCategories = <String, double>{};
-  final expenseCategories = <String, double>{};
-
-  for (final income in incomesAsync) {
-    final category = income.categoryName;
-    incomeCategories[category] =
-        (incomeCategories[category] ?? 0) + income.amount;
-  }
-
-  for (final expense in expensesAsync) {
-    final category = expense.categoryName;
-    expenseCategories[category] =
-        (expenseCategories[category] ?? 0) + expense.amount;
-  }
-
-  return IncomeExpenseReport(
-    monthlyData: months,
-    incomeCategories: incomeCategories,
-    expenseCategories: expenseCategories,
-  );
+/// Firebase Auth instance provider
+final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
+  return FirebaseAuth.instance;
 });
 
-/// Müşteri raporu için provider
-final customerReportProvider = FutureProvider<CustomerReport>((ref) async {
-  final customersAsync = await ref.read(customersProvider.future);
-  final invoicesAsync = await ref.read(invoicesProvider.future);
-
-  // Müşteri türü dağılımı
-  final customerTypeStats = <String, int>{};
-  for (final customer in customersAsync) {
-    final type = customer.customerType.displayName;
-    customerTypeStats[type] = (customerTypeStats[type] ?? 0) + 1;
-  }
-
-  // Müşteri performans analizi
-  final customerPerformance = <CustomerPerformance>[];
-  for (final customer in customersAsync) {
-    final customerInvoices = invoicesAsync
-        .where((invoice) => invoice.customerId == customer.id)
-        .toList();
-
-    final totalAmount = customerInvoices.fold<double>(
-      0,
-      (sum, invoice) => sum + invoice.totalAmount,
-    );
-    final paidInvoices = customerInvoices
-        .where((invoice) => invoice.status.toString().contains('paid'))
-        .length;
-    final totalInvoices = customerInvoices.length;
-
-    customerPerformance.add(
-      CustomerPerformance(
-        customerId: customer.id,
-        customerName: customer.name,
-        totalAmount: totalAmount,
-        totalInvoices: totalInvoices,
-        paidInvoices: paidInvoices,
-        paymentRate: totalInvoices > 0
-            ? (paidInvoices / totalInvoices * 100)
-            : 0,
-      ),
-    );
-  }
-
-  // Performansa göre sırala
-  customerPerformance.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
-
-  return CustomerReport(
-    totalCustomers: customersAsync.length,
-    customerTypeStats: customerTypeStats,
-    customerPerformance: customerPerformance,
-  );
+/// Report Firebase DataSource provider
+final reportFirebaseDataSourceProvider =
+    Provider<ReportFirebaseDataSource>((ref) {
+  final firestore = ref.watch(firestoreProvider);
+  final firebaseAuth = ref.watch(firebaseAuthProvider);
+  return ReportFirebaseDataSource(firestore, firebaseAuth);
 });
 
-/// Tedarikçi raporu için provider
-final supplierReportProvider = FutureProvider<SupplierReport>((ref) async {
-  final suppliersAsync = await ref.read(suppliersProvider.future);
-  final expensesAsync = await ref.read(expensesProvider.future);
-
-  // Tedarikçi performans analizi
-  final supplierPerformance = <SupplierPerformance>[];
-  for (final supplier in suppliersAsync) {
-    final supplierExpenses = expensesAsync
-        .where((expense) => expense.supplierId == supplier.id)
-        .toList();
-
-    final totalAmount = supplierExpenses.fold<double>(
-      0,
-      (sum, expense) => sum + expense.amount,
-    );
-    final expenseCount = supplierExpenses.length;
-
-    supplierPerformance.add(
-      SupplierPerformance(
-        supplierId: supplier.id,
-        supplierName: supplier.name,
-        totalAmount: totalAmount,
-        expenseCount: expenseCount,
-        averageAmount: expenseCount > 0 ? totalAmount / expenseCount : 0,
-      ),
-    );
-  }
-
-  // Tutara göre sırala
-  supplierPerformance.sort((a, b) => b.totalAmount.compareTo(a.totalAmount));
-
-  return SupplierReport(
-    totalSuppliers: suppliersAsync.length,
-    supplierPerformance: supplierPerformance,
-  );
+/// ReportTemplate Firebase DataSource provider
+final reportTemplateFirebaseDataSourceProvider =
+    Provider<ReportTemplateFirebaseDataSource>((ref) {
+  final firestore = ref.watch(firestoreProvider);
+  final firebaseAuth = ref.watch(firebaseAuthProvider);
+  return ReportTemplateFirebaseDataSource(firestore, firebaseAuth);
 });
 
-/// Ürün raporu için provider
-final productReportProvider = FutureProvider<ProductReport>((ref) async {
-  final productsAsync = await ref.read(productsStreamProvider.future);
-  final invoicesAsync = await ref.read(invoicesProvider.future);
-
-  // Ürün satış analizi
-  final productSales = <ProductSales>[];
-  for (final product in productsAsync) {
-    double totalSales = 0;
-    int totalQuantity = 0;
-
-    // Faturalardaki ürün satışlarını hesapla
-    for (final invoice in invoicesAsync) {
-      for (final item in invoice.items) {
-        if (item.productName == product.name) {
-          totalSales += item.lineTotal;
-          totalQuantity += item.quantity.toInt();
-        }
-      }
-    }
-
-    productSales.add(
-      ProductSales(
-        productId: product.id?.toString() ?? '',
-        productName: product.name,
-        totalSales: totalSales,
-        totalQuantity: totalQuantity,
-        averagePrice: totalQuantity > 0
-            ? totalSales / totalQuantity
-            : product.unitPrice,
-        stockLevel: product.stockQuantity,
-      ),
-    );
-  }
-
-  // Satışa göre sırala
-  productSales.sort((a, b) => b.totalSales.compareTo(a.totalSales));
-
-  // Stok durumu analizi
-  final lowStockProducts = productsAsync
-      .where((product) => product.stockQuantity <= 10)
-      .length;
-
-  final outOfStockProducts = productsAsync
-      .where((product) => product.stockQuantity == 0)
-      .length;
-
-  return ProductReport(
-    totalProducts: productsAsync.length,
-    productSales: productSales,
-    lowStockProducts: lowStockProducts,
-    outOfStockProducts: outOfStockProducts,
-  );
+/// Report Repository provider
+final reportRepositoryProvider = Provider<ReportRepositoryImpl>((ref) {
+  final dataSource = ref.watch(reportFirebaseDataSourceProvider);
+  return ReportRepositoryImpl(dataSource: dataSource);
 });
 
-/// Raporlar özet veri modeli
-class ReportsSummary {
-  final double totalIncome;
-  final double totalExpense;
-  final double netProfit;
-  final int totalTransactions;
-  final int totalCustomers;
-  final int totalSuppliers;
-  final int totalProducts;
-  final double incomeChangePercent;
-  final double expenseChangePercent;
-  final double netProfitChangePercent;
-  final double transactionChangePercent;
+/// ReportTemplate Repository provider
+final reportTemplateRepositoryProvider =
+    Provider<ReportTemplateRepositoryImpl>((ref) {
+  final dataSource = ref.watch(reportTemplateFirebaseDataSourceProvider);
+  return ReportTemplateRepositoryImpl(dataSource: dataSource);
+});
 
-  ReportsSummary({
-    required this.totalIncome,
-    required this.totalExpense,
-    required this.netProfit,
-    required this.totalTransactions,
-    required this.totalCustomers,
-    required this.totalSuppliers,
-    required this.totalProducts,
-    required this.incomeChangePercent,
-    required this.expenseChangePercent,
-    required this.netProfitChangePercent,
-    required this.transactionChangePercent,
-  });
+/// Create Report UseCase provider
+final createReportUseCaseProvider = Provider<CreateReportUseCase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return CreateReportUseCase(repository);
+});
 
-  String get formattedTotalIncome =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(totalIncome);
+/// Get Reports UseCase provider
+final getReportsUseCaseProvider = Provider<GetReportsUseCase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return GetReportsUseCase(repository);
+});
 
-  String get formattedTotalExpense =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(totalExpense);
+/// Get Report UseCase provider
+final getReportUseCaseProvider = Provider<GetReportUseCase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return GetReportUseCase(repository);
+});
 
-  String get formattedNetProfit =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(netProfit);
+/// Update Report UseCase provider
+final updateReportUseCaseProvider = Provider<UpdateReportUseCase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return UpdateReportUseCase(repository);
+});
 
-  String get formattedIncomeChange =>
-      '${incomeChangePercent >= 0 ? '+' : ''}${incomeChangePercent.toStringAsFixed(1)}%';
+/// Delete Report UseCase provider
+final deleteReportUseCaseProvider = Provider<DeleteReportUseCase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return DeleteReportUseCase(repository);
+});
 
-  String get formattedExpenseChange =>
-      '${expenseChangePercent >= 0 ? '+' : ''}${expenseChangePercent.toStringAsFixed(1)}%';
+/// Get Reports Statistics UseCase provider
+final getReportsStatisticsUseCaseProvider =
+    Provider<GetReportsStatisticsUseCase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return GetReportsStatisticsUseCase(repository);
+});
 
-  String get formattedNetProfitChange =>
-      '${netProfitChangePercent >= 0 ? '+' : ''}${netProfitChangePercent.toStringAsFixed(1)}%';
+/// Duplicate Report UseCase provider
+final duplicateReportUseCaseProvider = Provider<DuplicateReportUseCase>((ref) {
+  final repository = ref.watch(reportRepositoryProvider);
+  return DuplicateReportUseCase(repository);
+});
 
-  String get formattedTransactionChange =>
-      '${transactionChangePercent >= 0 ? '+' : ''}${transactionChangePercent.toStringAsFixed(1)}%';
-}
+/// Create ReportTemplate UseCase provider
+final createReportTemplateUseCaseProvider =
+    Provider<CreateReportTemplateUseCase>((ref) {
+  final repository = ref.watch(reportTemplateRepositoryProvider);
+  return CreateReportTemplateUseCase(repository);
+});
 
-/// Aylık rapor veri modeli
-class MonthlyReportData {
-  final String month;
-  final double income;
-  final double expense;
-  final double profit;
-  final int incomeCount;
-  final int expenseCount;
+/// Get ReportTemplates UseCase provider
+final getReportTemplatesUseCaseProvider =
+    Provider<GetReportTemplatesUseCase>((ref) {
+  final repository = ref.watch(reportTemplateRepositoryProvider);
+  return GetReportTemplatesUseCase(repository);
+});
 
-  MonthlyReportData({
-    required this.month,
-    required this.income,
-    required this.expense,
-    required this.profit,
-    required this.incomeCount,
-    required this.expenseCount,
-  });
+/// Get ReportTemplate UseCase provider
+final getReportTemplateUseCaseProvider =
+    Provider<GetReportTemplateUseCase>((ref) {
+  final repository = ref.watch(reportTemplateRepositoryProvider);
+  return GetReportTemplateUseCase(repository);
+});
 
-  String get formattedIncome =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(income);
+/// Update ReportTemplate UseCase provider
+final updateReportTemplateUseCaseProvider =
+    Provider<UpdateReportTemplateUseCase>((ref) {
+  final repository = ref.watch(reportTemplateRepositoryProvider);
+  return UpdateReportTemplateUseCase(repository);
+});
 
-  String get formattedExpense =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(expense);
+/// Delete ReportTemplate UseCase provider
+final deleteReportTemplateUseCaseProvider =
+    Provider<DeleteReportTemplateUseCase>((ref) {
+  final repository = ref.watch(reportTemplateRepositoryProvider);
+  return DeleteReportTemplateUseCase(repository);
+});
 
-  String get formattedProfit =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(profit);
-}
+/// Get ReportTemplates Statistics UseCase provider
+final getReportTemplatesStatisticsUseCaseProvider =
+    Provider<GetReportTemplatesStatisticsUseCase>((ref) {
+  final repository = ref.watch(reportTemplateRepositoryProvider);
+  return GetReportTemplatesStatisticsUseCase(repository);
+});
 
-/// Gelir-gider raporu modeli
-class IncomeExpenseReport {
-  final List<MonthlyReportData> monthlyData;
-  final Map<String, double> incomeCategories;
-  final Map<String, double> expenseCategories;
+/// Duplicate ReportTemplate UseCase provider
+final duplicateReportTemplateUseCaseProvider =
+    Provider<DuplicateReportTemplateUseCase>((ref) {
+  final repository = ref.watch(reportTemplateRepositoryProvider);
+  return DuplicateReportTemplateUseCase(repository);
+});
 
-  IncomeExpenseReport({
-    required this.monthlyData,
-    required this.incomeCategories,
-    required this.expenseCategories,
-  });
-}
+/// Reports Notifier provider
+final reportsNotifierProvider =
+    StateNotifierProvider<ReportsNotifier, ReportsState>((ref) {
+  final createReportUseCase = ref.watch(createReportUseCaseProvider);
+  final getReportsUseCase = ref.watch(getReportsUseCaseProvider);
+  final getReportUseCase = ref.watch(getReportUseCaseProvider);
+  final updateReportUseCase = ref.watch(updateReportUseCaseProvider);
+  final deleteReportUseCase = ref.watch(deleteReportUseCaseProvider);
+  final getReportsStatisticsUseCase =
+      ref.watch(getReportsStatisticsUseCaseProvider);
+  final duplicateReportUseCase = ref.watch(duplicateReportUseCaseProvider);
+  final createReportTemplateUseCase =
+      ref.watch(createReportTemplateUseCaseProvider);
+  final getReportTemplatesUseCase =
+      ref.watch(getReportTemplatesUseCaseProvider);
+  final getReportTemplateUseCase = ref.watch(getReportTemplateUseCaseProvider);
+  final updateReportTemplateUseCase =
+      ref.watch(updateReportTemplateUseCaseProvider);
+  final deleteReportTemplateUseCase =
+      ref.watch(deleteReportTemplateUseCaseProvider);
+  final getReportTemplatesStatisticsUseCase =
+      ref.watch(getReportTemplatesStatisticsUseCaseProvider);
+  final duplicateReportTemplateUseCase =
+      ref.watch(duplicateReportTemplateUseCaseProvider);
 
-/// Müşteri performans modeli
-class CustomerPerformance {
-  final String customerId;
-  final String customerName;
-  final double totalAmount;
-  final int totalInvoices;
-  final int paidInvoices;
-  final double paymentRate;
-
-  CustomerPerformance({
-    required this.customerId,
-    required this.customerName,
-    required this.totalAmount,
-    required this.totalInvoices,
-    required this.paidInvoices,
-    required this.paymentRate,
-  });
-
-  String get formattedTotalAmount =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(totalAmount);
-
-  String get formattedPaymentRate => '${paymentRate.toStringAsFixed(1)}%';
-}
-
-/// Müşteri raporu modeli
-class CustomerReport {
-  final int totalCustomers;
-  final Map<String, int> customerTypeStats;
-  final List<CustomerPerformance> customerPerformance;
-
-  CustomerReport({
-    required this.totalCustomers,
-    required this.customerTypeStats,
-    required this.customerPerformance,
-  });
-}
-
-/// Tedarikçi performans modeli
-class SupplierPerformance {
-  final String supplierId;
-  final String supplierName;
-  final double totalAmount;
-  final int expenseCount;
-  final double averageAmount;
-
-  SupplierPerformance({
-    required this.supplierId,
-    required this.supplierName,
-    required this.totalAmount,
-    required this.expenseCount,
-    required this.averageAmount,
-  });
-
-  String get formattedTotalAmount =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(totalAmount);
-
-  String get formattedAverageAmount =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(averageAmount);
-}
-
-/// Tedarikçi raporu modeli
-class SupplierReport {
-  final int totalSuppliers;
-  final List<SupplierPerformance> supplierPerformance;
-
-  SupplierReport({
-    required this.totalSuppliers,
-    required this.supplierPerformance,
-  });
-}
-
-/// Ürün satış modeli
-class ProductSales {
-  final String productId;
-  final String productName;
-  final double totalSales;
-  final int totalQuantity;
-  final double averagePrice;
-  final int stockLevel;
-
-  ProductSales({
-    required this.productId,
-    required this.productName,
-    required this.totalSales,
-    required this.totalQuantity,
-    required this.averagePrice,
-    required this.stockLevel,
-  });
-
-  String get formattedTotalSales =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(totalSales);
-
-  String get formattedAveragePrice =>
-      NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(averagePrice);
-}
-
-/// Ürün raporu modeli
-class ProductReport {
-  final int totalProducts;
-  final List<ProductSales> productSales;
-  final int lowStockProducts;
-  final int outOfStockProducts;
-
-  ProductReport({
-    required this.totalProducts,
-    required this.productSales,
-    required this.lowStockProducts,
-    required this.outOfStockProducts,
-  });
-}
+  return ReportsNotifier(
+    createReportUseCase: createReportUseCase,
+    getReportsUseCase: getReportsUseCase,
+    getReportUseCase: getReportUseCase,
+    updateReportUseCase: updateReportUseCase,
+    deleteReportUseCase: deleteReportUseCase,
+    getReportsStatisticsUseCase: getReportsStatisticsUseCase,
+    duplicateReportUseCase: duplicateReportUseCase,
+    createReportTemplateUseCase: createReportTemplateUseCase,
+    getReportTemplatesUseCase: getReportTemplatesUseCase,
+    getReportTemplateUseCase: getReportTemplateUseCase,
+    updateReportTemplateUseCase: updateReportTemplateUseCase,
+    deleteReportTemplateUseCase: deleteReportTemplateUseCase,
+    getReportTemplatesStatisticsUseCase: getReportTemplatesStatisticsUseCase,
+    duplicateReportTemplateUseCase: duplicateReportTemplateUseCase,
+  );
+});

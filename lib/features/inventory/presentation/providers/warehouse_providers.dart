@@ -1,10 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/warehouse.dart';
-import '../../data/repositories/warehouse_repository_impl.dart';
-import '../../data/datasources/warehouse_dao.dart';
+import '../../domain/repositories/warehouse_repository.dart';
 
 // Mock warehouse data
-class MockWarehouseRepository implements WarehouseRepositoryImpl {
+class MockWarehouseRepository implements WarehouseRepository {
   static final List<Warehouse> _mockWarehouses = [
     Warehouse(
       id: 1,
@@ -144,8 +143,6 @@ class MockWarehouseRepository implements WarehouseRepositoryImpl {
   }
 
   // Mock DAO methods (not used in mock implementation)
-  // ignore: unused_element
-  WarehouseDao get _warehouseDao => throw UnimplementedError();
 }
 
 // Providers
@@ -167,7 +164,6 @@ final defaultWarehouseProvider = FutureProvider<Warehouse?>((ref) async {
   final repository = ref.read(warehouseRepositoryProvider);
   return await repository.getDefaultWarehouse();
 });
-
 final warehouseCountProvider = FutureProvider<int>((ref) async {
   final repository = ref.read(warehouseRepositoryProvider);
   return await repository.getWarehouseCount();

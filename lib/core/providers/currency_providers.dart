@@ -4,7 +4,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../domain/entities/currency.dart';
-import '../services/exchange_rate_service.dart';
+import '../services/utils/exchange_rate_service.dart';
+
+/// Para birimi koduna göre ülke adını döndürür
+String _getCountryByCode(String code) {
+  const countryMap = {
+    'TRY': 'Türkiye',
+    'USD': 'Amerika',
+    'EUR': 'Avrupa',
+    'GBP': 'İngiltere',
+    'RUB': 'Rusya',
+    'CNY': 'Çin',
+    'AED': 'Dubai',
+    'BGN': 'Bulgaristan',
+    'XAU': 'Altın',
+  };
+  return countryMap[code] ?? 'Unknown';
+}
 
 /// Kur yenileme notifier'ı
 class CurrencyRefreshNotifier
@@ -17,8 +33,18 @@ class CurrencyRefreshNotifier
   Future<void> _loadRates() async {
     state = const AsyncValue.loading();
     try {
-      final rates = await ExchangeRateService.getExchangeRates();
-      state = AsyncValue.data(rates);
+      final exchangeRates = await ExchangeRateService().getExchangeRates();
+      final currencies = exchangeRates
+          .map((rate) => Currency(
+                code: rate.code,
+                name: rate.name,
+                symbol: rate.symbol,
+                country: _getCountryByCode(rate.code),
+                exchangeRate: rate.rate,
+                lastUpdated: rate.lastUpdated,
+              ))
+          .toList();
+      state = AsyncValue.data(currencies);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
@@ -38,7 +64,17 @@ final currencyRefreshNotifierProvider =
 
 /// Güncel kurlar provider'ı
 final exchangeRatesProvider = FutureProvider<List<Currency>>((ref) async {
-  return await ExchangeRateService.getExchangeRates();
+  final exchangeRates = await ExchangeRateService().getExchangeRates();
+  return exchangeRates
+      .map((rate) => Currency(
+            code: rate.code,
+            name: rate.name,
+            symbol: rate.symbol,
+            country: _getCountryByCode(rate.code),
+            exchangeRate: rate.rate,
+            lastUpdated: rate.lastUpdated,
+          ))
+      .toList();
 });
 
 /// Varsayılan para birimi provider'ı
@@ -143,10 +179,10 @@ class CurrencyConverter {
       orElse: () => SupportedCurrencies.defaultCurrency,
     );
 
-    return ExchangeRateService.convertCurrency(
-      amount: amount,
-      fromCurrency: fromCurrency,
-      toCurrency: toCurrency,
+    return ExchangeRateService().convertCurrency(
+      amount,
+      fromCurrency.code,
+      toCurrency.code,
     );
   }
 
@@ -165,9 +201,9 @@ class CurrencyConverter {
     );
 
     return ExchangeRateService.formatCurrency(
-      amount: amount,
-      currency: currency,
-      decimalPlaces: decimalPlaces,
+      amount,
+      currency.code,
+      decimalPlaces,
     );
   }
 
@@ -193,7 +229,17 @@ class CurrencyConverter {
 final currencyRefreshProvider =
     FutureProvider.autoDispose.family<List<Currency>, void>((ref, _) async {
   // Kur servisini yenile
-  return await ExchangeRateService.getExchangeRates();
+  final exchangeRates = await ExchangeRateService().getExchangeRates();
+  return exchangeRates
+      .map((rate) => Currency(
+            code: rate.code,
+            name: rate.name,
+            symbol: rate.symbol,
+            country: _getCountryByCode(rate.code),
+            exchangeRate: rate.rate,
+            lastUpdated: rate.lastUpdated,
+          ))
+      .toList();
 });
 
 /// Kur değişim oranları provider'ı

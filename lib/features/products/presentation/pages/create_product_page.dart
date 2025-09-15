@@ -4,14 +4,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:uuid/uuid.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/validation/data_sanitizer.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/product_providers.dart';
 import '../../domain/entities/product.dart';
 
 /// Ürün oluşturma/düzenleme sayfası
 class CreateProductPage extends ConsumerStatefulWidget {
-  final int? productId; // Düzenleme için ürün ID'si
+  final String? productId; // Düzenleme için ürün ID'si
 
   const CreateProductPage({super.key, this.productId});
 
@@ -27,14 +29,27 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   final _barcodeController = TextEditingController();
   final _categoryController = TextEditingController();
   final _unitPriceController = TextEditingController();
+  final _costPriceController = TextEditingController();
   final _stockQuantityController = TextEditingController();
   final _minStockLevelController = TextEditingController();
+  final _maxStockLevelController = TextEditingController();
   final _unitController = TextEditingController();
   final _taxRateController = TextEditingController();
+  final _brandController = TextEditingController();
+  final _modelController = TextEditingController();
+  final _colorController = TextEditingController();
+  final _sizeController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _weightUnitController = TextEditingController();
+  final _shelfLocationController = TextEditingController();
+  final _notesController = TextEditingController();
 
+  final ProductType _selectedType = ProductType.product;
   bool _isActive = true;
+  final bool _isDigital = false;
   bool _isLoading = false;
   bool _isEditing = false;
+  final List<String> _tags = [];
 
   @override
   void initState() {
@@ -81,32 +96,92 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Future<void> _saveForm() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Form validasyonu başarılı, verileri sanitize et
+    final sanitizedName = DataSanitizer.sanitizeText(_nameController.text);
+    final sanitizedDescription = DataSanitizer.sanitizeText(_descriptionController.text);
+    final sanitizedSku = DataSanitizer.sanitizeText(_skuController.text);
+    final sanitizedBarcode = DataSanitizer.sanitizeText(_barcodeController.text);
+    final sanitizedCategory = DataSanitizer.sanitizeText(_categoryController.text);
+    final sanitizedBrand = DataSanitizer.sanitizeText(_brandController.text);
+    final sanitizedModel = DataSanitizer.sanitizeText(_modelController.text);
+    final sanitizedColor = DataSanitizer.sanitizeText(_colorController.text);
+    final sanitizedSize = DataSanitizer.sanitizeText(_sizeController.text);
+    final sanitizedShelfLocation = DataSanitizer.sanitizeText(_shelfLocationController.text);
+    final sanitizedNotes = DataSanitizer.sanitizeText(_notesController.text);
+
+    // Ek validasyonlar
+    final unitPrice = double.tryParse(_unitPriceController.text);
+    if (unitPrice == null || unitPrice <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Geçerli bir birim fiyat girin'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final stockQuantity = int.tryParse(_stockQuantityController.text);
+    if (stockQuantity == null || stockQuantity < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Geçerli bir stok miktarı girin'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final minStockLevel = int.tryParse(_minStockLevelController.text);
+    if (minStockLevel == null || minStockLevel < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Geçerli bir minimum stok seviyesi girin'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final maxStockLevel = int.tryParse(_maxStockLevelController.text) ?? 1000;
+    final taxRate = double.tryParse(_taxRateController.text) ?? 20.0;
+    final costPrice = double.tryParse(_costPriceController.text);
+    final weight = double.tryParse(_weightController.text);
+
     setState(() => _isLoading = true);
 
     try {
       final product = Product(
-        id: widget.productId,
-        name: _nameController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
-        sku: _skuController.text.trim().isEmpty
-            ? null
-            : _skuController.text.trim(),
-        barcode: _barcodeController.text.trim().isEmpty
-            ? null
-            : _barcodeController.text.trim(),
-        category: _categoryController.text.trim().isEmpty
-            ? null
-            : _categoryController.text.trim(),
-        unitPrice: double.parse(_unitPriceController.text),
-        stockQuantity: int.parse(_stockQuantityController.text),
-        minStockLevel: int.parse(_minStockLevelController.text),
+        id: widget.productId ?? const Uuid().v4(),
+        name: sanitizedName,
+        description: sanitizedDescription.isEmpty ? null : sanitizedDescription,
+        sku: sanitizedSku.isEmpty ? null : sanitizedSku,
+        barcode: sanitizedBarcode.isEmpty ? null : sanitizedBarcode,
+        category: sanitizedCategory.isEmpty ? null : sanitizedCategory,
+        type: _selectedType,
+        unitPrice: unitPrice,
+        costPrice: costPrice,
+        stockQuantity: stockQuantity,
+        minStockLevel: minStockLevel,
+        maxStockLevel: maxStockLevel,
         unit: _unitController.text.trim(),
-        taxRate: double.parse(_taxRateController.text),
+        taxRate: taxRate,
+        currency: 'TRY',
         isActive: _isActive,
-        createdAt: DateTime.now(),
+        brand: sanitizedBrand.isEmpty ? null : sanitizedBrand,
+        model: sanitizedModel.isEmpty ? null : sanitizedModel,
+        color: sanitizedColor.isEmpty ? null : sanitizedColor,
+        size: sanitizedSize.isEmpty ? null : sanitizedSize,
+        weight: weight,
+        weightUnit: _weightUnitController.text.trim().isEmpty ? null : _weightUnitController.text.trim(),
+        isDigital: _isDigital,
+        tags: _tags,
+        notes: sanitizedNotes.isEmpty ? null : sanitizedNotes,
+        shelfLocation: sanitizedShelfLocation.isEmpty ? null : sanitizedShelfLocation,
+        createdAt: _isEditing ? DateTime.now() : DateTime.now(), // TODO: Mevcut ürün için orijinal tarihi al
         updatedAt: DateTime.now(),
+        createdBy: 'current_user', // TODO: Gerçek kullanıcı ID'si
+        updatedBy: _isEditing ? 'current_user' : null,
       );
 
       if (_isEditing) {
@@ -151,10 +226,20 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _barcodeController.dispose();
     _categoryController.dispose();
     _unitPriceController.dispose();
+    _costPriceController.dispose();
     _stockQuantityController.dispose();
     _minStockLevelController.dispose();
+    _maxStockLevelController.dispose();
     _unitController.dispose();
     _taxRateController.dispose();
+    _brandController.dispose();
+    _modelController.dispose();
+    _colorController.dispose();
+    _sizeController.dispose();
+    _weightController.dispose();
+    _weightUnitController.dispose();
+    _shelfLocationController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 

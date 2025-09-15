@@ -1,151 +1,279 @@
 // ========== SUPPLIER ENTITY ==========
 // lib/features/suppliers/domain/entities/supplier.dart
 
-/// Tedarikçi durumu enum'u
-enum SupplierStatus {
-  active('Aktif'),
-  inactive('Pasif'),
-  suspended('Askıya Alınmış');
+import 'package:equatable/equatable.dart';
 
-  const SupplierStatus(this.displayName);
-  final String displayName;
+/// Tedarikçi tipi enum'u
+enum SupplierType {
+  individual, // Bireysel
+  company, // Kurumsal
 }
 
-/// Tedarikçi entity sınıfı
-class Supplier {
+/// Tedarikçi durumu enum'u
+enum SupplierStatus {
+  active, // Aktif
+  inactive, // Pasif
+  suspended, // Askıya alınmış
+}
+
+/// SupplierStatus extension
+extension SupplierStatusExtension on SupplierStatus {
+  /// Durumun görüntüleme adını al
+  String get displayName {
+    switch (this) {
+      case SupplierStatus.active:
+        return 'Aktif';
+      case SupplierStatus.inactive:
+        return 'Pasif';
+      case SupplierStatus.suspended:
+        return 'Askıya Alınmış';
+    }
+  }
+}
+
+/// Tedarikçi entity'si
+class Supplier extends Equatable {
   final String id;
   final String name;
-  final String contactPerson;
-  final String email;
-  final String phone;
-  final String address;
-  final String taxNumber;
-  final String taxOffice;
-  final String bankName;
-  final String bankAccount;
+  final String? supplierCode;
+  final String? category;
+  final String? email;
+  final String? phone;
+  final String? address;
+  final String? taxNumber;
+  final String? taxOffice;
+  final SupplierType supplierType;
+  final SupplierStatus status;
   final double creditLimit;
   final double currentBalance;
+  final String companyId;
+  final String? city;
+  final String? country;
+  final String? postalCode;
+  final double balance;
   final String currency;
-  final SupplierStatus status;
+  final String? notes;
+  final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? createdBy;
+  final String? updatedBy;
+
+  // Tedarikçi özel alanları
+  final String? contactPerson;
+  final String? bankName;
+  final String? bankAccount;
+  final String? website;
+  final String? paymentTerms;
+  final int paymentDays;
+  final double discountRate;
+
+  // Hem müşteri hem tedarikçi olabilir
+  final bool isCustomer;
+  final String? customerId; // Eğer müşteri ise, müşteri ID'si
 
   const Supplier({
     required this.id,
     required this.name,
-    required this.contactPerson,
-    required this.email,
-    required this.phone,
-    required this.address,
-    required this.taxNumber,
-    required this.taxOffice,
-    required this.bankName,
-    required this.bankAccount,
-    required this.creditLimit,
-    required this.currentBalance,
-    required this.currency,
+    this.supplierCode,
+    this.category,
+    this.email,
+    this.phone,
+    this.address,
+    this.taxNumber,
+    this.taxOffice,
+    required this.supplierType,
     required this.status,
+    this.creditLimit = 0.0,
+    this.currentBalance = 0.0,
+    required this.companyId,
+    this.city,
+    this.country,
+    this.postalCode,
+    this.balance = 0.0,
+    this.currency = 'TRY',
+    this.notes,
+    this.isActive = true,
     required this.createdAt,
     required this.updatedAt,
+    this.createdBy,
+    this.updatedBy,
+    this.contactPerson,
+    this.bankName,
+    this.bankAccount,
+    this.website,
+    this.paymentTerms,
+    this.paymentDays = 30,
+    this.discountRate = 0.0,
+    this.isCustomer = false,
+    this.customerId,
   });
 
-  /// Kopyalama metodu
+  /// Tedarikçi kopyalama
   Supplier copyWith({
     String? id,
     String? name,
-    String? contactPerson,
+    String? supplierCode,
+    String? category,
     String? email,
     String? phone,
     String? address,
     String? taxNumber,
     String? taxOffice,
-    String? bankName,
-    String? bankAccount,
+    SupplierType? supplierType,
+    SupplierStatus? status,
     double? creditLimit,
     double? currentBalance,
+    String? companyId,
+    String? city,
+    String? country,
+    String? postalCode,
+    double? balance,
     String? currency,
-    SupplierStatus? status,
+    String? notes,
+    bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? createdBy,
+    String? updatedBy,
+    String? contactPerson,
+    String? bankName,
+    String? bankAccount,
+    String? website,
+    String? paymentTerms,
+    int? paymentDays,
+    double? discountRate,
+    bool? isCustomer,
+    String? customerId,
   }) {
     return Supplier(
       id: id ?? this.id,
       name: name ?? this.name,
-      contactPerson: contactPerson ?? this.contactPerson,
+      supplierCode: supplierCode ?? this.supplierCode,
+      category: category ?? this.category,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
       taxNumber: taxNumber ?? this.taxNumber,
       taxOffice: taxOffice ?? this.taxOffice,
-      bankName: bankName ?? this.bankName,
-      bankAccount: bankAccount ?? this.bankAccount,
+      supplierType: supplierType ?? this.supplierType,
+      status: status ?? this.status,
       creditLimit: creditLimit ?? this.creditLimit,
       currentBalance: currentBalance ?? this.currentBalance,
+      companyId: companyId ?? this.companyId,
+      city: city ?? this.city,
+      country: country ?? this.country,
+      postalCode: postalCode ?? this.postalCode,
+      balance: balance ?? this.balance,
       currency: currency ?? this.currency,
-      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      updatedBy: updatedBy ?? this.updatedBy,
+      contactPerson: contactPerson ?? this.contactPerson,
+      bankName: bankName ?? this.bankName,
+      bankAccount: bankAccount ?? this.bankAccount,
+      website: website ?? this.website,
+      paymentTerms: paymentTerms ?? this.paymentTerms,
+      paymentDays: paymentDays ?? this.paymentDays,
+      discountRate: discountRate ?? this.discountRate,
+      isCustomer: isCustomer ?? this.isCustomer,
+      customerId: customerId ?? this.customerId,
     );
   }
 
-  /// JSON'dan Supplier oluşturma
-  factory Supplier.fromJson(Map<String, dynamic> json) {
-    return Supplier(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      contactPerson: json['contactPerson'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
-      address: json['address'] as String,
-      taxNumber: json['taxNumber'] as String,
-      taxOffice: json['taxOffice'] as String,
-      bankName: json['bankName'] as String,
-      bankAccount: json['bankAccount'] as String,
-      creditLimit: (json['creditLimit'] as num).toDouble(),
-      currentBalance: (json['currentBalance'] as num).toDouble(),
-      currency: json['currency'] as String,
-      status: SupplierStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => SupplierStatus.active,
-      ),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-    );
+  @override
+  List<Object?> get props => [
+        id,
+        name,
+        supplierCode,
+        category,
+        email,
+        phone,
+        address,
+        taxNumber,
+        taxOffice,
+        supplierType,
+        status,
+        creditLimit,
+        currentBalance,
+        companyId,
+        city,
+        country,
+        postalCode,
+        balance,
+        currency,
+        notes,
+        isActive,
+        createdAt,
+        updatedAt,
+        createdBy,
+        updatedBy,
+        contactPerson,
+        bankName,
+        bankAccount,
+        website,
+        paymentTerms,
+        paymentDays,
+        discountRate,
+        isCustomer,
+        customerId,
+      ];
+
+  /// Tedarikçi tipi görünen adı
+  String get supplierTypeDisplayName {
+    switch (supplierType) {
+      case SupplierType.individual:
+        return 'Bireysel';
+      case SupplierType.company:
+        return 'Kurumsal';
+    }
   }
 
-  /// JSON'a dönüştürme
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'contactPerson': contactPerson,
-      'email': email,
-      'phone': phone,
-      'address': address,
-      'taxNumber': taxNumber,
-      'taxOffice': taxOffice,
-      'bankName': bankName,
-      'bankAccount': bankAccount,
-      'creditLimit': creditLimit,
-      'currentBalance': currentBalance,
-      'currency': currency,
-      'status': status.name,
-      'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-    };
+  /// Tedarikçi durumu görünen adı
+  String get statusDisplayName {
+    switch (status) {
+      case SupplierStatus.active:
+        return 'Aktif';
+      case SupplierStatus.inactive:
+        return 'Pasif';
+      case SupplierStatus.suspended:
+        return 'Askıya Alınmış';
+    }
   }
 
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is Supplier && other.id == id;
+  /// Bakiye durumu
+  String get balanceStatus {
+    if (currentBalance > 0) {
+      return 'Alacaklı';
+    } else if (currentBalance < 0) {
+      return 'Borçlu';
+    } else {
+      return 'Sıfır';
+    }
   }
 
-  @override
-  int get hashCode => id.hashCode;
+  /// Kredi limiti aşıldı mı?
+  bool get isCreditLimitExceeded {
+    return currentBalance.abs() > creditLimit;
+  }
 
-  @override
-  String toString() {
-    return 'Supplier(id: $id, name: $name, status: $status)';
+  /// Tam adres
+  String get fullAddress {
+    final parts = <String>[];
+    if (address != null) parts.add(address!);
+    if (city != null) parts.add(city!);
+    if (country != null) parts.add(country!);
+    return parts.join(', ');
+  }
+
+  /// Görünen ad
+  String get displayName {
+    if (contactPerson != null && contactPerson!.isNotEmpty) {
+      return '$name (${contactPerson!})';
+    }
+    return name;
   }
 }

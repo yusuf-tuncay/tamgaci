@@ -1,290 +1,236 @@
 // ========== INCOME REPOSITORY IMPLEMENTATION ==========
 // lib/features/income/data/repositories/income_repository_impl.dart
 
-import '../../domain/repositories/income_repository.dart';
-import '../../domain/entities/income.dart';
-import '../../domain/entities/income_category.dart';
-import '../../../../core/database/tamgaci_database.dart';
-import '../models/income_entity.dart';
-import '../models/income_category_entity.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tamgaci/core/repositories/firebase_repository.dart';
+import 'package:tamgaci/features/income/domain/entities/income.dart';
+import 'package:tamgaci/features/income/domain/entities/income_category.dart';
+import 'package:tamgaci/features/income/domain/repositories/income_repository.dart';
 
-/// Gelir repository implementation'ı
-class IncomeRepositoryImpl implements IncomeRepository {
-  final TamgaciDatabase _database;
+/// Firebase Income Repository Implementation
+class IncomeRepositoryImpl extends FirebaseRepository<Income>
+    implements IncomeRepository {
+  static const String _incomesCollection = 'incomes';
+  static const String _categoriesCollection = 'income_categories';
 
-  IncomeRepositoryImpl(this._database);
+  @override
+  String get collectionName => _incomesCollection;
+
+  @override
+  String get entityTypeName => 'Income';
+
+  @override
+  Map<String, dynamic> entityToMap(Income entity) => entity.toJson();
+
+  @override
+  Income mapToEntity(Map<String, dynamic> map) => Income.fromJson(map);
+
+  @override
+  String getEntityId(Income entity) => entity.id;
+
+  @override
+  Income setEntityId(Income entity, String id) => entity.copyWith(id: id);
+
+  @override
+  DateTime getEntityCreatedAt(Income entity) => entity.createdAt;
+
+  @override
+  DateTime getEntityUpdatedAt(Income entity) => entity.updatedAt;
+
+  @override
+  Income setEntityUpdatedAt(Income entity, DateTime timestamp) =>
+      entity.copyWith(updatedAt: timestamp);
+
+  @override
+  String getEntityCreatedBy(Income entity) => entity.createdBy;
+
+  @override
+  String? getEntityUpdatedBy(Income entity) => entity.updatedBy;
+
+  @override
+  Income setEntityUpdatedBy(Income entity, String userId) =>
+      entity.copyWith(updatedBy: userId);
 
   // ========== INCOME OPERATIONS ==========
 
   @override
   Future<List<Income>> getAllIncomes() async {
     try {
-      final incomeEntities = await _database.incomeDao.getAllIncomes().first;
-      return incomeEntities.map((entity) => entity.toDomain()).toList();
+      final snapshot = await firestore
+          .collection(_incomesCollection)
+          .orderBy('incomeDate', descending: true)
+          .get();
+
+      return snapshot.docs.map((doc) => Income.fromJson(doc.data())).toList();
     } catch (e) {
-      throw Exception('Gelirler getirilirken hata oluştu: $e');
+      throw Exception('Failed to get all incomes: $e');
     }
   }
 
   @override
   Stream<List<Income>> watchAllIncomes() {
-    try {
-      return _database.incomeDao.getAllIncomes().map(
-            (entities) => entities.map((entity) => entity.toDomain()).toList(),
-          );
-    } catch (e) {
-      throw Exception('Gelirler izlenirken hata oluştu: $e');
-    }
+    return firestore
+        .collection(_incomesCollection)
+        .orderBy('incomeDate', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Income.fromJson(doc.data())).toList());
   }
 
   @override
   Future<Income?> getIncomeById(String id) async {
     try {
-      final intId = int.tryParse(id);
-      if (intId == null) return null;
+      final doc = await firestore.collection(_incomesCollection).doc(id).get();
 
-      final entity = await _database.incomeDao.getIncomeById(intId);
-      return entity?.toDomain();
+      if (doc.exists) {
+        return Income.fromJson(doc.data()!);
+      }
+      return null;
     } catch (e) {
-      throw Exception('Gelir getirilirken hata oluştu: $e');
+      throw Exception('Failed to get income by id: $e');
     }
   }
 
   @override
   Stream<Income?> watchIncomeById(String id) {
-    try {
-      final intId = int.tryParse(id);
-      if (intId == null) return Stream.value(null);
-
-      return _database.incomeDao.getAllIncomes().map(
-            (entities) => entities
-                .where((entity) => entity.id == intId)
-                .firstOrNull
-                ?.toDomain(),
-          );
-    } catch (e) {
-      throw Exception('Gelir izlenirken hata oluştu: $e');
-    }
+    return firestore
+        .collection(_incomesCollection)
+        .doc(id)
+        .snapshots()
+        .map((doc) => doc.exists ? Income.fromJson(doc.data()!) : null);
   }
 
   @override
   Future<void> createIncome(Income income) async {
     try {
-      final entity = IncomeEntity.fromDomain(income);
-      await _database.incomeDao.insertIncome(entity);
+      await firestore
+          .collection(_incomesCollection)
+          .doc(income.id)
+          .set(income.toJson());
     } catch (e) {
-      throw Exception('Gelir oluşturulurken hata oluştu: $e');
+      throw Exception('Failed to create income: $e');
     }
   }
 
   @override
   Future<void> updateIncome(Income income) async {
     try {
-      final entity = IncomeEntity.fromDomain(income);
-      await _database.incomeDao.updateIncome(entity);
+      await firestore
+          .collection(_incomesCollection)
+          .doc(income.id)
+          .update(income.toJson());
     } catch (e) {
-      throw Exception('Gelir güncellenirken hata oluştu: $e');
+      throw Exception('Failed to update income: $e');
     }
   }
 
   @override
   Future<void> deleteIncome(String id) async {
     try {
-      final intId = int.tryParse(id);
-      if (intId == null) return;
-
-      await _database.incomeDao.deleteIncomeById(intId);
+      await firestore.collection(_incomesCollection).doc(id).delete();
     } catch (e) {
-      throw Exception('Gelir silinirken hata oluştu: $e');
+      throw Exception('Failed to delete income: $e');
     }
   }
 
   @override
   Future<void> updateIncomeStatus(String id, IncomeStatus status) async {
     try {
-      final income = await getIncomeById(id);
-      if (income == null) return;
-
-      final updatedIncome = income.copyWith(status: status);
-      await updateIncome(updatedIncome);
+      await firestore.collection(_incomesCollection).doc(id).update({
+        'status': status.value,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
     } catch (e) {
-      throw Exception('Gelir durumu güncellenirken hata oluştu: $e');
+      throw Exception('Failed to update income status: $e');
     }
   }
 
   @override
   Future<List<Income>> searchIncomes(String query) async {
     try {
-      final entities =
-          await _database.incomeDao.searchIncomes('%$query%').first;
-      return entities.map((entity) => entity.toDomain()).toList();
+      final snapshot = await firestore
+          .collection(_incomesCollection)
+          .where('title', isGreaterThanOrEqualTo: query)
+          .where('title', isLessThan: '$query\uf8ff')
+          .get();
+
+      return snapshot.docs.map((doc) => Income.fromJson(doc.data())).toList();
     } catch (e) {
-      throw Exception('Gelir arama yapılırken hata oluştu: $e');
+      throw Exception('Failed to search incomes: $e');
     }
   }
 
-  Future<List<Income>> getIncomesByCategory(String categoryId) async {
-    try {
-      final entities =
-          await _database.incomeDao.getIncomesByCategory(categoryId).first;
-      return entities.map((entity) => entity.toDomain()).toList();
-    } catch (e) {
-      throw Exception('Kategoriye göre gelirler getirilirken hata oluştu: $e');
-    }
-  }
-
-  Future<List<Income>> getIncomesByStatus(IncomeStatus status) async {
-    try {
-      final entities =
-          await _database.incomeDao.getIncomesByStatus(status.value).first;
-      return entities.map((entity) => entity.toDomain()).toList();
-    } catch (e) {
-      throw Exception('Duruma göre gelirler getirilirken hata oluştu: $e');
-    }
-  }
-
-  Future<List<Income>> getIncomesByDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    try {
-      final entities = await _database.incomeDao
-          .getIncomesByDateRange(startDate, endDate)
-          .first;
-      return entities.map((entity) => entity.toDomain()).toList();
-    } catch (e) {
-      throw Exception(
-        'Tarih aralığına göre gelirler getirilirken hata oluştu: $e',
-      );
-    }
-  }
-
-  // ========== INCOME CATEGORY OPERATIONS ==========
+  // ========== CATEGORY OPERATIONS ==========
 
   @override
   Future<List<IncomeCategory>> getAllIncomeCategories() async {
     try {
-      final categoryEntities =
-          await _database.incomeCategoryDao.getAllCategories().first;
-      return categoryEntities.map((entity) => entity.toDomain()).toList();
+      final snapshot = await firestore
+          .collection(_categoriesCollection)
+          .orderBy('name')
+          .get();
+
+      return snapshot.docs
+          .map((doc) => IncomeCategory.fromJson(doc.data()))
+          .toList();
     } catch (e) {
-      throw Exception('Gelir kategorileri getirilirken hata oluştu: $e');
+      throw Exception('Failed to get all income categories: $e');
     }
   }
 
   @override
   Stream<List<IncomeCategory>> watchAllIncomeCategories() {
-    try {
-      return _database.incomeCategoryDao.getAllCategories().map(
-            (entities) => entities.map((entity) => entity.toDomain()).toList(),
-          );
-    } catch (e) {
-      throw Exception('Gelir kategorileri izlenirken hata oluştu: $e');
-    }
-  }
-
-  Future<IncomeCategory?> getIncomeCategoryById(String id) async {
-    try {
-      final intId = int.tryParse(id);
-      if (intId == null) return null;
-
-      final entity = await _database.incomeCategoryDao.getCategoryById(intId);
-      return entity?.toDomain();
-    } catch (e) {
-      throw Exception('Gelir kategorisi getirilirken hata oluştu: $e');
-    }
+    return firestore
+        .collection(_categoriesCollection)
+        .orderBy('name')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => IncomeCategory.fromJson(doc.data()))
+            .toList());
   }
 
   @override
   Future<void> createIncomeCategory(IncomeCategory category) async {
     try {
-      final entity = IncomeCategoryEntity.fromDomain(category);
-      await _database.incomeCategoryDao.insertCategory(entity);
+      await firestore
+          .collection(_categoriesCollection)
+          .doc(category.id)
+          .set(category.toJson());
     } catch (e) {
-      throw Exception('Gelir kategorisi oluşturulurken hata oluştu: $e');
+      throw Exception('Failed to create income category: $e');
     }
   }
 
   @override
   Future<void> updateIncomeCategory(IncomeCategory category) async {
     try {
-      final entity = IncomeCategoryEntity.fromDomain(category);
-      await _database.incomeCategoryDao.updateCategory(entity);
+      await firestore
+          .collection(_categoriesCollection)
+          .doc(category.id)
+          .update(category.toJson());
     } catch (e) {
-      throw Exception('Gelir kategorisi güncellenirken hata oluştu: $e');
+      throw Exception('Failed to update income category: $e');
     }
   }
 
   @override
   Future<void> deleteIncomeCategory(String id) async {
     try {
-      final intId = int.tryParse(id);
-      if (intId == null) return;
-
-      await _database.incomeCategoryDao.deleteCategoryById(intId);
+      await firestore.collection(_categoriesCollection).doc(id).delete();
     } catch (e) {
-      throw Exception('Gelir kategorisi silinirken hata oluştu: $e');
+      throw Exception('Failed to delete income category: $e');
     }
   }
 
-  // ========== STATISTICS OPERATIONS ==========
+  // ========== FIREBASE REPOSITORY IMPLEMENTATION ==========
 
-  Future<double> getTotalIncome() async {
-    try {
-      final total = await _database.incomeDao.getTotalIncome();
-      return total ?? 0.0;
-    } catch (e) {
-      throw Exception('Toplam gelir hesaplanırken hata oluştu: $e');
-    }
+  @override
+  Income fromFirestore(Map<String, dynamic> data) {
+    return Income.fromJson(data);
   }
 
-  Future<double> getTotalIncomeByCategory(String categoryId) async {
-    try {
-      final total = await _database.incomeDao.getTotalIncomeByCategory(
-        categoryId,
-      );
-      return total ?? 0.0;
-    } catch (e) {
-      throw Exception(
-        'Kategoriye göre toplam gelir hesaplanırken hata oluştu: $e',
-      );
-    }
-  }
-
-  Future<double> getTotalIncomeByDateRange(
-    DateTime startDate,
-    DateTime endDate,
-  ) async {
-    try {
-      final total = await _database.incomeDao.getTotalIncomeByDateRange(
-        startDate,
-        endDate,
-      );
-      return total ?? 0.0;
-    } catch (e) {
-      throw Exception(
-        'Tarih aralığına göre toplam gelir hesaplanırken hata oluştu: $e',
-      );
-    }
-  }
-
-  Future<int> getIncomeCount() async {
-    try {
-      final count = await _database.incomeDao.getIncomeCount();
-      return count ?? 0;
-    } catch (e) {
-      throw Exception('Gelir sayısı hesaplanırken hata oluştu: $e');
-    }
-  }
-
-  Future<int> getIncomeCountByStatus(IncomeStatus status) async {
-    try {
-      final count = await _database.incomeDao.getIncomeCountByStatus(
-        status.value,
-      );
-      return count ?? 0;
-    } catch (e) {
-      throw Exception('Duruma göre gelir sayısı hesaplanırken hata oluştu: $e');
-    }
+  @override
+  Map<String, dynamic> toFirestore(Income entity) {
+    return entity.toJson();
   }
 }

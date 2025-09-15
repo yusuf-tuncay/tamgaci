@@ -100,6 +100,8 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
         currentBalance: double.tryParse(_currentBalanceController.text) ?? 0.0,
         currency: 'TRY', // Varsayılan para birimi
         status: _getStatusFromString(_selectedStatus),
+        supplierType: SupplierType.individual, // Varsayılan tedarikçi tipi
+        companyId: '', // Varsayılan şirket ID
         createdAt: widget.supplierId == null ? DateTime.now() : DateTime.now(),
         updatedAt: DateTime.now(),
       );

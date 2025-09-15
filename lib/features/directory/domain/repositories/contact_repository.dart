@@ -2,6 +2,7 @@
 // lib/features/directory/domain/repositories/contact_repository.dart
 
 import '../entities/contact.dart';
+import '../entities/contact_type.dart';
 
 /// Fihrist repository interface'i
 abstract class ContactRepository {
@@ -12,7 +13,7 @@ abstract class ContactRepository {
   Future<List<Contact>> getActiveContacts();
 
   /// ID'ye göre kişi/kurum getir
-  Future<Contact?> getContactById(int id);
+  Future<Contact?> getContactById(String id);
 
   /// Tip'e göre kişi/kurumları getir
   Future<List<Contact>> getContactsByType(ContactType type);
@@ -24,13 +25,13 @@ abstract class ContactRepository {
   Future<List<Contact>> searchContacts(String query);
 
   /// Yeni kişi/kurum ekle
-  Future<int> insertContact(Contact contact);
+  Future<String> insertContact(Contact contact);
 
   /// Kişi/kurum güncelle
   Future<void> updateContact(Contact contact);
 
   /// Kişi/kurum sil
-  Future<void> deleteContact(int id);
+  Future<void> deleteContact(String id);
 
   /// Kişi/kurum sayısını getir
   Future<int> getContactCount();
@@ -57,7 +58,8 @@ abstract class ContactRepository {
   Future<List<Contact>> getContactsByCountry(String country);
 
   /// Tarih aralığına göre kişi/kurumları getir
-  Future<List<Contact>> getContactsByDateRange(DateTime startDate, DateTime endDate);
+  Future<List<Contact>> getContactsByDateRange(
+      DateTime startDate, DateTime endDate);
 
   /// Son eklenen kişi/kurumları getir
   Future<List<Contact>> getRecentContacts(int limit);

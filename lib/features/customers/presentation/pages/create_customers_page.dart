@@ -3,10 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tamgaci/features/customers/data/models/customer_entity.dart';
+// import 'package:tamgaci/features/customers/data/models/customer_entity.dart'; // Removed - using Firebase only
 import 'package:uuid/uuid.dart';
 import '../../../../core/theme/constants.dart';
 import '../../domain/entities/customer.dart';
+import '../../domain/entities/customer_enums.dart';
 import 'package:tamgaci/features/customers/presentation/providers/customer_providers.dart';
 
 /// Yeni müşteri oluşturma sayfası - Tam fonksiyonel
@@ -602,6 +603,8 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           ? null
           : _taxOfficeController.text.trim(),
       customerType: _selectedType,
+      status: CustomerStatus.active,
+      companyId: 'default_company_id', // TODO: Get from user context
       city: _cityController.text.trim().isEmpty
           ? null
           : _cityController.text.trim(),
@@ -617,6 +620,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
       isActive: _isActive,
       createdAt: widget.customerId == null ? DateTime.now() : DateTime.now(),
       updatedAt: DateTime.now(),
+      createdBy: 'current_user_id', // TODO: Get from auth context
     );
 
     try {

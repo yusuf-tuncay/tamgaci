@@ -1,7 +1,7 @@
 // ========== lib/features/invoices/domain/entities/invoice.dart ==========
 
 
-import '../../data/models/invoice_entity.dart';
+// import '../../data/models/invoice_entity.dart'; // Removed - using Firebase only
 import '../../data/models/invoice_status.dart';
 import '../../../customers/domain/entities/customer.dart';
 import 'invoice_item.dart';
@@ -91,62 +91,67 @@ class Invoice {
     required this.updatedAt,
   });
 
-  /// InvoiceEntity'den Invoice'a dönüştürme
-  factory Invoice.fromEntity(
-    InvoiceEntity entity, {
-    Customer? customer,
-    List<InvoiceItem> items = const [],
-  }) {
+  /// JSON'dan Invoice oluştur
+  factory Invoice.fromJson(Map<String, dynamic> json) {
     return Invoice(
-      id: entity.id,
-      invoiceNumber: entity.invoiceNumber,
-      customerId: entity.customerId,
-      customer: customer,
-      invoiceDate: DateTime.fromMillisecondsSinceEpoch(entity.invoiceDate),
-      dueDate: entity.dueDate != null
-          ? DateTime.fromMillisecondsSinceEpoch(entity.dueDate!)
+      id: json['id'] as String,
+      invoiceNumber: json['invoiceNumber'] as String,
+      customerId: json['customerId'] as String,
+      customer: json['customer'] != null 
+          ? Customer.fromJson(json['customer'] as Map<String, dynamic>)
           : null,
-      status: InvoiceStatus.fromValue(entity.status),
-      subtotal: entity.subtotal / 100.0, // Kuruştan liraya
-      taxAmount: entity.taxAmount / 100.0,
-      discountAmount: entity.discountAmount / 100.0,
-      totalAmount: entity.totalAmount / 100.0,
-      currencyCode: entity.currencyCode,
-      paymentTerms: entity.paymentTerms,
-      notes: entity.notes,
-      description: entity.description,
-      isPaid: entity.isPaid,
-      paidDate: entity.paidDate != null
-          ? DateTime.fromMillisecondsSinceEpoch(entity.paidDate!)
+      invoiceDate: DateTime.parse(json['invoiceDate'] as String),
+      dueDate: json['dueDate'] != null 
+          ? DateTime.parse(json['dueDate'] as String)
           : null,
-      items: items,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(entity.createdAt),
-      updatedAt: DateTime.fromMillisecondsSinceEpoch(entity.updatedAt),
+      status: InvoiceStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => InvoiceStatus.draft,
+      ),
+      subtotal: (json['subtotal'] as num).toDouble(),
+      taxAmount: (json['taxAmount'] as num).toDouble(),
+      discountAmount: (json['discountAmount'] as num).toDouble(),
+      totalAmount: (json['totalAmount'] as num).toDouble(),
+      currencyCode: json['currencyCode'] as String,
+      paymentTerms: json['paymentTerms'] as String?,
+      notes: json['notes'] as String?,
+      description: json['description'] as String?,
+      isPaid: json['isPaid'] as bool,
+      paidDate: json['paidDate'] != null 
+          ? DateTime.parse(json['paidDate'] as String)
+          : null,
+      items: (json['items'] as List<dynamic>?)
+          ?.map((item) => InvoiceItem.fromJson(item as Map<String, dynamic>))
+          .toList() ?? [],
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
   }
 
-  /// Invoice'dan InvoiceEntity'ye dönüştürme
-  InvoiceEntity toEntity() {
-    return InvoiceEntity(
-      id: id,
-      invoiceNumber: invoiceNumber,
-      customerId: customerId,
-      invoiceDate: invoiceDate.millisecondsSinceEpoch,
-      dueDate: dueDate?.millisecondsSinceEpoch,
-      status: status.value,
-      subtotal: (subtotal * 100).round(), // Liradan kuruşa
-      taxAmount: (taxAmount * 100).round(),
-      discountAmount: (discountAmount * 100).round(),
-      totalAmount: (totalAmount * 100).round(),
-      currencyCode: currencyCode,
-      paymentTerms: paymentTerms,
-      notes: notes,
-      description: description,
-      isPaid: isPaid,
-      paidDate: paidDate?.millisecondsSinceEpoch,
-      createdAt: createdAt.millisecondsSinceEpoch,
-      updatedAt: updatedAt.millisecondsSinceEpoch,
-    );
+  /// Invoice'ı JSON'a çevir
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'invoiceNumber': invoiceNumber,
+      'customerId': customerId,
+      'customer': customer?.toJson(),
+      'invoiceDate': invoiceDate.toIso8601String(),
+      'dueDate': dueDate?.toIso8601String(),
+      'status': status.name,
+      'subtotal': subtotal,
+      'taxAmount': taxAmount,
+      'discountAmount': discountAmount,
+      'totalAmount': totalAmount,
+      'currencyCode': currencyCode,
+      'paymentTerms': paymentTerms,
+      'notes': notes,
+      'description': description,
+      'isPaid': isPaid,
+      'paidDate': paidDate?.toIso8601String(),
+      'items': items.map((item) => item.toJson()).toList(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
   }
 
   /// CopyWith metodu

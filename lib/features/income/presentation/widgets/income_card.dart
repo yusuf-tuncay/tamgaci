@@ -251,10 +251,9 @@ class IncomeCard extends ConsumerWidget {
           exchangeRatesAsync.when(
             data: (exchangeRates) {
               final convertedAmount = CurrencyHelper.convertCurrency(
-                amount: income.amount,
-                fromCurrencyCode: income.currency,
-                toCurrencyCode: selectedCurrency.code,
-                exchangeRates: exchangeRates,
+                income.amount,
+                income.currency,
+                selectedCurrency.code,
               );
               return Text(
                 '(${convertedAmount.toStringAsFixed(2)} ${selectedCurrency.symbol})',

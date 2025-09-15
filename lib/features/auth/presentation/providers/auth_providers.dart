@@ -1,10 +1,70 @@
-// ========== AUTH PROVIDERS ==========
-// lib/features/auth/presentation/providers/auth_providers.dart
-
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import '../../../../core/services/firebase_auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:tamgaci/features/auth/domain/entities/user.dart';
+import 'package:tamgaci/features/auth/domain/repositories/auth_repository.dart';
+import 'package:tamgaci/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:tamgaci/features/auth/data/datasources/auth_firebase_datasource.dart';
+import 'package:tamgaci/features/auth/domain/usecases/sign_in_usecase.dart';
+import 'package:tamgaci/features/auth/domain/usecases/sign_up_usecase.dart';
+import 'package:tamgaci/features/auth/domain/usecases/sign_out_usecase.dart';
+import 'package:tamgaci/features/auth/domain/usecases/get_current_user_usecase.dart';
+import 'package:tamgaci/features/auth/domain/usecases/reset_password_usecase.dart';
+
+// ========== DEPENDENCY INJECTION ==========
+
+/// Firebase Auth instance provider
+final firebaseAuthProvider = Provider<firebase_auth.FirebaseAuth>((ref) {
+  return firebase_auth.FirebaseAuth.instance;
+});
+
+/// Firebase Firestore instance provider
+final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) {
+  return FirebaseFirestore.instance;
+});
+
+/// Auth Firebase datasource provider
+final authFirebaseDataSourceProvider = Provider<AuthFirebaseDataSource>((ref) {
+  final firebaseAuth = ref.watch(firebaseAuthProvider);
+  final firestore = ref.watch(firebaseFirestoreProvider);
+  return AuthFirebaseDataSourceImpl(
+    firebaseAuth: firebaseAuth,
+    firestore: firestore,
+  );
+});
+
+/// Auth repository provider
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  final dataSource = ref.watch(authFirebaseDataSourceProvider);
+  return AuthRepositoryImpl(dataSource: dataSource);
+});
+
+/// Use cases providers
+final signInUseCaseProvider = Provider<SignInUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return SignInUseCase(repository);
+});
+
+final signUpUseCaseProvider = Provider<SignUpUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return SignUpUseCase(repository);
+});
+
+final signOutUseCaseProvider = Provider<SignOutUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return SignOutUseCase(repository);
+});
+
+final getCurrentUserUseCaseProvider = Provider<GetCurrentUserUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return GetCurrentUserUseCase(repository);
+});
+
+final resetPasswordUseCaseProvider = Provider<ResetPasswordUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return ResetPasswordUseCase(repository);
+});
 
 // ========== AUTH STATE ==========
 
@@ -40,33 +100,39 @@ class AuthState {
   bool get isSignedIn => user != null;
 
   /// Kullanıcı ID'sini al
-  String? get userId => user?.uid;
+  String? get userId => user?.id;
 
   /// Kullanıcı e-postasını al
   String? get userEmail => user?.email;
 
   /// Kullanıcı adını al
-  String? get userDisplayName => user?.displayName;
+  String? get userDisplayName => user?.fullName;
 }
 
 // ========== AUTH NOTIFIER ==========
 
 /// Auth durumunu yöneten Notifier
 class AuthNotifier extends StateNotifier<AuthState> {
-  AuthNotifier() : super(const AuthState()) {
+  final AuthRepository _repository;
+  StreamSubscription<User?>? _authStateSubscription;
+
+  AuthNotifier(this._repository) : super(const AuthState()) {
+    _initializeAuthState();
+  }
+
+  /// Auth state'i başlat
+  void _initializeAuthState() {
     // Firebase Auth durumu değişikliklerini dinle
-    _authStateSubscription = FirebaseAuthService.authStateChanges.listen(
+    _authStateSubscription = _repository.authStateChanges.listen(
       (User? user) {
         state = state.copyWith(
           user: user,
-          isEmailVerified: user?.emailVerified ?? false,
+          isEmailVerified: user?.isEmailVerified ?? false,
           error: null,
         );
       },
     );
   }
-
-  StreamSubscription<User?>? _authStateSubscription;
 
   @override
   void dispose() {
@@ -74,24 +140,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     super.dispose();
   }
 
-  /// E-posta ile kayıt ol
-  Future<void> registerWithEmailAndPassword({
+  /// E-posta ile giriş yap
+  Future<void> signInWithEmailAndPassword({
     required String email,
     required String password,
-    required String fullName,
-    String? companyName,
-    String? phoneNumber,
   }) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.registerWithEmailAndPassword(
-        email: email,
-        password: password,
-        fullName: fullName,
-        companyName: companyName,
-        phoneNumber: phoneNumber,
-      );
+      await _repository.signIn(email, password);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -103,18 +160,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  /// E-posta ile giriş yap
-  Future<void> signInWithEmailAndPassword({
+  /// E-posta ile kayıt ol
+  Future<void> registerWithEmailAndPassword({
     required String email,
     required String password,
+    required String name,
+    required String surname,
   }) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await _repository.signUp(email, password, name, surname);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -131,7 +187,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.sendPasswordResetEmail(email);
+      await _repository.resetPassword(email);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -148,7 +204,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.signOut();
+      await _repository.signOut();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -161,34 +217,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Kullanıcı profilini güncelle
-  Future<void> updateUserProfile({
-    String? displayName,
-    String? photoURL,
-  }) async {
+  Future<void> updateUserProfile(User user) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.updateUserProfile(
-        displayName: displayName,
-        photoURL: photoURL,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-      rethrow;
-    } finally {
-      state = state.copyWith(isLoading: false);
-    }
-  }
-
-  /// Kullanıcı e-postasını güncelle
-  Future<void> updateUserEmail(String newEmail) async {
-    try {
-      state = state.copyWith(isLoading: true, error: null);
-
-      await FirebaseAuthService.updateUserEmail(newEmail);
+      await _repository.updateUser(user);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -201,11 +234,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Kullanıcı şifresini güncelle
-  Future<void> updateUserPassword(String newPassword) async {
+  Future<void> updateUserPassword(
+      String currentPassword, String newPassword) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.updateUserPassword(newPassword);
+      await _repository.changePassword(currentPassword, newPassword);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -218,11 +252,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   /// Kullanıcı hesabını sil
-  Future<void> deleteUserAccount() async {
+  Future<void> deleteUserAccount(String password) async {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.deleteUserAccount();
+      await _repository.deleteAccount(password);
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -239,7 +273,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
-      await FirebaseAuthService.sendEmailVerification();
+      final user = state.user;
+      if (user != null) {
+        await _repository.sendEmailVerification(user.email);
+      }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -266,7 +303,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
 /// Auth provider'ı
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier();
+  final repository = ref.watch(authRepositoryProvider);
+  return AuthNotifier(repository);
 });
 
 /// Mevcut kullanıcı provider'ı

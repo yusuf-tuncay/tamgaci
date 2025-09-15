@@ -2,22 +2,15 @@
 // lib/features/suppliers/presentation/providers/supplier_providers.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../domain/entities/supplier.dart';
 import '../../domain/repositories/supplier_repository.dart';
 import '../../data/repositories/firebase_supplier_repository.dart';
 
 // ========== BASE PROVIDERS ==========
 
-/// Supplier repository provider
+/// Supplier repository provider - Firebase only
 final supplierRepositoryProvider = Provider<SupplierRepository>((ref) {
-  // Web platformunda Firebase kullan
-  if (kIsWeb) {
-    return FirebaseSupplierRepository();
-  }
-
-  // TODO: Gerçek repository implementasyonu eklenecek
-  return _EmptySupplierRepository();
+  return FirebaseSupplierRepository();
 });
 
 // ========== DATA PROVIDERS ==========
@@ -327,6 +320,8 @@ class _EmptySupplierRepository implements SupplierRepository {
       currentBalance: 15000.0,
       currency: 'TRY',
       status: SupplierStatus.active,
+      supplierType: SupplierType.company,
+      companyId: 'company_1',
       createdAt: DateTime.now().subtract(const Duration(days: 30)),
       updatedAt: DateTime.now(),
     ),
@@ -345,6 +340,8 @@ class _EmptySupplierRepository implements SupplierRepository {
       currentBalance: 25000.0,
       currency: 'TRY',
       status: SupplierStatus.active,
+      supplierType: SupplierType.company,
+      companyId: 'company_2',
       createdAt: DateTime.now().subtract(const Duration(days: 15)),
       updatedAt: DateTime.now(),
     ),

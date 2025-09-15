@@ -1,0 +1,197 @@
+// ========== FIREBASE NOTIFICATION SERVICE ==========
+// lib/core/services/firebase/firebase_notification_service.dart
+
+import 'package:firebase_messaging/firebase_messaging.dart';
+// import 'package:flutter/foundation.dart'; // Removed - not needed
+import 'package:tamgaci/core/utils/logger.dart';
+
+/// Firebase bildirim servisi
+class FirebaseNotificationService {
+  static final FirebaseNotificationService _instance =
+      FirebaseNotificationService._internal();
+  factory FirebaseNotificationService() => _instance;
+  FirebaseNotificationService._internal();
+
+  final FirebaseMessaging _messaging = FirebaseMessaging.instance;
+
+  /// Firebase bildirim servisini başlat
+  static Future<void> initialize() async {
+    try {
+      final service = FirebaseNotificationService();
+      await service._initialize();
+      AppLogger.info('Firebase notification service initialized');
+    } catch (e) {
+      AppLogger.error('Error initializing Firebase notification service', e);
+    }
+  }
+
+  /// Servisi başlat
+  Future<void> _initialize() async {
+    try {
+      // İzin iste
+      await _requestPermission();
+
+      // Token al
+      await _getToken();
+
+      // Mesaj dinleyicilerini ayarla
+      _setupMessageHandlers();
+
+      AppLogger.info('Firebase notification service setup completed');
+    } catch (e) {
+      AppLogger.error('Error setting up Firebase notification service', e);
+    }
+  }
+
+  /// Bildirim izni iste
+  Future<void> _requestPermission() async {
+    try {
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+
+      AppLogger.info(
+          'Notification permission status: ${settings.authorizationStatus}');
+    } catch (e) {
+      AppLogger.error('Error requesting notification permission', e);
+    }
+  }
+
+  /// FCM token al
+  Future<String?> _getToken() async {
+    try {
+      final token = await _messaging.getToken();
+      AppLogger.info('FCM Token: $token');
+      return token;
+    } catch (e) {
+      AppLogger.error('Error getting FCM token', e);
+      return null;
+    }
+  }
+
+  /// Mesaj dinleyicilerini ayarla
+  void _setupMessageHandlers() {
+    // Foreground mesajları
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+    // Background mesajları
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleBackgroundMessage);
+
+    // Uygulama kapalıyken gelen mesajlar
+    _handleInitialMessage();
+  }
+
+  /// Foreground mesaj işleme
+  void _handleForegroundMessage(RemoteMessage message) {
+    try {
+      AppLogger.info('Foreground message received: ${message.messageId}');
+
+      // Mesaj içeriğini logla
+      AppLogger.info('Message data: ${message.data}');
+      AppLogger.info('Message notification: ${message.notification?.title}');
+
+      // Burada bildirim gösterilebilir
+      // NotificationService().showNotification(...)
+    } catch (e) {
+      AppLogger.error('Error handling foreground message', e);
+    }
+  }
+
+  /// Background mesaj işleme
+  void _handleBackgroundMessage(RemoteMessage message) {
+    try {
+      AppLogger.info('Background message received: ${message.messageId}');
+
+      // Mesaj içeriğini logla
+      AppLogger.info('Message data: ${message.data}');
+      AppLogger.info('Message notification: ${message.notification?.title}');
+
+      // Burada gerekli işlemler yapılabilir
+    } catch (e) {
+      AppLogger.error('Error handling background message', e);
+    }
+  }
+
+  /// İlk mesaj işleme (uygulama kapalıyken gelen)
+  Future<void> _handleInitialMessage() async {
+    try {
+      final initialMessage = await _messaging.getInitialMessage();
+      if (initialMessage != null) {
+        AppLogger.info('Initial message received: ${initialMessage.messageId}');
+        _handleBackgroundMessage(initialMessage);
+      }
+    } catch (e) {
+      AppLogger.error('Error handling initial message', e);
+    }
+  }
+
+  /// Token yenileme dinleyicisi
+  void listenToTokenRefresh() {
+    _messaging.onTokenRefresh.listen((token) {
+      AppLogger.info('FCM Token refreshed: $token');
+      // Burada yeni token'ı sunucuya gönderebilirsiniz
+    });
+  }
+
+  /// Topic'e abone ol
+  Future<void> subscribeToTopic(String topic) async {
+    try {
+      await _messaging.subscribeToTopic(topic);
+      AppLogger.info('Subscribed to topic: $topic');
+    } catch (e) {
+      AppLogger.error('Error subscribing to topic: $topic', e);
+    }
+  }
+
+  /// Topic'ten çık
+  Future<void> unsubscribeFromTopic(String topic) async {
+    try {
+      await _messaging.unsubscribeFromTopic(topic);
+      AppLogger.info('Unsubscribed from topic: $topic');
+    } catch (e) {
+      AppLogger.error('Error unsubscribing from topic: $topic', e);
+    }
+  }
+
+  /// Mevcut token'ı al
+  Future<String?> getCurrentToken() async {
+    try {
+      return await _messaging.getToken();
+    } catch (e) {
+      AppLogger.error('Error getting current token', e);
+      return null;
+    }
+  }
+
+  /// Bildirim ayarlarını al
+  Future<NotificationSettings> getNotificationSettings() async {
+    try {
+      return await _messaging.getNotificationSettings();
+    } catch (e) {
+      AppLogger.error('Error getting notification settings', e);
+      rethrow;
+    }
+  }
+}
+
+/// Background message handler (top-level function)
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  try {
+    AppLogger.info('Background message handler: ${message.messageId}');
+
+    // Mesaj içeriğini logla
+    AppLogger.info('Message data: ${message.data}');
+    AppLogger.info('Message notification: ${message.notification?.title}');
+
+    // Burada gerekli işlemler yapılabilir
+  } catch (e) {
+    AppLogger.error('Error in background message handler', e);
+  }
+}

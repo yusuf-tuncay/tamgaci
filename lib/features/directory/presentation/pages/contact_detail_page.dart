@@ -4,10 +4,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/contact_providers.dart';
 import '../../domain/entities/contact.dart';
+import '../../domain/entities/contact_type.dart';
 import 'edit_contact_page.dart';
 
 class ContactDetailPage extends ConsumerStatefulWidget {
@@ -44,6 +48,8 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
           children: [
             _buildHeaderSection(),
             const SizedBox(height: 24),
+            _buildQuickActionsSection(),
+            const SizedBox(height: 24),
             _buildContactInfoSection(),
             const SizedBox(height: 24),
             _buildAddressSection(),
@@ -51,6 +57,8 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
             _buildTaxInfoSection(),
             const SizedBox(height: 24),
             _buildAdditionalInfoSection(),
+            const SizedBox(height: 24),
+            _buildStatisticsSection(),
             const SizedBox(height: 24),
             _buildTimestampsSection(),
           ],
@@ -70,9 +78,9 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
             // Avatar ve tip
             CircleAvatar(
               radius: 40,
-              backgroundColor: _getContactTypeColor(ContactType.fromValue(widget.contact.type)),
+              backgroundColor: _getContactTypeColor(widget.contact.type),
               child: Icon(
-                _getContactTypeIcon(ContactType.fromValue(widget.contact.type)),
+                _getContactTypeIcon(widget.contact.type),
                 color: Colors.white,
                 size: 40,
               ),
@@ -93,20 +101,20 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color:
-                    _getContactTypeColor(ContactType.fromValue(widget.contact.type)).withValues(alpha: 0.1),
+                color: _getContactTypeColor(widget.contact.type)
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: _getContactTypeColor(ContactType.fromValue(widget.contact.type)),
+                  color: _getContactTypeColor(widget.contact.type),
                   width: 1,
                 ),
               ),
               child: Text(
-                ContactType.fromValue(widget.contact.type).displayName,
+                widget.contact.type.displayName,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _getContactTypeColor(ContactType.fromValue(widget.contact.type)),
+                  color: _getContactTypeColor(widget.contact.type),
                 ),
               ),
             ),
@@ -488,7 +496,306 @@ class _ContactDetailPageState extends ConsumerState<ContactDetailPage> {
   void _deleteContact() {
     ref
         .read(contactOperationsProvider.notifier)
-        .deleteContact(widget.contact.id!);
+        .deleteContact(widget.contact.id);
     Navigator.pop(context);
+  }
+
+  Widget _buildQuickActionsSection() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hızlı İşlemler',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildActionButton(
+                    icon: Icons.phone,
+                    label: 'Ara',
+                    onTap: () => _makePhoneCall(),
+                    color: Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    icon: Icons.email,
+                    label: 'E-posta',
+                    onTap: () => _sendEmail(),
+                    color: Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    icon: Icons.share,
+                    label: 'Paylaş',
+                    onTap: () => _shareContact(),
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildActionButton(
+                    icon: Icons.qr_code,
+                    label: 'QR Kod',
+                    onTap: () => _showQRCode(),
+                    color: Colors.purple,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatisticsSection() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'İstatistikler',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.receipt,
+                    label: 'Toplam Fatura',
+                    value: '0',
+                    color: Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.attach_money,
+                    label: 'Toplam Tutar',
+                    value: '₺0',
+                    color: Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.shopping_cart,
+                    label: 'Son Alışveriş',
+                    value: 'Yok',
+                    color: Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildStatCard(
+                    icon: Icons.star,
+                    label: 'Müşteri Puanı',
+                    value: '5.0',
+                    color: Colors.amber,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _makePhoneCall() {
+    if (widget.contact.phone != null && widget.contact.phone!.isNotEmpty) {
+      final Uri phoneUri = Uri(scheme: 'tel', path: widget.contact.phone!);
+      launchUrl(phoneUri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Telefon numarası bulunamadı')),
+      );
+    }
+  }
+
+  void _sendEmail() {
+    if (widget.contact.email != null && widget.contact.email!.isNotEmpty) {
+      final Uri emailUri = Uri(
+        scheme: 'mailto',
+        path: widget.contact.email!,
+        query: 'subject=Merhaba ${widget.contact.name}',
+      );
+      launchUrl(emailUri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('E-posta adresi bulunamadı')),
+      );
+    }
+  }
+
+  void _shareContact() {
+    final contactInfo = '''
+${widget.contact.name}
+${widget.contact.phone != null ? 'Tel: ${widget.contact.phone}' : ''}
+${widget.contact.email != null ? 'E-posta: ${widget.contact.email}' : ''}
+${widget.contact.address != null ? 'Adres: ${widget.contact.address}' : ''}
+''';
+
+    Share.share(contactInfo,
+        subject: '${widget.contact.name} - İletişim Bilgileri');
+  }
+
+  void _showQRCode() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${widget.contact.name} - QR Kod'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: QrImageView(
+                data: _generateContactVCard(),
+                version: QrVersions.auto,
+                size: 200.0,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'QR kodu tarayarak kişi bilgilerini kaydedebilirsiniz',
+              style: GoogleFonts.poppins(fontSize: 12),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _generateContactVCard() {
+    final vcard = StringBuffer();
+    vcard.writeln('BEGIN:VCARD');
+    vcard.writeln('VERSION:3.0');
+    vcard.writeln('FN:${widget.contact.name}');
+    if (widget.contact.phone != null) {
+      vcard.writeln('TEL:${widget.contact.phone}');
+    }
+    if (widget.contact.email != null) {
+      vcard.writeln('EMAIL:${widget.contact.email}');
+    }
+    if (widget.contact.address != null) {
+      vcard.writeln('ADR:;;${widget.contact.address}');
+    }
+    if (widget.contact.website != null) {
+      vcard.writeln('URL:${widget.contact.website}');
+    }
+    vcard.writeln('END:VCARD');
+    return vcard.toString();
   }
 }

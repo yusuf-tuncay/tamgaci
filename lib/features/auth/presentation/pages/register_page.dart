@@ -51,12 +51,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     }
 
     try {
+      final full = _nameController.text.trim();
+      final parts = full.split(' ');
+      final name = parts.isNotEmpty ? parts.first : full;
+      final surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       await ref.read(authProvider.notifier).registerWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text,
-            fullName: _nameController.text.trim(),
-            companyName: _companyNameController.text.trim(),
-            phoneNumber: _phoneController.text.trim(),
+            name: name,
+            surname: surname,
           );
 
       if (mounted) {

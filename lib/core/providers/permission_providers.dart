@@ -3,7 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/permission_service.dart';
+import '../services/utils/permission_service.dart';
 
 /// Permission service provider
 final permissionServiceProvider = Provider<PermissionService>((ref) {

@@ -40,14 +40,9 @@ dependencies:
   # State Management
   flutter_riverpod: ^2.4.9
 
-  # Database
-  floor: ^1.5.0
-  sqflite: ^2.3.0
-  sqflite_common_ffi: ^2.3.2+4
-
   # HTTP ve API
   http: ^1.2.2
-  web_socket_channel: ^2.4.0
+  dio: ^5.4.0
   web: ^1.1.0
 
   # Utility
@@ -55,12 +50,27 @@ dependencies:
   uuid: ^4.3.3
   shared_preferences: ^2.5.3
   logger: ^2.0.2+1
+  equatable: ^2.0.5
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
 
   # Image ve File
   image_picker: ^1.0.7
   file_picker: ^8.0.0+1
+  
+  # QR Code ve Share
+  qr_flutter: ^4.1.0
+  share_plus: ^7.2.1
+  url_launcher: ^6.2.2
   path_provider: ^2.1.4
   permission_handler: ^11.3.1
+  device_info_plus: ^10.1.2
+  package_info_plus: ^8.0.2
+  geolocator: ^12.0.0
+  geocoding: ^3.0.0
+  timezone: ^0.9.4
+  image: ^4.1.7
+  flutter_image_compress: ^2.3.0
   
   # Export/Import
   excel: ^2.1.0
@@ -71,17 +81,8 @@ dependencies:
   connectivity_plus: ^5.0.2
   internet_connection_checker_plus: ^2.2.0
 
-  # Location
-  geolocator: ^11.0.0
-  geocoding: ^3.0.0
-
-  # Device Info
-  device_info_plus: ^10.1.0
-  package_info_plus: ^8.0.2
-  
   # Notifications
   flutter_local_notifications: ^18.0.1
-  timezone: ^0.9.4
 
   # Firebase
   firebase_core: ^3.6.0
@@ -103,8 +104,14 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^3.0.0
-  floor_generator: ^1.5.0
+  
+  # Testing dependencies
+  mockito: ^5.4.4
   build_runner: ^2.4.7
+  freezed: ^2.4.6
+  json_serializable: ^6.7.1
+  integration_test:
+    sdk: flutter
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

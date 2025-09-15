@@ -352,6 +352,8 @@ class FirebaseIncomeRepository implements IncomeRepository {
       'notes': income.notes,
       'createdAt': income.createdAt,
       'updatedAt': income.updatedAt,
+      'createdBy': income.createdBy,
+      'updatedBy': income.updatedBy,
     };
   }
 
@@ -377,6 +379,8 @@ class FirebaseIncomeRepository implements IncomeRepository {
       notes: data['notes'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      createdBy: data['createdBy'] ?? 'system',
+      updatedBy: data['updatedBy'],
     );
   }
 

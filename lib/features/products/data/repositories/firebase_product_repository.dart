@@ -6,7 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 import 'package:tamgaci/core/utils/logger.dart';
-import '../models/product_entity.dart';
+import '../models/firebase_product_entity.dart';
 
 /// Firebase Firestore tabanlı ürün repository implementasyonu
 class FirebaseProductRepository implements ProductRepository {
@@ -148,8 +148,8 @@ class FirebaseProductRepository implements ProductRepository {
   Future<void> createProduct(Product product) async {
     try {
       final docRef = _firestore.collection(_collectionName).doc();
-      final productEntity = ProductEntity.fromDomain(product)
-          .copyWith(id: int.tryParse(docRef.id));
+      final productEntity =
+          ProductEntity.fromDomain(product).copyWith(id: docRef.id);
       await docRef.set(productEntity.toFirestore());
     } catch (e) {
       AppLogger.error('Error creating product', e);

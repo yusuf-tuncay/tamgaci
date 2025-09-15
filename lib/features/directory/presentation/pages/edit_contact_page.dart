@@ -10,6 +10,7 @@ import '../../../../core/validators/input_validators.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/contact_providers.dart';
 import '../../domain/entities/contact.dart';
+import '../../domain/entities/contact_type.dart';
 
 class EditContactPage extends ConsumerStatefulWidget {
   final Contact contact;
@@ -59,7 +60,7 @@ class _EditContactPageState extends ConsumerState<EditContactPage> {
         TextEditingController(text: widget.contact.website ?? '');
     _notesController = TextEditingController(text: widget.contact.notes ?? '');
 
-    _selectedType = ContactType.fromValue(widget.contact.type);
+    _selectedType = widget.contact.type;
     _isFavorite = widget.contact.isFavorite;
     _isActive = widget.contact.isActive;
   }
@@ -426,7 +427,7 @@ class _EditContactPageState extends ConsumerState<EditContactPage> {
     if (_formKey.currentState!.validate()) {
       final updatedContact = widget.contact.copyWith(
         name: InputValidators.formatName(_nameController.text),
-        type: _selectedType.value,
+        type: _selectedType,
         email: _emailController.text.trim().isEmpty
             ? null
             : InputValidators.formatEmail(_emailController.text),

@@ -155,10 +155,14 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
         return supplier.name.toLowerCase().contains(
                   searchQuery.toLowerCase(),
                 ) ||
-            supplier.contactPerson.toLowerCase().contains(
-                  searchQuery.toLowerCase(),
-                ) ||
-            supplier.email.toLowerCase().contains(searchQuery.toLowerCase());
+            (supplier.contactPerson?.toLowerCase().contains(
+                      searchQuery.toLowerCase(),
+                    ) ??
+                false) ||
+            (supplier.email
+                    ?.toLowerCase()
+                    .contains(searchQuery.toLowerCase()) ??
+                false);
       }).toList();
     }
 
@@ -260,7 +264,7 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          supplier.contactPerson,
+                          supplier.contactPerson ?? '',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w400,
@@ -291,7 +295,7 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      supplier.email,
+                      supplier.email ?? '',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: TamgaciConstants.textSecondary,
@@ -314,7 +318,7 @@ class _SuppliersListPageState extends ConsumerState<SuppliersListPage> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    supplier.phone,
+                    supplier.phone ?? '',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       color: TamgaciConstants.textSecondary,

@@ -1,6 +1,7 @@
 // ========== lib/features/customers/domain/entities/customer.dart ==========
 
-import '../../data/models/customer_entity.dart';
+// import '../../data/models/customer_entity.dart'; // Removed - using Firebase only
+import 'customer_enums.dart';
 
 /// Müşteri domain entity'si - Business logic katmanı için
 class Customer {
@@ -9,6 +10,12 @@ class Customer {
 
   /// Müşteri/Şirket adı
   final String name;
+
+  /// Müşteri kodu
+  final String? customerCode;
+
+  /// Müşteri kategorisi
+  final String? category;
 
   /// E-posta adresi
   final String? email;
@@ -27,6 +34,18 @@ class Customer {
 
   /// Müşteri tipi
   final CustomerType customerType;
+
+  /// Müşteri durumu
+  final CustomerStatus status;
+
+  /// Kredi limiti
+  final double creditLimit;
+
+  /// Mevcut bakiye
+  final double currentBalance;
+
+  /// Şirket ID'si
+  final String companyId;
 
   /// Şehir
   final String? city;
@@ -55,15 +74,27 @@ class Customer {
   /// Güncellenme tarihi
   final DateTime updatedAt;
 
+  /// Oluşturan kullanıcı
+  final String createdBy;
+
+  /// Güncelleyen kullanıcı
+  final String? updatedBy;
+
   const Customer({
     required this.id,
     required this.name,
+    this.customerCode,
+    this.category,
     this.email,
     this.phone,
     this.address,
     this.taxNumber,
     this.taxOffice,
     required this.customerType,
+    required this.status,
+    this.creditLimit = 0.0,
+    this.currentBalance = 0.0,
+    required this.companyId,
     this.city,
     this.country,
     this.postalCode,
@@ -73,64 +104,32 @@ class Customer {
     this.isActive = true,
     required this.createdAt,
     required this.updatedAt,
+    required this.createdBy,
+    this.updatedBy,
   });
 
-  /// CustomerEntity'den Customer'a dönüştürme
-  factory Customer.fromEntity(CustomerEntity entity) {
-    return Customer(
-      id: entity.id,
-      name: entity.name,
-      email: entity.email,
-      phone: entity.phone,
-      address: entity.address,
-      taxNumber: entity.taxNumber,
-      taxOffice: entity.taxOffice,
-      customerType: CustomerType.fromValue(entity.customerType),
-      city: entity.city,
-      country: entity.country,
-      postalCode: entity.postalCode,
-      balance: entity.balance / 100.0, // Kuruştan liraya
-      balanceCurrency: entity.balanceCurrency,
-      notes: entity.notes,
-      isActive: entity.isActive,
-      createdAt: entity.createdAt,
-      updatedAt: entity.updatedAt,
-    );
-  }
+  /// CustomerEntity'den Customer'a dönüştürme - Removed
+  // factory Customer.fromEntity(CustomerEntity entity) { ... }
 
-  /// Customer'dan CustomerEntity'ye dönüştürme
-  CustomerEntity toEntity() {
-    return CustomerEntity(
-      id: id,
-      name: name,
-      email: email,
-      phone: phone,
-      address: address,
-      taxNumber: taxNumber,
-      taxOffice: taxOffice,
-      customerType: customerType.value,
-      city: city,
-      country: country,
-      postalCode: postalCode,
-      balance: (balance * 100).round(), // Liradan kuruşa
-      balanceCurrency: balanceCurrency,
-      notes: notes,
-      isActive: isActive,
-      createdAt: createdAt,
-      updatedAt: updatedAt,
-    );
-  }
+  /// Customer'dan CustomerEntity'ye dönüştürme - Removed
+  // CustomerEntity toEntity() { ... }
 
   /// CopyWith metodu
   Customer copyWith({
     String? id,
     String? name,
+    String? customerCode,
+    String? category,
     String? email,
     String? phone,
     String? address,
     String? taxNumber,
     String? taxOffice,
     CustomerType? customerType,
+    CustomerStatus? status,
+    double? creditLimit,
+    double? currentBalance,
+    String? companyId,
     String? city,
     String? country,
     String? postalCode,
@@ -140,16 +139,24 @@ class Customer {
     bool? isActive,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? createdBy,
+    String? updatedBy,
   }) {
     return Customer(
       id: id ?? this.id,
       name: name ?? this.name,
+      customerCode: customerCode ?? this.customerCode,
+      category: category ?? this.category,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
       taxNumber: taxNumber ?? this.taxNumber,
       taxOffice: taxOffice ?? this.taxOffice,
       customerType: customerType ?? this.customerType,
+      status: status ?? this.status,
+      creditLimit: creditLimit ?? this.creditLimit,
+      currentBalance: currentBalance ?? this.currentBalance,
+      companyId: companyId ?? this.companyId,
       city: city ?? this.city,
       country: country ?? this.country,
       postalCode: postalCode ?? this.postalCode,
@@ -159,13 +166,15 @@ class Customer {
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      createdBy: createdBy ?? this.createdBy,
+      updatedBy: updatedBy ?? this.updatedBy,
     );
   }
 
   /// Müşterinin tam adres bilgisini döndürür
   String get fullAddress {
     final parts = <String>[];
-    
+
     if (address != null && address!.isNotEmpty) {
       parts.add(address!);
     }
@@ -178,7 +187,7 @@ class Customer {
     if (postalCode != null && postalCode!.isNotEmpty) {
       parts.add(postalCode!);
     }
-    
+
     return parts.join(', ');
   }
 
@@ -200,7 +209,7 @@ class Customer {
   /// Müşterinin kısa bilgisini döndürür
   String get shortInfo {
     final parts = <String>[];
-    
+
     if (phone != null && phone!.isNotEmpty) {
       parts.add(phone!);
     }
@@ -210,7 +219,7 @@ class Customer {
     if (city != null && city!.isNotEmpty) {
       parts.add(city!);
     }
-    
+
     return parts.join(' • ');
   }
 
@@ -279,4 +288,66 @@ class Customer {
 
   @override
   int get hashCode => id.hashCode;
+
+  /// JSON'dan Customer oluştur
+  factory Customer.fromJson(Map<String, dynamic> json) {
+    return Customer(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      customerCode: json['customerCode'] as String?,
+      category: json['category'] as String?,
+      email: json['email'] as String?,
+      phone: json['phone'] as String?,
+      address: json['address'] as String?,
+      taxNumber: json['taxNumber'] as String?,
+      taxOffice: json['taxOffice'] as String?,
+      customerType: CustomerType.values.firstWhere(
+        (e) => e.name == json['customerType'],
+        orElse: () => CustomerType.individual,
+      ),
+      status: CustomerStatus.values.firstWhere(
+        (e) => e.name == json['status'],
+        orElse: () => CustomerStatus.active,
+      ),
+      creditLimit: (json['creditLimit'] ?? 0.0).toDouble(),
+      currentBalance: (json['currentBalance'] ?? 0.0).toDouble(),
+      companyId: json['companyId'] as String,
+      city: json['city'] as String?,
+      country: json['country'] as String?,
+      postalCode: json['postalCode'] as String?,
+      notes: json['notes'] as String?,
+      isActive: json['isActive'] ?? true,
+      createdBy: json['createdBy'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+    );
+  }
+
+  /// Customer'ı JSON'a çevir
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'customerCode': customerCode,
+      'category': category,
+      'email': email,
+      'phone': phone,
+      'address': address,
+      'taxNumber': taxNumber,
+      'taxOffice': taxOffice,
+      'customerType': customerType.name,
+      'status': status.name,
+      'creditLimit': creditLimit,
+      'currentBalance': currentBalance,
+      'companyId': companyId,
+      'city': city,
+      'country': country,
+      'postalCode': postalCode,
+      'notes': notes,
+      'isActive': isActive,
+      'createdBy': createdBy,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 }
