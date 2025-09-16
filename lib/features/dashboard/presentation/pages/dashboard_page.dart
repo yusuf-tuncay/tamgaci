@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
@@ -37,11 +38,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final recentActivitiesAsync = ref.watch(recentTransactionsProvider);
     final monthlyChartAsync = ref.watch(monthlyChartDataProvider);
 
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: const CustomAppBar(title: 'Dashboard', showDrawer: true),
-      drawer: const TamgaciDrawerMenu(),
-      body: _buildMobileLayout(dashboardSummaryAsync, recentActivitiesAsync,
-          monthlyChartAsync, isDark),
+      drawerContent: const TamgaciDrawerMenu(),
+      body: _buildMobileLayout(
+        dashboardSummaryAsync,
+        recentActivitiesAsync,
+        monthlyChartAsync,
+        isDark,
+      ),
     );
   }
 

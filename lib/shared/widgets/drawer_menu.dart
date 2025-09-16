@@ -578,13 +578,49 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Theme.of(context).brightness == Brightness.dark
+            ? Colors.grey[900]
+            : Colors.grey[50],
         border: Border(
           top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
         ),
       ),
       child: Column(
         children: [
+          // Ayarlar kısayolu
+          ListTile(
+            leading: const Icon(Icons.settings_outlined),
+            title: Text(
+              'Ayarlar',
+              style: GoogleFonts.poppins(fontSize: 14),
+            ),
+            onTap: () {
+              Navigator.pushNamed(context, TamgaciRoutes.settings);
+            },
+          ),
+          // Güncel kur bilgisi
+          Consumer(builder: (context, ref, child) {
+            final selected = ref.watch(selectedCurrencyProvider);
+            final converter = ref.watch(currencyConverterProvider);
+            final code = selected.code;
+            final rate = converter.convert(
+              amount: 1,
+              fromCurrencyCode: 'USD',
+              toCurrencyCode: code,
+            );
+            return ListTile(
+              leading: const Icon(Icons.show_chart),
+              title: Text(
+                'Güncel Kur',
+                style: GoogleFonts.poppins(fontSize: 14),
+              ),
+              subtitle: Text(
+                '1 USD = ${rate.toStringAsFixed(2)} $code',
+                style:
+                    GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
+              ),
+            );
+          }),
           // Tema seçici
           ListTile(
             leading: const Icon(Icons.palette_outlined),
