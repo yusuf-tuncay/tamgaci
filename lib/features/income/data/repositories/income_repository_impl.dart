@@ -224,12 +224,11 @@ class IncomeRepositoryImpl extends FirebaseRepository<Income>
 
   // ========== FIREBASE REPOSITORY IMPLEMENTATION ==========
 
-  @override
+  // These helpers are not overrides; keep as convenience mappers.
   Income fromFirestore(Map<String, dynamic> data) {
     return Income.fromJson(data);
   }
 
-  @override
   Map<String, dynamic> toFirestore(Income entity) {
     return entity.toJson();
   }

@@ -471,25 +471,6 @@ class DataCache {
   /// Clear specific data type cache
   Future<void> clearDataTypeCache(DataType dataType) async {
     try {
-      String prefix;
-      switch (dataType) {
-        case DataType.customers:
-          prefix = _customerCachePrefix;
-          break;
-        case DataType.products:
-          prefix = _productCachePrefix;
-          break;
-        case DataType.invoices:
-          prefix = _invoiceCachePrefix;
-          break;
-        case DataType.dashboard:
-          prefix = _dashboardCachePrefix;
-          break;
-        case DataType.reports:
-          prefix = _reportCachePrefix;
-          break;
-      }
-
       // This would require more complex logic to remove only specific prefix items
       // For now, we'll just log the action
       ErrorLogger.logInfo(

@@ -95,8 +95,8 @@ class FirebaseAuthService {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        await user.updateEmail(newEmail);
-        AppLogger.info('User email updated successfully');
+        await user.verifyBeforeUpdateEmail(newEmail);
+        AppLogger.info('Verification email sent for email update');
       }
     } catch (e) {
       AppLogger.error('Email update failed', e);

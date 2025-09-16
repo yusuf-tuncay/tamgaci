@@ -8,6 +8,7 @@ import 'package:tamgaci/features/inventory/domain/entities/inventory_movement.da
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
 class InventoryMovementFirebaseDataSource {
   final FirebaseFirestore _firestore;
+  // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
 
   InventoryMovementFirebaseDataSource(this._firestore, this._firebaseAuth);

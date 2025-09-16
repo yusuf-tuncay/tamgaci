@@ -87,7 +87,7 @@ class Warehouse {
   String get capacityStatus {
     final rate = capacityUsageRate;
     if (rate >= 0.9) return 'Dolu';
-    if (rate >= 0.7) return 'Dolu';
+    if (rate >= 0.7) return 'Yüksek';
     if (rate >= 0.5) return 'Orta';
     return 'Boş';
   }
@@ -132,7 +132,7 @@ class Warehouse {
       usedCapacity: usedCapacity ?? this.usedCapacity,
       hasClimateControl: hasClimateControl ?? this.hasClimateControl,
       hasSecurity: hasSecurity ?? this.hasSecurity,
-      createdBy: createdBy ?? createdBy,
+      createdBy: createdBy ?? this.createdBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

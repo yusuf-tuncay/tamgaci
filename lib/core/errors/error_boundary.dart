@@ -77,6 +77,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
     );
   }
 
+  // ignore: unused_element
   void _handleError(Object error, StackTrace stackTrace) {
     setState(() {
       hasError = true;

@@ -209,12 +209,11 @@ class WarehouseRepositoryImpl extends FirebaseRepository<Warehouse>
 
   // ========== FIREBASE REPOSITORY IMPLEMENTATION ==========
 
-  @override
+  // These methods are not part of the base interface; keep non-override helpers.
   Warehouse fromFirestore(Map<String, dynamic> data) {
     return Warehouse.fromMap(data);
   }
 
-  @override
   Map<String, dynamic> toFirestore(Warehouse entity) {
     return entity.toMap();
   }

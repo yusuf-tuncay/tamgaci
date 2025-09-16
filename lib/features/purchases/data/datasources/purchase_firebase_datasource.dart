@@ -8,6 +8,7 @@ import 'package:tamgaci/features/purchases/domain/entities/purchase.dart';
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
 class PurchaseFirebaseDataSource {
   final FirebaseFirestore _firestore;
+  // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
 
   PurchaseFirebaseDataSource(this._firestore, this._firebaseAuth);

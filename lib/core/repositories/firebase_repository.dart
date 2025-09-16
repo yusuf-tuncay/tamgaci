@@ -115,7 +115,7 @@ abstract class FirebaseRepository<T> extends BaseRepositoryImpl<T> {
         throw BusinessRuleException(businessRuleResult.errors.join(', '));
       }
 
-      final entityMap = entityToMap(entity);
+      // Map is recomputed after setting ID; suppress unused local variable
       final docRef = collection.doc();
       final entityWithId = setEntityId(entity, docRef.id);
       final finalEntityMap = entityToMap(entityWithId);

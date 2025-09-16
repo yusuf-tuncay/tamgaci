@@ -82,6 +82,7 @@ class PurchaseModel extends Purchase {
     );
   }
 
+  @override
   PurchaseModel copyWith({
     String? id,
     String? purchaseNumber,

@@ -152,7 +152,7 @@ class FirebaseContactRepository implements ContactRepository {
 
       return querySnapshot.docs
           .map((doc) => _contactFromMap(doc))
-          .where((contact) => contact.type == type.value)
+          .where((contact) => contact.type.value == type.value)
           .toList()
         ..sort((a, b) => a.name.compareTo(b.name));
     } catch (e) {
@@ -178,7 +178,7 @@ class FirebaseContactRepository implements ContactRepository {
       final querySnapshot = await _firestore.collection(_collectionName).get();
       return querySnapshot.docs
           .map((doc) => _contactFromMap(doc))
-          .where((contact) => contact.type == type.value)
+          .where((contact) => contact.type.value == type.value)
           .length;
     } catch (e) {
       AppLogger.error('Error getting contact count by type', e);
@@ -352,9 +352,9 @@ class FirebaseContactRepository implements ContactRepository {
       final total = contacts.length;
       final active = contacts.where((c) => c.isActive).length;
       final favorite = contacts.where((c) => c.isFavorite).length;
-      final customers = contacts.where((c) => c.type == 0).length;
-      final suppliers = contacts.where((c) => c.type == 1).length;
-      final both = contacts.where((c) => c.type == 2).length;
+      final customers = contacts.where((c) => c.type.value == 0).length;
+      final suppliers = contacts.where((c) => c.type.value == 1).length;
+      final both = contacts.where((c) => c.type.value == 2).length;
 
       return {
         'total': total,

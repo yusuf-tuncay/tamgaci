@@ -8,6 +8,7 @@ import 'package:tamgaci/features/inventory/domain/entities/inventory_item.dart';
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
 class InventoryItemFirebaseDataSource {
   final FirebaseFirestore _firestore;
+  // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
 
   InventoryItemFirebaseDataSource(this._firestore, this._firebaseAuth);
@@ -281,8 +282,10 @@ class InventoryItemFirebaseDataSource {
         default: // normal
           query = _firestore
               .collection('inventory_items')
-              .where('currentStock', isGreaterThan: FieldPath(const ['reorderPoint']))
-              .where('currentStock', isLessThan: FieldPath(const ['maximumStock']))
+              .where('currentStock',
+                  isGreaterThan: FieldPath(const ['reorderPoint']))
+              .where('currentStock',
+                  isLessThan: FieldPath(const ['maximumStock']))
               .orderBy('currentStock', descending: true);
       }
 

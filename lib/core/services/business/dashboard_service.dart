@@ -13,7 +13,6 @@ class DashboardService {
     try {
       final now = DateTime.now();
       final startOfMonth = DateTime(now.year, now.month, 1);
-      final startOfYear = DateTime(now.year, 1, 1);
 
       // Paralel olarak tüm verileri çek
       final results = await Future.wait([
@@ -69,8 +68,8 @@ class DashboardService {
       }).length;
 
       // Toplam bakiye
-      double totalBalance = customers.fold<double>(0, (sum, doc) {
-        return sum + ((doc.data()['currentBalance'] ?? 0.0).toDouble());
+      double totalBalance = customers.fold<double>(0, (acc, doc) {
+        return acc + ((doc.data()['currentBalance'] ?? 0.0).toDouble());
       });
 
       return {
@@ -113,10 +112,10 @@ class DashboardService {
           .length;
 
       // Toplam stok değeri
-      double totalStockValue = products.fold<double>(0, (sum, doc) {
+      double totalStockValue = products.fold<double>(0, (acc, doc) {
         final stock = (doc.data()['stockQuantity'] ?? 0).toInt();
         final price = (doc.data()['unitPrice'] ?? 0.0).toDouble();
-        return sum + (stock * price);
+        return acc + (stock * price);
       });
 
       return {
@@ -158,14 +157,14 @@ class DashboardService {
       int pendingSales =
           invoices.where((doc) => doc.data()['isPaid'] == false).length;
 
-      double totalAmount = invoices.fold<double>(0, (sum, doc) {
-        return sum + ((doc.data()['totalAmount'] ?? 0.0).toDouble());
+      double totalAmount = invoices.fold<double>(0, (acc, doc) {
+        return acc + ((doc.data()['totalAmount'] ?? 0.0).toDouble());
       });
 
       double paidAmount = invoices
           .where((doc) => doc.data()['isPaid'] == true)
-          .fold<double>(0, (sum, doc) {
-        return sum + ((doc.data()['totalAmount'] ?? 0.0).toDouble());
+          .fold<double>(0, (acc, doc) {
+        return acc + ((doc.data()['totalAmount'] ?? 0.0).toDouble());
       });
 
       double pendingAmount = totalAmount - paidAmount;
@@ -211,8 +210,8 @@ class DashboardService {
       int pendingExpenses =
           expenses.where((doc) => doc.data()['status'] == 'pending').length;
 
-      double totalAmount = expenses.fold<double>(0, (sum, doc) {
-        return sum + ((doc.data()['amount'] ?? 0.0).toDouble());
+      double totalAmount = expenses.fold<double>(0, (acc, doc) {
+        return acc + ((doc.data()['amount'] ?? 0.0).toDouble());
       });
 
       return {
@@ -251,8 +250,8 @@ class DashboardService {
       int pendingIncomes =
           incomes.where((doc) => doc.data()['status'] == 'pending').length;
 
-      double totalAmount = incomes.fold<double>(0, (sum, doc) {
-        return sum + ((doc.data()['amount'] ?? 0.0).toDouble());
+      double totalAmount = incomes.fold<double>(0, (acc, doc) {
+        return acc + ((doc.data()['amount'] ?? 0.0).toDouble());
       });
 
       return {
@@ -293,8 +292,8 @@ class DashboardService {
       int pendingTransactions =
           transactions.where((doc) => doc.data()['status'] == 'pending').length;
 
-      double totalAmount = transactions.fold<double>(0, (sum, doc) {
-        return sum + ((doc.data()['amount'] ?? 0.0).toDouble());
+      double totalAmount = transactions.fold<double>(0, (acc, doc) {
+        return acc + ((doc.data()['amount'] ?? 0.0).toDouble());
       });
 
       return {

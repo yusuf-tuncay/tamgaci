@@ -66,6 +66,7 @@ class CashTransactionModel extends CashTransaction {
     );
   }
 
+  @override
   CashTransactionModel copyWith({
     String? id,
     String? transactionNumber,

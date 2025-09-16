@@ -8,6 +8,7 @@ import 'package:tamgaci/features/cash_management/domain/entities/cash_account.da
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
 class CashAccountFirebaseDataSource {
   final FirebaseFirestore _firestore;
+  // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
 
   CashAccountFirebaseDataSource(this._firestore, this._firebaseAuth);

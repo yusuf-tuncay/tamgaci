@@ -310,12 +310,11 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
 
   // ========== FIREBASE REPOSITORY IMPLEMENTATION ==========
 
-  @override
+  // These methods are not part of the base interface; keep non-override helpers.
   Stock fromFirestore(Map<String, dynamic> data) {
     return Stock.fromMap(data);
   }
 
-  @override
   Map<String, dynamic> toFirestore(Stock entity) {
     return entity.toMap();
   }

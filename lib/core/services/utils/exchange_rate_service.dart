@@ -48,7 +48,9 @@ class ExchangeRateService {
   factory ExchangeRateService() => _instance;
   ExchangeRateService._internal();
 
+  // ignore: unused_field
   final Dio _dio = Dio();
+  // ignore: unused_field
   final String _baseUrl = 'https://api.exchangerate-api.com/v4/latest';
 
   /// Döviz kurlarını getir

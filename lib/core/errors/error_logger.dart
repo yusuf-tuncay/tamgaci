@@ -114,7 +114,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
+    // final logData = _buildLogData(context, additionalData);
 
     _logger.e(
       'ERROR${context != null ? ' [$context]' : ''}: $message',
@@ -143,7 +143,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
+    // final logData = _buildLogData(context, additionalData);
 
     _logger.w(
       'WARNING${context != null ? ' [$context]' : ''}: $message',
@@ -168,7 +168,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
+    // final logData = _buildLogData(context, additionalData);
 
     _logger.i('INFO${context != null ? ' [$context]' : ''}: $message');
 
@@ -187,7 +187,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
+    // final logData = _buildLogData(context, additionalData);
 
     _logger.d('DEBUG${context != null ? ' [$context]' : ''}: $message');
 
@@ -203,9 +203,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
-    logData['operation'] = operation;
-    logData['duration_ms'] = duration.inMilliseconds;
+    // metadata omitted to avoid unused variable warnings
 
     _logger.i(
         'PERFORMANCE${context != null ? ' [$context]' : ''}: $operation took ${duration.inMilliseconds}ms');
@@ -223,8 +221,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
-    logData['action'] = action;
+    // metadata omitted to avoid unused variable warnings
 
     _logger.i('USER_ACTION${context != null ? ' [$context]' : ''}: $action');
 
@@ -244,11 +241,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
-    logData['endpoint'] = endpoint;
-    logData['method'] = method;
-    logData['status_code'] = statusCode;
-    logData['duration_ms'] = duration?.inMilliseconds;
+    // metadata omitted to avoid unused variable warnings
 
     final status = statusCode != null ? ' [$statusCode]' : '';
     final time = duration != null ? ' (${duration.inMilliseconds}ms)' : '';
@@ -272,11 +265,7 @@ class ErrorLogger {
     String? context,
     Map<String, dynamic>? additionalData,
   ) {
-    final logData = _buildLogData(context, additionalData);
-    logData['operation'] = operation;
-    logData['collection'] = collection;
-    logData['document_id'] = documentId;
-    logData['success'] = success;
+    // metadata omitted to avoid unused variable warnings
 
     final successStr =
         success != null ? (success ? ' [SUCCESS]' : ' [FAILED]') : '';
@@ -293,6 +282,7 @@ class ErrorLogger {
     }
   }
 
+  // ignore: unused_element
   Map<String, dynamic> _buildLogData(
       String? context, Map<String, dynamic>? additionalData) {
     final logData = <String, dynamic>{

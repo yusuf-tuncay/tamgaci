@@ -55,6 +55,7 @@ class CashAccountModel extends CashAccount {
     );
   }
 
+  @override
   CashAccountModel copyWith({
     String? id,
     String? name,
