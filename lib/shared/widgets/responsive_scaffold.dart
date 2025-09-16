@@ -9,6 +9,7 @@ class ResponsiveScaffold extends StatelessWidget {
   final Widget drawerContent;
   final double sidePanelWidth;
   final double breakpoint;
+  final bool persistentOnLarge;
 
   const ResponsiveScaffold({
     super.key,
@@ -17,6 +18,7 @@ class ResponsiveScaffold extends StatelessWidget {
     required this.drawerContent,
     this.sidePanelWidth = 280,
     this.breakpoint = 1024,
+    this.persistentOnLarge = true,
   });
 
   @override
@@ -24,7 +26,7 @@ class ResponsiveScaffold extends StatelessWidget {
     final double width = MediaQuery.sizeOf(context).width;
     final bool isLarge = width >= breakpoint;
 
-    if (isLarge) {
+    if (isLarge && persistentOnLarge) {
       return Scaffold(
         appBar: appBar,
         body: Row(
@@ -55,7 +57,13 @@ class ResponsiveScaffold extends StatelessWidget {
     return Scaffold(
       appBar: appBar,
       drawer: Drawer(child: drawerContent),
-      body: body,
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: body,
+        ),
+      ),
     );
   }
 }

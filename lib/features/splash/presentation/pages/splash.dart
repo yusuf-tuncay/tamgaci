@@ -83,7 +83,7 @@ class SplashData {
 /// Splash ekranı durumunu yöneten StateNotifier
 class SplashNotifier extends StateNotifier<SplashData> {
   /// SplashNotifier constructor'ı
-  SplashNotifier()
+  const SplashNotifier()
       : super(
           SplashData(
             state: SplashState.loading,

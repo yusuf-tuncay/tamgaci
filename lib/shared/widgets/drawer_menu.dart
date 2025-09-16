@@ -348,7 +348,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
   Widget _buildHeader(AsyncValue<UserProfile?> userProfile) {
     return Container(
-      height: 200,
+      height: 240,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -407,6 +407,32 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 ],
               ),
               const SizedBox(height: 20),
+              // USD/EUR kısa kur bilgisi (mavi alan içinde)
+              Consumer(builder: (context, ref, child) {
+                final converter = ref.watch(currencyConverterProvider);
+                final selected = ref.watch(selectedCurrencyProvider);
+                final code = selected.code;
+                final usd = converter.convert(
+                    amount: 1, fromCurrencyCode: 'USD', toCurrencyCode: code);
+                final eur = converter.convert(
+                    amount: 1, fromCurrencyCode: 'EUR', toCurrencyCode: code);
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '1 USD = ${usd.toStringAsFixed(2)} $code',
+                      style: GoogleFonts.poppins(
+                          color: Colors.white, fontSize: 12),
+                    ),
+                    Text(
+                      '1 EUR = ${eur.toStringAsFixed(2)} $code',
+                      style: GoogleFonts.poppins(
+                          color: Colors.white, fontSize: 12),
+                    ),
+                  ],
+                );
+              }),
+              const SizedBox(height: 12),
               // Kullanıcı bilgileri
               userProfile.when(
                 data: (profile) => _buildUserInfo(profile),

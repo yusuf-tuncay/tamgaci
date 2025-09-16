@@ -41,6 +41,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return ResponsiveScaffold(
       appBar: const CustomAppBar(title: 'Dashboard', showDrawer: true),
       drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: _buildMobileLayout(
         dashboardSummaryAsync,
         recentActivitiesAsync,
