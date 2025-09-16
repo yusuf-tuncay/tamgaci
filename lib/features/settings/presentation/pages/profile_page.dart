@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'dart:io';
+import 'package:tamgaci/shared/utils/profile_image_provider.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
@@ -503,7 +503,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       TamgaciConstants.primaryColor.withValues(alpha: 0.1),
                   backgroundImage: profile.profilePhotoUrl != null &&
                           !profile.profilePhotoUrl!.startsWith('web_photo_')
-                      ? FileImage(File(profile.profilePhotoUrl!))
+                      ? imageProviderFromPath(profile.profilePhotoUrl!)
                       : null,
                   child: profile.profilePhotoUrl == null
                       ? Text(
