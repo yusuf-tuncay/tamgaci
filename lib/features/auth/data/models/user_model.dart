@@ -10,6 +10,9 @@ class UserModel extends User {
     required super.name,
     required super.surname,
     super.phone,
+    super.phoneE164,
+    super.phoneCountry,
+    super.phoneDialCode,
     super.profileImageUrl,
     required super.role,
     required super.status,
@@ -23,6 +26,9 @@ class UserModel extends User {
     super.position,
     super.preferences,
     super.settings,
+    super.taxId,
+    super.taxOffice,
+    super.billingAddress,
   });
 
   /// Firebase Firestore'dan UserModel oluşturur
@@ -34,6 +40,9 @@ class UserModel extends User {
       name: data['name'] ?? '',
       surname: data['surname'] ?? '',
       phone: data['phone'],
+      phoneE164: data['phoneE164'],
+      phoneCountry: data['phoneCountry'],
+      phoneDialCode: data['phoneDialCode'],
       profileImageUrl: data['profileImageUrl'],
       role: UserRole.fromString(data['role'] ?? 'user'),
       status: UserStatus.fromString(data['status'] ?? 'active'),
@@ -53,6 +62,9 @@ class UserModel extends User {
       settings: data['settings'] != null
           ? Map<String, dynamic>.from(data['settings'])
           : null,
+      taxId: data['taxId'],
+      taxOffice: data['taxOffice'],
+      billingAddress: data['billingAddress'],
     );
   }
 
@@ -64,6 +76,9 @@ class UserModel extends User {
       'name': name,
       'surname': surname,
       'phone': phone,
+      'phoneE164': phoneE164,
+      'phoneCountry': phoneCountry,
+      'phoneDialCode': phoneDialCode,
       'profileImageUrl': profileImageUrl,
       'role': role.value,
       'status': status.value,
@@ -78,6 +93,9 @@ class UserModel extends User {
       'position': position,
       'preferences': preferences,
       'settings': settings,
+      'taxId': taxId,
+      'taxOffice': taxOffice,
+      'billingAddress': billingAddress,
     };
   }
 
@@ -89,6 +107,9 @@ class UserModel extends User {
       name: name,
       surname: surname,
       phone: phone,
+      phoneE164: phoneE164,
+      phoneCountry: phoneCountry,
+      phoneDialCode: phoneDialCode,
       profileImageUrl: profileImageUrl,
       role: role,
       status: status,
@@ -102,6 +123,9 @@ class UserModel extends User {
       position: position,
       preferences: preferences,
       settings: settings,
+      taxId: taxId,
+      taxOffice: taxOffice,
+      billingAddress: billingAddress,
     );
   }
 
@@ -137,6 +161,9 @@ class UserModel extends User {
     String? name,
     String? surname,
     String? phone,
+    String? phoneE164,
+    String? phoneCountry,
+    String? phoneDialCode,
     String? profileImageUrl,
     UserRole? role,
     UserStatus? status,
@@ -150,6 +177,9 @@ class UserModel extends User {
     String? position,
     Map<String, dynamic>? preferences,
     Map<String, dynamic>? settings,
+    String? taxId,
+    String? taxOffice,
+    String? billingAddress,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -157,6 +187,9 @@ class UserModel extends User {
       name: name ?? this.name,
       surname: surname ?? this.surname,
       phone: phone ?? this.phone,
+      phoneE164: phoneE164 ?? this.phoneE164,
+      phoneCountry: phoneCountry ?? this.phoneCountry,
+      phoneDialCode: phoneDialCode ?? this.phoneDialCode,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,
       status: status ?? this.status,
@@ -170,6 +203,9 @@ class UserModel extends User {
       position: position ?? this.position,
       preferences: preferences ?? this.preferences,
       settings: settings ?? this.settings,
+      taxId: taxId ?? this.taxId,
+      taxOffice: taxOffice ?? this.taxOffice,
+      billingAddress: billingAddress ?? this.billingAddress,
     );
   }
 }

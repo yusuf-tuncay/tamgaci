@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
@@ -18,6 +21,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
+  bool _rememberMe = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberMe();
+  }
+
+  Future<void> _loadRememberMe() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        _rememberMe = prefs.getBool('remember_me') ?? true;
+      });
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -89,10 +108,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             borderRadius: BorderRadius.circular(TamgaciConstants.radiusLG),
             boxShadow: TamgaciConstants.shadowMedium,
           ),
-          child: const Icon(
-            Icons.account_balance,
-            size: 50,
-            color: TamgaciConstants.textOnPrimary,
+          clipBehavior: Clip.antiAlias,
+          child: Image.asset(
+            'assets/images/logos/fullsizebluelogo.png',
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(
+                Icons.account_balance,
+                size: 50,
+                color: TamgaciConstants.textOnPrimary,
+              );
+            },
           ),
         ),
 
@@ -223,6 +249,34 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             return null;
           },
         ),
+
+        const SizedBox(height: 12),
+
+        // Beni hatırla
+        Row(
+          children: [
+            Checkbox(
+              value: _rememberMe,
+              onChanged: (v) async {
+                final value = v ?? true;
+                setState(() => _rememberMe = value);
+                try {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('remember_me', value);
+                } catch (_) {}
+              },
+            ),
+            Text(
+              'Beni hatırla',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: isDark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -307,6 +361,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
 
     try {
+      // Web'de kalıcılığı ayarla
+      if (kIsWeb) {
+        final persistence = _rememberMe
+            ? firebase_auth.Persistence.LOCAL
+            : firebase_auth.Persistence.SESSION;
+        await firebase_auth.FirebaseAuth.instance.setPersistence(persistence);
+      }
+
       await ref.read(authProvider.notifier).signInWithEmailAndPassword(
             email: _emailController.text.trim(),
             password: _passwordController.text,
@@ -323,11 +385,34 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(e.toString()),
+            content: Text(_friendlyAuthMessage(e)),
             backgroundColor: Colors.red,
           ),
         );
       }
     }
+  }
+
+  String _friendlyAuthMessage(Object e) {
+    final text = e.toString().toLowerCase();
+    if (text.contains('user-not-found')) {
+      return 'Kullanıcı bulunamadı. E-posta adresinizi kontrol edin.';
+    }
+    if (text.contains('wrong-password')) {
+      return 'Şifre hatalı. Lütfen tekrar deneyin.';
+    }
+    if (text.contains('invalid-email')) {
+      return 'Geçersiz e-posta adresi.';
+    }
+    if (text.contains('too-many-requests')) {
+      return 'Çok fazla deneme yapıldı. Lütfen daha sonra tekrar deneyin.';
+    }
+    if (text.contains('permission-denied')) {
+      return 'İzin hatası. Lütfen daha sonra tekrar deneyin.';
+    }
+    if (text.contains('network') || text.contains('timeout')) {
+      return 'Ağ bağlantı sorunu. İnternetinizi kontrol edin ve tekrar deneyin.';
+    }
+    return 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin ve tekrar deneyin.';
   }
 }

@@ -55,8 +55,11 @@ class TamgaciApp extends ConsumerWidget {
 
       /// Desteklenen diller
       supportedLocales: const [
-        Locale('tr', 'TR'), // Türkçe
-        Locale('en', 'US'), // İngilizce (gelecek için)
+        Locale('tr', 'TR'),
+        Locale('en', 'US'),
+        Locale('ru', 'RU'),
+        Locale('bg', 'BG'),
+        Locale('ar', 'SA'),
       ],
 
       /// Varsayılan dil

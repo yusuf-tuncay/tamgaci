@@ -646,7 +646,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                   style: GoogleFonts.poppins(fontSize: 14),
                 ),
                 subtitle: Text(
-                  selectedCurrency.code ?? 'TRY',
+                  selectedCurrency.code,
                   style: GoogleFonts.poppins(
                       fontSize: 12, color: Colors.grey[600]),
                 ),

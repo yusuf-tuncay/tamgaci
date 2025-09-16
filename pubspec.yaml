@@ -71,6 +71,7 @@ dependencies:
   timezone: ^0.9.4
   image: ^4.1.7
   flutter_image_compress: ^2.3.0
+  country_picker: ^2.0.26
   
   # Export/Import
   excel: ^2.1.0

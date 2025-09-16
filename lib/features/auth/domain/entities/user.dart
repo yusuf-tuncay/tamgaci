@@ -19,6 +19,15 @@ class User extends Equatable {
   /// Kullanıcı telefon numarası
   final String? phone;
 
+  /// E164 formatında tam telefon numarası (+905551234567)
+  final String? phoneE164;
+
+  /// Ülke ISO kodu (TR, US ...)
+  final String? phoneCountry;
+
+  /// Ülke alan kodu (+90, +1 ...)
+  final String? phoneDialCode;
+
   /// Kullanıcı profil fotoğrafı URL'si
   final String? profileImageUrl;
 
@@ -58,12 +67,24 @@ class User extends Equatable {
   /// Kullanıcı ayarları
   final Map<String, dynamic>? settings;
 
+  /// Vergi Kimlik Numarası (TCKN/VKN)
+  final String? taxId;
+
+  /// Vergi Dairesi
+  final String? taxOffice;
+
+  /// Fatura/İş Adresi
+  final String? billingAddress;
+
   const User({
     required this.id,
     required this.email,
     required this.name,
     required this.surname,
     this.phone,
+    this.phoneE164,
+    this.phoneCountry,
+    this.phoneDialCode,
     this.profileImageUrl,
     required this.role,
     required this.status,
@@ -77,6 +98,9 @@ class User extends Equatable {
     this.position,
     this.preferences,
     this.settings,
+    this.taxId,
+    this.taxOffice,
+    this.billingAddress,
   });
 
   /// Firebase Firestore'dan User oluşturur
@@ -88,6 +112,9 @@ class User extends Equatable {
       name: data['name'] ?? '',
       surname: data['surname'] ?? '',
       phone: data['phone'],
+      phoneE164: data['phoneE164'],
+      phoneCountry: data['phoneCountry'],
+      phoneDialCode: data['phoneDialCode'],
       profileImageUrl: data['profileImageUrl'],
       role: UserRole.fromString(data['role'] ?? 'user'),
       status: UserStatus.fromString(data['status'] ?? 'active'),
@@ -107,6 +134,9 @@ class User extends Equatable {
       settings: data['settings'] != null
           ? Map<String, dynamic>.from(data['settings'])
           : null,
+      taxId: data['taxId'],
+      taxOffice: data['taxOffice'],
+      billingAddress: data['billingAddress'],
     );
   }
 
@@ -117,6 +147,9 @@ class User extends Equatable {
       'name': name,
       'surname': surname,
       'phone': phone,
+      'phoneE164': phoneE164,
+      'phoneCountry': phoneCountry,
+      'phoneDialCode': phoneDialCode,
       'profileImageUrl': profileImageUrl,
       'role': role.value,
       'status': status.value,
@@ -131,6 +164,9 @@ class User extends Equatable {
       'position': position,
       'preferences': preferences,
       'settings': settings,
+      'taxId': taxId,
+      'taxOffice': taxOffice,
+      'billingAddress': billingAddress,
     };
   }
 
@@ -141,6 +177,9 @@ class User extends Equatable {
     String? name,
     String? surname,
     String? phone,
+    String? phoneE164,
+    String? phoneCountry,
+    String? phoneDialCode,
     String? profileImageUrl,
     UserRole? role,
     UserStatus? status,
@@ -154,6 +193,9 @@ class User extends Equatable {
     String? position,
     Map<String, dynamic>? preferences,
     Map<String, dynamic>? settings,
+    String? taxId,
+    String? taxOffice,
+    String? billingAddress,
   }) {
     return User(
       id: id ?? this.id,
@@ -161,6 +203,9 @@ class User extends Equatable {
       name: name ?? this.name,
       surname: surname ?? this.surname,
       phone: phone ?? this.phone,
+      phoneE164: phoneE164 ?? this.phoneE164,
+      phoneCountry: phoneCountry ?? this.phoneCountry,
+      phoneDialCode: phoneDialCode ?? this.phoneDialCode,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       role: role ?? this.role,
       status: status ?? this.status,
@@ -174,6 +219,9 @@ class User extends Equatable {
       position: position ?? this.position,
       preferences: preferences ?? this.preferences,
       settings: settings ?? this.settings,
+      taxId: taxId ?? this.taxId,
+      taxOffice: taxOffice ?? this.taxOffice,
+      billingAddress: billingAddress ?? this.billingAddress,
     );
   }
 
@@ -209,6 +257,9 @@ class User extends Equatable {
         position,
         preferences,
         settings,
+        taxId,
+        taxOffice,
+        billingAddress,
       ];
 
   @override

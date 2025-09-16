@@ -132,7 +132,7 @@ class Warehouse {
       usedCapacity: usedCapacity ?? this.usedCapacity,
       hasClimateControl: hasClimateControl ?? this.hasClimateControl,
       hasSecurity: hasSecurity ?? this.hasSecurity,
-      createdBy: createdBy ?? this.createdBy,
+      createdBy: createdBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

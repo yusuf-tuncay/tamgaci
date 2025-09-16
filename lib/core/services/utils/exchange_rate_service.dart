@@ -3,6 +3,7 @@
 
 import 'package:dio/dio.dart';
 import 'package:tamgaci/core/utils/logger.dart';
+import 'package:tamgaci/core/cache/cache_manager.dart';
 
 /// Döviz kuru modeli
 class ExchangeRate {
@@ -48,54 +49,134 @@ class ExchangeRateService {
   factory ExchangeRateService() => _instance;
   ExchangeRateService._internal();
 
-  // ignore: unused_field
-  final Dio _dio = Dio();
-  // ignore: unused_field
-  final String _baseUrl = 'https://api.exchangerate-api.com/v4/latest';
+  final Dio _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 8),
+    receiveTimeout: const Duration(seconds: 8),
+  ));
 
-  /// Döviz kurlarını getir
+  // Hasan Adıgüzel TCMB realtime FX API
+  // Docs commonly reference `https://hasanadiguzel.com.tr/api/kurgetir`
+  // The response contains a list under keys like `TCMB_AnlikKurBilgileri`.
+  static const String _fxEndpoint = 'https://hasanadiguzel.com.tr/api/kurgetir';
+
+  // Simple cache via shared CacheManager
+  final CacheManager _cache = CacheManager();
+  static const String _cacheKeyLatest = 'fx_rates_latest';
+  static const Duration _cacheTtl = Duration(minutes: 30);
+
+  // Keep last fetched in memory for fast convert operations
+  List<ExchangeRate>? _lastRates;
+
+  /// Döviz kurlarını getir (TRY bazında 1 birim döviz = X TRY)
   Future<List<ExchangeRate>> getExchangeRates() async {
+    // 1) Try cache first
     try {
-      AppLogger.info('Fetching exchange rates');
-
-      // Mock data - gerçek API entegrasyonu için
-      final mockRates = [
-        ExchangeRate(
-          code: 'TRY',
-          name: 'Türk Lirası',
-          symbol: '₺',
-          rate: 1.0,
-          lastUpdated: DateTime.now(),
-        ),
-        ExchangeRate(
-          code: 'USD',
-          name: 'Amerikan Doları',
-          symbol: '\$',
-          rate: 34.50,
-          lastUpdated: DateTime.now(),
-        ),
-        ExchangeRate(
-          code: 'EUR',
-          name: 'Euro',
-          symbol: '€',
-          rate: 37.20,
-          lastUpdated: DateTime.now(),
-        ),
-        ExchangeRate(
-          code: 'GBP',
-          name: 'İngiliz Sterlini',
-          symbol: '£',
-          rate: 43.80,
-          lastUpdated: DateTime.now(),
-        ),
-      ];
-
-      AppLogger.info('Exchange rates fetched successfully');
-      return mockRates;
+      final cached = await _cache.get<List<ExchangeRate>>(
+        _cacheKeyLatest,
+        fromJson: (data) {
+          final list =
+              (data['rates'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+          return list.map(ExchangeRate.fromJson).toList();
+        },
+      );
+      if (cached != null && cached.isNotEmpty) {
+        _lastRates = cached;
+        AppLogger.debug('FX rates served from cache (${cached.length})');
+        // Return cached immediately while refreshing in background
+        // Fire and forget refresh
+        _refreshRatesSilently();
+        return cached;
+      }
     } catch (e) {
-      AppLogger.error('Error fetching exchange rates', e);
+      AppLogger.warning('FX cache read failed', e);
+    }
+
+    // 2) Fetch from API
+    try {
+      AppLogger.info('Fetching FX rates from Hasan Adıgüzel API');
+      final response = await _dio.get(_fxEndpoint);
+      final data = response.data;
+
+      final List<dynamic> rows = _extractRows(data);
+      final now = DateTime.now();
+
+      final List<ExchangeRate> parsed = [];
+
+      // Always include TRY baseline
+      parsed.add(ExchangeRate(
+        code: 'TRY',
+        name: 'Türk Lirası',
+        symbol: '₺',
+        rate: 1.0,
+        lastUpdated: now,
+      ));
+
+      for (final item in rows) {
+        final map = Map<String, dynamic>.from(item as Map);
+        final code = (map['CurrencyCode'] ?? map['Kod'] ?? '').toString();
+        if (code.isEmpty || code == 'XDR') continue; // skip invalid/SDR
+
+        // Prefer ForexSelling; fallback to ForexBuying
+        final sellingStr =
+            (map['ForexSelling'] ?? map['Satis'] ?? map['Selling'] ?? '')
+                .toString();
+        final buyingStr =
+            (map['ForexBuying'] ?? map['Alis'] ?? map['Buying'] ?? '')
+                .toString();
+        double? rate;
+        rate = double.tryParse(sellingStr.replaceAll(',', '.')) ??
+            double.tryParse(buyingStr.replaceAll(',', '.'));
+        if (rate == null || rate <= 0) continue;
+
+        parsed.add(ExchangeRate(
+          code: code,
+          name: (map['Isim'] ?? map['Unit'] ?? code).toString(),
+          symbol: _symbolFor(code),
+          rate: rate,
+          lastUpdated: now,
+        ));
+      }
+
+      // Cache & return
+      await _cache.set<List<ExchangeRate>>(
+        _cacheKeyLatest,
+        parsed,
+        expiry: _cacheTtl,
+        toJson: (list) => {
+          'rates': list.map((e) => e.toJson()).toList(),
+        },
+      );
+
+      _lastRates = parsed;
+      AppLogger.info('FX rates fetched (${parsed.length})');
+      return parsed;
+    } catch (e) {
+      AppLogger.error('Error fetching exchange rates from API', e);
+      // 3) Fallback to stale cache if available
+      try {
+        final cached = await _cache.get<List<ExchangeRate>>(
+          _cacheKeyLatest,
+          fromJson: (data) {
+            final list =
+                (data['rates'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+            return list.map(ExchangeRate.fromJson).toList();
+          },
+        );
+        if (cached != null && cached.isNotEmpty) {
+          _lastRates = cached;
+          AppLogger.warning('Using stale FX cache due to error');
+          return cached;
+        }
+      } catch (_) {}
       rethrow;
     }
+  }
+
+  Future<void> _refreshRatesSilently() async {
+    try {
+      final _ = await getExchangeRates();
+      // ignore: empty_statements
+    } catch (_) {}
   }
 
   /// Belirli bir para biriminin kurunu getir
@@ -117,18 +198,24 @@ class ExchangeRateService {
       double amount, String fromCurrency, String toCurrency) {
     if (fromCurrency == toCurrency) return amount;
 
-    // Mock conversion - gerçek API entegrasyonu için
-    final conversionRates = {
-      'TRY': 1.0,
-      'USD': 34.50,
-      'EUR': 37.20,
-      'GBP': 43.80,
-    };
+    final rates = _lastRates;
+    if (rates == null || rates.isEmpty) {
+      // Without rates, return amount unchanged to avoid wrong numbers
+      return amount;
+    }
 
-    final fromRate = conversionRates[fromCurrency] ?? 1.0;
-    final toRate = conversionRates[toCurrency] ?? 1.0;
+    double rateOf(String code) {
+      if (code == 'TRY') return 1.0;
+      final r = rates.cast<ExchangeRate?>().firstWhere(
+            (e) => e?.code == code,
+            orElse: () => null,
+          );
+      return r?.rate ?? 1.0;
+    }
 
-    return (amount * fromRate) / toRate;
+    final fromRateTry = rateOf(fromCurrency);
+    final toRateTry = rateOf(toCurrency);
+    return (amount * fromRateTry) / toRateTry;
   }
 
   /// Para birimi formatla
@@ -150,5 +237,50 @@ class ExchangeRateService {
   /// Kur formatla
   static String formatCurrencyRate(double rate, String currency) {
     return '1 $currency = ${rate.toStringAsFixed(4)} TRY';
+  }
+
+  // Map currency code to common symbol
+  String _symbolFor(String code) {
+    switch (code) {
+      case 'TRY':
+        return '₺';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      case 'RUB':
+        return '₽';
+      case 'CNY':
+        return '¥';
+      case 'AED':
+        return 'د.إ';
+      case 'BGN':
+        return 'лв';
+      case 'XAU':
+        return 'Au';
+      default:
+        return code;
+    }
+  }
+
+  // Extract rows from Hasan Adıgüzel/TCMB response
+  List<dynamic> _extractRows(dynamic data) {
+    try {
+      if (data is List) return data;
+      if (data is Map<String, dynamic>) {
+        if (data['TCMB_AnlikKurBilgileri'] is List) {
+          return data['TCMB_AnlikKurBilgileri'] as List;
+        }
+        if (data['data'] is List) {
+          return data['data'] as List;
+        }
+        if (data['result'] is List) {
+          return data['result'] as List;
+        }
+      }
+    } catch (_) {}
+    return const [];
   }
 }

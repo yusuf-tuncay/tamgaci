@@ -489,6 +489,7 @@ class ExpenseFormNotifier extends StateNotifier<ExpenseFormState> {
 // ========== WEB PLATFORM EMPTY REPOSITORY ==========
 
 /// Web platformu için boş gider repository sınıfı
+// ignore: unused_element
 class _EmptyExpenseRepository implements ExpenseRepository {
   // Mock verileri saklamak için static liste
   static final List<Expense> _mockExpenses = [

@@ -1,3 +1,4 @@
+// ignore_for_file: prefer_const_constructors
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -390,8 +391,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         updatedAt: DateTime.now(),
       );
 
-      // TODO: Save to repository using provider
-      // await ref.read(userProfileProvider.notifier).updateProfile(updatedProfile);
+      // Save to repository
+      await ref
+          .read(userProfileProvider.notifier)
+          .updateProfile(updatedProfile);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

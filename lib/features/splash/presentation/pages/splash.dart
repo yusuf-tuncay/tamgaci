@@ -7,6 +7,7 @@ import 'package:tamgaci/core/theme/constants.dart';
 // import 'package:tamgaci/core/database/test_data_helper.dart'; // Removed - using Firebase only
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:tamgaci/core/utils/logger.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ========== SPLASH STATE YÖNETİMİ ==========
 
@@ -481,45 +482,87 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   /// Uygulama logosunu oluşturan metod
   Widget _buildAppLogo() {
+    final double size = TamgaciConstants.getResponsiveValue(
+      context,
+      mobile: 110.0,
+      tablet: 130.0,
+      desktop: 150.0,
+      wideDesktop: 170.0,
+    );
+
     return Container(
-      width: TamgaciConstants.getResponsiveValue(
-        context,
-        mobile: 100.0,
-        tablet: 120.0,
-        desktop: 140.0,
-        wideDesktop: 160.0,
-      ),
-      height: TamgaciConstants.getResponsiveValue(
-        context,
-        mobile: 100.0,
-        tablet: 120.0,
-        desktop: 140.0,
-        wideDesktop: 160.0,
-      ),
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        color: TamgaciConstants.primaryColor,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
+        ),
         borderRadius: BorderRadius.circular(
           TamgaciConstants.getResponsiveValue(
             context,
-            mobile: TamgaciConstants.radiusLG,
+            mobile: TamgaciConstants.radiusXL,
             tablet: TamgaciConstants.radiusXL,
-            desktop: TamgaciConstants.radiusXL,
-            wideDesktop: 28.0,
+            desktop: 28.0,
+            wideDesktop: 32.0,
           ),
         ),
         boxShadow: TamgaciConstants.shadowMedium,
       ),
-      child: Center(
-        child: Icon(
-          Icons.account_balance,
-          size: TamgaciConstants.getResponsiveValue(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(
+          TamgaciConstants.getResponsiveValue(
             context,
-            mobile: 50.0,
-            tablet: 60.0,
-            desktop: 70.0,
-            wideDesktop: 80.0,
+            mobile: TamgaciConstants.radiusXL,
+            tablet: TamgaciConstants.radiusXL,
+            desktop: 28.0,
+            wideDesktop: 32.0,
           ),
-          color: TamgaciConstants.textOnPrimary,
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Logo (asset), yoksa ikon fallback
+            Image.asset(
+              'assets/images/logos/fullsizebluelogo.png',
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Icon(
+                    Icons.account_balance,
+                    size: TamgaciConstants.getResponsiveValue(
+                      context,
+                      mobile: 54.0,
+                      tablet: 64.0,
+                      desktop: 74.0,
+                      wideDesktop: 84.0,
+                    ),
+                    color: Colors.white,
+                  ),
+                );
+              },
+            ),
+            // Hafif parıltı efekti
+            Align(
+              alignment: Alignment.topLeft,
+              child: Container(
+                width: size * 0.6,
+                height: size * 0.6,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.25),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -763,10 +806,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // Haptic feedback
     HapticFeedback.lightImpact();
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(widget.homeRoute);
-      }
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      if (!mounted) return;
+      final user = FirebaseAuth.instance.currentUser;
+      final targetRoute = (user == null && widget.loginRoute != null)
+          ? widget.loginRoute!
+          : widget.homeRoute;
+      Navigator.of(context).pushReplacementNamed(targetRoute);
     });
   }
 }

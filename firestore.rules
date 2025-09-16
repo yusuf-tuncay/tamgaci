@@ -118,6 +118,13 @@ service cloud.firestore {
     match /app_settings/{uid} {
       allow read, write: if isSignedIn() && uid == userId();
     }
+    // Users (Auth profile documents)
+    match /users/{uid} {
+      allow read: if isSignedIn() && (uid == userId() || isAdmin());
+      allow create: if isSignedIn() && uid == userId();
+      allow update: if isSignedIn() && uid == userId();
+      allow delete: if isAdmin();
+    }
     match /user_profiles/{uid} {
       allow read: if isSignedIn() && (uid == userId() || isAdmin());
       allow create: if isSignedIn() && request.resource.data.id == userId();

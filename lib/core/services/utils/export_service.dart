@@ -438,13 +438,13 @@ class ExportService {
     final summary = <String, dynamic>{
       'Toplam Ürün': products.length,
       'Toplam Stok':
-          products.fold<int>(0, (sum, p) => sum + (p['stock'] as int)),
+          products.fold<int>(0, (acc, p) => acc + (p['stock'] as int)),
       'Düşük Stok': products
           .where((p) => (p['stock'] as int) <= (p['minStock'] as int))
           .length,
       'Stokta Olmayan': products.where((p) => (p['stock'] as int) == 0).length,
       'Toplam Değer': products.fold<double>(
-          0, (sum, p) => sum + ((p['stock'] as int) * (p['price'] as double))),
+          0, (acc, p) => acc + ((p['stock'] as int) * (p['price'] as double))),
     };
 
     return exportStockReportToPDF(products: products, summary: summary);

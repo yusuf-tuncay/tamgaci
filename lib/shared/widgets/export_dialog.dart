@@ -1,6 +1,7 @@
 // ========== EXPORT DIALOG WIDGET ==========
 // lib/shared/widgets/export_dialog.dart
 
+// ignore_for_file: deprecated_member_use
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
@@ -71,7 +72,7 @@ class _ExportDialogState extends State<ExportDialog> {
                   ),
                 ),
                 subtitle: Text(
-                  'Export as ${format.toUpperCase()} format',
+                  _getFormatDescription(format),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: AppColors.textSecondary,

@@ -278,7 +278,7 @@ class CustomerFirebaseService {
       final inactiveCustomers =
           customers.where((c) => c.status == CustomerStatus.inactive).length;
       final totalBalance =
-          customers.fold<double>(0, (sum, c) => sum + c.currentBalance);
+          customers.fold<double>(0, (acc, c) => acc + c.currentBalance);
 
       return {
         'totalCustomers': totalCustomers,

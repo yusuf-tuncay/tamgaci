@@ -36,10 +36,13 @@ class ResponsiveScaffold extends StatelessWidget {
             ),
             const VerticalDivider(width: 1),
             Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1400),
-                  child: body,
+              child: SizedBox.expand(
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1400),
+                    child: body,
+                  ),
                 ),
               ),
             ),

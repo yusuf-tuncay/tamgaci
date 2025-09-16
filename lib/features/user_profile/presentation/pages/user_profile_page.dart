@@ -76,7 +76,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
                         ? NetworkImage(profile!.profilePhotoUrl!)
                         : null,
                     child: profile?.profilePhotoUrl == null
-                        ? Icon(
+                        ? const Icon(
                             Icons.person,
                             size: 60,
                             color: AppColors.primary,
@@ -228,7 +228,7 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
     );
   }
 
-  void _saveProfile() {
+  void _saveProfile() async {
     if (_formKey.currentState!.validate()) {
       final updatedProfile = UserProfile(
         id: 'current_user', // TODO: from auth
@@ -249,14 +249,13 @@ class _UserProfilePageState extends ConsumerState<UserProfilePage> {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
-
-      // TODO: Save to repository
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Profil güncellendi'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      await ref
+          .read(userProfileProvider.notifier)
+          .updateProfile(updatedProfile);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Profil güncellendi'),
+        backgroundColor: Colors.green,
+      ));
     }
   }
 }

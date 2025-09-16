@@ -83,20 +83,46 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         throw AuthenticationFailure('Giriş yapılamadı');
       }
 
-      // Firestore'dan kullanıcı bilgilerini getir
-      final userDoc =
-          await _firestore.collection('users').doc(credential.user!.uid).get();
+      // Firestore'dan kullanıcı bilgilerini getir (izin yoksa Auth bilgileri ile fallback)
+      try {
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(credential.user!.uid)
+            .get();
 
-      if (!userDoc.exists) {
-        throw AuthenticationFailure('Kullanıcı bilgileri bulunamadı');
+        if (userDoc.exists) {
+          final userModel = UserModel.fromFirestore(userDoc);
+          // Son giriş tarihini güncelle (best-effort)
+          _updateLastLogin(credential.user!.uid);
+          return userModel;
+        }
+      } catch (_) {
+        // ignore and fallback to auth data
       }
 
-      final userModel = UserModel.fromFirestore(userDoc);
-
-      // Son giriş tarihini güncelle
-      await _updateLastLogin(credential.user!.uid);
-
-      return userModel;
+      // Fallback: yalnızca Auth bilgisinden UserModel üret
+      final fb = credential.user!;
+      return UserModel(
+        id: fb.uid,
+        email: fb.email ?? '',
+        name: fb.displayName?.split(' ').firstOrNull ?? '',
+        surname: fb.displayName != null && fb.displayName!.contains(' ')
+            ? fb.displayName!.split(' ').skip(1).join(' ')
+            : '',
+        phone: fb.phoneNumber,
+        phoneE164: fb.phoneNumber,
+        phoneCountry: null,
+        phoneDialCode: null,
+        role: UserRole.user,
+        status: UserStatus.active,
+        createdAt: fb.metadata.creationTime ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+        isEmailVerified: fb.emailVerified,
+        isTwoFactorEnabled: false,
+        taxId: null,
+        taxOffice: null,
+        billingAddress: null,
+      );
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
@@ -108,8 +134,9 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   @override
   Future<UserModel> signUp(
       String email, String password, String name, String surname) async {
+    UserCredential? credential;
     try {
-      final credential = await _firebaseAuth.createUserWithEmailAndPassword(
+      credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -118,28 +145,65 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         throw AuthenticationFailure('Kayıt olunamadı');
       }
 
-      // Firestore'da kullanıcı bilgilerini oluştur
+      // Firestore'da kullanıcı bilgilerini oluştur (best-effort)
       final userModel = UserModel(
         id: credential.user!.uid,
         email: email,
         name: name,
         surname: surname,
+        phone: null,
+        phoneE164: null,
+        phoneCountry: null,
+        phoneDialCode: null,
         role: UserRole.user,
         status: UserStatus.active,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         isEmailVerified: false,
         isTwoFactorEnabled: false,
+        taxId: null,
+        taxOffice: null,
+        billingAddress: null,
       );
 
-      await _firestore
-          .collection('users')
-          .doc(credential.user!.uid)
-          .set(userModel.toFirestore());
+      try {
+        await _firestore
+            .collection('users')
+            .doc(credential.user!.uid)
+            .set(userModel.toFirestore());
+      } on FirebaseException catch (_) {
+        // Firestore izni yoksa kayıt Auth tarafında tamamlanmıştır.
+      }
 
       return userModel;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
+    } on FirebaseException catch (e) {
+      // Firestore permission veya diğer hatalarda, Auth kullanıcı oluşturulduysa fallback dön
+      if (credential?.user != null) {
+        final fb = credential!.user!;
+        return UserModel(
+          id: fb.uid,
+          email: email,
+          name: name,
+          surname: surname,
+          phone: fb.phoneNumber,
+          phoneE164: fb.phoneNumber,
+          phoneCountry: null,
+          phoneDialCode: null,
+          role: UserRole.user,
+          status: UserStatus.active,
+          createdAt: fb.metadata.creationTime ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+          isEmailVerified: fb.emailVerified,
+          isTwoFactorEnabled: false,
+          taxId: null,
+          taxOffice: null,
+          billingAddress: null,
+        );
+      }
+      throw AuthenticationFailure(
+          'Kayıt olurken bir hata oluştu: ${e.message ?? e.code}');
     } catch (e) {
       throw AuthenticationFailure(
           'Kayıt olurken bir hata oluştu: ${e.toString()}');
@@ -230,10 +294,18 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   @override
   Future<void> updateUser(UserModel user) async {
     try {
-      await _firestore
-          .collection('users')
-          .doc(user.id)
-          .update(user.toFirestore());
+      // Update only mutable/profile fields to comply with common security rules
+      final Map<String, dynamic> updates = {
+        'phone': user.phone,
+        'phoneE164': user.phoneE164,
+        'phoneCountry': user.phoneCountry,
+        'phoneDialCode': user.phoneDialCode,
+        'settings': user.settings,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      };
+      updates.removeWhere((key, value) => value == null);
+
+      await _firestore.collection('users').doc(user.id).update(updates);
     } catch (e) {
       throw AuthenticationFailure(
           'Kullanıcı güncellenirken bir hata oluştu: ${e.toString()}');

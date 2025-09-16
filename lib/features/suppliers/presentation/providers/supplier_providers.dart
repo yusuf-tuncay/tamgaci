@@ -302,6 +302,7 @@ class SupplierFormNotifier extends StateNotifier<SupplierFormState> {
 // ========== WEB PLATFORM EMPTY REPOSITORY ==========
 
 /// Web platformu için boş tedarikçi repository sınıfı
+// ignore: unused_element
 class _EmptySupplierRepository implements SupplierRepository {
   // Mock verileri saklamak için static liste
   static final List<Supplier> _mockSuppliers = [

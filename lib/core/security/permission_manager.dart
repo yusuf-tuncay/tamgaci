@@ -220,12 +220,12 @@ class PermissionManager {
 
   /// Check calendar permission
   static Future<bool> checkCalendarPermission() async {
-    return await isGranted(Permission.calendar);
+    return await isGranted(Permission.calendarFullAccess);
   }
 
   /// Request calendar permission
   static Future<PermissionStatus> requestCalendarPermission() async {
-    return await request(Permission.calendar);
+    return await request(Permission.calendarFullAccess);
   }
 
   /// Check SMS permission
@@ -265,7 +265,9 @@ class PermissionManager {
         return 'Bildirimler';
       case Permission.contacts:
         return 'Kişiler';
-      case Permission.calendar:
+      case Permission.calendarWriteOnly:
+        return 'Takvim (Yazma)';
+      case Permission.calendarFullAccess:
         return 'Takvim';
       case Permission.sms:
         return 'SMS';
@@ -293,8 +295,10 @@ class PermissionManager {
         return 'Bildirim göndermek için bildirim izni gereklidir.';
       case Permission.contacts:
         return 'Kişi bilgilerine erişmek için kişiler izni gereklidir.';
-      case Permission.calendar:
-        return 'Takvim bilgilerine erişmek için takvim izni gereklidir.';
+      case Permission.calendarWriteOnly:
+        return 'Takvime yazmak için izin gereklidir.';
+      case Permission.calendarFullAccess:
+        return 'Takvim bilgilerine erişmek için izin gereklidir.';
       case Permission.sms:
         return 'SMS göndermek için SMS izni gereklidir.';
       case Permission.phone:
@@ -341,7 +345,7 @@ class PermissionManager {
       Permission.location,
       Permission.notification,
       Permission.contacts,
-      Permission.calendar,
+      Permission.calendarFullAccess,
       Permission.sms,
       Permission.phone,
     ];

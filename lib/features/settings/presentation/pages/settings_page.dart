@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../../../../core/domain/entities/currency.dart';
 
@@ -25,9 +26,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final selectedCurrency = ref.watch(selectedCurrencyProvider);
     final activeCurrencies = ref.watch(activeCurrenciesProvider);
 
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: const CustomAppBar(title: 'Ayarlar', showDrawer: true),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
