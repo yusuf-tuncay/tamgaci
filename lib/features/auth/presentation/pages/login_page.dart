@@ -97,42 +97,84 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget _buildHeader(bool isDark) {
     return Column(
       children: [
-        // Logo
+        // Premium Logo
         Container(
-          width: 100,
-          height: 100,
+          width: 120,
+          height: 120,
           decoration: BoxDecoration(
-            color: isDark
-                ? TamgaciConstants.primaryColorDark
-                : TamgaciConstants.primaryColor,
-            borderRadius: BorderRadius.circular(TamgaciConstants.radiusLG),
-            boxShadow: TamgaciConstants.shadowMedium,
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                blurRadius: 20,
+                spreadRadius: 2,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           clipBehavior: Clip.antiAlias,
-          child: Image.asset(
-            'assets/images/logos/fullsizebluelogo.png',
-            fit: BoxFit.contain,
-            errorBuilder: (context, error, stackTrace) {
-              return const Icon(
-                Icons.account_balance,
-                size: 50,
-                color: TamgaciConstants.textOnPrimary,
-              );
-            },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Image.asset(
+                'assets/images/logos/fullsizebluelogo.png',
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.account_balance,
+                    size: 60,
+                    color: Colors.white,
+                  );
+                },
+              ),
+              // Premium parıltı efekti
+              Align(
+                alignment: Alignment.topLeft,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.4),
+                        Colors.white.withValues(alpha: 0.1),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
 
         const SizedBox(height: TamgaciConstants.spaceLG),
 
         // Başlık
-        Text(
-          TamgaciConstants.appName,
-          style: GoogleFonts.poppins(
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            color: isDark
-                ? TamgaciConstants.primaryColorDark
-                : TamgaciConstants.primaryColor,
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [const Color(0xFF60A5FA), const Color(0xFF3B82F6)]
+                : [const Color(0xFF2563EB), const Color(0xFF1D4ED8)],
+          ).createShader(bounds),
+          child: Text(
+            TamgaciConstants.appName,
+            style: GoogleFonts.poppins(
+              fontSize: 34,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 1.2,
+            ),
           ),
         ),
 
@@ -143,10 +185,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           'Hesabınıza giriş yapın',
           style: GoogleFonts.poppins(
             fontSize: 16,
-            fontWeight: FontWeight.w400,
+            fontWeight: FontWeight.w500,
             color: isDark
-                ? TamgaciConstants.textSecondaryDark
-                : TamgaciConstants.textSecondary,
+                ? Colors.white.withValues(alpha: 0.8)
+                : Colors.black.withValues(alpha: 0.7),
           ),
         ),
       ],

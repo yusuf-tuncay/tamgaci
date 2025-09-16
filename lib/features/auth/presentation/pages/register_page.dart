@@ -236,36 +236,82 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               children: [
                 const SizedBox(height: 40),
 
-                // Logo ve başlık
+                // Premium Logo
                 Column(
                   children: [
                     Container(
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        color: TamgaciConstants.primaryColor,
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
+                        ),
                         borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                const Color(0xFF2563EB).withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 2,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       clipBehavior: Clip.antiAlias,
-                      child: Image.asset(
-                        'assets/images/logos/fullsizebluelogo.png',
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(
-                            Icons.account_balance,
-                            color: Colors.white,
-                            size: 40,
-                          );
-                        },
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.asset(
+                            'assets/images/logos/fullsizebluelogo.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Icon(
+                                Icons.account_balance,
+                                color: Colors.white,
+                                size: 50,
+                              );
+                            },
+                          ),
+                          // Premium parıltı efekti
+                          Align(
+                            alignment: Alignment.topLeft,
+                            child: Container(
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.white.withValues(alpha: 0.4),
+                                    Colors.white.withValues(alpha: 0.1),
+                                    Colors.white.withValues(alpha: 0.0),
+                                  ],
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      'Hesap Oluştur',
-                      style: GoogleFonts.poppins(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: TamgaciConstants.textPrimary,
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                      ).createShader(bounds),
+                      child: Text(
+                        'Hesap Oluştur',
+                        style: GoogleFonts.poppins(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 1.0,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -273,7 +319,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       "Tamgaci'ye hoş geldiniz!",
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: TamgaciConstants.textSecondary,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

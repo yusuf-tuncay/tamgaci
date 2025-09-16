@@ -85,7 +85,7 @@ class SplashNotifier extends StateNotifier<SplashData> {
   /// SplashNotifier constructor'ı
   SplashNotifier()
       : super(
-          SplashData(
+          const SplashData(
             state: SplashState.loading,
             progress: 0,
             message: 'Tamgacı Yükleniyor...',
@@ -485,10 +485,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   Widget _buildAppLogo() {
     final double size = TamgaciConstants.getResponsiveValue(
       context,
-      mobile: 110.0,
-      tablet: 130.0,
-      desktop: 150.0,
-      wideDesktop: 170.0,
+      mobile: 120.0,
+      tablet: 140.0,
+      desktop: 160.0,
+      wideDesktop: 180.0,
     );
 
     return Container(
@@ -509,7 +509,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             wideDesktop: 32.0,
           ),
         ),
-        boxShadow: TamgaciConstants.shadowMedium,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(
@@ -534,29 +541,49 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     Icons.account_balance,
                     size: TamgaciConstants.getResponsiveValue(
                       context,
-                      mobile: 54.0,
-                      tablet: 64.0,
-                      desktop: 74.0,
-                      wideDesktop: 84.0,
+                      mobile: 60.0,
+                      tablet: 70.0,
+                      desktop: 80.0,
+                      wideDesktop: 90.0,
                     ),
                     color: Colors.white,
                   ),
                 );
               },
             ),
-            // Hafif parıltı efekti
+            // Premium parıltı efekti
             Align(
               alignment: Alignment.topLeft,
               child: Container(
-                width: size * 0.6,
-                height: size * 0.6,
+                width: size * 0.7,
+                height: size * 0.7,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withValues(alpha: 0.25),
+                      Colors.white.withValues(alpha: 0.4),
+                      Colors.white.withValues(alpha: 0.1),
                       Colors.white.withValues(alpha: 0.0),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+            // Alt sağ köşe vurgusu
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Container(
+                width: size * 0.3,
+                height: size * 0.3,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.0),
+                      Colors.white.withValues(alpha: 0.2),
                     ],
                   ),
                   shape: BoxShape.circle,
@@ -574,23 +601,31 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Text(
-      TamgaciConstants.appName,
-      style: GoogleFonts.poppins(
-        fontSize: TamgaciConstants.getResponsiveValue(
-          context,
-          mobile: 32.0,
-          tablet: 36.0,
-          desktop: 40.0,
-          wideDesktop: 44.0,
+    return ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: isDark
+            ? [const Color(0xFF60A5FA), const Color(0xFF3B82F6)]
+            : [const Color(0xFF2563EB), const Color(0xFF1D4ED8)],
+      ).createShader(bounds),
+      child: Text(
+        TamgaciConstants.appName,
+        style: GoogleFonts.poppins(
+          fontSize: TamgaciConstants.getResponsiveValue(
+            context,
+            mobile: 34.0,
+            tablet: 38.0,
+            desktop: 42.0,
+            wideDesktop: 46.0,
+          ),
+          fontWeight: FontWeight.w800,
+          color: Colors.white,
+          letterSpacing: 1.5,
+          height: 1.1,
         ),
-        fontWeight: FontWeight.w700,
-        color: isDark
-            ? TamgaciConstants.primaryColorDark
-            : TamgaciConstants.primaryColor,
-        letterSpacing: 1.2,
+        textAlign: TextAlign.center,
       ),
-      textAlign: TextAlign.center,
     );
   }
 
@@ -657,27 +692,95 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   /// İlerleme çubuğunu oluşturan metod
   Widget _buildProgressBar(int progress) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: TamgaciConstants.getResponsiveValue(
         context,
-        mobile: 280.0,
-        tablet: 320.0,
-        desktop: 360.0,
-        wideDesktop: 400.0,
+        mobile: 300.0,
+        tablet: 340.0,
+        desktop: 380.0,
+        wideDesktop: 420.0,
       ),
-      height: 6.0,
+      height: 8.0,
       decoration: BoxDecoration(
-        color: TamgaciConstants.borderColor,
-        borderRadius: BorderRadius.circular(TamgaciConstants.radiusXS),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: progress / 100.0,
-        child: Container(
-          decoration: BoxDecoration(
-            color: TamgaciConstants.primaryColor,
-            borderRadius: BorderRadius.circular(TamgaciConstants.radiusXS),
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.1)
+            : Colors.black.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(4.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4.0),
+        child: Stack(
+          children: [
+            // Arka plan
+            Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.1)
+                  : Colors.black.withValues(alpha: 0.1),
+            ),
+            // İlerleme çubuğu
+            FractionallySizedBox(
+              alignment: Alignment.centerLeft,
+              widthFactor: progress / 100.0,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: isDark
+                        ? [const Color(0xFF60A5FA), const Color(0xFF3B82F6)]
+                        : [const Color(0xFF2563EB), const Color(0xFF1D4ED8)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Parlama efekti
+            if (progress > 0)
+              Positioned(
+                left: (progress / 100.0) *
+                        TamgaciConstants.getResponsiveValue(
+                          context,
+                          mobile: 300.0,
+                          tablet: 340.0,
+                          desktop: 380.0,
+                          wideDesktop: 420.0,
+                        ) -
+                    20,
+                child: Container(
+                  width: 20,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.0),
+                        Colors.white.withValues(alpha: 0.6),
+                        Colors.white.withValues(alpha: 0.0),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -773,28 +876,47 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     return Column(
       children: [
         // Versiyon bilgisi
-        Text(
-          'v${TamgaciConstants.appVersion}',
-          style: GoogleFonts.poppins(
-            fontSize: 12.0,
-            fontWeight: FontWeight.w400,
+        Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12.0,
+            vertical: 6.0,
+          ),
+          decoration: BoxDecoration(
             color: isDark
-                ? TamgaciConstants.textDisabledDark
-                : TamgaciConstants.textDisabled,
+                ? Colors.white.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12.0),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.2)
+                  : Colors.black.withValues(alpha: 0.1),
+              width: 1.0,
+            ),
+          ),
+          child: Text(
+            'v${TamgaciConstants.appVersion}',
+            style: GoogleFonts.poppins(
+              fontSize: 12.0,
+              fontWeight: FontWeight.w600,
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.8)
+                  : Colors.black.withValues(alpha: 0.7),
+              letterSpacing: 0.5,
+            ),
           ),
         ),
 
-        const SizedBox(height: TamgaciConstants.spaceXS),
+        const SizedBox(height: TamgaciConstants.spaceSM),
 
         // Copyright
         Text(
           '© 2024 Tamgaci. Tüm hakları saklıdır.',
           style: GoogleFonts.poppins(
             fontSize: 11.0,
-            fontWeight: FontWeight.w300,
+            fontWeight: FontWeight.w400,
             color: isDark
-                ? TamgaciConstants.textDisabledDark
-                : TamgaciConstants.textDisabled,
+                ? Colors.white.withValues(alpha: 0.6)
+                : Colors.black.withValues(alpha: 0.5),
           ),
           textAlign: TextAlign.center,
         ),

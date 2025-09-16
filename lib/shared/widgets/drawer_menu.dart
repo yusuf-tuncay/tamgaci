@@ -455,10 +455,30 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   Widget _buildUserInfo(UserProfile? profile) {
     return Row(
       children: [
-        CircleAvatar(
-          radius: 25,
-          backgroundColor: Colors.white.withValues(alpha: 0.2),
-          child: const Icon(Icons.person, color: Colors.white),
+        Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
+            ),
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                blurRadius: 8,
+                spreadRadius: 1,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: const Icon(
+            Icons.person,
+            color: Colors.white,
+            size: 24,
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -466,7 +486,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Kullanıcı',
+                profile?.name ?? 'Kullanıcı',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -474,7 +494,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 ),
               ),
               Text(
-                'email@example.com',
+                profile?.email ?? 'email@example.com',
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   color: Colors.white.withValues(alpha: 0.8),
