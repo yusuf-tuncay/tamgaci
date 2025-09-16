@@ -1,9 +1,8 @@
 /// Failure classes for the Tamgaci application
-/// 
+///
 /// This file contains all failure classes used throughout the application
 /// following the documentation requirements for proper error handling.
 library;
-
 
 /// Base failure class for all failures
 abstract class Failure {
@@ -315,7 +314,8 @@ sealed class Result<T> {
   Result<T> mapFailure(Failure Function(Failure) mapper) {
     return switch (this) {
       Success<T>() => this,
-      FailureResult<T>(failure: final failure) => Result.failure(mapper(failure)),
+      FailureResult<T>(failure: final failure) =>
+        Result.failure(mapper(failure)),
     };
   }
 

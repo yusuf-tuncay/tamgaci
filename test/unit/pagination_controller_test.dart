@@ -157,7 +157,7 @@ void main() {
             pageData[i]['id'] = 'page_${page}_customer_${i + 1}';
             pageData[i]['name'] = 'Page $page Customer ${i + 1}';
           }
-          
+
           return PaginationResult<Map<String, dynamic>>(
             items: pageData,
             totalItems: 50,
@@ -232,7 +232,7 @@ void main() {
             pageData[i]['id'] = 'page_${page}_customer_${i + 1}';
             pageData[i]['name'] = 'Page $page Customer ${i + 1}';
           }
-          
+
           return PaginationResult<Map<String, dynamic>>(
             items: pageData,
             totalItems: 50,
@@ -244,7 +244,7 @@ void main() {
 
         // Load initial data first
         await controller.loadInitialData(mockFetchData);
-        
+
         // Act
         await controller.goToPage(2, mockFetchData);
         await controller.previousPage(mockFetchData);
@@ -264,7 +264,7 @@ void main() {
             pageData[i]['id'] = 'page_${page}_customer_${i + 1}';
             pageData[i]['name'] = 'Page $page Customer ${i + 1}';
           }
-          
+
           return PaginationResult<Map<String, dynamic>>(
             items: pageData,
             totalItems: 50,
@@ -276,7 +276,7 @@ void main() {
 
         // Load initial data first
         await controller.loadInitialData(mockFetchData);
-        
+
         // Act
         await controller.goToPage(3, mockFetchData);
         await controller.firstPage(mockFetchData);
@@ -296,7 +296,7 @@ void main() {
             pageData[i]['id'] = 'page_${page}_customer_${i + 1}';
             pageData[i]['name'] = 'Page $page Customer ${i + 1}';
           }
-          
+
           return PaginationResult<Map<String, dynamic>>(
             items: pageData,
             totalItems: 50,
@@ -308,7 +308,7 @@ void main() {
 
         // Load initial data first
         await controller.loadInitialData(mockFetchData);
-        
+
         // Act
         await controller.lastPage(mockFetchData);
 
@@ -393,7 +393,7 @@ void main() {
             pageData[i]['id'] = 'page_${page}_customer_${i + 1}';
             pageData[i]['name'] = 'Page $page Customer ${i + 1}';
           }
-          
+
           return PaginationResult<Map<String, dynamic>>(
             items: pageData,
             totalItems: 50,

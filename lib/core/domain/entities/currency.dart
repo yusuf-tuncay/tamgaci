@@ -5,31 +5,31 @@
 class Currency {
   /// Para birimi kodu (TRY, USD, EUR, vb.)
   final String code;
-  
+
   /// Para birimi adı (Türk Lirası, Amerikan Doları, vb.)
   final String name;
-  
+
   /// Para birimi sembolü (₺, $, €, vb.)
   final String symbol;
-  
+
   /// Ülke/bölge adı
   final String country;
-  
+
   /// Varsayılan para birimi mi?
   final bool isDefault;
-  
+
   /// Aktif mi?
   final bool isActive;
-  
+
   /// Son güncelleme tarihi
   final DateTime? lastUpdated;
-  
+
   /// TRY'ye göre kur (1 TRY = ?)
   final double exchangeRate;
-  
+
   /// Kur değişim oranı (%)
   final double changeRate;
-  
+
   /// Kur değişim yönü (true: artış, false: azalış)
   final bool isIncreasing;
 
@@ -82,7 +82,9 @@ class Currency {
       country: json['country'] as String,
       isDefault: json['isDefault'] as bool? ?? false,
       isActive: json['isActive'] as bool? ?? true,
-      lastUpdated: json['lastUpdated'] != null ? DateTime.parse(json['lastUpdated'] as String) : null,
+      lastUpdated: json['lastUpdated'] != null
+          ? DateTime.parse(json['lastUpdated'] as String)
+          : null,
       exchangeRate: (json['exchangeRate'] as num).toDouble(),
       changeRate: (json['changeRate'] as num?)?.toDouble() ?? 0.0,
       isIncreasing: json['isIncreasing'] as bool? ?? true,
@@ -172,29 +174,31 @@ class SupportedCurrencies {
       lastUpdated: null,
       exchangeRate: 0.0,
     ),
-         Currency(
-       code: 'BGN',
-       name: 'Bulgar Levası',
-       symbol: 'лв',
-       country: 'Bulgaristan',
-       lastUpdated: null,
-       exchangeRate: 0.0,
-     ),
-     Currency(
-       code: 'XAU',
-       name: 'Altın (Gram)',
-       symbol: 'Au',
-       country: 'Altın',
-       lastUpdated: null,
-       exchangeRate: 0.0,
-     ),
+    Currency(
+      code: 'BGN',
+      name: 'Bulgar Levası',
+      symbol: 'лв',
+      country: 'Bulgaristan',
+      lastUpdated: null,
+      exchangeRate: 0.0,
+    ),
+    Currency(
+      code: 'XAU',
+      name: 'Altın (Gram)',
+      symbol: 'Au',
+      country: 'Altın',
+      lastUpdated: null,
+      exchangeRate: 0.0,
+    ),
   ];
 
   /// Varsayılan para birimini döndürür
-  static Currency get defaultCurrency => currencies.firstWhere((c) => c.isDefault);
+  static Currency get defaultCurrency =>
+      currencies.firstWhere((c) => c.isDefault);
 
   /// Aktif para birimlerini döndürür
-  static List<Currency> get activeCurrencies => currencies.where((c) => c.isActive).toList();
+  static List<Currency> get activeCurrencies =>
+      currencies.where((c) => c.isActive).toList();
 
   /// Para birimi koduna göre bulur
   static Currency? findByCode(String code) {

@@ -88,7 +88,7 @@ class PermissionService {
     ];
 
     final results = <Permission, bool>{};
-    
+
     for (final permission in permissions) {
       try {
         final status = await permission.request();

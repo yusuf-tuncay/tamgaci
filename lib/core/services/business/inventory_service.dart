@@ -333,8 +333,7 @@ class InventoryService {
           .get();
 
       return snapshot.docs
-          .map((doc) =>
-              StockMovement.fromMap(doc.data()))
+          .map((doc) => StockMovement.fromMap(doc.data()))
           .toList();
     } catch (e) {
       AppLogger.error('Error searching stock movements', e);

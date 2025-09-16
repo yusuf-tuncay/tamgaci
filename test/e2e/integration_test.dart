@@ -448,7 +448,8 @@ Future<void> _testPerformance(WidgetTester tester) async {
   stopwatch.start();
 
   // Scroll through customer list
-  await tester.drag(find.byKey(const Key('customers_list')), const Offset(0, -500));
+  await tester.drag(
+      find.byKey(const Key('customers_list')), const Offset(0, -500));
   await tester.pumpAndSettle();
 
   stopwatch.stop();

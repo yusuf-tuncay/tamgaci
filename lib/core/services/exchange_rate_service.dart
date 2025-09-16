@@ -16,7 +16,7 @@ class ExchangeRateService {
         'GBP': 38.80,
         'TRY': 1.0,
       };
-      
+
       AppLogger.info('Exchange rates fetched successfully');
       return rates;
     } catch (e) {
@@ -37,7 +37,7 @@ class ExchangeRateService {
     String toCurrency,
   ) {
     if (fromCurrency == toCurrency) return amount;
-    
+
     // Basit dönüştürme oranları
     final rates = {
       'TRY': 1.0,
@@ -45,10 +45,10 @@ class ExchangeRateService {
       'EUR': 0.030,
       'GBP': 0.026,
     };
-    
+
     final fromRate = rates[fromCurrency] ?? 1.0;
     final toRate = rates[toCurrency] ?? 1.0;
-    
+
     return amount * (toRate / fromRate);
   }
 

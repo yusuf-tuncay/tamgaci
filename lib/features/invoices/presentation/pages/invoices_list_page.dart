@@ -583,7 +583,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                          color: isDark
+                              ? TamgaciConstants.textPrimaryDark
+                              : TamgaciConstants.textPrimary,
                         ),
                       ),
                       Text(
@@ -591,7 +593,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
-                          color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                          color: isDark
+                              ? TamgaciConstants.textSecondaryDark
+                              : TamgaciConstants.textSecondary,
                         ),
                       ),
                     ],
@@ -601,7 +605,9 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
                   PopupMenuButton<String>(
                     icon: Icon(
                       Icons.more_vert,
-                      color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
                     ),
                     onSelected: (action) =>
                         _handleInvoiceAction(action, invoice),

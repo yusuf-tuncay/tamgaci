@@ -398,8 +398,7 @@ class CacheManager {
   Future<void> _saveToDisk(CacheItem item) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-          '$_cachePrefix${item.key}', jsonEncode(item.data));
+      await prefs.setString('$_cachePrefix${item.key}', jsonEncode(item.data));
       await prefs.setString('$_cacheTimestampPrefix${item.key}',
           item.createdAt.toIso8601String());
       await prefs.setString(

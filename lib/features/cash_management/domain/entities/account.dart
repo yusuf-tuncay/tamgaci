@@ -291,7 +291,8 @@ class CashTransaction {
 
   /// Vadesi geçmiş mi?
   bool get isOverdue {
-    if (dueDate == null || status == CashTransactionStatus.completed) return false;
+    if (dueDate == null || status == CashTransactionStatus.completed)
+      return false;
     return DateTime.now().isAfter(dueDate!);
   }
 
@@ -361,7 +362,9 @@ class CashTransaction {
       category: json['category'] as String?,
       subCategory: json['subCategory'] as String?,
       transactionDate: DateTime.parse(json['transactionDate'] as String),
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate'] as String) : null,
+      dueDate: json['dueDate'] != null
+          ? DateTime.parse(json['dueDate'] as String)
+          : null,
       notes: json['notes'] as String?,
       attachmentUrl: json['attachmentUrl'] as String?,
       createdBy: json['createdBy'] as String?,

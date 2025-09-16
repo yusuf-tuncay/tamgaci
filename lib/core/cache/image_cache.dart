@@ -365,7 +365,9 @@ class ImageCache {
           imageData[3] == 0x47) {
         return 'png';
       }
-      if (imageData[0] == 0x47 && imageData[1] == 0x49 && imageData[2] == 0x46) {
+      if (imageData[0] == 0x47 &&
+          imageData[1] == 0x49 &&
+          imageData[2] == 0x46) {
         return 'gif';
       }
       if (imageData[0] == 0x42 && imageData[1] == 0x4D) return 'bmp';

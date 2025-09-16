@@ -109,4 +109,3 @@ class ProductCategory {
   @override
   int get hashCode => id.hashCode;
 }
-

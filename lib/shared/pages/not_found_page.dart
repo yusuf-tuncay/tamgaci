@@ -32,9 +32,9 @@ class NotFoundPage extends StatelessWidget {
                   ),
                   color: TamgaciConstants.textDisabled,
                 ),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceLG),
-                
+
                 // 404 Başlık
                 Text(
                   '404',
@@ -50,9 +50,9 @@ class NotFoundPage extends StatelessWidget {
                     color: TamgaciConstants.primaryColor,
                   ),
                 ),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceMD),
-                
+
                 // Sayfa bulunamadı mesajı
                 Text(
                   'Sayfa Bulunamadı',
@@ -69,9 +69,9 @@ class NotFoundPage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceSM),
-                
+
                 // Açıklama metni
                 Text(
                   'Aradığınız sayfa bulunamadı veya taşınmış olabilir.\nAna sayfaya giderek devam edebilirsiniz.',
@@ -88,9 +88,9 @@ class NotFoundPage extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceXL),
-                
+
                 // Ana sayfaya git butonu
                 SizedBox(
                   width: TamgaciConstants.getResponsiveValue(
@@ -104,7 +104,7 @@ class NotFoundPage extends StatelessWidget {
                   child: ElevatedButton.icon(
                     onPressed: () {
                       TamgaciRoutes.pushNamedAndClearAll(
-                        context, 
+                        context,
                         TamgaciRoutes.dashboard,
                       );
                     },
@@ -117,9 +117,9 @@ class NotFoundPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: TamgaciConstants.spaceMD),
-                
+
                 // Geri git butonu
                 TextButton.icon(
                   onPressed: () {
@@ -127,7 +127,7 @@ class NotFoundPage extends StatelessWidget {
                       TamgaciRoutes.pop(context);
                     } else {
                       TamgaciRoutes.pushReplacementNamed(
-                        context, 
+                        context,
                         TamgaciRoutes.dashboard,
                       );
                     }

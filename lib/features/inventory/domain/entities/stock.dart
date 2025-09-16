@@ -174,9 +174,9 @@ class Stock {
 
 /// Stok durumu enum'u
 enum StockStatus {
-  low,    // Düşük stok
+  low, // Düşük stok
   normal, // Normal stok
-  high,   // Yüksek stok
+  high, // Yüksek stok
 }
 
 /// Stok durumu için extension

@@ -6,7 +6,8 @@ import '../../domain/entities/user_profile.dart';
 import '../../data/repositories/user_profile_repository_impl.dart';
 
 /// User profile repository provider
-final userProfileRepositoryProvider = Provider<UserProfileRepositoryImpl>((ref) {
+final userProfileRepositoryProvider =
+    Provider<UserProfileRepositoryImpl>((ref) {
   return UserProfileRepositoryImpl();
 });
 
@@ -116,7 +117,8 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
 }
 
 /// User profile provider
-final userProfileProvider = StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile>>((ref) {
+final userProfileProvider =
+    StateNotifierProvider<UserProfileNotifier, AsyncValue<UserProfile>>((ref) {
   final repository = ref.watch(userProfileRepositoryProvider);
   return UserProfileNotifier(repository);
 });

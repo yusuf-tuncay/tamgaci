@@ -310,4 +310,3 @@ class _AutoFormattedTextFieldState extends State<AutoFormattedTextField> {
     );
   }
 }
-

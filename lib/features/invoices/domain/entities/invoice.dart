@@ -1,6 +1,5 @@
 // ========== lib/features/invoices/domain/entities/invoice.dart ==========
 
-
 // import '../../data/models/invoice_entity.dart'; // Removed - using Firebase only
 import '../../data/models/invoice_status.dart';
 import '../../../customers/domain/entities/customer.dart';
@@ -97,11 +96,11 @@ class Invoice {
       id: json['id'] as String,
       invoiceNumber: json['invoiceNumber'] as String,
       customerId: json['customerId'] as String,
-      customer: json['customer'] != null 
+      customer: json['customer'] != null
           ? Customer.fromJson(json['customer'] as Map<String, dynamic>)
           : null,
       invoiceDate: DateTime.parse(json['invoiceDate'] as String),
-      dueDate: json['dueDate'] != null 
+      dueDate: json['dueDate'] != null
           ? DateTime.parse(json['dueDate'] as String)
           : null,
       status: InvoiceStatus.values.firstWhere(
@@ -117,12 +116,14 @@ class Invoice {
       notes: json['notes'] as String?,
       description: json['description'] as String?,
       isPaid: json['isPaid'] as bool,
-      paidDate: json['paidDate'] != null 
+      paidDate: json['paidDate'] != null
           ? DateTime.parse(json['paidDate'] as String)
           : null,
       items: (json['items'] as List<dynamic>?)
-          ?.map((item) => InvoiceItem.fromJson(item as Map<String, dynamic>))
-          .toList() ?? [],
+              ?.map(
+                  (item) => InvoiceItem.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          [],
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -292,9 +293,10 @@ class Invoice {
 
   /// Fatura ödenebilir mi?
   bool get canMarkAsPaid {
-    return (status == InvoiceStatus.sent || 
-           status == InvoiceStatus.overdue || 
-           status == InvoiceStatus.partiallyPaid) && !isPaid;
+    return (status == InvoiceStatus.sent ||
+            status == InvoiceStatus.overdue ||
+            status == InvoiceStatus.partiallyPaid) &&
+        !isPaid;
   }
 
   /// Fatura iptal edilebilir mi?

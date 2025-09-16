@@ -181,7 +181,9 @@ class Product {
         orElse: () => ProductType.product,
       ),
       unitPrice: (json['unitPrice'] as num).toDouble(),
-      costPrice: json['costPrice'] != null ? (json['costPrice'] as num).toDouble() : null,
+      costPrice: json['costPrice'] != null
+          ? (json['costPrice'] as num).toDouble()
+          : null,
       stockQuantity: json['stockQuantity'] as int,
       minStockLevel: json['minStockLevel'] as int,
       maxStockLevel: json['maxStockLevel'] as int,
@@ -197,7 +199,8 @@ class Product {
       model: json['model'] as String?,
       color: json['color'] as String?,
       size: json['size'] as String?,
-      weight: json['weight'] != null ? (json['weight'] as num).toDouble() : null,
+      weight:
+          json['weight'] != null ? (json['weight'] as num).toDouble() : null,
       weightUnit: json['weightUnit'] as String?,
       isDigital: json['isDigital'] as bool? ?? false,
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],

@@ -19,12 +19,16 @@ class NotificationsPage extends ConsumerWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? TamgaciConstants.backgroundColorDark : TamgaciConstants.backgroundColor,
+      backgroundColor: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.backgroundColor,
       appBar: AppBar(
         title: const Text('Bildirimler'),
         elevation: 0,
         backgroundColor: theme.appBarTheme.backgroundColor,
-        foregroundColor: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+        foregroundColor: isDark
+            ? TamgaciConstants.textPrimaryDark
+            : TamgaciConstants.textPrimary,
         actions: [
           IconButton(
             onPressed: () {
@@ -50,7 +54,9 @@ class NotificationsPage extends ConsumerWidget {
                     Icon(
                       Icons.notifications_none,
                       size: 64,
-                      color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -58,7 +64,9 @@ class NotificationsPage extends ConsumerWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
-                        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                        color: isDark
+                            ? TamgaciConstants.textSecondaryDark
+                            : TamgaciConstants.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -66,7 +74,9 @@ class NotificationsPage extends ConsumerWidget {
                       'Yeni bildirimler burada görünecek',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: isDark ? TamgaciConstants.textSecondaryDark : TamgaciConstants.textSecondary,
+                        color: isDark
+                            ? TamgaciConstants.textSecondaryDark
+                            : TamgaciConstants.textSecondary,
                       ),
                     ),
                   ],

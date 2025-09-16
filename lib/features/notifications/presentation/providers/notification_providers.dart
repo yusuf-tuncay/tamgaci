@@ -8,9 +8,9 @@ import '../../data/repositories/notification_repository.dart';
 /// Bildirimler için provider
 final notificationsProvider =
     FutureProvider<List<app_notification.AppNotification>>((ref) async {
-      final repository = ref.read(notificationRepositoryProvider);
-      return await repository.getAllNotifications();
-    });
+  final repository = ref.read(notificationRepositoryProvider);
+  return await repository.getAllNotifications();
+});
 
 /// Okunmamış bildirim sayısı için provider
 final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
@@ -21,23 +21,23 @@ final unreadNotificationsCountProvider = FutureProvider<int>((ref) async {
 /// Bildirimi okundu olarak işaretle
 final markAsReadProvider =
     StateNotifierProvider<MarkAsReadNotifier, AsyncValue<void>>((ref) {
-      final repository = ref.read(notificationRepositoryProvider);
-      return MarkAsReadNotifier(repository, ref);
-    });
+  final repository = ref.read(notificationRepositoryProvider);
+  return MarkAsReadNotifier(repository, ref);
+});
 
 /// Tüm bildirimleri okundu olarak işaretle
 final markAllAsReadProvider =
     StateNotifierProvider<MarkAllAsReadNotifier, AsyncValue<void>>((ref) {
-      final repository = ref.read(notificationRepositoryProvider);
-      return MarkAllAsReadNotifier(repository, ref);
-    });
+  final repository = ref.read(notificationRepositoryProvider);
+  return MarkAllAsReadNotifier(repository, ref);
+});
 
 /// Bildirimi sil
 final deleteNotificationProvider =
     StateNotifierProvider<DeleteNotificationNotifier, AsyncValue<void>>((ref) {
-      final repository = ref.read(notificationRepositoryProvider);
-      return DeleteNotificationNotifier(repository, ref);
-    });
+  final repository = ref.read(notificationRepositoryProvider);
+  return DeleteNotificationNotifier(repository, ref);
+});
 
 /// Bildirim repository provider
 final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
@@ -50,7 +50,7 @@ class MarkAsReadNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
 
   MarkAsReadNotifier(this._repository, this._ref)
-    : super(const AsyncValue.data(null));
+      : super(const AsyncValue.data(null));
 
   Future<void> markAsRead(String notificationId) async {
     state = const AsyncValue.loading();
@@ -72,7 +72,7 @@ class MarkAllAsReadNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
 
   MarkAllAsReadNotifier(this._repository, this._ref)
-    : super(const AsyncValue.data(null));
+      : super(const AsyncValue.data(null));
 
   Future<void> markAllAsRead() async {
     state = const AsyncValue.loading();
@@ -94,7 +94,7 @@ class DeleteNotificationNotifier extends StateNotifier<AsyncValue<void>> {
   final Ref _ref;
 
   DeleteNotificationNotifier(this._repository, this._ref)
-    : super(const AsyncValue.data(null));
+      : super(const AsyncValue.data(null));
 
   Future<void> deleteNotification(String notificationId) async {
     state = const AsyncValue.loading();

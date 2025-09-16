@@ -47,7 +47,7 @@ class ImageCompressor {
   }) async {
     try {
       final compressionConfig = config ?? _config;
-      
+
       ErrorLogger.logInfo(
         'Compressing image',
         context: 'ImageCompressor',
@@ -94,7 +94,8 @@ class ImageCompressor {
           'originalSize': imageData.length,
           'compressedSize': compressedData.length,
           'compressionRatio': compressedImage.compressionRatio,
-          'savings': '${((1 - compressedData.length / imageData.length) * 100).toStringAsFixed(1)}%',
+          'savings':
+              '${((1 - compressedData.length / imageData.length) * 100).toStringAsFixed(1)}%',
         },
       );
 
@@ -105,7 +106,7 @@ class ImageCompressor {
         error: e,
         context: 'ImageCompressor',
       );
-      
+
       // Return original image if compression fails
       return CompressedImage(
         data: imageData,
@@ -136,7 +137,7 @@ class ImageCompressor {
           'progressive': config.enableProgressive,
         },
       );
-      
+
       return imageData;
     } catch (e) {
       ErrorLogger.logError(
@@ -163,7 +164,7 @@ class ImageCompressor {
           'optimization': config.enableOptimization,
         },
       );
-      
+
       return imageData;
     } catch (e) {
       ErrorLogger.logError(
@@ -190,7 +191,7 @@ class ImageCompressor {
           'quality': config.quality,
         },
       );
-      
+
       return imageData;
     } catch (e) {
       ErrorLogger.logError(
@@ -209,7 +210,7 @@ class ImageCompressor {
   ) async {
     try {
       final format = _detectImageFormat(imageData);
-      
+
       switch (format) {
         case CompressionFormat.jpeg:
           return await _compressJpeg(imageData, config);
@@ -234,18 +235,23 @@ class ImageCompressor {
   CompressionFormat _detectImageFormat(Uint8List imageData) {
     try {
       if (imageData.length < 4) return CompressionFormat.auto;
-      
+
       // Check for common image formats
-      if (imageData[0] == 0xFF && imageData[1] == 0xD8) return CompressionFormat.jpeg;
-      if (imageData[0] == 0x89 && imageData[1] == 0x50 && 
-          imageData[2] == 0x4E && imageData[3] == 0x47) {
+      if (imageData[0] == 0xFF && imageData[1] == 0xD8)
+        return CompressionFormat.jpeg;
+      if (imageData[0] == 0x89 &&
+          imageData[1] == 0x50 &&
+          imageData[2] == 0x4E &&
+          imageData[3] == 0x47) {
         return CompressionFormat.png;
       }
-      if (imageData[0] == 0x52 && imageData[1] == 0x49 && 
-          imageData[2] == 0x46 && imageData[3] == 0x46) {
+      if (imageData[0] == 0x52 &&
+          imageData[1] == 0x49 &&
+          imageData[2] == 0x46 &&
+          imageData[3] == 0x46) {
         return CompressionFormat.webp;
       }
-      
+
       return CompressionFormat.auto;
     } catch (e) {
       ErrorLogger.logError(
@@ -298,7 +304,8 @@ class ImageCompressor {
 
       for (int i = 0; i < imageDataList.length; i++) {
         try {
-          final compressedImage = await compressImage(imageDataList[i], config: config);
+          final compressedImage =
+              await compressImage(imageDataList[i], config: config);
           compressedImages.add(compressedImage);
         } catch (e) {
           ErrorLogger.logError(
@@ -306,7 +313,7 @@ class ImageCompressor {
             error: e,
             context: 'ImageCompressor',
           );
-          
+
           // Add original image if compression fails
           compressedImages.add(CompressedImage(
             data: imageDataList[i],
@@ -357,8 +364,8 @@ class ImageCompressor {
       }
 
       final totalSavings = totalOriginalSize - totalCompressedSize;
-      final savingsPercentage = totalOriginalSize > 0 
-          ? (totalSavings / totalOriginalSize) * 100 
+      final savingsPercentage = totalOriginalSize > 0
+          ? (totalSavings / totalOriginalSize) * 100
           : 0.0;
 
       return CompressionStats(
@@ -369,7 +376,10 @@ class ImageCompressor {
         totalSavings: totalSavings,
         savingsPercentage: savingsPercentage,
         averageCompressionRatio: compressedImages.isNotEmpty
-            ? compressedImages.map((img) => img.compressionRatio).reduce((a, b) => a + b) / compressedImages.length
+            ? compressedImages
+                    .map((img) => img.compressionRatio)
+                    .reduce((a, b) => a + b) /
+                compressedImages.length
             : 1.0,
       );
     } catch (e) {
@@ -501,9 +511,8 @@ class CompressedImage {
   int get sizeSavings => originalSize - compressedSize;
 
   /// Get size savings percentage
-  double get sizeSavingsPercentage => originalSize > 0 
-      ? (sizeSavings / originalSize) * 100 
-      : 0.0;
+  double get sizeSavingsPercentage =>
+      originalSize > 0 ? (sizeSavings / originalSize) * 100 : 0.0;
 
   @override
   String toString() {
@@ -552,14 +561,14 @@ class CompressionStats {
   });
 
   factory CompressionStats.empty() => const CompressionStats(
-    totalImages: 0,
-    successfulCompressions: 0,
-    totalOriginalSize: 0,
-    totalCompressedSize: 0,
-    totalSavings: 0,
-    savingsPercentage: 0.0,
-    averageCompressionRatio: 1.0,
-  );
+        totalImages: 0,
+        successfulCompressions: 0,
+        totalOriginalSize: 0,
+        totalCompressedSize: 0,
+        totalSavings: 0,
+        savingsPercentage: 0.0,
+        averageCompressionRatio: 1.0,
+      );
 
   @override
   String toString() {

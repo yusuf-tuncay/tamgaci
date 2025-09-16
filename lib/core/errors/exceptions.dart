@@ -1,5 +1,5 @@
 /// Custom exceptions for the Tamgaci application
-/// 
+///
 /// This file contains all custom exception classes used throughout the application
 /// following the documentation requirements for proper error handling.
 library;

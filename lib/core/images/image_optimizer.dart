@@ -245,7 +245,9 @@ class ImageOptimizer {
           imageData[3] == 0x47) {
         return ImageFormat.png;
       }
-      if (imageData[0] == 0x47 && imageData[1] == 0x49 && imageData[2] == 0x46) {
+      if (imageData[0] == 0x47 &&
+          imageData[1] == 0x49 &&
+          imageData[2] == 0x46) {
         return ImageFormat.gif;
       }
       if (imageData[0] == 0x42 && imageData[1] == 0x4D) return ImageFormat.bmp;

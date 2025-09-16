@@ -144,7 +144,8 @@ class InvoiceItem {
     if (unit != null && unit!.isNotEmpty) {
       return '${quantity.toStringAsFixed(quantity.truncateToDouble() == quantity ? 0 : 1)} $unit';
     }
-    return quantity.toStringAsFixed(quantity.truncateToDouble() == quantity ? 0 : 1);
+    return quantity
+        .toStringAsFixed(quantity.truncateToDouble() == quantity ? 0 : 1);
   }
 
   /// KDV dahil toplam tutar
@@ -166,7 +167,7 @@ class InvoiceItem {
   InvoiceItem recalculate() {
     final newLineTotal = quantity * unitPrice;
     final newTaxAmount = newLineTotal * (taxRate / 100.0);
-    
+
     return copyWith(
       lineTotal: newLineTotal,
       taxAmount: newTaxAmount,
@@ -187,7 +188,7 @@ class InvoiceItem {
   }) {
     final lineTotal = quantity * unitPrice;
     final taxAmount = lineTotal * (taxRate / 100.0);
-    
+
     return InvoiceItem(
       id: id,
       invoiceId: invoiceId,

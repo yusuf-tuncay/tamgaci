@@ -63,10 +63,11 @@ class CurrencyHelper {
   }
 
   /// Para birimi dönüştür (basit implementasyon)
-  static double convertCurrency(double amount, String fromCurrency, String toCurrency) {
+  static double convertCurrency(
+      double amount, String fromCurrency, String toCurrency) {
     // Basit dönüştürme - gerçek uygulamada API kullanılmalı
     if (fromCurrency == toCurrency) return amount;
-    
+
     // Örnek dönüştürme oranları
     final rates = {
       'TRY': 1.0,
@@ -74,10 +75,10 @@ class CurrencyHelper {
       'EUR': 0.028,
       'GBP': 0.024,
     };
-    
+
     final fromRate = rates[fromCurrency] ?? 1.0;
     final toRate = rates[toCurrency] ?? 1.0;
-    
+
     return amount * (toRate / fromRate);
   }
 
@@ -85,7 +86,8 @@ class CurrencyHelper {
   static double parseCurrency(String currencyString) {
     // Türkçe format: 1.234,56 ₺
     final cleanString = currencyString
-        .replaceAll(RegExp(r'[^\d,.-]'), '') // Sadece rakam, virgül, nokta, tire
+        .replaceAll(
+            RegExp(r'[^\d,.-]'), '') // Sadece rakam, virgül, nokta, tire
         .replaceAll('.', '') // Binlik ayırıcıları kaldır
         .replaceAll(',', '.'); // Virgülü nokta yap
 

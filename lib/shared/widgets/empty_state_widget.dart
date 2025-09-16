@@ -85,7 +85,6 @@ class EmptyStateWidget extends StatelessWidget {
               // Aksiyon butonu (varsa)
               if (actionButton != null) ...[
                 const SizedBox(height: 24),
-
                 actionButton!,
               ],
             ],

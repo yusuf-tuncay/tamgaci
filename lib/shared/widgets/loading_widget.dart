@@ -50,7 +50,6 @@ class LoadingWidget extends StatelessWidget {
             // Mesaj (varsa)
             if (message != null) ...[
               const SizedBox(height: 16),
-
               Text(
                 message!,
                 style: GoogleFonts.poppins(

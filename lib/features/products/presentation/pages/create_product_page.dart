@@ -98,15 +98,19 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
     // Form validasyonu başarılı, verileri sanitize et
     final sanitizedName = DataSanitizer.sanitizeText(_nameController.text);
-    final sanitizedDescription = DataSanitizer.sanitizeText(_descriptionController.text);
+    final sanitizedDescription =
+        DataSanitizer.sanitizeText(_descriptionController.text);
     final sanitizedSku = DataSanitizer.sanitizeText(_skuController.text);
-    final sanitizedBarcode = DataSanitizer.sanitizeText(_barcodeController.text);
-    final sanitizedCategory = DataSanitizer.sanitizeText(_categoryController.text);
+    final sanitizedBarcode =
+        DataSanitizer.sanitizeText(_barcodeController.text);
+    final sanitizedCategory =
+        DataSanitizer.sanitizeText(_categoryController.text);
     final sanitizedBrand = DataSanitizer.sanitizeText(_brandController.text);
     final sanitizedModel = DataSanitizer.sanitizeText(_modelController.text);
     final sanitizedColor = DataSanitizer.sanitizeText(_colorController.text);
     final sanitizedSize = DataSanitizer.sanitizeText(_sizeController.text);
-    final sanitizedShelfLocation = DataSanitizer.sanitizeText(_shelfLocationController.text);
+    final sanitizedShelfLocation =
+        DataSanitizer.sanitizeText(_shelfLocationController.text);
     final sanitizedNotes = DataSanitizer.sanitizeText(_notesController.text);
 
     // Ek validasyonlar
@@ -173,12 +177,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         color: sanitizedColor.isEmpty ? null : sanitizedColor,
         size: sanitizedSize.isEmpty ? null : sanitizedSize,
         weight: weight,
-        weightUnit: _weightUnitController.text.trim().isEmpty ? null : _weightUnitController.text.trim(),
+        weightUnit: _weightUnitController.text.trim().isEmpty
+            ? null
+            : _weightUnitController.text.trim(),
         isDigital: _isDigital,
         tags: _tags,
         notes: sanitizedNotes.isEmpty ? null : sanitizedNotes,
-        shelfLocation: sanitizedShelfLocation.isEmpty ? null : sanitizedShelfLocation,
-        createdAt: _isEditing ? DateTime.now() : DateTime.now(), // TODO: Mevcut ürün için orijinal tarihi al
+        shelfLocation:
+            sanitizedShelfLocation.isEmpty ? null : sanitizedShelfLocation,
+        createdAt: _isEditing
+            ? DateTime.now()
+            : DateTime.now(), // TODO: Mevcut ürün için orijinal tarihi al
         updatedAt: DateTime.now(),
         createdBy: 'current_user', // TODO: Gerçek kullanıcı ID'si
         updatedBy: _isEditing ? 'current_user' : null,

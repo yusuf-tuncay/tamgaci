@@ -270,4 +270,3 @@ class _PaginatedListState<T> extends State<PaginatedList<T>> {
     );
   }
 }
-

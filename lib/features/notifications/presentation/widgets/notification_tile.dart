@@ -70,9 +70,8 @@ class NotificationTile extends StatelessWidget {
                   notification.title,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    fontWeight: notification.isRead
-                        ? FontWeight.w500
-                        : FontWeight.w600,
+                    fontWeight:
+                        notification.isRead ? FontWeight.w500 : FontWeight.w600,
                     color: notification.isRead
                         ? TamgaciConstants.textPrimary
                         : TamgaciConstants.textPrimary,
