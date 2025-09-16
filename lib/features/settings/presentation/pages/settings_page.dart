@@ -11,6 +11,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../../../../core/domain/entities/currency.dart';
 import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/providers/locale_provider.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 
 /// Ayarlar Sayfası
@@ -166,13 +167,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildLanguageSelector(bool isDark, AppLocalizations l10n) {
-    final supportedLocales = [
-      {'code': 'tr', 'name': 'Türkçe', 'flag': '🇹🇷'},
-      {'code': 'en', 'name': 'English', 'flag': '🇺🇸'},
-      {'code': 'ru', 'name': 'Русский', 'flag': '🇷🇺'},
-      {'code': 'bg', 'name': 'Български', 'flag': '🇧🇬'},
-      {'code': 'ar', 'name': 'العربية', 'flag': '🇸🇦'},
-    ];
+    final currentLocale = ref.watch(localeProvider);
+    final localeNotifier = ref.read(localeProvider.notifier);
 
     return Container(
       decoration: BoxDecoration(
@@ -182,7 +178,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: DropdownButtonFormField<Map<String, String>>(
+      child: DropdownButtonFormField<Locale>(
+        value: currentLocale,
         decoration: InputDecoration(
           border: InputBorder.none,
           contentPadding:
@@ -194,18 +191,18 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 : TamgaciConstants.textSecondary,
           ),
         ),
-        items: supportedLocales.map((locale) {
-          return DropdownMenuItem<Map<String, String>>(
+        items: localeNotifier.supportedLocales.map((locale) {
+          return DropdownMenuItem<Locale>(
             value: locale,
             child: Row(
               children: [
                 Text(
-                  locale['flag']!,
+                  localeNotifier.getLocaleFlag(locale),
                   style: const TextStyle(fontSize: 20),
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  locale['name']!,
+                  localeNotifier.getLocaleName(locale),
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -216,12 +213,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           );
         }).toList(),
-        onChanged: (Map<String, String>? newValue) {
+        onChanged: (Locale? newValue) {
           if (newValue != null) {
-            // TODO: Implement language switching
+            localeNotifier.setLocale(newValue);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('${l10n.languageChanged}: ${newValue['name']}'),
+                content: Text(
+                    '${l10n.languageChanged}: ${localeNotifier.getLocaleName(newValue)}'),
                 backgroundColor: TamgaciConstants.primaryColor,
               ),
             );

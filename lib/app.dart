@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamgaci/core/routes/routes.dart';
 import 'package:tamgaci/core/theme/app_theme.dart';
 import 'package:tamgaci/core/providers/theme_provider.dart';
+import 'package:tamgaci/core/providers/locale_provider.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/shared/pages/not_found_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -32,6 +33,9 @@ class TamgaciApp extends ConsumerWidget {
 
       /// Tema modu (provider'dan al)
       themeMode: ref.watch(themeProvider),
+
+      /// Dil (provider'dan al)
+      locale: ref.watch(localeProvider),
       // ========== NAVİGASYON AYARLARI ==========
 
       /// İlk açılacak sayfa
@@ -64,8 +68,17 @@ class TamgaciApp extends ConsumerWidget {
         Locale('ar', 'SA'),
       ],
 
-      /// Varsayılan dil
-      locale: const Locale('tr', 'TR'),
+      /// Dil çözümleme callback'i
+      localeResolutionCallback: (locale, supportedLocales) {
+        if (locale != null) {
+          for (var supportedLocale in supportedLocales) {
+            if (supportedLocale.languageCode == locale.languageCode) {
+              return supportedLocale;
+            }
+          }
+        }
+        return supportedLocales.first;
+      },
 
       // ========== PERFORMANS AYARLARI ==========
 
