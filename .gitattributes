@@ -1,0 +1,12 @@
+# Normalize line endings to LF for source files (prevents CI format churn)
+*.dart text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+*.json text eol=lf
+
+# Keep images/binaries untouched
+*.png -text
+*.jpg -text
+*.jpeg -text
+*.gif -text
