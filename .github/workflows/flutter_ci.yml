@@ -51,7 +51,7 @@ jobs:
         env:
           FLUTTER_WEB_USE_SKWASM: 'false'
           FLUTTER_WEB_USE_SKIA: 'true'
-        run: flutter build web --release --no-wasm-dry-run --web-renderer canvaskit
+        run: flutter build web --release --no-wasm-dry-run
 
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
