@@ -10,6 +10,8 @@ import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../../../../core/domain/entities/currency.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 /// Ayarlar Sayfası
 class SettingsPage extends ConsumerStatefulWidget {
@@ -25,41 +27,54 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedCurrency = ref.watch(selectedCurrencyProvider);
     final activeCurrencies = ref.watch(activeCurrenciesProvider);
+    final currentTheme = ref.watch(themeProvider);
+    final l10n = AppLocalizations.of(context);
 
     return ResponsiveScaffold(
-      appBar: const CustomAppBar(title: 'Ayarlar', showDrawer: true),
+      appBar: CustomAppBar(title: l10n.settings, showDrawer: true),
       drawerContent: const TamgaciDrawerMenu(),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWelcomeCard(isDark),
+            _buildWelcomeCard(isDark, l10n),
             const SizedBox(height: 16),
-            _buildCurrencySettings(isDark, selectedCurrency, activeCurrencies),
+            _buildLanguageSettings(isDark, l10n),
             const SizedBox(height: 16),
-            _buildOtherSettings(isDark),
+            _buildThemeSettings(isDark, currentTheme, l10n),
+            const SizedBox(height: 16),
+            _buildCurrencySettings(
+                isDark, selectedCurrency, activeCurrencies, l10n),
+            const SizedBox(height: 16),
+            _buildOtherSettings(isDark, l10n),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildWelcomeCard(bool isDark) {
+  Widget _buildWelcomeCard(bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
-              ? [Colors.blue.withValues(alpha: 0.8), Colors.blue]
-              : [Colors.blue, Colors.blue.withValues(alpha: 0.8)],
+              ? [
+                  const Color(0xFF2563EB).withValues(alpha: 0.8),
+                  const Color(0xFF1D4ED8)
+                ]
+              : [
+                  const Color(0xFF2563EB),
+                  const Color(0xFF1D4ED8).withValues(alpha: 0.8)
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
+            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -78,7 +93,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Uygulama Ayarları',
+                  l10n.settings,
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -90,7 +105,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Para birimi ve diğer tercihlerinizi yönetin',
+            l10n.settingsDescription,
             style: GoogleFonts.poppins(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.9),
@@ -101,15 +116,254 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildCurrencySettings(
-      bool isDark, Currency selectedCurrency, List<Currency> activeCurrencies) {
+  Widget _buildLanguageSettings(bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          color:
+              isDark ? TamgaciConstants.borderColorDark : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.language,
+                color: TamgaciConstants.primaryColor,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.language,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.languageDescription,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: isDark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildLanguageSelector(isDark, l10n),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLanguageSelector(bool isDark, AppLocalizations l10n) {
+    final supportedLocales = [
+      {'code': 'tr', 'name': 'Türkçe', 'flag': '🇹🇷'},
+      {'code': 'en', 'name': 'English', 'flag': '🇺🇸'},
+      {'code': 'ru', 'name': 'Русский', 'flag': '🇷🇺'},
+      {'code': 'bg', 'name': 'Български', 'flag': '🇧🇬'},
+      {'code': 'ar', 'name': 'العربية', 'flag': '🇸🇦'},
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color:
+              isDark ? TamgaciConstants.borderColorDark : Colors.grey.shade300,
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButtonFormField<Map<String, String>>(
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          hintText: l10n.selectLanguage,
+          hintStyle: GoogleFonts.poppins(
+            color: isDark
+                ? TamgaciConstants.textSecondaryDark
+                : TamgaciConstants.textSecondary,
+          ),
+        ),
+        items: supportedLocales.map((locale) {
+          return DropdownMenuItem<Map<String, String>>(
+            value: locale,
+            child: Row(
+              children: [
+                Text(
+                  locale['flag']!,
+                  style: const TextStyle(fontSize: 20),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  locale['name']!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+        onChanged: (Map<String, String>? newValue) {
+          if (newValue != null) {
+            // TODO: Implement language switching
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${l10n.languageChanged}: ${newValue['name']}'),
+                backgroundColor: TamgaciConstants.primaryColor,
+              ),
+            );
+          }
+        },
+        dropdownColor: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        style: GoogleFonts.poppins(
+          color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeSettings(
+      bool isDark, ThemeMode currentTheme, AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color:
+              isDark ? TamgaciConstants.borderColorDark : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.palette,
+                color: TamgaciConstants.primaryColor,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                l10n.theme,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            l10n.themeDescription,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: isDark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildThemeSelector(isDark, currentTheme, l10n),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildThemeSelector(
+      bool isDark, ThemeMode currentTheme, AppLocalizations l10n) {
+    final themes = [
+      {
+        'mode': ThemeMode.light,
+        'name': l10n.lightTheme,
+        'icon': Icons.light_mode
+      },
+      {'mode': ThemeMode.dark, 'name': l10n.darkTheme, 'icon': Icons.dark_mode},
+      {
+        'mode': ThemeMode.system,
+        'name': l10n.systemTheme,
+        'icon': Icons.settings_system_daydream
+      },
+    ];
+
+    return Column(
+      children: themes.map((theme) {
+        final isSelected = theme['mode'] == currentTheme;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
+                : (isDark ? Colors.grey.shade800 : Colors.grey.shade50),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? TamgaciConstants.primaryColor
+                  : (isDark
+                      ? TamgaciConstants.borderColorDark
+                      : Colors.grey.shade300),
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: ListTile(
+            leading: Icon(
+              theme['icon'] as IconData,
+              color: isSelected
+                  ? TamgaciConstants.primaryColor
+                  : (isDark ? Colors.white : TamgaciConstants.textPrimary),
+            ),
+            title: Text(
+              theme['name'] as String,
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected
+                    ? TamgaciConstants.primaryColor
+                    : (isDark ? Colors.white : TamgaciConstants.textPrimary),
+              ),
+            ),
+            trailing: isSelected
+                ? Icon(
+                    Icons.check_circle,
+                    color: TamgaciConstants.primaryColor,
+                  )
+                : null,
+            onTap: () {
+              ref
+                  .read(themeProvider.notifier)
+                  .setTheme(theme['mode'] as ThemeMode);
+            },
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildCurrencySettings(bool isDark, Currency selectedCurrency,
+      List<Currency> activeCurrencies, AppLocalizations l10n) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color:
+              isDark ? TamgaciConstants.borderColorDark : Colors.grey.shade200,
         ),
       ),
       child: Column(
@@ -124,7 +378,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Para Birimi Ayarları',
+                l10n.currencySettings,
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -135,7 +389,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Varsayılan Para Birimi',
+            l10n.defaultCurrency,
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
@@ -144,7 +398,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tüm işlemlerde kullanılacak varsayılan para birimini seçin',
+            l10n.defaultCurrencyDescription,
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: isDark
@@ -153,20 +407,22 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildCurrencySelector(isDark, selectedCurrency, activeCurrencies),
+          _buildCurrencySelector(
+              isDark, selectedCurrency, activeCurrencies, l10n),
           const SizedBox(height: 20),
-          _buildExchangeRatesInfo(isDark),
+          _buildExchangeRatesInfo(isDark, l10n),
         ],
       ),
     );
   }
 
-  Widget _buildCurrencySelector(
-      bool isDark, Currency selectedCurrency, List<Currency> currencies) {
+  Widget _buildCurrencySelector(bool isDark, Currency selectedCurrency,
+      List<Currency> currencies, AppLocalizations l10n) {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade300,
+          color:
+              isDark ? TamgaciConstants.borderColorDark : Colors.grey.shade300,
         ),
         borderRadius: BorderRadius.circular(12),
       ),
@@ -176,7 +432,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          hintText: 'Para birimi seçin',
+          hintText: l10n.selectCurrency,
           hintStyle: GoogleFonts.poppins(
             color: isDark
                 ? TamgaciConstants.textSecondaryDark
@@ -243,7 +499,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildExchangeRatesInfo(bool isDark) {
+  Widget _buildExchangeRatesInfo(bool isDark, AppLocalizations l10n) {
     final exchangeRatesAsync = ref.watch(exchangeRatesProvider);
 
     return Column(
@@ -258,7 +514,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             const SizedBox(width: 8),
             Text(
-              'Güncel Kurlar',
+              l10n.currentRates,
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -302,7 +558,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           },
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => Text(
-            'Kurlar yüklenemedi: $error',
+            '${l10n.ratesLoadError}: $error',
             style: GoogleFonts.poppins(
               fontSize: 12,
               color: TamgaciConstants.errorColor,
@@ -313,14 +569,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildOtherSettings(bool isDark) {
+  Widget _buildOtherSettings(bool isDark, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          color:
+              isDark ? TamgaciConstants.borderColorDark : Colors.grey.shade200,
         ),
       ),
       child: Column(
@@ -335,7 +592,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               ),
               const SizedBox(width: 8),
               Text(
-                'Diğer Ayarlar',
+                l10n.otherSettings,
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -346,8 +603,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 16),
           _buildSettingItem(
-            'Otomatik Kur Güncelleme',
-            'Kurlar otomatik olarak güncellensin',
+            l10n.autoUpdateRates,
+            l10n.autoUpdateRatesDescription,
             Icons.sync,
             true,
             isDark,
@@ -357,24 +614,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ),
           const SizedBox(height: 12),
           _buildSettingItem(
-            'Bildirimler',
-            'Önemli işlemler için bildirim al',
+            l10n.notifications,
+            l10n.notificationsDescription,
             Icons.notifications,
             true,
             isDark,
             (value) {
               // TODO: Implement notifications setting
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildSettingItem(
-            'Karanlık Tema',
-            'Karanlık tema kullan',
-            Icons.dark_mode,
-            isDark,
-            isDark,
-            (value) {
-              // TODO: Implement theme setting
             },
           ),
         ],
