@@ -291,8 +291,9 @@ class CashTransaction {
 
   /// Vadesi geçmiş mi?
   bool get isOverdue {
-    if (dueDate == null || status == CashTransactionStatus.completed)
+    if (dueDate == null || status == CashTransactionStatus.completed) {
       return false;
+    }
     return DateTime.now().isAfter(dueDate!);
   }
 

@@ -300,9 +300,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     }
                     final given = parts.first.trim();
                     final family = parts.sublist(1).join(' ').trim();
-                    if (given.length < 2) return 'Ad en az 2 karakter olmalı';
-                    if (family.length < 2)
+                    if (given.length < 2) {
+                      return 'Ad en az 2 karakter olmalı';
+                    }
+                    if (family.length < 2) {
                       return 'Soyad en az 2 karakter olmalı';
+                    }
                     return null;
                   },
                 ),
