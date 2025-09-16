@@ -140,14 +140,91 @@ class TamgaciTheme {
     );
   }
 
-  /// Koyu tema konfigürasyonunu döndürür (gelecek kullanım için hazır)
+  /// Koyu tema konfigürasyonunu döndürür
   static ThemeData getDarkTheme() {
-    // Şimdilik açık temanın tersini döndürüyoruz
-    // Gelecekte detaylı koyu tema eklenebilir
-    return getLightTheme().copyWith(
+    return ThemeData(
+      // Material 3 tasarım sistemini etkinleştir
+      useMaterial3: true,
+
+      // Temanın parlaklık seviyesi
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF121212),
+
+      // Ana renk şeması
       colorScheme: _getDarkColorScheme(),
+
+      // Font ailesi - Tüm uygulama için Poppins
+      fontFamily: GoogleFonts.poppins().fontFamily,
+
+      // Scaffold (Ana iskelet) teması
+      scaffoldBackgroundColor: TamgaciConstants.backgroundColorDark,
+
+      // Sayfa geçişleri için varsayılan animasyon süresi
+      pageTransitionsTheme: _getPageTransitionsTheme(),
+
+      // Material renk teması (legacy desteği için)
+      primarySwatch: Colors.blue,
+      primaryColor: TamgaciConstants.primaryColorDark,
+
+      // Vurgu rengi
+      highlightColor: TamgaciConstants.primaryLightDark.withValues(alpha: 0.2),
+
+      // Splash rengi (dokunma efekti)
+      splashColor: TamgaciConstants.primaryColorDark.withValues(alpha: 0.1),
+
+      // Hover rengi (masaüstü için)
+      hoverColor: TamgaciConstants.primaryColorDark.withValues(alpha: 0.04),
+
+      // Odak rengi
+      focusColor: TamgaciConstants.primaryColorDark.withValues(alpha: 0.12),
+
+      // Bölücü rengi
+      dividerColor: TamgaciConstants.dividerColorDark,
+
+      // ========== WIDGET TEMALARI ==========
+
+      // AppBar teması
+      appBarTheme: _getDarkAppBarTheme(),
+
+      // Buton temaları
+      elevatedButtonTheme: _getDarkElevatedButtonTheme(),
+      textButtonTheme: _getDarkTextButtonTheme(),
+      outlinedButtonTheme: _getDarkOutlinedButtonTheme(),
+      filledButtonTheme: _getDarkFilledButtonTheme(),
+
+      // Input field teması
+      inputDecorationTheme: _getDarkInputDecorationTheme(),
+
+      // Kart teması
+      cardTheme: _getDarkCardThemeData(),
+
+      // Liste elemanı teması
+      listTileTheme: _getDarkListTileTheme(),
+
+      // Chip teması
+      chipTheme: _getDarkChipTheme(),
+
+      // Dialog teması
+      dialogTheme: _getDarkDialogThemeData(),
+
+      // Bottom sheet teması
+      bottomSheetTheme: _getDarkBottomSheetTheme(),
+
+      // Drawer teması
+      drawerTheme: _getDarkDrawerTheme(),
+
+      // Menu button teması
+      menuButtonTheme: _getDarkMenuButtonTheme(),
+
+      // SearchBar teması
+      searchBarTheme: _getDarkSearchBarTheme(),
+
+      // Icon teması
+      iconTheme: _getDarkIconTheme(),
+      primaryIconTheme: _getDarkPrimaryIconTheme(),
+
+      // Text teması
+      textTheme: _getDarkTextTheme(),
+      primaryTextTheme: _getDarkPrimaryTextTheme(),
     );
   }
 
@@ -171,11 +248,21 @@ class TamgaciTheme {
     );
   }
 
-  /// Koyu tema renk şeması (gelecek kullanım için)
+  /// Koyu tema renk şeması
   static ColorScheme _getDarkColorScheme() {
     return ColorScheme.fromSeed(
-      seedColor: TamgaciConstants.primaryColor,
+      seedColor: TamgaciConstants.primaryColorDark,
       brightness: Brightness.dark,
+      primary: TamgaciConstants.primaryColorDark,
+      primaryContainer: TamgaciConstants.primaryLightDark,
+      secondary: TamgaciConstants.secondaryColorDark,
+      secondaryContainer: TamgaciConstants.secondaryLightDark,
+      surface: TamgaciConstants.surfaceColorDark,
+      error: TamgaciConstants.errorColor,
+      onPrimary: TamgaciConstants.textOnPrimaryDark,
+      onSecondary: TamgaciConstants.textOnPrimaryDark,
+      onSurface: TamgaciConstants.textPrimaryDark,
+      onError: TamgaciConstants.textOnPrimaryDark,
     );
   }
 
@@ -1468,5 +1555,568 @@ class TamgaciTheme {
     // Bu metod tema değiştirme logic'i için kullanılabilir
     // Provider veya Bloc ile tema state'i yönetilirken kullanılır
     onThemeChanged();
+  }
+
+  // ========== DARK THEME METHODS ==========
+
+  /// Koyu tema AppBar teması
+  static AppBarTheme _getDarkAppBarTheme() {
+    return AppBarTheme(
+      backgroundColor: TamgaciConstants.surfaceColorDark,
+      foregroundColor: TamgaciConstants.textPrimaryDark,
+      elevation: 0,
+      centerTitle: true,
+      titleTextStyle: GoogleFonts.poppins(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimaryDark,
+      ),
+      iconTheme: const IconThemeData(
+        color: TamgaciConstants.textPrimaryDark,
+        size: 24,
+      ),
+      actionsIconTheme: const IconThemeData(
+        color: TamgaciConstants.textPrimaryDark,
+        size: 24,
+      ),
+    );
+  }
+
+  /// Koyu tema Elevated Button teması
+  static ElevatedButtonThemeData _getDarkElevatedButtonTheme() {
+    return ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: TamgaciConstants.primaryColorDark,
+        foregroundColor: TamgaciConstants.textOnPrimaryDark,
+        elevation: 2,
+        shadowColor: TamgaciConstants.shadowColorDark,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        ),
+        textStyle: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema Text Button teması
+  static TextButtonThemeData _getDarkTextButtonTheme() {
+    return TextButtonThemeData(
+      style: TextButton.styleFrom(
+        foregroundColor: TamgaciConstants.primaryColorDark,
+        textStyle: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema Outlined Button teması
+  static OutlinedButtonThemeData _getDarkOutlinedButtonTheme() {
+    return OutlinedButtonThemeData(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: TamgaciConstants.primaryColorDark,
+        side: const BorderSide(
+          color: TamgaciConstants.primaryColorDark,
+          width: 1,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        ),
+        textStyle: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema Filled Button teması
+  static FilledButtonThemeData _getDarkFilledButtonTheme() {
+    return FilledButtonThemeData(
+      style: FilledButton.styleFrom(
+        backgroundColor: TamgaciConstants.primaryColorDark,
+        foregroundColor: TamgaciConstants.textOnPrimaryDark,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        ),
+        textStyle: GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema Input Decoration teması
+  static InputDecorationTheme _getDarkInputDecorationTheme() {
+    return InputDecorationTheme(
+      // Input field arka plan rengi
+      fillColor: TamgaciConstants.cardColorDark,
+      filled: true,
+
+      // Normal durum kenarlığı
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        borderSide: BorderSide(
+          color: TamgaciConstants.borderColorDark,
+          width: 1,
+        ),
+      ),
+
+      // Odaklanma durumu kenarlığı
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        borderSide: const BorderSide(
+          color: TamgaciConstants.primaryColorDark,
+          width: 2,
+        ),
+      ),
+
+      // Hata durumu kenarlığı
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        borderSide: const BorderSide(
+          color: TamgaciConstants.errorColor,
+          width: 1,
+        ),
+      ),
+
+      // Hata + odaklanma durumu kenarlığı
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        borderSide: const BorderSide(
+          color: TamgaciConstants.errorColor,
+          width: 2,
+        ),
+      ),
+
+      // Devre dışı durum kenarlığı
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        borderSide: BorderSide(
+          color: TamgaciConstants.borderColorDark.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+
+      // Label metni stili
+      labelStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textSecondaryDark,
+      ),
+
+      // Floating label stili
+      floatingLabelStyle: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.primaryColorDark,
+      ),
+
+      // Helper text stili
+      helperStyle: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textSecondaryDark,
+      ),
+
+      // Hata metni stili
+      errorStyle: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.errorColor,
+      ),
+
+      // Hint text stili
+      hintStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textDisabledDark,
+      ),
+
+      // Prefix ikon rengi
+      prefixIconColor: TamgaciConstants.textSecondaryDark,
+
+      // Suffix ikon rengi
+      suffixIconColor: TamgaciConstants.textSecondaryDark,
+    );
+  }
+
+  /// Koyu tema Kart teması
+  static CardThemeData _getDarkCardThemeData() {
+    return CardThemeData(
+      color: TamgaciConstants.cardColorDark,
+      elevation: 2,
+      shadowColor: TamgaciConstants.shadowColorDark,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+      ),
+      margin: const EdgeInsets.all(TamgaciConstants.spaceXS),
+      clipBehavior: Clip.hardEdge,
+    );
+  }
+
+  /// Koyu tema ListTile teması
+  static ListTileThemeData _getDarkListTileTheme() {
+    return ListTileThemeData(
+      tileColor: Colors.transparent,
+      selectedTileColor:
+          TamgaciConstants.primaryLightDark.withValues(alpha: 0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: TamgaciConstants.spaceMD,
+        vertical: TamgaciConstants.spaceXS,
+      ),
+      titleTextStyle: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textPrimaryDark,
+      ),
+      subtitleTextStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textSecondaryDark,
+      ),
+      leadingAndTrailingTextStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textSecondaryDark,
+      ),
+    );
+  }
+
+  /// Koyu tema Chip teması
+  static ChipThemeData _getDarkChipTheme() {
+    return ChipThemeData(
+      backgroundColor: TamgaciConstants.surfaceColorDark,
+      selectedColor: TamgaciConstants.primaryColorDark,
+      disabledColor: TamgaciConstants.textDisabledDark,
+      labelStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textPrimaryDark,
+      ),
+      secondaryLabelStyle: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textOnPrimaryDark,
+      ),
+      brightness: Brightness.dark,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+      ),
+    );
+  }
+
+  /// Koyu tema Dialog teması
+  static DialogThemeData _getDarkDialogThemeData() {
+    return DialogThemeData(
+      backgroundColor: TamgaciConstants.cardColorDark,
+      elevation: 8,
+      shadowColor: TamgaciConstants.shadowColorDark,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(TamgaciConstants.radiusLG),
+      ),
+      titleTextStyle: GoogleFonts.poppins(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimaryDark,
+      ),
+      contentTextStyle: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textSecondaryDark,
+      ),
+    );
+  }
+
+  /// Koyu tema Bottom Sheet teması
+  static BottomSheetThemeData _getDarkBottomSheetTheme() {
+    return BottomSheetThemeData(
+      backgroundColor: TamgaciConstants.cardColorDark,
+      elevation: 8,
+      shadowColor: TamgaciConstants.shadowColorDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(TamgaciConstants.radiusLG),
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema Drawer teması
+  static DrawerThemeData _getDarkDrawerTheme() {
+    return DrawerThemeData(
+      backgroundColor: TamgaciConstants.surfaceColorDark,
+      elevation: 8,
+      shadowColor: TamgaciConstants.shadowColorDark,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(
+          right: Radius.circular(TamgaciConstants.radiusLG),
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema Menu Button teması
+  static MenuButtonThemeData _getDarkMenuButtonTheme() {
+    return MenuButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor:
+            WidgetStateProperty.all(TamgaciConstants.cardColorDark),
+        foregroundColor:
+            WidgetStateProperty.all(TamgaciConstants.textPrimaryDark),
+        elevation: WidgetStateProperty.all(2.0),
+        shadowColor: WidgetStateProperty.all(TamgaciConstants.shadowColorDark),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema SearchBar teması
+  static SearchBarThemeData _getDarkSearchBarTheme() {
+    return SearchBarThemeData(
+      backgroundColor: WidgetStateProperty.all(TamgaciConstants.cardColorDark),
+      elevation: WidgetStateProperty.all(2),
+      shadowColor: WidgetStateProperty.all(TamgaciConstants.shadowColorDark),
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
+        ),
+      ),
+      textStyle: WidgetStateProperty.all(
+        GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: TamgaciConstants.textPrimaryDark,
+        ),
+      ),
+      hintStyle: WidgetStateProperty.all(
+        GoogleFonts.poppins(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: TamgaciConstants.textDisabledDark,
+        ),
+      ),
+    );
+  }
+
+  /// Koyu tema Icon teması
+  static IconThemeData _getDarkIconTheme() {
+    return const IconThemeData(
+      color: TamgaciConstants.textSecondaryDark,
+      size: 24,
+    );
+  }
+
+  /// Koyu tema Primary Icon teması
+  static IconThemeData _getDarkPrimaryIconTheme() {
+    return const IconThemeData(
+      color: TamgaciConstants.textOnPrimaryDark,
+      size: 24,
+    );
+  }
+
+  /// Koyu tema Text teması
+  static TextTheme _getDarkTextTheme() {
+    return TextTheme(
+      displayLarge: GoogleFonts.poppins(
+        fontSize: 57,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: -0.25,
+      ),
+      displayMedium: GoogleFonts.poppins(
+        fontSize: 45,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0,
+      ),
+      displaySmall: GoogleFonts.poppins(
+        fontSize: 36,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0,
+      ),
+      headlineLarge: GoogleFonts.poppins(
+        fontSize: 32,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0,
+      ),
+      headlineMedium: GoogleFonts.poppins(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0,
+      ),
+      headlineSmall: GoogleFonts.poppins(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0,
+      ),
+      titleLarge: GoogleFonts.poppins(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0,
+      ),
+      titleMedium: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0.15,
+      ),
+      titleSmall: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0.1,
+      ),
+      bodyLarge: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0.5,
+      ),
+      bodyMedium: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textSecondaryDark,
+        letterSpacing: 0.25,
+      ),
+      bodySmall: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textSecondaryDark,
+        letterSpacing: 0.4,
+      ),
+      labelLarge: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textPrimaryDark,
+        letterSpacing: 0.1,
+      ),
+      labelMedium: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textSecondaryDark,
+        letterSpacing: 0.5,
+      ),
+      labelSmall: GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textDisabledDark,
+        letterSpacing: 0.5,
+      ),
+    );
+  }
+
+  /// Koyu tema Primary Text teması
+  static TextTheme _getDarkPrimaryTextTheme() {
+    return TextTheme(
+      displayLarge: GoogleFonts.poppins(
+        fontSize: 57,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: -0.25,
+      ),
+      displayMedium: GoogleFonts.poppins(
+        fontSize: 45,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0,
+      ),
+      displaySmall: GoogleFonts.poppins(
+        fontSize: 36,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0,
+      ),
+      headlineLarge: GoogleFonts.poppins(
+        fontSize: 32,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0,
+      ),
+      headlineMedium: GoogleFonts.poppins(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0,
+      ),
+      headlineSmall: GoogleFonts.poppins(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0,
+      ),
+      titleLarge: GoogleFonts.poppins(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0,
+      ),
+      titleMedium: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.15,
+      ),
+      titleSmall: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.1,
+      ),
+      bodyLarge: GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.5,
+      ),
+      bodyMedium: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.25,
+      ),
+      bodySmall: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w400,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.4,
+      ),
+      labelLarge: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.1,
+      ),
+      labelMedium: GoogleFonts.poppins(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.5,
+      ),
+      labelSmall: GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: TamgaciConstants.textOnPrimaryDark,
+        letterSpacing: 0.5,
+      ),
+    );
   }
 }

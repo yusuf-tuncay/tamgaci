@@ -197,6 +197,16 @@ class TamgaciConstants {
   /// Gölge rengi
   static const Color shadowColor = Color(0x1F000000);
 
+  // Koyu Tema Çizgi ve Kenarlık Renkleri
+  /// Koyu tema ana kenarlık rengi
+  static const Color borderColorDark = Color(0xFF555555);
+
+  /// Koyu tema bölücü çizgi rengi
+  static const Color dividerColorDark = Color(0xFF666666);
+
+  /// Koyu tema gölge rengi
+  static const Color shadowColorDark = Color(0x3F000000);
+
   // ========== TEMA HELPER METODLARI ==========
 
   /// Mevcut temaya göre ana rengi döndürür
