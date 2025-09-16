@@ -34,8 +34,6 @@ jobs:
     name: Build Web (release)
     needs: analyze
     runs-on: ubuntu-latest
-    env:
-      # No explicit Wasm flags; allow Flutter to dry-run Wasm and fall back to JS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
