@@ -48,7 +48,7 @@ class TamgaciApp extends ConsumerWidget {
       initialRoute: TamgaciRoutes.splash,
 
       // ========== LOKALİZASYON AYARLARI ==========
-      localizationsDelegates: [
+      localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,

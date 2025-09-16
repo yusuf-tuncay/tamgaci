@@ -8,7 +8,7 @@ import 'package:tamgaci/core/theme/constants.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tamgaci/l10n/generated/app_localizations.dart';
+// import 'package:tamgaci/l10n/generated/app_localizations.dart';
 
 // ========== SPLASH STATE YÖNETİMİ ==========
 
@@ -83,7 +83,7 @@ class SplashData {
 /// Splash ekranı durumunu yöneten StateNotifier
 class SplashNotifier extends StateNotifier<SplashData> {
   /// SplashNotifier constructor'ı
-  const SplashNotifier()
+  SplashNotifier()
       : super(
           SplashData(
             state: SplashState.loading,
