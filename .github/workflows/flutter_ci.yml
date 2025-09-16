@@ -34,6 +34,9 @@ jobs:
     name: Build Web (release)
     needs: analyze
     runs-on: ubuntu-latest
+    env:
+      FLUTTER_WEB_USE_SKWASM: 'false'
+      FLUTTER_WEB_USE_SKIA: 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,9 +51,6 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        env:
-          FLUTTER_WEB_USE_SKWASM: 'false'
-          FLUTTER_WEB_USE_SKIA: 'true'
         run: flutter build web --release --no-wasm-dry-run --dart-define=FLUTTER_WEB_USE_SKWASM=false --dart-define=FLUTTER_WEB_USE_SKIA=true
 
       - name: Upload Web Artifact
