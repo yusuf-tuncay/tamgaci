@@ -27,5 +27,3 @@ class NotificationService {
 
   Future<List<dynamic>> getPendingNotifications() async => const [];
 }
-
-
