@@ -1,0 +1,10 @@
+{
+  "appTitle": "Tamgaci",
+  "action_retry": "Retry",
+  "splash_loading": "Loading Tamgaci...",
+  "splash_initializing": "Checking settings...",
+  "splash_db": "Preparing database...",
+  "splash_auth": "Checking session...",
+  "splash_ready": "Tamgaci is ready!"
+}
+

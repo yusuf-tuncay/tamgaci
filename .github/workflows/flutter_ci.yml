@@ -24,6 +24,9 @@ jobs:
       - name: Flutter Pub Get
         run: flutter pub get
 
+      - name: Generate L10n
+        run: flutter gen-l10n
+
       - name: Format
         run: dart format --set-exit-if-changed .
 

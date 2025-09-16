@@ -1,0 +1,10 @@
+{
+  "appTitle": "Tamgaci",
+  "action_retry": "Tekrar Dene",
+  "splash_loading": "Tamgacı Yükleniyor...",
+  "splash_initializing": "Ayarlar kontrol ediliyor...",
+  "splash_db": "Veritabanı hazırlanıyor...",
+  "splash_auth": "Oturum bilgileri kontrol ediliyor...",
+  "splash_ready": "Tamgacı hazır!"
+}
+

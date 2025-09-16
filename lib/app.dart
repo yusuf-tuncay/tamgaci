@@ -6,6 +6,7 @@ import 'package:tamgaci/core/providers/theme_provider.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/shared/pages/not_found_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:tamgaci/l10n/generated/app_localizations.dart';
 
 class TamgaciApp extends ConsumerWidget {
   const TamgaciApp({super.key});
@@ -47,7 +48,8 @@ class TamgaciApp extends ConsumerWidget {
       initialRoute: TamgaciRoutes.splash,
 
       // ========== LOKALİZASYON AYARLARI ==========
-      localizationsDelegates: const [
+      localizationsDelegates: [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
