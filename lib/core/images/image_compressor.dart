@@ -234,11 +234,14 @@ class ImageCompressor {
   /// Detect image format
   CompressionFormat _detectImageFormat(Uint8List imageData) {
     try {
-      if (imageData.length < 4) return CompressionFormat.auto;
+      if (imageData.length < 4) {
+        return CompressionFormat.auto;
+      }
 
       // Check for common image formats
-      if (imageData[0] == 0xFF && imageData[1] == 0xD8)
+      if (imageData[0] == 0xFF && imageData[1] == 0xD8) {
         return CompressionFormat.jpeg;
+      }
       if (imageData[0] == 0x89 &&
           imageData[1] == 0x50 &&
           imageData[2] == 0x4E &&
