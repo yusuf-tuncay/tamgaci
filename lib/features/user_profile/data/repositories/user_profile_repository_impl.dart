@@ -2,17 +2,15 @@
 // lib/features/user_profile/data/repositories/user_profile_repository_impl.dart
 
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import '../../domain/entities/user_profile.dart';
+import 'user_profile_repository_io.dart'
+    if (dart.library.html) 'user_profile_repository_web.dart';
 
 /// Kullanıcı profil repository implementation
 class UserProfileRepositoryImpl implements UserProfileRepository {
   static const String _profilesKey = 'user_profiles';
-  static const String _photoDirectory = 'profile_photos';
 
   @override
   Future<UserProfile> getUserProfile(String userId) async {
@@ -51,41 +49,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
   @override
   Future<String> uploadProfilePhoto(String userId, String filePath) async {
-    try {
-      if (kIsWeb) {
-        // Web platformu için base64 formatında saklama
-        final prefs = await SharedPreferences.getInstance();
-        final photoKey = 'profile_photo_$userId';
-
-        // Web için dosya yolu yerine base64 string kullan
-        // Bu durumda filePath aslında base64 string olacak
-        await prefs.setString(photoKey, filePath);
-
-        return 'web_photo_$userId';
-      } else {
-        // Mobil platform için dosya sistemi kullan
-        final appDir = await getApplicationDocumentsDirectory();
-        final photoDir = Directory('${appDir.path}/$_photoDirectory');
-
-        // Fotoğraf dizini yoksa oluştur
-        if (!await photoDir.exists()) {
-          await photoDir.create(recursive: true);
-        }
-
-        // Dosya adını oluştur
-        final fileName =
-            '${userId}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-        final targetPath = '${photoDir.path}/$fileName';
-
-        // Dosyayı kopyala
-        final sourceFile = File(filePath);
-        final targetFile = await sourceFile.copy(targetPath);
-
-        return targetFile.path;
-      }
-    } catch (e) {
-      throw Exception('Profil fotoğrafı yüklenirken hata oluştu: $e');
-    }
+    return uploadProfilePhotoImpl(userId, filePath);
   }
 
   @override
@@ -93,18 +57,7 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
     try {
       final profile = await getUserProfile(userId);
       if (profile.profilePhotoUrl != null) {
-        if (kIsWeb) {
-          // Web platformu için SharedPreferences'dan sil
-          final prefs = await SharedPreferences.getInstance();
-          final photoKey = 'profile_photo_$userId';
-          await prefs.remove(photoKey);
-        } else {
-          // Mobil platform için dosyayı sil
-          final file = File(profile.profilePhotoUrl!);
-          if (await file.exists()) {
-            await file.delete();
-          }
-        }
+        await deleteStoredPhotoImpl(userId, profile.profilePhotoUrl!);
 
         // Profilden fotoğraf URL'sini kaldır
         final updatedProfile = profile.copyWith(
