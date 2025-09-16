@@ -8,7 +8,6 @@ import '../../core/theme/constants.dart';
 import '../../core/routes/routes.dart';
 import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
 import '../../features/user_profile/domain/entities/user_profile.dart';
-import 'theme_selector_dialog.dart';
 import '../../core/providers/currency_providers.dart';
 
 // ========== DRAWER MENU MODELS ==========
@@ -667,41 +666,6 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               ),
             );
           }),
-          // Tema seçici
-          ListTile(
-            leading: const Icon(Icons.palette_outlined),
-            title: Text(
-              'Tema',
-              style: GoogleFonts.poppins(fontSize: 14),
-            ),
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (context) => const ThemeSelectorDialog(),
-              );
-            },
-          ),
-          // Para birimi seçici
-          Consumer(
-            builder: (context, ref, child) {
-              final selectedCurrency = ref.watch(selectedCurrencyProvider);
-              return ListTile(
-                leading: const Icon(Icons.currency_exchange_outlined),
-                title: Text(
-                  'Para Birimi',
-                  style: GoogleFonts.poppins(fontSize: 14),
-                ),
-                subtitle: Text(
-                  selectedCurrency.code,
-                  style: GoogleFonts.poppins(
-                      fontSize: 12, color: Colors.grey[600]),
-                ),
-                onTap: () {
-                  _showCurrencySelector(ref);
-                },
-              );
-            },
-          ),
           const Divider(),
           // Çıkış yap
           ListTile(
@@ -717,64 +681,6 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             onTap: () {
               _showLogoutDialog();
             },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCurrencySelector(WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Para Birimi Seç',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        content: Consumer(
-          builder: (context, ref, child) {
-            final currencies = ref.watch(exchangeRatesProvider);
-            final selectedCurrency = ref.watch(selectedCurrencyProvider);
-
-            return currencies.when(
-              data: (currencyList) => SizedBox(
-                width: double.maxFinite,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: currencyList.length,
-                  itemBuilder: (context, index) {
-                    final currency = currencyList[index];
-                    final isSelected = selectedCurrency.code == currency.code;
-
-                    return ListTile(
-                      leading: Text(
-                        currency.symbol,
-                        style: const TextStyle(fontSize: 20),
-                      ),
-                      title: Text(currency.name),
-                      subtitle: Text(currency.code),
-                      trailing: isSelected
-                          ? const Icon(Icons.check, color: AppColors.primary)
-                          : null,
-                      onTap: () {
-                        ref
-                            .read(selectedCurrencyProvider.notifier)
-                            .selectCurrency(currency);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-              ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Text('Hata: $error'),
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
           ),
         ],
       ),
