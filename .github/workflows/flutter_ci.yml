@@ -48,10 +48,10 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        run: |
-          export FLUTTER_WEB_USE_SKWASM=false
-          export FLUTTER_WEB_USE_SKIA=true
-          flutter build web --release --no-wasm-dry-run
+        env:
+          FLUTTER_WEB_USE_SKWASM: 'false'
+          FLUTTER_WEB_USE_SKIA: 'true'
+        run: flutter build web --release --no-wasm-dry-run --web-renderer canvaskit
 
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
