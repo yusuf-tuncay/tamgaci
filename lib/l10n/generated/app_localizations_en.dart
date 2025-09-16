@@ -15,6 +15,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get action_retry => 'Retry';
 
   @override
+  String get error_generic => 'An error occurred';
+
+  @override
+  String get copyright => '© 2024 Tamgaci. All rights reserved.';
+
+  @override
   String get splash_loading => 'Loading Tamgaci...';
 
   @override

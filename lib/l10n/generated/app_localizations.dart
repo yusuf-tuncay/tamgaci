@@ -110,6 +110,18 @@ abstract class AppLocalizations {
   /// **'Tekrar Dene'**
   String get action_retry;
 
+  /// No description provided for @error_generic.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir Sorun Oluştu'**
+  String get error_generic;
+
+  /// No description provided for @copyright.
+  ///
+  /// In tr, this message translates to:
+  /// **'© 2024 Tamgaci. Tüm hakları saklıdır.'**
+  String get copyright;
+
   /// No description provided for @splash_loading.
   ///
   /// In tr, this message translates to:

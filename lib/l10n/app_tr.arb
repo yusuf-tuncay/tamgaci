@@ -1,6 +1,8 @@
 {
   "appTitle": "Tamgaci",
   "action_retry": "Tekrar Dene",
+  "error_generic": "Bir Sorun Oluştu",
+  "copyright": "© 2024 Tamgaci. Tüm hakları saklıdır.",
   "splash_loading": "Tamgacı Yükleniyor...",
   "splash_initializing": "Ayarlar kontrol ediliyor...",
   "splash_db": "Veritabanı hazırlanıyor...",

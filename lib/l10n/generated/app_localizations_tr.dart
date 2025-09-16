@@ -15,6 +15,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get action_retry => 'Tekrar Dene';
 
   @override
+  String get error_generic => 'Bir Sorun Oluştu';
+
+  @override
+  String get copyright => '© 2024 Tamgaci. Tüm hakları saklıdır.';
+
+  @override
   String get splash_loading => 'Tamgacı Yükleniyor...';
 
   @override

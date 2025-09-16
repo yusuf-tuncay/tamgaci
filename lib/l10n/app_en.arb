@@ -1,6 +1,8 @@
 {
   "appTitle": "Tamgaci",
   "action_retry": "Retry",
+  "error_generic": "An error occurred",
+  "copyright": "© 2024 Tamgaci. All rights reserved.",
   "splash_loading": "Loading Tamgaci...",
   "splash_initializing": "Checking settings...",
   "splash_db": "Preparing database...",
