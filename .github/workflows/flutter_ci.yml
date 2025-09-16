@@ -35,8 +35,7 @@ jobs:
     needs: analyze
     runs-on: ubuntu-latest
     env:
-      FLUTTER_WEB_USE_SKWASM: 'false'
-      FLUTTER_WEB_USE_SKIA: 'true'
+      # No explicit Wasm flags; allow Flutter to dry-run Wasm and fall back to JS
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,7 +50,7 @@ jobs:
         run: flutter pub get
 
       - name: Build Web
-        run: flutter build web --release --no-wasm-dry-run --dart-define=FLUTTER_WEB_USE_SKWASM=false --dart-define=FLUTTER_WEB_USE_SKIA=true
+        run: flutter build web --release
 
       - name: Upload Web Artifact
         uses: actions/upload-artifact@v4
