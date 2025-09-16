@@ -41,13 +41,13 @@ class AppTheme {
         displayColor: _onSurfaceLight,
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: _primaryLight,
-        foregroundColor: _onPrimaryLight,
+        backgroundColor: _surfaceLight,
+        foregroundColor: _onSurfaceLight,
         elevation: 2,
         centerTitle: true,
         shadowColor: Color(0x1F000000),
         titleTextStyle: TextStyle(
-          color: _onPrimaryLight,
+          color: _onSurfaceLight,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
