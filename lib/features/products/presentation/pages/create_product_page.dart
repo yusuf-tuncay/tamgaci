@@ -44,7 +44,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   final _shelfLocationController = TextEditingController();
   final _notesController = TextEditingController();
 
-  final ProductType _selectedType = ProductType.product;
+  final ProductType _selectedType = ProductType.stocked;
   bool _isActive = true;
   final bool _isDigital = false;
   bool _isLoading = false;
@@ -78,10 +78,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       _skuController.text = product.sku ?? '';
       _barcodeController.text = product.barcode ?? '';
       _categoryController.text = product.category ?? '';
-      _unitPriceController.text = product.unitPrice.toString();
-      _stockQuantityController.text = product.stockQuantity.toString();
-      _minStockLevelController.text = product.minStockLevel.toString();
-      _unitController.text = product.unit;
+      _unitPriceController.text = product.salesPrice.toString();
+      _stockQuantityController.text = product.totalStockQuantity.toString();
+      _minStockLevelController.text = (product.criticalStockQuantity ?? 0).toString();
+      _unitController.text = 'Adet'; // Default unit
       _taxRateController.text = product.taxRate.toString();
       _isActive = product.isActive;
     } catch (e) {
@@ -163,28 +163,18 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         barcode: sanitizedBarcode.isEmpty ? null : sanitizedBarcode,
         category: sanitizedCategory.isEmpty ? null : sanitizedCategory,
         type: _selectedType,
-        unitPrice: unitPrice,
-        costPrice: costPrice,
-        stockQuantity: stockQuantity,
-        minStockLevel: minStockLevel,
-        maxStockLevel: maxStockLevel,
-        unit: _unitController.text.trim(),
+        salesPrice: unitPrice,
+        purchasePrice: costPrice,
+        salesCurrency: 'TRY',
         taxRate: taxRate,
-        currency: 'TRY',
-        isActive: _isActive,
-        brand: sanitizedBrand.isEmpty ? null : sanitizedBrand,
-        model: sanitizedModel.isEmpty ? null : sanitizedModel,
-        color: sanitizedColor.isEmpty ? null : sanitizedColor,
-        size: sanitizedSize.isEmpty ? null : sanitizedSize,
-        weight: weight,
-        weightUnit: _weightUnitController.text.trim().isEmpty
+        criticalStockQuantity: minStockLevel,
+        shelfLocation: _shelfLocationController.text.trim().isEmpty
             ? null
-            : _weightUnitController.text.trim(),
-        isDigital: _isDigital,
+            : _shelfLocationController.text.trim(),
         tags: _tags,
+        images: [], // TODO: Add image upload functionality
+        isActive: _isActive,
         notes: sanitizedNotes.isEmpty ? null : sanitizedNotes,
-        shelfLocation:
-            sanitizedShelfLocation.isEmpty ? null : sanitizedShelfLocation,
         createdAt: _isEditing
             ? DateTime.now()
             : DateTime.now(), // TODO: Mevcut ürün için orijinal tarihi al

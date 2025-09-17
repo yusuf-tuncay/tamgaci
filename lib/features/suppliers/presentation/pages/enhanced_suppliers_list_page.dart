@@ -434,7 +434,7 @@ class _EnhancedSuppliersListPageState
     // Kategori filtresi
     if (_selectedCategory != 'Tümü') {
       filtered = filtered
-          .where((supplier) => supplier.category == _selectedCategory)
+          .where((supplier) => supplier.category1 == _selectedCategory)
           .toList();
     }
 
@@ -563,9 +563,9 @@ class _EnhancedSuppliersListPageState
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        if (supplier.category != null)
+                        if (supplier.category1 != null)
                           Text(
-                            supplier.category!,
+                            supplier.category1!,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w400,

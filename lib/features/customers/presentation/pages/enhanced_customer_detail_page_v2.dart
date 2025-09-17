@@ -251,12 +251,12 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildCategoryAndDateInfo(Customer customer, bool isDark) {
     return Row(
       children: [
-        if (customer.category != null) ...[
+        if (customer.category1 != null) ...[
           Expanded(
             child: _buildInfoItem(
               icon: Icons.category,
               label: 'Kategori',
-              value: customer.category!,
+              value: customer.category1!,
               isDark: isDark,
             ),
           ),

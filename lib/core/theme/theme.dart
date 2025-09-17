@@ -1661,7 +1661,7 @@ class TamgaciTheme {
       // Normal durum kenarlığı
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusSM),
-        borderSide: BorderSide(
+        borderSide: const BorderSide(
           color: TamgaciConstants.borderColorDark,
           width: 1,
         ),
@@ -1839,11 +1839,11 @@ class TamgaciTheme {
 
   /// Koyu tema Bottom Sheet teması
   static BottomSheetThemeData _getDarkBottomSheetTheme() {
-    return BottomSheetThemeData(
+    return const BottomSheetThemeData(
       backgroundColor: TamgaciConstants.cardColorDark,
       elevation: 8,
       shadowColor: TamgaciConstants.shadowColorDark,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(TamgaciConstants.radiusLG),
         ),
@@ -1853,11 +1853,11 @@ class TamgaciTheme {
 
   /// Koyu tema Drawer teması
   static DrawerThemeData _getDarkDrawerTheme() {
-    return DrawerThemeData(
+    return const DrawerThemeData(
       backgroundColor: TamgaciConstants.surfaceColorDark,
       elevation: 8,
       shadowColor: TamgaciConstants.shadowColorDark,
-      shape: const RoundedRectangleBorder(
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.horizontal(
           right: Radius.circular(TamgaciConstants.radiusLG),
         ),

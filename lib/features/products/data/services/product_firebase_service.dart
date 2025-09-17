@@ -392,11 +392,11 @@ class ProductFirebaseService {
 
       final totalProducts = products.length;
       final lowStockProducts =
-          products.where((p) => p.stockQuantity <= p.minStockLevel).length;
+          products.where((p) => p.totalStockQuantity <= (p.criticalStockQuantity ?? 0)).length;
       final outOfStockProducts =
-          products.where((p) => p.stockQuantity <= 0).length;
+          products.where((p) => p.totalStockQuantity <= 0).length;
       final totalStockValue = products.fold<double>(
-          0, (total, p) => total + (p.stockQuantity * (p.costPrice ?? 0)));
+          0, (total, p) => total + (p.totalStockQuantity * (p.purchasePrice ?? 0)));
 
       return {
         'totalProducts': totalProducts,
@@ -419,17 +419,17 @@ class ProductFirebaseService {
       FirebaseFields.productDescription: product.description,
       FirebaseFields.productType: product.type.name,
       FirebaseFields.productCategory: product.category,
-      FirebaseFields.productUnit: product.unit,
-      FirebaseFields.productPrice: product.unitPrice,
-      FirebaseFields.productCost: product.costPrice,
-      FirebaseFields.productStock: product.stockQuantity,
-      FirebaseFields.productMinStock: product.minStockLevel,
-      FirebaseFields.productMaxStock: product.maxStockLevel,
-      FirebaseFields.productWarehouseId: product.warehouseId,
-      FirebaseFields.productImageUrl: product.imageUrl,
+      FirebaseFields.productUnit: 'Adet', // Default unit
+      FirebaseFields.productPrice: product.salesPrice,
+      FirebaseFields.productCost: product.purchasePrice,
+      FirebaseFields.productStock: product.totalStockQuantity,
+      FirebaseFields.productMinStock: product.criticalStockQuantity,
+      FirebaseFields.productMaxStock: null, // Removed from new Product entity
+      FirebaseFields.productWarehouseId: null, // Removed from new Product entity
+      FirebaseFields.productImageUrl: product.images.isNotEmpty ? product.images.first : null,
       // companyId is not a field of Product; omit or source from context if needed
       'taxRate': product.taxRate,
-      'currency': product.currency,
+      'currency': product.salesCurrency,
       'isActive': product.isActive,
     };
   }
@@ -444,20 +444,19 @@ class ProductFirebaseService {
       description: data[FirebaseFields.productDescription],
       type: ProductType.values.firstWhere(
         (e) => e.name == data[FirebaseFields.productType],
-        orElse: () => ProductType.product,
+        orElse: () => ProductType.stocked,
       ),
       category: data[FirebaseFields.productCategory] ?? '',
-      unitPrice: (data[FirebaseFields.productPrice] ?? 0).toDouble(),
-      costPrice: (data[FirebaseFields.productCost] ?? 0).toDouble(),
-      stockQuantity: (data[FirebaseFields.productStock] ?? 0).toInt(),
-      minStockLevel: (data[FirebaseFields.productMinStock] ?? 0).toInt(),
-      maxStockLevel: (data[FirebaseFields.productMaxStock] ?? 1000).toInt(),
-      unit: data[FirebaseFields.productUnit] ?? 'adet',
+      salesPrice: (data[FirebaseFields.productPrice] ?? 0).toDouble(),
+      purchasePrice: (data[FirebaseFields.productCost] ?? 0).toDouble(),
+      salesCurrency: data['currency'] ?? 'TRY',
       taxRate: (data['taxRate'] ?? 0).toDouble(),
-      currency: data['currency'] ?? 'TRY',
+      criticalStockQuantity: (data[FirebaseFields.productMinStock] ?? 0).toInt(),
+      shelfLocation: data[FirebaseFields.productWarehouseId],
+      images: data[FirebaseFields.productImageUrl] != null 
+          ? [data[FirebaseFields.productImageUrl]] 
+          : [],
       isActive: data['isActive'] ?? true,
-      imageUrl: data[FirebaseFields.productImageUrl],
-      warehouseId: data[FirebaseFields.productWarehouseId],
       createdAt: (data[FirebaseFields.createdAt] as Timestamp?)?.toDate() ??
           DateTime.now(),
       updatedAt: (data[FirebaseFields.updatedAt] as Timestamp?)?.toDate() ??

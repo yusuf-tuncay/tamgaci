@@ -5,7 +5,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
+import 'app_localizations_ar.dart';
+import 'app_localizations_bg.dart';
 import 'app_localizations_en.dart';
+import 'app_localizations_ru.dart';
 import 'app_localizations_tr.dart';
 
 // ignore_for_file: type=lint
@@ -94,7 +97,10 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
+    Locale('bg'),
     Locale('en'),
+    Locale('ru'),
     Locale('tr')
   ];
 
@@ -151,6 +157,138 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tamgacı hazır!'**
   String get splash_ready;
+
+  /// No description provided for @settings.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarlar'**
+  String get settings;
+
+  /// No description provided for @settingsDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para birimi, dil ve diğer tercihlerinizi yönetin'**
+  String get settingsDescription;
+
+  /// No description provided for @language.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dil Ayarları'**
+  String get language;
+
+  /// No description provided for @languageDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama dilini seçin'**
+  String get languageDescription;
+
+  /// No description provided for @selectLanguage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dil seçin'**
+  String get selectLanguage;
+
+  /// No description provided for @languageChanged.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dil değiştirildi'**
+  String get languageChanged;
+
+  /// No description provided for @theme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tema Ayarları'**
+  String get theme;
+
+  /// No description provided for @themeDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama temasını seçin'**
+  String get themeDescription;
+
+  /// No description provided for @lightTheme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açık Tema'**
+  String get lightTheme;
+
+  /// No description provided for @darkTheme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Koyu Tema'**
+  String get darkTheme;
+
+  /// No description provided for @systemTheme.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sistem Teması'**
+  String get systemTheme;
+
+  /// No description provided for @currencySettings.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para Birimi Ayarları'**
+  String get currencySettings;
+
+  /// No description provided for @defaultCurrency.
+  ///
+  /// In tr, this message translates to:
+  /// **'Varsayılan Para Birimi'**
+  String get defaultCurrency;
+
+  /// No description provided for @defaultCurrencyDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm işlemlerde kullanılacak varsayılan para birimini seçin'**
+  String get defaultCurrencyDescription;
+
+  /// No description provided for @selectCurrency.
+  ///
+  /// In tr, this message translates to:
+  /// **'Para birimi seçin'**
+  String get selectCurrency;
+
+  /// No description provided for @currentRates.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncel Kurlar'**
+  String get currentRates;
+
+  /// No description provided for @ratesLoadError.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurlar yüklenemedi'**
+  String get ratesLoadError;
+
+  /// No description provided for @otherSettings.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer Ayarlar'**
+  String get otherSettings;
+
+  /// No description provided for @autoUpdateRates.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik Kur Güncelleme'**
+  String get autoUpdateRates;
+
+  /// No description provided for @autoUpdateRatesDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurlar otomatik olarak güncellensin'**
+  String get autoUpdateRatesDescription;
+
+  /// No description provided for @notifications.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler'**
+  String get notifications;
+
+  /// No description provided for @notificationsDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önemli işlemler için bildirim al'**
+  String get notificationsDescription;
 }
 
 class _AppLocalizationsDelegate
@@ -164,7 +302,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'tr'].contains(locale.languageCode);
+      <String>['ar', 'bg', 'en', 'ru', 'tr'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -173,8 +311,14 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
+    case 'bg':
+      return AppLocalizationsBg();
     case 'en':
       return AppLocalizationsEn();
+    case 'ru':
+      return AppLocalizationsRu();
     case 'tr':
       return AppLocalizationsTr();
   }

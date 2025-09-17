@@ -171,11 +171,11 @@ class _EnhancedProductDetailPageState
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: _product!.imageUrl != null
+                child: _product!.images.isNotEmpty
                     ? ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Image.network(
-                          _product!.imageUrl!,
+                          _product!.images.first,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(Icons.image,
@@ -209,7 +209,7 @@ class _EnhancedProductDetailPageState
                     const SizedBox(height: 8),
                     Text(
                       CurrencyHelper.formatCurrency(
-                          _product!.unitPrice, _product!.currency),
+                          _product!.salesPrice, _product!.salesCurrency),
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -254,11 +254,11 @@ class _EnhancedProductDetailPageState
     String statusText;
     IconData statusIcon;
 
-    if (_product!.stockQuantity <= 0) {
+    if (_product!.totalStockQuantity <= 0) {
       statusColor = Colors.red;
       statusText = 'Stok Yok';
       statusIcon = Icons.error;
-    } else if (_product!.stockQuantity <= _product!.minStockLevel) {
+    } else if (_product!.totalStockQuantity <= (_product!.criticalStockQuantity ?? 0)) {
       statusColor = Colors.orange;
       statusText = 'Düşük Stok';
       statusIcon = Icons.warning;
@@ -288,7 +288,7 @@ class _EnhancedProductDetailPageState
             ),
           ),
           Text(
-            '${_product!.stockQuantity} adet',
+            '${_product!.totalStockQuantity} adet',
             style: GoogleFonts.poppins(
               fontSize: 10,
               color: statusColor,
@@ -618,7 +618,7 @@ class _EnhancedProductDetailPageState
                       ),
                       Text(
                         CurrencyHelper.formatCurrency(
-                            transaction.unitPrice, transaction.currency),
+                            transaction.unitPrice, 'TRY'), // Default currency
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -891,9 +891,9 @@ class _EnhancedProductDetailPageState
         type: type,
         documentNumber: '${type.shortName}-2024-001',
         quantity: 5.0,
-        unitPrice: _product!.unitPrice,
-        totalAmount: _product!.unitPrice * 5,
-        currency: _product!.currency,
+        unitPrice: _product!.salesPrice,
+        totalAmount: _product!.salesPrice * 5,
+        currency: _product!.salesCurrency,
         transactionDate: DateTime.now().subtract(const Duration(days: 5)),
         description: 'Test ${type.displayName.toLowerCase()} açıklaması',
         createdAt: DateTime.now().subtract(const Duration(days: 5)),
@@ -906,9 +906,9 @@ class _EnhancedProductDetailPageState
         type: type,
         documentNumber: '${type.shortName}-2024-002',
         quantity: 3.0,
-        unitPrice: _product!.unitPrice,
+        unitPrice: _product!.salesPrice,
         totalAmount: 100.0 * 3, // Mock data
-        currency: _product!.currency,
+        currency: _product!.salesCurrency,
         transactionDate: DateTime.now().subtract(const Duration(days: 10)),
         description: 'Test ${type.displayName.toLowerCase()} açıklaması',
         createdAt: DateTime.now().subtract(const Duration(days: 10)),

@@ -111,7 +111,7 @@ class FirebaseProductRepository implements ProductRepository {
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
-            .where((product) => product.stockQuantity <= product.minStockLevel)
+            .where((product) => product.totalStockQuantity <= (product.criticalStockQuantity ?? 0))
             .toList());
   }
 
@@ -123,7 +123,7 @@ class FirebaseProductRepository implements ProductRepository {
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
-            .where((product) => product.stockQuantity == 0)
+            .where((product) => product.totalStockQuantity == 0)
             .toList());
   }
 
@@ -231,7 +231,7 @@ class FirebaseProductRepository implements ProductRepository {
       double totalValue = 0.0;
       for (var doc in querySnapshot.docs) {
         final product = ProductEntity.fromFirestore(doc).toDomain();
-        totalValue += product.unitPrice * product.stockQuantity;
+        totalValue += product.salesPrice * product.totalStockQuantity;
       }
       return totalValue;
     } catch (e) {

@@ -286,9 +286,9 @@ class _EnhancedProductsListPageState
     final activeProducts = products.where((p) => p.isActive).length;
     final lowStockProducts = products.where((p) => p.isLowStock).length;
     final outOfStockProducts =
-        products.where((p) => p.stockQuantity <= 0).length;
+        products.where((p) => p.totalStockQuantity <= 0).length;
     final totalValue = products.fold<double>(
-        0, (sum, p) => sum + (p.unitPrice * p.stockQuantity));
+        0, (sum, p) => sum + (p.salesPrice * p.totalStockQuantity));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -477,7 +477,7 @@ class _EnhancedProductsListPageState
           case 'Kritik Stok':
             return product.isLowStock;
           case 'Stokta Yok':
-            return product.stockQuantity <= 0;
+            return product.totalStockQuantity <= 0;
           default:
             return true;
         }
@@ -498,9 +498,9 @@ class _EnhancedProductsListPageState
         case 'category':
           return (a.category ?? '').compareTo(b.category ?? '');
         case 'unitPrice':
-          return b.unitPrice.compareTo(a.unitPrice);
+          return b.salesPrice.compareTo(a.salesPrice);
         case 'stockQuantity':
-          return b.stockQuantity.compareTo(a.stockQuantity);
+          return b.totalStockQuantity.compareTo(a.totalStockQuantity);
         case 'createdAt':
           return b.createdAt.compareTo(a.createdAt);
         default:
@@ -513,7 +513,7 @@ class _EnhancedProductsListPageState
 
   Widget _buildProductCard(Product product) {
     final isLowStock = product.isLowStock;
-    final isOutOfStock = product.stockQuantity <= 0;
+    final isOutOfStock = product.totalStockQuantity <= 0;
     final stockColor = isOutOfStock
         ? AppColors.error
         : (isLowStock ? AppColors.warning : AppColors.success);
@@ -630,7 +630,7 @@ class _EnhancedProductsListPageState
                     child: _buildInfoCard(
                       label: 'Satış Fiyatı',
                       value: CurrencyHelper.formatCurrency(
-                          product.unitPrice, product.currency),
+                          product.salesPrice, product.salesCurrency),
                       color: AppColors.primary,
                       icon: Icons.attach_money,
                     ),
@@ -642,7 +642,7 @@ class _EnhancedProductsListPageState
                   Expanded(
                     child: _buildInfoCard(
                       label: 'Stok',
-                      value: '${product.stockQuantity} ${product.unit}',
+                      value: '${product.totalStockQuantity} adet',
                       color: stockColor,
                       icon: Icons.inventory,
                     ),
@@ -651,11 +651,11 @@ class _EnhancedProductsListPageState
                   const SizedBox(width: TamgaciConstants.spaceMD),
 
                   // Depo bilgisi
-                  if (product.warehouseId != null)
+                  if (product.shelfLocation != null)
                     Expanded(
                       child: _buildInfoCard(
                         label: 'Depo',
-                        value: 'Depo-${product.warehouseId}',
+                        value: product.shelfLocation!,
                         color: AppColors.info,
                         icon: Icons.warehouse,
                       ),
@@ -671,14 +671,10 @@ class _EnhancedProductsListPageState
 
   IconData _getProductTypeIcon(ProductType type) {
     switch (type) {
-      case ProductType.product:
+      case ProductType.stocked:
         return Icons.inventory;
-      case ProductType.service:
+      case ProductType.nonStocked:
         return Icons.room_service;
-      case ProductType.rawMaterial:
-        return Icons.construction;
-      case ProductType.finishedGood:
-        return Icons.check_circle;
     }
   }
 
@@ -686,7 +682,7 @@ class _EnhancedProductsListPageState
     Color color;
     String text;
 
-    if (product.stockQuantity <= 0) {
+    if (product.totalStockQuantity <= 0) {
       color = AppColors.error;
       text = 'Stokta Yok';
     } else if (product.isLowStock) {

@@ -71,7 +71,7 @@ class _EnhancedCustomersListPageState
 
       // Kategori filtresi
       if (_selectedCategory != 'Tümü') {
-        if (customer.category != _selectedCategory) return false;
+        if (customer.category1 != _selectedCategory) return false;
       }
 
       // Bakiye filtresi
@@ -476,7 +476,7 @@ class _EnhancedCustomersListPageState
                     ),
                     const SizedBox(width: 16),
                   ],
-                  if (customer.category != null) ...[
+                  if (customer.category1 != null) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
@@ -485,7 +485,7 @@ class _EnhancedCustomersListPageState
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        customer.category!,
+                        customer.category1!,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: AppColors.primary,
