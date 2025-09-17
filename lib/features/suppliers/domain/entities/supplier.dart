@@ -36,7 +36,12 @@ class Supplier extends Equatable {
   final String id;
   final String name;
   final String? supplierCode;
-  final String? category;
+
+  /// Sınıflandırma kategorisi 1
+  final String? category1;
+
+  /// Sınıflandırma kategorisi 2
+  final String? category2;
   final String? email;
   final String? phone;
   final String? address;
@@ -51,7 +56,18 @@ class Supplier extends Equatable {
   final String? country;
   final String? postalCode;
   final double balance;
+
+  /// Tedarikçi para birimi
   final String currency;
+
+  /// Vade (gün)
+  final int? maturityDays;
+
+  /// Açılış bakiyesi
+  final double? openingBalance;
+
+  /// Vergiden muaf mı?
+  final bool isTaxExempt;
   final String? notes;
   final bool isActive;
   final DateTime createdAt;
@@ -76,7 +92,8 @@ class Supplier extends Equatable {
     required this.id,
     required this.name,
     this.supplierCode,
-    this.category,
+    this.category1,
+    this.category2,
     this.email,
     this.phone,
     this.address,
@@ -92,6 +109,9 @@ class Supplier extends Equatable {
     this.postalCode,
     this.balance = 0.0,
     this.currency = 'TRY',
+    this.maturityDays,
+    this.openingBalance,
+    this.isTaxExempt = false,
     this.notes,
     this.isActive = true,
     required this.createdAt,
@@ -114,7 +134,8 @@ class Supplier extends Equatable {
     String? id,
     String? name,
     String? supplierCode,
-    String? category,
+    String? category1,
+    String? category2,
     String? email,
     String? phone,
     String? address,
@@ -130,6 +151,9 @@ class Supplier extends Equatable {
     String? postalCode,
     double? balance,
     String? currency,
+    int? maturityDays,
+    double? openingBalance,
+    bool? isTaxExempt,
     String? notes,
     bool? isActive,
     DateTime? createdAt,
@@ -150,7 +174,8 @@ class Supplier extends Equatable {
       id: id ?? this.id,
       name: name ?? this.name,
       supplierCode: supplierCode ?? this.supplierCode,
-      category: category ?? this.category,
+      category1: category1 ?? this.category1,
+      category2: category2 ?? this.category2,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
@@ -166,6 +191,9 @@ class Supplier extends Equatable {
       postalCode: postalCode ?? this.postalCode,
       balance: balance ?? this.balance,
       currency: currency ?? this.currency,
+      maturityDays: maturityDays ?? this.maturityDays,
+      openingBalance: openingBalance ?? this.openingBalance,
+      isTaxExempt: isTaxExempt ?? this.isTaxExempt,
       notes: notes ?? this.notes,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
@@ -189,7 +217,8 @@ class Supplier extends Equatable {
         id,
         name,
         supplierCode,
-        category,
+        category1,
+        category2,
         email,
         phone,
         address,
@@ -205,6 +234,9 @@ class Supplier extends Equatable {
         postalCode,
         balance,
         currency,
+        maturityDays,
+        openingBalance,
+        isTaxExempt,
         notes,
         isActive,
         createdAt,
