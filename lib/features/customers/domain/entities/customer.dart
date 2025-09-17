@@ -2,6 +2,7 @@
 
 // import '../../data/models/customer_entity.dart'; // Removed - using Firebase only
 import 'customer_enums.dart';
+import 'customer_branch.dart';
 
 /// Müşteri domain entity'si - Business logic katmanı için
 class Customer {
@@ -14,8 +15,11 @@ class Customer {
   /// Müşteri kodu
   final String? customerCode;
 
-  /// Müşteri kategorisi
-  final String? category;
+  /// Müşteri kategorisi 1
+  final String? category1;
+
+  /// Müşteri kategorisi 2
+  final String? category2;
 
   /// E-posta adresi
   final String? email;
@@ -31,6 +35,42 @@ class Customer {
 
   /// Vergi dairesi
   final String? taxOffice;
+
+  /// Sevk adresi
+  final String? shippingAddress;
+
+  /// Açık hesap risk limiti
+  final double? openAccountRiskLimit;
+
+  /// Müşteri para birimi
+  final String? customerCurrency;
+
+  /// Vade (gün)
+  final int? maturityDays;
+
+  /// Sabit iskonto oranı (%)
+  final double? fixedDiscountRate;
+
+  /// Vergiden muaf mı?
+  final bool isTaxExempt;
+
+  /// Banka bilgileri
+  final String? bankDetails;
+
+  /// Özel fiyat listesi ID'si
+  final String? specialPriceListId;
+
+  /// Açılış bakiyesi
+  final double? openingBalance;
+
+  /// Yetkili kişi adı (kurumsal müşteri için)
+  final String? authorizedPersonName;
+
+  /// Yetkili kişi telefonu (kurumsal müşteri için)
+  final String? authorizedPersonPhone;
+
+  /// Şube bilgileri (kurumsal müşteri için)
+  final List<CustomerBranch>? branches;
 
   /// Müşteri tipi
   final CustomerType customerType;
@@ -84,12 +124,25 @@ class Customer {
     required this.id,
     required this.name,
     this.customerCode,
-    this.category,
+    this.category1,
+    this.category2,
     this.email,
     this.phone,
     this.address,
     this.taxNumber,
     this.taxOffice,
+    this.shippingAddress,
+    this.openAccountRiskLimit,
+    this.customerCurrency,
+    this.maturityDays,
+    this.fixedDiscountRate,
+    this.isTaxExempt = false,
+    this.bankDetails,
+    this.specialPriceListId,
+    this.openingBalance,
+    this.authorizedPersonName,
+    this.authorizedPersonPhone,
+    this.branches,
     required this.customerType,
     required this.status,
     this.creditLimit = 0.0,
@@ -119,12 +172,25 @@ class Customer {
     String? id,
     String? name,
     String? customerCode,
-    String? category,
+    String? category1,
+    String? category2,
     String? email,
     String? phone,
     String? address,
     String? taxNumber,
     String? taxOffice,
+    String? shippingAddress,
+    double? openAccountRiskLimit,
+    String? customerCurrency,
+    int? maturityDays,
+    double? fixedDiscountRate,
+    bool? isTaxExempt,
+    String? bankDetails,
+    String? specialPriceListId,
+    double? openingBalance,
+    String? authorizedPersonName,
+    String? authorizedPersonPhone,
+    List<CustomerBranch>? branches,
     CustomerType? customerType,
     CustomerStatus? status,
     double? creditLimit,
@@ -146,12 +212,26 @@ class Customer {
       id: id ?? this.id,
       name: name ?? this.name,
       customerCode: customerCode ?? this.customerCode,
-      category: category ?? this.category,
+      category1: category1 ?? this.category1,
+      category2: category2 ?? this.category2,
       email: email ?? this.email,
       phone: phone ?? this.phone,
       address: address ?? this.address,
       taxNumber: taxNumber ?? this.taxNumber,
       taxOffice: taxOffice ?? this.taxOffice,
+      shippingAddress: shippingAddress ?? this.shippingAddress,
+      openAccountRiskLimit: openAccountRiskLimit ?? this.openAccountRiskLimit,
+      customerCurrency: customerCurrency ?? this.customerCurrency,
+      maturityDays: maturityDays ?? this.maturityDays,
+      fixedDiscountRate: fixedDiscountRate ?? this.fixedDiscountRate,
+      isTaxExempt: isTaxExempt ?? this.isTaxExempt,
+      bankDetails: bankDetails ?? this.bankDetails,
+      specialPriceListId: specialPriceListId ?? this.specialPriceListId,
+      openingBalance: openingBalance ?? this.openingBalance,
+      authorizedPersonName: authorizedPersonName ?? this.authorizedPersonName,
+      authorizedPersonPhone:
+          authorizedPersonPhone ?? this.authorizedPersonPhone,
+      branches: branches ?? this.branches,
       customerType: customerType ?? this.customerType,
       status: status ?? this.status,
       creditLimit: creditLimit ?? this.creditLimit,
@@ -295,12 +375,27 @@ class Customer {
       id: json['id'] as String,
       name: json['name'] as String,
       customerCode: json['customerCode'] as String?,
-      category: json['category'] as String?,
+      category1: json['category1'] as String?,
+      category2: json['category2'] as String?,
       email: json['email'] as String?,
       phone: json['phone'] as String?,
       address: json['address'] as String?,
       taxNumber: json['taxNumber'] as String?,
       taxOffice: json['taxOffice'] as String?,
+      shippingAddress: json['shippingAddress'] as String?,
+      openAccountRiskLimit: (json['openAccountRiskLimit'] as num?)?.toDouble(),
+      customerCurrency: json['customerCurrency'] as String?,
+      maturityDays: json['maturityDays'] as int?,
+      fixedDiscountRate: (json['fixedDiscountRate'] as num?)?.toDouble(),
+      isTaxExempt: json['isTaxExempt'] ?? false,
+      bankDetails: json['bankDetails'] as String?,
+      specialPriceListId: json['specialPriceListId'] as String?,
+      openingBalance: (json['openingBalance'] as num?)?.toDouble(),
+      authorizedPersonName: json['authorizedPersonName'] as String?,
+      authorizedPersonPhone: json['authorizedPersonPhone'] as String?,
+      branches: (json['branches'] as List<dynamic>?)
+          ?.map((e) => CustomerBranch.fromJson(e as Map<String, dynamic>))
+          .toList(),
       customerType: CustomerType.values.firstWhere(
         (e) => e.name == json['customerType'],
         orElse: () => CustomerType.individual,
@@ -329,12 +424,25 @@ class Customer {
       'id': id,
       'name': name,
       'customerCode': customerCode,
-      'category': category,
+      'category1': category1,
+      'category2': category2,
       'email': email,
       'phone': phone,
       'address': address,
       'taxNumber': taxNumber,
       'taxOffice': taxOffice,
+      'shippingAddress': shippingAddress,
+      'openAccountRiskLimit': openAccountRiskLimit,
+      'customerCurrency': customerCurrency,
+      'maturityDays': maturityDays,
+      'fixedDiscountRate': fixedDiscountRate,
+      'isTaxExempt': isTaxExempt,
+      'bankDetails': bankDetails,
+      'specialPriceListId': specialPriceListId,
+      'openingBalance': openingBalance,
+      'authorizedPersonName': authorizedPersonName,
+      'authorizedPersonPhone': authorizedPersonPhone,
+      'branches': branches?.map((e) => e.toJson()).toList(),
       'customerType': customerType.name,
       'status': status.name,
       'creditLimit': creditLimit,
