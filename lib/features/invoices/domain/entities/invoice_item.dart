@@ -13,6 +13,9 @@ class InvoiceItem {
   /// Kalem sıra numarası
   final int itemOrder;
 
+  /// Ürün ID'si (kayıtlı ürünlerden seçim için)
+  final String? productId;
+
   /// Ürün/Hizmet adı
   final String productName;
 
@@ -37,6 +40,15 @@ class InvoiceItem {
   /// Toplam tutar (KDV hariç)
   final double lineTotal;
 
+  /// Para birimi kodu
+  final String currencyCode;
+
+  /// Döviz kuru (farklı para birimi kullanılıyorsa)
+  final double? exchangeRate;
+
+  /// Döviz kuru tarihi
+  final DateTime? exchangeRateDate;
+
   /// Oluşturulma tarihi
   final DateTime createdAt;
 
@@ -44,6 +56,7 @@ class InvoiceItem {
     required this.id,
     required this.invoiceId,
     required this.itemOrder,
+    this.productId,
     required this.productName,
     this.description,
     required this.quantity,
@@ -52,6 +65,9 @@ class InvoiceItem {
     required this.taxRate,
     required this.taxAmount,
     required this.lineTotal,
+    this.currencyCode = 'TRY',
+    this.exchangeRate,
+    this.exchangeRateDate,
     required this.createdAt,
   });
 
@@ -61,14 +77,20 @@ class InvoiceItem {
       id: json['id'] as String,
       invoiceId: json['invoiceId'] as String,
       itemOrder: json['itemOrder'] as int,
+      productId: json['productId'] as String?,
       productName: json['productName'] as String,
       description: json['description'] as String?,
       quantity: (json['quantity'] as num).toDouble(),
-      unit: json['unit'] as String,
+      unit: json['unit'] as String?,
       unitPrice: (json['unitPrice'] as num).toDouble(),
       taxRate: (json['taxRate'] as num).toDouble(),
       taxAmount: (json['taxAmount'] as num).toDouble(),
       lineTotal: (json['lineTotal'] as num).toDouble(),
+      currencyCode: json['currencyCode'] as String? ?? 'TRY',
+      exchangeRate: (json['exchangeRate'] as num?)?.toDouble(),
+      exchangeRateDate: json['exchangeRateDate'] != null
+          ? DateTime.parse(json['exchangeRateDate'] as String)
+          : null,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -79,6 +101,7 @@ class InvoiceItem {
       'id': id,
       'invoiceId': invoiceId,
       'itemOrder': itemOrder,
+      'productId': productId,
       'productName': productName,
       'description': description,
       'quantity': quantity,
@@ -87,6 +110,9 @@ class InvoiceItem {
       'taxRate': taxRate,
       'taxAmount': taxAmount,
       'lineTotal': lineTotal,
+      'currencyCode': currencyCode,
+      'exchangeRate': exchangeRate,
+      'exchangeRateDate': exchangeRateDate?.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -96,6 +122,7 @@ class InvoiceItem {
     String? id,
     String? invoiceId,
     int? itemOrder,
+    String? productId,
     String? productName,
     String? description,
     double? quantity,
@@ -104,12 +131,16 @@ class InvoiceItem {
     double? taxRate,
     double? taxAmount,
     double? lineTotal,
+    String? currencyCode,
+    double? exchangeRate,
+    DateTime? exchangeRateDate,
     DateTime? createdAt,
   }) {
     return InvoiceItem(
       id: id ?? this.id,
       invoiceId: invoiceId ?? this.invoiceId,
       itemOrder: itemOrder ?? this.itemOrder,
+      productId: productId ?? this.productId,
       productName: productName ?? this.productName,
       description: description ?? this.description,
       quantity: quantity ?? this.quantity,
@@ -118,25 +149,42 @@ class InvoiceItem {
       taxRate: taxRate ?? this.taxRate,
       taxAmount: taxAmount ?? this.taxAmount,
       lineTotal: lineTotal ?? this.lineTotal,
+      currencyCode: currencyCode ?? this.currencyCode,
+      exchangeRate: exchangeRate ?? this.exchangeRate,
+      exchangeRateDate: exchangeRateDate ?? this.exchangeRateDate,
       createdAt: createdAt ?? this.createdAt,
     );
   }
 
   // ========== BUSINESS LOGIC METODLARI ==========
 
+  /// Para birimi sembolü
+  String get currencySymbol {
+    switch (currencyCode) {
+      case 'TRY':
+        return '₺';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      default:
+        return currencyCode;
+    }
+  }
+
   /// Formatlanmış birim fiyat
   String get formattedUnitPrice {
-    return '${unitPrice.toStringAsFixed(2)} ₺';
+    return '${unitPrice.toStringAsFixed(2)} $currencySymbol';
   }
 
   /// Formatlanmış satır toplamı
   String get formattedLineTotal {
-    return '${lineTotal.toStringAsFixed(2)} ₺';
+    return '${lineTotal.toStringAsFixed(2)} $currencySymbol';
   }
 
   /// Formatlanmış KDV tutarı
   String get formattedTaxAmount {
-    return '${taxAmount.toStringAsFixed(2)} ₺';
+    return '${taxAmount.toStringAsFixed(2)} $currencySymbol';
   }
 
   /// Formatlanmış miktar ve birim
@@ -155,7 +203,7 @@ class InvoiceItem {
 
   /// Formatlanmış KDV dahil toplam
   String get formattedTotalWithTax {
-    return '${totalWithTax.toStringAsFixed(2)} ₺';
+    return '${totalWithTax.toStringAsFixed(2)} $currencySymbol';
   }
 
   /// Ürün açıklaması (boşsa ürün adı)
@@ -179,12 +227,16 @@ class InvoiceItem {
     required String id,
     required String invoiceId,
     required int itemOrder,
+    String? productId,
     required String productName,
     String? description,
     required double quantity,
     String? unit,
     required double unitPrice,
     required double taxRate,
+    String currencyCode = 'TRY',
+    double? exchangeRate,
+    DateTime? exchangeRateDate,
   }) {
     final lineTotal = quantity * unitPrice;
     final taxAmount = lineTotal * (taxRate / 100.0);
@@ -193,6 +245,7 @@ class InvoiceItem {
       id: id,
       invoiceId: invoiceId,
       itemOrder: itemOrder,
+      productId: productId,
       productName: productName,
       description: description,
       quantity: quantity,
@@ -201,6 +254,9 @@ class InvoiceItem {
       taxRate: taxRate,
       taxAmount: taxAmount,
       lineTotal: lineTotal,
+      currencyCode: currencyCode,
+      exchangeRate: exchangeRate,
+      exchangeRateDate: exchangeRateDate,
       createdAt: DateTime.now(),
     );
   }
