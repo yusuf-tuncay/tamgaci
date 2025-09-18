@@ -7,6 +7,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../providers/income_providers.dart';
 import '../widgets/income_card.dart';
 import '../widgets/income_filter_sheet.dart';
@@ -140,10 +141,7 @@ class _IncomeListPageState extends ConsumerState<IncomeListPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+    return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Gelirler',
         showDrawer: true,
@@ -174,7 +172,8 @@ class _IncomeListPageState extends ConsumerState<IncomeListPage> {
           IconButton(onPressed: _navigateToCreate, icon: const Icon(Icons.add)),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: Column(
         children: [
           // Arama çubuğu

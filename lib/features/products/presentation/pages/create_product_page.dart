@@ -46,7 +46,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   final ProductType _selectedType = ProductType.stocked;
   bool _isActive = true;
-  final bool _isDigital = false;
+  // final bool _isDigital = false; // Removed - not used in new Product entity
   bool _isLoading = false;
   bool _isEditing = false;
   final List<String> _tags = [];
@@ -80,7 +80,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       _categoryController.text = product.category ?? '';
       _unitPriceController.text = product.salesPrice.toString();
       _stockQuantityController.text = product.totalStockQuantity.toString();
-      _minStockLevelController.text = (product.criticalStockQuantity ?? 0).toString();
+      _minStockLevelController.text =
+          (product.criticalStockQuantity ?? 0).toString();
       _unitController.text = 'Adet'; // Default unit
       _taxRateController.text = product.taxRate.toString();
       _isActive = product.isActive;
@@ -105,12 +106,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         DataSanitizer.sanitizeText(_barcodeController.text);
     final sanitizedCategory =
         DataSanitizer.sanitizeText(_categoryController.text);
-    final sanitizedBrand = DataSanitizer.sanitizeText(_brandController.text);
-    final sanitizedModel = DataSanitizer.sanitizeText(_modelController.text);
-    final sanitizedColor = DataSanitizer.sanitizeText(_colorController.text);
-    final sanitizedSize = DataSanitizer.sanitizeText(_sizeController.text);
-    final sanitizedShelfLocation =
-        DataSanitizer.sanitizeText(_shelfLocationController.text);
+    // final sanitizedBrand = DataSanitizer.sanitizeText(_brandController.text); // Removed - not used in new Product entity
+    // final sanitizedModel = DataSanitizer.sanitizeText(_modelController.text); // Removed - not used in new Product entity
+    // final sanitizedColor = DataSanitizer.sanitizeText(_colorController.text); // Removed - not used in new Product entity
+    // final sanitizedSize = DataSanitizer.sanitizeText(_sizeController.text); // Removed - not used in new Product entity
+    // final sanitizedShelfLocation =
+    //     DataSanitizer.sanitizeText(_shelfLocationController.text); // Removed - not used in new Product entity
     final sanitizedNotes = DataSanitizer.sanitizeText(_notesController.text);
 
     // Ek validasyonlar
@@ -147,10 +148,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       return;
     }
 
-    final maxStockLevel = int.tryParse(_maxStockLevelController.text) ?? 1000;
+    // final maxStockLevel = int.tryParse(_maxStockLevelController.text) ?? 1000; // Removed - not used in new Product entity
     final taxRate = double.tryParse(_taxRateController.text) ?? 20.0;
     final costPrice = double.tryParse(_costPriceController.text);
-    final weight = double.tryParse(_weightController.text);
+    // final weight = double.tryParse(_weightController.text); // Removed - not used in new Product entity
 
     setState(() => _isLoading = true);
 

@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/gucluoglu/tamgaci/branch/main/graph/badge.svg?token=0L4WSTDSJ5)](https://codecov.io/gh/gucluoglu/tamgaci)
+
 # Test Documentation
 
 Bu klasör, Tamgaci uygulamasının test dosyalarını içerir. Test yapısı, kaliteli ve güvenilir kod geliştirmeyi sağlamak için organize edilmiştir.

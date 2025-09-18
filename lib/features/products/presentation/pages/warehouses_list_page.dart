@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../domain/entities/warehouse.dart';
 
@@ -92,13 +93,9 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
     final searchQuery = _searchController.text;
     final warehouses = _getMockWarehouses();
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+    return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Depolar',
         showDrawer: true,
@@ -117,7 +114,8 @@ class _WarehousesListPageState extends ConsumerState<WarehousesListPage> {
           ),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: Column(
         children: [
           // Arama ve filtre çubuğu

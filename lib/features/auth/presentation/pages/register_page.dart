@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
 import '../providers/auth_providers.dart';
@@ -263,16 +264,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          Image.asset(
-                            'assets/images/logos/fullsizebluelogo.png',
+                          SvgPicture.asset(
+                            'assets/images/svg/whitelogo.svg',
+                            colorFilter: const ColorFilter.mode(
+                                Colors.white, BlendMode.srcIn),
                             fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Icon(
-                                Icons.account_balance,
-                                color: Colors.white,
-                                size: 50,
-                              );
-                            },
                           ),
                           // Premium parıltı efekti
                           Align(

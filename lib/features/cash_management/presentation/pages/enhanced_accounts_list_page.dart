@@ -8,6 +8,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../domain/entities/account.dart';
 
@@ -77,13 +78,9 @@ class _EnhancedAccountsListPageState
     final searchQuery = _searchController.text;
     final accounts = _getMockAccounts();
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+    return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Hesaplarım',
         showDrawer: true,
@@ -102,7 +99,8 @@ class _EnhancedAccountsListPageState
           ),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: Column(
         children: [
           // Arama ve filtre çubuğu

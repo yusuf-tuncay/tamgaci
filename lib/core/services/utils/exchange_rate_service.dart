@@ -82,9 +82,6 @@ class ExchangeRateService {
       if (cached != null && cached.isNotEmpty) {
         _lastRates = cached;
         AppLogger.debug('FX rates served from cache (${cached.length})');
-        // Return cached immediately while refreshing in background
-        // Fire and forget refresh
-        _refreshRatesSilently();
         return cached;
       }
     } catch (e) {
@@ -116,13 +113,19 @@ class ExchangeRateService {
         final code = (map['CurrencyCode'] ?? map['Kod'] ?? '').toString();
         if (code.isEmpty || code == 'XDR') continue; // skip invalid/SDR
 
-        // Prefer ForexSelling; fallback to ForexBuying
-        final sellingStr =
-            (map['ForexSelling'] ?? map['Satis'] ?? map['Selling'] ?? '')
-                .toString();
-        final buyingStr =
-            (map['ForexBuying'] ?? map['Alis'] ?? map['Buying'] ?? '')
-                .toString();
+        // Prefer ForexSelling / BanknoteSelling; fallback to ForexBuying / BanknoteBuying
+        final sellingStr = (map['ForexSelling'] ??
+                map['BanknoteSelling'] ??
+                map['Satis'] ??
+                map['Selling'] ??
+                '')
+            .toString();
+        final buyingStr = (map['ForexBuying'] ??
+                map['BanknoteBuying'] ??
+                map['Alis'] ??
+                map['Buying'] ??
+                '')
+            .toString();
         double? rate;
         rate = double.tryParse(sellingStr.replaceAll(',', '.')) ??
             double.tryParse(buyingStr.replaceAll(',', '.'));
@@ -170,13 +173,6 @@ class ExchangeRateService {
       } catch (_) {}
       rethrow;
     }
-  }
-
-  Future<void> _refreshRatesSilently() async {
-    try {
-      final _ = await getExchangeRates();
-      // ignore: empty_statements
-    } catch (_) {}
   }
 
   /// Belirli bir para biriminin kurunu getir

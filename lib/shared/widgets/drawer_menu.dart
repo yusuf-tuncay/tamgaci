@@ -9,6 +9,12 @@ import '../../core/routes/routes.dart';
 import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
 import '../../features/user_profile/domain/entities/user_profile.dart';
 import '../../core/providers/currency_providers.dart';
+import '../overlays/calculator_overlay.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../../core/services/firebase/firebase_auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import '../../core/cache/data_cache.dart';
 
 // ========== DRAWER MENU MODELS ==========
 
@@ -75,6 +81,22 @@ class DrawerMenuItem {
       isActive: isActive ?? this.isActive,
       isVisible: isVisible ?? this.isVisible,
       requiresAdmin: requiresAdmin ?? this.requiresAdmin,
+    );
+  }
+}
+
+class _SvgWhiteLogoFallback extends StatelessWidget {
+  const _SvgWhiteLogoFallback({this.color});
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(
+      'assets/images/svg/whitelogo.svg',
+      colorFilter: color != null
+          ? ColorFilter.mode(color!, BlendMode.srcIn)
+          : const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+      fit: BoxFit.contain,
     );
   }
 }
@@ -180,19 +202,22 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'production',
           title: 'Üretim',
           icon: Icons.precision_manufacturing_outlined,
-          route: TamgaciRoutes.inventory,
+          route: '',
+          isActive: false,
         ),
         DrawerMenuItem(
           id: 'price-lists',
           title: 'Özel Fiyat Listeleri',
           icon: Icons.price_check_outlined,
-          route: TamgaciRoutes.productsList, // Geçici route
+          route: '',
+          isActive: false,
         ),
         DrawerMenuItem(
           id: 'product-variants',
           title: 'Ürün Varyantları',
           icon: Icons.style_outlined,
-          route: TamgaciRoutes.productsList, // Geçici route
+          route: '',
+          isActive: false,
         ),
       ],
     ),
@@ -230,79 +255,53 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'employees',
           title: 'Personeller',
           icon: Icons.person_outline,
-          route: TamgaciRoutes.incomeList, // Geçici route
+          route: '',
+          isActive: false,
         ),
         DrawerMenuItem(
           id: 'expenses',
           title: 'Masraflar',
           icon: Icons.money_off_outlined,
-          route: TamgaciRoutes.expensesList,
+          route: '',
+          isActive: false,
         ),
         DrawerMenuItem(
           id: 'credits',
           title: 'Krediler',
           icon: Icons.credit_card_outlined,
-          route: TamgaciRoutes.accountsList, // Geçici route
+          route: '',
+          isActive: false,
         ),
         DrawerMenuItem(
           id: 'projects',
           title: 'Projeler',
           icon: Icons.work_outline,
-          route: TamgaciRoutes.accountsList, // Geçici route
+          route: '',
+          isActive: false,
         ),
         DrawerMenuItem(
           id: 'checks',
           title: 'Çekler',
           icon: Icons.receipt_long_outlined,
-          route: TamgaciRoutes.accountsList, // Geçici route
+          route: '',
+          isActive: false,
         ),
         DrawerMenuItem(
           id: 'bills',
           title: 'Senetler',
           icon: Icons.description_outlined,
-          route: TamgaciRoutes.accountsList, // Geçici route
+          route: '',
+          isActive: false,
         ),
       ],
     ),
 
-    // Raporlar (Açılır Menü)
+    // Raporlar (tek öğe)
     const DrawerMenuItem(
       id: 'reports',
       title: 'Raporlar',
       icon: Icons.assessment_outlined,
-      route: '', // Alt menü olduğu için boş
-      subItems: [
-        DrawerMenuItem(
-          id: 'reports-list',
-          title: 'Tüm Raporlar',
-          icon: Icons.list_outlined,
-          route: TamgaciRoutes.reportsList,
-        ),
-        DrawerMenuItem(
-          id: 'sales-purchases-reports',
-          title: 'Satışlar / Alışlar',
-          icon: Icons.trending_up_outlined,
-          route: TamgaciRoutes.invoicesList, // Geçici route
-        ),
-        DrawerMenuItem(
-          id: 'financial-reports',
-          title: 'Finansal Raporlar',
-          icon: Icons.pie_chart,
-          route: TamgaciRoutes.accountsList, // Geçici route
-        ),
-        DrawerMenuItem(
-          id: 'stock-reports',
-          title: 'Stok Raporları',
-          icon: Icons.inventory_2_outlined,
-          route: TamgaciRoutes.inventory,
-        ),
-        DrawerMenuItem(
-          id: 'customer-reports',
-          title: 'Müşteri Listesi',
-          icon: Icons.people_outline,
-          route: TamgaciRoutes.customersList,
-        ),
-      ],
+      route: TamgaciRoutes.reportsList,
     ),
   ];
 });
@@ -324,19 +323,28 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     final drawerState = ref.watch(drawerMenuProvider);
     final activeRoute = drawerState['activeRoute'] as String;
     final userProfile = ref.watch(userProfileProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Drawer(
+    return Container(
+      color: isDark
+          ? TamgaciConstants.backgroundColorDark
+          : TamgaciConstants.surfaceColor,
       child: Column(
         children: [
           _buildHeader(userProfile),
           Expanded(
-            child: ListView.builder(
-              padding: EdgeInsets.zero,
-              itemCount: menuItems.length,
-              itemBuilder: (context, index) {
-                final item = menuItems[index];
-                return _buildMenuItem(item, activeRoute);
-              },
+            child: Container(
+              color: isDark
+                  ? TamgaciConstants.backgroundColorDark
+                  : TamgaciConstants.surfaceColor,
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: menuItems.length,
+                itemBuilder: (context, index) {
+                  final item = menuItems[index];
+                  return _buildMenuItem(item, activeRoute);
+                },
+              ),
             ),
           ),
           _buildFooter(),
@@ -347,40 +355,37 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
   Widget _buildHeader(AsyncValue<UserProfile?> userProfile) {
     return Container(
-      height: 240,
-      decoration: const BoxDecoration(
+      height: 200,
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppColors.primary,
-            AppColors.primaryDark,
+            TamgaciConstants.primaryColor,
+            TamgaciConstants.primaryColorDark,
+            TamgaciConstants.primaryColorDark.withValues(alpha: 0.8),
           ],
         ),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Logo ve uygulama adı
+              // Premium Logo ve şirket adı
               Row(
                 children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance,
-                      color: Colors.white,
-                      size: 30,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
+                  _buildWhiteLogo(),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,59 +393,102 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                         Text(
                           'TAMGACI',
                           style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: TamgaciConstants.textOnPrimary,
+                            letterSpacing: 1.0,
                           ),
                         ),
                         Text(
-                          'Ön Muhasebe',
+                          'Ön Muhasebe Sistemi',
                           style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 11,
+                            color: TamgaciConstants.textOnPrimary
+                                .withValues(alpha: 0.9),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  // Hesap makinesi ikonu
+                  GestureDetector(
+                    onTap: _showCalculator,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: TamgaciConstants.textOnPrimary
+                            .withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: TamgaciConstants.textOnPrimary
+                              .withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.calculate,
+                        color: TamgaciConstants.textOnPrimary,
+                        size: 18,
+                      ),
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: 20),
-              // USD/EUR kısa kur bilgisi (mavi alan içinde)
-              Consumer(builder: (context, ref, child) {
-                final converter = ref.watch(currencyConverterProvider);
-                final selected = ref.watch(selectedCurrencyProvider);
-                final code = selected.code;
-                final usd = converter.convert(
-                    amount: 1, fromCurrencyCode: 'USD', toCurrencyCode: code);
-                final eur = converter.convert(
-                    amount: 1, fromCurrencyCode: 'EUR', toCurrencyCode: code);
-                return Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '1 USD = ${usd.toStringAsFixed(2)} $code',
-                      style: GoogleFonts.poppins(
-                          color: Colors.white, fontSize: 12),
+              const SizedBox(height: 12),
+              // Premium USD/EUR kur bilgisi
+              Consumer(builder: (context, ref, _) {
+                final rates = ref.watch(usdEurRatesProvider);
+                final double usdRate = rates['USD']?.exchangeRate ?? 0.0;
+                final double eurRate = rates['EUR']?.exchangeRate ?? 0.0;
+
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color:
+                        TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color:
+                          TamgaciConstants.textOnPrimary.withValues(alpha: 0.2),
+                      width: 1,
                     ),
-                    Text(
-                      '1 EUR = ${eur.toStringAsFixed(2)} $code',
-                      style: GoogleFonts.poppins(
-                          color: Colors.white, fontSize: 12),
-                    ),
-                  ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildCurrencyItem('USD', usdRate),
+                      Container(
+                        width: 1,
+                        height: 16,
+                        color: TamgaciConstants.textOnPrimary
+                            .withValues(alpha: 0.3),
+                      ),
+                      _buildCurrencyItem('EUR', eurRate),
+                    ],
+                  ),
                 );
               }),
               const SizedBox(height: 12),
               // Kullanıcı bilgileri
               userProfile.when(
-                data: (profile) => _buildUserInfo(profile),
-                loading: () =>
-                    const CircularProgressIndicator(color: Colors.white),
+                data: (profile) => _buildCompactUserInfo(profile),
+                loading: () => const SizedBox(
+                  height: 20,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: TamgaciConstants.textOnPrimary,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                ),
                 error: (error, stack) => Text(
                   'Kullanıcı bilgisi yüklenemedi',
                   style: GoogleFonts.poppins(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 10,
+                    color:
+                        TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
                   ),
                 ),
               ),
@@ -451,58 +499,126 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     );
   }
 
-  Widget _buildUserInfo(UserProfile? profile) {
+  Widget _buildWhiteLogo() {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.2),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: const _SvgWhiteLogoFallback(
+          color: TamgaciConstants.textOnPrimary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencyItem(String currency, double rate) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 50,
-          height: 50,
+          width: 24,
+          height: 24,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
-            ),
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                blurRadius: 8,
-                spreadRadius: 1,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(6),
           ),
-          child: const Icon(
-            Icons.person,
-            color: Colors.white,
-            size: 24,
+          child: Center(
+            child: Text(
+              currency,
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: TamgaciConstants.textOnPrimary,
+              ),
+            ),
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                profile?.name ?? 'Kullanıcı',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                profile?.email ?? 'email@example.com',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-            ],
+        const SizedBox(width: 8),
+        Text(
+          '${rate.toStringAsFixed(2)} ₺',
+          style: GoogleFonts.poppins(
+            color: TamgaciConstants.textOnPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCompactUserInfo(UserProfile? profile) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.15),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.person,
+              color: TamgaciConstants.textOnPrimary,
+              size: 16,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile?.fullName ?? 'Kullanıcı',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: TamgaciConstants.textOnPrimary,
+                  ),
+                ),
+                Text(
+                  profile?.company ?? 'Şirket Adı',
+                  style: GoogleFonts.poppins(
+                    fontSize: 9,
+                    color:
+                        TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -518,28 +634,48 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
         ListTile(
           leading: Icon(
             item.icon,
-            color: isActive ? AppColors.primary : Colors.grey[600],
+            color: item.isActive
+                ? (isActive
+                    ? TamgaciConstants.primaryColor
+                    : (Theme.of(context).brightness == Brightness.dark
+                        ? TamgaciConstants.textPrimaryDark
+                        : TamgaciConstants.textSecondary))
+                : (Theme.of(context).brightness == Brightness.dark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary),
             size: 24,
           ),
           title: Text(
             item.title,
             style: GoogleFonts.poppins(
               fontSize: 16,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              color: isActive ? AppColors.primary : Colors.grey[800],
+              fontWeight: item.isActive
+                  ? (isActive ? FontWeight.w600 : FontWeight.w500)
+                  : FontWeight.w400,
+              color: item.isActive
+                  ? (isActive
+                      ? TamgaciConstants.primaryColor
+                      : (Theme.of(context).brightness == Brightness.dark
+                          ? TamgaciConstants.textPrimaryDark
+                          : TamgaciConstants.textSecondary))
+                  : (Theme.of(context).brightness == Brightness.dark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary),
             ),
           ),
           trailing: hasSubItems
               ? Icon(
                   isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? TamgaciConstants.textSecondaryDark
+                      : TamgaciConstants.textSecondary,
                 )
               : item.badgeCount != null && item.badgeCount! > 0
                   ? Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
+                        color: TamgaciConstants.primaryColor,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -547,19 +683,31 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: TamgaciConstants.textOnPrimary,
                         ),
                       ),
                     )
                   : null,
           selected: isActive,
-          selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+          selectedTileColor: Theme.of(context).brightness == Brightness.dark
+              ? TamgaciConstants.primaryColor.withValues(alpha: 0.15)
+              : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+          hoverColor: Theme.of(context).brightness == Brightness.dark
+              ? TamgaciConstants.primaryColor.withValues(alpha: 0.08)
+              : TamgaciConstants.primaryColor.withValues(alpha: 0.05),
           onTap: () {
+            if (!item.isActive) return;
             if (hasSubItems) {
               ref.read(drawerMenuProvider.notifier).toggleExpanded(item.id);
             } else if (item.route.isNotEmpty) {
               ref.read(drawerMenuProvider.notifier).setActiveRoute(item.route);
-              Navigator.pushNamed(context, item.route);
+              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                Navigator.of(context).pop();
+              }
+              final current = ModalRoute.of(context)?.settings.name;
+              if (current != item.route) {
+                Navigator.of(context).pushReplacementNamed(item.route);
+              }
             }
           },
         ),
@@ -579,22 +727,40 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       child: ListTile(
         leading: Icon(
           subItem.icon,
-          color: isActive ? AppColors.primary : Colors.grey[500],
+          color: subItem.isActive
+              ? (isActive
+                  ? TamgaciConstants.primaryColor
+                  : (Theme.of(context).brightness == Brightness.dark
+                      ? TamgaciConstants.textPrimaryDark
+                      : TamgaciConstants.textSecondary))
+              : (Theme.of(context).brightness == Brightness.dark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary),
           size: 20,
         ),
         title: Text(
           subItem.title,
           style: GoogleFonts.poppins(
             fontSize: 14,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-            color: isActive ? AppColors.primary : Colors.grey[700],
+            fontWeight: subItem.isActive
+                ? (isActive ? FontWeight.w600 : FontWeight.w500)
+                : FontWeight.w400,
+            color: subItem.isActive
+                ? (isActive
+                    ? TamgaciConstants.primaryColor
+                    : (Theme.of(context).brightness == Brightness.dark
+                        ? TamgaciConstants.textPrimaryDark
+                        : TamgaciConstants.textSecondary))
+                : (Theme.of(context).brightness == Brightness.dark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary),
           ),
         ),
         trailing: subItem.badgeCount != null && subItem.badgeCount! > 0
             ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  color: TamgaciConstants.primaryColor,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
@@ -602,17 +768,29 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                   style: GoogleFonts.poppins(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: TamgaciConstants.textOnPrimary,
                   ),
                 ),
               )
             : null,
         selected: isActive,
-        selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+        selectedTileColor: Theme.of(context).brightness == Brightness.dark
+            ? TamgaciConstants.primaryColor.withValues(alpha: 0.15)
+            : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+        hoverColor: Theme.of(context).brightness == Brightness.dark
+            ? TamgaciConstants.primaryColor.withValues(alpha: 0.08)
+            : TamgaciConstants.primaryColor.withValues(alpha: 0.05),
         onTap: () {
+          if (!subItem.isActive) return;
           if (subItem.route.isNotEmpty) {
             ref.read(drawerMenuProvider.notifier).setActiveRoute(subItem.route);
-            Navigator.pushNamed(context, subItem.route);
+            if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+              Navigator.of(context).pop();
+            }
+            final current = ModalRoute.of(context)?.settings.name;
+            if (current != subItem.route) {
+              Navigator.of(context).pushReplacementNamed(subItem.route);
+            }
           }
         },
       ),
@@ -624,49 +802,47 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.grey[900]
-            : Colors.grey[50],
+            ? TamgaciConstants.backgroundColorDark
+            : TamgaciConstants.surfaceColor,
         border: Border(
-          top: BorderSide(color: Colors.grey.withValues(alpha: 0.2)),
+          top: BorderSide(
+              color: TamgaciConstants.borderColor.withValues(alpha: 0.2)),
         ),
       ),
       child: Column(
         children: [
           // Ayarlar kısayolu
           ListTile(
-            leading: const Icon(Icons.settings_outlined),
+            leading: Icon(
+              Icons.settings_outlined,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? TamgaciConstants.textPrimaryDark
+                  : TamgaciConstants.textSecondary,
+            ),
             title: Text(
               'Ayarlar',
-              style: GoogleFonts.poppins(fontSize: 14),
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? TamgaciConstants.textPrimaryDark
+                    : TamgaciConstants.textSecondary,
+              ),
             ),
+            hoverColor: Theme.of(context).brightness == Brightness.dark
+                ? TamgaciConstants.primaryColor.withValues(alpha: 0.08)
+                : TamgaciConstants.primaryColor.withValues(alpha: 0.05),
             onTap: () {
-              Navigator.pushNamed(context, TamgaciRoutes.settings);
+              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                Navigator.of(context).pop();
+              }
+              final current = ModalRoute.of(context)?.settings.name;
+              if (current != TamgaciRoutes.settings) {
+                Navigator.of(context).pushReplacementNamed(
+                  TamgaciRoutes.settings,
+                );
+              }
             },
           ),
-          // Güncel kur bilgisi
-          Consumer(builder: (context, ref, child) {
-            final selected = ref.watch(selectedCurrencyProvider);
-            final converter = ref.watch(currencyConverterProvider);
-            final code = selected.code;
-            final rate = converter.convert(
-              amount: 1,
-              fromCurrencyCode: 'USD',
-              toCurrencyCode: code,
-            );
-            return ListTile(
-              leading: const Icon(Icons.show_chart),
-              title: Text(
-                'Güncel Kur',
-                style: GoogleFonts.poppins(fontSize: 14),
-              ),
-              subtitle: Text(
-                '1 USD = ${rate.toStringAsFixed(2)} $code',
-                style:
-                    GoogleFonts.poppins(fontSize: 12, color: Colors.grey[600]),
-              ),
-            );
-          }),
-          const Divider(),
           // Çıkış yap
           ListTile(
             leading: const Icon(Icons.logout_outlined, color: Colors.red),
@@ -678,6 +854,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 fontWeight: FontWeight.w500,
               ),
             ),
+            hoverColor: Colors.red.withValues(alpha: 0.1),
             onTap: () {
               _showLogoutDialog();
             },
@@ -687,7 +864,16 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     );
   }
 
+  void _showCalculator() {
+    if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+      Navigator.of(context).pop();
+    }
+    // Toggle floating overlay (navigations persist)
+    CalculatorOverlay.instance.toggle(context);
+  }
+
   void _showLogoutDialog() {
+    bool forgetMe = false;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -695,9 +881,34 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
           'Çıkış Yap',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
-        content: Text(
-          'Uygulamadan çıkmak istediğinizden emin misiniz?',
-          style: GoogleFonts.poppins(),
+        content: StatefulBuilder(
+          builder: (context, setDialogState) {
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Uygulamadan çıkmak istediğinizden emin misiniz?',
+                  style: GoogleFonts.poppins(),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Checkbox(
+                      value: forgetMe,
+                      onChanged: (v) {
+                        setDialogState(() => forgetMe = v ?? false);
+                      },
+                    ),
+                    Text(
+                      'Beni unut',
+                      style: GoogleFonts.poppins(),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -705,10 +916,31 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             child: const Text('İptal'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // Çıkış işlemi burada yapılacak
-              // ref.read(authProvider.notifier).logout();
+              try {
+                // Beni unut seçiliyse flag'i güncelle
+                if (forgetMe) {
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('remember_me', false);
+                  // Remove stored credentials and clear caches
+                  const storage = FlutterSecureStorage();
+                  await storage.delete(key: 'cred_email');
+                  await storage.delete(key: 'cred_password');
+                  try {
+                    await DataCache().clearAllDataCache();
+                  } catch (_) {}
+                }
+              } catch (_) {}
+              try {
+                await FirebaseAuthService.signOut();
+              } catch (_) {}
+              if (mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  TamgaciRoutes.login,
+                  (route) => false,
+                );
+              }
             },
             child: const Text(
               'Çıkış Yap',

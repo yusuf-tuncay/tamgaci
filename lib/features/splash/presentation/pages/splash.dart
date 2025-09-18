@@ -8,6 +8,10 @@ import 'package:tamgaci/core/theme/constants.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:tamgaci/core/cache/data_cache.dart';
 // import 'package:tamgaci/l10n/generated/app_localizations.dart';
 
 // ========== SPLASH STATE YÖNETİMİ ==========
@@ -207,10 +211,29 @@ class SplashNotifier extends StateNotifier<SplashData> {
 
   /// Kullanıcı oturum durumunu kontrol eden metod
   Future<void> _checkUserAuthentication() async {
-    // Kullanıcının daha önce oturum açıp açmadığını kontrol et
-    // Token geçerliliğini kontrol et
-    // Biometric authentication durumunu kontrol et
-    await Future.delayed(const Duration(milliseconds: 600));
+    // SharedPreferences'tan remember_me ayarını oku
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rememberMe = prefs.getBool('remember_me');
+      if (rememberMe == false) {
+        // Kullanıcı unutulmak istendi; mevcut oturumu kapat
+        try {
+          await FirebaseAuth.instance.signOut();
+        } catch (_) {}
+        // Temizlik: güvenli saklanan bilgileri ve cache'i temizle
+        try {
+          const storage = FlutterSecureStorage();
+          await storage.delete(key: 'cred_email');
+          await storage.delete(key: 'cred_password');
+        } catch (_) {}
+        try {
+          await DataCache().clearAllDataCache();
+        } catch (_) {}
+      }
+    } catch (_) {}
+
+    // Kısa bir bekleme ile UI'ı güncel tut
+    await Future.delayed(const Duration(milliseconds: 300));
   }
 
   /// Uygulama ayarlarını yükleyen metod
@@ -379,6 +402,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Precache the logo once we have a BuildContext to avoid initial flicker
+    // on first frame when the SVG is decoded.
+    precacheImage(
+        const ExactAssetImage('assets/images/svg/whitelogo.svg'), context);
     // Splash verilerini dinle
     ref.listen<SplashData>(splashProvider, (previous, current) {
       // Splash tamamlandığında yönlendirme yap
@@ -532,24 +559,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           fit: StackFit.expand,
           children: [
             // Logo (asset), yoksa ikon fallback
-            Image.asset(
-              'assets/images/logos/fullsizebluelogo.png',
+            SvgPicture.asset(
+              'assets/images/svg/whitelogo.svg',
+              colorFilter:
+                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
               fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                return Center(
-                  child: Icon(
-                    Icons.account_balance,
-                    size: TamgaciConstants.getResponsiveValue(
-                      context,
-                      mobile: 60.0,
-                      tablet: 70.0,
-                      desktop: 80.0,
-                      wideDesktop: 90.0,
-                    ),
-                    color: Colors.white,
-                  ),
-                );
-              },
             ),
             // Premium parıltı efekti
             Align(

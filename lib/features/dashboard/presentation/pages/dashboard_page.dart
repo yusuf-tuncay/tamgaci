@@ -9,6 +9,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
@@ -161,25 +162,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isDark
-              ? [
-                  TamgaciConstants.primaryColor.withValues(alpha: 0.8),
-                  TamgaciConstants.primaryColor
-                ]
-              : [
-                  TamgaciConstants.primaryColor,
-                  TamgaciConstants.primaryColor.withValues(alpha: 0.8)
-                ],
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            TamgaciConstants.primaryColorDark,
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -188,38 +185,105 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.dashboard,
-                color: Colors.white,
-                size: 32,
+              // Premium square logo to match drawer
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    width: 1,
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: SvgPicture.asset(
+                  'assets/images/svg/whitelogo.svg',
+                  colorFilter:
+                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  fit: BoxFit.contain,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Hoş Geldiniz!',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TAMGACI',
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    Text(
+                      'İş Yönetim Sistemi',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              // Currency quick chips similar to drawer
+              Consumer(builder: (context, ref, _) {
+                final rates = ref.watch(usdEurRatesProvider);
+                final usd = rates['USD']?.exchangeRate ?? 0.0;
+                final eur = rates['EUR']?.exchangeRate ?? 0.0;
+                Widget chip(String code, double value) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            code,
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            value == 0.0
+                                ? '...'
+                                : '${value.toStringAsFixed(2)} ₺',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                return Row(children: [
+                  chip('USD', usd),
+                  const SizedBox(width: 8),
+                  chip('EUR', eur),
+                ]);
+              }),
             ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tamgaci İş Yönetim Sistemi',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
           ),
           const SizedBox(height: 16),
           Text(
-            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            'Hoş Geldiniz! Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
         ],

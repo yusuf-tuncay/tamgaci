@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
 import '../providers/auth_providers.dart';
@@ -22,11 +24,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _rememberMe = true;
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   @override
   void initState() {
     super.initState();
     _loadRememberMe();
+    _prefillCredentialsIfRemembered();
   }
 
   Future<void> _loadRememberMe() async {
@@ -34,6 +38,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         _rememberMe = prefs.getBool('remember_me') ?? true;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _prefillCredentialsIfRemembered() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final remember = prefs.getBool('remember_me') ?? true;
+      if (!remember) return;
+      final savedEmail = await _secureStorage.read(key: 'cred_email');
+      final savedPass = await _secureStorage.read(key: 'cred_password');
+      if (!mounted) return;
+      setState(() {
+        if (savedEmail != null) _emailController.text = savedEmail;
+        if (savedPass != null) _passwordController.text = savedPass;
       });
     } catch (_) {}
   }
@@ -121,16 +140,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.asset(
-                'assets/images/logos/fullsizebluelogo.png',
+              SvgPicture.asset(
+                'assets/images/svg/whitelogo.svg',
+                colorFilter:
+                    const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.account_balance,
-                    size: 60,
-                    color: Colors.white,
-                  );
-                },
               ),
               // Premium parıltı efekti
               Align(
@@ -415,6 +429,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('remember_me', _rememberMe);
+        if (_rememberMe) {
+          await _secureStorage.write(
+              key: 'cred_email', value: _emailController.text.trim());
+          await _secureStorage.write(
+              key: 'cred_password', value: _passwordController.text);
+        } else {
+          await _secureStorage.delete(key: 'cred_email');
+          await _secureStorage.delete(key: 'cred_password');
+        }
+      } catch (_) {}
 
       if (mounted) {
         // Başarılı giriş sonrası dashboard'a yönlendir

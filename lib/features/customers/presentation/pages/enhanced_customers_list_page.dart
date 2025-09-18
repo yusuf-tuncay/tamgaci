@@ -9,6 +9,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/routes/routes.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
@@ -113,9 +114,10 @@ class _EnhancedCustomersListPageState
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final customersAsync = ref.watch(customersProvider);
 
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: const CustomAppBar(title: 'Müşteriler', showDrawer: true),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: Column(
         children: [
           _buildSearchAndFilters(isDark),
@@ -154,19 +156,25 @@ class _EnhancedCustomersListPageState
               ),
             ),
           ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: FloatingActionButton.extended(
+                onPressed: () {
+                  Navigator.pushNamed(context, TamgaciRoutes.createCustomer);
+                },
+                icon: const Icon(Icons.person_add),
+                label: Text(
+                  'Yeni Müşteri',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                ),
+                backgroundColor: TamgaciConstants.primaryColor,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, TamgaciRoutes.createCustomer);
-        },
-        icon: const Icon(Icons.person_add),
-        label: Text(
-          'Yeni Müşteri',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-        ),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
       ),
     );
   }

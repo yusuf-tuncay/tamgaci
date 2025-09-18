@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../domain/entities/invoice.dart';
 import '../../data/models/invoice_status.dart';
 import '../providers/invoice_providers.dart';
@@ -39,10 +40,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+    return ResponsiveScaffold(
       appBar: AppBar(
         title: const Text('Faturalar'),
         elevation: 0,
@@ -149,7 +147,8 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
           ),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: Column(
         children: [
           // Arama çubuğu
@@ -166,13 +165,19 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
               error: (error, stack) => _buildErrorState(error),
             ),
           ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: FloatingActionButton(
+                onPressed: () {
+                  TamgaciRoutes.pushNamed(context, TamgaciRoutes.createInvoice);
+                },
+                child: const Icon(Icons.receipt_long),
+              ),
+            ),
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          TamgaciRoutes.pushNamed(context, TamgaciRoutes.createInvoice);
-        },
-        child: const Icon(Icons.receipt_long),
       ),
     );
   }

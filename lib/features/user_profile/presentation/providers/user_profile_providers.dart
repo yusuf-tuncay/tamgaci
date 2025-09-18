@@ -4,6 +4,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../data/repositories/user_profile_repository_impl.dart';
+import '../../../../core/services/firebase/firebase_auth_service.dart';
 
 /// User profile repository provider
 final userProfileRepositoryProvider =
@@ -18,13 +19,63 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
 
   UserProfileNotifier(this._repository) : super(const AsyncValue.loading()) {
     _loadProfile();
+    // Auth değişimlerini dinle ve profili yenile
+    FirebaseAuthService.authStateChanges.listen((_) {
+      _loadProfile();
+    });
   }
 
   /// Profil verilerini yükle
   Future<void> _loadProfile() async {
     try {
       state = const AsyncValue.loading();
-      final profile = await _repository.getUserProfile(_defaultUserId);
+
+      // 1) Firebase oturum açık ise Firestore'dan çek
+      final uid = FirebaseAuthService.currentUserId;
+      if (uid != null) {
+        final data = await FirebaseAuthService.getUserData(uid);
+        if (data != null) {
+          final String fullName =
+              (data['fullName'] as String?)?.trim().isNotEmpty == true
+                  ? (data['fullName'] as String)
+                  : ((FirebaseAuthService.currentUserDisplayName ?? '').trim());
+          final parts = (fullName).trim().split(' ');
+          final String name = parts.isNotEmpty
+              ? parts.first
+              : (fullName.isNotEmpty ? fullName : 'Kullanıcı');
+          final String surname =
+              parts.length > 1 ? parts.sublist(1).join(' ') : '';
+          final String email = (data['email'] as String?) ??
+              (FirebaseAuthService.currentUserEmail ?? 'kullanici@tamgaci.com');
+          final Map<String, dynamic>? settings =
+              data['settings'] as Map<String, dynamic>?;
+          final String? company = (data['companyName'] as String?) ??
+              (data['company'] as String?) ??
+              (settings != null ? settings['companyName'] as String? : null);
+
+          final now = DateTime.now();
+          final user = UserProfile(
+            id: uid,
+            name: name,
+            surname: surname,
+            email: email,
+            company: company,
+            phone: null,
+            position: null,
+            department: null,
+            profilePhotoUrl: null,
+            role: (data['role'] as String?) ?? 'Kullanıcı',
+            isActive: (data['isActive'] as bool?) ?? true,
+            createdAt: now,
+            updatedAt: now,
+          );
+          state = AsyncValue.data(user);
+          return;
+        }
+      }
+
+      // 2) Firebase yoksa yerel repository'den default al
+      final profile = await _repository.getUserProfile(uid ?? _defaultUserId);
       state = AsyncValue.data(profile);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);

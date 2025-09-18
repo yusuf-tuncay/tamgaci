@@ -11,7 +11,7 @@ import 'package:tamgaci/features/suppliers/presentation/pages/enhanced_supplier_
 import 'package:tamgaci/features/products/presentation/pages/enhanced_products_list_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/enhanced_product_detail_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/warehouses_list_page.dart';
-import 'package:tamgaci/features/sales/presentation/pages/sales_list_page.dart';
+import 'package:tamgaci/features/sales/presentation/pages/enhanced_sales_list_page.dart';
 import 'package:tamgaci/features/sales/presentation/pages/sale_detail_page.dart';
 import 'package:tamgaci/features/sales/presentation/pages/create_sale_page.dart';
 import 'package:tamgaci/features/purchases/presentation/pages/enhanced_purchases_list_page.dart';
@@ -31,7 +31,7 @@ import 'package:tamgaci/features/expenses/presentation/pages/expenses_list_page.
 import 'package:tamgaci/features/income/presentation/pages/create_income_page.dart';
 import 'package:tamgaci/features/income/presentation/pages/income_list_page.dart';
 import 'package:tamgaci/features/invoices/presentation/pages/create_invoice_page.dart';
-// import 'package:tamgaci/features/invoices/presentation/pages/invoices_list_page.dart'; // Unused
+import 'package:tamgaci/features/invoices/presentation/pages/invoices_list_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/create_product_page.dart';
 // product_detail_page.dart kaldırıldı - enhanced_product_detail_page.dart kullanılıyor
 // import 'package:tamgaci/features/products/presentation/pages/products_list_page.dart'; // Unused
@@ -351,7 +351,7 @@ class TamgaciRoutes {
       // ========== SATIŞ ROUTE'LARI ==========
 
       case salesList:
-        return _createRoute(const SalesListPage(), settings: settings);
+        return _createRoute(const EnhancedSalesListPage(), settings: settings);
 
       case createSale:
         return _createRoute(const CreateSalePage(), settings: settings);
@@ -376,7 +376,7 @@ class TamgaciRoutes {
       // ========== FATURA ROUTE'LARI ==========
 
       case invoicesList:
-        return _createRoute(const SalesListPage(), settings: settings);
+        return _createRoute(const InvoicesListPage(), settings: settings);
 
       case createInvoice:
         return _createRoute(const CreateInvoicePage(), settings: settings);

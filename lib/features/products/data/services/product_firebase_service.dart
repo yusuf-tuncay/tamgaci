@@ -391,12 +391,15 @@ class ProductFirebaseService {
           .toList();
 
       final totalProducts = products.length;
-      final lowStockProducts =
-          products.where((p) => p.totalStockQuantity <= (p.criticalStockQuantity ?? 0)).length;
+      final lowStockProducts = products
+          .where((p) => p.totalStockQuantity <= (p.criticalStockQuantity ?? 0))
+          .length;
       final outOfStockProducts =
           products.where((p) => p.totalStockQuantity <= 0).length;
       final totalStockValue = products.fold<double>(
-          0, (total, p) => total + (p.totalStockQuantity * (p.purchasePrice ?? 0)));
+          0,
+          (total, p) =>
+              total + (p.totalStockQuantity * (p.purchasePrice ?? 0)));
 
       return {
         'totalProducts': totalProducts,
@@ -425,8 +428,10 @@ class ProductFirebaseService {
       FirebaseFields.productStock: product.totalStockQuantity,
       FirebaseFields.productMinStock: product.criticalStockQuantity,
       FirebaseFields.productMaxStock: null, // Removed from new Product entity
-      FirebaseFields.productWarehouseId: null, // Removed from new Product entity
-      FirebaseFields.productImageUrl: product.images.isNotEmpty ? product.images.first : null,
+      FirebaseFields.productWarehouseId:
+          null, // Removed from new Product entity
+      FirebaseFields.productImageUrl:
+          product.images.isNotEmpty ? product.images.first : null,
       // companyId is not a field of Product; omit or source from context if needed
       'taxRate': product.taxRate,
       'currency': product.salesCurrency,
@@ -451,10 +456,11 @@ class ProductFirebaseService {
       purchasePrice: (data[FirebaseFields.productCost] ?? 0).toDouble(),
       salesCurrency: data['currency'] ?? 'TRY',
       taxRate: (data['taxRate'] ?? 0).toDouble(),
-      criticalStockQuantity: (data[FirebaseFields.productMinStock] ?? 0).toInt(),
+      criticalStockQuantity:
+          (data[FirebaseFields.productMinStock] ?? 0).toInt(),
       shelfLocation: data[FirebaseFields.productWarehouseId],
-      images: data[FirebaseFields.productImageUrl] != null 
-          ? [data[FirebaseFields.productImageUrl]] 
+      images: data[FirebaseFields.productImageUrl] != null
+          ? [data[FirebaseFields.productImageUrl]]
           : [],
       isActive: data['isActive'] ?? true,
       createdAt: (data[FirebaseFields.createdAt] as Timestamp?)?.toDate() ??

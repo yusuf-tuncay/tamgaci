@@ -5,6 +5,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../../core/routes/routes.dart';
 import '../providers/warehouse_providers.dart';
@@ -18,23 +19,32 @@ class WarehouseListPage extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final warehousesAsync = ref.watch(warehousesProvider);
 
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: const CustomAppBar(title: 'Depo Listesi', showDrawer: true),
-      drawer: const TamgaciDrawerMenu(),
-      body: warehousesAsync.when(
-        data: (warehouses) => _buildWarehouseList(warehouses, isDark, ref),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child:
-              Text('Hata: $error', style: const TextStyle(color: Colors.red)),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.of(context).pushNamed(TamgaciRoutes.createWarehouse);
-        },
-        backgroundColor: TamgaciConstants.primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
+      body: Stack(
+        children: [
+          warehousesAsync.when(
+            data: (warehouses) => _buildWarehouseList(warehouses, isDark, ref),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Text('Hata: $error',
+                  style: const TextStyle(color: Colors.red)),
+            ),
+          ),
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed(TamgaciRoutes.createWarehouse);
+              },
+              backgroundColor: TamgaciConstants.primaryColor,
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          ),
+        ],
       ),
     );
   }

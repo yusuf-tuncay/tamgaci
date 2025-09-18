@@ -90,9 +90,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         : TamgaciConstants.textPrimary;
 
     if (showDrawer) {
-      return IconButton(
-        onPressed: () => Scaffold.of(context).openDrawer(),
-        icon: Icon(Icons.menu, color: iconColor),
+      return Builder(
+        builder: (context) => IconButton(
+          onPressed: () {
+            try {
+              Scaffold.of(context).openDrawer();
+            } catch (e) {
+              // Fallback if drawer is not available
+              debugPrint('Drawer not available: $e');
+            }
+          },
+          icon: Icon(Icons.menu, color: iconColor),
+        ),
       );
     }
 

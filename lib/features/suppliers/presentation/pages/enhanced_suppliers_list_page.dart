@@ -8,6 +8,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
@@ -86,13 +87,9 @@ class _EnhancedSuppliersListPageState
     final operationsState = ref.watch(supplierOperationsProvider);
     final searchQuery = _searchController.text;
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+    return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Tedarikçiler',
         showDrawer: true,
@@ -111,7 +108,8 @@ class _EnhancedSuppliersListPageState
           ),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: Column(
         children: [
           // Arama ve filtre çubuğu

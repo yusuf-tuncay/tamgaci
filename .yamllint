@@ -1,0 +1,7 @@
+extends: default
+
+rules:
+  truthy:
+    ignore: |
+      # GitHub Actions secrets are always strings
+      secrets.*

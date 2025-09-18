@@ -8,6 +8,7 @@ import '../../../../core/theme/constants.dart';
 // import '../../../../core/utils/currency_helper.dart'; // Unused
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../domain/entities/report.dart';
 
 /// Gelişmiş raporlar listesi sayfası
@@ -54,10 +55,7 @@ class _EnhancedReportsListPageState
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+    return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Raporlar',
         showDrawer: true,
@@ -72,7 +70,8 @@ class _EnhancedReportsListPageState
           ),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: Column(
         children: [
           // Tab Bar

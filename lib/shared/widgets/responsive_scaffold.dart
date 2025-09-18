@@ -34,18 +34,27 @@ class ResponsiveScaffold extends StatelessWidget {
           children: [
             SizedBox(
               width: sidePanelWidth,
-              child: drawerContent,
+              child: Material(
+                color: Theme.of(context).drawerTheme.backgroundColor ??
+                    Theme.of(context).colorScheme.surface,
+                child: drawerContent,
+              ),
             ),
             const VerticalDivider(width: 1),
             Expanded(
-              child: SizedBox.expand(
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1400),
-                    child: body,
-                  ),
-                ),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SizedBox(
+                    width: constraints.maxWidth,
+                    height: constraints.maxHeight,
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1400),
+                        child: body,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
@@ -56,13 +65,25 @@ class ResponsiveScaffold extends StatelessWidget {
     // Small screens: standard drawer behavior
     return Scaffold(
       appBar: appBar,
-      drawer: Drawer(child: drawerContent),
-      body: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1400),
-          child: body,
-        ),
+      drawer: Drawer(
+        width: sidePanelWidth,
+        backgroundColor: Theme.of(context).drawerTheme.backgroundColor ??
+            Theme.of(context).colorScheme.surface,
+        child: drawerContent,
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: constraints.maxHeight,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1400),
+                child: body,
+              ),
+            ),
+          );
+        },
       ),
     );
   }

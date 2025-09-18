@@ -36,6 +36,7 @@ dependencies:
   # UI ve Tema
   cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
 
   # State Management
   flutter_riverpod: ^2.4.9
@@ -49,6 +50,7 @@ dependencies:
   intl: ^0.20.2
   uuid: ^4.3.3
   shared_preferences: ^2.5.3
+  flutter_secure_storage: ^9.2.2
   logger: ^2.0.2+1
   equatable: ^2.0.5
   freezed_annotation: ^2.4.1
@@ -130,6 +132,7 @@ flutter:
   assets:
     - assets/images/icons/
     - assets/images/logos/
+    - assets/images/svg/
     - assets/images/backgrounds/
     - assets/fonts/
     - assets/translations/
