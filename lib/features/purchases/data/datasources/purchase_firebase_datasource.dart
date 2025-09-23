@@ -575,25 +575,23 @@ class PurchaseFirebaseDataSource {
       final prefix = type.name.toUpperCase();
       final datePrefix = '$year$month$day';
 
-      // Bugünkü aynı tipte kaç tane satın alma var?
-      final todayStart = DateTime(now.year, now.month, now.day);
-      final todayEnd = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      // Firebase index hatası nedeniyle basit fallback kullan
+      final timestamp = now.millisecondsSinceEpoch;
+      final randomSuffix = (timestamp % 10000).toString().padLeft(4, '0');
 
-      final snapshot = await _firestore
-          .collection('purchases')
-          .where('type', isEqualTo: type.name)
-          .where('createdAt',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(todayStart))
-          .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(todayEnd))
-          .get();
-
-      final count = snapshot.docs.length + 1;
-      final number = count.toString().padLeft(4, '0');
-
-      return '$prefix-$datePrefix-$number';
+      return '$prefix-$datePrefix-$randomSuffix';
     } catch (e) {
       AppLogger.error('Error generating purchase number', e);
-      rethrow;
+      // Son çare olarak timestamp kullan
+      final now = DateTime.now();
+      final year = now.year.toString();
+      final month = now.month.toString().padLeft(2, '0');
+      final day = now.day.toString().padLeft(2, '0');
+      final prefix = type.name.toUpperCase();
+      final datePrefix = '$year$month$day';
+      final timestamp = now.millisecondsSinceEpoch;
+      final fallbackNumber = (timestamp % 10000).toString().padLeft(4, '0');
+      return '$prefix-$datePrefix-$fallbackNumber';
     }
   }
 }

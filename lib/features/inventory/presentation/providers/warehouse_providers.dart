@@ -6,7 +6,7 @@ import '../../domain/repositories/warehouse_repository.dart';
 class MockWarehouseRepository implements WarehouseRepository {
   static final List<Warehouse> _mockWarehouses = [
     Warehouse(
-      id: 1,
+      id: '1',
       name: 'Ana Depo',
       code: 'DEPO001',
       description: 'Ana şirket deposu',
@@ -23,7 +23,7 @@ class MockWarehouseRepository implements WarehouseRepository {
       updatedAt: DateTime.now(),
     ),
     Warehouse(
-      id: 2,
+      id: '2',
       name: 'Şube Depo',
       code: 'DEPO002',
       description: 'Şube deposu',
@@ -40,7 +40,7 @@ class MockWarehouseRepository implements WarehouseRepository {
       updatedAt: DateTime.now(),
     ),
     Warehouse(
-      id: 3,
+      id: '3',
       name: 'Soğuk Hava Deposu',
       code: 'DEPO003',
       description: 'Soğuk hava deposu',
@@ -81,7 +81,7 @@ class MockWarehouseRepository implements WarehouseRepository {
   }
 
   @override
-  Future<Warehouse?> getWarehouseById(int id) async {
+  Future<Warehouse?> getWarehouseById(String id) async {
     await Future.delayed(const Duration(milliseconds: 200));
     try {
       return _mockWarehouses.firstWhere((w) => w.id == id);
@@ -104,7 +104,7 @@ class MockWarehouseRepository implements WarehouseRepository {
   Future<Warehouse> createWarehouse(Warehouse warehouse) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final newWarehouse = warehouse.copyWith(
-      id: _mockWarehouses.length + 1,
+      id: (_mockWarehouses.length + 1).toString(),
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -125,7 +125,7 @@ class MockWarehouseRepository implements WarehouseRepository {
   }
 
   @override
-  Future<void> deleteWarehouse(int id) async {
+  Future<void> deleteWarehouse(String id) async {
     await Future.delayed(const Duration(milliseconds: 300));
     _mockWarehouses.removeWhere((w) => w.id == id);
   }

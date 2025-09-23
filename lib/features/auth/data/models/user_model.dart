@@ -14,6 +14,8 @@ class UserModel extends User {
     super.phoneCountry,
     super.phoneDialCode,
     super.profileImageUrl,
+    super.profileImagePath,
+    super.profileImageMetadata,
     required super.role,
     required super.status,
     required super.createdAt,
@@ -29,6 +31,12 @@ class UserModel extends User {
     super.taxId,
     super.taxOffice,
     super.billingAddress,
+    super.subscriptionStatus = SubscriptionStatus.none,
+    super.subscriptionPlan = SubscriptionPlan.none,
+    super.trialStartAt,
+    super.trialEndAt,
+    super.subscriptionStartAt,
+    super.subscriptionEndAt,
   });
 
   /// Firebase Firestore'dan UserModel oluşturur
@@ -43,7 +51,12 @@ class UserModel extends User {
       phoneE164: data['phoneE164'],
       phoneCountry: data['phoneCountry'],
       phoneDialCode: data['phoneDialCode'],
-      profileImageUrl: data['profileImageUrl'],
+      // Best practice: Profile image with path + metadata
+      profileImageUrl: data['profileImageUrl'], // Cache for performance
+      profileImagePath: data['profileImagePath'], // Path for reliability
+      profileImageMetadata: data['profileImageMetadata'] != null
+          ? Map<String, dynamic>.from(data['profileImageMetadata'])
+          : null,
       role: UserRole.fromString(data['role'] ?? 'user'),
       status: UserStatus.fromString(data['status'] ?? 'active'),
       createdAt: (data['createdAt'] as Timestamp).toDate(),
@@ -65,6 +78,15 @@ class UserModel extends User {
       taxId: data['taxId'],
       taxOffice: data['taxOffice'],
       billingAddress: data['billingAddress'],
+      subscriptionStatus:
+          SubscriptionStatus.fromString(data['subscriptionStatus'] ?? 'none'),
+      subscriptionPlan:
+          SubscriptionPlan.fromString(data['subscriptionPlan'] ?? 'none'),
+      trialStartAt: (data['trialStartAt'] as Timestamp?)?.toDate(),
+      trialEndAt: (data['trialEndAt'] as Timestamp?)?.toDate(),
+      subscriptionStartAt:
+          (data['subscriptionStartAt'] as Timestamp?)?.toDate(),
+      subscriptionEndAt: (data['subscriptionEndAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -96,6 +118,17 @@ class UserModel extends User {
       'taxId': taxId,
       'taxOffice': taxOffice,
       'billingAddress': billingAddress,
+      'subscriptionStatus': subscriptionStatus.value,
+      'subscriptionPlan': subscriptionPlan.value,
+      'trialStartAt':
+          trialStartAt != null ? Timestamp.fromDate(trialStartAt!) : null,
+      'trialEndAt': trialEndAt != null ? Timestamp.fromDate(trialEndAt!) : null,
+      'subscriptionStartAt': subscriptionStartAt != null
+          ? Timestamp.fromDate(subscriptionStartAt!)
+          : null,
+      'subscriptionEndAt': subscriptionEndAt != null
+          ? Timestamp.fromDate(subscriptionEndAt!)
+          : null,
     };
   }
 
@@ -137,6 +170,9 @@ class UserModel extends User {
       name: user.name,
       surname: user.surname,
       phone: user.phone,
+      phoneE164: user.phoneE164,
+      phoneCountry: user.phoneCountry,
+      phoneDialCode: user.phoneDialCode,
       profileImageUrl: user.profileImageUrl,
       role: user.role,
       status: user.status,
@@ -150,6 +186,15 @@ class UserModel extends User {
       position: user.position,
       preferences: user.preferences,
       settings: user.settings,
+      taxId: user.taxId,
+      taxOffice: user.taxOffice,
+      billingAddress: user.billingAddress,
+      subscriptionStatus: user.subscriptionStatus,
+      subscriptionPlan: user.subscriptionPlan,
+      trialStartAt: user.trialStartAt,
+      trialEndAt: user.trialEndAt,
+      subscriptionStartAt: user.subscriptionStartAt,
+      subscriptionEndAt: user.subscriptionEndAt,
     );
   }
 
@@ -165,6 +210,8 @@ class UserModel extends User {
     String? phoneCountry,
     String? phoneDialCode,
     String? profileImageUrl,
+    String? profileImagePath,
+    Map<String, dynamic>? profileImageMetadata,
     UserRole? role,
     UserStatus? status,
     DateTime? createdAt,
@@ -180,6 +227,12 @@ class UserModel extends User {
     String? taxId,
     String? taxOffice,
     String? billingAddress,
+    SubscriptionStatus? subscriptionStatus,
+    SubscriptionPlan? subscriptionPlan,
+    DateTime? trialStartAt,
+    DateTime? trialEndAt,
+    DateTime? subscriptionStartAt,
+    DateTime? subscriptionEndAt,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -191,6 +244,8 @@ class UserModel extends User {
       phoneCountry: phoneCountry ?? this.phoneCountry,
       phoneDialCode: phoneDialCode ?? this.phoneDialCode,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      profileImagePath: profileImagePath ?? this.profileImagePath,
+      profileImageMetadata: profileImageMetadata ?? this.profileImageMetadata,
       role: role ?? this.role,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
@@ -206,6 +261,12 @@ class UserModel extends User {
       taxId: taxId ?? this.taxId,
       taxOffice: taxOffice ?? this.taxOffice,
       billingAddress: billingAddress ?? this.billingAddress,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionPlan: subscriptionPlan ?? this.subscriptionPlan,
+      trialStartAt: trialStartAt ?? this.trialStartAt,
+      trialEndAt: trialEndAt ?? this.trialEndAt,
+      subscriptionStartAt: subscriptionStartAt ?? this.subscriptionStartAt,
+      subscriptionEndAt: subscriptionEndAt ?? this.subscriptionEndAt,
     );
   }
 }

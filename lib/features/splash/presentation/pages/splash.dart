@@ -8,7 +8,6 @@ import 'package:tamgaci/core/theme/constants.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:tamgaci/core/cache/data_cache.dart';
@@ -405,7 +404,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // Precache the logo once we have a BuildContext to avoid initial flicker
     // on first frame when the SVG is decoded.
     precacheImage(
-        const ExactAssetImage('assets/images/svg/whitelogo.svg'), context);
+        const AssetImage('assets/images/logos/180x180logo.png'), context);
     // Splash verilerini dinle
     ref.listen<SplashData>(splashProvider, (previous, current) {
       // Splash tamamlandığında yönlendirme yap
@@ -559,12 +558,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           fit: StackFit.expand,
           children: [
             // Logo (asset), yoksa ikon fallback
-            SvgPicture.asset(
-              'assets/images/svg/whitelogo.svg',
-              colorFilter:
-                  const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-              fit: BoxFit.contain,
-            ),
+            _buildLogoSvg(),
             // Premium parıltı efekti
             Align(
               alignment: Alignment.topLeft,
@@ -607,6 +601,38 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           ],
         ),
       ),
+    );
+  }
+
+  /// Logo widget'ını oluşturur (PNG logo kullanır)
+  Widget _buildLogoSvg() {
+    final double size = TamgaciConstants.getResponsiveValue(
+      context,
+      mobile: 120.0,
+      tablet: 140.0,
+      desktop: 160.0,
+      wideDesktop: 180.0,
+    );
+
+    // Responsive logo boyutuna göre uygun PNG dosyasını seç
+    String logoPath;
+    if (size <= 120) {
+      logoPath = 'assets/images/logos/140x140logo.png'; // 120 için en yakın
+    } else if (size <= 140) {
+      logoPath = 'assets/images/logos/140x140logo.png';
+    } else if (size <= 160) {
+      logoPath = 'assets/images/logos/160x160logo.png';
+    } else {
+      logoPath = 'assets/images/logos/180x180logo.png';
+    }
+
+    return Image.asset(
+      logoPath,
+      width: size,
+      height: size,
+      fit: BoxFit.contain,
+      color: Colors.white,
+      colorBlendMode: BlendMode.srcIn,
     );
   }
 

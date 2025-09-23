@@ -24,11 +24,10 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
   Stock mapToEntity(Map<String, dynamic> map) => Stock.fromMap(map);
 
   @override
-  String getEntityId(Stock entity) => entity.id.toString();
+  String getEntityId(Stock entity) => entity.id;
 
   @override
-  Stock setEntityId(Stock entity, String id) =>
-      entity.copyWith(id: int.tryParse(id) ?? entity.id);
+  Stock setEntityId(Stock entity, String id) => entity.copyWith(id: id);
 
   @override
   DateTime getEntityCreatedAt(Stock entity) => entity.createdAt;
@@ -79,7 +78,7 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
   }
 
   @override
-  Future<Stock?> getStockById(int id) async {
+  Future<Stock?> getStockById(String id) async {
     try {
       final doc = await firestore
           .collection(_stocksCollection)
@@ -97,7 +96,7 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
   }
 
   @override
-  Future<List<Stock>> getStocksByProductId(int productId) async {
+  Future<List<Stock>> getStocksByProductId(String productId) async {
     try {
       final snapshot = await firestore
           .collection(_stocksCollection)
@@ -112,7 +111,7 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
   }
 
   @override
-  Future<List<Stock>> getStocksByWarehouseId(int warehouseId) async {
+  Future<List<Stock>> getStocksByWarehouseId(String warehouseId) async {
     try {
       final snapshot = await firestore
           .collection(_stocksCollection)
@@ -128,7 +127,7 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
 
   @override
   Future<Stock?> getStockByProductAndWarehouse(
-      int productId, int warehouseId) async {
+      String productId, String warehouseId) async {
     try {
       final snapshot = await firestore
           .collection(_stocksCollection)
@@ -186,7 +185,7 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
   Future<Stock> createStock(Stock stock) async {
     try {
       // Generate new ID
-      final newId = DateTime.now().millisecondsSinceEpoch;
+      final newId = DateTime.now().millisecondsSinceEpoch.toString();
       final newStock = stock.copyWith(
         id: newId,
         createdAt: DateTime.now(),
@@ -221,18 +220,18 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
   }
 
   @override
-  Future<void> deleteStock(int id) async {
+  Future<void> deleteStock(String id) async {
     try {
-      await firestore.collection(_stocksCollection).doc(id.toString()).delete();
+      await firestore.collection(_stocksCollection).doc(id).delete();
     } catch (e) {
       throw Exception('Failed to delete stock: $e');
     }
   }
 
   @override
-  Future<void> updateStockQuantity(int id, double quantity) async {
+  Future<void> updateStockQuantity(String id, double quantity) async {
     try {
-      await firestore.collection(_stocksCollection).doc(id.toString()).update({
+      await firestore.collection(_stocksCollection).doc(id).update({
         'quantity': quantity,
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -242,9 +241,9 @@ class StockRepositoryImpl extends FirebaseRepository<Stock>
   }
 
   @override
-  Future<void> updateStockPrice(int id, double unitPrice) async {
+  Future<void> updateStockPrice(String id, double unitPrice) async {
     try {
-      await firestore.collection(_stocksCollection).doc(id.toString()).update({
+      await firestore.collection(_stocksCollection).doc(id).update({
         'unitPrice': unitPrice,
         'updatedAt': FieldValue.serverTimestamp(),
       });

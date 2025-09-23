@@ -3,8 +3,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/entities/customer_enums.dart';
+import '../../domain/entities/customer_category.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../../data/repositories/firebase_customer_repository.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/firebase/collections.dart';
 
 // ========== BASE PROVIDERS ==========
 
@@ -19,6 +22,56 @@ final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
 final customersProvider = FutureProvider<List<Customer>>((ref) async {
   final repository = ref.watch(customerRepositoryProvider);
   return await repository.getActiveCustomers();
+});
+
+/// Müşteri kategorileri (level 1 ve 2)
+final customerCategoriesProvider = FutureProvider.autoDispose
+    .family<List<CustomerCategory>, int>((ref, level) async {
+  final fs = FirebaseFirestore.instance;
+  final snap = await fs
+      .collection(FirebaseCollections.customerCategories)
+      .where('level', isEqualTo: level)
+      .where('isActive', isEqualTo: true)
+      .get();
+  return snap.docs
+      .map((d) => CustomerCategory.fromJson({
+            ...d.data(),
+            'id': d.id,
+            'createdAt':
+                (d['createdAt'] as Timestamp?)?.toDate().toIso8601String() ??
+                    DateTime.now().toIso8601String(),
+            'updatedAt':
+                (d['updatedAt'] as Timestamp?)?.toDate().toIso8601String() ??
+                    DateTime.now().toIso8601String(),
+          }))
+      .toList();
+});
+
+/// Yeni kategori oluşturma (dialog üzerinden)
+final createCustomerCategoryProvider = FutureProvider.autoDispose.family<
+    String,
+    ({
+      String name,
+      int level,
+      String? parentId,
+      String companyId,
+      String userId
+    })>((ref, args) async {
+  final fs = FirebaseFirestore.instance;
+  final now = DateTime.now();
+  final doc = await fs.collection(FirebaseCollections.customerCategories).add({
+    'name': args.name,
+    'description': null,
+    'level': args.level,
+    'parentCategoryId': args.parentId,
+    'companyId': args.companyId,
+    'isActive': true,
+    'createdAt': Timestamp.fromDate(now),
+    'updatedAt': Timestamp.fromDate(now),
+    'createdBy': args.userId,
+    'updatedBy': args.userId,
+  });
+  return doc.id;
 });
 
 /// Müşteri stream provider'ı (reactive)

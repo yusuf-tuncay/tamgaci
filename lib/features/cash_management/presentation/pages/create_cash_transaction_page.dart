@@ -429,7 +429,7 @@ class _CreateCashTransactionPageState
   List<Map<String, String>> _getMockAccounts() {
     return [
       {'value': '1', 'label': 'Ana Nakit Kasa'},
-      {'value': '2', 'label': 'İş Bankası TL Hesabı'},
+      {'value': '2', 'label': 'İş Bankası TRY Hesabı'},
       {'value': '3', 'label': 'Kredi Kartı'},
       {'value': '4', 'label': 'USD Döviz Hesabı'},
     ];

@@ -2,6 +2,8 @@
 // lib/features/user_profile/presentation/providers/user_profile_providers.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../data/repositories/user_profile_repository_impl.dart';
 import '../../../../core/services/firebase/firebase_auth_service.dart';
@@ -35,39 +37,82 @@ class UserProfileNotifier extends StateNotifier<AsyncValue<UserProfile>> {
       if (uid != null) {
         final data = await FirebaseAuthService.getUserData(uid);
         if (data != null) {
-          final String fullName =
-              (data['fullName'] as String?)?.trim().isNotEmpty == true
-                  ? (data['fullName'] as String)
-                  : ((FirebaseAuthService.currentUserDisplayName ?? '').trim());
-          final parts = (fullName).trim().split(' ');
-          final String name = parts.isNotEmpty
-              ? parts.first
-              : (fullName.isNotEmpty ? fullName : 'Kullanıcı');
-          final String surname =
-              parts.length > 1 ? parts.sublist(1).join(' ') : '';
+          // Get name and surname
+          final String firstName = (data['name'] as String?) ?? '';
+          final String lastName = (data['surname'] as String?) ?? '';
+
+          // Fallback to fullName if name/surname not available
+          String name = firstName;
+          String surname = lastName;
+
+          if (name.isEmpty && surname.isEmpty) {
+            final String fullName = (data['fullName'] as String?)?.trim() ??
+                FirebaseAuthService.currentUserDisplayName ??
+                '';
+            final parts = fullName.trim().split(' ');
+            name = parts.isNotEmpty ? parts.first : 'Kullanıcı';
+            surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+          }
+
           final String email = (data['email'] as String?) ??
               (FirebaseAuthService.currentUserEmail ?? 'kullanici@tamgaci.com');
           final Map<String, dynamic>? settings =
               data['settings'] as Map<String, dynamic>?;
-          final String? company = (data['companyName'] as String?) ??
-              (data['company'] as String?) ??
-              (settings != null ? settings['companyName'] as String? : null);
+          // Get company name from multiple possible sources
+          String? company = data['companyName'] as String?;
+          if (company == null || company.isEmpty) {
+            company = data['company'] as String?;
+          }
+          if (company == null || company.isEmpty) {
+            company = settings?['companyName'] as String?;
+          }
+          if (company == null || company.isEmpty) {
+            // Try to get from billing or business info
+            company = data['businessName'] as String?;
+          }
+
+          // Get profile photo URL with comprehensive fallback logic
+          String? profilePhotoUrl = data['profileImageUrl'] as String?;
+
+          // Check settings for profile image URL as backup
+          if (profilePhotoUrl == null || profilePhotoUrl.isEmpty) {
+            profilePhotoUrl = settings?['profileImageUrl'] as String?;
+          }
+
+          // Check alternative field names
+          if (profilePhotoUrl == null || profilePhotoUrl.isEmpty) {
+            profilePhotoUrl = data['photoURL'] as String?;
+          }
+          if (profilePhotoUrl == null || profilePhotoUrl.isEmpty) {
+            profilePhotoUrl = data['profileImageURL'] as String?;
+          }
+
+          debugPrint(
+              '🔍 UserProfile Loading - Company: $company, PhotoURL: $profilePhotoUrl');
+
+          final String? phone = data['phone'] as String?;
+          final String? position = data['position'] as String?;
+          final String? department = data['department'] as String?;
 
           final now = DateTime.now();
           final user = UserProfile(
             id: uid,
-            name: name,
+            name: name.isEmpty ? 'Kullanıcı' : name,
             surname: surname,
             email: email,
             company: company,
-            phone: null,
-            position: null,
-            department: null,
-            profilePhotoUrl: null,
+            phone: phone,
+            position: position,
+            department: department,
+            profilePhotoUrl: profilePhotoUrl,
             role: (data['role'] as String?) ?? 'Kullanıcı',
             isActive: (data['isActive'] as bool?) ?? true,
-            createdAt: now,
-            updatedAt: now,
+            createdAt: (data['createdAt'] != null)
+                ? (data['createdAt'] as Timestamp).toDate()
+                : now,
+            updatedAt: (data['updatedAt'] != null)
+                ? (data['updatedAt'] as Timestamp).toDate()
+                : now,
           );
           state = AsyncValue.data(user);
           return;

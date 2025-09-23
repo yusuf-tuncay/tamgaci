@@ -3,7 +3,8 @@ import 'package:tamgaci/features/auth/presentation/pages/forgot_password_page.da
 import 'package:tamgaci/features/auth/presentation/pages/login_page.dart';
 import 'package:tamgaci/features/auth/presentation/pages/register_page.dart';
 // Eski cash sayfaları kaldırıldı - cash_management kullanılıyor
-import 'package:tamgaci/features/customers/presentation/pages/create_customers_page.dart';
+import 'package:tamgaci/features/customers/presentation/pages/customer_create_page.dart';
+import 'package:tamgaci/features/customers/presentation/pages/customer_edit_page.dart';
 import 'package:tamgaci/features/customers/presentation/pages/enhanced_customers_list_page.dart';
 import 'package:tamgaci/features/customers/presentation/pages/enhanced_customer_detail_page_v2.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/enhanced_suppliers_list_page.dart';
@@ -45,6 +46,7 @@ import 'package:tamgaci/features/settings/presentation/pages/permissions_page.da
 import 'package:tamgaci/features/settings/presentation/pages/profile_page.dart';
 import 'package:tamgaci/features/settings/presentation/pages/settings_page.dart';
 import 'package:tamgaci/features/settings/presentation/pages/tax_settings_page.dart';
+import 'package:tamgaci/features/settings/presentation/pages/subscription_page.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/create_supplier_page.dart';
 // import 'package:tamgaci/features/suppliers/presentation/pages/supplier_detail_page.dart'; // Unused
@@ -265,6 +267,9 @@ class TamgaciRoutes {
   /// Profil sayfası
   static const String profile = '/settings/profile';
 
+  /// Abonelik sayfası
+  static const String subscription = '/settings/subscription';
+
   /// İzinler sayfası
   static const String permissions = '/settings/permissions';
 
@@ -347,6 +352,12 @@ class TamgaciRoutes {
 
       case forgotPassword:
         return _createRoute(const ForgotPasswordPage(), settings: settings);
+      // ========== AYARLAR/PROFIL ==========
+      case TamgaciRoutes.profile:
+        return _createRoute(const ProfilePage(), settings: settings);
+
+      case TamgaciRoutes.subscription:
+        return _createRoute(const SubscriptionPage(), settings: settings);
 
       // ========== SATIŞ ROUTE'LARI ==========
 
@@ -354,7 +365,18 @@ class TamgaciRoutes {
         return _createRoute(const EnhancedSalesListPage(), settings: settings);
 
       case createSale:
-        return _createRoute(const CreateSalePage(), settings: settings);
+        {
+          final args = settings.arguments;
+          if (args is Map) {
+            return _createRoute(
+              const CreateSalePage(
+                saleId: null,
+              ),
+              settings: settings,
+            );
+          }
+          return _createRoute(const CreateSalePage(), settings: settings);
+        }
 
       case saleDetail:
         // Sale ID parametresi bekleniyor
@@ -453,7 +475,7 @@ class TamgaciRoutes {
             settings: settings);
 
       case createCustomer:
-        return _createRoute(const CreateCustomerPage(), settings: settings);
+        return _createRoute(const CustomerCreatePage(), settings: settings);
 
       case customerDetail:
         // Customer ID parametresi bekleniyor
@@ -467,7 +489,7 @@ class TamgaciRoutes {
         // Customer ID parametresi bekleniyor
         final customerId = arguments as String?;
         return _createRoute(
-          CreateCustomerPage(customerId: customerId),
+          CustomerEditPage(customerId: customerId ?? ''),
           settings: settings,
         );
 
@@ -503,7 +525,15 @@ class TamgaciRoutes {
             settings: settings);
 
       case createPurchase:
-        return _createRoute(const CreatePurchasePage(), settings: settings);
+        final args = arguments as Map<String, dynamic>?;
+        return _createRoute(
+          CreatePurchasePage(
+            purchaseId: args?['purchaseId'] as String?,
+            supplierId: args?['supplierId'] as String?,
+            supplierName: args?['supplierName'] as String?,
+          ),
+          settings: settings,
+        );
 
       case purchaseDetail:
         // Purchase ID parametresi bekleniyor
@@ -701,9 +731,6 @@ class TamgaciRoutes {
 
       case TamgaciRoutes.settings:
         return _createRoute(const SettingsPage(), settings: settings);
-
-      case profile:
-        return _createRoute(const ProfilePage(), settings: settings);
 
       case permissions:
         return _createRoute(const PermissionsPage(), settings: settings);

@@ -4,6 +4,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/entities/customer_enums.dart';
+import '../../domain/entities/customer_branch.dart';
 
 /// Firebase için optimize edilmiş müşteri entity'si
 class FirebaseCustomerEntity {
@@ -11,21 +12,34 @@ class FirebaseCustomerEntity {
   final String name;
   final String? customerCode;
   final String? category;
+  final String? category2;
   final String? email;
   final String? phone;
   final String? address;
   final String? taxNumber;
   final String? taxOffice;
+  final String? shippingAddress;
   final String customerType; // 'individual' veya 'company'
   final String status; // 'active' veya 'inactive'
   final double creditLimit;
   final double currentBalance;
+  final double? openingBalance;
   final String companyId;
   final String? city;
   final String? country;
   final String? postalCode;
   final double balance;
   final String balanceCurrency;
+  final String? customerCurrency;
+  final int? maturityDays;
+  final double? fixedDiscountRate;
+  final bool isTaxExempt;
+  final String? bankDetails;
+  final String? specialPriceListId;
+  final double? openAccountRiskLimit;
+  final String? authorizedPersonName;
+  final String? authorizedPersonPhone;
+  final List<CustomerBranch>? branches;
   final String? notes;
   final bool isActive;
   final DateTime createdAt;
@@ -47,21 +61,34 @@ class FirebaseCustomerEntity {
     required this.name,
     this.customerCode,
     this.category,
+    this.category2,
     this.email,
     this.phone,
     this.address,
     this.taxNumber,
     this.taxOffice,
+    this.shippingAddress,
     required this.customerType,
     required this.status,
     this.creditLimit = 0.0,
     this.currentBalance = 0.0,
+    this.openingBalance,
     required this.companyId,
     this.city,
     this.country,
     this.postalCode,
     this.balance = 0.0,
     this.balanceCurrency = 'TRY',
+    this.customerCurrency,
+    this.maturityDays,
+    this.fixedDiscountRate,
+    this.isTaxExempt = false,
+    this.bankDetails,
+    this.specialPriceListId,
+    this.openAccountRiskLimit,
+    this.authorizedPersonName,
+    this.authorizedPersonPhone,
+    this.branches,
     this.notes,
     this.isActive = true,
     required this.createdAt,
@@ -84,21 +111,34 @@ class FirebaseCustomerEntity {
       name: customer.name,
       customerCode: customer.customerCode,
       category: customer.category1,
+      category2: customer.category2,
       email: customer.email,
       phone: customer.phone,
       address: customer.address,
       taxNumber: customer.taxNumber,
       taxOffice: customer.taxOffice,
+      shippingAddress: customer.shippingAddress,
       customerType: customer.customerType.name,
       status: customer.status.name,
-      creditLimit: customer.creditLimit / 100.0, // Kuruştan TL'ye
-      currentBalance: customer.currentBalance / 100.0,
+      creditLimit: customer.creditLimit,
+      currentBalance: customer.currentBalance,
+      openingBalance: customer.openingBalance,
       companyId: customer.companyId,
       city: customer.city,
       country: customer.country,
       postalCode: customer.postalCode,
-      balance: customer.balance / 100.0,
+      balance: customer.balance,
       balanceCurrency: customer.balanceCurrency,
+      customerCurrency: customer.customerCurrency,
+      maturityDays: customer.maturityDays,
+      fixedDiscountRate: customer.fixedDiscountRate,
+      isTaxExempt: customer.isTaxExempt,
+      bankDetails: customer.bankDetails,
+      specialPriceListId: customer.specialPriceListId,
+      openAccountRiskLimit: customer.openAccountRiskLimit,
+      authorizedPersonName: customer.authorizedPersonName,
+      authorizedPersonPhone: customer.authorizedPersonPhone,
+      branches: customer.branches,
       notes: customer.notes,
       isActive: customer.isActive,
       createdAt: customer.createdAt,
@@ -115,11 +155,13 @@ class FirebaseCustomerEntity {
       name: name,
       customerCode: customerCode,
       category1: category,
+      category2: category2,
       email: email,
       phone: phone,
       address: address,
       taxNumber: taxNumber,
       taxOffice: taxOffice,
+      shippingAddress: shippingAddress,
       customerType: CustomerType.values.firstWhere(
         (e) => e.name == customerType,
         orElse: () => CustomerType.individual,
@@ -128,14 +170,25 @@ class FirebaseCustomerEntity {
         (e) => e.name == status,
         orElse: () => CustomerStatus.active,
       ),
-      creditLimit: (creditLimit * 100).round().toDouble(), // TL'den kuruşa
-      currentBalance: (currentBalance * 100).round().toDouble(),
+      creditLimit: creditLimit,
+      currentBalance: currentBalance,
+      openingBalance: openingBalance,
       companyId: companyId,
       city: city,
       country: country,
       postalCode: postalCode,
-      balance: (balance * 100).round().toDouble(),
+      balance: balance,
       balanceCurrency: balanceCurrency,
+      customerCurrency: customerCurrency,
+      maturityDays: maturityDays,
+      fixedDiscountRate: fixedDiscountRate,
+      isTaxExempt: isTaxExempt,
+      bankDetails: bankDetails,
+      specialPriceListId: specialPriceListId,
+      openAccountRiskLimit: openAccountRiskLimit,
+      authorizedPersonName: authorizedPersonName,
+      authorizedPersonPhone: authorizedPersonPhone,
+      branches: branches,
       notes: notes,
       isActive: isActive,
       createdAt: createdAt,
@@ -154,21 +207,37 @@ class FirebaseCustomerEntity {
       name: data['name'] ?? '',
       customerCode: data['customerCode'],
       category: data['category'],
+      category2: data['category2'],
       email: data['email'],
       phone: data['phone'],
       address: data['address'],
       taxNumber: data['taxNumber'],
       taxOffice: data['taxOffice'],
+      shippingAddress: data['shippingAddress'],
       customerType: data['customerType'] ?? 'individual',
       status: data['status'] ?? 'active',
       creditLimit: (data['creditLimit'] ?? 0.0).toDouble(),
       currentBalance: (data['currentBalance'] ?? 0.0).toDouble(),
+      openingBalance: (data['openingBalance'] as num?)?.toDouble(),
       companyId: data['companyId'] ?? '',
       city: data['city'],
       country: data['country'],
       postalCode: data['postalCode'],
       balance: (data['balance'] ?? 0.0).toDouble(),
       balanceCurrency: data['balanceCurrency'] ?? 'TRY',
+      customerCurrency: data['customerCurrency'],
+      maturityDays: (data['maturityDays'] as num?)?.toInt(),
+      fixedDiscountRate: (data['fixedDiscountRate'] as num?)?.toDouble(),
+      isTaxExempt: data['isTaxExempt'] ?? false,
+      bankDetails: data['bankDetails'],
+      specialPriceListId: data['specialPriceListId'],
+      openAccountRiskLimit: (data['openAccountRiskLimit'] as num?)?.toDouble(),
+      authorizedPersonName: data['authorizedPersonName'],
+      authorizedPersonPhone: data['authorizedPersonPhone'],
+      branches: (data['branches'] as List<dynamic>?)
+          ?.map((e) => CustomerBranch.fromJson(
+              (e as Map<String, dynamic>).map((k, v) => MapEntry(k, v))))
+          .toList(),
       notes: data['notes'],
       isActive: data['isActive'] ?? true,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
@@ -192,21 +261,34 @@ class FirebaseCustomerEntity {
       'name': name,
       'customerCode': customerCode,
       'category': category,
+      'category2': category2,
       'email': email,
       'phone': phone,
       'address': address,
       'taxNumber': taxNumber,
       'taxOffice': taxOffice,
+      'shippingAddress': shippingAddress,
       'customerType': customerType,
       'status': status,
       'creditLimit': creditLimit,
       'currentBalance': currentBalance,
+      'openingBalance': openingBalance,
       'companyId': companyId,
       'city': city,
       'country': country,
       'postalCode': postalCode,
       'balance': balance,
       'balanceCurrency': balanceCurrency,
+      'customerCurrency': customerCurrency,
+      'maturityDays': maturityDays,
+      'fixedDiscountRate': fixedDiscountRate,
+      'isTaxExempt': isTaxExempt,
+      'bankDetails': bankDetails,
+      'specialPriceListId': specialPriceListId,
+      'openAccountRiskLimit': openAccountRiskLimit,
+      'authorizedPersonName': authorizedPersonName,
+      'authorizedPersonPhone': authorizedPersonPhone,
+      'branches': branches?.map((b) => b.toJson()).toList(),
       'notes': notes,
       'isActive': isActive,
       'createdAt': Timestamp.fromDate(createdAt),

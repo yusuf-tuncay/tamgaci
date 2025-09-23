@@ -26,6 +26,44 @@ class CurrencyHelper {
         return '€';
       case 'GBP':
         return '£';
+      case 'CHF':
+        return 'CHF';
+      case 'JPY':
+        return '¥';
+      case 'CAD':
+        return 'C\$';
+      case 'AUD':
+        return 'A\$';
+      case 'DKK':
+        return 'kr';
+      case 'SEK':
+        return 'kr';
+      case 'NOK':
+        return 'kr';
+      case 'SAR':
+        return '﷼';
+      case 'KWD':
+        return 'KD';
+      case 'BGN':
+        return 'лв';
+      case 'RON':
+        return 'lei';
+      case 'RUB':
+        return '₽';
+      case 'IRR':
+        return '﷼';
+      case 'CNY':
+        return '¥';
+      case 'PKR':
+        return '₨';
+      case 'QAR':
+        return '﷼';
+      case 'XDR':
+        return 'XDR';
+      case 'XAU':
+        return 'Au';
+      case 'AED':
+        return 'د.إ';
       default:
         return currencyCode;
     }
@@ -59,7 +97,31 @@ class CurrencyHelper {
 
   /// Para birimi seçeneklerini al
   static List<String> getCurrencyOptions() {
-    return ['TRY', 'USD', 'EUR', 'GBP'];
+    return [
+      'TRY',
+      'USD',
+      'EUR',
+      'GBP',
+      'CHF',
+      'JPY',
+      'CAD',
+      'AUD',
+      'DKK',
+      'SEK',
+      'NOK',
+      'SAR',
+      'KWD',
+      'BGN',
+      'RON',
+      'RUB',
+      'IRR',
+      'CNY',
+      'PKR',
+      'QAR',
+      'XDR',
+      'XAU',
+      'AED'
+    ];
   }
 
   /// Para birimi dönüştür (basit implementasyon)

@@ -4,13 +4,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../../core/theme/constants.dart';
 import '../../core/routes/routes.dart';
 import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
 import '../../features/user_profile/domain/entities/user_profile.dart';
 import '../../core/providers/currency_providers.dart';
+import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/auth/domain/entities/user.dart' as auth_domain;
 import '../overlays/calculator_overlay.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../core/services/firebase/firebase_auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -91,12 +94,11 @@ class _SvgWhiteLogoFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SvgPicture.asset(
-      'assets/images/svg/whitelogo.svg',
-      colorFilter: color != null
-          ? ColorFilter.mode(color!, BlendMode.srcIn)
-          : const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+    return Image.asset(
+      'assets/images/logos/140x140logo.png',
       fit: BoxFit.contain,
+      color: color ?? Colors.white,
+      colorBlendMode: BlendMode.srcIn,
     );
   }
 }
@@ -354,6 +356,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   }
 
   Widget _buildHeader(AsyncValue<UserProfile?> userProfile) {
+    final currentUser = ref.watch(currentUserProvider);
     return Container(
       height: 200,
       decoration: BoxDecoration(
@@ -472,26 +475,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               }),
               const SizedBox(height: 12),
               // Kullanıcı bilgileri
-              userProfile.when(
-                data: (profile) => _buildCompactUserInfo(profile),
-                loading: () => const SizedBox(
-                  height: 20,
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      color: TamgaciConstants.textOnPrimary,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                ),
-                error: (error, stack) => Text(
-                  'Kullanıcı bilgisi yüklenemedi',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color:
-                        TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
-                  ),
-                ),
-              ),
+              _buildCompactUserInfo(currentUser),
             ],
           ),
         ),
@@ -555,69 +539,320 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     );
   }
 
-  Widget _buildCompactUserInfo(UserProfile? profile) {
+  Widget _buildSubscriptionChip() {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final user = container.read(currentUserProvider);
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+    final now = DateTime.now();
+    String text = '';
+    Color color = Colors.grey;
+
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial &&
+        user.trialEndAt != null) {
+      final remaining = user.trialEndAt!.difference(now).inDays;
+      if (remaining > 0) {
+        text = 'Deneme ${remaining}g';
+        color = Colors.orange;
+      }
+    } else if (user.subscriptionStatus ==
+            auth_domain.SubscriptionStatus.active &&
+        user.subscriptionEndAt != null) {
+      final remaining = user.subscriptionEndAt!.difference(now).inDays;
+      if (remaining > 0) {
+        text = '${remaining}g';
+        color = Colors.green;
+      }
+    }
+
+    if (text.isEmpty) return const SizedBox.shrink();
+
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.15),
-          width: 1,
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+      ),
+      child: Text(
+        text,
+        style: GoogleFonts.poppins(
+          fontSize: 9,
+          color: TamgaciConstants.textOnPrimary,
+          fontWeight: FontWeight.w600,
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF60A5FA), Color(0xFF3B82F6)],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                  blurRadius: 4,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.person,
-              color: TamgaciConstants.textOnPrimary,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  profile?.fullName ?? 'Kullanıcı',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: TamgaciConstants.textOnPrimary,
-                  ),
-                ),
-                Text(
-                  profile?.company ?? 'Şirket Adı',
-                  style: GoogleFonts.poppins(
-                    fontSize: 9,
-                    color:
-                        TamgaciConstants.textOnPrimary.withValues(alpha: 0.8),
-                  ),
-                ),
-              ],
-            ),
+    );
+  }
+
+  bool _isSubscriptionExpired(auth_domain.User? user) {
+    if (user == null) return false;
+    final now = DateTime.now();
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial) {
+      final end = user.trialEndAt;
+      if (end == null) return false;
+      return now.isAfter(end);
+    }
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.active) {
+      final end = user.subscriptionEndAt;
+      if (end == null) return false;
+      return now.isAfter(end);
+    }
+    return false;
+  }
+
+  Widget _buildUserAvatar(auth_domain.User? user) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+            blurRadius: 4,
+            spreadRadius: 1,
+            offset: const Offset(0, 1),
           ),
         ],
+      ),
+      child: CircleAvatar(
+        radius: 16,
+        backgroundColor: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+        backgroundImage: _getAvatarImageProvider(user),
+        child: _getAvatarImageProvider(user) == null
+            ? Text(
+                _getInitials(user?.name, user?.surname),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: TamgaciConstants.textOnPrimary,
+                ),
+              )
+            : null,
+      ),
+    );
+  }
+
+  ImageProvider<Object>? _getAvatarImageProvider(auth_domain.User? user) {
+    // Priority 1: User entity's profile image URL
+    final userProfileUrl = user?.profileImageUrl;
+    if (userProfileUrl != null && userProfileUrl.isNotEmpty) {
+      String workingUrl = _fixImageUrl(userProfileUrl);
+      debugPrint('✅ Loading avatar from User entity: $workingUrl');
+      return NetworkImage(workingUrl);
+    }
+
+    // Priority 2: Check UserProfile entity
+    final userProfile = ref.read(userProfileProvider).value;
+    final profilePhotoUrl = userProfile?.profilePhotoUrl;
+    if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      String workingUrl = _fixImageUrl(profilePhotoUrl);
+      debugPrint('✅ Loading avatar from UserProfile entity: $workingUrl');
+      return NetworkImage(workingUrl);
+    }
+
+    // Priority 3: Check user settings for backup URL
+    final settingsUrl = user?.settings?['profileImageUrl'] as String?;
+    if (settingsUrl != null && settingsUrl.isNotEmpty) {
+      String workingUrl = _fixImageUrl(settingsUrl);
+      debugPrint('✅ Loading avatar from settings: $workingUrl');
+      return NetworkImage(workingUrl);
+    }
+
+    // Priority 4: Path available but no URL - try to load fresh URL in background
+    final imagePath = user?.profileImagePath;
+    if (imagePath != null && imagePath.isNotEmpty) {
+      debugPrint('📷 Profile image path available: $imagePath');
+      _refreshImageUrlFromPath(imagePath);
+      return null; // Show initials while loading
+    }
+
+    debugPrint('🚫 No profile image found, showing initials');
+    return null;
+  }
+
+  /// Fix common Firebase Storage URL issues
+  String _fixImageUrl(String url) {
+    String workingUrl = url;
+
+    // Fix old bucket URLs to new format
+    if (url.contains('tamgaci.appspot.com')) {
+      workingUrl =
+          url.replaceAll('tamgaci.appspot.com', 'tamgaci.firebasestorage.app');
+      debugPrint('🔧 Fixed image URL format: $workingUrl');
+    }
+
+    // Add token if missing for authenticated requests
+    if (!workingUrl.contains('token=') && !workingUrl.contains('alt=media')) {
+      final separator = workingUrl.contains('?') ? '&' : '?';
+      workingUrl += '${separator}alt=media';
+    }
+
+    // Add cache busting parameter to avoid CORS issues
+    final separator = workingUrl.contains('?') ? '&' : '?';
+    workingUrl += '${separator}_t=${DateTime.now().millisecondsSinceEpoch}';
+
+    debugPrint('🔧 Final image URL: $workingUrl');
+    return workingUrl;
+  }
+
+  /// Refresh image URL from storage path in background
+  Future<void> _refreshImageUrlFromPath(String imagePath) async {
+    try {
+      final storage = FirebaseStorage.instance;
+      final storageRef = storage.ref().child(imagePath);
+      final freshUrl = await storageRef.getDownloadURL();
+
+      debugPrint('🔄 Refreshed URL from path: $freshUrl');
+
+      // Update both User and UserProfile entities with fresh URL
+      final currentUser = ref.read(currentUserProvider);
+      if (currentUser != null) {
+        final updatedUser = currentUser.copyWith(
+          profileImageUrl: freshUrl,
+          updatedAt: DateTime.now(),
+        );
+        // Fire and forget - don't block UI
+        ref
+            .read(authProvider.notifier)
+            .updateUserProfile(updatedUser)
+            .catchError((e) {
+          debugPrint('⚠️ Background user update failed: $e');
+        });
+      }
+
+      // Also refresh UserProfile provider in background
+      ref.read(userProfileProvider.notifier).refreshProfile().catchError((e) {
+        debugPrint('⚠️ Background profile refresh failed: $e');
+      });
+    } catch (e) {
+      debugPrint('❌ Failed to refresh image URL from path: $e');
+    }
+  }
+
+  /// Get user display name with fallback
+  String _getUserDisplayName(auth_domain.User? user) {
+    if (user == null) return 'Kullanıcı';
+
+    final name = user.name.trim();
+    final surname = user.surname.trim();
+
+    if (name.isNotEmpty && surname.isNotEmpty) {
+      return '$name $surname';
+    } else if (name.isNotEmpty) {
+      return name;
+    } else if (surname.isNotEmpty) {
+      return surname;
+    }
+
+    // Fallback to UserProfile if User entity is incomplete
+    final userProfile = ref.read(userProfileProvider).value;
+    if (userProfile != null) {
+      return userProfile.fullName;
+    }
+
+    return 'Kullanıcı';
+  }
+
+  /// Get company name with fallback
+  String _getCompanyName(auth_domain.User? user) {
+    // Try from User entity settings first
+    String? company = user?.settings?['companyName'] as String?;
+
+    if (company == null || company.isEmpty) {
+      company = user?.settings?['businessName'] as String?;
+    }
+
+    // Fallback to UserProfile
+    if (company == null || company.isEmpty) {
+      final userProfile = ref.read(userProfileProvider).value;
+      company = userProfile?.company;
+    }
+
+    return company?.isNotEmpty == true ? company! : 'Tamgaci';
+  }
+
+  String _getInitials(String? name, String? surname) {
+    final n = (name ?? '').trim();
+    final s = (surname ?? '').trim();
+    final first = n.isNotEmpty ? n.characters.first : '';
+    final second = s.isNotEmpty ? s.characters.first : '';
+    final result = (first + second).toUpperCase();
+    return result.isEmpty ? 'KU' : result;
+  }
+
+  Widget _buildCompactUserInfo(auth_domain.User? user) {
+    return InkWell(
+      onTap: () {
+        // Drawer kapat ve profil sayfasına git
+        if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+          Navigator.of(context).pop();
+        }
+        ref
+            .read(drawerMenuProvider.notifier)
+            .setActiveRoute(TamgaciRoutes.profile);
+        final current = ModalRoute.of(context)?.settings.name;
+        if (current != TamgaciRoutes.profile) {
+          Navigator.of(context).pushNamed(TamgaciRoutes.profile);
+        }
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.15),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            _buildUserAvatar(user),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _getUserDisplayName(user),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: TamgaciConstants.textOnPrimary,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _getCompanyName(user),
+                          style: GoogleFonts.poppins(
+                            fontSize: 9,
+                            color: TamgaciConstants.textOnPrimary
+                                .withValues(alpha: 0.8),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      _buildSubscriptionChip(),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.edit_outlined,
+              size: 16,
+              color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.9),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -700,6 +935,24 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             if (hasSubItems) {
               ref.read(drawerMenuProvider.notifier).toggleExpanded(item.id);
             } else if (item.route.isNotEmpty) {
+              // Subscription guard: if expired, redirect to subscription page
+              final container =
+                  ProviderScope.containerOf(context, listen: false);
+              final user = container.read(currentUserProvider);
+              if (_isSubscriptionExpired(user)) {
+                ref
+                    .read(drawerMenuProvider.notifier)
+                    .setActiveRoute(TamgaciRoutes.subscription);
+                if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                  Navigator.of(context).pop();
+                }
+                final current = ModalRoute.of(context)?.settings.name;
+                if (current != TamgaciRoutes.subscription) {
+                  Navigator.of(context)
+                      .pushReplacementNamed(TamgaciRoutes.subscription);
+                }
+                return;
+              }
               ref.read(drawerMenuProvider.notifier).setActiveRoute(item.route);
               if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
                 Navigator.of(context).pop();

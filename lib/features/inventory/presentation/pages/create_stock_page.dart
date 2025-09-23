@@ -32,7 +32,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
   final _notesController = TextEditingController();
 
   String _selectedCurrency = 'TRY';
-  int? _selectedWarehouseId;
+  String? _selectedWarehouseId;
   bool _isActive = true;
 
   @override
@@ -158,7 +158,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
 
     return warehousesAsync.when(
       data: (warehouses) {
-        return DropdownButtonFormField<int>(
+        return DropdownButtonFormField<String>(
           initialValue: _selectedWarehouseId,
           decoration: InputDecoration(
             labelText: 'Depo',
@@ -168,7 +168,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
             ),
           ),
           items: warehouses.map((warehouse) {
-            return DropdownMenuItem<int>(
+            return DropdownMenuItem<String>(
               value: warehouse.id,
               child: Text(warehouse.name),
             );
@@ -520,8 +520,8 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
 
     try {
       Stock(
-        id: widget.stockId != null ? int.parse(widget.stockId!) : 0,
-        productId: int.parse(_productIdController.text),
+        id: widget.stockId ?? '',
+        productId: _productIdController.text,
         warehouseId: _selectedWarehouseId!,
         quantity: double.parse(_quantityController.text),
         minimumQuantity: double.parse(_minimumQuantityController.text),

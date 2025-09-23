@@ -54,36 +54,74 @@ class DashboardStatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: (isDark ? Colors.white12 : Colors.black12),
           width: 1,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  Colors.white.withValues(alpha: 0.04),
+                  Colors.white.withValues(alpha: 0.02),
+                ]
+              : [
+                  Colors.white,
+                  Colors.white,
+                ],
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Accent bar
+          Container(
+            height: 4,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              gradient: LinearGradient(
+                colors: [
+                  backgroundColor.withValues(alpha: 0.9),
+                  iconColor.withValues(alpha: 0.9),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: backgroundColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      backgroundColor.withValues(alpha: 0.18),
+                      iconColor.withValues(alpha: 0.18),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: iconColor.withValues(alpha: 0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 20,
-                ),
+                child: Icon(icon, color: iconColor, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -93,9 +131,9 @@ class DashboardStatsCard extends StatelessWidget {
                     Text(
                       title,
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: isDark ? Colors.grey[300] : Colors.grey[600],
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.grey[200] : Colors.grey[700],
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -103,7 +141,7 @@ class DashboardStatsCard extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: GoogleFonts.poppins(
-                          fontSize: 10,
+                          fontSize: 11,
                           color: isDark ? Colors.grey[400] : Colors.grey[500],
                         ),
                       ),
@@ -149,9 +187,9 @@ class DashboardStatsCard extends StatelessWidget {
           Text(
             CurrencyHelper.formatCurrency(value, currency),
             style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.grey[800],
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: isDark ? Colors.white : Colors.grey[900],
             ),
           ),
         ],

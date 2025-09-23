@@ -3,7 +3,8 @@
 
 /// Satın alma türü enum'u
 enum PurchaseType {
-  purchase('Satın Alma'),
+  purchase('Normal Alış'),
+  returnPurchase('Satıştan İade Alışı'),
   invoice('Fatura'),
   proforma('Proforma'),
   waybill('İrsaliye'),

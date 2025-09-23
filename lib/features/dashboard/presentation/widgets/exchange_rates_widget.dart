@@ -33,7 +33,8 @@ class ExchangeRatesWidget extends ConsumerWidget {
         children: [
           _buildHeader(isDark),
           const SizedBox(height: 16),
-          _buildExchangeRates(exchangeRatesAsync, isDark, selectedCurrency),
+          _buildExchangeRates(
+              ref, exchangeRatesAsync, isDark, selectedCurrency),
         ],
       ),
     );
@@ -133,13 +134,20 @@ class ExchangeRatesWidget extends ConsumerWidget {
   }
 
   /// Kur listesi oluşturur
-  Widget _buildExchangeRates(AsyncValue<List<Currency>> exchangeRatesAsync,
-      bool isDark, Currency selectedCurrency) {
+  Widget _buildExchangeRates(
+      WidgetRef ref,
+      AsyncValue<List<Currency>> exchangeRatesAsync,
+      bool isDark,
+      Currency selectedCurrency) {
     return exchangeRatesAsync.when(
-      data: (currencies) =>
-          _buildCurrenciesList(currencies, isDark, selectedCurrency),
-      loading: () => _buildLoadingState(isDark),
-      error: (error, stack) => _buildErrorState(error, isDark),
+      data: (currencies) {
+        if (currencies.isEmpty) {
+          return _buildEmptyState(ref, isDark);
+        }
+        return _buildCurrenciesList(currencies, isDark, selectedCurrency);
+      },
+      loading: () => _buildLoadingSkeleton(isDark),
+      error: (error, stack) => _buildErrorState(ref, error, isDark),
     );
   }
 
@@ -272,17 +280,56 @@ class ExchangeRatesWidget extends ConsumerWidget {
   }
 
   /// Loading durumu oluşturur
-  Widget _buildLoadingState(bool isDark) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(20),
-        child: CircularProgressIndicator(),
-      ),
+  Widget _buildLoadingSkeleton(bool isDark) {
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey.shade200;
+    final highlight = isDark ? Colors.grey[700]! : Colors.grey.shade300;
+    Widget row() => Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: baseColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(height: 12, width: 120, color: highlight),
+                  const SizedBox(height: 6),
+                  Container(height: 10, width: 80, color: baseColor),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(height: 12, width: 80, color: highlight),
+                const SizedBox(height: 6),
+                Container(height: 10, width: 60, color: baseColor),
+              ],
+            )
+          ],
+        );
+    return Column(
+      children: [
+        row(),
+        const SizedBox(height: 12),
+        row(),
+        const SizedBox(height: 12),
+        row(),
+        const SizedBox(height: 12),
+        row(),
+      ],
     );
   }
 
   /// Hata durumu oluşturur
-  Widget _buildErrorState(Object error, bool isDark) {
+  Widget _buildErrorState(WidgetRef ref, Object error, bool isDark) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -302,6 +349,51 @@ class ExchangeRatesWidget extends ConsumerWidget {
                     ? TamgaciConstants.textSecondaryDark
                     : TamgaciConstants.textSecondary,
               ),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              onPressed: () {
+                ref.read(currencyRefreshNotifierProvider.notifier).refresh();
+              },
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Yenile'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(WidgetRef ref, bool isDark) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Icon(
+              Icons.currency_exchange,
+              color: isDark
+                  ? TamgaciConstants.textSecondaryDark
+                  : TamgaciConstants.textSecondary,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Kur verisi bulunamadı',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: isDark
+                    ? TamgaciConstants.textSecondaryDark
+                    : TamgaciConstants.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () {
+                ref.read(currencyRefreshNotifierProvider.notifier).refresh();
+              },
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Yeniden Dene'),
             ),
           ],
         ),

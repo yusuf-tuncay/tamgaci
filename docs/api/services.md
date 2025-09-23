@@ -1,3 +1,11 @@
+# Services
+
+This folder documents external service integrations.
+
+## TCMB EVDS Exchange Rates API
+
+See `docs/api/evds_tcmb.md` for details about the official TCMB EVDS endpoint we use for live exchange rates.
+
 # Services API Documentation
 
 Bu dokümantasyon, Tamgaci uygulamasının servis katmanı API'lerini detaylı olarak açıklar.

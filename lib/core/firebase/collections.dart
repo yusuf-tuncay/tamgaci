@@ -7,6 +7,7 @@ class FirebaseCollections {
   static const String users = 'users';
   static const String companies = 'companies';
   static const String customers = 'customers';
+  static const String customerCategories = 'customer_categories';
   static const String suppliers = 'suppliers';
   static const String products = 'products';
   static const String warehouses = 'warehouses';

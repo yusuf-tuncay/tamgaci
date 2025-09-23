@@ -4,7 +4,6 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
@@ -140,11 +139,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              SvgPicture.asset(
-                'assets/images/svg/whitelogo.svg',
-                colorFilter:
-                    const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+              Image.asset(
+                'assets/images/logos/140x140logo.png',
+                width: 120,
+                height: 120,
                 fit: BoxFit.contain,
+                color: Colors.white,
+                colorBlendMode: BlendMode.srcIn,
               ),
               // Premium parıltı efekti
               Align(

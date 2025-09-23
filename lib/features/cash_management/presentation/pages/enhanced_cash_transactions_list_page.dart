@@ -758,7 +758,7 @@ class _EnhancedCashTransactionsListPageState
     return [
       'Tümü',
       'Ana Nakit Kasa',
-      'İş Bankası TL Hesabı',
+      'İş Bankası TRY Hesabı',
       'Kredi Kartı',
       'USD Döviz Hesabı'
     ];
@@ -769,7 +769,7 @@ class _EnhancedCashTransactionsListPageState
       case '1':
         return 'Ana Nakit Kasa';
       case '2':
-        return 'İş Bankası TL Hesabı';
+        return 'İş Bankası TRY Hesabı';
       case '3':
         return 'Kredi Kartı';
       case '4':

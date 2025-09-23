@@ -29,14 +29,15 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
   Future<void> _loadSettings() async {
     try {
       state = const AsyncValue.loading();
-      final settings = await _repository.getAppSettings(_defaultUserId);
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? _defaultUserId;
+      final settings = await _repository.getAppSettings(uid);
       if (settings != null) {
         state = AsyncValue.data(settings);
       } else {
         // Create default settings if missing
         final newSettings = AppSettings(
-          id: _defaultUserId,
-          userId: _defaultUserId,
+          id: uid,
+          userId: uid,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
         );
@@ -144,6 +145,35 @@ class SettingsNotifier extends StateNotifier<AsyncValue<AppSettings>> {
   /// Ayarları yenile
   Future<void> refreshSettings() async {
     await _loadSettings();
+  }
+
+  /// Custom setting update (generic)
+  Future<void> updateCustom(String key, dynamic value) async {
+    try {
+      final currentSettings = state.value;
+      if (currentSettings == null) return;
+      final updated = await _repository.updateCustomSetting(
+          currentSettings.userId, key, value);
+      state = AsyncValue.data(updated);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+    }
+  }
+
+  Future<void> updateRoundingMode(String mode) async {
+    await updateCustom('roundingMode', mode);
+  }
+
+  Future<void> updateRoundingDecimals(int decimals) async {
+    await updateCustom('roundingDecimals', decimals);
+  }
+
+  Future<void> updateFxSource(String source) async {
+    await updateCustom('fxSource', source); // e.g., 'TCMB_EVDS'
+  }
+
+  Future<void> updateNumberingScheme(String scheme) async {
+    await updateCustom('numberingScheme', scheme); // e.g., 'INV-{YYYY}-{####}'
   }
 }
 

@@ -49,7 +49,7 @@ class WarehouseDetailPage extends ConsumerWidget {
           final warehouse = warehouses.firstWhere(
             (w) => w.id.toString() == warehouseId,
             orElse: () => Warehouse(
-              id: 0,
+              id: '0',
               name: 'Depo Bulunamadı',
               currency: 'TRY',
               createdAt: DateTime.now(),

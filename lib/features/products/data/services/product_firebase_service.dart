@@ -503,7 +503,6 @@ class ProductFirebaseService {
       ),
       capacity: (data[FirebaseFields.warehouseCapacity] ?? 0).toDouble(),
       manager: data[FirebaseFields.warehouseManager],
-      companyId: data[FirebaseFields.companyId] ?? '',
       createdAt: (data[FirebaseFields.createdAt] as Timestamp?)?.toDate() ??
           DateTime.now(),
       updatedAt: (data[FirebaseFields.updatedAt] as Timestamp?)?.toDate() ??
@@ -525,7 +524,6 @@ class ProductFirebaseService {
       FirebaseFields.movementDate: movement.movementDate,
       FirebaseFields.movementReference: movement.reference,
       FirebaseFields.movementNotes: movement.notes,
-      FirebaseFields.companyId: movement.companyId,
     };
   }
 
@@ -537,7 +535,7 @@ class ProductFirebaseService {
       warehouseId: data[FirebaseFields.movementWarehouseId] ?? '',
       type: StockMovementType.values.firstWhere(
         (e) => e.name == data[FirebaseFields.movementType],
-        orElse: () => StockMovementType.in_,
+        orElse: () => StockMovementType.stockIn,
       ),
       quantity: (data[FirebaseFields.movementQuantity] ?? 0).toDouble(),
       unitPrice: (data[FirebaseFields.movementUnitPrice] ?? 0).toDouble(),
@@ -547,7 +545,6 @@ class ProductFirebaseService {
               DateTime.now(),
       reference: data[FirebaseFields.movementReference],
       notes: data[FirebaseFields.movementNotes],
-      companyId: data[FirebaseFields.companyId] ?? '',
       createdAt: (data[FirebaseFields.createdAt] as Timestamp?)?.toDate() ??
           DateTime.now(),
       updatedAt: (data[FirebaseFields.updatedAt] as Timestamp?)?.toDate() ??

@@ -11,7 +11,7 @@ abstract class WarehouseRepository {
   Future<Warehouse?> getDefaultWarehouse();
 
   /// ID'ye göre depo getir
-  Future<Warehouse?> getWarehouseById(int id);
+  Future<Warehouse?> getWarehouseById(String id);
 
   /// Koda göre depo getir
   Future<Warehouse?> getWarehouseByCode(String code);
@@ -23,7 +23,7 @@ abstract class WarehouseRepository {
   Future<Warehouse> updateWarehouse(Warehouse warehouse);
 
   /// Depo sil
-  Future<void> deleteWarehouse(int id);
+  Future<void> deleteWarehouse(String id);
 
   /// Depo sayısını getir
   Future<int> getWarehouseCount();

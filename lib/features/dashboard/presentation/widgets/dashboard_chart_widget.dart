@@ -30,17 +30,18 @@ class DashboardChartWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: isDark ? Colors.white12 : Colors.black12,
           width: 1,
         ),
       ),

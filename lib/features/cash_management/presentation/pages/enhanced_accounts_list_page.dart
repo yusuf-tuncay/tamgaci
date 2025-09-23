@@ -703,7 +703,7 @@ class _EnhancedAccountsListPageState
       ),
       Account(
         id: '2',
-        name: 'İş Bankası TL Hesabı',
+        name: 'İş Bankası TRY Hesabı',
         description: 'Ana işletme hesabı',
         type: AccountType.bank,
         status: AccountStatus.active,

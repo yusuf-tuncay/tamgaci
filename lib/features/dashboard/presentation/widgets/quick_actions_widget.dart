@@ -17,17 +17,18 @@ class QuickActionsWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: isDark ? Colors.white12 : Colors.black12,
           width: 1,
         ),
       ),
@@ -47,9 +48,9 @@ class QuickActionsWidget extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 4,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.2,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 1.4,
             children: [
               _buildQuickAction(
                 context,
@@ -130,12 +131,26 @@ class QuickActionsWidget extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: Container(
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color.withValues(alpha: 0.12),
+              color.withValues(alpha: 0.08),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withValues(alpha: 0.3),
+            color: color.withValues(alpha: 0.35),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -143,15 +158,15 @@ class QuickActionsWidget extends StatelessWidget {
             Icon(
               icon,
               color: color,
-              size: 24,
+              size: 26,
             ),
             const SizedBox(height: 8),
             Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white : Colors.grey[800],
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.grey[900],
               ),
               textAlign: TextAlign.center,
               maxLines: 2,

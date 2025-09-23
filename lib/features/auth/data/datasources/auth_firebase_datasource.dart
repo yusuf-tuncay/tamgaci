@@ -1,5 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tamgaci/features/auth/data/models/user_model.dart';
 import 'package:tamgaci/features/auth/domain/entities/user.dart';
 import 'package:tamgaci/core/errors/failures.dart';
@@ -62,11 +63,11 @@ abstract class AuthFirebaseDataSource {
 
 /// Auth Firebase datasource implementasyonu
 class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
-  final FirebaseAuth _firebaseAuth;
+  final firebase_auth.FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
 
   AuthFirebaseDataSourceImpl({
-    required FirebaseAuth firebaseAuth,
+    required firebase_auth.FirebaseAuth firebaseAuth,
     required FirebaseFirestore firestore,
   })  : _firebaseAuth = firebaseAuth,
         _firestore = firestore;
@@ -123,7 +124,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         taxOffice: null,
         billingAddress: null,
       );
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
       throw AuthenticationFailure(
@@ -134,7 +135,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   @override
   Future<UserModel> signUp(
       String email, String password, String name, String surname) async {
-    UserCredential? credential;
+    firebase_auth.UserCredential? credential;
     try {
       credential = await _firebaseAuth.createUserWithEmailAndPassword(
         email: email,
@@ -146,6 +147,8 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       }
 
       // Firestore'da kullanıcı bilgilerini oluştur (best-effort)
+      final now = DateTime.now();
+      final trialEnd = DateTime(now.year, now.month + 1, now.day);
       final userModel = UserModel(
         id: credential.user!.uid,
         email: email,
@@ -157,13 +160,19 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         phoneDialCode: null,
         role: UserRole.user,
         status: UserStatus.active,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+        createdAt: now,
+        updatedAt: now,
         isEmailVerified: false,
         isTwoFactorEnabled: false,
         taxId: null,
         taxOffice: null,
         billingAddress: null,
+        subscriptionStatus: SubscriptionStatus.trial,
+        subscriptionPlan: SubscriptionPlan.none,
+        trialStartAt: now,
+        trialEndAt: trialEnd,
+        subscriptionStartAt: null,
+        subscriptionEndAt: null,
       );
 
       try {
@@ -176,12 +185,14 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       }
 
       return userModel;
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } on FirebaseException catch (e) {
       // Firestore permission veya diğer hatalarda, Auth kullanıcı oluşturulduysa fallback dön
       if (credential?.user != null) {
         final fb = credential!.user!;
+        final now = DateTime.now();
+        final trialEnd = DateTime(now.year, now.month + 1, now.day);
         return UserModel(
           id: fb.uid,
           email: email,
@@ -193,13 +204,19 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
           phoneDialCode: null,
           role: UserRole.user,
           status: UserStatus.active,
-          createdAt: fb.metadata.creationTime ?? DateTime.now(),
-          updatedAt: DateTime.now(),
+          createdAt: fb.metadata.creationTime ?? now,
+          updatedAt: now,
           isEmailVerified: fb.emailVerified,
           isTwoFactorEnabled: false,
           taxId: null,
           taxOffice: null,
           billingAddress: null,
+          subscriptionStatus: SubscriptionStatus.trial,
+          subscriptionPlan: SubscriptionPlan.none,
+          trialStartAt: now,
+          trialEndAt: trialEnd,
+          subscriptionStartAt: null,
+          subscriptionEndAt: null,
         );
       }
       throw AuthenticationFailure(
@@ -228,18 +245,75 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         return null;
       }
 
-      final userDoc =
-          await _firestore.collection('users').doc(firebaseUser.uid).get();
+      // Best practice: Use cache with fallback to server
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(firebaseUser.uid)
+          .get(const GetOptions(source: Source.cache))
+          .catchError((_) => _firestore
+              .collection('users')
+              .doc(firebaseUser.uid)
+              .get(const GetOptions(source: Source.server)));
 
       if (!userDoc.exists) {
-        return null;
+        // Best practice: Create user document if missing but Auth user exists
+        return await _createMissingUserDocument(firebaseUser);
       }
 
       return UserModel.fromFirestore(userDoc);
+    } on FirebaseException catch (e) {
+      throw AuthenticationFailure(
+          'Firebase kullanıcı verisi alınamadı: ${e.message ?? e.code}');
     } catch (e) {
       throw AuthenticationFailure(
-          'Kullanıcı bilgileri alınırken bir hata oluştu: ${e.toString()}');
+          'Kullanıcı bilgileri alınırken hata: ${e.toString()}');
     }
+  }
+
+  /// Create missing user document from Firebase Auth data
+  Future<UserModel> _createMissingUserDocument(
+      firebase_auth.User firebaseUser) async {
+    final now = DateTime.now();
+    final trialEnd = DateTime(now.year, now.month + 1, now.day);
+
+    final userModel = UserModel(
+      id: firebaseUser.uid,
+      email: firebaseUser.email ?? '',
+      name: firebaseUser.displayName?.split(' ').first ?? 'Kullanıcı',
+      surname: firebaseUser.displayName?.contains(' ') == true
+          ? firebaseUser.displayName!.split(' ').skip(1).join(' ')
+          : '',
+      phone: firebaseUser.phoneNumber,
+      phoneE164: firebaseUser.phoneNumber,
+      phoneCountry: null,
+      phoneDialCode: null,
+      role: UserRole.user,
+      status: UserStatus.active,
+      createdAt: firebaseUser.metadata.creationTime ?? now,
+      updatedAt: now,
+      isEmailVerified: firebaseUser.emailVerified,
+      isTwoFactorEnabled: false,
+      taxId: null,
+      taxOffice: null,
+      billingAddress: null,
+      subscriptionStatus: SubscriptionStatus.trial,
+      subscriptionPlan: SubscriptionPlan.none,
+      trialStartAt: now,
+      trialEndAt: trialEnd,
+      subscriptionStartAt: null,
+      subscriptionEndAt: null,
+    );
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(firebaseUser.uid)
+          .set(userModel.toFirestore());
+    } catch (e) {
+      debugPrint('⚠️ Failed to create missing user document: $e');
+    }
+
+    return userModel;
   }
 
   @override
@@ -256,7 +330,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   Future<void> resetPassword(String email) async {
     try {
       await _firebaseAuth.sendPasswordResetEmail(email: email);
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
       throw AuthenticationFailure(
@@ -272,7 +346,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         throw AuthenticationFailure('Kullanıcı bulunamadı');
       }
       await user.sendEmailVerification();
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
       throw AuthenticationFailure(
@@ -294,21 +368,68 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   @override
   Future<void> updateUser(UserModel user) async {
     try {
+      // Best practice: Use batch writes for atomic updates
+      final batch = _firestore.batch();
+      final userRef = _firestore.collection('users').doc(user.id);
+
       // Update only mutable/profile fields to comply with common security rules
       final Map<String, dynamic> updates = {
+        'name': user.name,
+        'surname': user.surname,
         'phone': user.phone,
         'phoneE164': user.phoneE164,
         'phoneCountry': user.phoneCountry,
         'phoneDialCode': user.phoneDialCode,
         'settings': user.settings,
+        // Best practice: Profile image with path + metadata
+        'profileImageUrl': user.profileImageUrl, // Cache for performance
+        'profileImagePath': user.profileImagePath,
+        'profileImageMetadata': user.profileImageMetadata,
+        // Company name at root level for easy access
+        'companyName': user.settings?['companyName'],
+        'businessName': user.settings?['businessName'], // Alternative field
+        'company': user.settings?['companyName'], // Backward compatibility
+        // Persist registration fields captured on register page
+        'taxId': user.taxId,
+        'taxOffice': user.taxOffice,
+        'billingAddress': user.billingAddress,
+        // Subscription fields
+        'subscriptionStatus': user.subscriptionStatus.value,
+        'subscriptionPlan': user.subscriptionPlan.value,
+        'trialStartAt': user.trialStartAt != null
+            ? Timestamp.fromDate(user.trialStartAt!)
+            : null,
+        'trialEndAt': user.trialEndAt != null
+            ? Timestamp.fromDate(user.trialEndAt!)
+            : null,
+        'subscriptionStartAt': user.subscriptionStartAt != null
+            ? Timestamp.fromDate(user.subscriptionStartAt!)
+            : null,
+        'subscriptionEndAt': user.subscriptionEndAt != null
+            ? Timestamp.fromDate(user.subscriptionEndAt!)
+            : null,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       };
+
+      // Add debug logging for company data
+      final companyName = user.settings?['companyName'];
+      debugPrint(
+          '💾 Firestore Update - Company: $companyName, ProfileURL: ${user.profileImageUrl}');
+
+      // Remove null values to avoid overwriting with nulls
       updates.removeWhere((key, value) => value == null);
 
-      await _firestore.collection('users').doc(user.id).update(updates);
+      // Best practice: Use merge option to avoid overwriting entire document
+      batch.set(userRef, updates, SetOptions(merge: true));
+
+      // Execute batch operation
+      await batch.commit();
+    } on FirebaseException catch (e) {
+      throw AuthenticationFailure(
+          'Kullanıcı profili güncellenirken Firebase hatası: ${e.message ?? e.code}');
     } catch (e) {
       throw AuthenticationFailure(
-          'Kullanıcı güncellenirken bir hata oluştu: ${e.toString()}');
+          'Kullanıcı güncellenirken beklenmeyen hata: ${e.toString()}');
     }
   }
 
@@ -322,7 +443,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       }
 
       // Mevcut şifreyi doğrula
-      final credential = EmailAuthProvider.credential(
+      final credential = firebase_auth.EmailAuthProvider.credential(
         email: user.email!,
         password: currentPassword,
       );
@@ -330,7 +451,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
 
       // Yeni şifreyi ayarla
       await user.updatePassword(newPassword);
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
       throw AuthenticationFailure(
@@ -347,7 +468,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       }
 
       // Şifreyi doğrula
-      final credential = EmailAuthProvider.credential(
+      final credential = firebase_auth.EmailAuthProvider.credential(
         email: user.email!,
         password: password,
       );
@@ -358,7 +479,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
 
       // Firebase Auth'dan kullanıcıyı sil
       await user.delete();
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
       throw AuthenticationFailure(
@@ -477,20 +598,40 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   }
 
   /// Son giriş tarihini günceller
+  /// Best practice: Non-blocking background update with retry
   Future<void> _updateLastLogin(String userId) async {
+    // Fire and forget approach - don't block user flow
+    _performBackgroundUpdate(() async {
+      try {
+        final now = DateTime.now();
+        await _firestore.collection('users').doc(userId).set({
+          'lastLoginAt': Timestamp.fromDate(now),
+          'updatedAt': Timestamp.fromDate(now),
+        }, SetOptions(merge: true));
+      } catch (e) {
+        // Log error but don't throw - non-critical operation
+        debugPrint('⚠️ Failed to update last login time: $e');
+      }
+    });
+  }
+
+  /// Perform background update with timeout
+  Future<void> _performBackgroundUpdate(
+      Future<void> Function() operation) async {
     try {
-      await _firestore.collection('users').doc(userId).update({
-        'lastLoginAt': Timestamp.fromDate(DateTime.now()),
-        'updatedAt': Timestamp.fromDate(DateTime.now()),
-      });
+      await operation().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('⚠️ Background update timed out');
+        },
+      );
     } catch (e) {
-      // Son giriş tarihi güncellenemezse hata fırlatma
-      // Bu kritik bir işlem değil
+      debugPrint('⚠️ Background update failed: $e');
     }
   }
 
   /// Firebase Auth exception'larını handle eder
-  Failure _handleFirebaseAuthException(FirebaseAuthException e) {
+  Failure _handleFirebaseAuthException(firebase_auth.FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
         return AuthenticationFailure('Kullanıcı bulunamadı');

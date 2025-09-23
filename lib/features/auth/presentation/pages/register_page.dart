@@ -7,11 +7,19 @@ import 'package:country_picker/country_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
 import '../providers/auth_providers.dart';
+import '../../../../shared/widgets/privacy_policy_dialog.dart';
+import '../../../../features/user_profile/presentation/providers/user_profile_providers.dart';
+import '../../domain/entities/user.dart';
 
 /// Kayıt olma sayfası
 class RegisterPage extends ConsumerStatefulWidget {
@@ -23,7 +31,8 @@ class RegisterPage extends ConsumerStatefulWidget {
 
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -33,9 +42,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _taxOfficeController = TextEditingController();
   final _addressController = TextEditingController();
 
+  // Profile image
+  final ImagePicker _imagePicker = ImagePicker();
+  Uint8List? _avatarBytes;
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
+  bool _isRegistering = false;
 
   // Phone area code (country calling code) state
   String _selectedDialCode = '+90';
@@ -61,12 +75,121 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   }
 
   bool _isStrongPassword(String password) {
-    // En az 8 karakter, 1 büyük, 1 küçük, 1 rakam, 1 özel karakter (Türkçe dahil)
-    // Raw string tek tırnak içerirken derleyici uyarısı çıkarabilir; karakter kümesini sadeleştiriyoruz.
-    final regex = RegExp(
-      r'^(?=.*[A-ZÇĞİÖŞÜ])(?=.*[a-zçğıöşü])(?=.*\d)(?=.*[!@#\$%^&*()_+\-={}\[\]\\|:;,.<>/?~`]).{8,}$',
+    if (password.length < 8) return false;
+
+    // Check for different character types
+    bool hasUppercase = password.contains(RegExp(r'[A-ZÇĞİÖŞÜ]'));
+    bool hasLowercase = password.contains(RegExp(r'[a-zçğıöşü]'));
+    bool hasDigits = password.contains(RegExp(r'[0-9]'));
+    bool hasSpecialCharacters =
+        password.contains(RegExp(r'[!@#\$%^&*()_+\-={}\[\]\\|:;,.<>/?~`]'));
+
+    return hasUppercase && hasLowercase && hasDigits && hasSpecialCharacters;
+  }
+
+  /// Get password strength score (0-4)
+  int _getPasswordStrength(String password) {
+    int score = 0;
+    if (password.length >= 8) score++;
+    if (password.contains(RegExp(r'[A-ZÇĞİÖŞÜ]'))) score++;
+    if (password.contains(RegExp(r'[a-zçğıöşü]'))) score++;
+    if (password.contains(RegExp(r'[0-9]'))) score++;
+    if (password.contains(RegExp(r'[!@#\$%^&*()_+\-={}\[\]\\|:;,.<>/?~`]'))) {
+      score++;
+    }
+    return score > 4 ? 4 : score;
+  }
+
+  /// Get password strength text and color
+  Map<String, dynamic> _getPasswordStrengthInfo(String password) {
+    final strength = _getPasswordStrength(password);
+    switch (strength) {
+      case 0:
+      case 1:
+        return {'text': 'Çok Zayıf', 'color': Colors.red};
+      case 2:
+        return {'text': 'Zayıf', 'color': Colors.orange};
+      case 3:
+        return {'text': 'Orta', 'color': Colors.amber};
+      case 4:
+        return {'text': 'Güçlü', 'color': Colors.green};
+      default:
+        return {'text': 'Güçlü', 'color': Colors.green};
+    }
+  }
+
+  /// Build password strength indicator widget
+  Widget _buildPasswordStrengthIndicator() {
+    final password = _passwordController.text;
+    final strengthInfo = _getPasswordStrengthInfo(password);
+    final strength = _getPasswordStrength(password);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: LinearProgressIndicator(
+                value: strength / 4,
+                backgroundColor: Colors.grey.shade300,
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(strengthInfo['color']),
+                minHeight: 4,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              strengthInfo['text'],
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: strengthInfo['color'],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Wrap(
+          spacing: 8,
+          children: [
+            _buildPasswordCriteria('8+ karakter', password.length >= 8),
+            _buildPasswordCriteria(
+                'Büyük harf', password.contains(RegExp(r'[A-ZÇĞİÖŞÜ]'))),
+            _buildPasswordCriteria(
+                'Küçük harf', password.contains(RegExp(r'[a-zçğıöşü]'))),
+            _buildPasswordCriteria(
+                'Rakam', password.contains(RegExp(r'[0-9]'))),
+            _buildPasswordCriteria(
+                'Sembol',
+                password
+                    .contains(RegExp(r'[!@#\$%^&*()_+\-={}[\]\\|:;,.<>/?~`]'))),
+          ],
+        ),
+      ],
     );
-    return regex.hasMatch(password);
+  }
+
+  /// Build individual password criteria indicator
+  Widget _buildPasswordCriteria(String text, bool isMet) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          isMet ? Icons.check_circle : Icons.circle_outlined,
+          size: 12,
+          color: isMet ? Colors.green : Colors.grey,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 10,
+            color: isMet ? Colors.green : Colors.grey,
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _detectCountryCode() async {
@@ -107,7 +230,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -119,108 +243,859 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     super.dispose();
   }
 
-  /// Kayıt işlemi
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Kullanım şartlarını kabul etmelisiniz')),
-      );
-      return;
-    }
-
+  Future<void> _pickAvatar() async {
     try {
-      final full = _nameController.text.trim();
-      final parts = full.split(' ');
-      final name = parts.isNotEmpty ? parts.first : full;
-      final surname = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-      final localDigits = _phoneController.text.trim();
-      final phoneE164 =
-          localDigits.isEmpty ? null : '$_selectedDialCode$localDigits';
+      // Show picker options
+      final source = await _showImageSourceDialog();
+      if (source == null) return;
 
-      if (name.length < 2 || surname.length < 2) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ad ve soyad en az 2 karakter olmalı')),
-        );
-        return;
-      }
+      final XFile? picked = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 90,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
 
-      if (!_isStrongPassword(_passwordController.text)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lütfen güçlü bir şifre girin')),
-        );
-        return;
-      }
-
-      await ref.read(authProvider.notifier).registerWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-            name: name,
-            surname: surname,
+      if (picked != null) {
+        // Show loading indicator
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                  SizedBox(width: 16),
+                  Text('Fotoğraf işleniyor...'),
+                ],
+              ),
+              duration: Duration(seconds: 2),
+            ),
           );
-
-      // Fetch latest user after sign up and update profile (non-blocking)
-      try {
-        final current = await ref.read(getCurrentUserUseCaseProvider).call();
-        if (current != null) {
-          final updated = current.copyWith(
-            phone: localDigits.isEmpty ? null : localDigits,
-            phoneE164: phoneE164,
-            phoneCountry: _selectedCountry,
-            phoneDialCode: _selectedDialCode,
-            settings: {
-              ...?current.settings,
-              'companyName': _companyNameController.text.trim(),
-              'taxId': _taxIdController.text.trim(),
-              'taxOffice': _taxOfficeController.text.trim(),
-              'billingAddress': _addressController.text.trim(),
-            },
-          );
-          await ref.read(authProvider.notifier).updateUserProfile(updated);
         }
-      } catch (_) {
-        // profile update failure should not block navigation
-      }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Kayıt başarılı! Giriş yapabilirsiniz.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pushReplacementNamed(TamgaciRoutes.login);
+        // Compress and process image
+        final compressedBytes = await _compressImage(picked);
+
+        if (mounted && compressedBytes != null) {
+          setState(() {
+            _avatarBytes = compressedBytes;
+          });
+
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Fotoğraf hazır!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
       }
     } catch (e) {
+      debugPrint('❌ Avatar pick error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_friendlyAuthMessage(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        _showErrorSnackBar('Fotoğraf seçilirken hata oluştu');
       }
     }
   }
 
-  String _friendlyAuthMessage(Object e) {
+  /// Show image source selection dialog
+  Future<ImageSource?> _showImageSourceDialog() async {
+    return showDialog<ImageSource>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Fotoğraf Seç'),
+        content:
+            const Text('Profil fotoğrafınızı nereden seçmek istiyorsunuz?'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => Navigator.pop(context, ImageSource.camera),
+            icon: const Icon(Icons.camera_alt),
+            label: const Text('Kamera'),
+          ),
+          TextButton.icon(
+            onPressed: () => Navigator.pop(context, ImageSource.gallery),
+            icon: const Icon(Icons.photo_library),
+            label: const Text('Galeri'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Compress image for optimal storage and performance
+  Future<Uint8List?> _compressImage(XFile imageFile) async {
+    try {
+      final bytes = await imageFile.readAsBytes();
+
+      // Check file size - if already small, don't compress
+      if (bytes.length <= 500 * 1024) {
+        // 500KB
+        return bytes;
+      }
+
+      final compressedBytes = await FlutterImageCompress.compressWithList(
+        bytes,
+        minHeight: 512,
+        minWidth: 512,
+        quality: 85,
+        format: CompressFormat.jpeg,
+      );
+
+      debugPrint(
+          '🗜️ Image compressed: ${bytes.length} → ${compressedBytes.length} bytes');
+      return compressedBytes;
+    } catch (e) {
+      debugPrint('❌ Image compression failed: $e');
+      // Return original bytes if compression fails
+      return await imageFile.readAsBytes();
+    }
+  }
+
+  /// Kayıt işlemi
+  Future<void> _register() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (!_agreeToTerms) {
+      _showErrorSnackBar('Kullanım şartlarını kabul etmelisiniz');
+      return;
+    }
+
+    // Prevent multiple simultaneous registration attempts
+    if (_isRegistering) {
+      debugPrint(
+          '⚠️ Registration already in progress, ignoring duplicate request');
+      return;
+    }
+
+    // Input validation
+    final validationError = _validateInputs();
+    if (validationError != null) {
+      _showErrorSnackBar(validationError);
+      return;
+    }
+
+    setState(() {
+      _isRegistering = true;
+    });
+
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+      final name = _firstNameController.text.trim();
+      final surname = _lastNameController.text.trim();
+      final localDigits = _phoneController.text.trim();
+      final phoneE164 =
+          localDigits.isEmpty ? null : '$_selectedDialCode$localDigits';
+
+      // 1. Register user with Firebase Auth (with existing user handling)
+      debugPrint('🔄 Starting user registration...');
+      User? current;
+
+      try {
+        await ref.read(authProvider.notifier).registerWithEmailAndPassword(
+              email: email,
+              password: password,
+              name: name,
+              surname: surname,
+            );
+        debugPrint('✅ Basic registration completed');
+
+        // Get the newly created user
+        current = await ref.read(getCurrentUserUseCaseProvider).call();
+        if (current == null) {
+          throw Exception('Kullanıcı kayıt işlemi tamamlanamadı');
+        }
+        debugPrint('👤 Got current user: ${current.email}');
+      } catch (e) {
+        debugPrint(
+            '⚠️ Registration failed, checking if user already exists: $e');
+
+        // Check if this is an "email already in use" error
+        final errorMessage = e.toString().toLowerCase();
+        if (errorMessage.contains('email-already-in-use') ||
+            errorMessage.contains('email adresi zaten kullanılıyor')) {
+          debugPrint('🔍 Attempting to sign in with existing user...');
+
+          // Try to sign in with existing user
+          try {
+            await ref.read(authProvider.notifier).signInWithEmailAndPassword(
+                  email: email,
+                  password: password,
+                );
+
+            current = await ref.read(getCurrentUserUseCaseProvider).call();
+            if (current != null) {
+              debugPrint('✅ Signed in with existing user: ${current.email}');
+
+              // Check if profile is already completed
+              final settings = current.settings ?? <String, dynamic>{};
+              final isRegistrationCompleted =
+                  settings['registrationCompleted'] == true;
+
+              if (isRegistrationCompleted) {
+                debugPrint('⚠️ User registration already completed');
+                if (mounted) {
+                  _showErrorSnackBar(
+                      'Bu hesap zaten mevcut ve tamamlanmış. Giriş sayfasından giriş yapınız.');
+                  Navigator.of(context)
+                      .pushReplacementNamed(TamgaciRoutes.login);
+                }
+                return;
+              }
+
+              debugPrint('🔄 Continuing registration for existing user...');
+            }
+          } catch (signInError) {
+            debugPrint('❌ Failed to sign in with existing user: $signInError');
+            rethrow; // Re-throw the original registration error
+          }
+        } else {
+          rethrow; // Re-throw non-duplicate email errors
+        }
+      }
+
+      if (current == null) {
+        throw Exception('Kullanıcı kayıt işlemi tamamlanamadı');
+      }
+
+      // 3. Upload profile image if selected (with retry mechanism)
+      String? profileUrl;
+      String? profilePath;
+      if (_avatarBytes != null) {
+        debugPrint('📤 Uploading profile image...');
+
+        // Run Firebase Storage diagnostics first
+        await _testFirebaseStorageSetup();
+
+        // Check if Storage is available before attempting upload
+        final storage = FirebaseStorage.instance;
+        try {
+          final bucket = storage.ref().bucket;
+          debugPrint('🪣 Storage bucket: $bucket');
+
+          // Quick connectivity test
+          await storage
+              .ref()
+              .child('connectivity-test')
+              .getMetadata()
+              .timeout(const Duration(seconds: 3));
+          debugPrint('✅ Storage connectivity verified');
+        } catch (e) {
+          debugPrint('❌ Storage not available: $e');
+          debugPrint('⚠️ Skipping photo upload, continuing registration...');
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.cloud_off, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                          'Firebase Storage henüz hazır değil. Fotoğraf daha sonra eklenebilir.'),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 4),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          // Skip photo upload and continue registration
+          profileUrl = null;
+          profilePath = null;
+          // Jump to step 4
+          debugPrint(
+              '⏭️ Skipping photo upload, continuing with profile update...');
+        }
+
+        // Show upload progress to user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Text('Profil fotoğrafı yükleniyor...'),
+                ],
+              ),
+              backgroundColor: TamgaciConstants.primaryColor,
+              duration: Duration(seconds: 10),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+
+        try {
+          final result =
+              await _uploadProfileImageWithRetry(current.id, _avatarBytes!);
+          profileUrl = result['url'];
+          profilePath = result['path'];
+          debugPrint('✅ Profile image uploaded successfully');
+          debugPrint('🔗 URL: $profileUrl');
+          debugPrint('📁 Path: $profilePath');
+
+          // Hide upload progress and show success
+          if (mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Profil fotoğrafı başarıyla yüklendi'),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        } catch (e) {
+          debugPrint('❌ Profile image upload failed: $e');
+          // Continue registration without profile image - don't throw error
+          profileUrl = null;
+          profilePath = null;
+          if (mounted) {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                          'Profil fotoğrafı yüklenemedi, kayıt devam ediyor...'),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+        }
+      }
+
+      // 4. Update user profile with all data
+      debugPrint('💾 Updating user profile with complete data...');
+      final companyName = _companyNameController.text.trim();
+      final taxId = _taxIdController.text.trim();
+      final taxOffice = _taxOfficeController.text.trim();
+      final billingAddress = _addressController.text.trim();
+
+      debugPrint('💼 Company data: $companyName');
+      debugPrint('🔗 Profile URL: $profileUrl');
+      debugPrint('📁 Profile Path: $profilePath');
+
+      final updated = current.copyWith(
+        phone: localDigits.isEmpty ? null : localDigits,
+        phoneE164: phoneE164,
+        phoneCountry: _selectedCountry,
+        phoneDialCode: _selectedDialCode,
+        profileImageUrl: profileUrl,
+        profileImagePath: profilePath,
+        taxId: taxId.isEmpty ? null : taxId,
+        taxOffice: taxOffice.isEmpty ? null : taxOffice,
+        billingAddress: billingAddress.isEmpty ? null : billingAddress,
+        settings: {
+          ...(current.settings ?? <String, dynamic>{}),
+          'companyName': companyName,
+          'businessName': companyName, // Alternative field name
+          'taxId': taxId,
+          'taxOffice': taxOffice,
+          'billingAddress': billingAddress,
+          'registrationCompleted': true,
+          'profileImageUrl': profileUrl,
+          'profileImagePath': profilePath,
+          'registrationDate': DateTime.now().toIso8601String(),
+        },
+        updatedAt: DateTime.now(),
+      );
+
+      await ref.read(authProvider.notifier).updateUserProfile(updated);
+      debugPrint('✅ User profile updated successfully');
+
+      // 5. Force refresh user profile provider to sync data
+      try {
+        await ref.read(userProfileProvider.notifier).refreshProfile();
+        debugPrint('🔄 User profile provider refreshed');
+
+        // Verify data was loaded
+        final refreshedProfile = ref.read(userProfileProvider).value;
+        debugPrint('🔍 Verification - Company: ${refreshedProfile?.company}');
+        debugPrint(
+            '🔍 Verification - Photo: ${refreshedProfile?.profilePhotoUrl}');
+      } catch (e) {
+        debugPrint('⚠️ UserProfile refresh failed, but continuing: $e');
+      }
+
+      // 6. Show success message and navigate
+      if (mounted) {
+        _showSuccessSnackBar('Kayıt başarılı! Giriş yapabilirsiniz.');
+
+        // Navigate to login page with slight delay
+        await Future.delayed(const Duration(milliseconds: 1200));
+        if (mounted) {
+          debugPrint('🚀 Navigating to login page...');
+          Navigator.of(context).pushReplacementNamed(TamgaciRoutes.login);
+          debugPrint('✅ Navigation completed');
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ Registration failed: $e');
+      debugPrint('❌ Error type: ${e.runtimeType}');
+
+      if (mounted) {
+        _showErrorSnackBar(_getDetailedErrorMessage(e));
+      }
+    } finally {
+      // Always reset registration state
+      if (mounted) {
+        setState(() {
+          _isRegistering = false;
+        });
+      }
+    }
+  }
+
+  /// Input validation helper
+  String? _validateInputs() {
+    final name = _firstNameController.text.trim();
+    final surname = _lastNameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+    final companyName = _companyNameController.text.trim();
+    final taxId = _taxIdController.text.trim();
+    final taxOffice = _taxOfficeController.text.trim();
+    final address = _addressController.text.trim();
+
+    if (name.length < 2) return 'Ad en az 2 karakter olmalıdır';
+    if (surname.length < 2) return 'Soyad en az 2 karakter olmalıdır';
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      return 'Geçerli bir e-posta adresi giriniz';
+    }
+    if (!_isStrongPassword(password)) {
+      return 'Şifre: En az 8 karakter, 1 büyük harf, 1 küçük harf, 1 rakam ve 1 özel karakter içermelidir';
+    }
+    if (password != confirmPassword) {
+      return 'Şifreler eşleşmiyor';
+    }
+    if (companyName.isEmpty) return 'Şirket adı zorunludur';
+    if (companyName.length < 2) return 'Şirket adı en az 2 karakter olmalıdır';
+    if (taxId.isEmpty) return 'Vergi kimlik numarası zorunludur';
+    if (taxId.length < 10) {
+      return 'Vergi kimlik numarası en az 10 haneli olmalıdır';
+    }
+    if (!RegExp(r'^[0-9]+$').hasMatch(taxId)) {
+      return 'Vergi kimlik numarası sadece rakam içermelidir';
+    }
+    if (taxOffice.isEmpty) return 'Vergi dairesi zorunludur';
+    if (taxOffice.length < 2) return 'Vergi dairesi en az 2 karakter olmalıdır';
+    if (address.isEmpty) return 'Adres bilgisi zorunludur';
+    if (address.length < 10) return 'Adres en az 10 karakter olmalıdır';
+
+    // Phone validation if provided
+    final localDigits = _phoneController.text.trim();
+    if (localDigits.isNotEmpty) {
+      if (localDigits.length < 7) return 'Telefon numarası çok kısa';
+      if (!RegExp(r'^[0-9]+$').hasMatch(localDigits)) {
+        return 'Telefon numarası sadece rakam içermelidir';
+      }
+    }
+
+    return null;
+  }
+
+  /// Upload profile image with retry mechanism
+  Future<Map<String, String?>> _uploadProfileImageWithRetry(
+      String userId, Uint8List imageBytes,
+      {int maxRetries = 3}) async {
+    Exception? lastException;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        debugPrint('📤 Profile image upload attempt $attempt/$maxRetries');
+        debugPrint('📊 Image size: ${imageBytes.length} bytes');
+
+        final storage = FirebaseStorage.instance;
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final fileName = 'profile_${userId}_$timestamp.jpg';
+        final storagePath = 'users/$userId/profile/$fileName';
+        final storageRef = storage.ref().child(storagePath);
+
+        debugPrint('📁 Storage path: $storagePath');
+
+        // Auto-detect content type based on image header
+        String contentType = 'image/jpeg'; // Default
+        if (imageBytes.length > 8) {
+          // Check PNG signature (89 50 4E 47)
+          if (imageBytes[0] == 0x89 &&
+              imageBytes[1] == 0x50 &&
+              imageBytes[2] == 0x4E &&
+              imageBytes[3] == 0x47) {
+            contentType = 'image/png';
+            debugPrint('🖼️ Detected PNG image');
+          }
+          // Check JPEG signature (FF D8)
+          else if (imageBytes[0] == 0xFF && imageBytes[1] == 0xD8) {
+            contentType = 'image/jpeg';
+            debugPrint('🖼️ Detected JPEG image');
+          }
+          // Check WebP signature (52 49 46 46)
+          else if (imageBytes[0] == 0x52 &&
+              imageBytes[1] == 0x49 &&
+              imageBytes[2] == 0x46 &&
+              imageBytes[3] == 0x46) {
+            contentType = 'image/webp';
+            debugPrint('🖼️ Detected WebP image');
+          }
+        }
+        debugPrint('📷 Content type: $contentType');
+
+        // Test basic Firebase connectivity
+        debugPrint('🌐 Testing Firebase connectivity...');
+        try {
+          // Simple connectivity test with minimal timeout
+          final testRef = storage.ref().child('test');
+          await testRef.getMetadata().timeout(
+                const Duration(seconds: 5),
+                onTimeout: () => throw Exception(
+                    'Firebase Storage connectivity test failed'),
+              );
+          debugPrint('✅ Firebase Storage connectivity: OK');
+        } catch (e) {
+          debugPrint('❌ Firebase Storage connectivity failed: $e');
+          // Continue anyway, might be a permission issue rather than connectivity
+        }
+
+        // Check Firebase Storage configuration
+        try {
+          final bucketInfo = storage.ref().bucket;
+          debugPrint('🪣 Storage bucket: $bucketInfo');
+        } catch (e) {
+          debugPrint('❌ Storage bucket error: $e');
+        }
+
+        // Test authentication
+        final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
+        debugPrint('🔐 Auth user: ${currentUser?.uid}');
+        debugPrint('🔐 Auth token available: ${currentUser != null}');
+
+        if (currentUser == null) {
+          throw Exception('User not authenticated for upload');
+        }
+
+        // Test user permissions for the specific path
+        debugPrint('🔐 Testing upload permissions...');
+        try {
+          // Try to get metadata of the parent directory to test permissions
+          final parentRef = storage.ref().child('users/$userId/');
+          await parentRef.listAll().timeout(
+                const Duration(seconds: 3),
+                onTimeout: () => throw Exception('Permission test timeout'),
+              );
+          debugPrint('✅ Upload permissions: OK');
+        } catch (e) {
+          debugPrint('⚠️ Permission test result: $e');
+          // This might fail if directory doesn't exist yet, which is normal
+        }
+
+        // Auto-detect content type based on image header
+        String detectedContentType = 'image/jpeg'; // Default
+        if (imageBytes.length > 8) {
+          // Check PNG signature (89 50 4E 47)
+          if (imageBytes[0] == 0x89 &&
+              imageBytes[1] == 0x50 &&
+              imageBytes[2] == 0x4E &&
+              imageBytes[3] == 0x47) {
+            detectedContentType = 'image/png';
+            debugPrint('🖼️ Detected PNG image');
+          }
+          // Check JPEG signature (FF D8)
+          else if (imageBytes[0] == 0xFF && imageBytes[1] == 0xD8) {
+            detectedContentType = 'image/jpeg';
+            debugPrint('🖼️ Detected JPEG image');
+          }
+          // Check WebP signature (52 49 46 46)
+          else if (imageBytes[0] == 0x52 &&
+              imageBytes[1] == 0x49 &&
+              imageBytes[2] == 0x46 &&
+              imageBytes[3] == 0x46) {
+            detectedContentType = 'image/webp';
+            debugPrint('🖼️ Detected WebP image');
+          }
+        }
+        debugPrint('📷 Content type: $detectedContentType');
+
+        // Upload with metadata and progress tracking
+        final uploadTask = storageRef.putData(
+          imageBytes,
+          SettableMetadata(
+            contentType: detectedContentType,
+            customMetadata: {
+              'uploadedAt': DateTime.now().toIso8601String(),
+              'userId': userId,
+              'source': 'registration',
+              'originalSize': imageBytes.length.toString(),
+              'detectedType': contentType,
+            },
+          ),
+        );
+
+        // Track upload progress with detailed error handling
+        late StreamSubscription progressSubscription;
+        bool progressReceived = false;
+
+        progressSubscription = uploadTask.snapshotEvents.listen((taskSnapshot) {
+          progressReceived = true;
+          final progress =
+              (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+          debugPrint('📈 Upload progress: ${progress.toStringAsFixed(1)}%');
+          debugPrint(
+              '📊 Bytes transferred: ${taskSnapshot.bytesTransferred}/${taskSnapshot.totalBytes}');
+          debugPrint('📊 Upload state: ${taskSnapshot.state}');
+        }, onError: (e) {
+          debugPrint('❌ Upload stream error: $e');
+          debugPrint('❌ Error type: ${e.runtimeType}');
+        }, onDone: () {
+          debugPrint('✅ Upload stream completed');
+        });
+
+        // Wait for upload completion with timeout and progress check
+        try {
+          final snapshot = await uploadTask.timeout(
+            const Duration(seconds: 30),
+            onTimeout: () {
+              debugPrint('⏰ Upload timeout after 30 seconds');
+              debugPrint('❌ Progress received: $progressReceived');
+              progressSubscription.cancel();
+              throw Exception(
+                  'Upload timeout after 30 seconds - no progress received: $progressReceived');
+            },
+          );
+
+          progressSubscription.cancel();
+
+          debugPrint('✅ Upload completed, getting download URL...');
+
+          // Get download URL with retry
+          String? downloadUrl;
+          for (int urlAttempt = 1; urlAttempt <= 3; urlAttempt++) {
+            try {
+              downloadUrl = await snapshot.ref.getDownloadURL();
+              break;
+            } catch (e) {
+              debugPrint('❌ URL fetch attempt $urlAttempt failed: $e');
+              if (urlAttempt < 3) {
+                await Future.delayed(Duration(seconds: urlAttempt));
+              }
+            }
+          }
+
+          if (downloadUrl == null) {
+            throw Exception('Failed to get download URL after 3 attempts');
+          }
+
+          debugPrint('🔗 Download URL obtained: $downloadUrl');
+
+          return {
+            'url': downloadUrl,
+            'path': storagePath,
+          };
+        } catch (e) {
+          progressSubscription.cancel();
+          rethrow;
+        }
+      } catch (e) {
+        lastException = e is Exception ? e : Exception(e.toString());
+        debugPrint('❌ Upload attempt $attempt failed: $e');
+        debugPrint('❌ Error type: ${e.runtimeType}');
+        debugPrint('❌ Error details: ${e.toString()}');
+
+        if (attempt < maxRetries) {
+          final delay = Duration(seconds: attempt * 2);
+          debugPrint('⏳ Waiting ${delay.inSeconds}s before retry...');
+          await Future.delayed(delay);
+        }
+      }
+    }
+
+    throw lastException ??
+        Exception('Profile image upload failed after $maxRetries attempts');
+  }
+
+  /// Test Firebase Storage rules and connectivity
+  Future<void> _testFirebaseStorageSetup() async {
+    try {
+      debugPrint('🧪 Testing Firebase Storage setup...');
+
+      final storage = FirebaseStorage.instance;
+      final currentUser = firebase_auth.FirebaseAuth.instance.currentUser;
+
+      if (currentUser == null) {
+        debugPrint('❌ No authenticated user for storage test');
+        return;
+      }
+
+      // Test 1: Basic connectivity
+      debugPrint('🧪 Test 1: Basic connectivity');
+      try {
+        final bucket = storage.ref().bucket;
+        debugPrint('✅ Storage bucket: $bucket');
+        debugPrint('✅ Firebase Storage instance is ready');
+      } catch (e) {
+        debugPrint('❌ Firebase Storage connectivity issue: $e');
+      }
+
+      // Test 2: User-specific path permissions
+      debugPrint('🧪 Test 2: User path permissions');
+      try {
+        final testPath = 'users/${currentUser.uid}/test.txt';
+        final testRef = storage.ref().child(testPath);
+
+        // Try to create a small test file
+        await testRef.putString('test').timeout(const Duration(seconds: 10));
+        debugPrint('✅ Upload permission test passed');
+
+        // Clean up test file
+        await testRef.delete();
+        debugPrint('✅ Delete permission test passed');
+      } catch (e) {
+        debugPrint('❌ Permission test failed: $e');
+        debugPrint('💡 Check Firebase Storage Rules:');
+        debugPrint('   rules_version = "2";');
+        debugPrint('   service firebase.storage {');
+        debugPrint('     match /b/{bucket}/o {');
+        debugPrint('       match /users/{userId}/{allPaths=**} {');
+        debugPrint(
+            '         allow read, write: if request.auth != null && request.auth.uid == userId;');
+        debugPrint('       }');
+        debugPrint('     }');
+        debugPrint('   }');
+      }
+    } catch (e) {
+      debugPrint('❌ Storage setup test failed: $e');
+    }
+  }
+
+  /// Show error snackbar
+  void _showErrorSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 4),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Show success snackbar
+  void _showSuccessSnackBar(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  /// Get detailed error message based on exception type and content
+  String _getDetailedErrorMessage(Object e) {
     final text = e.toString().toLowerCase();
+
+    // Firebase Auth specific errors
     if (text.contains('email-already-in-use')) {
-      return 'Bu e-posta adresi zaten kayıtlı. Giriş yapmayı deneyin.';
+      return 'Bu e-posta adresi zaten kayıtlı. Farklı bir e-posta adresi deneyin veya giriş yapın.';
     }
     if (text.contains('weak-password')) {
-      return 'Şifreniz yeterince güçlü değil. Daha güçlü bir şifre deneyin.';
+      return 'Şifre çok zayıf. En az 8 karakter, büyük/küçük harf, rakam ve özel karakter kullanın.';
     }
     if (text.contains('invalid-email')) {
-      return 'Geçersiz e-posta adresi.';
+      return 'Geçersiz e-posta adresi formatı. Lütfen doğru formatta giriniz.';
     }
+    if (text.contains('operation-not-allowed')) {
+      return 'E-posta/şifre ile kayıt işlemi şu anda devre dışı. Lütfen daha sonra tekrar deneyin.';
+    }
+
+    // Network and connectivity errors
+    if (text.contains('network') ||
+        text.contains('timeout') ||
+        text.contains('connection')) {
+      return 'İnternet bağlantısı sorunu. Bağlantınızı kontrol edip tekrar deneyin.';
+    }
+
+    // Permission and authentication errors
     if (text.contains('permission-denied')) {
-      return 'İşlem tamamlandı, ancak profil oluşturulamadı. Daha sonra otomatik tamamlanacaktır.';
+      return 'Kayıt işlemi tamamlandı ancak profil verilerinde sorun oluştu. Giriş yapıp profilinizi güncelleyebilirsiniz.';
     }
-    if (text.contains('network') || text.contains('timeout')) {
-      return 'Ağ bağlantı sorunu. İnternetinizi kontrol edin ve tekrar deneyin.';
+    if (text.contains('requires-recent-login')) {
+      return 'Güvenlik nedeniyle işlem gerçekleştirilemedi. Lütfen tekrar giriş yapın.';
     }
-    return 'Kayıt tamamlanamadı. Lütfen bilgilerinizi kontrol edin ve tekrar deneyin.';
+
+    // Storage and upload errors
+    if (text.contains('storage') || text.contains('upload')) {
+      return 'Profil fotoğrafı yüklenemedi. Kayıt işlemi tamamlandı, fotoğrafı daha sonra ekleyebilirsiniz.';
+    }
+
+    // Firestore errors
+    if (text.contains('firestore') || text.contains('document')) {
+      return 'Profil bilgileri kaydedilemedi. Kayıt tamamlandı, bilgilerinizi profilden güncelleyebilirsiniz.';
+    }
+
+    // Validation errors
+    if (text.contains('validation') || text.contains('invalid')) {
+      return 'Girilen bilgilerde hata var. Lütfen tüm alanları doğru şekilde doldurun.';
+    }
+
+    // Generic errors
+    if (text.contains('too-many-requests')) {
+      return 'Çok fazla istek gönderdiniz. Lütfen birkaç dakika bekleyip tekrar deneyin.';
+    }
+
+    // Default friendly message
+    return 'Kayıt işlemi sırasında bir hata oluştu. Lütfen bilgilerinizi kontrol edip tekrar deneyin.';
   }
 
   @override
@@ -264,11 +1139,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          SvgPicture.asset(
-                            'assets/images/svg/whitelogo.svg',
-                            colorFilter: const ColorFilter.mode(
-                                Colors.white, BlendMode.srcIn),
+                          Image.asset(
+                            'assets/images/logos/140x140logo.png',
                             fit: BoxFit.contain,
+                            color: Colors.white,
+                            colorBlendMode: BlendMode.srcIn,
                           ),
                           // Premium parıltı efekti
                           Align(
@@ -324,33 +1199,68 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
                 const SizedBox(height: 40),
 
-                // Ad Soyad
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ad Soyad *',
-                    hintText: 'İsim Soyisim',
-                    prefixIcon: Icon(Icons.person_outline),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Ad soyad gereklidir';
-                    }
-                    final parts = value.trim().split(' ');
-                    if (parts.length < 2) {
-                      return 'Lütfen ad ve soyad girin';
-                    }
-                    final given = parts.first.trim();
-                    final family = parts.sublist(1).join(' ').trim();
-                    if (given.length < 2) {
-                      return 'Ad en az 2 karakter olmalı';
-                    }
-                    if (family.length < 2) {
-                      return 'Soyad en az 2 karakter olmalı';
-                    }
-                    return null;
-                  },
+                // Profil fotoğrafı ve Ad/Soyad
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: _pickAvatar,
+                      child: CircleAvatar(
+                        radius: 28,
+                        backgroundColor: Colors.grey.shade200,
+                        backgroundImage: _avatarBytes != null
+                            ? MemoryImage(_avatarBytes!)
+                            : null,
+                        child: _avatarBytes == null
+                            ? const Icon(Icons.camera_alt_outlined)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _firstNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Ad *',
+                              hintText: 'Adınız',
+                              prefixIcon: Icon(Icons.person_outline),
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Ad gereklidir';
+                              }
+                              if (value.trim().length < 2) {
+                                return 'Ad en az 2 karakter olmalı';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _lastNameController,
+                            decoration: const InputDecoration(
+                              labelText: 'Soyad *',
+                              hintText: 'Soyadınız',
+                              prefixIcon: Icon(Icons.person_outline),
+                              border: OutlineInputBorder(),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Soyad gereklidir';
+                              }
+                              if (value.trim().length < 2) {
+                                return 'Soyad en az 2 karakter olmalı';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -510,37 +1420,47 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 const SizedBox(height: 16),
 
                 // Şifre
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Şifre *',
-                    hintText:
-                        'En az 8 karakter, 1 büyük/1 küçük/1 rakam/1 sembol',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
-                      },
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      onChanged: (value) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: 'Şifre *',
+                        hintText:
+                            'En az 8 karakter, büyük/küçük harf, rakam ve sembol',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
+                          ),
+                        ),
+                        border: const OutlineInputBorder(),
                       ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Şifre gereklidir';
+                        }
+                        if (!_isStrongPassword(value)) {
+                          return 'Şifre güvenlik gereksinimlerini karşılamıyor';
+                        }
+                        return null;
+                      },
                     ),
-                    border: const OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Şifre gereklidir';
-                    }
-                    if (!_isStrongPassword(value)) {
-                      return 'Şifre: 1 büyük, 1 küçük, 1 rakam, 1 sembol içermeli';
-                    }
-                    return null;
-                  },
+                    if (_passwordController.text.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      _buildPasswordStrengthIndicator(),
+                    ],
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -601,16 +1521,25 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             fontSize: 14,
                             color: TamgaciConstants.textSecondary,
                           ),
-                          children: const [
-                            TextSpan(text: 'Kullanım şartlarını ve '),
-                            TextSpan(
-                              text: "Gizlilik Politikası'nı",
-                              style: TextStyle(
-                                color: TamgaciConstants.primaryColor,
-                                fontWeight: FontWeight.w600,
+                          children: [
+                            const TextSpan(text: 'Kullanım şartlarını ve '),
+                            WidgetSpan(
+                              child: GestureDetector(
+                                onTap: () {
+                                  showPrivacyPolicyDialog(context);
+                                },
+                                child: Text(
+                                  "Gizlilik Politikası'nı",
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: TamgaciConstants.primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
                               ),
                             ),
-                            TextSpan(text: ' kabul ediyorum'),
+                            const TextSpan(text: ' kabul ediyorum'),
                           ],
                         ),
                       ),
@@ -623,7 +1552,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 // Kayıt ol butonu
                 Consumer(
                   builder: (context, ref, child) {
-                    final isLoading = ref.watch(authLoadingProvider);
+                    final authLoading = ref.watch(authLoadingProvider);
+                    final isLoading = authLoading || _isRegistering;
 
                     return ElevatedButton(
                       onPressed: isLoading ? null : _register,
@@ -634,17 +1564,35 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
+                        elevation: isLoading ? 0 : 2,
                       ),
                       child: isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                          ? Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _isRegistering
+                                      ? (_avatarBytes != null
+                                          ? 'Fotoğraf yükleniyor...'
+                                          : 'Kayıt oluşturuluyor...')
+                                      : 'Kayıt Ol',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             )
                           : Text(
                               'Kayıt Ol',

@@ -17,7 +17,8 @@ service cloud.firestore {
       return isSignedIn() &&
              request.resource.data.createdBy == userId() &&
              (request.resource.data.createdAt == null || request.resource.data.createdAt is timestamp) &&
-             !(request.resource.data.keys().hasAny(['updatedAt','updatedBy'])) &&
+             (request.resource.data.updatedAt == null || request.resource.data.updatedAt is timestamp) &&
+             (request.resource.data.updatedBy == null || request.resource.data.updatedBy == userId()) &&
              (request.resource.data.isActive == null || request.resource.data.isActive is bool);
     }
     function allowUpdate(doc) {
@@ -38,7 +39,15 @@ service cloud.firestore {
 
     // Customers
     match /customers/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
+      allow create: if isValidCreate();
+      allow update: if allowUpdate(resource);
+      allow delete: if allowDelete(resource);
+    }
+
+    // Customer Categories
+    match /customer_categories/{id} {
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
@@ -46,7 +55,7 @@ service cloud.firestore {
 
     // Suppliers
     match /suppliers/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
@@ -54,7 +63,7 @@ service cloud.firestore {
 
     // Sales
     match /sales/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
@@ -62,7 +71,7 @@ service cloud.firestore {
 
     // Purchases
     match /purchases/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
@@ -70,13 +79,13 @@ service cloud.firestore {
 
     // Cash accounts and transactions
     match /cash_accounts/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
     }
     match /cash_transactions/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
@@ -84,19 +93,19 @@ service cloud.firestore {
 
     // Inventory
     match /inventory_items/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
     }
     match /inventory_movements/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
     }
     match /stocks/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
@@ -104,7 +113,21 @@ service cloud.firestore {
 
     // Reports
     match /reports/{id} {
-      allow read: if allowRead(resource);
+      allow get, list: if isSignedIn();
+      allow create: if isValidCreate();
+      allow update: if allowUpdate(resource);
+      allow delete: if allowDelete(resource);
+    }
+
+    // Income/Expense collections
+    match /incomes/{id} {
+      allow get, list: if isSignedIn();
+      allow create: if isValidCreate();
+      allow update: if allowUpdate(resource);
+      allow delete: if allowDelete(resource);
+    }
+    match /expenses/{id} {
+      allow get, list: if isSignedIn();
       allow create: if isValidCreate();
       allow update: if allowUpdate(resource);
       allow delete: if allowDelete(resource);
@@ -116,7 +139,16 @@ service cloud.firestore {
 
     // Settings
     match /app_settings/{uid} {
-      allow read, write: if isSignedIn() && uid == userId();
+      // Geçici: varsayılan kullanıcı yapısı kullanıldığı için okuma tüm authenticated kullanıcılara açık
+      allow read: if isSignedIn();
+      // Yazma: sadece kendi ayarını yazsın
+      allow write: if isSignedIn() && uid == userId();
+    }
+    match /system_settings/{docId} {
+      // Sistem ayarlarını tüm kullanıcılar okuyabilir (veya isSignedIn())
+      allow read: if true;
+      // Yazma sadece admin
+      allow write: if isAdmin();
     }
     // Users (Auth profile documents)
     match /users/{uid} {

@@ -484,7 +484,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage> {
     if (_formKey.currentState!.validate()) {
       try {
         final warehouse = Warehouse(
-          id: widget.warehouseId != null ? int.parse(widget.warehouseId!) : 0,
+          id: widget.warehouseId ?? '',
           name: _nameController.text.trim(),
           code: _codeController.text.trim().isEmpty
               ? null

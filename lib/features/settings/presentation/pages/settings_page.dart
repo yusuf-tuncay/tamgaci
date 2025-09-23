@@ -10,7 +10,9 @@ import '../../../../core/providers/currency_providers.dart';
 import '../../../../core/domain/entities/currency.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
+import '../../presentation/providers/settings_providers.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../../core/routes/routes.dart';
 
 /// Ayarlar Sayfası
 class SettingsPage extends ConsumerStatefulWidget {
@@ -40,6 +42,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
             // Genel Ayarlar
             _buildCategoryHeader("Genel Ayarlar", Icons.settings, isDark),
+            const SizedBox(height: 12),
+            _buildSimpleSection(
+              title: "Abonelik",
+              icon: Icons.workspace_premium,
+              isDark: isDark,
+              child: _buildSubscriptionSettings(isDark),
+            ),
             const SizedBox(height: 12),
             _buildSimpleSection(
               title: "Firma Bilgileri",
@@ -81,6 +90,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               icon: Icons.account_balance,
               isDark: isDark,
               child: _buildTaxSettings(isDark),
+            ),
+            const SizedBox(height: 12),
+            _buildSimpleSection(
+              title: "Para Birimi & Kur Ayarları",
+              icon: Icons.calculate,
+              isDark: isDark,
+              child: _buildRoundingAndFxSettings(isDark),
             ),
             const SizedBox(height: 24),
 
@@ -506,7 +522,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected
-              ? Colors.blue.withValues(alpha:  0.1)
+              ? Colors.blue.withValues(alpha: 0.1)
               : (isDark ? Colors.grey[700] : Colors.grey[100]),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
@@ -605,6 +621,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   Widget _buildCompanyInfoSettings(bool isDark) {
     return Column(
       children: [
+        _buildActionButton("Profili Düzenle", isDark, () {
+          Navigator.of(context).pushNamed(TamgaciRoutes.profile);
+        }),
+        const SizedBox(height: 8),
         _buildActionButton("Firma Bilgilerini Düzenle", isDark, () {}),
         const SizedBox(height: 8),
         _buildSwitchSetting("Vergi Numarası Görünür", true, isDark, (value) {}),
@@ -623,6 +643,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildActionButton("Marka Renklerini Ayarla", isDark, () {}),
         const SizedBox(height: 8),
         _buildSwitchSetting("Otomatik Renk Uyumu", true, isDark, (value) {}),
+      ],
+    );
+  }
+
+  Widget _buildSubscriptionSettings(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildActionButton("Abonelik Planları", isDark, () {
+          Navigator.of(context).pushNamed(TamgaciRoutes.subscription);
+        }),
+        const SizedBox(height: 8),
+        Text(
+          "Planınızı buradan yönetebilirsiniz.",
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.grey[300] : Colors.grey[700],
+          ),
+        ),
       ],
     );
   }
@@ -656,6 +695,126 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         const SizedBox(height: 8),
         _buildActionButton("Vergi Oranlarını Yönet", isDark, () {}),
       ],
+    );
+  }
+
+  Widget _buildRoundingAndFxSettings(bool isDark) {
+    final settingsAsync = ref.watch(settingsProvider);
+    final notifier = ref.read(settingsProvider.notifier);
+
+    return settingsAsync.when(
+      data: (s) {
+        final roundingMode =
+            (s.customSettings['roundingMode']?.toString() ?? 'halfUp');
+        final roundingDecimals = int.tryParse(
+              (s.customSettings['roundingDecimals']?.toString() ?? '2'),
+            ) ??
+            2;
+        final fxSource =
+            (s.customSettings['fxSource']?.toString() ?? 'TCMB_EVDS');
+        final numbering = (s.customSettings['numberingScheme']?.toString() ??
+            'INV-{YYYY}-{####}');
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Rounding Mode
+            _buildSimpleDropdown(
+              value: roundingMode,
+              items: const ['halfUp', 'floor', 'ceil'],
+              isDark: isDark,
+              onChanged: (val) {
+                if (val != null) notifier.updateRoundingMode(val);
+              },
+            ),
+            const SizedBox(height: 8),
+            // Rounding Decimals
+            _buildSimpleDropdown(
+              value: roundingDecimals.toString(),
+              items: const ['0', '1', '2', '3', '4', '5', '6'],
+              isDark: isDark,
+              onChanged: (val) {
+                final v = int.tryParse(val ?? '2') ?? 2;
+                notifier.updateRoundingDecimals(v);
+              },
+            ),
+            const SizedBox(height: 8),
+            // FX Source
+            _buildSimpleDropdown(
+              value: fxSource,
+              items: const ['TCMB_EVDS', 'MANUAL_ONLY'],
+              isDark: isDark,
+              onChanged: (val) {
+                if (val != null) notifier.updateFxSource(val);
+              },
+            ),
+            const SizedBox(height: 8),
+            // Numbering Scheme
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[700] : Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.confirmation_number,
+                      color: Colors.blue, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      numbering,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  OutlinedButton(
+                    onPressed: () async {
+                      final controller = TextEditingController(text: numbering);
+                      final res = await showDialog<String>(
+                        context: context,
+                        builder: (_) => AlertDialog(
+                          title: const Text('Numaralandırma Şeması'),
+                          content: TextField(
+                            controller: controller,
+                            decoration: const InputDecoration(
+                              hintText: 'INV-{YYYY}-{####}',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('İptal')),
+                            TextButton(
+                                onPressed: () => Navigator.pop(
+                                    context, controller.text.trim()),
+                                child: const Text('Kaydet')),
+                          ],
+                        ),
+                      );
+                      if (res != null && res.isNotEmpty) {
+                        notifier.updateNumberingScheme(res);
+                      }
+                    },
+                    child: const Text('Düzenle'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
     );
   }
 

@@ -222,14 +222,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: true, error: null);
 
       await _repository.updateUser(user);
+
+      // ✅ CRITICAL: Update local state with new user data
+      state = state.copyWith(
+        user: user,
+        isLoading: false,
+        error: null,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
       rethrow;
-    } finally {
-      state = state.copyWith(isLoading: false);
     }
   }
 

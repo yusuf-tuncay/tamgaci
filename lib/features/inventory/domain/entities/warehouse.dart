@@ -1,6 +1,9 @@
+// ========== WAREHOUSE ENTITY ==========
+// lib/features/inventory/domain/entities/warehouse.dart
+
 /// Depo domain entity'si
 class Warehouse {
-  final int? id;
+  final String id;
   final String name;
   final String? code;
   final String? description;
@@ -17,7 +20,7 @@ class Warehouse {
   final DateTime updatedAt;
 
   Warehouse({
-    this.id,
+    required this.id,
     required this.name,
     this.code,
     this.description,
@@ -36,7 +39,7 @@ class Warehouse {
 
   /// Kopyalama metodu
   Warehouse copyWith({
-    int? id,
+    String? id,
     String? name,
     String? code,
     String? description,
@@ -74,7 +77,7 @@ class Warehouse {
   /// Map'ten Warehouse oluşturur
   factory Warehouse.fromMap(Map<String, dynamic> map) {
     return Warehouse(
-      id: map['id']?.toInt(),
+      id: map['id'] as String,
       name: map['name'] ?? '',
       code: map['code'],
       description: map['description'],

@@ -28,8 +28,14 @@ class User extends Equatable {
   /// Ülke alan kodu (+90, +1 ...)
   final String? phoneDialCode;
 
-  /// Kullanıcı profil fotoğrafı URL'si
+  /// Kullanıcı profil fotoğrafı URL'si (cache for performance)
   final String? profileImageUrl;
+
+  /// Kullanıcı profil fotoğrafı path'i (reliable storage path)
+  final String? profileImagePath;
+
+  /// Kullanıcı profil fotoğrafı metadata'sı (upload info, file size, etc.)
+  final Map<String, dynamic>? profileImageMetadata;
 
   /// Kullanıcı rolü (admin, user, manager)
   final UserRole role;
@@ -76,6 +82,24 @@ class User extends Equatable {
   /// Fatura/İş Adresi
   final String? billingAddress;
 
+  /// Abonelik durumu
+  final SubscriptionStatus subscriptionStatus;
+
+  /// Abonelik planı
+  final SubscriptionPlan subscriptionPlan;
+
+  /// Deneme başlangıç tarihi
+  final DateTime? trialStartAt;
+
+  /// Deneme bitiş tarihi
+  final DateTime? trialEndAt;
+
+  /// Abonelik başlangıç tarihi
+  final DateTime? subscriptionStartAt;
+
+  /// Abonelik bitiş tarihi
+  final DateTime? subscriptionEndAt;
+
   const User({
     required this.id,
     required this.email,
@@ -86,6 +110,8 @@ class User extends Equatable {
     this.phoneCountry,
     this.phoneDialCode,
     this.profileImageUrl,
+    this.profileImagePath,
+    this.profileImageMetadata,
     required this.role,
     required this.status,
     required this.createdAt,
@@ -101,6 +127,12 @@ class User extends Equatable {
     this.taxId,
     this.taxOffice,
     this.billingAddress,
+    this.subscriptionStatus = SubscriptionStatus.none,
+    this.subscriptionPlan = SubscriptionPlan.none,
+    this.trialStartAt,
+    this.trialEndAt,
+    this.subscriptionStartAt,
+    this.subscriptionEndAt,
   });
 
   /// Firebase Firestore'dan User oluşturur
@@ -137,6 +169,15 @@ class User extends Equatable {
       taxId: data['taxId'],
       taxOffice: data['taxOffice'],
       billingAddress: data['billingAddress'],
+      subscriptionStatus:
+          SubscriptionStatus.fromString(data['subscriptionStatus'] ?? 'none'),
+      subscriptionPlan:
+          SubscriptionPlan.fromString(data['subscriptionPlan'] ?? 'none'),
+      trialStartAt: (data['trialStartAt'] as Timestamp?)?.toDate(),
+      trialEndAt: (data['trialEndAt'] as Timestamp?)?.toDate(),
+      subscriptionStartAt:
+          (data['subscriptionStartAt'] as Timestamp?)?.toDate(),
+      subscriptionEndAt: (data['subscriptionEndAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -167,6 +208,17 @@ class User extends Equatable {
       'taxId': taxId,
       'taxOffice': taxOffice,
       'billingAddress': billingAddress,
+      'subscriptionStatus': subscriptionStatus.value,
+      'subscriptionPlan': subscriptionPlan.value,
+      'trialStartAt':
+          trialStartAt != null ? Timestamp.fromDate(trialStartAt!) : null,
+      'trialEndAt': trialEndAt != null ? Timestamp.fromDate(trialEndAt!) : null,
+      'subscriptionStartAt': subscriptionStartAt != null
+          ? Timestamp.fromDate(subscriptionStartAt!)
+          : null,
+      'subscriptionEndAt': subscriptionEndAt != null
+          ? Timestamp.fromDate(subscriptionEndAt!)
+          : null,
     };
   }
 
@@ -181,6 +233,8 @@ class User extends Equatable {
     String? phoneCountry,
     String? phoneDialCode,
     String? profileImageUrl,
+    String? profileImagePath,
+    Map<String, dynamic>? profileImageMetadata,
     UserRole? role,
     UserStatus? status,
     DateTime? createdAt,
@@ -196,6 +250,12 @@ class User extends Equatable {
     String? taxId,
     String? taxOffice,
     String? billingAddress,
+    SubscriptionStatus? subscriptionStatus,
+    SubscriptionPlan? subscriptionPlan,
+    DateTime? trialStartAt,
+    DateTime? trialEndAt,
+    DateTime? subscriptionStartAt,
+    DateTime? subscriptionEndAt,
   }) {
     return User(
       id: id ?? this.id,
@@ -207,6 +267,8 @@ class User extends Equatable {
       phoneCountry: phoneCountry ?? this.phoneCountry,
       phoneDialCode: phoneDialCode ?? this.phoneDialCode,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      profileImagePath: profileImagePath ?? this.profileImagePath,
+      profileImageMetadata: profileImageMetadata ?? this.profileImageMetadata,
       role: role ?? this.role,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
@@ -222,6 +284,12 @@ class User extends Equatable {
       taxId: taxId ?? this.taxId,
       taxOffice: taxOffice ?? this.taxOffice,
       billingAddress: billingAddress ?? this.billingAddress,
+      subscriptionStatus: subscriptionStatus ?? this.subscriptionStatus,
+      subscriptionPlan: subscriptionPlan ?? this.subscriptionPlan,
+      trialStartAt: trialStartAt ?? this.trialStartAt,
+      trialEndAt: trialEndAt ?? this.trialEndAt,
+      subscriptionStartAt: subscriptionStartAt ?? this.subscriptionStartAt,
+      subscriptionEndAt: subscriptionEndAt ?? this.subscriptionEndAt,
     );
   }
 
@@ -245,6 +313,8 @@ class User extends Equatable {
         surname,
         phone,
         profileImageUrl,
+        profileImagePath,
+        profileImageMetadata,
         role,
         status,
         createdAt,
@@ -260,6 +330,12 @@ class User extends Equatable {
         taxId,
         taxOffice,
         billingAddress,
+        subscriptionStatus,
+        subscriptionPlan,
+        trialStartAt,
+        trialEndAt,
+        subscriptionStartAt,
+        subscriptionEndAt,
       ];
 
   @override
@@ -310,6 +386,56 @@ enum UserStatus {
         return UserStatus.suspended;
       default:
         return UserStatus.active;
+    }
+  }
+}
+
+/// Abonelik durumu enum'u
+enum SubscriptionStatus {
+  none('none'),
+  trial('trial'),
+  active('active'),
+  expired('expired');
+
+  const SubscriptionStatus(this.value);
+  final String value;
+
+  static SubscriptionStatus fromString(String value) {
+    switch (value) {
+      case 'trial':
+        return SubscriptionStatus.trial;
+      case 'active':
+        return SubscriptionStatus.active;
+      case 'expired':
+        return SubscriptionStatus.expired;
+      case 'none':
+      default:
+        return SubscriptionStatus.none;
+    }
+  }
+}
+
+/// Abonelik planı enum'u
+enum SubscriptionPlan {
+  none('none'),
+  monthly('monthly'),
+  semiAnnual('semi_annual'),
+  annual('annual');
+
+  const SubscriptionPlan(this.value);
+  final String value;
+
+  static SubscriptionPlan fromString(String value) {
+    switch (value) {
+      case 'monthly':
+        return SubscriptionPlan.monthly;
+      case 'semi_annual':
+        return SubscriptionPlan.semiAnnual;
+      case 'annual':
+        return SubscriptionPlan.annual;
+      case 'none':
+      default:
+        return SubscriptionPlan.none;
     }
   }
 }

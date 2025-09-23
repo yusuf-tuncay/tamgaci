@@ -1,6 +1,20 @@
 {
     "indexes": [
         {
+            "collectionGroup": "customers",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "isActive",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "name",
+                    "order": "ASCENDING"
+                }
+            ]
+        },
+        {
             "collectionGroup": "products",
             "queryScope": "COLLECTION",
             "fields": [

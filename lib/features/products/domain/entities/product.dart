@@ -1,4 +1,5 @@
 import 'product_variant.dart';
+import 'product_attribute.dart';
 
 /// Ürün türü enum'u
 enum ProductType {
@@ -55,6 +56,8 @@ class Product {
   final List<String> tags; // Etiketler
   final List<String> images; // Resimler
   final List<ProductVariant>? variants; // Varyantlar
+  final List<ProductAttribute>? attributes; // Ürün özellikleri
+  final Map<String, dynamic>? attributeValues; // Özellik değerleri
   final List<String>?
       linkedProducts; // Bağlı ürünler (satıldığında stoktan düşsün)
   final String? notes;
@@ -91,6 +94,8 @@ class Product {
     this.tags = const [],
     this.images = const [],
     this.variants,
+    this.attributes,
+    this.attributeValues,
     this.linkedProducts,
     this.notes,
     this.isActive = true,
@@ -167,6 +172,8 @@ class Product {
     List<String>? tags,
     List<String>? images,
     List<ProductVariant>? variants,
+    List<ProductAttribute>? attributes,
+    Map<String, dynamic>? attributeValues,
     List<String>? linkedProducts,
     String? notes,
     bool? isActive,
@@ -203,6 +210,8 @@ class Product {
       tags: tags ?? this.tags,
       images: images ?? this.images,
       variants: variants ?? this.variants,
+      attributes: attributes ?? this.attributes,
+      attributeValues: attributeValues ?? this.attributeValues,
       linkedProducts: linkedProducts ?? this.linkedProducts,
       notes: notes ?? this.notes,
       isActive: isActive ?? this.isActive,
@@ -253,6 +262,12 @@ class Product {
       variants: (json['variants'] as List<dynamic>?)
           ?.map((e) => ProductVariant.fromJson(e as Map<String, dynamic>))
           .toList(),
+      attributes: (json['attributes'] as List<dynamic>?)
+          ?.map((e) => ProductAttribute.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      attributeValues: json['attributeValues'] != null
+          ? Map<String, dynamic>.from(json['attributeValues'])
+          : null,
       linkedProducts: json['linkedProducts'] != null
           ? List<String>.from(json['linkedProducts'])
           : null,
@@ -294,6 +309,8 @@ class Product {
       'tags': tags,
       'images': images,
       'variants': variants?.map((e) => e.toJson()).toList(),
+      'attributes': attributes?.map((e) => e.toJson()).toList(),
+      'attributeValues': attributeValues,
       'linkedProducts': linkedProducts,
       'notes': notes,
       'isActive': isActive,

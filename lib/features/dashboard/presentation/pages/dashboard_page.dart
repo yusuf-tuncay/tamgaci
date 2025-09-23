@@ -9,10 +9,11 @@ import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../auth/domain/entities/user.dart' as auth_domain;
 import '../providers/dashboard_providers.dart';
 import '../widgets/exchange_rates_widget.dart';
 import '../widgets/dashboard_stats_card.dart';
@@ -22,6 +23,8 @@ import '../widgets/recent_activities_widget.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../../../inventory/presentation/providers/warehouse_providers.dart';
 import '../../../inventory/presentation/providers/stock_providers.dart';
+import '../../../user_profile/presentation/providers/user_profile_providers.dart';
+// imports removed: invoice backfill kaldırıldı
 
 /// Dashboard Sayfası
 class DashboardPage extends ConsumerStatefulWidget {
@@ -32,6 +35,8 @@ class DashboardPage extends ConsumerStatefulWidget {
 }
 
 class _DashboardPageState extends ConsumerState<DashboardPage> {
+  // Backfill kaldırıldı: bazı projelerde kurallar nedeniyle uyarı üretiyordu
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -52,12 +57,55 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
+  Widget? _buildSubscriptionBanner(auth_domain.User? user) {
+    if (user == null) return null;
+    final now = DateTime.now();
+    DateTime? end;
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial) {
+      end = user.trialEndAt;
+    } else if (user.subscriptionStatus ==
+        auth_domain.SubscriptionStatus.active) {
+      end = user.subscriptionEndAt;
+    }
+    if (end == null) return null;
+    final remaining = end.difference(now).inDays;
+    if (remaining > 3 && now.isBefore(end)) return null;
+    final isExpired = now.isAfter(end);
+    final text = isExpired
+        ? 'Abonelik süreniz doldu. Devam etmek için lütfen aboneliğinizi yenileyin.'
+        : 'Aboneliğinizin bitmesine $remaining gün kaldı. Yenilemeyi unutmayın.';
+    final color = isExpired ? Colors.red : Colors.orange;
+    return InkWell(
+      onTap: () => Navigator.of(context).pushNamed(TamgaciRoutes.subscription),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: color),
+            const SizedBox(width: 8),
+            Expanded(child: Text(text)),
+            const SizedBox(width: 8),
+            const Icon(Icons.arrow_forward_ios, size: 14),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildMobileLayout(
     AsyncValue<DashboardSummary> dashboardSummaryAsync,
     AsyncValue<List<TransactionItem>> recentActivitiesAsync,
     AsyncValue<List<MonthlyChartData>> monthlyChartAsync,
     bool isDark,
   ) {
+    final user = ref.watch(currentUserProvider);
+    final banner = _buildSubscriptionBanner(user);
     return RefreshIndicator(
       onRefresh: () async {
         // Refresh dashboard data and exchange rates
@@ -71,11 +119,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (banner != null) banner,
             _buildWelcomeCard(isDark),
             const SizedBox(height: 16),
-            _buildStatsGrid(dashboardSummaryAsync, isDark),
-            const SizedBox(height: 16),
             const QuickActionsWidget(),
+            const SizedBox(height: 16),
+            _buildStatsGrid(dashboardSummaryAsync, isDark),
             const SizedBox(height: 16),
             _buildChartSection(monthlyChartAsync, isDark),
             const SizedBox(height: 16),
@@ -198,11 +247,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: SvgPicture.asset(
-                  'assets/images/svg/whitelogo.svg',
-                  colorFilter:
-                      const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                child: Image.asset(
+                  'assets/images/logos/140x140logo.png',
                   fit: BoxFit.contain,
+                  color: Colors.white,
+                  colorBlendMode: BlendMode.srcIn,
                 ),
               ),
               const SizedBox(width: 12),
@@ -210,17 +259,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Consumer(builder: (context, ref, _) {
+                      final profileAsync = ref.watch(userProfileProvider);
+                      return Text(
+                        profileAsync.value?.company ?? 'Şirket Adı',
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          letterSpacing: 0.6,
+                        ),
+                      );
+                    }),
                     Text(
-                      'TAMGACI',
-                      style: GoogleFonts.poppins(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                    Text(
-                      'İş Yönetim Sistemi',
+                      'Hoş Geldiniz! ${DateFormat('dd MMMM yyyy', 'tr_TR').format(DateTime.now())}',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         color: Colors.white.withValues(alpha: 0.9),
@@ -230,52 +282,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ],
                 ),
               ),
-              // Currency quick chips similar to drawer
-              Consumer(builder: (context, ref, _) {
-                final rates = ref.watch(usdEurRatesProvider);
-                final usd = rates['USD']?.exchangeRate ?? 0.0;
-                final eur = rates['EUR']?.exchangeRate ?? 0.0;
-                Widget chip(String code, double value) => Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            code,
-                            style: GoogleFonts.poppins(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            value == 0.0
-                                ? '...'
-                                : '${value.toStringAsFixed(2)} ₺',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                return Row(children: [
-                  chip('USD', usd),
-                  const SizedBox(width: 8),
-                  chip('EUR', eur),
-                ]);
-              }),
+              // Removed currency chips per request
             ],
           ),
           const SizedBox(height: 16),
@@ -583,14 +590,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildStatsGrid(
       AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
     return dashboardSummaryAsync.when(
-      data: (summary) => GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1.5,
-        children: [
+      data: (summary) {
+        final cards = <Widget>[
           DashboardStatsCard(
             title: 'Toplam Satış',
             value: summary.totalSales,
@@ -644,8 +645,47 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             iconColor: Colors.purple,
             backgroundColor: Colors.purple,
           ),
-        ],
-      ),
+          DashboardStatsCard(
+            title: 'Bekleyen Tahsilat',
+            value: summary.pendingReceivables,
+            currency: 'TRY',
+            icon: Icons.download,
+            iconColor: Colors.teal,
+            backgroundColor: Colors.teal,
+          ),
+          DashboardStatsCard(
+            title: 'Bekleyen Ödeme',
+            value: summary.pendingPayables,
+            currency: 'TRY',
+            icon: Icons.upload,
+            iconColor: Colors.indigo,
+            backgroundColor: Colors.indigo,
+          ),
+        ];
+
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            // Responsive max item width so small screens do not overflow
+            double maxExtent = 260;
+            if (width < 400) {
+              maxExtent = 300; // allow single column if very narrow
+            }
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: maxExtent,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.1,
+              ),
+              itemCount: cards.length,
+              itemBuilder: (context, index) => cards[index],
+            );
+          },
+        );
+      },
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (error, stack) => Center(
         child: Text(

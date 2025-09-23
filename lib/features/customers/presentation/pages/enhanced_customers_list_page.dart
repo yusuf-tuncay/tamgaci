@@ -11,6 +11,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/services/excel_service.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
 
@@ -44,6 +45,10 @@ class _EnhancedCustomersListPageState
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    // Provider'ı yenile
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.invalidate(customersProvider);
+    });
   }
 
   @override
@@ -309,16 +314,40 @@ class _EnhancedCustomersListPageState
                 onPressed: () {
                   _exportToExcel();
                 },
-                icon: const Icon(Icons.file_download),
+                icon: const Icon(Icons.table_chart),
                 tooltip: 'Excel\'e Aktar',
               ),
-              // Excel içe aktarım
+              // CSV dışa aktarım
+              IconButton(
+                onPressed: () {
+                  _exportToCSV();
+                },
+                icon: const Icon(Icons.description),
+                tooltip: 'CSV\'ye Aktar',
+              ),
+              // PDF dışa aktarım
+              IconButton(
+                onPressed: () {
+                  _exportToPDF();
+                },
+                icon: const Icon(Icons.picture_as_pdf),
+                tooltip: 'PDF\'ye Aktar',
+              ),
+              // Excel/CSV içe aktarım
               IconButton(
                 onPressed: () {
                   _importFromExcel();
                 },
                 icon: const Icon(Icons.file_upload),
-                tooltip: 'Excel\'den İçe Aktar',
+                tooltip: 'Dosyadan İçe Aktar',
+              ),
+              // Yeni müşteri
+              IconButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/customers/create');
+                },
+                icon: const Icon(Icons.person_add),
+                tooltip: 'Yeni Müşteri',
               ),
             ],
           ),
@@ -462,6 +491,37 @@ class _EnhancedCustomersListPageState
                       ),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  if (customer.branches != null &&
+                      customer.branches!.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: (isDark ? Colors.blueGrey : Colors.blue)
+                            .withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: (isDark ? Colors.blueGrey : Colors.blue)
+                              .withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.account_tree_rounded,
+                              size: 16,
+                              color: isDark ? Colors.blueGrey : Colors.blue),
+                          const SizedBox(width: 4),
+                          Text('${customer.branches!.length}',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      isDark ? Colors.blueGrey : Colors.blue)),
+                        ],
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -575,7 +635,14 @@ class _EnhancedCustomersListPageState
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      // Satış yap
+                      Navigator.pushNamed(
+                        context,
+                        TamgaciRoutes.createSale,
+                        arguments: {
+                          'customerId': customer.id,
+                          'customerName': customer.name,
+                        },
+                      );
                     },
                     icon: const Icon(Icons.sell),
                     label: const Text('Satış Yap'),
@@ -646,21 +713,412 @@ class _EnhancedCustomersListPageState
     );
   }
 
-  void _exportToExcel() {
-    // TODO: Excel dışa aktarım implementasyonu
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Excel dışa aktarım özelliği yakında eklenecek'),
-      ),
-    );
+  void _exportToCSV() async {
+    try {
+      final customersAsync = ref.read(customersProvider);
+      final customers = customersAsync.when(
+        data: (data) => data,
+        loading: () => throw Exception('Müşteriler yükleniyor'),
+        error: (error, stack) =>
+            throw Exception('Müşteriler yüklenemedi: $error'),
+      );
+
+      if (customers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Dışa aktarılacak müşteri bulunamadı'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final fileName = await ExcelService.exportCustomersToCSV(customers);
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      if (fileName != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$fileName dosyası başarıyla oluşturuldu'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Paylaş',
+              textColor: Colors.white,
+              onPressed: () => _shareFile(fileName),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Loading'i kapat
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CSV dışa aktarım hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  void _importFromExcel() {
-    // TODO: Excel içe aktarım implementasyonu
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Excel içe aktarım özelliği yakında eklenecek'),
-      ),
-    );
+  void _exportToPDF() async {
+    try {
+      final customersAsync = ref.read(customersProvider);
+      final customers = customersAsync.when(
+        data: (data) => data,
+        loading: () => throw Exception('Müşteriler yükleniyor'),
+        error: (error, stack) =>
+            throw Exception('Müşteriler yüklenemedi: $error'),
+      );
+
+      if (customers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Dışa aktarılacak müşteri bulunamadı'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final fileName = await ExcelService.exportCustomersToPDF(customers);
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      if (fileName != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$fileName dosyası başarıyla oluşturuldu'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Paylaş',
+              textColor: Colors.white,
+              onPressed: () => _shareFile(fileName),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Loading'i kapat
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('PDF dışa aktarım hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _exportToExcel() async {
+    try {
+      final customersAsync = ref.read(customersProvider);
+      final customers = customersAsync.when(
+        data: (data) => data,
+        loading: () => throw Exception('Müşteriler yükleniyor'),
+        error: (error, stack) =>
+            throw Exception('Müşteriler yüklenemedi: $error'),
+      );
+
+      if (customers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Dışa aktarılacak müşteri bulunamadı'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final fileName = await ExcelService.exportCustomersToExcel(customers);
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      if (fileName != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$fileName dosyası başarıyla oluşturuldu'),
+            backgroundColor: Colors.green,
+            action: SnackBarAction(
+              label: 'Paylaş',
+              textColor: Colors.white,
+              onPressed: () => _shareFile(fileName),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Loading'i kapat
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Excel dışa aktarım hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _importFromExcel() async {
+    try {
+      // Import seçenekleri göster
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Müşteri İçe Aktarım',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const Icon(Icons.table_chart, color: Colors.green),
+                title: const Text('Excel Dosyası (.xlsx)'),
+                subtitle: const Text('Excel formatında müşteri listesi'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _importFromExcelFile();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.description, color: Colors.blue),
+                title: const Text('CSV Dosyası (.csv)'),
+                subtitle: const Text('Virgülle ayrılmış değerler'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _importFromCSVFile();
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('İçe aktarım hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _importFromExcelFile() async {
+    try {
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final customers = await ExcelService.importCustomersFromExcel();
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      if (customers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Excel dosyasında geçerli müşteri bulunamadı'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Onay dialogu göster
+      final shouldImport = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Müşteri İçe Aktarım'),
+          content: Text(
+              '${customers.length} müşteri içe aktarılacak. Devam etmek istiyor musunuz?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('İçe Aktar'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldImport == true) {
+        // Müşterileri kaydet
+        final repository = ref.read(customerRepositoryProvider);
+        await repository.createCustomers(customers);
+
+        // Provider'ı yenile
+        ref.invalidate(customersProvider);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('${customers.length} müşteri başarıyla içe aktarıldı'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Loading'i kapat
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Excel içe aktarım hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _importFromCSVFile() async {
+    try {
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      final customers = await ExcelService.importCustomersFromCSV();
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      if (customers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('CSV dosyasında geçerli müşteri bulunamadı'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Onay dialogu göster
+      final shouldImport = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Müşteri İçe Aktarım'),
+          content: Text(
+              '${customers.length} müşteri içe aktarılacak. Devam etmek istiyor musunuz?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('İçe Aktar'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldImport == true) {
+        // Müşterileri kaydet
+        final repository = ref.read(customerRepositoryProvider);
+        await repository.createCustomers(customers);
+
+        // Provider'ı yenile
+        ref.invalidate(customersProvider);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('${customers.length} müşteri başarıyla içe aktarıldı'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // Loading'i kapat
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CSV içe aktarım hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _shareFile(String fileName) async {
+    try {
+      // TODO: Dosya paylaşım implementasyonu
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$fileName dosyası paylaşım için hazır'),
+          backgroundColor: Colors.blue,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Dosya paylaşım hatası: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

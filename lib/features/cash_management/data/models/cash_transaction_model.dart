@@ -33,7 +33,7 @@ class CashTransactionModel extends CashTransaction {
     final data = doc.data() as Map<String, dynamic>;
     return CashTransactionModel(
       id: doc.id,
-      transactionNumber: data['transactionNumber'] as String,
+      transactionNumber: data['transactionNumber'] as String? ?? '',
       type: CashTransactionType.values.firstWhere(
         (e) => e.name == data['type'],
         orElse: () => CashTransactionType.income,
@@ -46,21 +46,22 @@ class CashTransactionModel extends CashTransaction {
         (e) => e.name == data['status'],
         orElse: () => CashTransactionStatus.pending,
       ),
-      fromAccountId: data['fromAccountId'] as String,
+      fromAccountId: data['fromAccountId'] as String? ?? '',
       toAccountId: data['toAccountId'] as String?,
-      amount: (data['amount'] as num).toDouble(),
-      currency: data['currency'] as String,
+      amount: (data['amount'] as num?)?.toDouble() ?? 0.0,
+      currency: data['currency'] as String? ?? 'TRY',
       description: data['description'] as String?,
       reference: data['reference'] as String?,
       relatedDocumentId: data['relatedDocumentId'] as String?,
       relatedDocumentType: data['relatedDocumentType'] as String?,
-      transactionDate: (data['transactionDate'] as Timestamp).toDate(),
+      transactionDate:
+          (data['transactionDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       dueDate: (data['dueDate'] as Timestamp?)?.toDate(),
       notes: data['notes'] as String?,
       attachments: List<String>.from(data['attachments'] ?? []),
       metadata: Map<String, dynamic>.from(data['metadata'] ?? {}),
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       createdBy: data['createdBy'] as String?,
       updatedBy: data['updatedBy'] as String?,
     );

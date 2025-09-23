@@ -2,30 +2,30 @@
 // lib/features/settings/presentation/pages/profile_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:tamgaci/shared/utils/profile_image_provider.dart';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../core/services/permissions/storage_permission_service.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import '../../../../core/validators/input_validators.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../user_profile/presentation/providers/user_profile_providers.dart';
-import '../../../user_profile/domain/entities/user_profile.dart';
+import '../../../../core/utils/logger.dart';
 
-/// Profil sayfası
-class ProfilePage extends ConsumerStatefulWidget {
+/// Profil sayfası - Tamamen Firebase'den veri çeker
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends ConsumerState<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
@@ -41,11 +41,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _isLoading = false;
   bool _isEditingPassword = false;
   bool _isUploadingPhoto = false;
+  bool _initialized = false;
+  String? _profileImageUrl;
+  Uint8List? _localAvatarBytes;
+  double _uploadProgress = 0.0;
 
   @override
   void initState() {
     super.initState();
-    _loadProfileData();
+    // Clean up old URLs immediately on page load
+    WidgetsBinding.instance.addPostFrameCallback((_) {});
   }
 
   @override
@@ -63,22 +68,68 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     super.dispose();
   }
 
-  /// Profil verilerini yükle
-  void _loadProfileData() {
-    final profileAsync = ref.read(userProfileProvider);
-    profileAsync.whenData((profile) {
+  /// Geçerli profil fotoğrafı var mı kontrol et
+  bool _hasValidProfileImage() {
+    // Basit kontrol: URL var mı?
+    return _profileImageUrl != null && _profileImageUrl!.isNotEmpty;
+  }
+
+  /// Profil fotoğrafını tamamen kaldır
+  /// DELETE (Fotoğrafı sil) - Best Practice CRUD pattern
+  Future<void> _cleanupOldProfileImage() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) return;
+
+    debugPrint('🗑️ Removing profile image...');
+    try {
+      // 1. Storage'dan dosyayı sil
+      final storageRef = FirebaseStorage.instance.ref().child(
+          'users/${currentUser.uid}/profile/profile_${currentUser.uid}.jpg');
+
+      try {
+        await storageRef.delete();
+        debugPrint('✅ Profile image deleted from Storage');
+      } catch (e) {
+        debugPrint('⚠️ Storage delete failed (file might not exist): $e');
+        // Continue with Firestore cleanup even if Storage delete fails
+      }
+
+      // 2. Firestore'dan path alanını sil (best practice)
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .update({
+        'profileImagePath': FieldValue.delete(),
+        'profileImageUrl': FieldValue.delete(), // Legacy field cleanup
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      debugPrint('✅ Profile image path removed from Firestore');
+
       if (mounted) {
         setState(() {
-          _nameController.text = profile.name;
-          _surnameController.text = profile.surname;
-          _emailController.text = profile.email;
-          _phoneController.text = profile.phone ?? '';
-          _positionController.text = profile.position ?? '';
-          _departmentController.text = profile.department ?? '';
-          _companyController.text = profile.company ?? '';
+          _profileImageUrl = null;
         });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Profil fotoğrafı başarıyla kaldırıldı'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
       }
-    });
+    } catch (e) {
+      debugPrint('❌ Failed to remove profile image: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Fotoğraf kaldırılırken hata oluştu: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   /// Profil bilgilerini kaydet
@@ -90,33 +141,32 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     });
 
     try {
-      final profileAsync = ref.read(userProfileProvider);
-      final currentProfile = profileAsync.value;
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        final userRef =
+            FirebaseFirestore.instance.collection('users').doc(currentUser.uid);
 
-      if (currentProfile != null) {
-        // Formatlanmış değerleri kullan
-        final updatedProfile = currentProfile.copyWith(
-          name: InputValidators.formatName(_nameController.text),
-          surname: InputValidators.formatName(_surnameController.text),
-          email: InputValidators.formatEmail(_emailController.text),
-          phone: _phoneController.text.trim().isEmpty
+        final updateData = {
+          'name': InputValidators.formatName(_nameController.text),
+          'surname': InputValidators.formatName(_surnameController.text),
+          'phone': _phoneController.text.trim().isEmpty
               ? null
               : InputValidators.formatPhone(_phoneController.text),
-          position: _positionController.text.trim().isEmpty
+          'position': _positionController.text.trim().isEmpty
               ? null
               : _positionController.text.trim(),
-          department: _departmentController.text.trim().isEmpty
+          'department': _departmentController.text.trim().isEmpty
               ? null
               : _departmentController.text.trim(),
-          company: _companyController.text.trim().isEmpty
-              ? null
-              : _companyController.text.trim(),
-          updatedAt: DateTime.now(),
-        );
+          'companyName': _companyController.text.trim(),
+          'profileImageUrl': _profileImageUrl,
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
 
-        await ref
-            .read(userProfileProvider.notifier)
-            .updateProfile(updatedProfile);
+        // Remove null values
+        updateData.removeWhere((key, value) => value == null);
+
+        await userRef.update(updateData);
 
         if (mounted) {
           final messenger = ScaffoldMessenger.of(context);
@@ -129,6 +179,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         }
       }
     } catch (e) {
+      AppLogger.error('Error updating profile: $e');
       if (mounted) {
         final messenger = ScaffoldMessenger.of(context);
         messenger.showSnackBar(
@@ -144,10 +195,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 
-  /// Profil fotoğrafı seç
+  /// Profil fotoğrafı seç ve Firebase Storage'a yükle
   Future<void> _pickProfilePhoto() async {
     try {
       if (!kIsWeb) {
+        // Request storage/media permissions up-front (best effort)
+        final ok =
+            await const StoragePermissionService().ensureMediaPermissions();
+        if (!ok && mounted) {
+          final messenger = ScaffoldMessenger.of(context);
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Depolama/Fotoğraflar izni gerekli. Lütfen ayarlardan verin.'),
+            ),
+          );
+        }
         // Mobil platform için izin kontrolü
         final cameraStatus = await Permission.camera.status;
         if (cameraStatus.isDenied) {
@@ -196,35 +259,130 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
         final XFile? image = await picker.pickImage(
           source: source,
-          maxWidth: 512,
-          maxHeight: 512,
-          imageQuality: 80,
+          maxWidth: 300,
+          maxHeight: 300,
+          imageQuality: 70,
         );
 
         if (image != null) {
-          String photoData;
-
-          if (kIsWeb) {
-            // Web platformu için base64 formatında dönüştür
-            final bytes = await image.readAsBytes();
-            photoData = base64Encode(bytes);
-          } else {
-            // Mobil platform için dosya yolu kullan
-            photoData = image.path;
+          if (mounted) {
+            setState(() {
+              _isUploadingPhoto = true;
+              _uploadProgress = 0.0;
+            });
           }
 
-          await ref
-              .read(userProfileProvider.notifier)
-              .uploadProfilePhoto(photoData);
+          try {
+            final bytes = await image.readAsBytes();
+            debugPrint('📊 Image size: ${bytes.length} bytes');
 
-          if (mounted) {
-            final messenger = ScaffoldMessenger.of(context);
-            messenger.showSnackBar(
-              const SnackBar(
-                content: Text('Profil fotoğrafı başarıyla güncellendi'),
-                backgroundColor: Colors.green,
+            final currentUser = FirebaseAuth.instance.currentUser;
+            if (currentUser == null) {
+              throw Exception('User not authenticated');
+            }
+
+            // Show local preview immediately
+            if (mounted) {
+              setState(() {
+                _localAvatarBytes = bytes;
+              });
+            }
+
+            debugPrint('🔄 Starting Firebase Storage upload...');
+            debugPrint('👤 User ID: ${currentUser.uid}');
+
+            // Firebase Storage upload with fixed file path (CRUD pattern)
+            final storage = FirebaseStorage.instance;
+            // Fixed file path - same for all uploads (update pattern)
+            final storageRef = storage.ref().child(
+                'users/${currentUser.uid}/profile/profile_${currentUser.uid}.jpg');
+
+            debugPrint(
+                '📤 Uploading to: users/${currentUser.uid}/profile/profile_${currentUser.uid}.jpg');
+
+            // Upload with progress tracking
+            final uploadTask = storageRef.putData(
+              bytes,
+              SettableMetadata(
+                contentType: 'image/jpeg',
+                customMetadata: {
+                  'userId': currentUser.uid,
+                  'uploadedAt': DateTime.now().toIso8601String(),
+                },
               ),
             );
+
+            // Track upload progress
+            uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
+              final progress = snapshot.bytesTransferred / snapshot.totalBytes;
+              if (mounted) {
+                setState(() {
+                  _uploadProgress = progress;
+                });
+              }
+            });
+
+            await uploadTask;
+            debugPrint('✅ Upload completed');
+
+            // Get download URL
+            final downloadURL = await storageRef.getDownloadURL();
+            debugPrint('🔗 Download URL obtained: $downloadURL');
+
+            // Update user profile in Firestore with best practice (path + metadata)
+            debugPrint('💾 Updating user profile in Firestore...');
+            final imagePath =
+                'users/${currentUser.uid}/profile/profile_${currentUser.uid}.jpg';
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUser.uid)
+                .set({
+              'profileImagePath': imagePath, // Best practice: store path
+              'profileImageUrl': downloadURL, // Cache for performance
+              'profileImageMetadata': {
+                'uploadedAt': FieldValue.serverTimestamp(),
+                'fileSize': bytes.length,
+                'mimeType': 'image/jpeg',
+              },
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+            debugPrint('✅ User profile updated in Firestore');
+
+            if (mounted) {
+              setState(() {
+                _profileImageUrl = downloadURL;
+                _localAvatarBytes = null;
+                _isUploadingPhoto = false;
+                _uploadProgress = 0.0;
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('✅ Profil fotoğrafı başarıyla yüklendi!'),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+          } catch (e) {
+            debugPrint('❌ Upload failed: $e');
+            debugPrint('❌ Error type: ${e.runtimeType}');
+
+            if (mounted) {
+              setState(() {
+                _isUploadingPhoto = false;
+                _uploadProgress = 0.0;
+                _localAvatarBytes = null;
+              });
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('❌ Yükleme başarısız: ${e.toString()}'),
+                  backgroundColor: Colors.red,
+                  duration: const Duration(seconds: 3),
+                ),
+              );
+            }
           }
         }
       }
@@ -239,7 +397,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       if (mounted) {
         setState(() {
           _isUploadingPhoto = false;
+          _uploadProgress = 0.0; // Reset progress
         });
+        // Clear any remaining loading snackbars
+        ScaffoldMessenger.of(context).clearSnackBars();
       }
     }
   }
@@ -308,267 +469,413 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 
+  /// Appends cache-busting version parameter to a URL without breaking existing query params
+
+  /// Shows dialog when user tries to exit during upload
+  void _showUploadInProgressDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.upload, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Yükleme Devam Ediyor'),
+            ],
+          ),
+          content: const Text(
+            'Profil fotoğrafınız yükleniyor. Lütfen işlem tamamlanana kadar bekleyin.\n\n'
+            'Yükleme tamamlanmadan çıkarsanız fotoğraf kaybolabilir.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Tamam'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final profileAsync = ref.watch(userProfileProvider);
-
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
-      appBar: const CustomAppBar(
-          title: 'Profil', showBackButton: true, showDrawer: false),
-      body: profileAsync.when(
-        data: (profile) => Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // Form alanları
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Profil fotoğrafı
-                      _buildProfilePhoto(profile),
-                      const SizedBox(height: 24),
+    if (currentUser == null) {
+      return const Scaffold(
+        appBar: CustomAppBar(
+          title: 'Profil',
+          showBackButton: true,
+          showDrawer: false,
+        ),
+        body: Center(
+          child: Text('Kullanıcı girişi gerekli'),
+        ),
+      );
+    }
 
-                      // Kişisel bilgiler
-                      _buildSectionTitle('Kişisel Bilgiler'),
-                      _buildPersonalInfoSection(),
+    return PopScope(
+      canPop: !_isUploadingPhoto,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop && _isUploadingPhoto) {
+          _showUploadInProgressDialog();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: isDark
+            ? TamgaciConstants.backgroundColorDark
+            : TamgaciConstants.backgroundColor,
+        appBar: CustomAppBar(
+          title: 'Profil',
+          showBackButton: true,
+          showDrawer: false,
+          onBackPressed: _isUploadingPhoto
+              ? null
+              : () {
+                  if (_isUploadingPhoto) {
+                    _showUploadInProgressDialog();
+                    return;
+                  }
+                  try {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    } else {
+                      Navigator.of(context).pushReplacementNamed('/dashboard');
+                    }
+                  } catch (e) {
+                    debugPrint('Navigation error: $e');
+                    // Fallback navigation
+                    Navigator.of(context).pushReplacementNamed('/dashboard');
+                  }
+                },
+        ),
+        body: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-                      const SizedBox(height: 24),
-
-                      // İş bilgileri
-                      _buildSectionTitle('İş Bilgileri'),
-                      _buildWorkInfoSection(),
-
-                      const SizedBox(height: 24),
-
-                      // Şifre değiştirme
-                      _buildSectionTitle('Güvenlik'),
-                      _buildPasswordSection(),
-
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Kaydet butonu
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 4,
-                      offset: const Offset(0, -2),
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error, size: 64, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text('Hata: ${snapshot.error}'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => setState(() {}),
+                      child: const Text('Tekrar Dene'),
                     ),
                   ],
                 ),
-                child: SafeArea(
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _saveProfile,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: TamgaciConstants.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+              );
+            }
+
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return const Center(
+                child: Text('Kullanıcı verisi bulunamadı'),
+              );
+            }
+
+            final userData = snapshot.data!.data() as Map<String, dynamic>;
+            _initFromFirebaseData(userData);
+
+            return Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  // Form alanları
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Profil fotoğrafı
+                          _buildProfilePhotoFromFirebase(userData),
+                          const SizedBox(height: 24),
+
+                          // Kişisel bilgiler
+                          _buildSectionTitle('Kişisel Bilgiler'),
+                          _buildPersonalInfoSectionFromFirebase(userData),
+
+                          const SizedBox(height: 24),
+
+                          // İş bilgileri
+                          _buildSectionTitle('İş Bilgileri'),
+                          _buildWorkInfoSectionFromFirebase(userData),
+
+                          const SizedBox(height: 24),
+
+                          // Şirket bilgileri
+                          _buildSectionTitle('Şirket Bilgileri'),
+                          _buildCompanyInfoSectionFromFirebase(userData),
+
+                          const SizedBox(height: 24),
+
+                          // Şifre değiştirme
+                          _buildSectionTitle('Güvenlik'),
+                          _buildPasswordSection(),
+
+                          const SizedBox(height: 40),
+                        ],
                       ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              'Değişiklikleri Kaydet',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
                     ),
                   ),
-                ),
+
+                  // Kaydet butonu
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? TamgaciConstants.cardColorDark
+                          : Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, -2),
+                        ),
+                      ],
+                    ),
+                    child: SafeArea(
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: (_isLoading || _isUploadingPhoto)
+                              ? null
+                              : _saveProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: TamgaciConstants.primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: (_isLoading || _isUploadingPhoto)
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : Text(
+                                  _isUploadingPhoto
+                                      ? 'Fotoğraf Yükleniyor...'
+                                      : 'Değişiklikleri Kaydet',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: TamgaciConstants.errorColor,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Profil yüklenirken hata oluştu',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: isDark
-                      ? TamgaciConstants.textPrimaryDark
-                      : TamgaciConstants.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: isDark
-                      ? TamgaciConstants.textSecondaryDark
-                      : TamgaciConstants.textSecondary,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  ref.read(userProfileProvider.notifier).refreshProfile();
-                },
-                child: const Text('Tekrar Dene'),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
   }
 
-  /// Profil fotoğrafı
-  Widget _buildProfilePhoto(UserProfile profile) {
+  /// Firebase verilerini form alanlarına yükle
+  void _initFromFirebaseData(Map<String, dynamic> userData) {
+    if (_initialized) return;
+
+    _nameController.text = userData['name'] ?? '';
+    _surnameController.text = userData['surname'] ?? '';
+    _emailController.text = userData['email'] ?? '';
+    _phoneController.text = userData['phone'] ?? '';
+    _positionController.text = userData['position'] ?? '';
+    _departmentController.text = userData['department'] ?? '';
+    _companyController.text = userData['companyName'] ?? '';
+
+    // Profil fotoğrafı URL'sini güncelle (best practice: path'den URL çek)
+    final profileImagePath = userData['profileImagePath'];
+    final cachedUrl = userData['profileImageUrl']; // Cache'den hızlı yükleme
+
+    if (profileImagePath != null) {
+      // Önce cache'den yükle, sonra path'den güncelle
+      if (cachedUrl != null && cachedUrl != _profileImageUrl) {
+        // setState'i WidgetsBinding.instance.addPostFrameCallback ile sarmala
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            setState(() {
+              _profileImageUrl = cachedUrl;
+            });
+          }
+        });
+      }
+
+      // Path'den fresh URL çek (background'da)
+      _loadProfileImageFromPath(profileImagePath);
+    } else if (cachedUrl != null && cachedUrl != _profileImageUrl) {
+      // Legacy: sadece URL varsa onu kullan
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _profileImageUrl = cachedUrl;
+          });
+        }
+      });
+    }
+
+    _initialized = true;
+  }
+
+  /// READ (Path'den URL çek) - Best Practice
+  Future<void> _loadProfileImageFromPath(String imagePath) async {
+    try {
+      final storageRef = FirebaseStorage.instance.ref().child(imagePath);
+      final downloadURL = await storageRef.getDownloadURL();
+
+      if (mounted && downloadURL != _profileImageUrl) {
+        setState(() {
+          _profileImageUrl = downloadURL;
+        });
+        debugPrint('✅ Profile image loaded from path: $imagePath');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to load image from path $imagePath: $e');
+      // Path geçersizse Firestore'dan temizle
+      if (e.toString().contains('object-not-found')) {
+        await _cleanupInvalidImagePath(imagePath);
+      }
+    }
+  }
+
+  /// Geçersiz image path'i temizle
+  Future<void> _cleanupInvalidImagePath(String imagePath) async {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({
+          'profileImagePath': FieldValue.delete(),
+          'profileImageUrl': FieldValue.delete(),
+        });
+        debugPrint('🧹 Cleaned up invalid image path: $imagePath');
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to cleanup invalid path: $e');
+    }
+  }
+
+  /// Profil fotoğrafı - Firebase verilerinden (best practice)
+  Widget _buildProfilePhotoFromFirebase(Map<String, dynamic> userData) {
+    final name = userData['name'] ?? '';
+    final surname = userData['surname'] ?? '';
+    // Best practice: önce cache'den, sonra path'den
+    final profileImageUrl = userData['profileImageUrl'] ?? _profileImageUrl;
+
     return Center(
       child: Column(
         children: [
           Stack(
             children: [
-              if (kIsWeb &&
-                  profile.profilePhotoUrl != null &&
-                  profile.profilePhotoUrl!.startsWith('web_photo_'))
-                // Web platformu için FutureBuilder ile base64 veriyi al
-                FutureBuilder<String?>(
-                  future: _getWebPhotoData(profile.id),
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData && snapshot.data != null) {
-                      return CircleAvatar(
-                        radius: 50,
-                        backgroundColor: TamgaciConstants.primaryColor
-                            .withValues(alpha: 0.1),
-                        backgroundImage:
-                            MemoryImage(base64Decode(snapshot.data!)),
-                      );
-                    } else {
-                      return CircleAvatar(
-                        radius: 50,
-                        backgroundColor: TamgaciConstants.primaryColor
-                            .withValues(alpha: 0.1),
-                        child: Text(
-                          profile.initials,
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: TamgaciConstants.primaryColor,
-                          ),
+              CircleAvatar(
+                radius: 50,
+                backgroundColor:
+                    TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                backgroundImage:
+                    profileImageUrl != null && profileImageUrl.isNotEmpty
+                        ? NetworkImage(profileImageUrl)
+                        : null,
+                child: profileImageUrl == null || profileImageUrl.isEmpty
+                    ? Text(
+                        _initialsFrom(name, surname),
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: TamgaciConstants.primaryColor,
                         ),
-                      );
-                    }
-                  },
-                )
-              else
-                // Mobil platform veya fotoğraf yok
-                CircleAvatar(
-                  radius: 50,
-                  backgroundColor:
-                      TamgaciConstants.primaryColor.withValues(alpha: 0.1),
-                  backgroundImage: profile.profilePhotoUrl != null &&
-                          !profile.profilePhotoUrl!.startsWith('web_photo_')
-                      ? imageProviderFromPath(profile.profilePhotoUrl!)
-                      : null,
-                  child: profile.profilePhotoUrl == null
-                      ? Text(
-                          profile.initials,
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: TamgaciConstants.primaryColor,
-                          ),
-                        )
-                      : null,
-                ),
+                      )
+                    : null,
+              ),
               Positioned(
                 bottom: 0,
                 right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: TamgaciConstants.primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                  child: _isUploadingPhoto
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                child: GestureDetector(
+                  onTap: _isUploadingPhoto
+                      ? null
+                      : () async {
+                          debugPrint(
+                              '🔘 Icon tapped! _hasValidProfileImage: ${_hasValidProfileImage()}');
+                          debugPrint('🔘 _profileImageUrl: $_profileImageUrl');
+
+                          if (_hasValidProfileImage()) {
+                            debugPrint('🗑️ Removing profile image...');
+                            await _cleanupOldProfileImage();
+                          } else {
+                            debugPrint('📷 Picking new profile photo...');
+                            await _pickProfilePhoto();
+                          }
+                        },
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: _hasValidProfileImage()
+                          ? Colors.red
+                          : TamgaciConstants.primaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: _isUploadingPhoto
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              value: null, // Dönen animasyon için null
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Icon(
+                            _hasValidProfileImage()
+                                ? Icons.close
+                                : Icons.camera_alt,
+                            color: Colors.white,
+                            size: 20,
                           ),
-                        )
-                      : const Icon(
-                          Icons.camera_alt,
-                          color: Colors.white,
-                          size: 20,
-                        ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          TextButton(
-            onPressed: _isUploadingPhoto ? null : _pickProfilePhoto,
-            child: Text(
-              _isUploadingPhoto ? 'Yükleniyor...' : 'Fotoğraf Değiştir',
-              style: GoogleFonts.poppins(
-                color: TamgaciConstants.primaryColor,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  /// Web platformu için SharedPreferences'dan fotoğraf verisini al
-  Future<String?> _getWebPhotoData(String userId) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final photoKey = 'profile_photo_$userId';
-      return prefs.getString(photoKey);
-    } catch (e) {
-      return null;
-    }
+  String _initialsFrom(String? name, String? surname) {
+    final n = (name ?? '').trim();
+    final s = (surname ?? '').trim();
+    final first = n.isNotEmpty ? n.characters.first : '';
+    final second = s.isNotEmpty ? s.characters.first : '';
+    final result = (first + second).toUpperCase();
+    return result.isEmpty ? 'KU' : result;
   }
 
   /// Bölüm başlığı
@@ -591,8 +898,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  /// Kişisel bilgiler bölümü
-  Widget _buildPersonalInfoSection() {
+  /// Kişisel bilgiler - Firebase verilerinden
+  Widget _buildPersonalInfoSectionFromFirebase(Map<String, dynamic> userData) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -623,8 +930,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             FormattedPhoneField(
               label: 'Telefon',
               controller: _phoneController,
-              hint: '+90 543 288 1296',
-              required: false,
+              hint: '0555 123 45 67',
             ),
           ],
         ),
@@ -632,8 +938,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  /// İş bilgileri bölümü
-  Widget _buildWorkInfoSection() {
+  /// İş bilgileri - Firebase verilerinden
+  Widget _buildWorkInfoSectionFromFirebase(Map<String, dynamic> userData) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -643,6 +949,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Abonelik bilgisi kısa gösterim
+            _buildSubscriptionInfoFromFirebase(userData),
+            const SizedBox(height: 16),
             TextFormField(
               controller: _positionController,
               decoration: const InputDecoration(
@@ -662,19 +971,142 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 hintText: 'Örn: Yönetim',
               ),
             ),
-            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Şirket bilgileri - Firebase verilerinden
+  Widget _buildCompanyInfoSectionFromFirebase(Map<String, dynamic> userData) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      color: isDark ? TamgaciConstants.cardColorDark : null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
             TextFormField(
               controller: _companyController,
               decoration: const InputDecoration(
-                labelText: 'Şirket',
+                labelText: 'Şirket Adı',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.business),
-                hintText: 'Örn: Tamgaci Ltd. Şti.',
+                hintText: 'Örn: ABC Şirketi',
               ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              initialValue: userData['taxId'] ?? '',
+              decoration: const InputDecoration(
+                labelText: 'Vergi Numarası',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.receipt),
+                hintText: 'Örn: 1234567890',
+              ),
+              readOnly: true,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              initialValue: userData['taxOffice'] ?? '',
+              decoration: const InputDecoration(
+                labelText: 'Vergi Dairesi',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.location_city),
+                hintText: 'Örn: Fatih',
+              ),
+              readOnly: true,
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              initialValue: userData['billingAddress'] ?? '',
+              decoration: const InputDecoration(
+                labelText: 'Fatura Adresi',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.location_on),
+                hintText: 'Adres bilgisi',
+              ),
+              readOnly: true,
+              maxLines: 3,
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Abonelik bilgisi - Firebase verilerinden
+  Widget _buildSubscriptionInfoFromFirebase(Map<String, dynamic> userData) {
+    final now = DateTime.now();
+    String text = 'Abonelik: Yok';
+    Color color = Colors.grey;
+
+    final subscriptionStatus = userData['subscriptionStatus'] ?? 'none';
+    final trialEndAt = userData['trialEndAt'];
+    final subscriptionEndAt = userData['subscriptionEndAt'];
+
+    if (subscriptionStatus == 'trial' && trialEndAt != null) {
+      final trialEnd = (trialEndAt as Timestamp).toDate();
+      final remaining = trialEnd.difference(now).inDays;
+      text = remaining >= 0
+          ? 'Deneme: $remaining gün kaldı'
+          : 'Deneme süresi doldu';
+      color = remaining > 0 ? Colors.orange : Colors.red;
+    } else if (subscriptionStatus == 'active' && subscriptionEndAt != null) {
+      final subEnd = (subscriptionEndAt as Timestamp).toDate();
+      final remaining = subEnd.difference(now).inDays;
+      text = remaining >= 0
+          ? 'Aktif: $remaining gün kaldı'
+          : 'Abonelik süresi doldu';
+      color = remaining > 0 ? Colors.green : Colors.red;
+    }
+
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.subscriptions,
+                size: 16,
+                color: color,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                text,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Spacer(),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pushNamed('/subscription');
+          },
+          child: Text(
+            'Yönet',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: TamgaciConstants.primaryColor,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

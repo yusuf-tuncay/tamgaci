@@ -40,7 +40,16 @@ class CashTransactionFirebaseDataSource {
 
       final snapshot = await query.get();
       return snapshot.docs
-          .map((doc) => CashTransactionModel.fromFirestore(doc))
+          .map((doc) {
+            try {
+              return CashTransactionModel.fromFirestore(doc);
+            } catch (e) {
+              AppLogger.error('Error parsing cash transaction document ${doc.id}', e);
+              return null;
+            }
+          })
+          .where((transaction) => transaction != null)
+          .cast<CashTransactionModel>()
           .toList();
     } catch (e) {
       AppLogger.error('Error getting all cash transactions', e);
@@ -54,7 +63,12 @@ class CashTransactionFirebaseDataSource {
       final doc =
           await _firestore.collection('cash_transactions').doc(id).get();
       if (doc.exists) {
-        return CashTransactionModel.fromFirestore(doc);
+        try {
+          return CashTransactionModel.fromFirestore(doc);
+        } catch (e) {
+          AppLogger.error('Error parsing cash transaction document ${doc.id}', e);
+          return null;
+        }
       }
       return null;
     } catch (e) {

@@ -11,16 +11,17 @@ abstract class StockRepository {
   Future<List<Stock>> getActiveStocks();
 
   /// ID'ye göre stok getir
-  Future<Stock?> getStockById(int id);
+  Future<Stock?> getStockById(String id);
 
   /// Ürün ID'sine göre stokları getir
-  Future<List<Stock>> getStocksByProductId(int productId);
+  Future<List<Stock>> getStocksByProductId(String productId);
 
   /// Depo ID'sine göre stokları getir
-  Future<List<Stock>> getStocksByWarehouseId(int warehouseId);
+  Future<List<Stock>> getStocksByWarehouseId(String warehouseId);
 
   /// Ürün ve depo ID'sine göre stok getir
-  Future<Stock?> getStockByProductAndWarehouse(int productId, int warehouseId);
+  Future<Stock?> getStockByProductAndWarehouse(
+      String productId, String warehouseId);
 
   /// Düşük stokları getir
   Future<List<Stock>> getLowStocks();
@@ -35,13 +36,13 @@ abstract class StockRepository {
   Future<Stock> updateStock(Stock stock);
 
   /// Stok sil
-  Future<void> deleteStock(int id);
+  Future<void> deleteStock(String id);
 
   /// Stok miktarını güncelle
-  Future<void> updateStockQuantity(int id, double quantity);
+  Future<void> updateStockQuantity(String id, double quantity);
 
   /// Stok fiyatını güncelle
-  Future<void> updateStockPrice(int id, double unitPrice);
+  Future<void> updateStockPrice(String id, double unitPrice);
 
   /// Stok sayısını getir
   Future<int> getStockCount();

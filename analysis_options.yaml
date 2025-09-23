@@ -27,6 +27,8 @@ linter:
 
 # Generated files için linter uyarılarını ignore et
 analyzer:
+  errors:
+    unused_field: ignore
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"

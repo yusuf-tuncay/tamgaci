@@ -705,6 +705,8 @@ class _EnhancedPurchaseDetailPageState
         return Icons.point_of_sale;
       case PurchaseType.purchase:
         return Icons.shopping_cart;
+      case PurchaseType.returnPurchase:
+        return Icons.keyboard_return;
       case PurchaseType.estimate:
         return Icons.assessment;
     }

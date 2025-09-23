@@ -23,11 +23,10 @@ class WarehouseRepositoryImpl extends FirebaseRepository<Warehouse>
   Warehouse mapToEntity(Map<String, dynamic> map) => Warehouse.fromMap(map);
 
   @override
-  String getEntityId(Warehouse entity) => (entity.id ?? '').toString();
+  String getEntityId(Warehouse entity) => entity.id;
 
   @override
-  Warehouse setEntityId(Warehouse entity, String id) =>
-      entity.copyWith(id: int.tryParse(id));
+  Warehouse setEntityId(Warehouse entity, String id) => entity.copyWith(id: id);
 
   @override
   DateTime getEntityCreatedAt(Warehouse entity) => entity.createdAt;
@@ -97,7 +96,7 @@ class WarehouseRepositoryImpl extends FirebaseRepository<Warehouse>
   }
 
   @override
-  Future<Warehouse?> getWarehouseById(int id) async {
+  Future<Warehouse?> getWarehouseById(String id) async {
     try {
       final doc = await firestore
           .collection(_warehousesCollection)
@@ -136,7 +135,7 @@ class WarehouseRepositoryImpl extends FirebaseRepository<Warehouse>
   Future<Warehouse> createWarehouse(Warehouse warehouse) async {
     try {
       // Generate new ID
-      final newId = DateTime.now().millisecondsSinceEpoch;
+      final newId = DateTime.now().millisecondsSinceEpoch.toString();
       final newWarehouse = warehouse.copyWith(
         id: newId,
         createdAt: DateTime.now(),
@@ -171,12 +170,9 @@ class WarehouseRepositoryImpl extends FirebaseRepository<Warehouse>
   }
 
   @override
-  Future<void> deleteWarehouse(int id) async {
+  Future<void> deleteWarehouse(String id) async {
     try {
-      await firestore
-          .collection(_warehousesCollection)
-          .doc(id.toString())
-          .delete();
+      await firestore.collection(_warehousesCollection).doc(id).delete();
     } catch (e) {
       throw Exception('Failed to delete warehouse: $e');
     }

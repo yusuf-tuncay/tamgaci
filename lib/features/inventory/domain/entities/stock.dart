@@ -6,9 +6,9 @@ import 'warehouse.dart';
 
 /// Stok entity'si - Warehouse'larda bulunan ürünlerin stok bilgilerini tutar
 class Stock {
-  final int id;
-  final int productId;
-  final int warehouseId;
+  final String id;
+  final String productId;
+  final String warehouseId;
   final double quantity;
   final double minimumQuantity;
   final double maximumQuantity;
@@ -75,9 +75,9 @@ class Stock {
 
   /// Copy with method
   Stock copyWith({
-    int? id,
-    int? productId,
-    int? warehouseId,
+    String? id,
+    String? productId,
+    String? warehouseId,
     double? quantity,
     double? minimumQuantity,
     double? maximumQuantity,
@@ -115,9 +115,9 @@ class Stock {
   /// Map'ten Stock oluşturur
   factory Stock.fromMap(Map<String, dynamic> map) {
     return Stock(
-      id: map['id']?.toInt() ?? 0,
-      productId: map['productId']?.toInt() ?? 0,
-      warehouseId: map['warehouseId']?.toInt() ?? 0,
+      id: map['id']?.toString() ?? '',
+      productId: map['productId']?.toString() ?? '',
+      warehouseId: map['warehouseId']?.toString() ?? '',
       quantity: map['quantity']?.toDouble() ?? 0.0,
       minimumQuantity: map['minimumQuantity']?.toDouble() ?? 0.0,
       maximumQuantity: map['maximumQuantity']?.toDouble() ?? 0.0,

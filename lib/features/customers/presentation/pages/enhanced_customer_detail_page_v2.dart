@@ -11,8 +11,11 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../core/routes/routes.dart';
 import '../../domain/entities/customer.dart';
-import '../../domain/entities/customer_transaction.dart';
+// import '../../domain/entities/customer_transaction.dart';
 import '../providers/customer_providers.dart';
+import '../../../invoices/presentation/providers/invoice_providers.dart';
+import '../../../cash_management/presentation/providers/cash_management_providers.dart';
+import '../../../cash_management/domain/entities/cash_transaction.dart';
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -43,6 +46,10 @@ class _EnhancedCustomerDetailPageV2State
       setState(() {
         _selectedTabIndex = _tabController.index;
       });
+    });
+    // Load cash transactions to enable payment counts and lists
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
     });
   }
 
@@ -87,7 +94,7 @@ class _EnhancedCustomerDetailPageV2State
         // Hızlı işlem butonları
         _buildQuickActionButtons(customer, isDark),
         // Tab bar
-        _buildTabBar(isDark),
+        _buildTabBar(customer, isDark),
         // Tab içerikleri
         Expanded(
           child: TabBarView(
@@ -325,10 +332,13 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Satış Yap',
               color: Colors.green,
               onTap: () {
-                // Satış yap
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Satış yapma özelliği yakında eklenecek')),
+                Navigator.pushNamed(
+                  context,
+                  TamgaciRoutes.createSale,
+                  arguments: {
+                    'customerId': customer.id,
+                    'customerName': customer.name,
+                  },
                 );
               },
             ),
@@ -340,10 +350,13 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Alış Yap',
               color: Colors.orange,
               onTap: () {
-                // Alış yap
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Alış yapma özelliği yakında eklenecek')),
+                Navigator.pushNamed(
+                  context,
+                  TamgaciRoutes.createPurchase,
+                  arguments: {
+                    'supplierId': customer.id,
+                    'supplierName': customer.name,
+                  },
                 );
               },
             ),
@@ -355,10 +368,15 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Tahsilat',
               color: Colors.blue,
               onTap: () {
-                // Tahsilat yap
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Tahsilat özelliği yakında eklenecek')),
+                Navigator.pushNamed(
+                  context,
+                  TamgaciRoutes.createCashTransaction,
+                  arguments: {
+                    'customerId': customer.id,
+                    'customerName': customer.name,
+                    'transactionType': 'income',
+                    'relatedModule': 'customer',
+                  },
                 );
               },
             ),
@@ -375,6 +393,17 @@ class _EnhancedCustomerDetailPageV2State
                   TamgaciRoutes.editCustomer,
                   arguments: customer.id,
                 );
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _buildActionButton(
+              icon: Icons.delete,
+              label: 'Sil',
+              color: Colors.red,
+              onTap: () {
+                _showDeleteConfirmationDialog(customer);
               },
             ),
           ),
@@ -424,71 +453,364 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
-  Widget _buildTabBar(bool isDark) {
+  Widget _buildTabBar(Customer customer, bool isDark) {
+    final invoicesAsync =
+        ref.watch(customerInvoicesStreamProvider(customer.id));
+    final cashState = ref.watch(cashManagementNotifierProvider);
+
+    final invoices = invoicesAsync.maybeWhen(
+      data: (list) => list,
+      orElse: () => <dynamic>[],
+    );
+    final invoiceIds = invoices.map((e) => e.id as String).toSet();
+    final paymentsForCustomer = cashState.cashTransactions
+        .where((t) => invoiceIds.contains(t.relatedDocumentId))
+        .toList();
+    final invoicesCount = invoices.length;
+    final paymentsCount = paymentsForCustomer.length;
+    final transactionsCount = invoicesCount + paymentsCount;
+    final statementCount = transactionsCount;
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: AppColors.primary,
-          borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark
+              ? [
+                  Colors.grey[850]!,
+                  Colors.grey[800]!,
+                  Colors.grey[850]!,
+                ]
+              : [
+                  Colors.white,
+                  Colors.grey[50]!,
+                  Colors.white,
+                ],
         ),
-        labelColor: Colors.white,
-        unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
-        labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-        tabs: const [
-          Tab(text: 'İşlemler'),
-          Tab(text: 'Faturalar'),
-          Tab(text: 'Ödemeler'),
-          Tab(text: 'Hesap Ekstresi'),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
+        border: Border.all(
+          color: isDark
+              ? Colors.grey[700]!.withValues(alpha: 0.3)
+              : Colors.grey[200]!.withValues(alpha: 0.8),
+          width: 1,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          indicator: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.primary,
+                AppColors.primary.withValues(alpha: 0.8),
+                AppColors.primary,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withValues(alpha: 0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+                spreadRadius: 0,
+              ),
+            ],
+          ),
+          indicatorSize: TabBarIndicatorSize.tab,
+          indicatorPadding: const EdgeInsets.all(6),
+          dividerColor: Colors.transparent,
+          labelColor: Colors.white,
+          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
+          labelStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            letterSpacing: 0.5,
+          ),
+          unselectedLabelStyle: GoogleFonts.poppins(
+            fontWeight: FontWeight.w500,
+            fontSize: 13,
+            letterSpacing: 0.3,
+          ),
+          overlayColor: WidgetStateProperty.all(
+            AppColors.primary.withValues(alpha: 0.1),
+          ),
+          splashFactory: InkRipple.splashFactory,
+          tabs: [
+            _buildPremiumTab(
+              icon: Icons.swap_horiz_rounded,
+              label: 'İşlemler',
+              isSelected: _selectedTabIndex == 0,
+              isDark: isDark,
+              badgeCount: transactionsCount,
+            ),
+            _buildPremiumTab(
+              icon: Icons.receipt_long_rounded,
+              label: 'Faturalar',
+              isSelected: _selectedTabIndex == 1,
+              isDark: isDark,
+              badgeCount: invoicesCount,
+            ),
+            _buildPremiumTab(
+              icon: Icons.payment_rounded,
+              label: 'Ödemeler',
+              isSelected: _selectedTabIndex == 2,
+              isDark: isDark,
+              badgeCount: paymentsCount,
+            ),
+            _buildPremiumTab(
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Hesap Ekstresi',
+              isSelected: _selectedTabIndex == 3,
+              isDark: isDark,
+              badgeCount: statementCount,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumTab({
+    required IconData icon,
+    required String label,
+    required bool isSelected,
+    required bool isDark,
+    int? badgeCount,
+  }) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOutCubic,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: isSelected ? 22 : 20,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                ),
+              ),
+              if ((badgeCount ?? 0) > 0)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      (badgeCount ?? 0) > 99
+                          ? '99+'
+                          : (badgeCount ?? 0).toString(),
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: isSelected ? AppColors.primary : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            style: GoogleFonts.poppins(
+              fontSize: isSelected ? 12 : 11,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
+              letterSpacing: isSelected ? 0.5 : 0.3,
+            ),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildTransactionsTab(Customer customer, bool isDark) {
-    // Mock transaction data
-    final transactions = _getMockTransactions(customer.id);
+    final invoicesAsync =
+        ref.watch(customerInvoicesStreamProvider(customer.id));
+    final cashState = ref.watch(cashManagementNotifierProvider);
+    return invoicesAsync.when(
+      data: (invoices) {
+        final invoiceIds = invoices.map((e) => e.id).toSet();
+        final payments = cashState.cashTransactions
+            .where((t) => invoiceIds.contains(t.relatedDocumentId))
+            .toList();
+        final entries = <Map<String, dynamic>>[
+          ...invoices.map((i) => {
+                'type': 'invoice',
+                'date': i.invoiceDate,
+                'data': i,
+              }),
+          ...payments.map((t) => {
+                'type': 'payment',
+                'date': t.transactionDate,
+                'data': t,
+              }),
+        ]..sort(
+            (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: transactions.length,
-      itemBuilder: (context, index) {
-        final transaction = transactions[index];
-        return _buildTransactionCard(transaction, isDark);
+        if (entries.isEmpty) {
+          return Center(
+            child: Text(
+              'İşlem bulunamadı',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: entries.length,
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            if (entry['type'] == 'invoice') {
+              return _buildInvoiceTile(entry['data'], isDark);
+            } else {
+              return _buildPaymentTile(entry['data'], isDark);
+            }
+          },
+        );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text(
+          'İşlemler yüklenemedi',
+          style: GoogleFonts.poppins(color: Colors.red),
+        ),
+      ),
     );
   }
 
   Widget _buildInvoicesTab(Customer customer, bool isDark) {
-    // Mock invoice data
-    final invoices = _getMockInvoices(customer.id);
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: invoices.length,
-      itemBuilder: (context, index) {
-        final invoice = invoices[index];
-        return _buildInvoiceCard(invoice, isDark);
+    final invoicesAsync =
+        ref.watch(customerInvoicesStreamProvider(customer.id));
+    return invoicesAsync.when(
+      data: (invoices) {
+        if (invoices.isEmpty) {
+          return Center(
+            child: Text(
+              'Fatura bulunamadı',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: invoices.length,
+          itemBuilder: (context, index) {
+            final invoice = invoices[index];
+            return _buildInvoiceTile(invoice, isDark);
+          },
+        );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text(
+          'Faturalar yüklenemedi',
+          style: GoogleFonts.poppins(color: Colors.red),
+        ),
+      ),
     );
   }
 
   Widget _buildPaymentsTab(Customer customer, bool isDark) {
-    // Mock payment data
-    final payments = _getMockPayments(customer.id);
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: payments.length,
-      itemBuilder: (context, index) {
-        final payment = payments[index];
-        return _buildPaymentCard(payment, isDark);
+    final invoicesAsync =
+        ref.watch(customerInvoicesStreamProvider(customer.id));
+    final cashState = ref.watch(cashManagementNotifierProvider);
+    return invoicesAsync.when(
+      data: (invoices) {
+        final invoiceIds = invoices.map((e) => e.id).toSet();
+        final payments = cashState.cashTransactions
+            .where((t) => invoiceIds.contains(t.relatedDocumentId))
+            .toList();
+        if (payments.isEmpty) {
+          return Center(
+            child: Text(
+              'Ödeme bulunamadı',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: payments.length,
+          itemBuilder: (context, index) {
+            final t = payments[index];
+            return _buildPaymentTile(t, isDark);
+          },
+        );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text(
+          'Ödemeler yüklenemedi',
+          style: GoogleFonts.poppins(color: Colors.red),
+        ),
+      ),
     );
   }
 
@@ -507,23 +829,52 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
-  Widget _buildTransactionCard(CustomerTransaction transaction, bool isDark) {
-    final typeColor = _getTransactionTypeColor(transaction.type);
-    final typeIcon = _getTransactionTypeIcon(transaction.type);
+  // legacy invoice card (replaced by _buildInvoiceTile)
 
+  Widget _buildPaymentTile(CashTransaction t, bool isDark) {
+    final color =
+        t.type == CashTransactionType.income ? Colors.green : Colors.red;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: typeColor.withValues(alpha: 0.1),
-          child: Icon(typeIcon, color: typeColor),
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: Icon(Icons.payment, color: color),
         ),
         title: Text(
-          transaction.description ?? 'Açıklama yok',
+          t.transactionNumber,
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          '${DateFormat('dd.MM.yyyy HH:mm').format(transaction.transactionDate)} - ${transaction.documentNumber}',
+          DateFormat('dd.MM.yyyy').format(t.transactionDate),
+        ),
+        trailing: Text(
+          CurrencyHelper.formatCurrency(t.amount, t.currency),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInvoiceTile(dynamic invoice, bool isDark) {
+    // invoice entity with known fields
+    final color = invoice.isPaid ? Colors.green : Colors.blue;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: const Icon(Icons.receipt, color: Colors.blue),
+        ),
+        title: Text(
+          'Fatura: ${invoice.invoiceNumber}',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Text(
+          DateFormat('dd.MM.yyyy').format(invoice.invoiceDate),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -531,87 +882,20 @@ class _EnhancedCustomerDetailPageV2State
           children: [
             Text(
               CurrencyHelper.formatCurrency(
-                  transaction.amount, transaction.currency),
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.bold,
-                color: typeColor,
-              ),
-            ),
-            Text(
-              _getStatusDisplayName(transaction.status),
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: _getStatusColor(transaction.status),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInvoiceCard(Map<String, dynamic> invoice, bool isDark) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Colors.blue,
-          child: Icon(Icons.receipt, color: Colors.white),
-        ),
-        title: Text(
-          'Fatura: ${invoice['number']}',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-        ),
-        subtitle: Text(
-          DateFormat('dd.MM.yyyy').format(invoice['date']),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              CurrencyHelper.formatCurrency(invoice['amount'], 'TRY'),
+                  invoice.totalAmount, invoice.currencyCode),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: Colors.blue,
               ),
             ),
             Text(
-              invoice['status'],
+              invoice.isPaid ? 'Ödendi' : 'Beklemede',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: invoice['status'] == 'Ödendi'
-                    ? Colors.green
-                    : Colors.orange,
+                color: invoice.isPaid ? Colors.green : Colors.orange,
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentCard(Map<String, dynamic> payment, bool isDark) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Colors.green,
-          child: Icon(Icons.payment, color: Colors.white),
-        ),
-        title: Text(
-          'Ödeme: ${payment['method']}',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-        ),
-        subtitle: Text(
-          DateFormat('dd.MM.yyyy').format(payment['date']),
-        ),
-        trailing: Text(
-          CurrencyHelper.formatCurrency(payment['amount'], 'TRY'),
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
-          ),
         ),
       ),
     );
@@ -691,190 +975,182 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildDetailedTransactionList(Customer customer, bool isDark) {
-    final transactions = _getMockTransactions(customer.id);
+    final invoicesAsync =
+        ref.watch(customerInvoicesStreamProvider(customer.id));
+    final cashState = ref.watch(cashManagementNotifierProvider);
+    return invoicesAsync.when(
+      data: (invoices) {
+        final invoiceIds = invoices.map((e) => e.id).toSet();
+        final payments = cashState.cashTransactions
+            .where((t) => invoiceIds.contains(t.relatedDocumentId))
+            .toList();
+        final entries = <Map<String, dynamic>>[
+          ...invoices.map((i) => {
+                'type': 'invoice',
+                'date': i.invoiceDate,
+                'data': i,
+              }),
+          ...payments.map((t) => {
+                'type': 'payment',
+                'date': t.transactionDate,
+                'data': t,
+              }),
+        ]..sort(
+            (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
 
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Text(
-              'Detaylı İşlem Listesi',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+        return Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Detaylı İşlem Listesi',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
+              if (entries.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'Kayıt yok',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                  ),
+                )
+              else
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: entries.length,
+                  itemBuilder: (context, index) {
+                    final entry = entries[index];
+                    if (entry['type'] == 'invoice') {
+                      return _buildInvoiceTile(entry['data'], isDark);
+                    } else {
+                      return _buildPaymentTile(entry['data'], isDark);
+                    }
+                  },
+                ),
+            ],
           ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: transactions.length,
-            itemBuilder: (context, index) {
-              final transaction = transactions[index];
-              return _buildTransactionCard(transaction, isDark);
-            },
-          ),
-        ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(
+        child: Text(
+          'Hesap ekstresi yüklenemedi',
+          style: GoogleFonts.poppins(color: Colors.red),
+        ),
       ),
     );
   }
 
-  // Mock data methods
-  List<CustomerTransaction> _getMockTransactions(String customerId) {
-    final now = DateTime.now();
-    return [
-      CustomerTransaction(
-        id: '1',
-        customerId: customerId,
-        type: CustomerTransactionType.invoice,
-        documentNumber: 'FAT-2024-001',
-        amount: 15000.0,
-        currency: 'TRY',
-        transactionDate: now.subtract(const Duration(days: 1)),
-        dueDate: now.add(const Duration(days: 30)),
-        status: 'pending',
-        description: 'Ürün satışı',
-        companyId: 'company_1',
-        createdAt: now.subtract(const Duration(days: 1)),
-        updatedAt: now.subtract(const Duration(days: 1)),
-        createdBy: 'user_1',
-      ),
-      CustomerTransaction(
-        id: '2',
-        customerId: customerId,
-        type: CustomerTransactionType.payment,
-        documentNumber: 'TAH-2024-001',
-        amount: 10000.0,
-        currency: 'TRY',
-        transactionDate: now.subtract(const Duration(days: 2)),
-        dueDate: now,
-        status: 'paid',
-        description: 'Nakit ödeme',
-        companyId: 'company_1',
-        createdAt: now.subtract(const Duration(days: 2)),
-        updatedAt: now.subtract(const Duration(days: 2)),
-        createdBy: 'user_1',
-      ),
-    ];
-  }
+  // Removed mock data methods; using live Firestore data via providers
 
-  List<Map<String, dynamic>> _getMockInvoices(String customerId) {
-    final now = DateTime.now();
-    return [
-      {
-        'number': 'FAT-2024-001',
-        'date': now.subtract(const Duration(days: 1)),
-        'amount': 15000.0,
-        'status': 'Beklemede',
+  // Removed unused legacy helpers: _getTransactionTypeColor, _getTransactionTypeIcon,
+  // _getStatusDisplayName, _getStatusColor
+
+  Future<void> _showDeleteConfirmationDialog(Customer customer) async {
+    final canDelete = customer.currentBalance == 0.0;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Müşteri Sil'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                  '${customer.name} müşterisini silmek istediğinizden emin misiniz?'),
+              const SizedBox(height: 16),
+              if (!canDelete) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border:
+                        Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning, color: Colors.red, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Bu müşterinin ${CurrencyHelper.formatCurrency(customer.currentBalance, customer.customerCurrency ?? 'TRY')} bakiyesi var. Bakiye sıfır olmadığı sürece müşteri silinemez.',
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('İptal'),
+            ),
+            if (canDelete)
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.of(ctx).pop();
+                  await _deleteCustomer(customer);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Sil'),
+              ),
+          ],
+        );
       },
-      {
-        'number': 'FAT-2024-002',
-        'date': now.subtract(const Duration(days: 5)),
-        'amount': 25000.0,
-        'status': 'Ödendi',
-      },
-    ];
+    );
   }
 
-  List<Map<String, dynamic>> _getMockPayments(String customerId) {
-    final now = DateTime.now();
-    return [
-      {
-        'method': 'Nakit',
-        'date': now.subtract(const Duration(days: 2)),
-        'amount': 10000.0,
-      },
-      {
-        'method': 'Havale',
-        'date': now.subtract(const Duration(days: 7)),
-        'amount': 15000.0,
-      },
-    ];
-  }
+  Future<void> _deleteCustomer(Customer customer) async {
+    try {
+      await ref
+          .read(customerOperationsProvider.notifier)
+          .deleteCustomer(customer.id);
 
-  Color _getTransactionTypeColor(CustomerTransactionType type) {
-    switch (type) {
-      case CustomerTransactionType.invoice:
-        return Colors.blue;
-      case CustomerTransactionType.proforma:
-        return Colors.orange;
-      case CustomerTransactionType.waybill:
-        return Colors.purple;
-      case CustomerTransactionType.payment:
-        return Colors.green;
-      case CustomerTransactionType.credit:
-        return Colors.teal;
-      case CustomerTransactionType.debit:
-        return Colors.red;
-      case CustomerTransactionType.sale:
-        return Colors.indigo;
-      case CustomerTransactionType.purchase:
-        return Colors.brown;
-      case CustomerTransactionType.refund:
-        return Colors.pink;
-    }
-  }
+      // Provider'ı yenile
+      ref.invalidate(customersProvider);
 
-  IconData _getTransactionTypeIcon(CustomerTransactionType type) {
-    switch (type) {
-      case CustomerTransactionType.invoice:
-        return Icons.receipt;
-      case CustomerTransactionType.proforma:
-        return Icons.description;
-      case CustomerTransactionType.waybill:
-        return Icons.local_shipping;
-      case CustomerTransactionType.payment:
-        return Icons.payment;
-      case CustomerTransactionType.credit:
-        return Icons.add_circle;
-      case CustomerTransactionType.debit:
-        return Icons.remove_circle;
-      case CustomerTransactionType.sale:
-        return Icons.shopping_cart;
-      case CustomerTransactionType.purchase:
-        return Icons.shopping_bag;
-      case CustomerTransactionType.refund:
-        return Icons.undo;
-    }
-  }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${customer.name} başarıyla silindi'),
+            backgroundColor: Colors.green,
+          ),
+        );
 
-  String _getStatusDisplayName(String? status) {
-    if (status == null) return 'Bilinmiyor';
-
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return 'Beklemede';
-      case 'paid':
-        return 'Ödendi';
-      case 'overdue':
-        return 'Vadesi Geçmiş';
-      case 'cancelled':
-        return 'İptal Edildi';
-      case 'completed':
-        return 'Tamamlandı';
-      default:
-        return 'Bilinmiyor';
-    }
-  }
-
-  Color _getStatusColor(String? status) {
-    if (status == null) return Colors.grey;
-
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'paid':
-        return Colors.green;
-      case 'overdue':
-        return Colors.red;
-      case 'cancelled':
-        return Colors.grey;
-      case 'completed':
-        return Colors.blue;
-      default:
-        return Colors.grey;
+        // Müşteri listesine geri dön
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Müşteri silinirken hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }

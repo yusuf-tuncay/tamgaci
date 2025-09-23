@@ -20,7 +20,7 @@ class StockDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final stockAsync = ref.watch(stockByIdProvider(int.parse(stockId)));
+    final stockAsync = ref.watch(stockByIdProvider(stockId));
 
     return Scaffold(
       appBar: const CustomAppBar(

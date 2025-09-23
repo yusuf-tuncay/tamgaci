@@ -61,6 +61,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
     try {
       final querySnapshot =
           await _firestore.collection(_collectionName).orderBy('name').get();
+
       return querySnapshot.docs
           .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
           .toList();
@@ -73,13 +74,15 @@ class FirebaseCustomerRepository implements CustomerRepository {
   @override
   Future<List<Customer>> getActiveCustomers() async {
     try {
-      final querySnapshot = await _firestore.collection(_collectionName).get();
+      final querySnapshot = await _firestore
+          .collection(_collectionName)
+          .where('isActive', isEqualTo: true)
+          .orderBy('name')
+          .get();
 
       return querySnapshot.docs
           .map((doc) => FirebaseCustomerEntity.fromFirestore(doc).toDomain())
-          .where((customer) => customer.isActive)
-          .toList()
-        ..sort((a, b) => a.name.compareTo(b.name));
+          .toList();
     } catch (e) {
       AppLogger.error('Error getting active customers', e);
       rethrow;

@@ -144,6 +144,27 @@ class SupplierOperations extends StateNotifier<SupplierOperationsState> {
     }
   }
 
+  /// Hızlı/minimal tedarikçi oluştur (sadece isim)
+  Future<Supplier?> createMinimalSupplier(String name) async {
+    try {
+      final id = await _repository.createSupplier(
+        Supplier(
+          id: '',
+          name: name,
+          supplierType: SupplierType.company,
+          status: SupplierStatus.active,
+          companyId: 'default',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+      );
+      final created = await _repository.getSupplierById(id);
+      return created;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Yeni tedarikçi oluştur
   Future<void> createSupplier(Supplier supplier) async {
     state = state.copyWith(isLoading: true, errorMessage: null);

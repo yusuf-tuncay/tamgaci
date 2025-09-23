@@ -24,17 +24,18 @@ class RecentActivitiesWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: isDark ? Colors.white12 : Colors.black12,
           width: 1,
         ),
       ),
@@ -113,8 +114,22 @@ class RecentActivitiesWidget extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: activity.color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                activity.color.withValues(alpha: 0.18),
+                activity.color.withValues(alpha: 0.10),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: activity.color.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Icon(
             activity.icon,
