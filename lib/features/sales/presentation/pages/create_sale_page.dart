@@ -703,7 +703,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _buildAddressItems(isBilling: true).any((item) => item.value == _billingAddress) ? _billingAddress : null,
+                    value: _billingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Fatura Adresi',
                       border: OutlineInputBorder(),
@@ -723,7 +723,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _buildAddressItems(isBilling: false).any((item) => item.value == _shippingAddress) ? _shippingAddress : null,
+                    value: _shippingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Sevk Adresi',
                       border: OutlineInputBorder(),
