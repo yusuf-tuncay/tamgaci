@@ -1217,9 +1217,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     }
 
     // Ödeme para birimi seçilmişse, tüm hesaplamaları o para birimine göre yap
-    if (_paymentCurrencyCode.isNotEmpty) {
-      return _buildPaymentCurrencySummary();
-    }
+    // Şimdilik para birimi kartlarını her zaman gösterelim
+    // if (_paymentCurrencyCode.isNotEmpty) {
+    //   return _buildPaymentCurrencySummary();
+    // }
 
     // Para birimi bazlı gruplandırma (ödeme para birimi seçilmemişse)
     final Map<String, List<SaleItem>> itemsByCurrency = {};
