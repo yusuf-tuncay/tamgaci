@@ -53,7 +53,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       'Nakit'; // Ödeme Şekli: Nakit, Banka, Kredi Kartı, Çek, Senet
   bool _isCashPayment = true; // Peşin/Vadeli toggle
   int? _installmentCount;
-  String _paymentCurrencyCode = 'TRY';
+  String _paymentCurrencyCode = '';
 
   // Addresses
   String? _billingAddress;
@@ -227,7 +227,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                       DropdownButtonFormField<String>(
                         initialValue: _paymentCurrencyCode.isNotEmpty
                             ? _paymentCurrencyCode
-                            : appCcy,
+                            : null,
                         decoration: const InputDecoration(
                           labelText: 'Ödeme Para Birimi',
                           border: OutlineInputBorder(),
@@ -1542,96 +1542,97 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Para birimi başlığı
-              Text(
-                'Para Birimi: $currency',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade700,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 16.0),
-
-              // Ara Toplam
-              _buildSummaryRow(
-                  'Ara Toplam:', _formatMoney(subtotal, currency: currency)),
-
-              // İskonto
-              if (discount > 0)
-                _buildSummaryRow(
-                    'İskonto:', _formatMoney(discount, currency: currency),
-                    isNegative: true),
-
-              // KDV
-              if (tax > 0)
-                _buildSummaryRow('KDV:', _formatMoney(tax, currency: currency),
-                    isPositive: true),
-
-              const SizedBox(height: 8.0),
-
-              // Kur bilgisi (TRY dışındaki para birimleri için)
-              if (rate != null) ...[
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Para birimi başlığı
                 Text(
-                  'Kur: 1 $currency = ${rate.rate.toStringAsFixed(4)} TRY',
+                  'Para Birimi: $currency',
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade700,
+                    fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 8.0),
-              ],
+                const SizedBox(height: 16.0),
 
-              // Toplam
-              Container(
-                padding: const EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Toplam:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                // Ara Toplam
+                _buildSummaryRow(
+                    'Ara Toplam:', _formatMoney(subtotal, currency: currency)),
+
+                // İskonto
+                if (discount > 0)
+                  _buildSummaryRow(
+                      'İskonto:', _formatMoney(discount, currency: currency),
+                      isNegative: true),
+
+                // KDV
+                if (tax > 0)
+                  _buildSummaryRow(
+                      'KDV:', _formatMoney(tax, currency: currency),
+                      isPositive: true),
+
+                const SizedBox(height: 8.0),
+
+                // Kur bilgisi (TRY dışındaki para birimleri için)
+                if (rate != null) ...[
+                  Text(
+                    'Kur: 1 $currency = ${rate.rate.toStringAsFixed(4)} TRY',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          _formatMoney(total, currency: currency),
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.green.shade700,
-                          ),
+                  ),
+                  const SizedBox(height: 8.0),
+                ],
+
+                // Toplam
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Toplam:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
-                        if (rate != null) ...[
-                          const SizedBox(height: 2.0),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
                           Text(
-                            '(${_formatMoney(totalInTRY, currency: 'TRY')})',
+                            _formatMoney(total, currency: currency),
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.green.shade700,
                             ),
                           ),
+                          if (rate != null) ...[
+                            const SizedBox(height: 2.0),
+                            Text(
+                              '(${_formatMoney(totalInTRY, currency: 'TRY')})',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      );
+        );
       },
     );
   }
