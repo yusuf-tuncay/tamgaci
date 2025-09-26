@@ -45,6 +45,8 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _profileImageUrl;
   Uint8List? _localAvatarBytes;
   double _uploadProgress = 0.0;
+  int _lastProgressPercent = -1;
+  String? _resolvedImagePath;
 
   @override
   void initState() {
@@ -108,6 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         setState(() {
           _profileImageUrl = null;
+          _initialized = false; // Force refresh of page data
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -169,6 +172,11 @@ class _ProfilePageState extends State<ProfilePage> {
         await userRef.update(updateData);
 
         if (mounted) {
+          // Refresh the page data after successful update
+          setState(() {
+            _initialized = false;
+          });
+
           final messenger = ScaffoldMessenger.of(context);
           messenger.showSnackBar(
             const SnackBar(
@@ -315,7 +323,9 @@ class _ProfilePageState extends State<ProfilePage> {
             // Track upload progress
             uploadTask.snapshotEvents.listen((TaskSnapshot snapshot) {
               final progress = snapshot.bytesTransferred / snapshot.totalBytes;
-              if (mounted) {
+              final percent = (progress * 100).floor();
+              if (percent != _lastProgressPercent && mounted) {
+                _lastProgressPercent = percent;
                 setState(() {
                   _uploadProgress = progress;
                 });
@@ -354,15 +364,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 _localAvatarBytes = null;
                 _isUploadingPhoto = false;
                 _uploadProgress = 0.0;
+                _lastProgressPercent = -1;
               });
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('✅ Profil fotoğrafı başarıyla yüklendi!'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
             }
           } catch (e) {
             debugPrint('❌ Upload failed: $e');
@@ -554,11 +557,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   }
                 },
         ),
-        body: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
+        body: FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance
               .collection('users')
               .doc(currentUser.uid)
-              .snapshots(),
+              .get(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -589,7 +592,10 @@ class _ProfilePageState extends State<ProfilePage> {
             }
 
             final userData = snapshot.data!.data() as Map<String, dynamic>;
-            _initFromFirebaseData(userData);
+            // Only init once to prevent rebuild storms
+            if (!_initialized) {
+              _initFromFirebaseData(userData);
+            }
 
             return Form(
               key: _formKey,
@@ -709,34 +715,25 @@ class _ProfilePageState extends State<ProfilePage> {
     _departmentController.text = userData['department'] ?? '';
     _companyController.text = userData['companyName'] ?? '';
 
-    // Profil fotoğrafı URL'sini güncelle (best practice: path'den URL çek)
-    final profileImagePath = userData['profileImagePath'];
-    final cachedUrl = userData['profileImageUrl']; // Cache'den hızlı yükleme
+    // Profil fotoğrafı: sadece path değişmişse background'da çöz
+    final profileImagePath = userData['profileImagePath'] as String?;
+    final cachedUrl = userData['profileImageUrl'] as String?;
 
-    if (profileImagePath != null) {
-      // Önce cache'den yükle, sonra path'den güncelle
-      if (cachedUrl != null && cachedUrl != _profileImageUrl) {
-        // setState'i WidgetsBinding.instance.addPostFrameCallback ile sarmala
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            setState(() {
-              _profileImageUrl = cachedUrl;
-            });
-          }
-        });
-      }
-
-      // Path'den fresh URL çek (background'da)
-      _loadProfileImageFromPath(profileImagePath);
-    } else if (cachedUrl != null && cachedUrl != _profileImageUrl) {
-      // Legacy: sadece URL varsa onu kullan
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _profileImageUrl = cachedUrl;
-          });
+    if (profileImagePath != null && profileImagePath.isNotEmpty) {
+      if (_resolvedImagePath != profileImagePath) {
+        _resolvedImagePath = profileImagePath;
+        // Set cached URL immediately to prevent flicker
+        if (cachedUrl != null && cachedUrl.isNotEmpty) {
+          _profileImageUrl = cachedUrl;
         }
-      });
+        _loadProfileImageFromPath(profileImagePath);
+      }
+    } else {
+      _resolvedImagePath = null;
+      // Use cached URL if available
+      if (cachedUrl != null && cachedUrl.isNotEmpty) {
+        _profileImageUrl = cachedUrl;
+      }
     }
 
     _initialized = true;
@@ -787,7 +784,21 @@ class _ProfilePageState extends State<ProfilePage> {
     final name = userData['name'] ?? '';
     final surname = userData['surname'] ?? '';
     // Best practice: önce cache'den, sonra path'den
-    final profileImageUrl = userData['profileImageUrl'] ?? _profileImageUrl;
+    String? profileImageUrl = userData['profileImageUrl'] ?? _profileImageUrl;
+    if (profileImageUrl != null &&
+        profileImageUrl.contains('tamgaci.appspot.com')) {
+      profileImageUrl = profileImageUrl.replaceAll(
+          'tamgaci.appspot.com', 'tamgaci.firebasestorage.app');
+    }
+
+    // Validate URL exists before using it
+    if (profileImageUrl != null && profileImageUrl.isNotEmpty) {
+      // Check if URL has token (indicates valid Firebase Storage URL)
+      if (!profileImageUrl.contains('token=')) {
+        debugPrint('⚠️ Invalid profile URL (no token): $profileImageUrl');
+        profileImageUrl = null;
+      }
+    }
 
     return Center(
       child: Column(
@@ -799,10 +810,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 backgroundColor:
                     TamgaciConstants.primaryColor.withValues(alpha: 0.1),
                 backgroundImage:
-                    profileImageUrl != null && profileImageUrl.isNotEmpty
+                    (profileImageUrl != null && profileImageUrl.isNotEmpty)
                         ? NetworkImage(profileImageUrl)
                         : null,
-                child: profileImageUrl == null || profileImageUrl.isEmpty
+                child: (profileImageUrl == null || profileImageUrl.isEmpty)
                     ? Text(
                         _initialsFrom(name, surname),
                         style: GoogleFonts.poppins(

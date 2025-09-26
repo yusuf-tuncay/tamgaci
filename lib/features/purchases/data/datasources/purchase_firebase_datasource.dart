@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:tamgaci/features/purchases/data/models/purchase_model.dart';
 import 'package:tamgaci/features/purchases/domain/entities/purchase.dart';
+import 'package:tamgaci/core/firebase/firebase_service.dart';
+import 'package:tamgaci/core/services/tenant_service.dart';
 
 /// Purchase Firebase DataSource
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
@@ -10,8 +12,23 @@ class PurchaseFirebaseDataSource {
   final FirebaseFirestore _firestore;
   // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
+  final FirebaseService _firebaseService = FirebaseService();
+  final TenantService _tenantService = TenantService();
 
   PurchaseFirebaseDataSource(this._firestore, this._firebaseAuth);
+
+  /// Get tenant-scoped purchases collection
+  Future<CollectionReference<Map<String, dynamic>>> _tenantPurchases() async {
+    final tenantId = await _tenantService.getUserTenantId();
+    if (tenantId == null) {
+      AppLogger.error('Tenant ID is null, cannot access purchases collection.');
+      throw Exception('Tenant ID is null');
+    }
+    return _firestore
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('purchases');
+  }
 
   /// Tüm satın almaları getirir
   Future<List<PurchaseModel>> getAllPurchases({
@@ -19,13 +36,11 @@ class PurchaseFirebaseDataSource {
     int? offset,
   }) async {
     try {
-      Query query = _firestore
-          .collection('purchases')
-          .orderBy('createdAt', descending: true);
+      final col = await _tenantPurchases();
+      Query query = col.orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
-        final offsetDoc = await _firestore
-            .collection('purchases')
+        final offsetDoc = await col
             .orderBy('createdAt', descending: true)
             .limit(offset)
             .get();
@@ -51,7 +66,8 @@ class PurchaseFirebaseDataSource {
   /// ID'ye göre satın alma getirir
   Future<PurchaseModel?> getPurchaseById(String id) async {
     try {
-      final doc = await _firestore.collection('purchases').doc(id).get();
+      final col = await _tenantPurchases();
+      final doc = await col.doc(id).get();
       if (doc.exists) {
         return PurchaseModel.fromFirestore(doc);
       }
@@ -65,8 +81,8 @@ class PurchaseFirebaseDataSource {
   /// Satın alma numarasına göre satın alma getirir
   Future<PurchaseModel?> getPurchaseByNumber(String purchaseNumber) async {
     try {
-      final snapshot = await _firestore
-          .collection('purchases')
+      final col = await _tenantPurchases();
+      final snapshot = await col
           .where('purchaseNumber', isEqualTo: purchaseNumber)
           .limit(1)
           .get();
@@ -88,14 +104,13 @@ class PurchaseFirebaseDataSource {
     int? offset,
   }) async {
     try {
-      Query query = _firestore
-          .collection('purchases')
+      final col = await _tenantPurchases();
+      Query query = col
           .where('supplierId', isEqualTo: supplierId)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
-        final offsetDoc = await _firestore
-            .collection('purchases')
+        final offsetDoc = await col
             .where('supplierId', isEqualTo: supplierId)
             .orderBy('createdAt', descending: true)
             .limit(offset)
@@ -127,8 +142,8 @@ class PurchaseFirebaseDataSource {
     int? offset,
   }) async {
     try {
-      Query query = _firestore
-          .collection('purchases')
+      final col = await _tenantPurchases();
+      Query query = col
           .where('purchaseDate',
               isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
           .where('purchaseDate',
@@ -136,8 +151,7 @@ class PurchaseFirebaseDataSource {
           .orderBy('purchaseDate', descending: true);
 
       if (offset != null && offset > 0) {
-        final offsetDoc = await _firestore
-            .collection('purchases')
+        final offsetDoc = await col
             .where('purchaseDate',
                 isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
             .where('purchaseDate',
@@ -171,14 +185,13 @@ class PurchaseFirebaseDataSource {
     int? offset,
   }) async {
     try {
-      Query query = _firestore
-          .collection('purchases')
+      final col = await _tenantPurchases();
+      Query query = col
           .where('status', isEqualTo: status.name)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
-        final offsetDoc = await _firestore
-            .collection('purchases')
+        final offsetDoc = await col
             .where('status', isEqualTo: status.name)
             .orderBy('createdAt', descending: true)
             .limit(offset)
@@ -209,14 +222,13 @@ class PurchaseFirebaseDataSource {
     int? offset,
   }) async {
     try {
-      Query query = _firestore
-          .collection('purchases')
+      final col = await _tenantPurchases();
+      Query query = col
           .where('paymentStatus', isEqualTo: paymentStatus.name)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
-        final offsetDoc = await _firestore
-            .collection('purchases')
+        final offsetDoc = await col
             .where('paymentStatus', isEqualTo: paymentStatus.name)
             .orderBy('createdAt', descending: true)
             .limit(offset)
@@ -249,16 +261,15 @@ class PurchaseFirebaseDataSource {
   }) async {
     try {
       final now = DateTime.now();
-      Query query = _firestore
-          .collection('purchases')
+      final col = await _tenantPurchases();
+      Query query = col
           .where('dueDate', isLessThan: Timestamp.fromDate(now))
           .where('paymentStatus', whereIn: ['pending', 'partial']).orderBy(
               'dueDate',
               descending: true);
 
       if (offset != null && offset > 0) {
-        final offsetDoc = await _firestore
-            .collection('purchases')
+        final offsetDoc = await col
             .where('dueDate', isLessThan: Timestamp.fromDate(now))
             .where('paymentStatus', whereIn: ['pending', 'partial'])
             .orderBy('dueDate', descending: true)
@@ -286,10 +297,14 @@ class PurchaseFirebaseDataSource {
   /// Yeni satın alma oluşturur
   Future<PurchaseModel> createPurchase(PurchaseModel purchase) async {
     try {
-      final docRef = _firestore.collection('purchases').doc();
+      final col = await _tenantPurchases();
+      final docRef = col.doc();
+      final tenantId = await _tenantService.getUserTenantId();
       final newPurchase = purchase.copyWith(id: docRef.id);
-
-      await docRef.set(newPurchase.toFirestore());
+      final data = newPurchase.toFirestore();
+      data['tenantId'] = tenantId;
+      data['createdBy'] = _firebaseAuth.currentUser?.uid;
+      await docRef.set(data);
       AppLogger.info('Purchase created: ${newPurchase.purchaseNumber}');
       return newPurchase;
     } catch (e) {
@@ -301,10 +316,10 @@ class PurchaseFirebaseDataSource {
   /// Satın alma günceller
   Future<PurchaseModel> updatePurchase(PurchaseModel purchase) async {
     try {
-      await _firestore
-          .collection('purchases')
-          .doc(purchase.id)
-          .update(purchase.toFirestore());
+      final col = await _tenantPurchases();
+      final data = purchase.toFirestore();
+      data['tenantId'] = await _tenantService.getUserTenantId();
+      await col.doc(purchase.id).update(data);
 
       AppLogger.info('Purchase updated: ${purchase.purchaseNumber}');
       return purchase;
@@ -317,7 +332,8 @@ class PurchaseFirebaseDataSource {
   /// Satın alma siler
   Future<void> deletePurchase(String id) async {
     try {
-      await _firestore.collection('purchases').doc(id).delete();
+      final col = await _tenantPurchases();
+      await col.doc(id).delete();
       AppLogger.info('Purchase deleted: $id');
     } catch (e) {
       AppLogger.error('Error deleting purchase: $id', e);
@@ -332,9 +348,9 @@ class PurchaseFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final col = await _tenantPurchases();
       // Basit arama - purchaseNumber ve supplierName'de arama
-      final snapshot = await _firestore
-          .collection('purchases')
+      final snapshot = await col
           .where('purchaseNumber', isGreaterThanOrEqualTo: query)
           .where('purchaseNumber', isLessThanOrEqualTo: '$query\uf8ff')
           .limit(limit ?? 50)
@@ -345,8 +361,7 @@ class PurchaseFirebaseDataSource {
 
       // Eğer yeterli sonuç yoksa, supplierName'de de ara
       if (results.length < (limit ?? 50)) {
-        final supplierSnapshot = await _firestore
-            .collection('purchases')
+        final supplierSnapshot = await col
             .where('supplierName', isGreaterThanOrEqualTo: query)
             .where('supplierName', isLessThanOrEqualTo: '$query\uf8ff')
             .limit((limit ?? 50) - results.length)
@@ -370,7 +385,8 @@ class PurchaseFirebaseDataSource {
   /// Satın alma sayısını getirir
   Future<int> getPurchasesCount() async {
     try {
-      final snapshot = await _firestore.collection('purchases').count().get();
+      final col = await _tenantPurchases();
+      final snapshot = await col.count().get();
       return snapshot.count ?? 0;
     } catch (e) {
       AppLogger.error('Error getting purchases count', e);
@@ -384,7 +400,8 @@ class PurchaseFirebaseDataSource {
     DateTime? endDate,
   }) async {
     try {
-      Query query = _firestore.collection('purchases');
+      final col = await _tenantPurchases();
+      Query query = col;
 
       if (startDate != null) {
         query = query.where('purchaseDate',
@@ -415,7 +432,8 @@ class PurchaseFirebaseDataSource {
     DateTime? endDate,
   }) async {
     try {
-      Query query = _firestore.collection('purchases');
+      final col = await _tenantPurchases();
+      Query query = col;
 
       if (startDate != null) {
         query = query.where('purchaseDate',
@@ -474,7 +492,8 @@ class PurchaseFirebaseDataSource {
     DateTime? endDate,
   }) async {
     try {
-      Query query = _firestore.collection('purchases');
+      final col = await _tenantPurchases();
+      Query query = col;
 
       if (startDate != null) {
         query = query.where('purchaseDate',
@@ -524,7 +543,8 @@ class PurchaseFirebaseDataSource {
     DateTime? endDate,
   }) async {
     try {
-      Query query = _firestore.collection('purchases');
+      final col = await _tenantPurchases();
+      Query query = col;
 
       if (startDate != null) {
         query = query.where('purchaseDate',

@@ -44,6 +44,8 @@ void main() async {
   // Firebase Notification service'i başlat
   await FirebaseNotificationService.initialize();
 
+  // Tenant setup artık login sonrası yapılıyor
+
   // Mock data removed - using real Firebase data only
 
   // Sistem UI ayarları (status bar, navigation bar)

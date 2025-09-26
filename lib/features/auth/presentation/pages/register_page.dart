@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_picker/country_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -41,6 +42,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _taxIdController = TextEditingController();
   final _taxOfficeController = TextEditingController();
   final _addressController = TextEditingController();
+  // Address detail controllers
+  final _cityController = TextEditingController();
+  final _districtController = TextEditingController();
+  final _neighborhoodController = TextEditingController();
+  final _streetController = TextEditingController();
+  final _buildingNoController = TextEditingController();
+  final _apartmentNoController = TextEditingController();
+  final _postalCodeController = TextEditingController();
 
   // Profile image
   final ImagePicker _imagePicker = ImagePicker();
@@ -56,6 +65,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   String _selectedCountry = 'TR';
 
   // country_picker paketini kullanarak tüm ülkeler ve alan kodları gösterilecek
+  // Address/location data
+  List<String> _cities = [];
+  Map<String, List<String>> _districtsByCity = {};
+  Map<String, List<String>> _taxOfficesByDistrict = {};
+  List<String> _allTaxOffices = [];
+  String? _selectedCity;
+  String? _selectedDistrict;
 
   @override
   void didChangeDependencies() {
@@ -72,6 +88,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       _selectedDialCode = '+90';
     }
     _detectCountryCode();
+    _loadLocationAndTaxData();
   }
 
   bool _isStrongPassword(String password) {
@@ -85,6 +102,70 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         password.contains(RegExp(r'[!@#\$%^&*()_+\-={}\[\]\\|:;,.<>/?~`]'));
 
     return hasUppercase && hasLowercase && hasDigits && hasSpecialCharacters;
+  }
+
+  Future<void> _loadLocationAndTaxData() async {
+    try {
+      // Cities and districts from Firestore
+      final citiesSnap = await FirebaseFirestore.instance
+          .collection('geo_cities')
+          .orderBy('name')
+          .get();
+
+      final List<String> cities = [];
+      final Map<String, List<String>> districtsByCity = {};
+
+      for (final doc in citiesSnap.docs) {
+        final data = doc.data();
+        final name = (data['name'] ?? '').toString();
+        final districts = (data['districts'] as List<dynamic>? ?? [])
+            .map((e) => e.toString())
+            .toList()
+          ..sort();
+        if (name.isNotEmpty) {
+          cities.add(name);
+          districtsByCity[name] = districts;
+        }
+      }
+
+      // Tax offices from Firestore
+      final taxDoc = await FirebaseFirestore.instance
+          .collection('metadata')
+          .doc('tax_offices')
+          .get();
+      final allOffices = (taxDoc.data()?['names'] as List<dynamic>? ?? [])
+          .map((e) => e.toString())
+          .toList();
+      allOffices.sort();
+
+      // Build district->offices mapping by simple contains heuristic
+      final Map<String, List<String>> taxByDistrict = {};
+      for (final city in cities) {
+        final districts = districtsByCity[city] ?? [];
+        for (final d in districts) {
+          final matches = allOffices
+              .where((o) =>
+                  o.toUpperCase().contains(d.toUpperCase()) ||
+                  o.toUpperCase().contains(city.toUpperCase()))
+              .toList()
+            ..sort();
+          if (matches.isNotEmpty) {
+            taxByDistrict[d] = matches;
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _cities = cities;
+          _districtsByCity = districtsByCity;
+          _taxOfficesByDistrict = taxByDistrict;
+          _allTaxOffices = allOffices;
+        });
+      }
+    } catch (e) {
+      debugPrint('⚠️ Failed to load geo metadata from Firestore: $e');
+    }
   }
 
   /// Get password strength score (0-4)
@@ -130,13 +211,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         Row(
           children: [
             Expanded(
-              child: LinearProgressIndicator(
-                value: strength / 4,
-                backgroundColor: Colors.grey.shade300,
-                valueColor:
-                    AlwaysStoppedAnimation<Color>(strengthInfo['color']),
-                minHeight: 4,
-              ),
+              child: Builder(builder: (context) {
+                final scheme = Theme.of(context).colorScheme;
+                return LinearProgressIndicator(
+                  value: strength / 4,
+                  backgroundColor: scheme.surfaceContainerHighest,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(strengthInfo['color']),
+                  minHeight: 4,
+                );
+              }),
             ),
             const SizedBox(width: 8),
             Text(
@@ -172,24 +256,28 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   /// Build individual password criteria indicator
   Widget _buildPasswordCriteria(String text, bool isMet) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          isMet ? Icons.check_circle : Icons.circle_outlined,
-          size: 12,
-          color: isMet ? Colors.green : Colors.grey,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: 10,
-            color: isMet ? Colors.green : Colors.grey,
+    return Builder(builder: (context) {
+      final scheme = Theme.of(context).colorScheme;
+      final ok = isMet ? Colors.green : scheme.outline;
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isMet ? Icons.check_circle : Icons.circle_outlined,
+            size: 12,
+            color: ok,
           ),
-        ),
-      ],
-    );
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 10,
+              color: ok,
+            ),
+          ),
+        ],
+      );
+    });
   }
 
   Future<void> _detectCountryCode() async {
@@ -240,6 +328,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _taxIdController.dispose();
     _taxOfficeController.dispose();
     _addressController.dispose();
+    _cityController.dispose();
+    _districtController.dispose();
+    _neighborhoodController.dispose();
+    _streetController.dispose();
+    _buildingNoController.dispose();
+    _apartmentNoController.dispose();
+    _postalCodeController.dispose();
     super.dispose();
   }
 
@@ -286,11 +381,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           });
 
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          final scheme = Theme.of(context).colorScheme;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Fotoğraf hazır!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 1),
+            SnackBar(
+              content: Text('✅ Fotoğraf hazır!',
+                  style: TextStyle(color: scheme.onPrimary)),
+              backgroundColor: scheme.primary,
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
             ),
           );
         }
@@ -471,132 +569,63 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       String? profileUrl;
       String? profilePath;
       if (_avatarBytes != null) {
+        final nonNullCurrent = current; // non-null as ensured above
         debugPrint('📤 Uploading profile image...');
-
-        // Run Firebase Storage diagnostics first
-        await _testFirebaseStorageSetup();
-
-        // Check if Storage is available before attempting upload
-        final storage = FirebaseStorage.instance;
         try {
-          final bucket = storage.ref().bucket;
-          debugPrint('🪣 Storage bucket: $bucket');
+          try {
+            await _testFirebaseStorageSetup();
+          } catch (_) {}
 
-          // Quick connectivity test
-          await storage
-              .ref()
-              .child('connectivity-test')
-              .getMetadata()
-              .timeout(const Duration(seconds: 3));
-          debugPrint('✅ Storage connectivity verified');
-        } catch (e) {
-          debugPrint('❌ Storage not available: $e');
-          debugPrint('⚠️ Skipping photo upload, continuing registration...');
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.cloud_off, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                          'Firebase Storage henüz hazır değil. Fotoğraf daha sonra eklenebilir.'),
-                    ),
-                  ],
-                ),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 4),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-          // Skip photo upload and continue registration
-          profileUrl = null;
-          profilePath = null;
-          // Jump to step 4
-          debugPrint(
-              '⏭️ Skipping photo upload, continuing with profile update...');
-        }
-
-        // Show upload progress to user
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Text('Profil fotoğrafı yükleniyor...'),
-                ],
-              ),
-              backgroundColor: TamgaciConstants.primaryColor,
-              duration: Duration(seconds: 10),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-
-        try {
-          final result =
-              await _uploadProfileImageWithRetry(current.id, _avatarBytes!);
+          // Try one awaited upload so Firestore has URL before first navigation
+          final result = await _uploadProfileImageWithRetry(
+              nonNullCurrent.id, _avatarBytes!,
+              maxRetries: 2);
           profileUrl = result['url'];
           profilePath = result['path'];
           debugPrint('✅ Profile image uploaded successfully');
           debugPrint('🔗 URL: $profileUrl');
           debugPrint('📁 Path: $profilePath');
 
-          // Hide upload progress and show success
-          if (mounted) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Profil fotoğrafı başarıyla yüklendi'),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
+          // Persist image data immediately
+          final imageUpdate = nonNullCurrent.copyWith(
+            profileImageUrl: profileUrl,
+            profileImagePath: profilePath,
+            settings: {
+              ...(nonNullCurrent.settings ?? <String, dynamic>{}),
+              'profileImageUrl': profileUrl,
+              'profileImagePath': profilePath,
+            },
+            updatedAt: DateTime.now(),
+          );
+          await ref.read(authProvider.notifier).updateUserProfile(imageUpdate);
         } catch (e) {
-          debugPrint('❌ Profile image upload failed: $e');
-          // Continue registration without profile image - don't throw error
-          profileUrl = null;
-          profilePath = null;
-          if (mounted) {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.warning, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                          'Profil fotoğrafı yüklenemedi, kayıt devam ediyor...'),
-                    ),
-                  ],
-                ),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 3),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
+          debugPrint(
+              '❌ Immediate upload failed, will continue in background: $e');
+          // Fallback: continue in background so we don't block registration
+          () async {
+            try {
+              final result = await _uploadProfileImageWithRetry(
+                  nonNullCurrent.id, _avatarBytes!);
+              final bgUrl = result['url'];
+              final bgPath = result['path'];
+              final imageUpdate = nonNullCurrent.copyWith(
+                profileImageUrl: bgUrl,
+                profileImagePath: bgPath,
+                settings: {
+                  ...(nonNullCurrent.settings ?? <String, dynamic>{}),
+                  'profileImageUrl': bgUrl,
+                  'profileImagePath': bgPath,
+                },
+                updatedAt: DateTime.now(),
+              );
+              await ref
+                  .read(authProvider.notifier)
+                  .updateUserProfile(imageUpdate);
+              debugPrint('✅ Background upload completed.');
+            } catch (err) {
+              debugPrint('❌ Background upload failed: $err');
+            }
+          }();
         }
       }
 
@@ -605,7 +634,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       final companyName = _companyNameController.text.trim();
       final taxId = _taxIdController.text.trim();
       final taxOffice = _taxOfficeController.text.trim();
-      final billingAddress = _addressController.text.trim();
+      final billingAddress =
+          _addressController.text.trim(); // kept in settings.billingAddress
+      final city = _selectedCity ??
+          _cityController.text.trim(); // stored under settings.address.city
+      final district = _selectedDistrict ??
+          _districtController.text
+              .trim(); // stored under settings.address.district
+      final neighborhood = _neighborhoodController.text.trim();
+      final street = _streetController.text.trim();
+      final buildingNo = _buildingNoController.text.trim();
+      final apartmentNo = _apartmentNoController.text.trim();
+      final postalCode = _postalCodeController.text.trim();
 
       debugPrint('💼 Company data: $companyName');
       debugPrint('🔗 Profile URL: $profileUrl');
@@ -628,6 +668,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           'taxId': taxId,
           'taxOffice': taxOffice,
           'billingAddress': billingAddress,
+          'address': {
+            'countryCode': _selectedCountry,
+            'dialCode': _selectedDialCode,
+            'city': city,
+            'district': district,
+            'neighborhood': neighborhood,
+            'street': street,
+            'buildingNo': buildingNo,
+            'apartmentNo': apartmentNo,
+            'postalCode': postalCode,
+            'description': billingAddress,
+          },
           'registrationCompleted': true,
           'profileImageUrl': profileUrl,
           'profileImagePath': profilePath,
@@ -653,17 +705,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         debugPrint('⚠️ UserProfile refresh failed, but continuing: $e');
       }
 
-      // 6. Show success message and navigate
+      // 6. Show success message and navigate immediately
       if (mounted) {
         _showSuccessSnackBar('Kayıt başarılı! Giriş yapabilirsiniz.');
-
-        // Navigate to login page with slight delay
-        await Future.delayed(const Duration(milliseconds: 1200));
-        if (mounted) {
-          debugPrint('🚀 Navigating to login page...');
-          Navigator.of(context).pushReplacementNamed(TamgaciRoutes.login);
-          debugPrint('✅ Navigation completed');
-        }
+        debugPrint('🚀 Navigating to login page...');
+        Navigator.of(context).pushReplacementNamed(TamgaciRoutes.login);
+        debugPrint('✅ Navigation completed');
       }
     } catch (e) {
       debugPrint('❌ Registration failed: $e');
@@ -692,7 +739,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final companyName = _companyNameController.text.trim();
     final taxId = _taxIdController.text.trim();
     final taxOffice = _taxOfficeController.text.trim();
-    final address = _addressController.text.trim();
+    // Derived address fields handled during submit; no-op vars removed
+    final neighborhood = _neighborhoodController.text.trim();
+    final street = _streetController.text.trim();
+    final buildingNo = _buildingNoController.text.trim();
+    final apartmentNo = _apartmentNoController.text.trim();
+    final postalCode = _postalCodeController.text.trim();
 
     if (name.length < 2) return 'Ad en az 2 karakter olmalıdır';
     if (surname.length < 2) return 'Soyad en az 2 karakter olmalıdır';
@@ -714,10 +766,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (!RegExp(r'^[0-9]+$').hasMatch(taxId)) {
       return 'Vergi kimlik numarası sadece rakam içermelidir';
     }
-    if (taxOffice.isEmpty) return 'Vergi dairesi zorunludur';
-    if (taxOffice.length < 2) return 'Vergi dairesi en az 2 karakter olmalıdır';
-    if (address.isEmpty) return 'Adres bilgisi zorunludur';
-    if (address.length < 10) return 'Adres en az 10 karakter olmalıdır';
+    if (_selectedCountry == 'TR') {
+      if (_selectedCity == null || (_selectedCity?.isEmpty ?? true)) {
+        return 'İl seçimi zorunludur';
+      }
+      if (_selectedDistrict == null || (_selectedDistrict?.isEmpty ?? true)) {
+        return 'İlçe seçimi zorunludur';
+      }
+      if (taxOffice.isEmpty) return 'Vergi dairesi zorunludur';
+      if (neighborhood.isEmpty) return 'Mahalle zorunludur';
+      if (street.isEmpty) return 'Sokak/Cadde zorunludur';
+      if (buildingNo.isEmpty) return 'Bina no zorunludur';
+      if (apartmentNo.isEmpty) return 'Daire no zorunludur';
+      if (postalCode.isEmpty) return 'Posta kodu zorunludur';
+    }
 
     // Phone validation if provided
     final localDigits = _phoneController.text.trim();
@@ -1006,16 +1068,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   /// Show error snackbar
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
+    final scheme = Theme.of(context).colorScheme;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
+            Icon(Icons.error_outline, color: scheme.onError),
             const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            Expanded(
+                child: Text(message, style: TextStyle(color: scheme.onError))),
           ],
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: scheme.error,
         duration: const Duration(seconds: 4),
         behavior: SnackBarBehavior.floating,
       ),
@@ -1025,16 +1089,19 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   /// Show success snackbar
   void _showSuccessSnackBar(String message) {
     if (!mounted) return;
+    final scheme = Theme.of(context).colorScheme;
+    final bg = scheme.primary;
+    final fg = scheme.onPrimary;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white),
+            Icon(Icons.check_circle_outline, color: fg),
             const SizedBox(width: 8),
-            Expanded(child: Text(message)),
+            Expanded(child: Text(message, style: TextStyle(color: fg))),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: bg,
         duration: const Duration(seconds: 3),
         behavior: SnackBarBehavior.floating,
       ),
@@ -1101,7 +1168,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -1186,14 +1253,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      "Tamgaci'ye hoş geldiniz!",
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.black.withValues(alpha: 0.7),
-                      ),
-                    ),
+                    Builder(builder: (context) {
+                      final scheme = Theme.of(context).colorScheme;
+                      final hintColor = scheme.onSurface.withValues(alpha: 0.7);
+                      return Text(
+                        "Tamgaci'ye hoş geldiniz!",
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: hintColor,
+                        ),
+                      );
+                    }),
                   ],
                 ),
 
@@ -1207,12 +1278,23 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       onTap: _pickAvatar,
                       child: CircleAvatar(
                         radius: 28,
-                        backgroundColor: Colors.grey.shade200,
+                        backgroundColor:
+                            Theme.of(context).brightness == Brightness.light
+                                ? Colors.grey.shade300
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .surfaceContainerHighest,
                         backgroundImage: _avatarBytes != null
                             ? MemoryImage(_avatarBytes!)
                             : null,
                         child: _avatarBytes == null
-                            ? const Icon(Icons.camera_alt_outlined)
+                            ? Icon(
+                                Icons.camera_alt_outlined,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.black87
+                                    : Colors.white,
+                              )
                             : null,
                       ),
                     ),
@@ -1328,46 +1410,50 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           },
                         );
                       },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                        child: Row(
-                          children: [
-                            Text(
-                              _countryFlagEmoji(_selectedCountry),
-                              style: const TextStyle(fontSize: 20),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _selectedDialCode,
-                              style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600),
-                            ),
-                            const Icon(Icons.arrow_drop_down),
-                            const SizedBox(width: 12),
-                            const VerticalDivider(width: 1),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _phoneController,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.digitsOnly,
-                                  LengthLimitingTextInputFormatter(15),
-                                ],
-                                decoration: const InputDecoration(
-                                  hintText: '5551234567',
-                                  border: InputBorder.none,
+                      child: Builder(builder: (context) {
+                        final scheme = Theme.of(context).colorScheme;
+                        return Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: scheme.outlineVariant),
+                            borderRadius: BorderRadius.circular(8),
+                            color: scheme.surface,
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          child: Row(
+                            children: [
+                              Text(
+                                _countryFlagEmoji(_selectedCountry),
+                                style: const TextStyle(fontSize: 20),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                _selectedDialCode,
+                                style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              const Icon(Icons.arrow_drop_down),
+                              const SizedBox(width: 12),
+                              const VerticalDivider(width: 1),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: _phoneController,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(15),
+                                  ],
+                                  decoration: const InputDecoration(
+                                    hintText: '5551234567',
+                                    border: InputBorder.none,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
+                            ],
+                          ),
+                        );
+                      }),
                     ),
                   ],
                 ),
@@ -1392,29 +1478,275 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
                 const SizedBox(height: 16),
 
-                // Vergi Dairesi
-                TextFormField(
-                  controller: _taxOfficeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Vergi Dairesi',
-                    hintText: 'Örn. Kadıköy VD',
-                    prefixIcon: Icon(Icons.apartment_outlined),
-                    border: OutlineInputBorder(),
+                // Vergi Dairesi: TR ise arama/seçim, diğer ülkelerde serbest metin
+                if (_selectedCountry == 'TR')
+                  RawAutocomplete<String>(
+                    optionsBuilder: (TextEditingValue textEditingValue) {
+                      final q = textEditingValue.text.trim().toLowerCase();
+                      if (q.isEmpty) {
+                        // Yazmadan da önde gelenleri göster (ilk 100)
+                        return _allTaxOffices.take(100);
+                      }
+                      return _allTaxOffices
+                          .where((o) => o.toLowerCase().contains(q));
+                    },
+                    initialValue:
+                        TextEditingValue(text: _taxOfficeController.text),
+                    onSelected: (String selection) {
+                      _taxOfficeController.text = selection;
+                    },
+                    fieldViewBuilder:
+                        (context, controller, focusNode, onFieldSubmitted) {
+                      if (controller.text != _taxOfficeController.text) {
+                        controller.text = _taxOfficeController.text;
+                        controller.selection = TextSelection.fromPosition(
+                          TextPosition(offset: controller.text.length),
+                        );
+                      }
+                      controller.addListener(() {
+                        _taxOfficeController.text = controller.text;
+                      });
+                      focusNode.addListener(() {
+                        if (focusNode.hasFocus && controller.text.isEmpty) {
+                          controller.text = '';
+                        }
+                      });
+                      return TextFormField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        decoration: const InputDecoration(
+                          labelText: 'Vergi Dairesi',
+                          hintText: 'Yazarak arayın veya listeden seçin',
+                          prefixIcon: Icon(Icons.apartment_outlined),
+                          border: OutlineInputBorder(),
+                        ),
+                      );
+                    },
+                    optionsViewBuilder: (context, onSelected, options) {
+                      final scheme = Theme.of(context).colorScheme;
+                      return Align(
+                        alignment: Alignment.topLeft,
+                        child: Material(
+                          elevation: 4,
+                          color: scheme.surface,
+                          borderRadius: BorderRadius.circular(8),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                                maxHeight: 300, minWidth: 280),
+                            child: ListView.builder(
+                              padding: EdgeInsets.zero,
+                              shrinkWrap: true,
+                              itemCount: options.length,
+                              itemBuilder: (context, index) {
+                                final opt = options.elementAt(index);
+                                return ListTile(
+                                  dense: true,
+                                  title: Text(opt,
+                                      overflow: TextOverflow.ellipsis,
+                                      style:
+                                          TextStyle(color: scheme.onSurface)),
+                                  onTap: () => onSelected(opt),
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  )
+                else
+                  TextFormField(
+                    controller: _taxOfficeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Vergi Dairesi',
+                      hintText: 'Vergi dairesini yazın',
+                      prefixIcon: Icon(Icons.apartment_outlined),
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                ),
 
                 const SizedBox(height: 16),
 
-                // Adres
-                TextFormField(
-                  controller: _addressController,
-                  maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Adres',
-                    hintText: 'Fatura/iş adresi',
-                    prefixIcon: Icon(Icons.location_on_outlined),
-                    border: OutlineInputBorder(),
-                  ),
+                // Ülke/İl/İlçe ve adres detayları
+                Column(
+                  children: [
+                    // Ülke sabit country picker ile
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text('Ülke: $_selectedCountry',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: TamgaciConstants.textSecondary)),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            showCountryPicker(
+                              context: context,
+                              showPhoneCode: true,
+                              onSelect: (Country country) {
+                                setState(() {
+                                  _selectedCountry = country.countryCode;
+                                  _selectedDialCode = '+${country.phoneCode}';
+                                });
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.public),
+                          label: const Text('Ülke Seç'),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Türkiye seçili değilse adres alanlarını serbest bırak
+                    if (_selectedCountry == 'TR')
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              isExpanded: true,
+                              initialValue: _selectedCity,
+                              items: _cities
+                                  .map((c) => DropdownMenuItem(
+                                        value: c,
+                                        child: Text(c,
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: false),
+                                      ))
+                                  .toList(),
+                              selectedItemBuilder: (context) => _cities
+                                  .map((c) => Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(c,
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: false),
+                                      ))
+                                  .toList(),
+                              onChanged: (v) {
+                                setState(() {
+                                  _selectedCity = v;
+                                  _selectedDistrict = null;
+                                  _cityController.text = v ?? '';
+                                  _districtController.clear();
+                                  // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                                });
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'İl',
+                                prefixIcon: Icon(Icons.location_city),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: _selectedDistrict,
+                              items: (_selectedCity != null)
+                                  ? (_districtsByCity[_selectedCity!] ?? [])
+                                      .map((d) => DropdownMenuItem(
+                                          value: d, child: Text(d)))
+                                      .toList()
+                                  : const [],
+                              onChanged: (v) {
+                                setState(() {
+                                  _selectedDistrict = v;
+                                  _districtController.text = v ?? '';
+                                  // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                                });
+                              },
+                              decoration: const InputDecoration(
+                                labelText: 'İlçe',
+                                prefixIcon: Icon(Icons.map_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (_selectedCountry == 'TR') const SizedBox(height: 12),
+                    if (_selectedCountry == 'TR')
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _neighborhoodController,
+                              decoration: const InputDecoration(
+                                labelText: 'Mahalle',
+                                prefixIcon: Icon(Icons.home_work_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _streetController,
+                              decoration: const InputDecoration(
+                                labelText: 'Sokak/Cadde',
+                                prefixIcon: Icon(Icons.alt_route_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (_selectedCountry == 'TR') const SizedBox(height: 12),
+                    if (_selectedCountry == 'TR')
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _buildingNoController,
+                              decoration: const InputDecoration(
+                                labelText: 'Bina No',
+                                prefixIcon: Icon(Icons.apartment),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _apartmentNoController,
+                              decoration: const InputDecoration(
+                                labelText: 'Daire No',
+                                prefixIcon: Icon(Icons.meeting_room_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _postalCodeController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(10)
+                              ],
+                              decoration: const InputDecoration(
+                                labelText: 'Posta Kodu',
+                                prefixIcon:
+                                    Icon(Icons.local_post_office_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _addressController,
+                      maxLines: _selectedCountry == 'TR' ? 2 : 3,
+                      decoration: const InputDecoration(
+                        labelText: 'Adres (Açıklama)',
+                        hintText: 'Opsiyonel ek açıklama',
+                        prefixIcon: Icon(Icons.sticky_note_2_outlined),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 16),
@@ -1558,8 +1890,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     return ElevatedButton(
                       onPressed: isLoading ? null : _register,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: TamgaciConstants.primaryColor,
-                        foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -1570,13 +1900,13 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           ? Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                const SizedBox(
+                                SizedBox(
                                   height: 20,
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
+                                      Theme.of(context).colorScheme.onPrimary,
                                     ),
                                   ),
                                 ),

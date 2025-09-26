@@ -696,6 +696,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       taxRate: 0,
       taxAmount: 0,
       totalAmount: totalAmount,
+      currency: 'TRY',
     );
 
     widget.onAdd(item);

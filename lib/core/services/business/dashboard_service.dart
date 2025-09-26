@@ -2,6 +2,7 @@
 // lib/core/services/dashboard_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 
 /// Dashboard veri servisi
@@ -43,10 +44,53 @@ class DashboardService {
     }
   }
 
-  /// Müşteri istatistikleri
+  /// Müşteri istatistikleri - Multi-tenant
   Future<Map<String, dynamic>> _getCustomerStats() async {
     try {
-      final customersSnapshot = await _firestore.collection('customers').get();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return {
+          'total': 0,
+          'active': 0,
+          'individual': 0,
+          'company': 0,
+          'newThisMonth': 0,
+          'totalBalance': 0.0,
+        };
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        return {
+          'total': 0,
+          'active': 0,
+          'individual': 0,
+          'company': 0,
+          'newThisMonth': 0,
+          'totalBalance': 0.0,
+        };
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        return {
+          'total': 0,
+          'active': 0,
+          'individual': 0,
+          'company': 0,
+          'newThisMonth': 0,
+          'totalBalance': 0.0,
+        };
+      }
+
+      final customersSnapshot = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('customers')
+          .get();
       final customers = customersSnapshot.docs;
 
       int totalCustomers = customers.length;
@@ -93,10 +137,50 @@ class DashboardService {
     }
   }
 
-  /// Ürün istatistikleri
+  /// Ürün istatistikleri - Multi-tenant
   Future<Map<String, dynamic>> _getProductStats() async {
     try {
-      final productsSnapshot = await _firestore.collection('products').get();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return {
+          'total': 0,
+          'active': 0,
+          'lowStock': 0,
+          'outOfStock': 0,
+          'totalValue': 0.0,
+        };
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        return {
+          'total': 0,
+          'active': 0,
+          'lowStock': 0,
+          'outOfStock': 0,
+          'totalValue': 0.0,
+        };
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        return {
+          'total': 0,
+          'active': 0,
+          'lowStock': 0,
+          'outOfStock': 0,
+          'totalValue': 0.0,
+        };
+      }
+
+      final productsSnapshot = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .get();
       final products = productsSnapshot.docs;
 
       int totalProducts = products.length;
@@ -231,11 +315,46 @@ class DashboardService {
     }
   }
 
-  /// Gelir istatistikleri
+  /// Gelir istatistikleri - Multi-tenant
   Future<Map<String, dynamic>> _getIncomeStats(
       DateTime startDate, DateTime endDate) async {
     try {
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return {
+          'total': 0,
+          'received': 0,
+          'pending': 0,
+          'totalAmount': 0.0,
+        };
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        return {
+          'total': 0,
+          'received': 0,
+          'pending': 0,
+          'totalAmount': 0.0,
+        };
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        return {
+          'total': 0,
+          'received': 0,
+          'pending': 0,
+          'totalAmount': 0.0,
+        };
+      }
+
       final incomesSnapshot = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
           .collection('incomes')
           .where('incomeDate',
               isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))

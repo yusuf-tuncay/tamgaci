@@ -274,6 +274,7 @@ class FirebaseCustomerEntity {
       'currentBalance': currentBalance,
       'openingBalance': openingBalance,
       'companyId': companyId,
+      'tenantId': companyId, // Multi-tenant için tenantId ekle
       'city': city,
       'country': country,
       'postalCode': postalCode,

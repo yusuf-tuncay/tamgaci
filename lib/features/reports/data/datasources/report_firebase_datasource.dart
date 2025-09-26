@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:tamgaci/features/reports/data/models/report_model.dart';
 import 'package:tamgaci/features/reports/domain/entities/report.dart';
+import 'package:tamgaci/core/firebase/firebase_service.dart';
 
 /// Report Firebase DataSource
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
@@ -10,6 +11,7 @@ class ReportFirebaseDataSource {
   final FirebaseFirestore _firestore;
   // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
+  final FirebaseService _firebaseService = FirebaseService();
 
   ReportFirebaseDataSource(this._firestore, this._firebaseAuth);
 
@@ -19,13 +21,18 @@ class ReportFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('reports')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
         final offsetDoc = await _firestore
             .collection('reports')
+            .where('companyId',
+                isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
             .orderBy('createdAt', descending: true)
             .limit(offset)
             .get();
@@ -69,14 +76,19 @@ class ReportFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('reports')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('type', isEqualTo: type.name)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
         final offsetDoc = await _firestore
             .collection('reports')
+            .where('companyId',
+                isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
             .where('type', isEqualTo: type.name)
             .orderBy('createdAt', descending: true)
             .limit(offset)
@@ -107,8 +119,11 @@ class ReportFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('reports')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('status', isEqualTo: status.name)
           .orderBy('createdAt', descending: true);
 
@@ -145,8 +160,11 @@ class ReportFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('reports')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('format', isEqualTo: format.name)
           .orderBy('createdAt', descending: true);
 
@@ -183,8 +201,11 @@ class ReportFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('reports')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('createdBy', isEqualTo: userId)
           .orderBy('createdAt', descending: true);
 
@@ -222,8 +243,11 @@ class ReportFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('reports')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('createdAt',
               isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
           .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
@@ -262,9 +286,12 @@ class ReportFirebaseDataSource {
   Future<ReportModel> createReport(ReportModel report) async {
     try {
       final docRef = _firestore.collection('reports').doc();
+      final companyIds = await _firebaseService.getUserCompanyIds();
       final newReport = report.copyWith(id: docRef.id);
-
-      await docRef.set(newReport.toFirestore());
+      final data = newReport.toFirestore();
+      data['companyId'] = companyIds.isNotEmpty ? companyIds.first : '';
+      data['createdBy'] = _firebaseAuth.currentUser?.uid;
+      await docRef.set(data);
       AppLogger.info('Report created: ${newReport.name}');
       return newReport;
     } catch (e) {
@@ -345,7 +372,13 @@ class ReportFirebaseDataSource {
   /// Rapor sayısını getirir
   Future<int> getReportsCount() async {
     try {
-      final snapshot = await _firestore.collection('reports').count().get();
+      final companyIds = await _firebaseService.getUserCompanyIds();
+      final snapshot = await _firestore
+          .collection('reports')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
+          .count()
+          .get();
       return snapshot.count ?? 0;
     } catch (e) {
       AppLogger.error('Error getting reports count', e);
@@ -446,7 +479,9 @@ class ReportFirebaseDataSource {
     DateTime? endDate,
   }) async {
     try {
-      Query query = _firestore.collection('reports');
+      final companyIds = await _firebaseService.getUserCompanyIds();
+      Query query = _firestore.collection('reports').where('companyId',
+          isEqualTo: companyIds.isNotEmpty ? companyIds.first : null);
 
       if (startDate != null) {
         query = query.where('createdAt',

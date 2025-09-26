@@ -2,6 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tamgaci/features/sales/data/models/sale_model.dart';
 import 'package:tamgaci/features/sales/domain/entities/sale.dart';
 import 'package:tamgaci/core/errors/failures.dart';
+import 'package:tamgaci/core/firebase/firebase_service.dart';
+import 'package:tamgaci/core/services/tenant_service.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Sales Firebase datasource
 /// Firebase Firestore işlemleri için datasource
@@ -105,10 +108,22 @@ abstract class SaleFirebaseDataSource {
 /// Sales Firebase datasource implementasyonu
 class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   final FirebaseFirestore _firestore;
+  final FirebaseService _firebaseService = FirebaseService();
+  final TenantService _tenantService = TenantService();
 
   SaleFirebaseDataSourceImpl({
     required FirebaseFirestore firestore,
   }) : _firestore = firestore;
+
+  /// Get tenant-scoped sales collection
+  Future<CollectionReference<Map<String, dynamic>>> _tenantSales() async {
+    final tenantId = await _tenantService.getUserTenantId();
+    if (tenantId == null) {
+      AppLogger.error('Tenant ID is null, cannot access sales collection.');
+      throw Exception('Tenant ID is null');
+    }
+    return _firestore.collection('tenants').doc(tenantId).collection('sales');
+  }
 
   @override
   Future<List<SaleModel>> getAllSales({
@@ -116,11 +131,8 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
     int? offset,
   }) async {
     try {
-      Query query =
-          _firestore.collection('sales').orderBy('createdAt', descending: true);
-
-      // Firestore'da offset yok, pagination için startAfter kullanılmalı
-      // Şimdilik offset'i ignore ediyoruz
+      final col = await _tenantSales();
+      Query query = col.orderBy('createdAt', descending: true);
 
       if (limit != null) {
         query = query.limit(limit);
@@ -137,7 +149,8 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   @override
   Future<SaleModel?> getSaleById(String id) async {
     try {
-      final doc = await _firestore.collection('sales').doc(id).get();
+      final col = await _tenantSales();
+      final doc = await col.doc(id).get();
       if (!doc.exists) {
         return null;
       }
@@ -151,11 +164,9 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   @override
   Future<SaleModel?> getSaleByNumber(String saleNumber) async {
     try {
-      final snapshot = await _firestore
-          .collection('sales')
-          .where('saleNumber', isEqualTo: saleNumber)
-          .limit(1)
-          .get();
+      final col = await _tenantSales();
+      final snapshot =
+          await col.where('saleNumber', isEqualTo: saleNumber).limit(1).get();
 
       if (snapshot.docs.isEmpty) {
         return null;
@@ -175,8 +186,11 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('sales')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('customerId', isEqualTo: customerId)
           .orderBy('createdAt', descending: true);
 
@@ -203,8 +217,11 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('sales')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('saleDate',
               isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
           .where('saleDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
@@ -232,8 +249,11 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('sales')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('status', isEqualTo: status.name)
           .orderBy('createdAt', descending: true);
 
@@ -259,8 +279,11 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('sales')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('paymentStatus', isEqualTo: paymentStatus.name)
           .orderBy('createdAt', descending: true);
 
@@ -286,8 +309,11 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   }) async {
     try {
       final now = DateTime.now();
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('sales')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('dueDate', isLessThan: Timestamp.fromDate(now))
           .where('paymentStatus', whereIn: ['pending', 'overdue']).orderBy(
               'dueDate',
@@ -311,10 +337,14 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   @override
   Future<SaleModel> createSale(SaleModel sale) async {
     try {
-      final docRef = _firestore.collection('sales').doc();
+      final col = await _tenantSales();
+      final docRef = col.doc();
+      final tenantId = await _tenantService.getUserTenantId();
       final saleWithId = sale.copyWith(id: docRef.id);
-
-      await docRef.set(saleWithId.toFirestore());
+      final data = saleWithId.toFirestore();
+      data['tenantId'] = tenantId;
+      data['createdBy'] = _firebaseService.currentUserId;
+      await docRef.set(data);
       return saleWithId;
     } catch (e) {
       throw DatabaseFailure(
@@ -325,10 +355,8 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   @override
   Future<SaleModel> updateSale(SaleModel sale) async {
     try {
-      await _firestore
-          .collection('sales')
-          .doc(sale.id)
-          .update(sale.toFirestore());
+      final col = await _tenantSales();
+      await col.doc(sale.id).update(sale.toFirestore());
       return sale;
     } catch (e) {
       throw DatabaseFailure(
@@ -339,7 +367,8 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   @override
   Future<void> deleteSale(String id) async {
     try {
-      await _firestore.collection('sales').doc(id).delete();
+      final col = await _tenantSales();
+      await col.doc(id).delete();
     } catch (e) {
       throw DatabaseFailure(
           'Satış silinirken bir hata oluştu: ${e.toString()}');
@@ -355,8 +384,11 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
     try {
       // Firestore'da text search için algolia veya elasticsearch kullanılmalı
       // Şimdilik basit bir arama yapıyoruz
+      final companyIds = await _firebaseService.getUserCompanyIds();
       final snapshot = await _firestore
           .collection('sales')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('saleNumber', isGreaterThanOrEqualTo: query)
           .where('saleNumber', isLessThan: '$query\uf8ff')
           .orderBy('saleNumber')
@@ -373,7 +405,12 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
   @override
   Future<int> getSalesCount() async {
     try {
-      final snapshot = await _firestore.collection('sales').get();
+      final companyIds = await _firebaseService.getUserCompanyIds();
+      final snapshot = await _firestore
+          .collection('sales')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
+          .get();
       return snapshot.docs.length;
     } catch (e) {
       throw DatabaseFailure(
@@ -387,7 +424,9 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
     DateTime? endDate,
   }) async {
     try {
-      Query query = _firestore.collection('sales');
+      final companyIds = await _firebaseService.getUserCompanyIds();
+      Query query = _firestore.collection('sales').where('companyId',
+          isEqualTo: companyIds.isNotEmpty ? companyIds.first : null);
 
       if (startDate != null) {
         query = query.where('saleDate',
@@ -559,8 +598,8 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
       final startOfDay = DateTime(year, now.month, now.day);
       final endOfDay = DateTime(year, now.month, now.day, 23, 59, 59);
 
-      final snapshot = await _firestore
-          .collection('sales')
+      final col = await _tenantSales();
+      final snapshot = await col
           .where('createdAt',
               isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
           .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))

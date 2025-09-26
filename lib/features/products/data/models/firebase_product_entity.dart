@@ -3,66 +3,86 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tamgaci/features/products/domain/entities/product.dart';
+import 'package:tamgaci/features/products/domain/entities/product_variant.dart';
+import 'package:tamgaci/features/products/domain/entities/product_attribute.dart';
 
 class ProductEntity {
   final String id;
   final String name;
   final String? description;
-  final String? barcode;
+  final String? productCode;
   final String? sku;
-  final double price;
-  final String currency;
-  final double? costPrice;
-  final String category;
+  final String? barcode;
+  final String? gs1Barcode;
+  final String? category;
   final String? brand;
-  final String? model;
-  final String? color;
-  final String? size;
-  final double? weight;
-  final String? weightUnit;
-  final String? imageUrl;
-  final int stockQuantity;
-  final int? minStockLevel;
-  final int? maxStockLevel;
-  final String? unit;
-  final String? location;
-  final bool isActive;
-  final bool isDigital;
-  final String? tags;
+  final ProductType type;
+  final double salesPrice;
+  final double? purchasePrice;
+  final String salesCurrency;
+  final String? purchaseCurrency;
+  final double salesTaxRate;
+  final double? purchaseTaxRate;
+  final TaxInclusiveOption salesTaxInclusive;
+  final TaxInclusiveOption? purchaseTaxInclusive;
+  final double? purchaseDiscount;
+  final double? sct;
+  final String? shelfLocation;
+  final StockTrackingType stockTracking;
+  final int? criticalStockQuantity;
+  final String? gtipCode;
+  final String? countryCode;
+  final List<String> tags;
+  final List<String> images;
+  final List<ProductVariant>? variants;
+  final List<ProductAttribute>? attributes;
+  final Map<String, dynamic>? attributeValues;
+  final List<String>? linkedProducts;
   final String? notes;
-  final String createdBy;
+  final bool isActive;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String createdBy;
+  final String? updatedBy;
 
   ProductEntity({
     required this.id,
     required this.name,
     this.description,
-    this.barcode,
+    this.productCode,
     this.sku,
-    required this.price,
-    required this.currency,
-    this.costPrice,
-    required this.category,
+    this.barcode,
+    this.gs1Barcode,
+    this.category,
     this.brand,
-    this.model,
-    this.color,
-    this.size,
-    this.weight,
-    this.weightUnit,
-    this.imageUrl,
-    required this.stockQuantity,
-    this.minStockLevel,
-    this.maxStockLevel,
-    this.unit,
-    this.location,
-    required this.isActive,
-    required this.isDigital,
-    this.tags,
+    required this.type,
+    required this.salesPrice,
+    this.purchasePrice,
+    this.salesCurrency = 'TRY',
+    this.purchaseCurrency,
+    required this.salesTaxRate,
+    this.purchaseTaxRate,
+    this.salesTaxInclusive = TaxInclusiveOption.exclusive,
+    this.purchaseTaxInclusive,
+    this.purchaseDiscount,
+    this.sct,
+    this.shelfLocation,
+    this.stockTracking = StockTrackingType.normal,
+    this.criticalStockQuantity,
+    this.gtipCode,
+    this.countryCode,
+    this.tags = const [],
+    this.images = const [],
+    this.variants,
+    this.attributes,
+    this.attributeValues,
+    this.linkedProducts,
     this.notes,
-    required this.createdBy,
+    this.isActive = true,
     required this.createdAt,
     required this.updatedAt,
+    required this.createdBy,
+    this.updatedBy,
   });
 
   factory ProductEntity.fromFirestore(DocumentSnapshot doc) {
@@ -71,29 +91,60 @@ class ProductEntity {
       id: doc.id,
       name: data['name'] ?? '',
       description: data['description'],
-      barcode: data['barcode'],
+      productCode: data['productCode'],
       sku: data['sku'],
-      price: (data['price'] ?? 0).toDouble(),
-      currency: data['currency'] ?? 'TRY',
-      costPrice: data['costPrice']?.toDouble(),
-      category: data['category'] ?? '',
+      barcode: data['barcode'],
+      gs1Barcode: data['gs1Barcode'],
+      category: data['category'],
       brand: data['brand'],
-      model: data['model'],
-      color: data['color'],
-      size: data['size'],
-      weight: data['weight']?.toDouble(),
-      weightUnit: data['weightUnit'],
-      imageUrl: data['imageUrl'],
-      stockQuantity: data['stockQuantity'] ?? 0,
-      minStockLevel: data['minStockLevel'] ?? 0,
-      maxStockLevel: data['maxStockLevel'] ?? 0,
-      unit: data['unit'],
-      location: data['location'],
-      isActive: data['isActive'] ?? true,
-      isDigital: data['isDigital'] ?? false,
-      tags: data['tags'],
+      type: ProductType.values.firstWhere(
+        (e) => e.name == data['type'],
+        orElse: () => ProductType.stocked,
+      ),
+      salesPrice: (data['salesPrice'] ?? 0).toDouble(),
+      purchasePrice: data['purchasePrice']?.toDouble(),
+      salesCurrency: data['salesCurrency'] ?? 'TRY',
+      purchaseCurrency: data['purchaseCurrency'],
+      salesTaxRate: (data['salesTaxRate'] ?? 0).toDouble(),
+      purchaseTaxRate: data['purchaseTaxRate']?.toDouble(),
+      salesTaxInclusive: TaxInclusiveOption.values.firstWhere(
+        (e) => e.name == data['salesTaxInclusive'],
+        orElse: () => TaxInclusiveOption.exclusive,
+      ),
+      purchaseTaxInclusive: data['purchaseTaxInclusive'] != null
+          ? TaxInclusiveOption.values.firstWhere(
+              (e) => e.name == data['purchaseTaxInclusive'],
+              orElse: () => TaxInclusiveOption.exclusive,
+            )
+          : null,
+      purchaseDiscount: data['purchaseDiscount']?.toDouble(),
+      sct: data['sct']?.toDouble(),
+      shelfLocation: data['shelfLocation'],
+      stockTracking: StockTrackingType.values.firstWhere(
+        (e) => e.name == data['stockTracking'],
+        orElse: () => StockTrackingType.normal,
+      ),
+      criticalStockQuantity: data['criticalStockQuantity'],
+      gtipCode: data['gtipCode'],
+      countryCode: data['countryCode'],
+      tags: data['tags'] != null ? List<String>.from(data['tags']) : [],
+      images: data['images'] != null ? List<String>.from(data['images']) : [],
+      variants: (data['variants'] as List<dynamic>?)
+          ?.map((e) => ProductVariant.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      attributes: (data['attributes'] as List<dynamic>?)
+          ?.map((e) => ProductAttribute.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      attributeValues: data['attributeValues'] != null
+          ? Map<String, dynamic>.from(data['attributeValues'])
+          : null,
+      linkedProducts: data['linkedProducts'] != null
+          ? List<String>.from(data['linkedProducts'])
+          : null,
       notes: data['notes'],
+      isActive: data['isActive'] ?? true,
       createdBy: data['createdBy'] ?? '',
+      updatedBy: data['updatedBy'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
@@ -104,29 +155,38 @@ class ProductEntity {
       id: product.id,
       name: product.name,
       description: product.description,
-      barcode: product.barcode,
+      productCode: product.productCode,
       sku: product.sku,
-      price: product.salesPrice,
-      currency: product.salesCurrency,
-      costPrice: product.purchasePrice,
-      category: product.category ?? '',
+      barcode: product.barcode,
+      gs1Barcode: product.gs1Barcode,
+      category: product.category,
       brand: product.brand,
-      model: null, // Removed from new Product entity
-      color: null, // Removed from new Product entity
-      size: null, // Removed from new Product entity
-      weight: null, // Removed from new Product entity
-      weightUnit: null, // Removed from new Product entity
-      imageUrl: product.images.isNotEmpty ? product.images.first : null,
-      stockQuantity: product.totalStockQuantity,
-      minStockLevel: product.criticalStockQuantity,
-      maxStockLevel: null, // Removed from new Product entity
-      unit: null, // Removed from new Product entity
-      location: product.shelfLocation,
-      isActive: product.isActive,
-      isDigital: false, // Removed from new Product entity
-      tags: product.tags.join(','),
+      type: product.type,
+      salesPrice: product.salesPrice,
+      purchasePrice: product.purchasePrice,
+      salesCurrency: product.salesCurrency,
+      purchaseCurrency: product.purchaseCurrency,
+      salesTaxRate: product.salesTaxRate,
+      purchaseTaxRate: product.purchaseTaxRate,
+      salesTaxInclusive: product.salesTaxInclusive,
+      purchaseTaxInclusive: product.purchaseTaxInclusive,
+      purchaseDiscount: product.purchaseDiscount,
+      sct: product.sct,
+      shelfLocation: product.shelfLocation,
+      stockTracking: product.stockTracking,
+      criticalStockQuantity: product.criticalStockQuantity,
+      gtipCode: product.gtipCode,
+      countryCode: product.countryCode,
+      tags: product.tags,
+      images: product.images,
+      variants: product.variants,
+      attributes: product.attributes,
+      attributeValues: product.attributeValues,
+      linkedProducts: product.linkedProducts,
       notes: product.notes,
+      isActive: product.isActive,
       createdBy: product.createdBy,
+      updatedBy: product.updatedBy,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt,
     );
@@ -134,31 +194,41 @@ class ProductEntity {
 
   Map<String, dynamic> toFirestore() {
     return {
+      'id': id,
       'name': name,
       'description': description,
-      'barcode': barcode,
+      'productCode': productCode,
       'sku': sku,
-      'price': price,
-      'currency': currency,
-      'costPrice': costPrice,
+      'barcode': barcode,
+      'gs1Barcode': gs1Barcode,
       'category': category,
       'brand': brand,
-      'model': model,
-      'color': color,
-      'size': size,
-      'weight': weight,
-      'weightUnit': weightUnit,
-      'imageUrl': imageUrl,
-      'stockQuantity': stockQuantity,
-      'minStockLevel': minStockLevel,
-      'maxStockLevel': maxStockLevel,
-      'unit': unit,
-      'location': location,
-      'isActive': isActive,
-      'isDigital': isDigital,
+      'type': type.name,
+      'salesPrice': salesPrice,
+      'purchasePrice': purchasePrice,
+      'salesCurrency': salesCurrency,
+      'purchaseCurrency': purchaseCurrency,
+      'salesTaxRate': salesTaxRate,
+      'purchaseTaxRate': purchaseTaxRate,
+      'salesTaxInclusive': salesTaxInclusive.name,
+      'purchaseTaxInclusive': purchaseTaxInclusive?.name,
+      'purchaseDiscount': purchaseDiscount,
+      'sct': sct,
+      'shelfLocation': shelfLocation,
+      'stockTracking': stockTracking.name,
+      'criticalStockQuantity': criticalStockQuantity,
+      'gtipCode': gtipCode,
+      'countryCode': countryCode,
       'tags': tags,
+      'images': images,
+      'variants': variants?.map((e) => e.toJson()).toList(),
+      'attributes': attributes?.map((e) => e.toJson()).toList(),
+      'attributeValues': attributeValues,
+      'linkedProducts': linkedProducts,
       'notes': notes,
+      'isActive': isActive,
       'createdBy': createdBy,
+      'updatedBy': updatedBy,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -169,22 +239,40 @@ class ProductEntity {
       id: id,
       name: name,
       description: description,
-      barcode: barcode,
+      productCode: productCode,
       sku: sku,
-      salesPrice: price,
-      salesCurrency: currency,
-      purchasePrice: costPrice,
-      category: category.isEmpty ? null : category,
+      barcode: barcode,
+      gs1Barcode: gs1Barcode,
+      category: category,
       brand: brand,
-      taxRate: 20.0, // Default tax rate
-      shelfLocation: location,
-      criticalStockQuantity: minStockLevel,
-      tags: tags?.split(',') ?? [],
-      images: imageUrl != null ? [imageUrl!] : [],
+      type: type,
+      salesPrice: salesPrice,
+      purchasePrice: purchasePrice,
+      salesCurrency: salesCurrency,
+      purchaseCurrency: purchaseCurrency,
+      salesTaxRate: salesTaxRate,
+      purchaseTaxRate: purchaseTaxRate,
+      salesTaxInclusive: salesTaxInclusive,
+      purchaseTaxInclusive: purchaseTaxInclusive,
+      purchaseDiscount: purchaseDiscount,
+      sct: sct,
+      shelfLocation: shelfLocation,
+      stockTracking: stockTracking,
+      criticalStockQuantity: criticalStockQuantity,
+      gtipCode: gtipCode,
+      countryCode: countryCode,
+      tags: tags,
+      images: images,
+      variants: variants,
+      attributes: attributes,
+      attributeValues: attributeValues,
+      linkedProducts: linkedProducts,
+      notes: notes,
       isActive: isActive,
-      createdBy: createdBy,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      createdBy: createdBy,
+      updatedBy: updatedBy,
     );
   }
 
@@ -193,29 +281,38 @@ class ProductEntity {
     String? id,
     String? name,
     String? description,
-    String? barcode,
+    String? productCode,
     String? sku,
-    double? price,
-    String? currency,
-    double? costPrice,
+    String? barcode,
+    String? gs1Barcode,
     String? category,
     String? brand,
-    String? model,
-    String? color,
-    String? size,
-    double? weight,
-    String? weightUnit,
-    String? imageUrl,
-    int? stockQuantity,
-    int? minStockLevel,
-    int? maxStockLevel,
-    String? unit,
-    String? location,
-    bool? isActive,
-    bool? isDigital,
-    String? tags,
+    ProductType? type,
+    double? salesPrice,
+    double? purchasePrice,
+    String? salesCurrency,
+    String? purchaseCurrency,
+    double? salesTaxRate,
+    double? purchaseTaxRate,
+    TaxInclusiveOption? salesTaxInclusive,
+    TaxInclusiveOption? purchaseTaxInclusive,
+    double? purchaseDiscount,
+    double? sct,
+    String? shelfLocation,
+    StockTrackingType? stockTracking,
+    int? criticalStockQuantity,
+    String? gtipCode,
+    String? countryCode,
+    List<String>? tags,
+    List<String>? images,
+    List<ProductVariant>? variants,
+    List<ProductAttribute>? attributes,
+    Map<String, dynamic>? attributeValues,
+    List<String>? linkedProducts,
     String? notes,
+    bool? isActive,
     String? createdBy,
+    String? updatedBy,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -223,29 +320,39 @@ class ProductEntity {
       id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
-      barcode: barcode ?? this.barcode,
+      productCode: productCode ?? this.productCode,
       sku: sku ?? this.sku,
-      price: price ?? this.price,
-      currency: currency ?? this.currency,
-      costPrice: costPrice ?? this.costPrice,
+      barcode: barcode ?? this.barcode,
+      gs1Barcode: gs1Barcode ?? this.gs1Barcode,
       category: category ?? this.category,
       brand: brand ?? this.brand,
-      model: model ?? this.model,
-      color: color ?? this.color,
-      size: size ?? this.size,
-      weight: weight ?? this.weight,
-      weightUnit: weightUnit ?? this.weightUnit,
-      imageUrl: imageUrl ?? this.imageUrl,
-      stockQuantity: stockQuantity ?? this.stockQuantity,
-      minStockLevel: minStockLevel ?? this.minStockLevel,
-      maxStockLevel: maxStockLevel ?? this.maxStockLevel,
-      unit: unit ?? this.unit,
-      location: location ?? this.location,
-      isActive: isActive ?? this.isActive,
-      isDigital: isDigital ?? this.isDigital,
+      type: type ?? this.type,
+      salesPrice: salesPrice ?? this.salesPrice,
+      purchasePrice: purchasePrice ?? this.purchasePrice,
+      salesCurrency: salesCurrency ?? this.salesCurrency,
+      purchaseCurrency: purchaseCurrency ?? this.purchaseCurrency,
+      salesTaxRate: salesTaxRate ?? this.salesTaxRate,
+      purchaseTaxRate: purchaseTaxRate ?? this.purchaseTaxRate,
+      salesTaxInclusive: salesTaxInclusive ?? this.salesTaxInclusive,
+      purchaseTaxInclusive: purchaseTaxInclusive ?? this.purchaseTaxInclusive,
+      purchaseDiscount: purchaseDiscount ?? this.purchaseDiscount,
+      sct: sct ?? this.sct,
+      shelfLocation: shelfLocation ?? this.shelfLocation,
+      stockTracking: stockTracking ?? this.stockTracking,
+      criticalStockQuantity:
+          criticalStockQuantity ?? this.criticalStockQuantity,
+      gtipCode: gtipCode ?? this.gtipCode,
+      countryCode: countryCode ?? this.countryCode,
       tags: tags ?? this.tags,
+      images: images ?? this.images,
+      variants: variants ?? this.variants,
+      attributes: attributes ?? this.attributes,
+      attributeValues: attributeValues ?? this.attributeValues,
+      linkedProducts: linkedProducts ?? this.linkedProducts,
       notes: notes ?? this.notes,
+      isActive: isActive ?? this.isActive,
       createdBy: createdBy ?? this.createdBy,
+      updatedBy: updatedBy ?? this.updatedBy,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

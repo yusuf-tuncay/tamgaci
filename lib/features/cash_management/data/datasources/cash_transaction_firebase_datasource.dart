@@ -8,10 +8,98 @@ import 'package:tamgaci/features/cash_management/domain/entities/cash_transactio
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
 class CashTransactionFirebaseDataSource {
   final FirebaseFirestore _firestore;
-  // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
 
   CashTransactionFirebaseDataSource(this._firestore, this._firebaseAuth);
+
+  /// Kullanıcının tenantId'sini al
+  Future<String?> _getUserTenantId() async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        AppLogger.error('No authenticated user found');
+        return null;
+      }
+
+      AppLogger.info('Getting tenantId for user: ${user.uid}');
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.error('User document does not exist');
+        return null;
+      }
+
+      final userData = userDoc.data();
+      final tenantId = userData?['tenantId'] as String?;
+
+      AppLogger.info('Current tenantId: $tenantId');
+
+      // Eğer tenantId yoksa, oluştur
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.info('TenantId is null or empty, creating new one...');
+        await _createTenantIdForUser(user.uid, userData);
+        // Tekrar oku
+        final updatedUserDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+        final updatedUserData = updatedUserDoc.data();
+        final newTenantId = updatedUserData?['tenantId'] as String?;
+        AppLogger.info('New tenantId created: $newTenantId');
+        return newTenantId;
+      }
+
+      return tenantId;
+    } catch (e) {
+      AppLogger.error('Error getting user tenant ID', e);
+      return null;
+    }
+  }
+
+  /// Kullanıcı için tenantId oluştur
+  Future<void> _createTenantIdForUser(
+      String uid, Map<String, dynamic>? userData) async {
+    try {
+      final companyName = userData?['companyName'] as String? ?? '';
+      final tenantId = companyName.isNotEmpty
+          ? companyName
+              .toLowerCase()
+              .replaceAll(' ', '_')
+              .replaceAll(RegExp(r'[^a-z0-9_]'), '')
+          : 'default_tenant_$uid';
+
+      // User document'ını güncelle
+      await _firestore.collection('users').doc(uid).update({
+        'tenantId': tenantId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Tenant document'ını oluştur
+      await _firestore.collection('tenants').doc(tenantId).set({
+        'id': tenantId,
+        'name': companyName.isNotEmpty ? companyName : 'Default Tenant',
+        'ownerId': uid,
+        'memberIds': [uid],
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isActive': true,
+      });
+
+      AppLogger.info('Tenant ID created for user: $tenantId');
+    } catch (e) {
+      AppLogger.error('Error creating tenant ID for user', e);
+    }
+  }
+
+  /// Multi-tenant collection path oluştur
+  Future<String> _getCollectionPath() async {
+    final tenantId = await _getUserTenantId();
+    if (tenantId != null) {
+      final path = 'tenants/$tenantId/cash_transactions';
+      AppLogger.info('Using collection path: $path');
+      return path;
+    }
+    AppLogger.warning(
+        'No tenantId found, using fallback path: cash_transactions');
+    return 'cash_transactions'; // Fallback
+  }
 
   /// Tüm nakit işlemleri getirir
   Future<List<CashTransactionModel>> getAllCashTransactions({
@@ -19,13 +107,16 @@ class CashTransactionFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final collectionPath = await _getCollectionPath();
+      AppLogger.info('Executing query on collection: $collectionPath');
+
       Query query = _firestore
-          .collection('cash_transactions')
+          .collection(collectionPath)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
         final offsetDoc = await _firestore
-            .collection('cash_transactions')
+            .collection(collectionPath)
             .orderBy('createdAt', descending: true)
             .limit(offset)
             .get();
@@ -39,18 +130,25 @@ class CashTransactionFirebaseDataSource {
       }
 
       final snapshot = await query.get();
-      return snapshot.docs
+      AppLogger.info(
+          'Query completed. Found ${snapshot.docs.length} documents');
+
+      final results = snapshot.docs
           .map((doc) {
             try {
               return CashTransactionModel.fromFirestore(doc);
             } catch (e) {
-              AppLogger.error('Error parsing cash transaction document ${doc.id}', e);
+              AppLogger.error(
+                  'Error parsing cash transaction document ${doc.id}', e);
               return null;
             }
           })
           .where((transaction) => transaction != null)
           .cast<CashTransactionModel>()
           .toList();
+
+      AppLogger.info('Successfully parsed ${results.length} cash transactions');
+      return results;
     } catch (e) {
       AppLogger.error('Error getting all cash transactions', e);
       rethrow;
@@ -60,13 +158,14 @@ class CashTransactionFirebaseDataSource {
   /// ID'ye göre nakit işlem getirir
   Future<CashTransactionModel?> getCashTransactionById(String id) async {
     try {
-      final doc =
-          await _firestore.collection('cash_transactions').doc(id).get();
+      final collectionPath = await _getCollectionPath();
+      final doc = await _firestore.collection(collectionPath).doc(id).get();
       if (doc.exists) {
         try {
           return CashTransactionModel.fromFirestore(doc);
         } catch (e) {
-          AppLogger.error('Error parsing cash transaction document ${doc.id}', e);
+          AppLogger.error(
+              'Error parsing cash transaction document ${doc.id}', e);
           return null;
         }
       }
@@ -81,8 +180,9 @@ class CashTransactionFirebaseDataSource {
   Future<CashTransactionModel?> getCashTransactionByNumber(
       String transactionNumber) async {
     try {
+      final collectionPath = await _getCollectionPath();
       final snapshot = await _firestore
-          .collection('cash_transactions')
+          .collection(collectionPath)
           .where('transactionNumber', isEqualTo: transactionNumber)
           .limit(1)
           .get();
@@ -343,7 +443,8 @@ class CashTransactionFirebaseDataSource {
   Future<CashTransactionModel> createCashTransaction(
       CashTransactionModel cashTransaction) async {
     try {
-      final docRef = _firestore.collection('cash_transactions').doc();
+      final collectionPath = await _getCollectionPath();
+      final docRef = _firestore.collection(collectionPath).doc();
       final newCashTransaction = cashTransaction.copyWith(id: docRef.id);
 
       await docRef.set(newCashTransaction.toFirestore());
@@ -360,8 +461,9 @@ class CashTransactionFirebaseDataSource {
   Future<CashTransactionModel> updateCashTransaction(
       CashTransactionModel cashTransaction) async {
     try {
+      final collectionPath = await _getCollectionPath();
       await _firestore
-          .collection('cash_transactions')
+          .collection(collectionPath)
           .doc(cashTransaction.id)
           .update(cashTransaction.toFirestore());
 
@@ -378,7 +480,8 @@ class CashTransactionFirebaseDataSource {
   /// Nakit işlem siler
   Future<void> deleteCashTransaction(String id) async {
     try {
-      await _firestore.collection('cash_transactions').doc(id).delete();
+      final collectionPath = await _getCollectionPath();
+      await _firestore.collection(collectionPath).doc(id).delete();
       AppLogger.info('Cash transaction deleted: $id');
     } catch (e) {
       AppLogger.error('Error deleting cash transaction: $id', e);

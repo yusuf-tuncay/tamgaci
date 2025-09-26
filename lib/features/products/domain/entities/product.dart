@@ -4,7 +4,9 @@ import 'product_attribute.dart';
 /// Ürün türü enum'u
 enum ProductType {
   stocked('Stoklu'),
-  nonStocked('Stoksuz');
+  nonStocked('Stoksuz'),
+  service('Hizmet'),
+  digital('Dijital');
 
   const ProductType(this.displayName);
   final String displayName;
@@ -44,10 +46,12 @@ class Product {
   final double? purchasePrice; // Alış fiyatı
   final String salesCurrency; // Satış para birimi
   final String? purchaseCurrency; // Alış para birimi
-  final double taxRate; // KDV oranı
-  final TaxInclusiveOption taxInclusive; // KDV dahil/hariç
-  final double? purchaseDiscount; // Alış iskontosu
-  final double? sct; // ÖTV (Özel Tüketim Vergisi)
+  final double salesTaxRate; // Satış KDV oranı
+  final double? purchaseTaxRate; // Alış KDV oranı
+  final TaxInclusiveOption salesTaxInclusive; // Satış fiyatına KDV dahil
+  final TaxInclusiveOption? purchaseTaxInclusive; // Alış fiyatına KDV dahil
+  final double? purchaseDiscount; // Alış iskontosu (%)
+  final double? sct; // ÖTV (Özel Tüketim Vergisi) (%)
   final String? shelfLocation; // Raf yeri (depo modülüyle takip)
   final StockTrackingType stockTracking; // Stok takibi türü
   final int? criticalStockQuantity; // Kritik stok miktarı
@@ -82,8 +86,10 @@ class Product {
     this.purchasePrice,
     this.salesCurrency = 'TRY',
     this.purchaseCurrency,
-    required this.taxRate,
-    this.taxInclusive = TaxInclusiveOption.exclusive,
+    required this.salesTaxRate,
+    this.purchaseTaxRate,
+    this.salesTaxInclusive = TaxInclusiveOption.exclusive,
+    this.purchaseTaxInclusive,
     this.purchaseDiscount,
     this.sct,
     this.shelfLocation,
@@ -107,19 +113,19 @@ class Product {
 
   /// Vergi dahil satış fiyatı
   double get salesPriceWithTax {
-    if (taxInclusive == TaxInclusiveOption.inclusive) {
+    if (salesTaxInclusive == TaxInclusiveOption.inclusive) {
       return salesPrice;
     }
-    return salesPrice * (1 + taxRate / 100);
+    return salesPrice * (1 + salesTaxRate / 100);
   }
 
   /// Vergi dahil alış fiyatı
   double? get purchasePriceWithTax {
-    if (purchasePrice == null) return null;
-    if (taxInclusive == TaxInclusiveOption.inclusive) {
+    if (purchasePrice == null || purchaseTaxRate == null) return null;
+    if (purchaseTaxInclusive == TaxInclusiveOption.inclusive) {
       return purchasePrice;
     }
-    return purchasePrice! * (1 + taxRate / 100);
+    return purchasePrice! * (1 + purchaseTaxRate! / 100);
   }
 
   /// Toplam stok miktarı (varyantlar dahil)
@@ -160,8 +166,10 @@ class Product {
     double? purchasePrice,
     String? salesCurrency,
     String? purchaseCurrency,
-    double? taxRate,
-    TaxInclusiveOption? taxInclusive,
+    double? salesTaxRate,
+    double? purchaseTaxRate,
+    TaxInclusiveOption? salesTaxInclusive,
+    TaxInclusiveOption? purchaseTaxInclusive,
     double? purchaseDiscount,
     double? sct,
     String? shelfLocation,
@@ -197,8 +205,10 @@ class Product {
       purchasePrice: purchasePrice ?? this.purchasePrice,
       salesCurrency: salesCurrency ?? this.salesCurrency,
       purchaseCurrency: purchaseCurrency ?? this.purchaseCurrency,
-      taxRate: taxRate ?? this.taxRate,
-      taxInclusive: taxInclusive ?? this.taxInclusive,
+      salesTaxRate: salesTaxRate ?? this.salesTaxRate,
+      purchaseTaxRate: purchaseTaxRate ?? this.purchaseTaxRate,
+      salesTaxInclusive: salesTaxInclusive ?? this.salesTaxInclusive,
+      purchaseTaxInclusive: purchaseTaxInclusive ?? this.purchaseTaxInclusive,
       purchaseDiscount: purchaseDiscount ?? this.purchaseDiscount,
       sct: sct ?? this.sct,
       shelfLocation: shelfLocation ?? this.shelfLocation,
@@ -242,11 +252,18 @@ class Product {
       purchasePrice: (json['purchasePrice'] as num?)?.toDouble(),
       salesCurrency: json['salesCurrency'] as String? ?? 'TRY',
       purchaseCurrency: json['purchaseCurrency'] as String?,
-      taxRate: (json['taxRate'] as num).toDouble(),
-      taxInclusive: TaxInclusiveOption.values.firstWhere(
-        (e) => e.name == json['taxInclusive'],
+      salesTaxRate: (json['salesTaxRate'] as num).toDouble(),
+      purchaseTaxRate: (json['purchaseTaxRate'] as num?)?.toDouble(),
+      salesTaxInclusive: TaxInclusiveOption.values.firstWhere(
+        (e) => e.name == json['salesTaxInclusive'],
         orElse: () => TaxInclusiveOption.exclusive,
       ),
+      purchaseTaxInclusive: json['purchaseTaxInclusive'] != null
+          ? TaxInclusiveOption.values.firstWhere(
+              (e) => e.name == json['purchaseTaxInclusive'],
+              orElse: () => TaxInclusiveOption.exclusive,
+            )
+          : null,
       purchaseDiscount: (json['purchaseDiscount'] as num?)?.toDouble(),
       sct: (json['sct'] as num?)?.toDouble(),
       shelfLocation: json['shelfLocation'] as String?,
@@ -297,8 +314,10 @@ class Product {
       'purchasePrice': purchasePrice,
       'salesCurrency': salesCurrency,
       'purchaseCurrency': purchaseCurrency,
-      'taxRate': taxRate,
-      'taxInclusive': taxInclusive.name,
+      'salesTaxRate': salesTaxRate,
+      'purchaseTaxRate': purchaseTaxRate,
+      'salesTaxInclusive': salesTaxInclusive.name,
+      'purchaseTaxInclusive': purchaseTaxInclusive?.name,
       'purchaseDiscount': purchaseDiscount,
       'sct': sct,
       'shelfLocation': shelfLocation,

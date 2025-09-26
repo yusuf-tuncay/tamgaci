@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../products/presentation/providers/product_providers.dart';
 import '../../../inventory/presentation/providers/warehouse_providers.dart';
 import '../../../inventory/domain/entities/warehouse.dart';
@@ -22,6 +21,12 @@ import '../../../notifications/presentation/providers/notification_providers.dar
 import '../../../notifications/domain/entities/notification.dart'
     as app_notification;
 // import '../../../../core/routes/routes.dart';
+import 'package:tamgaci/features/invoices/domain/entities/invoice.dart' as inv;
+import 'package:tamgaci/features/invoices/domain/entities/invoice_item.dart'
+    as inv_item;
+import 'package:tamgaci/features/invoices/presentation/providers/invoice_providers.dart';
+import 'package:tamgaci/features/invoices/data/models/invoice_status.dart'
+    as inv_status;
 
 /// Yeni alış oluşturma sayfası
 class CreatePurchasePage extends ConsumerStatefulWidget {
@@ -215,7 +220,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       });
     } catch (_) {
       // Fallback: Generate a simple unique number
-    final now = DateTime.now();
+      final now = DateTime.now();
       final prefix =
           _purchaseType == PurchaseType.returnPurchase ? 'IAL' : 'NAL';
       final fallbackNumber =
@@ -237,7 +242,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: widget.purchaseId != null ? 'Alış Düzenle' : 'Yeni Alış',
-        showDrawer: true,
+        showBackButton: true,
         actions: [
           IconButton(
             onPressed: _savePurchase,
@@ -245,7 +250,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           ),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      // No drawer on create page, use back button for navigation
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -263,28 +268,42 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 16),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
+                      border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant),
                       borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey.shade50,
+                      color: Theme.of(context).colorScheme.surface,
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.receipt_long,
                             color: AppColors.primary, size: 20),
                         const SizedBox(width: 8),
-                        Text(
-                          '${_purchaseType == PurchaseType.returnPurchase ? 'İade Alış' : 'Normal Alış'} Numarası: ',
-                          style: GoogleFonts.poppins(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
+                        Flexible(
+                          child: Text(
+                            '${_purchaseType == PurchaseType.returnPurchase ? 'İade Alış' : 'Normal Alış'} Numarası: ',
+                            style: GoogleFonts.poppins(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.7),
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
                         ),
-                        Text(
-                          _purchaseNumberController.text,
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            _purchaseNumberController.text,
+                            style: GoogleFonts.poppins(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                            textAlign: TextAlign.right,
                           ),
                         ),
                       ],
@@ -352,10 +371,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
               // Ödeme Bilgileri - Sadece normal alış için göster
               if (_purchaseType == PurchaseType.purchase) ...[
-              _buildSectionCard(
-                'Ödeme Bilgileri',
-                Icons.payment,
-                [
+                _buildSectionCard(
+                  'Ödeme Bilgileri',
+                  Icons.payment,
+                  [
                     _buildCurrencyAndFxRow(),
                     const SizedBox(height: 16),
                     _buildTextField(
@@ -375,47 +394,67 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                     Row(
                       children: [
                         Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _selectedWarehouse?.id,
-                            decoration:
-                                const InputDecoration(labelText: 'Depo'),
-                            isExpanded: true,
-                            items: ref.watch(warehousesProvider).maybeWhen(
-                                  data: (list) => [
-                                    const DropdownMenuItem(
-                                      value: 'no_stock',
-                                      child: Text('Stoksuz Ürün'),
-                                    ),
-                                    for (final w in list)
-                                      DropdownMenuItem(
-                                          value: w.id, child: Text(w.name)),
-                                  ],
-                                  orElse: () => [
-                                    const DropdownMenuItem(
-                                      value: 'no_stock',
-                                      child: Text('Stoksuz Ürün'),
-                                    ),
-                                  ],
-                                ),
-                            onChanged: (id) async {
-                              if (id == 'no_stock') {
-                      setState(() {
-                                  _selectedWarehouse = null;
-                                  _receiveToInventory =
-                                      false; // Stoksuz ürün için stok girişi false
-                                });
-                              } else {
-                                final list =
-                                    await ref.read(warehousesProvider.future);
-                                setState(() {
-                                  _selectedWarehouse =
-                                      list.firstWhere((w) => w.id == id);
-                                  _receiveToInventory =
-                                      true; // Normal depo için stok girişi true
-                                });
-                              }
-                            },
-                          ),
+                          child: Consumer(builder: (context, ref, _) {
+                            final asyncWarehouses =
+                                ref.watch(warehousesProvider);
+                            return asyncWarehouses.when(
+                              data: (list) {
+                                // unique values and safe initial
+                                final items = <DropdownMenuItem<String>>[
+                                  const DropdownMenuItem(
+                                    value: 'no_stock',
+                                    child: Text('Stoksuz Ürün'),
+                                  ),
+                                  for (final w in list)
+                                    DropdownMenuItem(
+                                        value: w.id, child: Text(w.name)),
+                                ];
+                                String? value = _selectedWarehouse?.id;
+                                final values =
+                                    items.map((e) => e.value).toSet();
+                                if (value != null && !values.contains(value)) {
+                                  value = 'no_stock';
+                                }
+                                return DropdownButtonFormField<String>(
+                                  initialValue: value,
+                                  decoration:
+                                      const InputDecoration(labelText: 'Depo'),
+                                  isExpanded: true,
+                                  items: items,
+                                  onChanged: (id) async {
+                                    if (id == 'no_stock') {
+                                      setState(() {
+                                        _selectedWarehouse = null;
+                                        _receiveToInventory = false;
+                                      });
+                                    } else {
+                                      final list = await ref
+                                          .read(warehousesProvider.future);
+                                      setState(() {
+                                        _selectedWarehouse = list.firstWhere(
+                                            (w) => w.id == id,
+                                            orElse: () => list.first);
+                                        _receiveToInventory = true;
+                                      });
+                                    }
+                                  },
+                                );
+                              },
+                              loading: () => const LinearProgressIndicator(),
+                              error: (e, _) => DropdownButtonFormField<String>(
+                                initialValue: 'no_stock',
+                                decoration:
+                                    const InputDecoration(labelText: 'Depo'),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 'no_stock',
+                                    child: Text('Stoksuz Ürün'),
+                                  ),
+                                ],
+                                onChanged: (_) {},
+                              ),
+                            );
+                          }),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
@@ -428,9 +467,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                             contentPadding: EdgeInsets.zero,
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
-                  ),
-                ],
-              ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
                 const SizedBox(height: 24),
@@ -503,7 +542,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                     ),
                   ],
                 ),
-              const SizedBox(height: 24),
+                const SizedBox(height: 24),
               ],
 
               // Vade ve Taksitler - Sadece normal alış için göster
@@ -556,7 +595,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: FilledButton.icon(
-                    onPressed: _addPurchaseItem,
+                      onPressed: _addPurchaseItem,
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.primary,
                       ),
@@ -582,24 +621,24 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                     const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: _isSaving ? null : _savePurchase,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(TamgaciConstants.radiusMD),
-                    ),
-                  ),
-                  child: Text(
-                    widget.purchaseId != null
-                        ? 'Alışı Güncelle'
-                        : 'Alışı Kaydet',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(TamgaciConstants.radiusMD),
+                        ),
+                      ),
+                      child: Text(
+                        widget.purchaseId != null
+                            ? 'Alışı Güncelle'
+                            : 'Alışı Kaydet',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -725,15 +764,20 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         for (int i = 0; i < _items.length; i++) _buildItemCard(i),
         if (_items.isEmpty)
           Container(
-      padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant),
             ),
             child: Text(
               'Kalem ekleyin',
-              style: GoogleFonts.poppins(color: AppColors.textSecondary),
+              style: GoogleFonts.poppins(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7)),
             ),
           ),
       ],
@@ -767,9 +811,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -828,23 +872,39 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   Future<void> _savePurchase() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSupplier == null) {
+      final scheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tedarikçi seçilmelidir')),
+        SnackBar(
+          content: Text('Tedarikçi seçilmelidir',
+              style: TextStyle(color: scheme.onError)),
+          backgroundColor: scheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
     if (_items.isEmpty) {
+      final scheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('En az bir kalem ekleyin')),
+        SnackBar(
+          content: Text('En az bir kalem ekleyin',
+              style: TextStyle(color: scheme.onError)),
+          backgroundColor: scheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
       );
       return;
     }
 
     // Vadeli alış uyumu: vade tarihi seçilmişse pending olarak bırak; aksi nakit varsayımı
     if (_dueDate != null && _dueDate!.isBefore(_purchaseDate)) {
+      final scheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Vade tarihi alış tarihinden önce olamaz')),
+        SnackBar(
+            content: Text('Vade tarihi alış tarihinden önce olamaz',
+                style: TextStyle(color: scheme.onError)),
+            backgroundColor: scheme.error,
+            behavior: SnackBarBehavior.floating),
       );
       return;
     }
@@ -908,6 +968,11 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       await ref
           .read(purchaseNotifierProvider.notifier)
           .createPurchase(purchase);
+
+      // Faturalar modülüne senkronizasyon (direction: purchase)
+      try {
+        await _syncInvoiceWithPurchase(purchase);
+      } catch (_) {}
       // Installment reminders
       if (_isInstallmentPurchase && _installments.isNotEmpty) {
         for (final inst in _installments) {
@@ -934,15 +999,27 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       }
       // TODO: if _receiveToInventory and _selectedWarehouse != null, create stock movements (future step)
       if (mounted) {
+        final scheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Alış kaydedildi')),
+          SnackBar(
+            content: Text('Alış kaydedildi',
+                style: TextStyle(color: scheme.onPrimary)),
+            backgroundColor: scheme.primary,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
+        final scheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Kaydedilemedi: $e')),
+          SnackBar(
+            content: Text('Kaydedilemedi: $e',
+                style: TextStyle(color: scheme.onError)),
+            backgroundColor: scheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } finally {
@@ -950,19 +1027,100 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     }
   }
 
+  Future<void> _syncInvoiceWithPurchase(Purchase purchase) async {
+    // documentType eşlemesi: normal alış -> invoice, satıştan iade alışı -> returnPurchase (invoice altında not)
+    final documentType = purchase.type == PurchaseType.returnPurchase
+        ? 'invoice' // İade alışını da purchase faturası olarak kaydediyoruz
+        : 'invoice';
+
+    final repo = ref.read(invoiceRepositoryProvider);
+    final existing = await repo.getInvoiceByNumber(purchase.purchaseNumber,
+        includeItems: true);
+
+    // InvoiceStatus eşlemesi
+    inv_status.InvoiceStatus status;
+    switch (purchase.status) {
+      case PurchaseStatus.draft:
+        status = inv_status.InvoiceStatus.draft;
+        break;
+      case PurchaseStatus.cancelled:
+        status = inv_status.InvoiceStatus.cancelled;
+        break;
+      case PurchaseStatus.paid:
+        status = inv_status.InvoiceStatus.paid;
+        break;
+      default:
+        status = inv_status.InvoiceStatus.sent;
+    }
+
+    final now = DateTime.now();
+    final invoice = inv.Invoice(
+      id: existing?.id ?? '',
+      invoiceNumber: purchase.purchaseNumber,
+      customerId: purchase.supplierId, // supplierId müşteri alanına yazılıyor
+      customer: null,
+      invoiceDate: purchase.purchaseDate,
+      dueDate: purchase.dueDate,
+      status: status,
+      subtotal: purchase.subtotal,
+      taxAmount: purchase.taxAmount,
+      discountAmount: purchase.discountAmount,
+      totalAmount: purchase.totalAmount,
+      currencyCode: purchase.currency,
+      paymentTerms: purchase.paymentTerms,
+      notes: purchase.notes,
+      description: purchase.description,
+      isPaid: purchase.paymentStatus == PurchasePaymentStatus.paid,
+      paidDate:
+          purchase.paymentStatus == PurchasePaymentStatus.paid ? now : null,
+      items: const [],
+      direction: 'purchase',
+      documentType: documentType,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    );
+
+    final items = <inv_item.InvoiceItem>[];
+    for (int i = 0; i < purchase.items.length; i++) {
+      final pi = purchase.items[i];
+      items.add(inv_item.InvoiceItem.create(
+        id: '',
+        invoiceId: '',
+        itemOrder: i + 1,
+        productId: pi.productId,
+        productName: pi.productName ?? pi.productId,
+        description: pi.description,
+        quantity: pi.quantity,
+        unit: null,
+        unitPrice: pi.unitPrice,
+        taxRate: pi.taxRate,
+        currencyCode: purchase.currency,
+      ));
+    }
+
+    if (existing == null) {
+      await repo.createInvoice(invoice, items);
+    } else {
+      await repo.updateInvoice(invoice);
+      await repo.deleteAllInvoiceItems(existing.id);
+      await repo.addInvoiceItems(
+          items.map((it) => it.copyWith(invoiceId: existing.id)).toList());
+    }
+  }
+
   Widget _buildPurchaseTypeSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+      children: [
+        Text(
           'Alış Türü',
-            style: GoogleFonts.poppins(
+          style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
-            ),
           ),
-          const SizedBox(height: 8),
+        ),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -994,19 +1152,19 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-          Text(
+                            Text(
                               'Satıştan İade Alışı',
                               style: GoogleFonts.poppins(fontSize: 14),
                             ),
                             Text(
                               'Müşteriden iade alınan ürünler',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: AppColors.textSecondary,
-            ),
-          ),
-        ],
-      ),
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -1071,9 +1229,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(8),
-        color: Colors.grey.shade50,
+        color: Theme.of(context).colorScheme.surface,
       ),
       child: Row(
         children: [
@@ -1082,7 +1240,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           Text(
             'Tedarikçi: ',
             style: GoogleFonts.poppins(
-              color: AppColors.textSecondary,
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
               fontSize: 14,
             ),
           ),
@@ -1091,7 +1252,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
               _selectedSupplier?.name ?? 'Tedarikçi seçilmedi',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
               ),
             ),
@@ -1158,18 +1319,17 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
   Widget _buildItemCard(int index) {
     final item = _items[index];
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          color: Theme.of(context).colorScheme.outlineVariant,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1269,9 +1429,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             ]),
           ],
         ),
-        ),
-      );
-    }
+      ),
+    );
+  }
 
   Widget _buildProductPicker(int index) {
     final query = _items[index].productQuery;
@@ -1372,8 +1532,8 @@ class _PurchaseItemForm {
     productName = p.name;
     unitPrice = p.purchasePrice ?? 0;
     unitPriceController.text = (p.purchasePrice ?? 0).toStringAsFixed(2);
-    taxRate = p.taxRate;
-    taxRateController.text = p.taxRate.toStringAsFixed(2);
+    taxRate = p.salesTaxRate;
+    taxRateController.text = p.salesTaxRate.toStringAsFixed(2);
     currency = p.purchaseCurrency ?? p.salesCurrency;
   }
 

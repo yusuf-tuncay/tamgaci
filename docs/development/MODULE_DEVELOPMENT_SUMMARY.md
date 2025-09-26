@@ -4,6 +4,8 @@
 
 Bu dokümantasyon, Tamgaci ERP uygulaması için geliştirilen tüm modüllerin kapsamlı bir özetini içermektedir. Her modül, işletme süreçlerinin farklı alanlarını kapsayan entity'ler, repository'ler ve provider'lar içermektedir.
 
+**GÜNCEL DURUM**: Multi-tenant mimarisi tamamlandı, tüm modüller tenant bazlı çalışıyor, production-ready durumda.
+
 ## Geliştirilen Modüller
 
 ### 1. Gelişmiş Sistem Ayarları (settings_base_currency_fx)

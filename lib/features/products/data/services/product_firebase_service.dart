@@ -433,7 +433,7 @@ class ProductFirebaseService {
       FirebaseFields.productImageUrl:
           product.images.isNotEmpty ? product.images.first : null,
       // companyId is not a field of Product; omit or source from context if needed
-      'taxRate': product.taxRate,
+      'salesTaxRate': product.salesTaxRate,
       'currency': product.salesCurrency,
       'isActive': product.isActive,
     };
@@ -455,7 +455,9 @@ class ProductFirebaseService {
       salesPrice: (data[FirebaseFields.productPrice] ?? 0).toDouble(),
       purchasePrice: (data[FirebaseFields.productCost] ?? 0).toDouble(),
       salesCurrency: data['currency'] ?? 'TRY',
-      taxRate: (data['taxRate'] ?? 0).toDouble(),
+      salesTaxRate: (data['salesTaxRate'] ?? 0).toDouble(),
+      salesTaxInclusive: TaxInclusiveOption.exclusive,
+      stockTracking: StockTrackingType.normal,
       criticalStockQuantity:
           (data[FirebaseFields.productMinStock] ?? 0).toInt(),
       shelfLocation: data[FirebaseFields.productWarehouseId],

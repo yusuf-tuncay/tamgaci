@@ -75,7 +75,8 @@ final productsByCategoryProvider =
 });
 
 /// Ürün detay provider'ı
-final productDetailProvider = FutureProvider.family<Product?, int>((ref, id) {
+final productDetailProvider =
+    FutureProvider.family<Product?, String>((ref, id) {
   final repository = ref.watch(productRepositoryProvider);
   return repository.getProductById(id);
 });
@@ -168,7 +169,7 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
         salesPrice: 0,
         purchaseCurrency: 'TRY',
         salesCurrency: 'TRY',
-        taxRate: 0,
+        salesTaxRate: 0,
         // criticalStockQuantity is optional; variants control stock
         isActive: true,
         createdAt: DateTime.now(),
@@ -221,7 +222,7 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
   }
 
   /// Ürün sil
-  Future<void> deleteProduct(int id) async {
+  Future<void> deleteProduct(String id) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
@@ -239,7 +240,7 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
   }
 
   /// Stok miktarını güncelle
-  Future<void> updateStockQuantity(int id, int quantity) async {
+  Future<void> updateStockQuantity(String id, int quantity) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {

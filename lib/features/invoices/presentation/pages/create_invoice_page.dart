@@ -42,6 +42,9 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
   DateTime _invoiceDate = DateTime.now();
   DateTime? _dueDate;
   String _currencyCode = 'TRY';
+  // Yeni alanlar: yön ve belge türü
+  final String _direction = 'sale'; // sale|purchase (varsayılan satış)
+  final String _documentType = 'invoice'; // invoice|waybill|proforma
   final double _discountAmount = 0.0;
 
   // Items state

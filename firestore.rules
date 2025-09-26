@@ -1,136 +1,181 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Public metadata for registration (cities/districts/tax offices)
+    match /geo_cities/{docId} {
+      allow read: if true;       // Public read for dropdowns before auth
+      allow write: if isAdmin(); // Manage via admin/tools only
+    }
+    match /metadata/{docId} {
+      allow read: if true;       // e.g., tax_offices
+      allow write: if isAdmin();
+    }
+    
     function isSignedIn() { return request.auth != null; }
     function userId() { return request.auth.uid; }
     function isOwner(resourceData) { return resourceData.createdBy == userId(); }
     function isAdmin() { return request.auth.token.role == 'admin'; }
+    
+    // Multi-tenant functions
+    function getUserTenantId() {
+      return get(/databases/$(database)/documents/users/$(userId())).data.tenantId;
+    }
+    function isSameTenant(resourceData) {
+      return resourceData.tenantId == getUserTenantId();
+    }
+    function isSameTenantOrAdmin(resourceData) {
+      return isAdmin() || isSameTenant(resourceData);
+    }
+    function isTenantOwner(tenantId) {
+      return get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == userId();
+    }
+    function isTenantMember(tenantId) {
+      // Kullanıcının kendi tenantId'sine erişimi
+      return exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
+             (userId() in get(/databases/$(database)/documents/tenants/$(tenantId)).data.memberIds ||
+              get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == userId());
+    }
 
-    // Generic helpers
+    // Generic helpers - Multi-tenant aware
     function allowRead(doc) {
-      return isSignedIn() && (isAdmin() || isOwner(doc.data));
+      return isSignedIn() && isSameTenantOrAdmin(doc.data);
     }
     function allowDelete(doc) {
-      return isSignedIn() && (isAdmin() || isOwner(doc.data));
+      return isSignedIn() && isSameTenantOrAdmin(doc.data) && isOwner(doc.data);
     }
     function isValidCreate() {
       return isSignedIn() &&
              request.resource.data.createdBy == userId() &&
+             request.resource.data.tenantId == getUserTenantId() &&
              (request.resource.data.createdAt == null || request.resource.data.createdAt is timestamp) &&
              (request.resource.data.updatedAt == null || request.resource.data.updatedAt is timestamp) &&
              (request.resource.data.updatedBy == null || request.resource.data.updatedBy == userId()) &&
              (request.resource.data.isActive == null || request.resource.data.isActive is bool);
     }
     function allowUpdate(doc) {
-      return isSignedIn() && (isAdmin() || isOwner(doc.data)) &&
+      return isSignedIn() && isSameTenantOrAdmin(doc.data) && isOwner(doc.data) &&
              request.resource.data.createdBy == doc.data.createdBy &&
+             request.resource.data.tenantId == doc.data.tenantId &&
              request.resource.data.createdAt == doc.data.createdAt &&
              (request.resource.data.updatedAt is timestamp) &&
              (request.resource.data.isActive == null || request.resource.data.isActive is bool);
     }
 
-    // Products
-    match /products/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
+    // Tenants
+    match /tenants/{tenantId} {
+      allow read: if isSignedIn() && (isTenantMember(tenantId) || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.ownerId == userId();
+      allow update: if isSignedIn() && (isTenantOwner(tenantId) || isAdmin());
+      allow delete: if isSignedIn() && (isTenantOwner(tenantId) || isAdmin());
     }
 
-    // Customers
-    match /customers/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
+    // Tenant-based collections
+    match /tenants/{tenantId}/products/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/customers/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/suppliers/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/sales/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/purchases/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/cash_accounts/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/cash_transactions/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/invoices/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/inventory_items/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/reports/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
 
     // Customer Categories
-    match /customer_categories/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
+    match /tenants/{tenantId}/customer_categories/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
 
-    // Suppliers
-    match /suppliers/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-
-    // Sales
-    match /sales/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-
-    // Purchases
-    match /purchases/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-
-    // Cash accounts and transactions
-    match /cash_accounts/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-    match /cash_transactions/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-
-    // Inventory
-    match /inventory_items/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-    match /inventory_movements/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-    match /stocks/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-
-    // Reports
-    match /reports/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-
-    // Income/Expense collections
-    match /incomes/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
-    }
-    match /expenses/{id} {
-      allow get, list: if isSignedIn();
-      allow create: if isValidCreate();
-      allow update: if allowUpdate(resource);
-      allow delete: if allowDelete(resource);
+    // Users
+    match /users/{uid} {
+      allow read: if isSignedIn() && (uid == userId() || isAdmin());
+      allow create: if isSignedIn() && uid == userId();
+      allow update: if isSignedIn() && uid == userId();
+      allow delete: if isAdmin();
     }
     match /report_templates/{id} {
       allow read: if isSignedIn();
@@ -162,6 +207,25 @@ service cloud.firestore {
       allow create: if isSignedIn() && request.resource.data.id == userId();
       allow update: if isSignedIn() && uid == userId();
       allow delete: if isAdmin();
+    }
+    
+    // Income collection rules
+    match /tenants/{tenantId}/incomes/{id} {
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
+    }
+    
+    // Inventory/Stock collection rules
+    match /tenants/{tenantId}/inventory/{id} {
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
+    }
+    
+    match /tenants/{tenantId}/stock_movements/{id} {
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
+    }
+    
+    // Expense collection rules
+    match /tenants/{tenantId}/expenses/{id} {
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
     }
   }
 }

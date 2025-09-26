@@ -360,21 +360,22 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     return Container(
       height: 200,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
             TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
             TamgaciConstants.primaryColorDark,
-            TamgaciConstants.primaryColorDark.withValues(alpha: 0.8),
           ],
         ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -387,23 +388,47 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               // Premium Logo ve şirket adı
               Row(
                 children: [
-                  _buildWhiteLogo(),
-                  const SizedBox(width: 16),
+                  // circular logo for consistency (open calculator on tap)
+                  GestureDetector(
+                      onTap: _showCalculator,
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 1,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: _SvgWhiteLogoFallback(color: Colors.white),
+                        ),
+                      )),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'TAMGACI',
+                          'Tamgacı',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
                             color: TamgaciConstants.textOnPrimary,
-                            letterSpacing: 1.0,
+                            letterSpacing: 0.4,
                           ),
                         ),
+                        const SizedBox(height: 4),
                         Text(
-                          'Ön Muhasebe Sistemi',
+                          'Ön Muhasebe Uygulaması',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
                             fontSize: 11,
                             color: TamgaciConstants.textOnPrimary
@@ -414,28 +439,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                       ],
                     ),
                   ),
-                  // Hesap makinesi ikonu
-                  GestureDetector(
-                    onTap: _showCalculator,
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: TamgaciConstants.textOnPrimary
-                            .withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(
-                          color: TamgaciConstants.textOnPrimary
-                              .withValues(alpha: 0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.calculate,
-                        color: TamgaciConstants.textOnPrimary,
-                        size: 18,
-                      ),
-                    ),
-                  ),
+                  // removed calculator button - open via logo
                 ],
               ),
               const SizedBox(height: 12),
@@ -483,26 +487,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     );
   }
 
-  Widget _buildWhiteLogo() {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: const _SvgWhiteLogoFallback(
-          color: TamgaciConstants.textOnPrimary,
-        ),
-      ),
-    );
-  }
+  // _buildWhiteLogo removed (not used)
 
   Widget _buildCurrencyItem(String currency, double rate) {
     return Row(
@@ -603,6 +588,9 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   }
 
   Widget _buildUserAvatar(auth_domain.User? user) {
+    final imageProvider = _getAvatarImageProvider(user);
+    final hasValidImage = imageProvider != null;
+
     return Container(
       width: 32,
       height: 32,
@@ -620,8 +608,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       child: CircleAvatar(
         radius: 16,
         backgroundColor: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
-        backgroundImage: _getAvatarImageProvider(user),
-        child: _getAvatarImageProvider(user) == null
+        backgroundImage: hasValidImage ? imageProvider : null,
+        child: !hasValidImage
             ? Text(
                 _getInitials(user?.name, user?.surname),
                 style: GoogleFonts.poppins(
@@ -639,6 +627,11 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     // Priority 1: User entity's profile image URL
     final userProfileUrl = user?.profileImageUrl;
     if (userProfileUrl != null && userProfileUrl.isNotEmpty) {
+      // Validate URL has token before using
+      if (!userProfileUrl.contains('token=')) {
+        debugPrint('⚠️ Invalid user profile URL (no token): $userProfileUrl');
+        return null;
+      }
       String workingUrl = _fixImageUrl(userProfileUrl);
       debugPrint('✅ Loading avatar from User entity: $workingUrl');
       return NetworkImage(workingUrl);
@@ -648,6 +641,11 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     final userProfile = ref.read(userProfileProvider).value;
     final profilePhotoUrl = userProfile?.profilePhotoUrl;
     if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
+      // Validate URL has token before using
+      if (!profilePhotoUrl.contains('token=')) {
+        debugPrint('⚠️ Invalid profile photo URL (no token): $profilePhotoUrl');
+        return null;
+      }
       String workingUrl = _fixImageUrl(profilePhotoUrl);
       debugPrint('✅ Loading avatar from UserProfile entity: $workingUrl');
       return NetworkImage(workingUrl);
@@ -656,9 +654,21 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     // Priority 3: Check user settings for backup URL
     final settingsUrl = user?.settings?['profileImageUrl'] as String?;
     if (settingsUrl != null && settingsUrl.isNotEmpty) {
+      // Validate URL has token before using
+      if (!settingsUrl.contains('token=')) {
+        debugPrint('⚠️ Invalid settings URL (no token): $settingsUrl');
+        return null;
+      }
       String workingUrl = _fixImageUrl(settingsUrl);
       debugPrint('✅ Loading avatar from settings: $workingUrl');
       return NetworkImage(workingUrl);
+    }
+
+    // Priority 3.5: If no URL but we have a user, try to resolve by fixed path
+    if (user?.id.isNotEmpty == true) {
+      final fixedPath = 'users/${user!.id}/profile/profile_${user.id}.jpg';
+      debugPrint('🔎 Trying fixed storage path for avatar: $fixedPath');
+      _refreshImageUrlFromPath(fixedPath);
     }
 
     // Priority 4: Path available but no URL - try to load fresh URL in background
@@ -690,9 +700,12 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       workingUrl += '${separator}alt=media';
     }
 
-    // Add cache busting parameter to avoid CORS issues
-    final separator = workingUrl.contains('?') ? '&' : '?';
-    workingUrl += '${separator}_t=${DateTime.now().millisecondsSinceEpoch}';
+    // Don't add cache busting for Firebase Storage URLs with tokens
+    // This prevents 404 errors when file doesn't exist
+    if (!workingUrl.contains('token=')) {
+      final separator = workingUrl.contains('?') ? '&' : '?';
+      workingUrl += '${separator}_t=${DateTime.now().millisecondsSinceEpoch}';
+    }
 
     debugPrint('🔧 Final image URL: $workingUrl');
     return workingUrl;
@@ -777,6 +790,24 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   String _getInitials(String? name, String? surname) {
     final n = (name ?? '').trim();
     final s = (surname ?? '').trim();
+
+    // If both name and surname are empty, try to get from UserProfile
+    if (n.isEmpty && s.isEmpty) {
+      final userProfile = ref.read(userProfileProvider).value;
+      if (userProfile != null) {
+        final profileName = userProfile.name.trim();
+        final profileSurname = userProfile.surname.trim();
+        if (profileName.isNotEmpty || profileSurname.isNotEmpty) {
+          final first =
+              profileName.isNotEmpty ? profileName.characters.first : '';
+          final second =
+              profileSurname.isNotEmpty ? profileSurname.characters.first : '';
+          final result = (first + second).toUpperCase();
+          return result.isEmpty ? 'KU' : result;
+        }
+      }
+    }
+
     final first = n.isNotEmpty ? n.characters.first : '';
     final second = s.isNotEmpty ? s.characters.first : '';
     final result = (first + second).toUpperCase();

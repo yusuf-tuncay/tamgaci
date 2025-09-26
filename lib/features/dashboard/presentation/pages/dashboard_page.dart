@@ -5,6 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:geolocator/geolocator.dart';
+import '../../../../shared/overlays/calculator_overlay.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
@@ -36,6 +40,69 @@ class DashboardPage extends ConsumerStatefulWidget {
 
 class _DashboardPageState extends ConsumerState<DashboardPage> {
   // Backfill kaldırıldı: bazı projelerde kurallar nedeniyle uyarı üretiyordu
+  Map<String, dynamic>? _weather;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadWeather();
+  }
+
+  Future<void> _loadWeather() async {
+    try {
+      // Lightweight geolocation (best effort)
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+      double lat = 41.015137;
+      double lon = 28.979530;
+      if (perm != LocationPermission.denied &&
+          perm != LocationPermission.deniedForever) {
+        final pos = await Geolocator.getCurrentPosition(
+            desiredAccuracy: LocationAccuracy.low);
+        lat = pos.latitude;
+        lon = pos.longitude;
+      }
+      // Open-Meteo free API (no key)
+      final uri = Uri.parse(
+          'https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true');
+      final res = await http.get(uri).timeout(const Duration(seconds: 6));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body) as Map<String, dynamic>;
+        setState(() {
+          _weather = data['current_weather'] as Map<String, dynamic>?;
+        });
+      }
+    } catch (_) {
+      // ignore silently
+    }
+  }
+
+  Widget _buildWeatherPill() {
+    final w = _weather;
+    final temp = w != null ? (w['temperature']?.toString() ?? '') : '';
+    final wind = w != null ? (w['windspeed']?.toString() ?? '') : '';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.wb_sunny, color: Colors.white, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            w == null ? 'Hava durumu' : '$temp°C, rüzgar $wind km/s',
+            style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,90 +276,110 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   Widget _buildWelcomeCard(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
             TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
             TamgaciConstants.primaryColorDark,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: const Offset(0, 8),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              // Premium square logo to match drawer
-              Container(
-                width: 40,
-                height: 40,
+          // Logo + text (open calculator on tap)
+          GestureDetector(
+              onTap: () => CalculatorOverlay.instance.toggle(context),
+              child: Container(
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withValues(alpha: 0.25),
                     width: 1,
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  'assets/images/logos/140x140logo.png',
-                  fit: BoxFit.contain,
-                  color: Colors.white,
-                  colorBlendMode: BlendMode.srcIn,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Image.asset(
+                    'assets/images/logos/140x140logo.png',
+                    fit: BoxFit.contain,
+                    color: Colors.white,
+                    colorBlendMode: BlendMode.srcIn,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Consumer(builder: (context, ref, _) {
-                      final profileAsync = ref.watch(userProfileProvider);
-                      return Text(
-                        profileAsync.value?.company ?? 'Şirket Adı',
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 0.6,
-                        ),
-                      );
-                    }),
-                    Text(
-                      'Hoş Geldiniz! ${DateFormat('dd MMMM yyyy', 'tr_TR').format(DateTime.now())}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w500,
-                      ),
+              )),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Consumer(builder: (context, ref, _) {
+                  final profileAsync = ref.watch(userProfileProvider);
+                  return Text(
+                    profileAsync.value?.company ?? 'Şirket Adı',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      letterSpacing: 0.2,
                     ),
-                  ],
+                  );
+                }),
+                const SizedBox(height: 6),
+                LayoutBuilder(builder: (context, constraints) {
+                  final narrow = constraints.maxWidth < 280;
+                  return Text(
+                    'Tamgacı profesyonel iş yönetim uygulaması',
+                    maxLines: narrow ? 2 : 1,
+                    softWrap: true,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: narrow ? 11 : 12,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                }),
+                const SizedBox(height: 8),
+                Container(
+                  height: 1,
+                  width: double.infinity,
+                  color: Colors.white.withValues(alpha: 0.12),
                 ),
-              ),
-              // Removed currency chips per request
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Hoş Geldiniz! Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.9),
+                const SizedBox(height: 8),
+                Text(
+                  'Hoş Geldiniz! Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(width: 12),
+          // Weather on the right
+          _buildWeatherPill(),
         ],
       ),
     );

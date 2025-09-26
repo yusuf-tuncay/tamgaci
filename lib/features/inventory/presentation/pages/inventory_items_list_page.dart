@@ -240,7 +240,7 @@ class _InventoryItemsListPageState
 
     if (state.error != null) {
       return core_widgets.ErrorWidget(
-        message: state.error!,
+        error: state.error!,
         onRetry: _loadInventoryItems,
       );
     }

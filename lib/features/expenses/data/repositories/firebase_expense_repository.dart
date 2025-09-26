@@ -7,12 +7,44 @@ import '../../domain/entities/expense.dart';
 import '../../domain/entities/expense_category.dart';
 import '../../domain/repositories/expense_repository.dart';
 import 'package:tamgaci/core/utils/logger.dart';
+import 'package:tamgaci/core/firebase/firebase_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 
 /// Firebase Firestore tabanlı gider repository implementasyonu
 class FirebaseExpenseRepository implements ExpenseRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collectionName = 'expenses';
   final String _categoriesCollectionName = 'expense_categories';
+  final FirebaseService _firebaseService = FirebaseService();
+
+  String? _uid() {
+    try {
+      return firebase_auth.FirebaseAuth.instance.currentUser?.uid;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<String> _companyId() async {
+    final ids = await _firebaseService.getUserCompanyIds();
+    return ids.isNotEmpty ? ids.first : '';
+  }
+
+  Future<String> _tenantId() async {
+    try {
+      final user = firebase_auth.FirebaseAuth.instance.currentUser;
+      if (user == null) return '';
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        return userDoc.data()?['tenantId'] ?? '';
+      }
+      return '';
+    } catch (e) {
+      AppLogger.error('Error getting tenant ID', e);
+      return '';
+    }
+  }
 
   // ========== EXPENSE OPERATIONS ==========
 
@@ -20,7 +52,10 @@ class FirebaseExpenseRepository implements ExpenseRepository {
   Future<String> createExpense(Expense expense) async {
     try {
       final docRef = _firestore.collection(_collectionName).doc();
+      final companyId = await _companyId();
       final expenseData = _expenseToMap(expense.copyWith(id: docRef.id));
+      if (companyId.isNotEmpty) expenseData['companyId'] = companyId;
+      expenseData['createdBy'] = _uid();
       await docRef.set(expenseData);
       return docRef.id;
     } catch (e) {
@@ -68,8 +103,16 @@ class FirebaseExpenseRepository implements ExpenseRepository {
   @override
   Future<List<Expense>> getAllExpenses() async {
     try {
+      final tenantId = await _tenantId();
+      if (tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found, returning empty list');
+        return [];
+      }
+
       final querySnapshot = await _firestore
-          .collection(_collectionName)
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('expenses')
           .orderBy('expenseDate', descending: true)
           .get();
 
@@ -83,11 +126,15 @@ class FirebaseExpenseRepository implements ExpenseRepository {
   @override
   Future<List<Expense>> getExpensesByCategory(String categoryId) async {
     try {
-      final querySnapshot = await _firestore
+      final companyId = await _companyId();
+      Query<Map<String, dynamic>> q = _firestore
           .collection(_collectionName)
           .where('categoryId', isEqualTo: categoryId)
-          .orderBy('expenseDate', descending: true)
-          .get();
+          .orderBy('expenseDate', descending: true);
+      if (companyId.isNotEmpty) {
+        q = q.where('companyId', isEqualTo: companyId);
+      }
+      final querySnapshot = await q.get();
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
@@ -99,11 +146,15 @@ class FirebaseExpenseRepository implements ExpenseRepository {
   @override
   Future<List<Expense>> getExpensesByStatus(ExpenseStatus status) async {
     try {
-      final querySnapshot = await _firestore
+      final companyId = await _companyId();
+      Query<Map<String, dynamic>> q = _firestore
           .collection(_collectionName)
           .where('status', isEqualTo: status.name)
-          .orderBy('expenseDate', descending: true)
-          .get();
+          .orderBy('expenseDate', descending: true);
+      if (companyId.isNotEmpty) {
+        q = q.where('companyId', isEqualTo: companyId);
+      }
+      final querySnapshot = await q.get();
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
@@ -116,12 +167,16 @@ class FirebaseExpenseRepository implements ExpenseRepository {
   Future<List<Expense>> getExpensesByDateRange(
       DateTime startDate, DateTime endDate) async {
     try {
-      final querySnapshot = await _firestore
+      final companyId = await _companyId();
+      Query<Map<String, dynamic>> q = _firestore
           .collection(_collectionName)
           .where('expenseDate', isGreaterThanOrEqualTo: startDate)
           .where('expenseDate', isLessThanOrEqualTo: endDate)
-          .orderBy('expenseDate', descending: true)
-          .get();
+          .orderBy('expenseDate', descending: true);
+      if (companyId.isNotEmpty) {
+        q = q.where('companyId', isEqualTo: companyId);
+      }
+      final querySnapshot = await q.get();
 
       return querySnapshot.docs.map((doc) => _expenseFromMap(doc)).toList();
     } catch (e) {
@@ -149,7 +204,12 @@ class FirebaseExpenseRepository implements ExpenseRepository {
   @override
   Future<int> getTotalExpenseCount() async {
     try {
-      final querySnapshot = await _firestore.collection(_collectionName).get();
+      final companyId = await _companyId();
+      Query<Map<String, dynamic>> q = _firestore.collection(_collectionName);
+      if (companyId.isNotEmpty) {
+        q = q.where('companyId', isEqualTo: companyId);
+      }
+      final querySnapshot = await q.get();
       return querySnapshot.docs.length;
     } catch (e) {
       AppLogger.error('Error getting total expense count', e);
@@ -160,7 +220,12 @@ class FirebaseExpenseRepository implements ExpenseRepository {
   @override
   Future<double> getTotalExpenseAmount() async {
     try {
-      final querySnapshot = await _firestore.collection(_collectionName).get();
+      final companyId = await _companyId();
+      Query<Map<String, dynamic>> q = _firestore.collection(_collectionName);
+      if (companyId.isNotEmpty) {
+        q = q.where('companyId', isEqualTo: companyId);
+      }
+      final querySnapshot = await q.get();
       double total = 0;
 
       for (final doc in querySnapshot.docs) {
@@ -182,11 +247,15 @@ class FirebaseExpenseRepository implements ExpenseRepository {
       final startOfMonth = DateTime(now.year, now.month, 1);
       final endOfMonth = DateTime(now.year, now.month + 1, 0);
 
-      final querySnapshot = await _firestore
+      final companyId = await _companyId();
+      Query<Map<String, dynamic>> q = _firestore
           .collection(_collectionName)
           .where('expenseDate', isGreaterThanOrEqualTo: startOfMonth)
-          .where('expenseDate', isLessThanOrEqualTo: endOfMonth)
-          .get();
+          .where('expenseDate', isLessThanOrEqualTo: endOfMonth);
+      if (companyId.isNotEmpty) {
+        q = q.where('companyId', isEqualTo: companyId);
+      }
+      final querySnapshot = await q.get();
 
       double total = 0;
       for (final doc in querySnapshot.docs) {

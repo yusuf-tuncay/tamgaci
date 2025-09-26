@@ -41,6 +41,7 @@ class CustomDropdown<T> extends StatelessWidget {
           initialValue: value,
           onChanged: onChanged,
           validator: validator,
+          isExpanded: true,
           decoration: InputDecoration(
             hintText: hint,
             border: OutlineInputBorder(

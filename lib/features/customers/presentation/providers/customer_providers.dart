@@ -7,7 +7,7 @@ import '../../domain/entities/customer_category.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../../data/repositories/firebase_customer_repository.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../core/firebase/collections.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ========== BASE PROVIDERS ==========
 
@@ -24,30 +24,58 @@ final customersProvider = FutureProvider<List<Customer>>((ref) async {
   return await repository.getActiveCustomers();
 });
 
-/// Müşteri kategorileri (level 1 ve 2)
+/// Müşteri kategorileri (level 1 ve 2) - Multi-tenant
 final customerCategoriesProvider = FutureProvider.autoDispose
     .family<List<CustomerCategory>, int>((ref, level) async {
-  final fs = FirebaseFirestore.instance;
-  final snap = await fs
-      .collection(FirebaseCollections.customerCategories)
-      .where('level', isEqualTo: level)
-      .where('isActive', isEqualTo: true)
-      .get();
-  return snap.docs
-      .map((d) => CustomerCategory.fromJson({
-            ...d.data(),
-            'id': d.id,
-            'createdAt':
-                (d['createdAt'] as Timestamp?)?.toDate().toIso8601String() ??
-                    DateTime.now().toIso8601String(),
-            'updatedAt':
-                (d['updatedAt'] as Timestamp?)?.toDate().toIso8601String() ??
-                    DateTime.now().toIso8601String(),
-          }))
-      .toList();
+  try {
+    final fs = FirebaseFirestore.instance;
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+
+    if (user == null) {
+      return [];
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await fs.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      return [];
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      return [];
+    }
+
+    final snap = await fs
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('customer_categories')
+        .where('level', isEqualTo: level)
+        .where('isActive', isEqualTo: true)
+        .get();
+
+    return snap.docs
+        .map((d) => CustomerCategory.fromJson({
+              ...d.data(),
+              'id': d.id,
+              'createdAt':
+                  (d['createdAt'] as Timestamp?)?.toDate().toIso8601String() ??
+                      DateTime.now().toIso8601String(),
+              'updatedAt':
+                  (d['updatedAt'] as Timestamp?)?.toDate().toIso8601String() ??
+                      DateTime.now().toIso8601String(),
+            }))
+        .toList();
+  } catch (e) {
+    // AppLogger.error('Error loading customer categories', e);
+    return [];
+  }
 });
 
-/// Yeni kategori oluşturma (dialog üzerinden)
+/// Yeni kategori oluşturma (dialog üzerinden) - Multi-tenant
 final createCustomerCategoryProvider = FutureProvider.autoDispose.family<
     String,
     ({
@@ -57,21 +85,51 @@ final createCustomerCategoryProvider = FutureProvider.autoDispose.family<
       String companyId,
       String userId
     })>((ref, args) async {
-  final fs = FirebaseFirestore.instance;
-  final now = DateTime.now();
-  final doc = await fs.collection(FirebaseCollections.customerCategories).add({
-    'name': args.name,
-    'description': null,
-    'level': args.level,
-    'parentCategoryId': args.parentId,
-    'companyId': args.companyId,
-    'isActive': true,
-    'createdAt': Timestamp.fromDate(now),
-    'updatedAt': Timestamp.fromDate(now),
-    'createdBy': args.userId,
-    'updatedBy': args.userId,
-  });
-  return doc.id;
+  try {
+    final fs = FirebaseFirestore.instance;
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await fs.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      throw Exception('User document not found');
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      throw Exception('Tenant ID not found');
+    }
+
+    final now = DateTime.now();
+    final doc = await fs
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('customer_categories')
+        .add({
+      'name': args.name,
+      'description': null,
+      'level': args.level,
+      'parentCategoryId': args.parentId,
+      'companyId': args.companyId,
+      'tenantId': tenantId,
+      'isActive': true,
+      'createdAt': Timestamp.fromDate(now),
+      'updatedAt': Timestamp.fromDate(now),
+      'createdBy': args.userId,
+      'updatedBy': args.userId,
+    });
+    return doc.id;
+  } catch (e) {
+    // AppLogger.error('Error creating customer category', e);
+    rethrow;
+  }
 });
 
 /// Müşteri stream provider'ı (reactive)

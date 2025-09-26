@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../../core/services/tenant_service.dart';
+import '../../../../core/utils/logger.dart';
 import '../providers/auth_providers.dart';
 
 /// Giriş sayfası
@@ -430,6 +432,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
+
+      // Tenant setup'ı kontrol et ve gerekirse oluştur
+      try {
+        final tenantService = TenantService();
+        await tenantService.ensureUserTenantSetup();
+        AppLogger.info('User tenant setup completed after login');
+      } catch (e) {
+        AppLogger.error('User tenant setup failed after login', e);
+      }
 
       try {
         final prefs = await SharedPreferences.getInstance();

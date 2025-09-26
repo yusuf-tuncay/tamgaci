@@ -2,6 +2,7 @@
 // lib/core/services/business/transaction_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 
 /// İşlem türü enum'u
@@ -186,11 +187,36 @@ class TransactionService {
     }
   }
 
-  /// Müşteri bakiyesini güncelleme
+  /// Müşteri bakiyesini güncelleme - Multi-tenant
   Future<void> _updateCustomerBalance(
       String customerId, Transaction transaction) async {
     try {
-      final customerRef = _firestore.collection('customers').doc(customerId);
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found');
+        return;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return;
+      }
+
+      final customerRef = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('customers')
+          .doc(customerId);
       final customerDoc = await customerRef.get();
 
       if (!customerDoc.exists) {
@@ -378,7 +404,32 @@ class TransactionService {
   Future<void> _reverseCustomerBalance(
       String customerId, Transaction transaction) async {
     try {
-      final customerRef = _firestore.collection('customers').doc(customerId);
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found');
+        return;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return;
+      }
+
+      final customerRef = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('customers')
+          .doc(customerId);
       final customerDoc = await customerRef.get();
 
       if (!customerDoc.exists) return;
@@ -417,10 +468,35 @@ class TransactionService {
     }
   }
 
-  /// Tüm müşteri bakiyelerini yeniden hesaplama
+  /// Tüm müşteri bakiyelerini yeniden hesaplama - Multi-tenant
   Future<void> recalculateAllCustomerBalances() async {
     try {
-      final customersSnapshot = await _firestore.collection('customers').get();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found');
+        return;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return;
+      }
+
+      final customersSnapshot = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('customers')
+          .get();
 
       for (final customerDoc in customersSnapshot.docs) {
         final customerId = customerDoc.id;

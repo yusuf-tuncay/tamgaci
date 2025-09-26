@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/drawer_menu.dart';
 import '../../domain/entities/account.dart';
 
 /// Yeni nakit işlemi oluşturma sayfası
@@ -84,7 +83,7 @@ class _CreateCashTransactionPageState
           : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: widget.transactionId != null ? 'İşlem Düzenle' : 'Yeni İşlem',
-        showDrawer: true,
+        showBackButton: true,
         actions: [
           IconButton(
             onPressed: _saveTransaction,
@@ -92,7 +91,7 @@ class _CreateCashTransactionPageState
           ),
         ],
       ),
-      drawer: const TamgaciDrawerMenu(),
+      // No drawer here; use back for modal-like create page
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

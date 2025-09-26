@@ -157,6 +157,9 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
       final uid = FirebaseAuthService.currentUserId ?? 'system';
       final companyName = ref.read(userCompanyProvider);
 
+      // Mevcut kullanıcı için tenantId oluştur (eğer yoksa)
+      await FirebaseAuthService.createTenantIdForCurrentUser();
+
       final parsedCreditLimit =
           CurrencyHelper.parseCurrency(_creditLimitController.text);
       final parsedOpeningBalance =
@@ -226,7 +229,14 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
         createdBy: uid,
       );
 
-      await ref.read(customerRepositoryProvider).createCustomer(customer);
+      // Firebase'e kaydetmeden önce tenantId'yi ekle
+      final customerWithTenantId = customer.copyWith(
+        companyId: companyName,
+      );
+
+      await ref
+          .read(customerRepositoryProvider)
+          .createCustomer(customerWithTenantId);
       AppLogger.info('Customer created successfully: ${customer.name}');
 
       // Açılış bakiyesi işlemi oluştur (ekstreye yansısın ve bakiye hesaplansın)
@@ -846,6 +856,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   return Row(
                     children: [
                       Expanded(
+                        flex: 4,
                         child: CustomDropdown<String>(
                           value: _selectedCategory1Id,
                           label: 'Kategori 1',
@@ -862,16 +873,19 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      IconButton(
-                        tooltip: 'Yeni kategori',
-                        onPressed: () async {
-                          await _showCreateCategoryDialog(level: 1);
-                          if (mounted) setState(() {});
-                        },
-                        icon: const Icon(Icons.add),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                      Expanded(
+                        flex: 1,
+                        child: IconButton(
+                          tooltip: 'Yeni kategori',
+                          onPressed: () async {
+                            await _showCreateCategoryDialog(level: 1);
+                            if (mounted) setState(() {});
+                          },
+                          icon: const Icon(Icons.add),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -933,6 +947,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   return Row(
                     children: [
                       Expanded(
+                        flex: 4,
                         child: CustomDropdown<String>(
                           value: _selectedCategory2Id,
                           label: 'Kategori 2',
@@ -949,16 +964,19 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      IconButton(
-                        tooltip: 'Yeni kategori',
-                        onPressed: () async {
-                          await _showCreateCategoryDialog(level: 2);
-                          if (mounted) setState(() {});
-                        },
-                        icon: const Icon(Icons.add),
-                        style: IconButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                      Expanded(
+                        flex: 1,
+                        child: IconButton(
+                          tooltip: 'Yeni kategori',
+                          onPressed: () async {
+                            await _showCreateCategoryDialog(level: 2);
+                            if (mounted) setState(() {});
+                          },
+                          icon: const Icon(Icons.add),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
                       ),
                     ],

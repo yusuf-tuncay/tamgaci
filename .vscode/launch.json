@@ -8,7 +8,7 @@
             "name": "tamgaci",
             "request": "launch",
             "type": "dart",
-            "program": "lib/main/main.dart"
+            "program": "lib/main.dart"
         },
         {
             "name": "tamgaci (profile mode)",

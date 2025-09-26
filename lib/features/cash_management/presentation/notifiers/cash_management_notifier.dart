@@ -16,6 +16,7 @@ import 'package:tamgaci/features/cash_management/domain/usecases/delete_cash_tra
 import 'package:tamgaci/features/cash_management/domain/usecases/get_cash_transactions_statistics_usecase.dart';
 import 'package:tamgaci/features/cash_management/domain/usecases/duplicate_cash_transaction_usecase.dart';
 import 'package:tamgaci/features/cash_management/presentation/states/cash_management_state.dart';
+import 'package:flutter/foundation.dart';
 
 /// Cash Management state notifier
 class CashManagementNotifier extends StateNotifier<CashManagementState> {
@@ -473,19 +474,34 @@ class CashManagementNotifier extends StateNotifier<CashManagementState> {
     int? limit,
     int? offset,
   }) async {
+    if (kDebugMode) {
+      print('🔄 Starting to load cash transactions...');
+    }
     state = state.copyWith(isLoading: true, error: null);
 
     try {
+      if (kDebugMode) {
+        print('📞 Calling getCashTransactionsUseCase...');
+      }
       final cashTransactions = await _getCashTransactionsUseCase.call(
         limit: limit,
         offset: offset,
       );
 
+      if (kDebugMode) {
+        print(
+          '✅ Successfully loaded ${cashTransactions.length} cash transactions');
+      }
       state = state.copyWith(
         isLoading: false,
         cashTransactions: cashTransactions,
+        hasLoadedTransactions: true,
       );
+      debugPrint('🐛 hasLoadedTransactions set to: ${state.hasLoadedTransactions}');
     } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error loading cash transactions: $e');
+      }
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),

@@ -1,21 +1,24 @@
-// ========== PRODUCTS (ÜRÜNLER) FEATURE ==========
+// ========== CREATE PRODUCT PAGE ==========
 // lib/features/products/presentation/pages/create_product_page.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:uuid/uuid.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/validation/data_sanitizer.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../providers/product_providers.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../core/widgets/formatted_text_field.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/utils/barcode_generator.dart';
+import '../providers/product_providers.dart';
 
-/// Ürün oluşturma/düzenleme sayfası
+/// Ürün oluşturma sayfası
 class CreateProductPage extends ConsumerStatefulWidget {
   final String? productId; // Düzenleme için ürün ID'si
 
-  const CreateProductPage({super.key, this.productId});
+  const CreateProductPage({
+    super.key,
+    this.productId,
+  });
 
   @override
   ConsumerState<CreateProductPage> createState() => _CreateProductPageState();
@@ -25,220 +28,61 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _skuController = TextEditingController();
+  final _productCodeController = TextEditingController();
   final _barcodeController = TextEditingController();
   final _categoryController = TextEditingController();
-  final _unitPriceController = TextEditingController();
-  final _costPriceController = TextEditingController();
-  final _stockQuantityController = TextEditingController();
-  final _minStockLevelController = TextEditingController();
-  final _maxStockLevelController = TextEditingController();
-  final _unitController = TextEditingController();
-  final _taxRateController = TextEditingController();
   final _brandController = TextEditingController();
-  final _modelController = TextEditingController();
-  final _colorController = TextEditingController();
-  final _sizeController = TextEditingController();
-  final _weightController = TextEditingController();
-  final _weightUnitController = TextEditingController();
+  final _salesPriceController = TextEditingController();
+  final _purchasePriceController = TextEditingController();
+  final _salesTaxRateController = TextEditingController();
+  final _purchaseTaxRateController = TextEditingController();
+  final _purchaseDiscountController = TextEditingController();
+  final _sctController = TextEditingController();
   final _shelfLocationController = TextEditingController();
+  final _criticalStockController = TextEditingController();
+  final _gtipCodeController = TextEditingController();
+  final _countryCodeController = TextEditingController();
   final _notesController = TextEditingController();
 
-  final ProductType _selectedType = ProductType.stocked;
-  bool _isActive = true;
-  // final bool _isDigital = false; // Removed - not used in new Product entity
-  bool _isLoading = false;
-  bool _isEditing = false;
+  ProductType _selectedType = ProductType.stocked;
+  StockTrackingType _selectedStockTracking = StockTrackingType.normal;
+  TaxInclusiveOption _salesTaxInclusive = TaxInclusiveOption.exclusive;
+  TaxInclusiveOption? _purchaseTaxInclusive;
+  String _salesCurrency = 'TRY';
+  String? _purchaseCurrency;
   final List<String> _tags = [];
+  final List<String> _images = [];
+  final List<String> _linkedProducts = [];
+
+  bool _isLoading = false;
+  bool _autoGenerateBarcode = false;
+  bool _autoGenerateProductCode = false;
 
   @override
   void initState() {
     super.initState();
-    _isEditing = widget.productId != null;
-    if (_isEditing) {
-      _loadProductData();
-    } else {
-      _unitController.text = 'Adet';
-      _taxRateController.text = '20.0';
-    }
-  }
-
-  void _loadProductData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      final operationsState = ref.read(productOperationsProvider);
-      final product = operationsState.products.firstWhere(
-        (p) => p.id == widget.productId,
-        orElse: () => throw Exception('Ürün bulunamadı'),
-      );
-
-      _nameController.text = product.name;
-      _descriptionController.text = product.description ?? '';
-      _skuController.text = product.sku ?? '';
-      _barcodeController.text = product.barcode ?? '';
-      _categoryController.text = product.category ?? '';
-      _unitPriceController.text = product.salesPrice.toString();
-      _stockQuantityController.text = product.totalStockQuantity.toString();
-      _minStockLevelController.text =
-          (product.criticalStockQuantity ?? 0).toString();
-      _unitController.text = 'Adet'; // Default unit
-      _taxRateController.text = product.taxRate.toString();
-      _isActive = product.isActive;
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ürün yüklenirken hata oluştu: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _saveForm() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    // Form validasyonu başarılı, verileri sanitize et
-    final sanitizedName = DataSanitizer.sanitizeText(_nameController.text);
-    final sanitizedDescription =
-        DataSanitizer.sanitizeText(_descriptionController.text);
-    final sanitizedSku = DataSanitizer.sanitizeText(_skuController.text);
-    final sanitizedBarcode =
-        DataSanitizer.sanitizeText(_barcodeController.text);
-    final sanitizedCategory =
-        DataSanitizer.sanitizeText(_categoryController.text);
-    // final sanitizedBrand = DataSanitizer.sanitizeText(_brandController.text); // Removed - not used in new Product entity
-    // final sanitizedModel = DataSanitizer.sanitizeText(_modelController.text); // Removed - not used in new Product entity
-    // final sanitizedColor = DataSanitizer.sanitizeText(_colorController.text); // Removed - not used in new Product entity
-    // final sanitizedSize = DataSanitizer.sanitizeText(_sizeController.text); // Removed - not used in new Product entity
-    // final sanitizedShelfLocation =
-    //     DataSanitizer.sanitizeText(_shelfLocationController.text); // Removed - not used in new Product entity
-    final sanitizedNotes = DataSanitizer.sanitizeText(_notesController.text);
-
-    // Ek validasyonlar
-    final unitPrice = double.tryParse(_unitPriceController.text);
-    if (unitPrice == null || unitPrice <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Geçerli bir birim fiyat girin'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final stockQuantity = int.tryParse(_stockQuantityController.text);
-    if (stockQuantity == null || stockQuantity < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Geçerli bir stok miktarı girin'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final minStockLevel = int.tryParse(_minStockLevelController.text);
-    if (minStockLevel == null || minStockLevel < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Geçerli bir minimum stok seviyesi girin'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    // final maxStockLevel = int.tryParse(_maxStockLevelController.text) ?? 1000; // Removed - not used in new Product entity
-    final taxRate = double.tryParse(_taxRateController.text) ?? 20.0;
-    final costPrice = double.tryParse(_costPriceController.text);
-    // final weight = double.tryParse(_weightController.text); // Removed - not used in new Product entity
-
-    setState(() => _isLoading = true);
-
-    try {
-      final product = Product(
-        id: widget.productId ?? const Uuid().v4(),
-        name: sanitizedName,
-        description: sanitizedDescription.isEmpty ? null : sanitizedDescription,
-        sku: sanitizedSku.isEmpty ? null : sanitizedSku,
-        barcode: sanitizedBarcode.isEmpty ? null : sanitizedBarcode,
-        category: sanitizedCategory.isEmpty ? null : sanitizedCategory,
-        type: _selectedType,
-        salesPrice: unitPrice,
-        purchasePrice: costPrice,
-        salesCurrency: 'TRY',
-        taxRate: taxRate,
-        criticalStockQuantity: minStockLevel,
-        shelfLocation: _shelfLocationController.text.trim().isEmpty
-            ? null
-            : _shelfLocationController.text.trim(),
-        tags: _tags,
-        images: [], // TODO: Add image upload functionality
-        isActive: _isActive,
-        notes: sanitizedNotes.isEmpty ? null : sanitizedNotes,
-        createdAt: _isEditing
-            ? DateTime.now()
-            : DateTime.now(), // TODO: Mevcut ürün için orijinal tarihi al
-        updatedAt: DateTime.now(),
-        createdBy: 'current_user', // TODO: Gerçek kullanıcı ID'si
-        updatedBy: _isEditing ? 'current_user' : null,
-      );
-
-      if (_isEditing) {
-        await ref
-            .read(productOperationsProvider.notifier)
-            .updateProduct(product);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ürün başarıyla güncellendi')),
-          );
-        }
-      } else {
-        await ref
-            .read(productOperationsProvider.notifier)
-            .createProduct(product);
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ürün başarıyla oluşturuldu')),
-          );
-        }
-      }
-
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    _autoGenerateProductCode = true;
+    _autoGenerateBarcode = true;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _skuController.dispose();
+    _productCodeController.dispose();
     _barcodeController.dispose();
     _categoryController.dispose();
-    _unitPriceController.dispose();
-    _costPriceController.dispose();
-    _stockQuantityController.dispose();
-    _minStockLevelController.dispose();
-    _maxStockLevelController.dispose();
-    _unitController.dispose();
-    _taxRateController.dispose();
     _brandController.dispose();
-    _modelController.dispose();
-    _colorController.dispose();
-    _sizeController.dispose();
-    _weightController.dispose();
-    _weightUnitController.dispose();
+    _salesPriceController.dispose();
+    _purchasePriceController.dispose();
+    _salesTaxRateController.dispose();
+    _purchaseTaxRateController.dispose();
+    _purchaseDiscountController.dispose();
+    _sctController.dispose();
     _shelfLocationController.dispose();
+    _criticalStockController.dispose();
+    _gtipCodeController.dispose();
+    _countryCodeController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -253,71 +97,63 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           ? TamgaciConstants.backgroundColorDark
           : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
-        title: _isEditing ? 'Ürün Düzenle' : 'Yeni Ürün',
+        title: 'Yeni Ürün',
         showBackButton: true,
+        showDrawer: false,
         actions: [
-          if (!_isLoading)
-            TextButton(
-              onPressed: _saveForm,
-              child: Text(
-                _isEditing ? 'Güncelle' : 'Kaydet',
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+          TextButton(
+            onPressed: _isLoading ? null : _saveProduct,
+            child: Text(
+              'Kaydet',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: _isLoading ? Colors.grey : TamgaciConstants.primaryColor,
               ),
             ),
+          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: TamgaciConstants.paddingMedium(context),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Temel Bilgiler
-                    _buildSectionTitle('Temel Bilgiler', isDark),
-                    _buildNameField(),
-                    _buildDescriptionField(),
-                    _buildCategoryField(),
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Temel Bilgiler
+              _buildSectionTitle('Temel Bilgiler'),
+              _buildBasicInfoSection(),
 
-                    const SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: 24),
 
-                    // Kod Bilgileri
-                    _buildSectionTitle('Kod Bilgileri', isDark),
-                    _buildSkuField(),
-                    _buildBarcodeField(),
+              // Fiyat ve Vergi Bilgileri
+              _buildSectionTitle('Fiyat ve Vergi Bilgileri'),
+              _buildPricingSection(),
 
-                    const SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: 24),
 
-                    // Fiyat ve Stok Bilgileri
-                    _buildSectionTitle('Fiyat ve Stok Bilgileri', isDark),
-                    _buildPriceAndStockFields(),
+              // Stok ve Depo Bilgileri
+              _buildSectionTitle('Stok ve Depo Bilgileri'),
+              _buildStockSection(),
 
-                    const SizedBox(height: TamgaciConstants.spaceLG),
+              const SizedBox(height: 24),
 
-                    // Diğer Bilgiler
-                    _buildSectionTitle('Diğer Bilgiler', isDark),
-                    _buildOtherFields(),
+              // Ek Bilgiler
+              _buildSectionTitle('Ek Bilgiler'),
+              _buildAdditionalInfoSection(),
 
-                    const SizedBox(height: TamgaciConstants.spaceLG),
-
-                    // Durum
-                    _buildStatusField(isDark),
-
-                    const SizedBox(height: TamgaciConstants.spaceXXL),
-                  ],
-                ),
-              ),
-            ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  /// Bölüm başlığı oluşturur
-  Widget _buildSectionTitle(String title, bool isDark) {
+  Widget _buildSectionTitle(String title) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
@@ -333,307 +169,587 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     );
   }
 
-  /// Ürün adı alanı
-  Widget _buildNameField() {
-    return TextFormField(
-      controller: _nameController,
-      decoration: InputDecoration(
-        labelText: 'Ürün Adı *',
-        hintText: 'Örn: iPhone 15 Pro',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
+  Widget _buildBasicInfoSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Ürün adı
+            FormattedNameField(
+              label: 'Ürün Adı *',
+              controller: _nameController,
+              hint: 'Örn: iPhone 15 Pro',
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Ürün adı zorunludur';
+                }
+                return null;
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Ürün türü
+            DropdownButtonFormField<ProductType>(
+              initialValue: _selectedType,
+              decoration: const InputDecoration(
+                labelText: 'Ürün Türü *',
+                border: OutlineInputBorder(),
+              ),
+              items: ProductType.values.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type.displayName),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedType = value!;
+                });
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Açıklama
+            TextFormField(
+              controller: _descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Açıklama',
+                border: OutlineInputBorder(),
+                hintText: 'Ürün açıklaması...',
+              ),
+              maxLines: 3,
+            ),
+
+            const SizedBox(height: 16),
+
+            // Kategori ve Marka
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _categoryController,
+                    decoration: const InputDecoration(
+                      labelText: 'Kategori',
+                      border: OutlineInputBorder(),
+                      hintText: 'Örn: Elektronik',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _brandController,
+                    decoration: const InputDecoration(
+                      labelText: 'Marka',
+                      border: OutlineInputBorder(),
+                      hintText: 'Örn: Apple',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Ürün kodu ve barkod
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _productCodeController,
+                    decoration: InputDecoration(
+                      labelText: 'Ürün Kodu',
+                      border: const OutlineInputBorder(),
+                      hintText: 'Otomatik üretilir',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.refresh),
+                        onPressed: _generateProductCode,
+                        tooltip: 'Otomatik üret',
+                      ),
+                    ),
+                    readOnly: _autoGenerateProductCode,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _barcodeController,
+                    decoration: InputDecoration(
+                      labelText: 'Barkod',
+                      border: const OutlineInputBorder(),
+                      hintText: 'GS1 barkod',
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.qr_code),
+                        onPressed: _generateBarcode,
+                        tooltip: 'GS1 barkod üret',
+                      ),
+                    ),
+                    readOnly: _autoGenerateBarcode,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Ürün adı gereklidir';
-        }
-        return null;
-      },
     );
   }
 
-  /// Açıklama alanı
-  Widget _buildDescriptionField() {
-    return TextFormField(
-      controller: _descriptionController,
-      decoration: InputDecoration(
-        labelText: 'Açıklama',
-        hintText: 'Ürün açıklaması...',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
+  Widget _buildPricingSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Satış fiyatı
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _salesPriceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Satış Fiyatı *',
+                      border: OutlineInputBorder(),
+                      hintText: '0.00',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Satış fiyatı zorunludur';
+                      }
+                      if (double.tryParse(value) == null) {
+                        return 'Geçerli bir fiyat girin';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _salesCurrency,
+                    decoration: const InputDecoration(
+                      labelText: 'Para Birimi',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ['TRY', 'USD', 'EUR'].map((currency) {
+                      return DropdownMenuItem(
+                        value: currency,
+                        child: Text(currency),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _salesCurrency = value!;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Alış fiyatı
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _purchasePriceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Alış Fiyatı',
+                      border: OutlineInputBorder(),
+                      hintText: '0.00',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _purchaseCurrency,
+                    decoration: const InputDecoration(
+                      labelText: 'Para Birimi',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                          value: null, child: Text('Seçiniz')),
+                      ...['TRY', 'USD', 'EUR'].map((currency) {
+                        return DropdownMenuItem(
+                          value: currency,
+                          child: Text(currency),
+                        );
+                      }),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _purchaseCurrency = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // KDV oranları
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _salesTaxRateController,
+                    decoration: const InputDecoration(
+                      labelText: 'Satış KDV Oranı (%) *',
+                      border: OutlineInputBorder(),
+                      hintText: '20',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'KDV oranı zorunludur';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _purchaseTaxRateController,
+                    decoration: const InputDecoration(
+                      labelText: 'Alış KDV Oranı (%)',
+                      border: OutlineInputBorder(),
+                      hintText: '20',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // KDV dahil seçenekleri
+            Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<TaxInclusiveOption>(
+                    initialValue: _salesTaxInclusive,
+                    decoration: const InputDecoration(
+                      labelText: 'Satış Fiyatına KDV',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: TaxInclusiveOption.values.map((option) {
+                      return DropdownMenuItem(
+                        value: option,
+                        child: Text(option.displayName),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _salesTaxInclusive = value!;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: DropdownButtonFormField<TaxInclusiveOption?>(
+                    initialValue: _purchaseTaxInclusive,
+                    decoration: const InputDecoration(
+                      labelText: 'Alış Fiyatına KDV',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      const DropdownMenuItem(
+                          value: null, child: Text('Seçiniz')),
+                      ...TaxInclusiveOption.values.map((option) {
+                        return DropdownMenuItem(
+                          value: option,
+                          child: Text(option.displayName),
+                        );
+                      }),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _purchaseTaxInclusive = value;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // İskonto ve ÖTV
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _purchaseDiscountController,
+                    decoration: const InputDecoration(
+                      labelText: 'Alış İskontosu (%)',
+                      border: OutlineInputBorder(),
+                      hintText: '0',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _sctController,
+                    decoration: const InputDecoration(
+                      labelText: 'ÖTV Oranı (%)',
+                      border: OutlineInputBorder(),
+                      hintText: '0',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-      maxLines: 3,
     );
   }
 
-  /// Kategori alanı
-  Widget _buildCategoryField() {
-    return TextFormField(
-      controller: _categoryController,
-      decoration: InputDecoration(
-        labelText: 'Kategori',
-        hintText: 'Örn: Elektronik',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
+  Widget _buildStockSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Stok takibi türü
+            DropdownButtonFormField<StockTrackingType>(
+              initialValue: _selectedStockTracking,
+              decoration: const InputDecoration(
+                labelText: 'Stok Takibi',
+                border: OutlineInputBorder(),
+              ),
+              items: StockTrackingType.values.map((type) {
+                return DropdownMenuItem(
+                  value: type,
+                  child: Text(type.displayName),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedStockTracking = value!;
+                });
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            // Kritik stok ve raf yeri
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _criticalStockController,
+                    decoration: const InputDecoration(
+                      labelText: 'Kritik Stok Miktarı',
+                      border: OutlineInputBorder(),
+                      hintText: '0',
+                    ),
+                    keyboardType: TextInputType.number,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _shelfLocationController,
+                    decoration: const InputDecoration(
+                      labelText: 'Raf Yeri',
+                      border: OutlineInputBorder(),
+                      hintText: 'A-1-2',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// SKU alanı
-  Widget _buildSkuField() {
-    return TextFormField(
-      controller: _skuController,
-      decoration: InputDecoration(
-        labelText: 'SKU',
-        hintText: 'Örn: IPH15PRO-128',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
+  Widget _buildAdditionalInfoSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // GTIP kodu ve ülke kodu
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _gtipCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'GTIP Kodu',
+                      border: OutlineInputBorder(),
+                      hintText: '8517120000',
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextFormField(
+                    controller: _countryCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'Ülke Kodu',
+                      border: OutlineInputBorder(),
+                      hintText: 'TR',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Notlar
+            TextFormField(
+              controller: _notesController,
+              decoration: const InputDecoration(
+                labelText: 'Notlar',
+                border: OutlineInputBorder(),
+                hintText: 'Ek notlar...',
+              ),
+              maxLines: 3,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  /// Barkod alanı
-  Widget _buildBarcodeField() {
-    return TextFormField(
-      controller: _barcodeController,
-      decoration: InputDecoration(
-        labelText: 'Barkod',
-        hintText: '1234567890123',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-      ),
-    );
+  // Helper methods
+  void _generateProductCode() {
+    // Basit ürün kodu üretimi
+    final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+    _productCodeController.text = 'PRD-$timestamp';
+    setState(() {
+      _autoGenerateProductCode = true;
+    });
   }
 
-  /// Birim fiyat alanı
-  Widget _buildUnitPriceField() {
-    return TextFormField(
-      controller: _unitPriceController,
-      decoration: InputDecoration(
-        labelText: 'Birim Fiyat (₺) *',
-        hintText: '0.00',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        prefixText: '₺',
-      ),
-      keyboardType: TextInputType.number,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Birim fiyat gereklidir';
-        }
-        final price = double.tryParse(value);
-        if (price == null || price < 0) {
-          return 'Geçerli bir fiyat giriniz';
-        }
-        return null;
-      },
-    );
+  void _generateBarcode() {
+    final barcode = BarcodeGenerator.generateRandomGS1Barcode();
+    _barcodeController.text = barcode;
+    setState(() {
+      _autoGenerateBarcode = true;
+    });
   }
 
-  /// KDV oranı alanı
-  Widget _buildTaxRateField() {
-    return TextFormField(
-      controller: _taxRateController,
-      decoration: InputDecoration(
-        labelText: 'KDV Oranı (%) *',
-        hintText: '20.0',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        suffixText: '%',
-      ),
-      keyboardType: TextInputType.number,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'KDV oranı gereklidir';
-        }
-        final rate = double.tryParse(value);
-        if (rate == null || rate < 0 || rate > 100) {
-          return 'Geçerli bir KDV oranı giriniz (0-100)';
-        }
-        return null;
-      },
-    );
-  }
+  Future<void> _saveProduct() async {
+    if (!_formKey.currentState!.validate()) return;
 
-  /// Stok miktarı alanı
-  Widget _buildStockQuantityField() {
-    return TextFormField(
-      controller: _stockQuantityController,
-      decoration: InputDecoration(
-        labelText: 'Stok Miktarı *',
-        hintText: '0',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-      ),
-      keyboardType: TextInputType.number,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Stok miktarı gereklidir';
-        }
-        final quantity = int.tryParse(value);
-        if (quantity == null || quantity < 0) {
-          return 'Geçerli bir stok miktarı giriniz';
-        }
-        return null;
-      },
-    );
-  }
+    setState(() {
+      _isLoading = true;
+    });
 
-  /// Minimum stok seviyesi alanı
-  Widget _buildMinStockLevelField() {
-    return TextFormField(
-      controller: _minStockLevelController,
-      decoration: InputDecoration(
-        labelText: 'Minimum Stok Seviyesi *',
-        hintText: '5',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-      ),
-      keyboardType: TextInputType.number,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Minimum stok seviyesi gereklidir';
-        }
-        final level = int.tryParse(value);
-        if (level == null || level < 0) {
-          return 'Geçerli bir minimum stok seviyesi giriniz';
-        }
-        return null;
-      },
-    );
-  }
+    try {
+      final product = Product(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        productCode: _productCodeController.text.trim().isEmpty
+            ? null
+            : _productCodeController.text.trim(),
+        barcode: _barcodeController.text.trim().isEmpty
+            ? null
+            : _barcodeController.text.trim(),
+        category: _categoryController.text.trim().isEmpty
+            ? null
+            : _categoryController.text.trim(),
+        brand: _brandController.text.trim().isEmpty
+            ? null
+            : _brandController.text.trim(),
+        type: _selectedType,
+        salesPrice: double.parse(_salesPriceController.text),
+        purchasePrice: _purchasePriceController.text.trim().isEmpty
+            ? null
+            : double.parse(_purchasePriceController.text),
+        salesCurrency: _salesCurrency,
+        purchaseCurrency: _purchaseCurrency,
+        salesTaxRate: double.parse(_salesTaxRateController.text),
+        purchaseTaxRate: _purchaseTaxRateController.text.trim().isEmpty
+            ? null
+            : double.parse(_purchaseTaxRateController.text),
+        salesTaxInclusive: _salesTaxInclusive,
+        purchaseTaxInclusive: _purchaseTaxInclusive,
+        purchaseDiscount: _purchaseDiscountController.text.trim().isEmpty
+            ? null
+            : double.parse(_purchaseDiscountController.text),
+        sct: _sctController.text.trim().isEmpty
+            ? null
+            : double.parse(_sctController.text),
+        shelfLocation: _shelfLocationController.text.trim().isEmpty
+            ? null
+            : _shelfLocationController.text.trim(),
+        stockTracking: _selectedStockTracking,
+        criticalStockQuantity: _criticalStockController.text.trim().isEmpty
+            ? null
+            : int.parse(_criticalStockController.text),
+        gtipCode: _gtipCodeController.text.trim().isEmpty
+            ? null
+            : _gtipCodeController.text.trim(),
+        countryCode: _countryCodeController.text.trim().isEmpty
+            ? null
+            : _countryCodeController.text.trim(),
+        tags: _tags,
+        images: _images,
+        linkedProducts: _linkedProducts.isEmpty ? null : _linkedProducts,
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
+        isActive: true,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        createdBy: 'current_user_id', // TODO: Get from auth provider
+      );
 
-  /// Birim alanı
-  Widget _buildUnitField() {
-    return TextFormField(
-      controller: _unitController,
-      decoration: InputDecoration(
-        labelText: 'Birim *',
-        hintText: 'Adet, Kg, Lt...',
-        border: const OutlineInputBorder(),
-        labelStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-        hintStyle: GoogleFonts.poppins(
-          color: TamgaciConstants.textSecondary,
-        ),
-      ),
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Birim gereklidir';
-        }
-        return null;
-      },
-    );
-  }
+      // Save product using repository
+      await ref.read(productOperationsProvider.notifier).createProduct(product);
 
-  /// Fiyat ve stok alanları
-  Widget _buildPriceAndStockFields() {
-    return Column(
-      children: [
-        _buildUnitPriceField(),
-        const SizedBox(height: TamgaciConstants.spaceMD),
-        _buildTaxRateField(),
-        const SizedBox(height: TamgaciConstants.spaceMD),
-        _buildStockQuantityField(),
-        const SizedBox(height: TamgaciConstants.spaceMD),
-        _buildMinStockLevelField(),
-      ],
-    );
-  }
-
-  /// Diğer alanlar
-  Widget _buildOtherFields() {
-    return _buildUnitField();
-  }
-
-  /// Durum alanı
-  Widget _buildStatusField(bool isDark) {
-    return SwitchListTile(
-      title: Text(
-        'Aktif',
-        style: GoogleFonts.poppins(
-          color: isDark
-              ? TamgaciConstants.textPrimaryDark
-              : TamgaciConstants.textPrimary,
-        ),
-      ),
-      subtitle: Text(
-        'Ürün aktif olarak satışta',
-        style: GoogleFonts.poppins(
-          color: isDark
-              ? TamgaciConstants.textSecondaryDark
-              : TamgaciConstants.textSecondary,
-        ),
-      ),
-      value: _isActive,
-      onChanged: (value) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ürün başarıyla oluşturuldu'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
         setState(() {
-          _isActive = value;
+          _isLoading = false;
         });
-      },
-      activeThumbColor: TamgaciConstants.primaryColor,
-    );
-  }
-
-  /// Aktif/Pasif switch'i
-  // ignore: unused_element
-  Widget _buildActiveSwitch() {
-    return SwitchListTile(
-      title: const Text('Aktif'),
-      subtitle: const Text('Ürün aktif olarak satışta'),
-      value: _isActive,
-      onChanged: (value) {
-        setState(() {
-          _isActive = value;
-        });
-      },
-      activeThumbColor: TamgaciConstants.primaryColor,
-    );
+      }
+    }
   }
 }

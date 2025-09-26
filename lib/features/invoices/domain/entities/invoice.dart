@@ -61,6 +61,12 @@ class Invoice {
   /// Fatura kalemleri
   final List<InvoiceItem> items;
 
+  /// Belge yönü (satış/alış) - opsiyonel, geriye dönük uyum için
+  final String? direction; // 'sale' | 'purchase'
+
+  /// Belge türü (fatura/irsaliye/proforma) - opsiyonel
+  final String? documentType; // 'invoice' | 'waybill' | 'proforma'
+
   /// Oluşturulma tarihi
   final DateTime createdAt;
 
@@ -86,6 +92,8 @@ class Invoice {
     required this.isPaid,
     this.paidDate,
     this.items = const [],
+    this.direction,
+    this.documentType,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -124,6 +132,8 @@ class Invoice {
                   (item) => InvoiceItem.fromJson(item as Map<String, dynamic>))
               .toList() ??
           [],
+      direction: json['direction'] as String?,
+      documentType: json['documentType'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: DateTime.parse(json['updatedAt'] as String),
     );
@@ -150,6 +160,8 @@ class Invoice {
       'isPaid': isPaid,
       'paidDate': paidDate?.toIso8601String(),
       'items': items.map((item) => item.toJson()).toList(),
+      'direction': direction,
+      'documentType': documentType,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -175,6 +187,8 @@ class Invoice {
     bool? isPaid,
     DateTime? paidDate,
     List<InvoiceItem>? items,
+    String? direction,
+    String? documentType,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -197,6 +211,8 @@ class Invoice {
       isPaid: isPaid ?? this.isPaid,
       paidDate: paidDate ?? this.paidDate,
       items: items ?? this.items,
+      direction: direction ?? this.direction,
+      documentType: documentType ?? this.documentType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

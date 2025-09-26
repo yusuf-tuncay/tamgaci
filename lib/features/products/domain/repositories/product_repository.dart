@@ -9,7 +9,7 @@ abstract class ProductRepository {
   Stream<List<Product>> getActiveProducts();
 
   /// ID'ye göre ürün getir
-  Future<Product?> getProductById(int id);
+  Future<Product?> getProductById(String id);
 
   /// SKU'ya göre ürün getir
   Future<Product?> getProductBySku(String sku);
@@ -36,13 +36,13 @@ abstract class ProductRepository {
   Future<void> updateProduct(Product product);
 
   /// Ürün sil
-  Future<void> deleteProduct(int id);
+  Future<void> deleteProduct(String id);
 
   /// Stok miktarını güncelle
-  Future<void> updateStockQuantity(int id, int quantity);
+  Future<void> updateStockQuantity(String id, int quantity);
 
   /// Ürün durumunu değiştir
-  Future<void> updateProductStatus(int id, bool isActive);
+  Future<void> updateProductStatus(String id, bool isActive);
 
   /// Toplam ürün sayısı
   Future<int> getActiveProductCount();

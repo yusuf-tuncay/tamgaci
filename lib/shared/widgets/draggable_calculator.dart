@@ -189,20 +189,21 @@ class _DraggableCalculatorState extends State<DraggableCalculator> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF667eea),
-                  Color(0xFF764ba2),
+                  Color(0xFF2563EB),
+                  Color(0xFF4C6EF5),
                 ],
               ),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(20),
                 topRight: Radius.circular(20),
               ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF667eea).withValues(alpha: 0.3),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                  offset: const Offset(0, 4),
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                  blurRadius: 18,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -226,11 +227,12 @@ class _DraggableCalculatorState extends State<DraggableCalculator> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Tamgacı Hesap Makinesi',
+                        'Tamgacı\nHesap Makinesi',
                         style: GoogleFonts.poppins(
                           color: Colors.white,
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                       Text(
@@ -239,6 +241,7 @@ class _DraggableCalculatorState extends State<DraggableCalculator> {
                           color: Colors.white.withValues(alpha: 0.8),
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
+                          decoration: TextDecoration.none,
                         ),
                       ),
                     ],
@@ -311,6 +314,7 @@ class _DraggableCalculatorState extends State<DraggableCalculator> {
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
                         color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        decoration: TextDecoration.none,
                       ),
                       textAlign: TextAlign.right,
                       maxLines: 1,
@@ -322,45 +326,36 @@ class _DraggableCalculatorState extends State<DraggableCalculator> {
                 Container(
                   width: double.infinity,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
+                    gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: isDark
-                          ? [
-                              const Color(0xFF1A1A1A),
-                              const Color(0xFF0F0F0F),
-                            ]
-                          : [
-                              const Color(0xFFF8F9FA),
-                              const Color(0xFFE9ECEF),
-                            ],
+                      colors: [
+                        Color(0xFF2563EB),
+                        Color(0xFF4C6EF5),
+                      ],
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark
-                          ? const Color(0xFF404040)
-                          : const Color(0xFFDEE2E6),
-                      width: 2,
-                    ),
+                        color: Colors.white.withValues(alpha: 0.18),
+                        width: 1.2),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark
-                            ? Colors.black.withValues(alpha: 0.5)
-                            : Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 10,
+                        color: const Color(0xFF2563EB).withValues(alpha: 0.25),
+                        blurRadius: 16,
                         spreadRadius: 2,
-                        offset: const Offset(0, 4),
+                        offset: const Offset(0, 6),
                       ),
                     ],
                   ),
                   child: Text(
                     _display,
                     style: GoogleFonts.poppins(
-                      fontSize: 24,
+                      fontSize: 28,
                       fontWeight: FontWeight.w700,
-                      color: isDark ? Colors.white : const Color(0xFF212529),
+                      color: Colors.white,
+                      decoration: TextDecoration.none,
                     ),
                     textAlign: TextAlign.right,
                     maxLines: 1,
@@ -430,41 +425,17 @@ class _DraggableCalculatorState extends State<DraggableCalculator> {
     Color textColor;
     List<Color> gradientColors;
 
-    if (isSpecial) {
-      textColor = const Color(0xFFDC3545);
-      gradientColors = [
-        const Color(0xFFDC3545).withValues(alpha: 0.1),
-        const Color(0xFFDC3545).withValues(alpha: 0.05),
-      ];
-    } else if (isOperator) {
+    if (isSpecial || isOperator || isMemory || isFunction) {
       textColor = Colors.white;
-      gradientColors = [
-        const Color(0xFF667eea),
-        const Color(0xFF764ba2),
-      ];
-    } else if (isMemory) {
-      textColor = isDark ? const Color(0xFFFFB347) : const Color(0xFFFF8C00);
-      gradientColors = [
-        const Color(0xFFFFB347).withValues(alpha: 0.1),
-        const Color(0xFFFF8C00).withValues(alpha: 0.05),
-      ];
-    } else if (isFunction) {
-      textColor = isDark ? const Color(0xFF40E0D0) : const Color(0xFF008B8B);
-      gradientColors = [
-        const Color(0xFF40E0D0).withValues(alpha: 0.1),
-        const Color(0xFF008B8B).withValues(alpha: 0.05),
+      gradientColors = const [
+        Color(0xFF2563EB),
+        Color(0xFF4C6EF5),
       ];
     } else {
-      textColor = isDark ? Colors.white : const Color(0xFF212529);
+      textColor = isDark ? Colors.white : const Color(0xFF111827);
       gradientColors = isDark
-          ? [
-              const Color(0xFF2C2C2C),
-              const Color(0xFF1A1A1A),
-            ]
-          : [
-              const Color(0xFFF8F9FA),
-              const Color(0xFFE9ECEF),
-            ];
+          ? const [Color(0xFF374151), Color(0xFF111827)]
+          : const [Color(0xFFF3F4F6), Color(0xFFE5E7EB)];
     }
 
     return GestureDetector(
@@ -479,27 +450,17 @@ class _DraggableCalculatorState extends State<DraggableCalculator> {
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? const Color(0xFF404040) : const Color(0xFFDEE2E6),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isDark
-                  ? Colors.black.withValues(alpha: 0.3)
-                  : Colors.black.withValues(alpha: 0.1),
-              blurRadius: 8,
-              spreadRadius: 1,
-              offset: const Offset(0, 2),
-            ),
-          ],
+              color: Colors.black.withValues(alpha: 0.08), width: 0.8),
         ),
         child: Center(
           child: Text(
             text,
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: isOperator || isFunction || isSpecial ? 18 : 15,
               fontWeight: FontWeight.w700,
               color: textColor,
+              decoration: TextDecoration.none,
+              letterSpacing: isOperator ? 0.2 : 0.0,
             ),
           ),
         ),

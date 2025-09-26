@@ -35,6 +35,14 @@ class FirebaseAuthService {
       // Kullanıcı profilini güncelle
       await userCredential.user?.updateDisplayName(fullName);
 
+      // Tenant ID oluştur (şirket adından)
+      final tenantId = companyName?.isNotEmpty == true
+          ? companyName!
+              .toLowerCase()
+              .replaceAll(' ', '_')
+              .replaceAll(RegExp(r'[^a-z0-9_]'), '')
+          : 'default_tenant_${userCredential.user!.uid.substring(0, 8)}';
+
       // Firestore'da kullanıcı dokümanı oluştur
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'uid': userCredential.user!.uid,
@@ -42,6 +50,7 @@ class FirebaseAuthService {
         'fullName': fullName,
         'companyName': companyName ?? '',
         'phoneNumber': phoneNumber ?? '',
+        'tenantId': tenantId, // Multi-tenant için tenantId ekle
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         'isActive': true,
@@ -52,6 +61,17 @@ class FirebaseAuthService {
           'currency': 'TRY',
           'timezone': 'Europe/Istanbul',
         },
+      });
+
+      // Tenant dokümanı oluştur
+      await _firestore.collection('tenants').doc(tenantId).set({
+        'id': tenantId,
+        'name': companyName ?? 'Default Company',
+        'ownerId': userCredential.user!.uid,
+        'memberIds': [userCredential.user!.uid],
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isActive': true,
       });
 
       return userCredential;
@@ -246,4 +266,50 @@ class FirebaseAuthService {
 
   /// Kullanıcı adını al
   static String? get currentUserDisplayName => _auth.currentUser?.displayName;
+
+  /// Mevcut kullanıcı için tenantId oluştur (migration için)
+  static Future<void> createTenantIdForCurrentUser() async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) return;
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+
+      // Eğer tenantId zaten varsa, işlem yapma
+      if (userData['tenantId'] != null) return;
+
+      // Tenant ID oluştur
+      final companyName = userData['companyName'] as String? ?? '';
+      final tenantId = companyName.isNotEmpty
+          ? companyName
+              .toLowerCase()
+              .replaceAll(' ', '_')
+              .replaceAll(RegExp(r'[^a-z0-9_]'), '')
+          : 'default_tenant_${user.uid.substring(0, 8)}';
+
+      // Kullanıcı dokümanını güncelle
+      await _firestore.collection('users').doc(user.uid).update({
+        'tenantId': tenantId,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Tenant dokümanı oluştur
+      await _firestore.collection('tenants').doc(tenantId).set({
+        'id': tenantId,
+        'name': companyName.isNotEmpty ? companyName : 'Default Company',
+        'ownerId': user.uid,
+        'memberIds': [user.uid],
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isActive': true,
+      });
+
+      AppLogger.info('Tenant ID created for user: $tenantId');
+    } catch (e) {
+      AppLogger.error('Error creating tenant ID for current user', e);
+    }
+  }
 }

@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 /// Error widget
 class ErrorWidget extends StatelessWidget {
-  final String message;
+  final String error;
   final VoidCallback? onRetry;
 
   const ErrorWidget({
     super.key,
-    required this.message,
+    required this.error,
     this.onRetry,
   });
 
@@ -32,7 +32,7 @@ class ErrorWidget extends StatelessWidget {
             ),
             const SizedBox(height: 8.0),
             Text(
-              message,
+              error,
               style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),

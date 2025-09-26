@@ -9,8 +9,6 @@ import 'package:tamgaci/features/customers/presentation/pages/enhanced_customers
 import 'package:tamgaci/features/customers/presentation/pages/enhanced_customer_detail_page_v2.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/enhanced_suppliers_list_page.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/enhanced_supplier_detail_page.dart';
-import 'package:tamgaci/features/products/presentation/pages/enhanced_products_list_page.dart';
-import 'package:tamgaci/features/products/presentation/pages/enhanced_product_detail_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/warehouses_list_page.dart';
 import 'package:tamgaci/features/sales/presentation/pages/enhanced_sales_list_page.dart';
 import 'package:tamgaci/features/sales/presentation/pages/sale_detail_page.dart';
@@ -69,6 +67,9 @@ import 'package:tamgaci/features/directory/presentation/pages/create_contact_pag
 import 'package:tamgaci/features/directory/presentation/pages/contact_detail_page.dart';
 import 'package:tamgaci/features/directory/presentation/pages/edit_contact_page.dart';
 import 'package:tamgaci/features/directory/domain/entities/contact.dart';
+
+import 'package:tamgaci/features/products/presentation/pages/products_list_page.dart';
+import 'package:tamgaci/features/products/presentation/pages/product_detail_page.dart';
 
 /// Tamgaci Uygulaması Route Yönetim Sınıfı
 /// Tüm sayfa route'larını merkezi olarak yönetir
@@ -616,22 +617,19 @@ class TamgaciRoutes {
       // ========== ÜRÜN ROUTE'LARI ==========
 
       case productsList:
-        return _createRoute(const EnhancedProductsListPage(),
-            settings: settings);
+        return _createRoute(const ProductsListPage(), settings: settings);
 
       case createProduct:
         return _createRoute(const CreateProductPage(), settings: settings);
 
       case productDetail:
-        // Product ID parametresi bekleniyor
         final productId = arguments as String?;
         return _createRoute(
-          EnhancedProductDetailPage(productId: productId ?? ''),
+          ProductDetailPage(productId: productId ?? ''),
           settings: settings,
         );
 
       case editProduct:
-        // Product ID parametresi bekleniyor
         final productId = arguments as String?;
         return _createRoute(
           CreateProductPage(productId: productId),

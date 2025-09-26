@@ -113,7 +113,8 @@ class SaleModel extends Sale {
       'shippingCost': shippingCost,
       'paymentMethod': paymentMethod,
       'paymentTerms': paymentTerms,
-      'items': items.map((item) => (item as SaleItemModel).toMap()).toList(),
+      'items':
+          items.map((item) => SaleItemModel.fromEntity(item).toMap()).toList(),
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'createdBy': createdBy,
@@ -271,6 +272,7 @@ class SaleItemModel extends SaleItem {
     required super.totalAmount,
     super.description,
     super.notes,
+    required super.currency,
   });
 
   /// Map'ten SaleItemModel oluşturur
@@ -290,6 +292,7 @@ class SaleItemModel extends SaleItem {
       totalAmount: (map['totalAmount'] as num).toDouble(),
       description: map['description'],
       notes: map['notes'],
+      currency: map['currency'] ?? 'TRY',
     );
   }
 
@@ -310,6 +313,7 @@ class SaleItemModel extends SaleItem {
       'totalAmount': totalAmount,
       'description': description,
       'notes': notes,
+      'currency': currency,
     };
   }
 
@@ -330,6 +334,7 @@ class SaleItemModel extends SaleItem {
       totalAmount: totalAmount,
       description: description,
       notes: notes,
+      currency: currency,
     );
   }
 
@@ -350,6 +355,7 @@ class SaleItemModel extends SaleItem {
       totalAmount: item.totalAmount,
       description: item.description,
       notes: item.notes,
+      currency: item.currency,
     );
   }
 }

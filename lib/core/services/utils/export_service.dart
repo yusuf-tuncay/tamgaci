@@ -7,7 +7,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:logger/logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/currency_helper.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Dışa aktarım formatları
 enum ExportFormat {
@@ -192,10 +194,35 @@ class ExportService {
     }
   }
 
-  /// Firebase'den müşteri listesi çekme
+  /// Firebase'den müşteri listesi çekme - Multi-tenant
   Future<List<Map<String, dynamic>>> getCustomersFromFirebase() async {
     try {
-      final querySnapshot = await _firestore.collection('customers').get();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found');
+        return [];
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return [];
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return [];
+      }
+
+      final querySnapshot = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('customers')
+          .get();
       return querySnapshot.docs.map((doc) {
         final data = doc.data();
         return {

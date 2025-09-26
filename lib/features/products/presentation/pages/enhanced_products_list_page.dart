@@ -673,6 +673,10 @@ class _EnhancedProductsListPageState
         return Icons.inventory;
       case ProductType.nonStocked:
         return Icons.room_service;
+      case ProductType.service:
+        return Icons.build;
+      case ProductType.digital:
+        return Icons.computer;
     }
   }
 

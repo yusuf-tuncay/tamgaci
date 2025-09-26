@@ -12,6 +12,50 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   static const String _invoicesCollection = 'invoices';
   static const String _invoiceItemsCollection = 'invoice_items';
 
+  Future<String?> _currentTenantId() async {
+    try {
+      final uid = _currentUid();
+      if (uid == null) return null;
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      if (!userDoc.exists) return null;
+      final data = userDoc.data() as Map<String, dynamic>;
+      final tenantId = data['tenantId'] as String?;
+      return (tenantId != null && tenantId.isNotEmpty) ? tenantId : null;
+    } catch (e) {
+      AppLogger.error('Error getting tenantId for invoices', e);
+      return null;
+    }
+  }
+
+  Future<CollectionReference<Map<String, dynamic>>> _tenantInvoices() async {
+    final tenantId = await _currentTenantId();
+    if (tenantId == null) {
+      // fallback: root collection (will likely be blocked by security rules)
+      AppLogger.warning('No tenantId found; using root invoices collection');
+      return _firestore.collection(_invoicesCollection);
+    }
+    final col = _firestore
+        .collection('tenants')
+        .doc(tenantId)
+        .collection(_invoicesCollection);
+    return col;
+  }
+
+  Future<CollectionReference<Map<String, dynamic>>>
+      _tenantInvoiceItems() async {
+    final tenantId = await _currentTenantId();
+    if (tenantId == null) {
+      AppLogger.warning(
+          'No tenantId found; using root invoice_items collection');
+      return _firestore.collection(_invoiceItemsCollection);
+    }
+    final col = _firestore
+        .collection('tenants')
+        .doc(tenantId)
+        .collection(_invoiceItemsCollection);
+    return col;
+  }
+
   String? _currentUid() {
     try {
       return firebase_auth.FirebaseAuth.instance.currentUser?.uid;
@@ -20,12 +64,10 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
     }
   }
 
-  /// Returns a base query scoped to the current user if available.
-  Query<Map<String, dynamic>> _scopedInvoicesCollection() {
-    final uid = _currentUid();
-    final col = _firestore.collection(_invoicesCollection);
-    if (uid == null || uid.isEmpty) return col;
-    return col.where('createdBy', isEqualTo: uid);
+  /// Returns a base query scoped to current tenant (no createdBy filter).
+  Future<Query<Map<String, dynamic>>> _scopedInvoicesCollection() async {
+    final col = await _tenantInvoices();
+    return col;
   }
 
   /// Backfill createdBy for invoices missing this field (best-effort)
@@ -59,7 +101,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<List<Invoice>> getAllInvoices({bool includeItems = false}) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .orderBy('createdAt', descending: true)
           .get();
 
@@ -89,30 +131,32 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
 
   @override
   Stream<List<Invoice>> watchAllInvoices() {
-    return _scopedInvoicesCollection()
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList())
-        .handleError(
-      (error) {
-        if (error.toString().contains('permission-denied')) {
-          AppLogger.warning(
-              'Firebase permission denied for invoices stream (suppressed)');
-          // handled -> suppress error event
-          return;
-        }
-        AppLogger.error('Error in watchAllInvoices stream', error);
-      },
-      test: (error) => error.toString().contains('permission-denied'),
-    );
+    return _tenantInvoices().asStream().asyncExpand((col) {
+      return col
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) =>
+              snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList())
+          .handleError(
+        (error) {
+          if (error.toString().contains('permission-denied')) {
+            AppLogger.warning(
+                'Firebase permission denied for invoices stream (suppressed)');
+            // suppress error event
+            return;
+          }
+          AppLogger.error('Error in watchAllInvoices stream', error);
+        },
+        test: (error) => error.toString().contains('permission-denied'),
+      );
+    });
   }
 
   @override
   Future<Invoice?> getInvoiceById(String id, {bool includeItems = true}) async {
     try {
-      final doc =
-          await _firestore.collection(_invoicesCollection).doc(id).get();
+      final col = await _tenantInvoices();
+      final doc = await col.doc(id).get();
 
       if (!doc.exists) return null;
 
@@ -137,71 +181,79 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
 
   @override
   Stream<Invoice?> watchInvoiceById(String id) {
-    return _firestore
-        .collection(_invoicesCollection)
-        .doc(id)
-        .snapshots()
-        .map((doc) => doc.exists ? _invoiceFromFirestore(doc) : null)
-        .handleError(
-      (error) {
-        if (error.toString().contains('permission-denied')) {
-          AppLogger.warning(
-              'Firebase permission denied for invoice $id stream (suppressed)');
-          return;
-        }
-        AppLogger.error('Error in watchInvoiceById stream for $id', error);
-      },
-      test: (error) => error.toString().contains('permission-denied'),
-    );
+    return _tenantInvoices().asStream().asyncExpand((col) {
+      return col
+          .doc(id)
+          .snapshots()
+          .map((doc) => doc.exists ? _invoiceFromFirestore(doc) : null)
+          .handleError(
+        (error) {
+          if (error.toString().contains('permission-denied')) {
+            AppLogger.warning(
+                'Firebase permission denied for invoice $id stream (suppressed)');
+            return;
+          }
+          AppLogger.error('Error in watchInvoiceById stream for $id', error);
+        },
+        test: (error) => error.toString().contains('permission-denied'),
+      );
+    });
   }
 
   @override
   Stream<List<Invoice>> watchInvoicesByCustomerId(String customerId) {
-    return _scopedInvoicesCollection()
-        .where('customerId', isEqualTo: customerId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList())
-        .handleError(
-      (error) {
-        if (error.toString().contains('permission-denied')) {
-          AppLogger.warning(
-              'Firebase permission denied for customer invoices $customerId stream (suppressed)');
-          return;
-        }
-        AppLogger.error(
-            'Error in watchInvoicesByCustomerId stream for $customerId', error);
-      },
-      test: (error) => error.toString().contains('permission-denied'),
-    );
+    return _tenantInvoices().asStream().asyncExpand((col) {
+      return col
+          .where('customerId', isEqualTo: customerId)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) =>
+              snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList())
+          .handleError(
+        (error) {
+          if (error.toString().contains('permission-denied')) {
+            AppLogger.warning(
+                'Firebase permission denied for customer invoices $customerId stream (suppressed)');
+            return; // suppress
+          }
+          AppLogger.error(
+              'Error in watchInvoicesByCustomerId stream for $customerId',
+              error);
+        },
+        test: (error) => error.toString().contains('permission-denied'),
+      );
+    });
   }
 
   @override
   Stream<List<Invoice>> watchInvoicesByStatus(InvoiceStatus status) {
-    return _scopedInvoicesCollection()
-        .where('status', isEqualTo: status.name)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList());
+    return _tenantInvoices().asStream().asyncExpand((col) {
+      return col
+          .where('status', isEqualTo: status.name)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) =>
+              snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList());
+    });
   }
 
   @override
   Stream<List<Invoice>> watchUnpaidInvoices() {
-    return _scopedInvoicesCollection()
-        .where('isPaid', isEqualTo: false)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snapshot) =>
-            snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList());
+    return _tenantInvoices().asStream().asyncExpand((col) {
+      return col
+          .where('isPaid', isEqualTo: false)
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) =>
+              snapshot.docs.map((doc) => _invoiceFromFirestore(doc)).toList());
+    });
   }
 
   @override
   Future<List<Invoice>> getInvoicesByCustomerId(String customerId,
       {bool includeItems = false}) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .where('customerId', isEqualTo: customerId)
           .orderBy('createdAt', descending: true)
           .get();
@@ -231,7 +283,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
     bool includeItems = false,
   }) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .where('invoiceDate',
               isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
           .where('invoiceDate',
@@ -261,7 +313,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   Future<List<Invoice>> getInvoicesByStatus(InvoiceStatus status,
       {bool includeItems = false}) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .where('status', isEqualTo: status.name)
           .orderBy('createdAt', descending: true)
           .get();
@@ -288,7 +340,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   Future<List<Invoice>> getOverdueInvoices({bool includeItems = false}) async {
     try {
       final now = DateTime.now();
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .where('dueDate', isLessThan: Timestamp.fromDate(now))
           .where('isPaid', isEqualTo: false)
           .orderBy('dueDate', descending: false)
@@ -315,7 +367,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<List<Invoice>> getUnpaidInvoices({bool includeItems = false}) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .where('isPaid', isEqualTo: false)
           .orderBy('createdAt', descending: true)
           .get();
@@ -342,22 +394,27 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   Future<String> createInvoice(Invoice invoice, List<InvoiceItem> items) async {
     try {
       final batch = _firestore.batch();
+      final invoicesCol = await _tenantInvoices();
+      final itemsCol = await _tenantInvoiceItems();
 
       // Create invoice
-      final invoiceRef = _firestore.collection(_invoicesCollection).doc();
+      final invoiceRef = invoicesCol.doc();
+      final tenantId = await _currentTenantId();
       final invoiceData = {
         ..._invoiceToFirestore(invoice.copyWith(id: invoiceRef.id)),
         'createdBy': _currentUid(),
+        'tenantId': tenantId,
       };
       batch.set(invoiceRef, invoiceData);
 
       // Create invoice items
       for (final item in items) {
-        final itemRef = _firestore.collection(_invoiceItemsCollection).doc();
+        final itemRef = itemsCol.doc();
         final itemData = _invoiceItemToFirestore(item.copyWith(
           id: itemRef.id,
           invoiceId: invoiceRef.id,
         ));
+        itemData['tenantId'] = tenantId;
         batch.set(itemRef, itemData);
       }
 
@@ -373,10 +430,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<void> updateInvoice(Invoice invoice) async {
     try {
-      await _firestore
-          .collection(_invoicesCollection)
-          .doc(invoice.id)
-          .update(_invoiceToFirestore(invoice));
+      final invoicesCol = await _tenantInvoices();
+      await invoicesCol.doc(invoice.id).update(_invoiceToFirestore(invoice));
 
       AppLogger.info('Invoice updated: ${invoice.invoiceNumber}');
     } catch (e) {
@@ -391,13 +446,13 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
       final batch = _firestore.batch();
 
       // Delete invoice
-      batch.delete(_firestore.collection(_invoicesCollection).doc(id));
+      final invoicesCol = await _tenantInvoices();
+      batch.delete(invoicesCol.doc(id));
 
       // Delete associated items
-      final itemsSnapshot = await _firestore
-          .collection(_invoiceItemsCollection)
-          .where('invoiceId', isEqualTo: id)
-          .get();
+      final itemsCol = await _tenantInvoiceItems();
+      final itemsSnapshot =
+          await itemsCol.where('invoiceId', isEqualTo: id).get();
 
       for (final doc in itemsSnapshot.docs) {
         batch.delete(doc.reference);
@@ -413,8 +468,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
 
   Future<List<InvoiceItem>> getInvoiceItems(String invoiceId) async {
     try {
-      final snapshot = await _firestore
-          .collection(_invoiceItemsCollection)
+      final itemsCol = await _tenantInvoiceItems();
+      final snapshot = await itemsCol
           .where('invoiceId', isEqualTo: invoiceId)
           .orderBy('itemOrder')
           .get();
@@ -431,7 +486,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<void> updateInvoiceStatus(String id, InvoiceStatus status) async {
     try {
-      await _firestore.collection(_invoicesCollection).doc(id).update({
+      final invoicesCol = await _tenantInvoices();
+      await invoicesCol.doc(id).update({
         'status': status.name,
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -446,7 +502,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<void> markInvoiceAsPaid(String id, {DateTime? paidDate}) async {
     try {
-      await _firestore.collection(_invoicesCollection).doc(id).update({
+      final invoicesCol = await _tenantInvoices();
+      await invoicesCol.doc(id).update({
         'isPaid': true,
         'status': InvoiceStatus.paid.name,
         'paidDate': Timestamp.fromDate(paidDate ?? DateTime.now()),
@@ -464,7 +521,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   Future<List<Invoice>> searchInvoices(String query,
       {bool includeItems = false}) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .where('invoiceNumber', isGreaterThanOrEqualTo: query)
           .where('invoiceNumber', isLessThanOrEqualTo: '$query\uf8ff')
           .get();
@@ -491,10 +548,9 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   Future<Invoice?> getInvoiceByNumber(String number,
       {bool includeItems = true}) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
-          .where('invoiceNumber', isEqualTo: number)
-          .limit(1)
-          .get();
+      final col = await _scopedInvoicesCollection();
+      final snapshot =
+          await col.where('invoiceNumber', isEqualTo: number).limit(1).get();
       if (snapshot.docs.isEmpty) return null;
 
       final doc = snapshot.docs.first;
@@ -513,10 +569,9 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<int> getInvoiceCountByStatus(InvoiceStatus status) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
-          .where('status', isEqualTo: status.name)
-          .count()
-          .get();
+      final col = await _scopedInvoicesCollection();
+      final snapshot =
+          await col.where('status', isEqualTo: status.name).count().get();
       return snapshot.count ?? 0;
     } catch (e) {
       AppLogger.error('Error getting invoice count by status', e);
@@ -530,7 +585,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
     bool includeItems = false,
   }) async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
+      final snapshot = await (await _scopedInvoicesCollection())
           .orderBy('createdAt', descending: true)
           .limit(limit)
           .get();
@@ -555,7 +610,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<int> getTotalInvoiceCount() async {
     try {
-      final snapshot = await _scopedInvoicesCollection().count().get();
+      final col = await _scopedInvoicesCollection();
+      final snapshot = await col.count().get();
       return snapshot.count ?? 0;
     } catch (e) {
       AppLogger.error('Error getting invoice count', e);
@@ -566,9 +622,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<double> getTotalRevenue() async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
-          .where('isPaid', isEqualTo: true)
-          .get();
+      final col = await _scopedInvoicesCollection();
+      final snapshot = await col.where('isPaid', isEqualTo: true).get();
 
       double total = 0.0;
       for (final doc in snapshot.docs) {
@@ -589,7 +644,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
       final startOfMonth = DateTime(now.year, now.month, 1);
       final endOfMonth = DateTime(now.year, now.month + 1, 0);
 
-      final snapshot = await _scopedInvoicesCollection()
+      final col = await _scopedInvoicesCollection();
+      final snapshot = await col
           .where('invoiceDate',
               isGreaterThanOrEqualTo: Timestamp.fromDate(startOfMonth))
           .where('invoiceDate',
@@ -612,9 +668,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
   @override
   Future<double> getPendingPaymentAmount() async {
     try {
-      final snapshot = await _scopedInvoicesCollection()
-          .where('isPaid', isEqualTo: false)
-          .get();
+      final col = await _scopedInvoicesCollection();
+      final snapshot = await col.where('isPaid', isEqualTo: false).get();
 
       double total = 0.0;
       for (final doc in snapshot.docs) {
@@ -675,32 +730,39 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
 
   @override
   Future<void> addInvoiceItem(InvoiceItem item) async {
-    final itemRef = _firestore.collection(_invoiceItemsCollection).doc();
-    await itemRef.set(_invoiceItemToFirestore(item.copyWith(id: itemRef.id)));
+    final itemsCol = await _tenantInvoiceItems();
+    final itemRef = itemsCol.doc();
+    final itemData = _invoiceItemToFirestore(item.copyWith(id: itemRef.id));
+    itemData['tenantId'] = await _currentTenantId();
+    await itemRef.set(itemData);
   }
 
   @override
   Future<void> addInvoiceItems(List<InvoiceItem> items) async {
     final batch = _firestore.batch();
+    final itemsCol = await _tenantInvoiceItems();
+    final tenantId = await _currentTenantId();
+
     for (final item in items) {
-      final itemRef = _firestore.collection(_invoiceItemsCollection).doc();
-      batch.set(
-          itemRef, _invoiceItemToFirestore(item.copyWith(id: itemRef.id)));
+      final itemRef = itemsCol.doc();
+      final itemData = _invoiceItemToFirestore(item.copyWith(id: itemRef.id));
+      itemData['tenantId'] = tenantId;
+      batch.set(itemRef, itemData);
     }
     await batch.commit();
   }
 
   @override
   Future<void> deleteInvoiceItem(String itemId) async {
-    await _firestore.collection(_invoiceItemsCollection).doc(itemId).delete();
+    final itemsCol = await _tenantInvoiceItems();
+    await itemsCol.doc(itemId).delete();
   }
 
   @override
   Future<void> deleteAllInvoiceItems(String invoiceId) async {
-    final snapshot = await _firestore
-        .collection(_invoiceItemsCollection)
-        .where('invoiceId', isEqualTo: invoiceId)
-        .get();
+    final itemsCol = await _tenantInvoiceItems();
+    final snapshot =
+        await itemsCol.where('invoiceId', isEqualTo: invoiceId).get();
     final batch = _firestore.batch();
     for (final doc in snapshot.docs) {
       batch.delete(doc.reference);
@@ -710,10 +772,10 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
 
   @override
   Future<void> updateInvoiceItem(InvoiceItem item) async {
-    await _firestore
-        .collection(_invoiceItemsCollection)
-        .doc(item.id)
-        .update(_invoiceItemToFirestore(item));
+    final itemsCol = await _tenantInvoiceItems();
+    final itemData = _invoiceItemToFirestore(item);
+    itemData['tenantId'] = await _currentTenantId();
+    await itemsCol.doc(item.id).update(itemData);
   }
 
   @override
@@ -756,6 +818,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
       description: data['description'],
       isPaid: data['isPaid'] ?? false,
       items: const [], // Items loaded separately
+      direction: data['direction'] as String?,
+      documentType: data['documentType'] as String?,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
     );
@@ -778,6 +842,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
       'notes': invoice.notes,
       'description': invoice.description,
       'isPaid': invoice.isPaid,
+      'direction': invoice.direction,
+      'documentType': invoice.documentType,
       'createdAt': Timestamp.fromDate(invoice.createdAt),
       'updatedAt': Timestamp.fromDate(invoice.updatedAt),
     };

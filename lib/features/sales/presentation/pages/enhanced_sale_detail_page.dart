@@ -807,6 +807,7 @@ class _EnhancedSaleDetailPageState extends ConsumerState<EnhancedSaleDetailPage>
             taxRate: 18.0,
             taxAmount: 90.0,
             totalAmount: 1040.0,
+            currency: 'TRY',
           ),
         ],
         createdAt: DateTime.now().subtract(const Duration(days: 5)),

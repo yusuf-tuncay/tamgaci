@@ -200,7 +200,7 @@ class _CashAccountsListPageState extends ConsumerState<CashAccountsListPage> {
 
     if (state.error != null) {
       return core_widgets.ErrorWidget(
-        message: state.error!,
+        error: state.error!,
         onRetry: _loadCashAccounts,
       );
     }

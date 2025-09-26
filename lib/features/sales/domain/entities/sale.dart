@@ -303,6 +303,7 @@ class SaleItem {
   final double totalAmount; // Toplam tutar
   final String? description; // Açıklama
   final String? notes; // Notlar
+  final String currency; // Para birimi
 
   const SaleItem({
     required this.id,
@@ -320,6 +321,7 @@ class SaleItem {
     required this.totalAmount,
     this.description,
     this.notes,
+    required this.currency,
   });
 
   /// Net tutar (indirim sonrası)
@@ -344,6 +346,7 @@ class SaleItem {
     double? totalAmount,
     String? description,
     String? notes,
+    String? currency,
   }) {
     return SaleItem(
       id: id ?? this.id,
@@ -360,6 +363,7 @@ class SaleItem {
       totalAmount: totalAmount ?? this.totalAmount,
       description: description ?? this.description,
       notes: notes ?? this.notes,
+      currency: currency ?? this.currency,
     );
   }
 
@@ -380,6 +384,7 @@ class SaleItem {
       totalAmount: (json['totalAmount'] as num).toDouble(),
       description: json['description'] as String?,
       notes: json['notes'] as String?,
+      currency: json['currency'] as String? ?? 'TRY',
     );
   }
 
@@ -400,6 +405,7 @@ class SaleItem {
       'totalAmount': totalAmount,
       'description': description,
       'notes': notes,
+      'currency': currency,
     };
   }
 

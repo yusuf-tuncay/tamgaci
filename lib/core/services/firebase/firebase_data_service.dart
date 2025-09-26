@@ -2,6 +2,7 @@
 // lib/core/services/firebase_data_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 
@@ -9,12 +10,34 @@ import 'package:tamgaci/core/utils/logger.dart';
 class FirebaseDataService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Mock ürün verilerini Firebase'e ekle
+  /// Mock ürün verilerini Firebase'e ekle - Multi-tenant
   static Future<void> addMockProducts() async {
     if (!kIsWeb) return; // Sadece web platformunda çalışsın
 
     try {
-      final productsCollection = _firestore.collection('products');
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found for mock data');
+        return;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return;
+      }
+
+      final productsCollection =
+          _firestore.collection('tenants').doc(tenantId).collection('products');
 
       // Mevcut ürünleri kontrol et
       final existingProducts = await productsCollection.get();
@@ -122,12 +145,36 @@ class FirebaseDataService {
     }
   }
 
-  /// Mock müşteri verilerini Firebase'e ekle
+  /// Mock müşteri verilerini Firebase'e ekle - Multi-tenant
   static Future<void> addMockCustomers() async {
     if (!kIsWeb) return;
 
     try {
-      final customersCollection = _firestore.collection('customers');
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found for mock data');
+        return;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return;
+      }
+
+      final customersCollection = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('customers');
 
       final existingCustomers = await customersCollection.get();
       if (existingCustomers.docs.isNotEmpty) {
@@ -407,11 +454,33 @@ class FirebaseDataService {
     }
   }
 
-  /// Mock gelir verilerini Firebase'e ekle
+  /// Mock gelir verilerini Firebase'e ekle - Multi-tenant
   static Future<void> addMockIncomes() async {
     if (!kIsWeb) return; // Sadece web platformunda çalışsın
     try {
-      final incomesCollection = _firestore.collection('incomes');
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found for mock data');
+        return;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return;
+      }
+
+      final incomesCollection =
+          _firestore.collection('tenants').doc(tenantId).collection('incomes');
       final existingIncomes = await incomesCollection.get();
       if (existingIncomes.docs.isNotEmpty) {
         AppLogger.info('Gelirler zaten mevcut, mock veri eklenmeyecek');
@@ -490,11 +559,35 @@ class FirebaseDataService {
     }
   }
 
-  /// Mock tedarikçi verilerini Firebase'e ekle
+  /// Mock tedarikçi verilerini Firebase'e ekle - Multi-tenant
   static Future<void> addMockSuppliers() async {
     if (!kIsWeb) return; // Sadece web platformunda çalışsın
     try {
-      final suppliersCollection = _firestore.collection('suppliers');
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        AppLogger.warning('No authenticated user found for mock data');
+        return;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        AppLogger.warning('User document not found');
+        return;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.warning('No tenant ID found for user');
+        return;
+      }
+
+      final suppliersCollection = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('suppliers');
       final existingSuppliers = await suppliersCollection.get();
       if (existingSuppliers.docs.isNotEmpty) {
         AppLogger.info('Tedarikçiler zaten mevcut, mock veri eklenmeyecek');

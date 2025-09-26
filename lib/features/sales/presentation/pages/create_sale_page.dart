@@ -448,7 +448,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
     if (state.error != null) {
       return core_widgets.ErrorWidget(
-        message: state.error!,
+        error: state.error!,
         onRetry: _loadSale,
       );
     }
@@ -2104,7 +2104,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
               p.id,
               p.name,
               p.salesPrice,
-              p.taxRate,
+              18.0, // Varsayılan KDV oranı
               p.salesCurrency,
             );
             final state =
@@ -2113,7 +2113,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
               state._productIdController.text = p.productCode ?? p.id;
               state._productNameController.text = p.name;
               state._unitPriceController.text = _formatTrCurrency(p.salesPrice);
-              state._taxRateController.text = p.taxRate.toStringAsFixed(0);
+              state._taxRateController.text = '18'; // Varsayılan KDV oranı
               state._productCurrencyCode = (p.salesCurrency).toUpperCase();
               // Varsayılan satır para birimini ürün para birimine set et
               state.setState(() {
@@ -2493,6 +2493,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       taxRate: taxRate,
       taxAmount: taxAmount,
       totalAmount: totalAmount,
+      currency: _lineCurrencyCode,
     );
 
     widget.onAdd(item);

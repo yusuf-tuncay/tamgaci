@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:tamgaci/features/cash_management/data/models/cash_account_model.dart';
 import 'package:tamgaci/features/cash_management/domain/entities/cash_account.dart';
+import 'package:tamgaci/core/firebase/firebase_service.dart';
 
 /// CashAccount Firebase DataSource
 /// Firebase Firestore ile doğrudan etkileşimi yönetir.
@@ -10,6 +11,7 @@ class CashAccountFirebaseDataSource {
   final FirebaseFirestore _firestore;
   // ignore: unused_field
   final FirebaseAuth _firebaseAuth;
+  final FirebaseService _firebaseService = FirebaseService();
 
   CashAccountFirebaseDataSource(this._firestore, this._firebaseAuth);
 
@@ -19,13 +21,18 @@ class CashAccountFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('cash_accounts')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
         final offsetDoc = await _firestore
             .collection('cash_accounts')
+            .where('companyId',
+                isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
             .orderBy('createdAt', descending: true)
             .limit(offset)
             .get();
@@ -69,14 +76,19 @@ class CashAccountFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('cash_accounts')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('type', isEqualTo: type.name)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
         final offsetDoc = await _firestore
             .collection('cash_accounts')
+            .where('companyId',
+                isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
             .where('type', isEqualTo: type.name)
             .orderBy('createdAt', descending: true)
             .limit(offset)
@@ -107,8 +119,11 @@ class CashAccountFirebaseDataSource {
     int? offset,
   }) async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       Query query = _firestore
           .collection('cash_accounts')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('status', isEqualTo: status.name)
           .orderBy('createdAt', descending: true);
 
@@ -142,8 +157,11 @@ class CashAccountFirebaseDataSource {
   /// Varsayılan nakit hesabı getirir
   Future<CashAccountModel?> getDefaultCashAccount() async {
     try {
+      final companyIds = await _firebaseService.getUserCompanyIds();
       final snapshot = await _firestore
           .collection('cash_accounts')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('isDefault', isEqualTo: true)
           .limit(1)
           .get();
@@ -163,9 +181,12 @@ class CashAccountFirebaseDataSource {
       CashAccountModel cashAccount) async {
     try {
       final docRef = _firestore.collection('cash_accounts').doc();
+      final companyIds = await _firebaseService.getUserCompanyIds();
       final newCashAccount = cashAccount.copyWith(id: docRef.id);
-
-      await docRef.set(newCashAccount.toFirestore());
+      final data = newCashAccount.toFirestore();
+      data['companyId'] = companyIds.isNotEmpty ? companyIds.first : '';
+      data['createdBy'] = _firebaseAuth.currentUser?.uid;
+      await docRef.set(data);
       AppLogger.info('Cash account created: ${newCashAccount.name}');
       return newCashAccount;
     } catch (e) {
@@ -248,8 +269,13 @@ class CashAccountFirebaseDataSource {
   /// Nakit hesap sayısını getirir
   Future<int> getCashAccountsCount() async {
     try {
-      final snapshot =
-          await _firestore.collection('cash_accounts').count().get();
+      final companyIds = await _firebaseService.getUserCompanyIds();
+      final snapshot = await _firestore
+          .collection('cash_accounts')
+          .where('companyId',
+              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
+          .count()
+          .get();
       return snapshot.count ?? 0;
     } catch (e) {
       AppLogger.error('Error getting cash accounts count', e);

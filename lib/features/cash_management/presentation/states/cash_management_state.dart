@@ -16,6 +16,7 @@ class CashManagementState extends Equatable {
   final Map<String, dynamic>? cashTransactionsReport;
   final List<Map<String, dynamic>> topCategories;
   final List<Map<String, dynamic>> topAccounts;
+  final bool hasLoadedTransactions;
 
   const CashManagementState({
     this.cashAccounts = const [],
@@ -30,6 +31,7 @@ class CashManagementState extends Equatable {
     this.cashTransactionsReport,
     this.topCategories = const [],
     this.topAccounts = const [],
+    this.hasLoadedTransactions = false,
   });
 
   CashManagementState copyWith({
@@ -45,6 +47,7 @@ class CashManagementState extends Equatable {
     Map<String, dynamic>? cashTransactionsReport,
     List<Map<String, dynamic>>? topCategories,
     List<Map<String, dynamic>>? topAccounts,
+    bool? hasLoadedTransactions,
   }) {
     return CashManagementState(
       cashAccounts: cashAccounts ?? this.cashAccounts,
@@ -63,6 +66,8 @@ class CashManagementState extends Equatable {
           cashTransactionsReport ?? this.cashTransactionsReport,
       topCategories: topCategories ?? this.topCategories,
       topAccounts: topAccounts ?? this.topAccounts,
+      hasLoadedTransactions:
+          hasLoadedTransactions ?? this.hasLoadedTransactions,
     );
   }
 
@@ -80,5 +85,6 @@ class CashManagementState extends Equatable {
         cashTransactionsReport,
         topCategories,
         topAccounts,
+        hasLoadedTransactions,
       ];
 }

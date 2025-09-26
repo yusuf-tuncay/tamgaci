@@ -91,11 +91,17 @@ class DashboardChartWidget extends StatelessWidget {
   Widget _buildBarChart(List<ChartData> data, bool isDark) {
     final maxValue = data.map((e) => e.value).reduce((a, b) => a > b ? a : b);
 
+    // Eğer tüm değerler 0 ise, grafik çubuklarını minimum yükseklikte göster
+    final isAllZero = maxValue == 0;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: data.map((item) {
-        final height = (item.value / maxValue) * 150;
+        // NaN değerlerini önlemek için güvenli hesaplama
+        final height = isAllZero ? 20.0 : (item.value / maxValue) * 150;
+        final safeHeight = height.isNaN || height.isInfinite ? 20.0 : height;
+
         return Column(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -109,7 +115,7 @@ class DashboardChartWidget extends StatelessWidget {
             const SizedBox(height: 4),
             Container(
               width: 30,
-              height: height,
+              height: safeHeight,
               decoration: BoxDecoration(
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(4),
@@ -189,13 +195,17 @@ class LineChartPainter extends CustomPainter {
     final minValue = data.map((e) => e.value).reduce((a, b) => a < b ? a : b);
     final range = maxValue - minValue;
 
+    // Eğer tüm değerler aynıysa (range = 0), yatay çizgi çiz
+    final isAllSame = range == 0;
+
     final path = Path();
     final points = <Offset>[];
 
     for (int i = 0; i < data.length; i++) {
       final x = (i / (data.length - 1)) * size.width;
-      final y =
-          size.height - ((data[i].value - minValue) / range) * size.height;
+      final y = isAllSame
+          ? size.height / 2 // Tüm değerler aynıysa ortada yatay çizgi
+          : size.height - ((data[i].value - minValue) / range) * size.height;
       points.add(Offset(x, y));
     }
 
@@ -232,6 +242,20 @@ class PieChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     final total = data.map((e) => e.value).reduce((a, b) => a + b);
+
+    // Eğer toplam 0 ise, boş pasta grafik göster
+    if (total == 0) {
+      final center = Offset(size.width / 2, size.height / 2);
+      final radius = size.width / 2 - 10;
+
+      final paint = Paint()
+        ..color = Colors.grey[300]!
+        ..style = PaintingStyle.fill;
+
+      canvas.drawCircle(center, radius, paint);
+      return;
+    }
+
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 10;
 
@@ -239,6 +263,9 @@ class PieChartPainter extends CustomPainter {
 
     for (int i = 0; i < data.length; i++) {
       final sweepAngle = (data[i].value / total) * 2 * 3.14159;
+
+      // NaN değerlerini önle
+      if (sweepAngle.isNaN || sweepAngle.isInfinite) continue;
 
       final paint = Paint()
         ..color = data[i].color ?? _getColorForIndex(i)

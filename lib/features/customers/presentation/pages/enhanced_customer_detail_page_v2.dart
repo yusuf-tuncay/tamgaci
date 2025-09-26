@@ -9,6 +9,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/routes/routes.dart';
 import '../../domain/entities/customer.dart';
 // import '../../domain/entities/customer_transaction.dart';
@@ -37,6 +38,7 @@ class _EnhancedCustomerDetailPageV2State
   late TabController _tabController;
   // ignore: unused_field
   int _selectedTabIndex = 0;
+  bool _hasLoadedTransactions = false;
 
   @override
   void initState() {
@@ -64,9 +66,9 @@ class _EnhancedCustomerDetailPageV2State
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final customersAsync = ref.watch(customersProvider);
 
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: const CustomAppBar(title: 'Müşteri Detayı', showDrawer: true),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
       body: customersAsync.when(
         data: (customers) {
           final customer = customers.firstWhere(
@@ -424,10 +426,10 @@ class _EnhancedCustomerDetailPageV2State
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withValues(alpha: 0.3),
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
         child: Column(
@@ -443,7 +445,7 @@ class _EnhancedCustomerDetailPageV2State
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: color,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
@@ -684,34 +686,137 @@ class _EnhancedCustomerDetailPageV2State
     final invoicesAsync =
         ref.watch(customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
-    return invoicesAsync.when(
-      data: (invoices) {
+
+    // Cash transactions'ı yükle (sadece bir kez, hata durumunda retry yapma)
+    // Sadece ilk yüklemede çağır, tekrar yükleme yapma
+    debugPrint(
+        '🐛 hasLoadedTransactions: ${cashState.hasLoadedTransactions}, isLoading: ${cashState.isLoading}, error: ${cashState.error}');
+    debugPrint('🐛 Local _hasLoadedTransactions: $_hasLoadedTransactions');
+
+    if (!_hasLoadedTransactions &&
+        !cashState.isLoading &&
+        cashState.error == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint('🔄 Loading cash transactions for customer: ${customer.id}');
+        _hasLoadedTransactions = true; // Local flag'i hemen true yap
+        ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
+      });
+    }
+
+    return Builder(
+      builder: (context) {
+        // İrsaliye/Proforma/Alış vb. belgeler faturalar üzerinden geliyor olabilir.
+        // Fatura stream'inde hata/izin sorunu olsa bile UI'ı bloklamayalım.
+        final invoices = invoicesAsync.maybeWhen(
+          data: (value) => value,
+          orElse: () => const [],
+        );
+
+        // Sadece nakit işlemler yüklenirken loading göster
+        if (cashState.isLoading) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  'İşlemler yükleniyor...',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
         final invoiceIds = invoices.map((e) => e.id).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
+
+        // Müşteriye özel işlemler (satış, alış, tahsilat)
+        final customerTransactions = cashState.cashTransactions
+            .where((t) =>
+                t.relatedDocumentId == customer.id ||
+                t.metadata['customerId'] == customer.id)
+            .toList();
+
         final entries = <Map<String, dynamic>>[
+          // Faturalar
           ...invoices.map((i) => {
                 'type': 'invoice',
                 'date': i.invoiceDate,
                 'data': i,
               }),
+          // Ödemeler
           ...payments.map((t) => {
                 'type': 'payment',
+                'date': t.transactionDate,
+                'data': t,
+              }),
+          // Müşteri işlemleri
+          ...customerTransactions.map((t) => {
+                'type': 'transaction',
                 'date': t.transactionDate,
                 'data': t,
               }),
         ]..sort(
             (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
 
-        if (entries.isEmpty) {
+        if (entries.isEmpty || cashState.error != null) {
           return Center(
-            child: Text(
-              'İşlem bulunamadı',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  cashState.error != null
+                      ? Icons.error_outline
+                      : Icons.swap_horiz,
+                  size: 64,
+                  color: isDark ? Colors.grey[600] : Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  cashState.error != null
+                      ? 'İşlemler yüklenirken hata oluştu'
+                      : 'Henüz işlem bulunmuyor',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+                if (cashState.error != null) ...[
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      ref
+                          .read(cashManagementNotifierProvider.notifier)
+                          .getCashTransactions();
+                    },
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Tekrar Dene'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          isDark ? Colors.blue[800] : Colors.blue[600],
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Text(
+                  'Bu müşteri için satış, alış veya tahsilat işlemi yapılmamış',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: isDark ? Colors.grey[500] : Colors.grey[500],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           );
         }
@@ -723,53 +828,174 @@ class _EnhancedCustomerDetailPageV2State
             final entry = entries[index];
             if (entry['type'] == 'invoice') {
               return _buildInvoiceTile(entry['data'], isDark);
-            } else {
+            } else if (entry['type'] == 'payment') {
               return _buildPaymentTile(entry['data'], isDark);
+            } else {
+              return _buildTransactionTile(entry['data'], isDark);
             }
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(
-        child: Text(
-          'İşlemler yüklenemedi',
-          style: GoogleFonts.poppins(color: Colors.red),
-        ),
-      ),
     );
   }
 
   Widget _buildInvoicesTab(Customer customer, bool isDark) {
     final invoicesAsync =
         ref.watch(customerInvoicesStreamProvider(customer.id));
-    return invoicesAsync.when(
-      data: (invoices) {
-        if (invoices.isEmpty) {
-          return Center(
-            child: Text(
-              'Fatura bulunamadı',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
+
+    final invoices = invoicesAsync.maybeWhen(
+      data: (value) => value,
+      orElse: () => const [],
+    );
+    final isLoading = invoicesAsync.isLoading;
+    final hasError = invoicesAsync.hasError;
+
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          TabBar(
+            isScrollable: true,
+            labelColor: Theme.of(context).colorScheme.onSurface,
+            tabs: const [
+              Tab(text: 'Satış Faturaları'),
+              Tab(text: 'Alış Faturaları'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                // Satış Faturaları
+                DefaultTabController(
+                  length: 3,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      TabBar(
+                        isScrollable: true,
+                        labelColor: Theme.of(context).colorScheme.onSurface,
+                        tabs: const [
+                          Tab(text: 'Fatura'),
+                          Tab(text: 'İrsaliye'),
+                          Tab(text: 'Proforma'),
+                        ],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          children: [
+                            // Fatura (Satış) - eldeki invoices ile
+                            Builder(
+                              builder: (_) {
+                                if (isLoading) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                                if (hasError) {
+                                  return Center(
+                                    child: Text(
+                                      'Faturalar yüklenemedi',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                if (invoices.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'Fatura bulunamadı',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: invoices.length,
+                                  itemBuilder: (context, index) {
+                                    final invoice = invoices[index];
+                                    return _buildInvoiceTile(invoice, isDark);
+                                  },
+                                );
+                              },
+                            ),
+                            // İrsaliye (Satış) - henüz ayrıştırma alanı yok
+                            Center(
+                              child: Text(
+                                'İrsaliye listesi için alan henüz entegre değil',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            // Proforma (Satış) - henüz ayrıştırma alanı yok
+                            Center(
+                              child: Text(
+                                'Proforma listesi için alan henüz entegre değil',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Alış Faturaları
+                DefaultTabController(
+                  length: 2,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+                      TabBar(
+                        isScrollable: true,
+                        labelColor: Theme.of(context).colorScheme.onSurface,
+                        tabs: const [
+                          Tab(text: 'Normal Alış'),
+                          Tab(text: 'Satıştan İade Alışı'),
+                        ],
+                      ),
+                      const Expanded(
+                        child: TabBarView(
+                          children: [
+                            Center(
+                              child: Text(
+                                'Normal alış belgeleri müşteri yerine tedarikçi bazlıdır',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            Center(
+                              child: Text(
+                                'Satıştan iade alışı listesi için alan henüz entegre değil',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: invoices.length,
-          itemBuilder: (context, index) {
-            final invoice = invoices[index];
-            return _buildInvoiceTile(invoice, isDark);
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(
-        child: Text(
-          'Faturalar yüklenemedi',
-          style: GoogleFonts.poppins(color: Colors.red),
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -854,6 +1080,67 @@ class _EnhancedCustomerDetailPageV2State
             fontWeight: FontWeight.bold,
             color: color,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionTile(CashTransaction t, bool isDark) {
+    final color =
+        t.type == CashTransactionType.income ? Colors.green : Colors.red;
+    final icon = t.type == CashTransactionType.income
+        ? Icons.trending_up
+        : Icons.trending_down;
+    final typeText =
+        t.type == CashTransactionType.income ? 'Tahsilat' : 'Ödeme';
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(
+          '$typeText - ${t.transactionNumber}',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              DateFormat('dd.MM.yyyy HH:mm').format(t.transactionDate),
+            ),
+            if (t.description != null && t.description!.isNotEmpty)
+              Text(
+                t.description!,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              CurrencyHelper.formatCurrency(t.amount, t.currency),
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+            Text(
+              typeText,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
