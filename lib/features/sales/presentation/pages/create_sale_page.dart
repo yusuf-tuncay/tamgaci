@@ -1563,13 +1563,13 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                 // İskonto
                 if (discount > 0)
                   _buildSummaryRow(
-                      'İskonto:', _formatMoney(discount, currency: currency),
+                      'İskonto:', '-${_formatMoney(discount, currency: currency)}',
                       isNegative: true),
 
                 // KDV
                 if (tax > 0)
                   _buildSummaryRow(
-                      'KDV:', _formatMoney(tax, currency: currency),
+                      'KDV:', '+${_formatMoney(tax, currency: currency)}',
                       isPositive: true),
 
                 const SizedBox(height: 8.0),
