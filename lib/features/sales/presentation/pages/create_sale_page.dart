@@ -1282,7 +1282,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       itemsByCurrency[currency]!.add(item);
     }
 
-    // Her para birimi için hesaplamalar
+    // Her para birimi için hesaplamalar ve toplam hesaplama
     final List<Widget> currencyCards = [];
     double totalInPaymentCurrency = 0.0;
 
@@ -1297,6 +1297,14 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       final totalTax = items.fold(0.0, (sum, item) => sum + item.taxAmount);
       final total = subtotal - totalDiscount + totalTax;
 
+      // Bu para biriminin ödeme para birimindeki karşılığını hesapla
+      double totalInPaymentCurrencyForThisCurrency = total;
+      if (currency != _paymentCurrencyCode) {
+        totalInPaymentCurrencyForThisCurrency =
+            ExchangeRateService().convertCurrency(total, currency, _paymentCurrencyCode);
+      }
+      totalInPaymentCurrency += totalInPaymentCurrencyForThisCurrency;
+
       currencyCards.add(_buildCurrencySummaryCardWithPaymentCurrency(
         currency: currency,
         subtotal: subtotal,
@@ -1305,7 +1313,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         total: total,
         paymentCurrency: _paymentCurrencyCode,
         onTotalCalculated: (paymentCurrencyAmount) {
-          totalInPaymentCurrency += paymentCurrencyAmount;
+          // Bu callback artık kullanılmıyor ama metodun imzası için gerekli
         },
       ));
     }
@@ -1316,7 +1324,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         ...currencyCards,
         // GENEL TOPLAM kartı
         const SizedBox(height: 16.0),
-        _buildGrandTotalCardWithPaymentCurrency(totalInPaymentCurrency, _paymentCurrencyCode),
+        _buildGrandTotalCardWithPaymentCurrency(
+            totalInPaymentCurrency, _paymentCurrencyCode),
       ],
     );
   }
@@ -1431,8 +1440,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         double totalInPaymentCurrency = total;
 
         if (rate != null && currency != paymentCurrency) {
-          totalInPaymentCurrency =
-              ExchangeRateService().convertCurrency(total, currency, paymentCurrency);
+          totalInPaymentCurrency = ExchangeRateService()
+              .convertCurrency(total, currency, paymentCurrency);
           onTotalCalculated(totalInPaymentCurrency);
         } else if (currency == paymentCurrency) {
           onTotalCalculated(total);
@@ -1462,8 +1471,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
                 // İskonto
                 if (discount > 0)
-                  _buildSummaryRow(
-                      'İskonto:', '-${_formatMoney(discount, currency: currency)}',
+                  _buildSummaryRow('İskonto:',
+                      '-${_formatMoney(discount, currency: currency)}',
                       isNegative: true),
 
                 // KDV
@@ -1686,7 +1695,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     );
   }
 
-  Widget _buildGrandTotalCardWithPaymentCurrency(double totalInPaymentCurrency, String paymentCurrency) {
+  Widget _buildGrandTotalCardWithPaymentCurrency(
+      double totalInPaymentCurrency, String paymentCurrency) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
