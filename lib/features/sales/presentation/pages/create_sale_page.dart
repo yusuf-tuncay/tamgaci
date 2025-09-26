@@ -1217,10 +1217,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     }
 
     // Ödeme para birimi seçilmişse, tüm hesaplamaları o para birimine göre yap
-    // Şimdilik para birimi kartlarını her zaman gösterelim
-    // if (_paymentCurrencyCode.isNotEmpty) {
-    //   return _buildPaymentCurrencySummary();
-    // }
+    if (_paymentCurrencyCode.isNotEmpty) {
+      return _buildPaymentCurrencySummary();
+    }
 
     // Para birimi bazlı gruplandırma (ödeme para birimi seçilmemişse)
     final Map<String, List<SaleItem>> itemsByCurrency = {};
@@ -1273,152 +1272,52 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   }
 
   Widget _buildPaymentCurrencySummary() {
-    // TRY seçilmişse kur servisine gerek yok
-    if (_paymentCurrencyCode == 'TRY') {
-      return _buildTryPaymentSummary();
+    // Para birimi bazlı gruplandırma
+    final Map<String, List<SaleItem>> itemsByCurrency = {};
+    for (final item in _items) {
+      final currency = item.currency;
+      if (!itemsByCurrency.containsKey(currency)) {
+        itemsByCurrency[currency] = [];
+      }
+      itemsByCurrency[currency]!.add(item);
     }
 
-    return FutureBuilder<ExchangeRate?>(
-      future: ExchangeRateService().getExchangeRate(_paymentCurrencyCode),
-      builder: (context, snapshot) {
-        final rate = snapshot.data;
+    // Her para birimi için hesaplamalar
+    final List<Widget> currencyCards = [];
+    double totalInPaymentCurrency = 0.0;
 
-        if (rate == null) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Özet',
-                    style: TextStyle(
-                      fontSize: 18.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  SizedBox(height: 16.0),
-                  Center(
-                    child: Text(
-                      'Kur bilgisi yükleniyor...',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
+    for (final currency in itemsByCurrency.keys) {
+      final items = itemsByCurrency[currency]!;
 
-        // Tüm ürünleri ödeme para birimine çevir
-        double totalSubtotal = 0.0;
-        double totalDiscount = 0.0;
-        double totalTax = 0.0;
-        double totalAmount = 0.0;
+      // Bu para birimi için hesaplamalar
+      final subtotal = items.fold(
+          0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
+      final totalDiscount =
+          items.fold(0.0, (sum, item) => sum + item.discountAmount);
+      final totalTax = items.fold(0.0, (sum, item) => sum + item.taxAmount);
+      final total = subtotal - totalDiscount + totalTax;
 
-        for (final item in _items) {
-          // Her ürünün tutarlarını ödeme para birimine çevir
-          final itemSubtotal = ExchangeRateService().convertCurrency(
-              item.unitPrice * item.quantity,
-              item.currency,
-              _paymentCurrencyCode);
-          final itemDiscount = ExchangeRateService().convertCurrency(
-              item.discountAmount, item.currency, _paymentCurrencyCode);
-          final itemTax = ExchangeRateService().convertCurrency(
-              item.taxAmount, item.currency, _paymentCurrencyCode);
-          final itemTotal = ExchangeRateService().convertCurrency(
-              item.totalAmount, item.currency, _paymentCurrencyCode);
+      currencyCards.add(_buildCurrencySummaryCardWithPaymentCurrency(
+        currency: currency,
+        subtotal: subtotal,
+        discount: totalDiscount,
+        tax: totalTax,
+        total: total,
+        paymentCurrency: _paymentCurrencyCode,
+        onTotalCalculated: (paymentCurrencyAmount) {
+          totalInPaymentCurrency += paymentCurrencyAmount;
+        },
+      ));
+    }
 
-          totalSubtotal += itemSubtotal;
-          totalDiscount += itemDiscount;
-          totalTax += itemTax;
-          totalAmount += itemTotal;
-        }
-
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Özet ($_paymentCurrencyCode)',
-                  style: const TextStyle(
-                    fontSize: 18.0,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-
-                // Ara Toplam
-                _buildSummaryRow(
-                    'Ara Toplam:',
-                    _formatMoney(totalSubtotal,
-                        currency: _paymentCurrencyCode)),
-
-                // İskonto
-                if (totalDiscount > 0)
-                  _buildSummaryRow(
-                      'İskonto:',
-                      _formatMoney(totalDiscount,
-                          currency: _paymentCurrencyCode),
-                      isNegative: true),
-
-                // KDV
-                if (totalTax > 0)
-                  _buildSummaryRow('KDV:',
-                      _formatMoney(totalTax, currency: _paymentCurrencyCode),
-                      isPositive: true),
-
-                const SizedBox(height: 8.0),
-
-                // Kur bilgisi
-                Text(
-                  'Kur: 1 $_paymentCurrencyCode = ${rate.rate.toStringAsFixed(4)} TRY',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-
-                const SizedBox(height: 8.0),
-
-                // Toplam
-                Container(
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: Colors.blue.shade200),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'GENEL TOPLAM:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Text(
-                        _formatMoney(totalAmount,
-                            currency: _paymentCurrencyCode),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+    return Column(
+      children: [
+        // Her para birimi için ayrı kart
+        ...currencyCards,
+        // GENEL TOPLAM kartı
+        const SizedBox(height: 16.0),
+        _buildGrandTotalCardWithPaymentCurrency(totalInPaymentCurrency, _paymentCurrencyCode),
+      ],
     );
   }
 
@@ -1514,6 +1413,131 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     );
   }
 
+  Widget _buildCurrencySummaryCardWithPaymentCurrency({
+    required String currency,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double total,
+    required String paymentCurrency,
+    required Function(double) onTotalCalculated,
+  }) {
+    return FutureBuilder<ExchangeRate?>(
+      future: currency == paymentCurrency
+          ? Future.value(null)
+          : ExchangeRateService().getExchangeRate(currency),
+      builder: (context, snapshot) {
+        final rate = snapshot.data;
+        double totalInPaymentCurrency = total;
+
+        if (rate != null && currency != paymentCurrency) {
+          totalInPaymentCurrency =
+              ExchangeRateService().convertCurrency(total, currency, paymentCurrency);
+          onTotalCalculated(totalInPaymentCurrency);
+        } else if (currency == paymentCurrency) {
+          onTotalCalculated(total);
+        }
+
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Para birimi başlığı
+                Text(
+                  'Para Birimi: $currency',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade700,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+
+                // Ara Toplam
+                _buildSummaryRow(
+                    'Ara Toplam:', _formatMoney(subtotal, currency: currency)),
+
+                // İskonto
+                if (discount > 0)
+                  _buildSummaryRow(
+                      'İskonto:', '-${_formatMoney(discount, currency: currency)}',
+                      isNegative: true),
+
+                // KDV
+                if (tax > 0)
+                  _buildSummaryRow(
+                      'KDV:', '+${_formatMoney(tax, currency: currency)}',
+                      isPositive: true),
+
+                const SizedBox(height: 8.0),
+
+                // Kur bilgisi (ödeme para birimi dışındaki para birimleri için)
+                if (rate != null && currency != paymentCurrency) ...[
+                  Text(
+                    'Kur: 1 $currency = ${rate.rate.toStringAsFixed(4)} $paymentCurrency',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 8.0),
+                ],
+
+                // Toplam
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(color: Colors.green.shade200),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Toplam:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatMoney(total, currency: currency),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.green.shade700,
+                            ),
+                          ),
+                          if (currency != paymentCurrency) ...[
+                            const SizedBox(height: 2.0),
+                            Text(
+                              '(${_formatMoney(totalInPaymentCurrency, currency: paymentCurrency)})',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCurrencySummaryCard({
     required String currency,
     required double subtotal,
@@ -1562,8 +1586,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
                 // İskonto
                 if (discount > 0)
-                  _buildSummaryRow(
-                      'İskonto:', '-${_formatMoney(discount, currency: currency)}',
+                  _buildSummaryRow('İskonto:',
+                      '-${_formatMoney(discount, currency: currency)}',
                       isNegative: true),
 
                 // KDV
@@ -1658,6 +1682,35 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGrandTotalCardWithPaymentCurrency(double totalInPaymentCurrency, String paymentCurrency) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'GENEL TOPLAM ($paymentCurrency):',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.black87,
+              ),
+            ),
+            Text(
+              _formatMoney(totalInPaymentCurrency, currency: paymentCurrency),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.green.shade700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
