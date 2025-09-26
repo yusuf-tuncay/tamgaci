@@ -703,7 +703,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    initialValue: _billingAddress,
+                    value: _billingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Fatura Adresi',
                       border: OutlineInputBorder(),
@@ -723,7 +723,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    initialValue: _shippingAddress,
+                    value: _shippingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Sevk Adresi',
                       border: OutlineInputBorder(),
@@ -2408,7 +2408,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       // Customer seçiliyse customer adreslerini al
       final asyncCustomer = ref.read(customerProvider(customerId));
       String? baseAddress;
-      
+
       if (asyncCustomer.hasValue && asyncCustomer.value != null) {
         baseAddress = isBilling
             ? asyncCustomer.value!.address
@@ -2419,7 +2419,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       }
 
       // Ana adres
-      if (baseAddress != null && baseAddress.isNotEmpty && !seen.contains(baseAddress)) {
+      if (baseAddress != null &&
+          baseAddress.isNotEmpty &&
+          !seen.contains(baseAddress)) {
         seen.add(baseAddress);
         items.add(DropdownMenuItem(
           value: baseAddress,
@@ -2454,7 +2456,18 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       ),
     ));
 
-    return items;
+    // Final duplicate check - bu çok önemli!
+    final finalItems = <DropdownMenuItem<String>>[];
+    final finalSeen = <String>{};
+    
+    for (final item in items) {
+      if (item.value != null && !finalSeen.contains(item.value)) {
+        finalSeen.add(item.value!);
+        finalItems.add(item);
+      }
+    }
+
+    return finalItems;
   }
 
   Future<void> _showAddAddressDialog({required bool isBilling}) async {
