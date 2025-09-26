@@ -914,18 +914,19 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   Widget _buildSummaryCard() {
     // Multi-currency toplam hesaplaması
     final Map<String, double> currencyTotals = {};
-    
+
     for (final item in _items) {
       final currency = item.currency;
       final itemTotal = item.totalAmount;
       currencyTotals[currency] = (currencyTotals[currency] ?? 0.0) + itemTotal;
     }
-    
+
     // İndirim tutarını ana para birimine ekle
     if (_discountAmount > 0) {
-      currencyTotals[_baseCurrencyCode] = (currencyTotals[_baseCurrencyCode] ?? 0.0) - _discountAmount;
+      currencyTotals[_baseCurrencyCode] =
+          (currencyTotals[_baseCurrencyCode] ?? 0.0) - _discountAmount;
     }
-    
+
     // Eski hesaplama (backward compatibility için)
     final gross =
         _items.fold(0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
@@ -1071,7 +1072,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                               final currency = entry.key;
                               final amount = entry.value;
                               if (amount <= 0) return const SizedBox.shrink();
-                              
+
                               return Text(
                                 _formatMoney(amount, currency: currency),
                                 style: const TextStyle(
@@ -1417,20 +1418,22 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     }
   }
 
-  Future<double> _calculateTryEquivalent(Map<String, double> currencyTotals) async {
+  Future<double> _calculateTryEquivalent(
+      Map<String, double> currencyTotals) async {
     double tryTotal = 0.0;
-    
+
     for (final entry in currencyTotals.entries) {
       final currency = entry.key;
       final amount = entry.value;
-      
+
       if (currency == 'TRY') {
         tryTotal += amount;
       } else {
         // Kur servisini kullanarak TRY'ye çevir
         try {
           await ExchangeRateService().getExchangeRate(currency);
-          final convertedAmount = ExchangeRateService().convertCurrency(amount, currency, 'TRY');
+          final convertedAmount =
+              ExchangeRateService().convertCurrency(amount, currency, 'TRY');
           tryTotal += convertedAmount;
         } catch (e) {
           debugPrint('Kur çevirme hatası: $e');
@@ -1439,7 +1442,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         }
       }
     }
-    
+
     return tryTotal;
   }
 
@@ -2636,7 +2639,6 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     );
   }
 
-
   void _addItem() {
     debugPrint('_addItem çağrıldı');
 
@@ -2670,25 +2672,13 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     final quantity = double.parse(_quantityController.text);
     final unitPrice = double.parse(
         _unitPriceController.text.replaceAll('.', '').replaceAll(',', '.'));
-    double priceInBase;
-    if (_lineCurrencyCode == widget.baseCurrencyCode) {
-      priceInBase = unitPrice;
-    } else {
-      final manual = double.tryParse(
-          _manualRateController.text.replaceAll('.', '').replaceAll(',', '.'));
-      if (manual != null && manual > 0) {
-        priceInBase = unitPrice * manual; // 1 LINE = manual BASE
-      } else if (_fxRateToTry != null && _fxRateToTry! > 0) {
-        priceInBase = unitPrice * _fxRateToTry!; // 1 LINE = fx BASE
-      } else {
-        // Son çare: hafızadaki kurlarla çevir
-        priceInBase = ExchangeRateService().convertCurrency(
-            unitPrice, _lineCurrencyCode, widget.baseCurrencyCode);
-      }
-    }
+    
+    // unitPrice'ı orijinal para biriminde tut (USD ise USD olarak)
     final discountRate = double.tryParse(_discountRateController.text) ?? 0.0;
     final taxRate = double.tryParse(_taxRateController.text) ?? 0.0;
-    final gross = quantity * priceInBase;
+    
+    // Hesaplamaları orijinal para biriminde yap
+    final gross = quantity * unitPrice;
     final discountAmount = (gross * (discountRate / 100));
     final net = gross - discountAmount;
     final taxAmount = net * (taxRate / 100);
@@ -2713,13 +2703,13 @@ class _AddItemDialogState extends State<_AddItemDialog> {
           ? _productDescriptionController.text
           : null,
       quantity: quantity,
-      unitPrice: priceInBase,
+      unitPrice: unitPrice, // Orijinal para biriminde (USD ise USD)
       discountRate: discountRate,
       discountAmount: discountAmount,
       taxRate: taxRate,
       taxAmount: taxAmount,
       totalAmount: totalAmount,
-      currency: _lineCurrencyCode,
+      currency: _lineCurrencyCode, // Orijinal para birimi (USD)
     );
 
     debugPrint('Ürün ekleniyor: ${item.productName}');
