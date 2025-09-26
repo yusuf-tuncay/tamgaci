@@ -896,6 +896,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   }
 
   Widget _buildProductsTable() {
+    // Aynı ürün, aynı para birimi ve aynı birim fiyat olan ürünleri birleştir
+    final mergedItems = _mergeIdenticalItems(_items);
+
     return Card(
       child: Column(
         children: [
@@ -953,10 +956,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: _items.length,
+            itemCount: mergedItems.length,
             separatorBuilder: (context, index) => const Divider(height: 1.0),
             itemBuilder: (context, index) {
-              final item = _items[index];
+              final item = mergedItems[index];
               return _buildProductRow(item, index);
             },
           ),
@@ -973,6 +976,47 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         fontSize: 14,
       ),
     );
+  }
+
+  /// Aynı ürün, aynı para birimi ve aynı birim fiyat olan ürünleri birleştir
+  List<SaleItem> _mergeIdenticalItems(List<SaleItem> items) {
+    if (items.isEmpty) return items;
+
+    // Birleştirme için Map kullan
+    final Map<String, SaleItem> mergedMap = {};
+
+    for (final item in items) {
+      // Benzersiz anahtar oluştur: productId + currency + unitPrice + taxRate + discountRate
+      final key =
+          '${item.productId}_${item.currency}_${item.unitPrice}_${item.taxRate}_${item.discountRate}';
+
+      if (mergedMap.containsKey(key)) {
+        // Mevcut ürünü güncelle
+        final existingItem = mergedMap[key]!;
+        final mergedItem = SaleItem(
+          id: existingItem.id,
+          saleId: existingItem.saleId,
+          productId: existingItem.productId,
+          productName: existingItem.productName,
+          productDescription: existingItem.productDescription,
+          productSku: existingItem.productSku,
+          quantity: existingItem.quantity + item.quantity,
+          unitPrice: existingItem.unitPrice,
+          discountRate: existingItem.discountRate,
+          discountAmount: existingItem.discountAmount + item.discountAmount,
+          taxRate: existingItem.taxRate,
+          taxAmount: existingItem.taxAmount + item.taxAmount,
+          totalAmount: existingItem.totalAmount + item.totalAmount,
+          currency: existingItem.currency,
+        );
+        mergedMap[key] = mergedItem;
+      } else {
+        // Yeni ürün ekle
+        mergedMap[key] = item;
+      }
+    }
+
+    return mergedMap.values.toList();
   }
 
   Widget _buildProductRow(SaleItem item, int index) {
@@ -1031,7 +1075,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
         // Miktar
         Text(
-          '${item.quantity.toStringAsFixed(0)}',
+          item.quantity.toStringAsFixed(0),
           style: const TextStyle(fontSize: 12),
         ),
 
@@ -1188,29 +1232,69 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   }
 
   Widget _buildSummaryCard() {
-    // Multi-currency toplam hesaplaması
-    final Map<String, double> currencyTotals = {};
+    if (_items.isEmpty) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Özet',
+                style: TextStyle(
+                  fontSize: 18.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 16.0),
+              Center(
+                child: Text(
+                  'Henüz ürün eklenmedi',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
+    // Para birimi bazlı gruplandırma
+    final Map<String, List<SaleItem>> itemsByCurrency = {};
     for (final item in _items) {
       final currency = item.currency;
-      final itemTotal = item.totalAmount;
-      currencyTotals[currency] = (currencyTotals[currency] ?? 0.0) + itemTotal;
+      if (!itemsByCurrency.containsKey(currency)) {
+        itemsByCurrency[currency] = [];
+      }
+      itemsByCurrency[currency]!.add(item);
     }
 
-    // İndirim tutarını ana para birimine ekle
-    if (_discountAmount > 0) {
-      currencyTotals[_baseCurrencyCode] =
-          (currencyTotals[_baseCurrencyCode] ?? 0.0) - _discountAmount;
-    }
+    // Her para birimi için hesaplamalar
+    final List<Widget> currencyCards = [];
+    double totalInTRY = 0.0;
 
-    // Eski hesaplama (backward compatibility için)
-    final gross =
-        _items.fold(0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
-    final totalDiscount =
-        _items.fold(0.0, (sum, item) => sum + item.discountAmount);
-    final subtotal = gross - totalDiscount;
-    final taxAmount = _items.fold(0.0, (sum, item) => sum + item.taxAmount);
-    final total = subtotal + taxAmount - _discountAmount;
+    for (final currency in itemsByCurrency.keys) {
+      final items = itemsByCurrency[currency]!;
+
+      // Bu para birimi için hesaplamalar
+      final subtotal = items.fold(
+          0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
+      final totalDiscount =
+          items.fold(0.0, (sum, item) => sum + item.discountAmount);
+      final totalTax = items.fold(0.0, (sum, item) => sum + item.taxAmount);
+      final total = subtotal - totalDiscount + totalTax;
+
+      currencyCards.add(_buildCurrencySummaryCard(
+        currency: currency,
+        subtotal: subtotal,
+        discount: totalDiscount,
+        tax: totalTax,
+        total: total,
+        onTotalCalculated: (tryAmount) {
+          totalInTRY += tryAmount;
+        },
+      ));
+    }
 
     return Card(
       child: Padding(
@@ -1226,397 +1310,195 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
               ),
             ),
             const SizedBox(height: 16.0),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Ara Toplam (İskonto sonrası):',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    _formatMoney(subtotal),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8.0),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Toplam KDV:',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    _formatMoney(taxAmount),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8.0),
-            Row(
-              children: [
-                const Expanded(
-                  child: Text(
-                    'Ek İndirim:',
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    _formatMoney(_discountAmount),
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
-                  ),
-                ),
-              ],
-            ),
-            const Divider(),
-            Consumer(builder: (context, ref, _) {
-              final settingsAsync = ref.watch(settingsProvider);
-              return settingsAsync.when(
-                data: (s) {
-                  final code = s.currency.name.toUpperCase() == 'TRY'
-                      ? 'TRY'
-                      : s.currency.name.toUpperCase();
-                  if (code == 'TRY') return const SizedBox.shrink();
-                  return FutureBuilder<ExchangeRate?>(
-                    future: ExchangeRateService().getExchangeRate(code),
-                    builder: (context, snap) {
-                      final rate = snap.data;
-                      if (rate == null) return const SizedBox.shrink();
-                      final totalInFx = ExchangeRateService()
-                          .convertCurrency(total, 'TRY', rate.code);
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('Toplam (${rate.code}):'),
-                              Text(
-                                  '${rate.symbol}${_formatMoney(totalInFx, currency: code)}'),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Kur: 1 ${rate.code} = ${rate.rate.toStringAsFixed(4)} TRY',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              );
-            }),
-            Builder(builder: (context) {
-              if (_paymentCurrencyCode == 'TRY') {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Toplam:',
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            // Multi-currency toplam gösterimi
-                            ...currencyTotals.entries.map((entry) {
-                              final currency = entry.key;
-                              final amount = entry.value;
-                              if (amount <= 0) return const SizedBox.shrink();
-
-                              return Text(
-                                _formatMoney(amount, currency: currency),
-                                style: const TextStyle(
-                                  fontSize: 18.0,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      ],
-                    ),
-                    // TRY karşılığı (farklı para birimleri varsa)
-                    if (currencyTotals.keys.any((c) => c != 'TRY')) ...[
-                      const SizedBox(height: 8),
-                      FutureBuilder<double>(
-                        future: _calculateTryEquivalent(currencyTotals),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) return const SizedBox.shrink();
-                          final tryTotal = snapshot.data!;
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'TRY Karşılığı:',
-                                style: TextStyle(
-                                  fontSize: 14.0,
-                                  fontStyle: FontStyle.italic,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              Text(
-                                '≈ ${_formatMoney(tryTotal, currency: 'TRY')}',
-                                style: const TextStyle(
-                                  fontSize: 14.0,
-                                  fontStyle: FontStyle.italic,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                  ],
-                );
-              }
-
-              // Ödeme para birimi seçilmiş -> Toplamı ödeme para birimine çevir
-              double? manual;
-              if (_paymentFxController.text.trim().isNotEmpty) {
-                manual = double.tryParse(_paymentFxController.text
-                    .replaceAll('.', '')
-                    .replaceAll(',', '.'));
-              }
-
-              if (manual != null && manual > 0) {
-                final payAmount = total / manual; // TRY -> PAY
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Toplam ($_paymentCurrencyCode):',
-                          style: const TextStyle(
-                            fontSize: 16.0,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Flexible(
-                          child: Text(
-                            _formatMoney(payAmount,
-                                currency: _paymentCurrencyCode),
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              fontSize: 18.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      () {
-                        final baseVal = _baseCurrencyCode == 'TRY'
-                            ? total
-                            : ExchangeRateService().convertCurrency(
-                                total, 'TRY', _baseCurrencyCode);
-                        final m = manual ?? 0.0;
-                        final mTxt = m > 0 ? m.toStringAsFixed(4) : '—';
-                        return '≈ ${_formatMoney(baseVal, currency: _baseCurrencyCode)}  •  Kur: 1 $_paymentCurrencyCode = $mTxt TRY';
-                      }(),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                );
-              }
-
-              // Manuel yoksa otomatik kurla göster
-              return FutureBuilder<ExchangeRate?>(
-                future:
-                    ExchangeRateService().getExchangeRate(_paymentCurrencyCode),
-                builder: (context, snap) {
-                  final rate = snap.data;
-                  if (rate == null || rate.rate <= 0) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Toplam ($_paymentCurrencyCode):',
-                              style: const TextStyle(
-                                fontSize: 16.0,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text('—')
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        const Text('Kur yükleniyor...',
-                            style: TextStyle(fontSize: 12, color: Colors.grey)),
-                        const SizedBox(height: 8),
-                      ],
-                    );
-                  }
-                  final payAmount = total / rate.rate; // TRY -> PAY
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Toplam ($_paymentCurrencyCode):',
-                            style: const TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Flexible(
-                            child: Text(
-                              _formatMoney(payAmount,
-                                  currency: _paymentCurrencyCode),
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                fontSize: 18.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        () {
-                          final baseVal = _baseCurrencyCode == 'TRY'
-                              ? total
-                              : ExchangeRateService().convertCurrency(
-                                  total, 'TRY', _baseCurrencyCode);
-                          return '≈ ${_formatMoney(baseVal, currency: _baseCurrencyCode)}  •  Kur: 1 ${rate.code} = ${rate.rate.toStringAsFixed(4)} TRY';
-                        }(),
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  );
-                },
-              );
-            }),
-            // Bilgi amaçlı çapraz para birimi gösterimleri
-            Consumer(builder: (context, ref, _) {
-              final settingsAsync = ref.watch(settingsProvider);
-              return settingsAsync.when(
-                data: (s) {
-                  // Uygulama varsayılan para birimi
-                  final appCurrency = s.currency.name.toUpperCase() == 'TRY'
-                      ? 'TRY'
-                      : s.currency.name.toUpperCase();
-
-                  // Müşterinin varsayılan para birimi (müşteri yüklenmişse)
-                  final customerId = _customerIdController.text;
-                  return FutureBuilder<String?>(
-                    future: customerId.isEmpty
-                        ? Future<String?>.value(null)
-                        : ref.read(customerProvider(customerId)).maybeWhen(
-                              data: (c) =>
-                                  Future<String?>.value(c?.customerCurrency),
-                              orElse: () => Future<String?>.value(null),
-                            ),
-                    builder: (context, snapCcy) {
-                      final customerCurrency =
-                          (snapCcy.data ?? '').toUpperCase();
-                      // Case A: Uygulama TRY, müşteri farklı (örn. USD)
-                      // Case B: Uygulama USD, müşteri TRY veya farklı
-                      final fxCode = customerCurrency.isNotEmpty
-                          ? customerCurrency
-                          : appCurrency;
-                      if (fxCode.isEmpty || fxCode == 'TRY') {
-                        return const SizedBox.shrink();
-                      }
-                      return FutureBuilder<ExchangeRate?>(
-                        future: ExchangeRateService().getExchangeRate(fxCode),
-                        builder: (context, snapRate) {
-                          final rate = snapRate.data;
-                          if (rate == null) return const SizedBox.shrink();
-                          // App currency → TRY bazlı; toplamı müşteri/app dövizine çevirip bilgi olarak göster
-                          final toAppFx = ExchangeRateService()
-                              .convertCurrency(total, 'TRY', appCurrency);
-                          final toCustomerFx = ExchangeRateService()
-                              .convertCurrency(total, 'TRY', rate.code);
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (appCurrency != 'TRY')
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('Toplam ($appCurrency):'),
-                                    Text(_formatMoney(toAppFx,
-                                        currency: appCurrency)),
-                                  ],
-                                ),
-                              if (customerCurrency.isNotEmpty &&
-                                  customerCurrency != 'TRY')
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                        'Toplam (${rate.code}) (müşteri bazlı):'),
-                                    Text(
-                                        '${rate.symbol}${_formatMoney(toCustomerFx, currency: rate.code)}'),
-                                  ],
-                                ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Kur: 1 ${rate.code} = ${rate.rate.toStringAsFixed(4)} TRY',
-                                style: const TextStyle(
-                                    fontSize: 12, color: Colors.grey),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              );
-            }),
+            ...currencyCards,
+            if (currencyCards.length > 1) ...[
+              const SizedBox(height: 16.0),
+              const Divider(),
+              const SizedBox(height: 8.0),
+              _buildGrandTotalCard(totalInTRY),
+            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCurrencySummaryCard({
+    required String currency,
+    required double subtotal,
+    required double discount,
+    required double tax,
+    required double total,
+    required Function(double) onTotalCalculated,
+  }) {
+    return FutureBuilder<ExchangeRate?>(
+      future: currency == 'TRY'
+          ? Future.value(null)
+          : ExchangeRateService().getExchangeRate(currency),
+      builder: (context, snapshot) {
+        final rate = snapshot.data;
+        double totalInTRY = total;
+
+        if (rate != null) {
+          totalInTRY =
+              ExchangeRateService().convertCurrency(total, currency, 'TRY');
+          onTotalCalculated(totalInTRY);
+        } else if (currency == 'TRY') {
+          onTotalCalculated(total);
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12.0),
+          padding: const EdgeInsets.all(12.0),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(8.0),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Para birimi başlığı
+              Text(
+                'Para Birimi: $currency',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade700,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12.0),
+
+              // Ara Toplam
+              _buildSummaryRow(
+                  'Ara Toplam:', _formatMoney(subtotal, currency: currency)),
+
+              // İskonto
+              if (discount > 0)
+                _buildSummaryRow(
+                    'İskonto:', _formatMoney(discount, currency: currency),
+                    isNegative: true),
+
+              // KDV
+              if (tax > 0)
+                _buildSummaryRow('KDV:', _formatMoney(tax, currency: currency),
+                    isPositive: true),
+
+              const SizedBox(height: 8.0),
+
+              // Kur bilgisi (TRY dışındaki para birimleri için)
+              if (rate != null) ...[
+                Text(
+                  'Kur: 1 $currency = ${rate.rate.toStringAsFixed(4)} TRY',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+              ],
+
+              // Toplam
+              Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(6.0),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Toplam:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          _formatMoney(total, currency: currency),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                        if (rate != null)
+                          Text(
+                            '(${_formatMoney(totalInTRY, currency: 'TRY')})',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value,
+      {bool isNegative = false, bool isPositive = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: isNegative
+                  ? Colors.red.shade600
+                  : isPositive
+                      ? Colors.green.shade600
+                      : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGrandTotalCard(double totalInTRY) {
+    return Container(
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8.0),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'GENEL TOPLAM (TRY):',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          Text(
+            _formatMoney(totalInTRY, currency: 'TRY'),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: Colors.green.shade700,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1692,34 +1574,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         _dueDate = date;
       });
     }
-  }
-
-  Future<double> _calculateTryEquivalent(
-      Map<String, double> currencyTotals) async {
-    double tryTotal = 0.0;
-
-    for (final entry in currencyTotals.entries) {
-      final currency = entry.key;
-      final amount = entry.value;
-
-      if (currency == 'TRY') {
-        tryTotal += amount;
-      } else {
-        // Kur servisini kullanarak TRY'ye çevir
-        try {
-          await ExchangeRateService().getExchangeRate(currency);
-          final convertedAmount =
-              ExchangeRateService().convertCurrency(amount, currency, 'TRY');
-          tryTotal += convertedAmount;
-        } catch (e) {
-          debugPrint('Kur çevirme hatası: $e');
-          // Hata durumunda orijinal tutarı ekle (fallback)
-          tryTotal += amount;
-        }
-      }
-    }
-
-    return tryTotal;
   }
 
   void _addItem() {
