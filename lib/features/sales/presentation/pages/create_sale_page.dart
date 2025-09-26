@@ -1258,30 +1258,16 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       ));
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Özet',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            ...currencyCards,
-            if (currencyCards.length > 1) ...[
-              const SizedBox(height: 16.0),
-              const Divider(),
-              const SizedBox(height: 8.0),
-              _buildGrandTotalCard(totalInTRY),
-            ],
-          ],
-        ),
-      ),
+    return Column(
+      children: [
+        // Her para birimi için ayrı kart
+        ...currencyCards,
+        // GENEL TOPLAM kartı (birden fazla para birimi varsa)
+        if (currencyCards.length > 1) ...[
+          const SizedBox(height: 16.0),
+          _buildGrandTotalCard(totalInTRY),
+        ],
+      ],
     );
   }
 
@@ -1297,21 +1283,21 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         final rate = snapshot.data;
 
         if (rate == null) {
-          return Card(
+          return const Card(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Özet',
                     style: TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 16.0),
-                  const Center(
+                  SizedBox(height: 16.0),
+                  Center(
                     child: Text(
                       'Kur bilgisi yükleniyor...',
                       style: TextStyle(color: Colors.grey),
@@ -1551,15 +1537,11 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           onTotalCalculated(total);
         }
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12.0),
-          padding: const EdgeInsets.all(12.0),
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            borderRadius: BorderRadius.circular(8.0),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Column(
+        return Card(
+          margin: const EdgeInsets.only(bottom: 16.0),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Para birimi başlığı
@@ -1571,7 +1553,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   fontSize: 16,
                 ),
               ),
-              const SizedBox(height: 12.0),
+              const SizedBox(height: 16.0),
 
               // Ara Toplam
               _buildSummaryRow(
@@ -1604,10 +1586,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
               // Toplam
               Container(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(6.0),
+                  borderRadius: BorderRadius.circular(8.0),
                   border: Border.all(color: Colors.green.shade200),
                 ),
                 child: Row(
@@ -1631,7 +1613,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                             color: Colors.green.shade700,
                           ),
                         ),
-                        if (rate != null)
+                        if (rate != null) ...[
+                          const SizedBox(height: 2.0),
                           Text(
                             '(${_formatMoney(totalInTRY, currency: 'TRY')})',
                             style: TextStyle(
@@ -1639,6 +1622,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                               color: Colors.grey.shade600,
                             ),
                           ),
+                        ],
                       ],
                     ),
                   ],
@@ -1646,7 +1630,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
               ),
             ],
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -1676,33 +1661,30 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   }
 
   Widget _buildGrandTotalCard(double totalInTRY) {
-    return Container(
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(8.0),
-        border: Border.all(color: Colors.blue.shade200),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            'GENEL TOPLAM (TRY):',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Colors.black87,
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'GENEL TOPLAM (TRY):',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.black87,
+              ),
             ),
-          ),
-          Text(
-            _formatMoney(totalInTRY, currency: 'TRY'),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              color: Colors.green.shade700,
+            Text(
+              _formatMoney(totalInTRY, currency: 'TRY'),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.green.shade700,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
