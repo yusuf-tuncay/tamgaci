@@ -1259,7 +1259,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       );
     }
 
-    // Para birimi bazlı gruplandırma
+    // Ödeme para birimi seçilmişse, tüm hesaplamaları o para birimine göre yap
+    if (_paymentCurrencyCode.isNotEmpty) {
+      return _buildPaymentCurrencySummary();
+    }
+
+    // Para birimi bazlı gruplandırma (ödeme para birimi seçilmemişse)
     final Map<String, List<SaleItem>> itemsByCurrency = {};
     for (final item in _items) {
       final currency = item.currency;
@@ -1317,6 +1322,248 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
               const SizedBox(height: 8.0),
               _buildGrandTotalCard(totalInTRY),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPaymentCurrencySummary() {
+    // TRY seçilmişse kur servisine gerek yok
+    if (_paymentCurrencyCode == 'TRY') {
+      return _buildTryPaymentSummary();
+    }
+
+    return FutureBuilder<ExchangeRate?>(
+      future: ExchangeRateService().getExchangeRate(_paymentCurrencyCode),
+      builder: (context, snapshot) {
+        final rate = snapshot.data;
+
+        if (rate == null) {
+          return Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Özet',
+                    style: TextStyle(
+                      fontSize: 18.0,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16.0),
+                  const Center(
+                    child: Text(
+                      'Kur bilgisi yükleniyor...',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        // Tüm ürünleri ödeme para birimine çevir
+        double totalSubtotal = 0.0;
+        double totalDiscount = 0.0;
+        double totalTax = 0.0;
+        double totalAmount = 0.0;
+
+        for (final item in _items) {
+          // Her ürünün tutarlarını ödeme para birimine çevir
+          final itemSubtotal = ExchangeRateService().convertCurrency(
+              item.unitPrice * item.quantity,
+              item.currency,
+              _paymentCurrencyCode);
+          final itemDiscount = ExchangeRateService().convertCurrency(
+              item.discountAmount, item.currency, _paymentCurrencyCode);
+          final itemTax = ExchangeRateService().convertCurrency(
+              item.taxAmount, item.currency, _paymentCurrencyCode);
+          final itemTotal = ExchangeRateService().convertCurrency(
+              item.totalAmount, item.currency, _paymentCurrencyCode);
+
+          totalSubtotal += itemSubtotal;
+          totalDiscount += itemDiscount;
+          totalTax += itemTax;
+          totalAmount += itemTotal;
+        }
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Özet ($_paymentCurrencyCode)',
+                  style: const TextStyle(
+                    fontSize: 18.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+
+                // Ara Toplam
+                _buildSummaryRow(
+                    'Ara Toplam:',
+                    _formatMoney(totalSubtotal,
+                        currency: _paymentCurrencyCode)),
+
+                // İskonto
+                if (totalDiscount > 0)
+                  _buildSummaryRow(
+                      'İskonto:',
+                      _formatMoney(totalDiscount,
+                          currency: _paymentCurrencyCode),
+                      isNegative: true),
+
+                // KDV
+                if (totalTax > 0)
+                  _buildSummaryRow('KDV:',
+                      _formatMoney(totalTax, currency: _paymentCurrencyCode),
+                      isPositive: true),
+
+                const SizedBox(height: 8.0),
+
+                // Kur bilgisi
+                Text(
+                  'Kur: 1 $_paymentCurrencyCode = ${rate.rate.toStringAsFixed(4)} TRY',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+
+                const SizedBox(height: 8.0),
+
+                // Toplam
+                Container(
+                  padding: const EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8.0),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'GENEL TOPLAM:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        _formatMoney(totalAmount,
+                            currency: _paymentCurrencyCode),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTryPaymentSummary() {
+    // TRY seçilmişse, tüm ürünleri TRY'ye çevir (zaten TRY olanlar aynı kalır)
+    double totalSubtotal = 0.0;
+    double totalDiscount = 0.0;
+    double totalTax = 0.0;
+    double totalAmount = 0.0;
+
+    for (final item in _items) {
+      // Her ürünün tutarlarını TRY'ye çevir
+      final itemSubtotal = ExchangeRateService().convertCurrency(
+          item.unitPrice * item.quantity, item.currency, 'TRY');
+      final itemDiscount = ExchangeRateService()
+          .convertCurrency(item.discountAmount, item.currency, 'TRY');
+      final itemTax = ExchangeRateService()
+          .convertCurrency(item.taxAmount, item.currency, 'TRY');
+      final itemTotal = ExchangeRateService()
+          .convertCurrency(item.totalAmount, item.currency, 'TRY');
+
+      totalSubtotal += itemSubtotal;
+      totalDiscount += itemDiscount;
+      totalTax += itemTax;
+      totalAmount += itemTotal;
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Özet (TRY)',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16.0),
+
+            // Ara Toplam
+            _buildSummaryRow(
+                'Ara Toplam:', _formatMoney(totalSubtotal, currency: 'TRY')),
+
+            // İskonto
+            if (totalDiscount > 0)
+              _buildSummaryRow(
+                  'İskonto:', _formatMoney(totalDiscount, currency: 'TRY'),
+                  isNegative: true),
+
+            // KDV
+            if (totalTax > 0)
+              _buildSummaryRow('KDV:', _formatMoney(totalTax, currency: 'TRY'),
+                  isPositive: true),
+
+            const SizedBox(height: 8.0),
+
+            // Toplam
+            Container(
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8.0),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'GENEL TOPLAM:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  Text(
+                    _formatMoney(totalAmount, currency: 'TRY'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
