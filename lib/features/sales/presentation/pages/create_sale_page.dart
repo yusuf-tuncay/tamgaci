@@ -703,7 +703,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    initialValue: _billingAddress,
+                    value: _billingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Fatura Adresi',
                       border: OutlineInputBorder(),
@@ -723,7 +723,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    initialValue: _shippingAddress,
+                    value: _shippingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Sevk Adresi',
                       border: OutlineInputBorder(),
@@ -2466,9 +2466,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         deduped.add(it);
       }
     }
-    items
-      ..clear()
-      ..addAll(deduped);
+    items.clear();
+    items.addAll(deduped);
     // Yeni adres ekle seçeneği
     items.add(const DropdownMenuItem(
       value: _kNewAddressValue,
