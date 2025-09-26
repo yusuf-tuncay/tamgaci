@@ -184,12 +184,16 @@ class DashboardStatsCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
-            CurrencyHelper.formatCurrency(value, currency),
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: isDark ? Colors.white : Colors.grey[900],
+          Flexible(
+            child: Text(
+              CurrencyHelper.formatCurrency(value, currency),
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : Colors.grey[900],
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
             ),
           ),
         ],
