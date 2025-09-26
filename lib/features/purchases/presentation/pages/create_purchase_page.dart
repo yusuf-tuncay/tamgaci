@@ -407,7 +407,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                                   ),
                                   for (final w in list)
                                     DropdownMenuItem(
-                                        value: w.id, child: Text(w.name)),
+                                        value: w.id, 
+                                        child: Text(w.code != null && w.code!.isNotEmpty 
+                                            ? '${w.name} (${w.code})' 
+                                            : w.name)),
                                 ];
                                 String? value = _selectedWarehouse?.id;
                                 final values =
@@ -497,7 +500,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                                     ),
                                     for (final w in list)
                                       DropdownMenuItem(
-                                          value: w.id, child: Text(w.name)),
+                                          value: w.id, 
+                                          child: Text(w.code != null && w.code!.isNotEmpty 
+                                              ? '${w.name} (${w.code})' 
+                                              : w.name)),
                                   ],
                                   orElse: () => [
                                     const DropdownMenuItem(
