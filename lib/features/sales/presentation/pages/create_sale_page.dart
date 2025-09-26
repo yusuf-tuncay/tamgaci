@@ -912,6 +912,21 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   }
 
   Widget _buildSummaryCard() {
+    // Multi-currency toplam hesaplaması
+    final Map<String, double> currencyTotals = {};
+    
+    for (final item in _items) {
+      final currency = item.currency;
+      final itemTotal = item.totalAmount;
+      currencyTotals[currency] = (currencyTotals[currency] ?? 0.0) + itemTotal;
+    }
+    
+    // İndirim tutarını ana para birimine ekle
+    if (_discountAmount > 0) {
+      currencyTotals[_baseCurrencyCode] = (currencyTotals[_baseCurrencyCode] ?? 0.0) - _discountAmount;
+    }
+    
+    // Eski hesaplama (backward compatibility için)
     final gross =
         _items.fold(0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
     final totalDiscount =
@@ -1048,16 +1063,60 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Text(
-                          _formatMoney(total, currency: _baseCurrencyCode),
-                          style: const TextStyle(
-                            fontSize: 18.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            // Multi-currency toplam gösterimi
+                            ...currencyTotals.entries.map((entry) {
+                              final currency = entry.key;
+                              final amount = entry.value;
+                              if (amount <= 0) return const SizedBox.shrink();
+                              
+                              return Text(
+                                _formatMoney(amount, currency: currency),
+                                style: const TextStyle(
+                                  fontSize: 18.0,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              );
+                            }).toList(),
+                          ],
                         ),
                       ],
                     ),
+                    // TRY karşılığı (farklı para birimleri varsa)
+                    if (currencyTotals.keys.any((c) => c != 'TRY')) ...[
+                      const SizedBox(height: 8),
+                      FutureBuilder<double>(
+                        future: _calculateTryEquivalent(currencyTotals),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData) return const SizedBox.shrink();
+                          final tryTotal = snapshot.data!;
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'TRY Karşılığı:',
+                                style: TextStyle(
+                                  fontSize: 14.0,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                              Text(
+                                '≈ ${_formatMoney(tryTotal, currency: 'TRY')}',
+                                style: const TextStyle(
+                                  fontSize: 14.0,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 8),
                   ],
                 );
@@ -1356,6 +1415,32 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         _dueDate = date;
       });
     }
+  }
+
+  Future<double> _calculateTryEquivalent(Map<String, double> currencyTotals) async {
+    double tryTotal = 0.0;
+    
+    for (final entry in currencyTotals.entries) {
+      final currency = entry.key;
+      final amount = entry.value;
+      
+      if (currency == 'TRY') {
+        tryTotal += amount;
+      } else {
+        // Kur servisini kullanarak TRY'ye çevir
+        try {
+          await ExchangeRateService().getExchangeRate(currency);
+          final convertedAmount = ExchangeRateService().convertCurrency(amount, currency, 'TRY');
+          tryTotal += convertedAmount;
+        } catch (e) {
+          debugPrint('Kur çevirme hatası: $e');
+          // Hata durumunda orijinal tutarı ekle (fallback)
+          tryTotal += amount;
+        }
+      }
+    }
+    
+    return tryTotal;
   }
 
   void _addItem() {
@@ -2440,8 +2525,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                           final rate = ExchangeRateService().convertCurrency(
                               1.0, _lineCurrencyCode, widget.baseCurrencyCode);
                           setState(() {
-                            _manualRateController.text =
-                                _formatTrNumber(rate);
+                            _manualRateController.text = _formatTrNumber(rate);
                           });
                         },
                         child: const Text('Kuru Getir'),
@@ -2561,12 +2645,13 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     );
   }
 
+
   void _addItem() {
-    print('_addItem çağrıldı');
+    debugPrint('_addItem çağrıldı');
 
     // Form validation'ı atla, manuel kontrol yap
     if (_quantityController.text.isEmpty) {
-      print('Miktar boş');
+      debugPrint('Miktar boş');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Miktar gerekli')),
       );
@@ -2574,7 +2659,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     }
 
     if (_unitPriceController.text.isEmpty) {
-      print('Birim fiyat boş');
+      debugPrint('Birim fiyat boş');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Birim fiyat gerekli')),
       );
@@ -2582,9 +2667,9 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     }
 
     // Ürün seçilmiş mi kontrol et
-    print('Ürün ID: ${_productIdController.text}');
+    debugPrint('Ürün ID: ${_productIdController.text}');
     if (_productIdController.text.isEmpty) {
-      print('Ürün seçilmemiş');
+      debugPrint('Ürün seçilmemiş');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Lütfen bir ürün seçiniz')),
       );
@@ -2646,9 +2731,9 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       currency: _lineCurrencyCode,
     );
 
-    print('Ürün ekleniyor: ${item.productName}');
+    debugPrint('Ürün ekleniyor: ${item.productName}');
     widget.onAdd(item);
-    print('Ürün eklendi, dialog kapatılıyor');
+    debugPrint('Ürün eklendi, dialog kapatılıyor');
     Navigator.pop(context);
   }
 }
