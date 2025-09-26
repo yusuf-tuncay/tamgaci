@@ -503,6 +503,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                         : 'Müşteri seçiniz',
                     style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
+                  if (_hasSelectedCustomer) ...[
+                    const SizedBox(height: 16),
+                    _buildCustomerCard(),
+                  ],
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -522,32 +526,153 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: 220,
+                    child: DropdownButtonFormField<SaleType>(
+                      initialValue: _selectedType,
+                      decoration: const InputDecoration(
+                        labelText: 'İşlem Türü',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        SaleType.invoice,
+                        SaleType.waybill,
+                        SaleType.proforma
+                      ]
+                          .map((type) => DropdownMenuItem(
+                                value: type,
+                                child: Text(type.displayName),
+                              ))
+                          .toList(),
+                      onChanged: (value) =>
+                          setState(() => _selectedType = value!),
+                    ),
+                  ),
                 ],
-              ),
-            ),
-            SizedBox(
-              width: 220,
-              child: DropdownButtonFormField<SaleType>(
-                initialValue: _selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'İşlem Türü',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  SaleType.invoice,
-                  SaleType.waybill,
-                  SaleType.proforma
-                ]
-                    .map((type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type.displayName),
-                        ))
-                    .toList(),
-                onChanged: (value) => setState(() => _selectedType = value!),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerCard() {
+    return Consumer(
+      builder: (context, ref, child) {
+        final customerAsync =
+            ref.watch(customerProvider(_customerIdController.text));
+
+        return customerAsync.when(
+          data: (customer) {
+            if (customer == null) return const SizedBox.shrink();
+
+            return Card(
+              elevation: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.person,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Müşteri Bilgileri',
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildCustomerInfoRow('Ad', customer.name),
+                    if (customer.customerCode != null &&
+                        customer.customerCode!.isNotEmpty)
+                      _buildCustomerInfoRow('Kod', customer.customerCode!),
+                    if (customer.phone != null && customer.phone!.isNotEmpty)
+                      _buildCustomerInfoRow('Telefon', customer.phone!),
+                    if (customer.email != null && customer.email!.isNotEmpty)
+                      _buildCustomerInfoRow('E-posta', customer.email!),
+                    if (customer.address != null &&
+                        customer.address!.isNotEmpty)
+                      _buildCustomerInfoRow('Adres', customer.address!),
+                    if (customer.taxNumber != null &&
+                        customer.taxNumber!.isNotEmpty)
+                      _buildCustomerInfoRow('Vergi No', customer.taxNumber!),
+                    if (customer.creditLimit > 0)
+                      _buildCustomerInfoRow('Kredi Limiti',
+                          '${customer.creditLimit.toStringAsFixed(2)} ${customer.balanceCurrency}'),
+                    if (customer.currentBalance != 0)
+                      _buildCustomerInfoRow(
+                        'Mevcut Bakiye',
+                        '${customer.currentBalance.toStringAsFixed(2)} ${customer.balanceCurrency}',
+                        isBalance: true,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+          loading: () => const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          error: (error, stack) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                'Müşteri bilgileri yüklenemedi: $error',
+                style: const TextStyle(color: Colors.red),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCustomerInfoRow(String label, String value,
+      {bool isBalance = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: isBalance
+                        ? (value.startsWith('-') ? Colors.red : Colors.green)
+                        : Theme.of(context).colorScheme.onSurface,
+                    fontWeight: isBalance ? FontWeight.w600 : FontWeight.normal,
+                  ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -582,8 +707,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     items: warehouses
                         .map((w) => DropdownMenuItem<String>(
                               value: w.id,
-                              child: Text(w.code != null && w.code!.isNotEmpty 
-                                  ? '${w.name} (${w.code})' 
+                              child: Text(w.code != null && w.code!.isNotEmpty
+                                  ? '${w.name} (${w.code})'
                                   : w.name),
                             ))
                         .toList(),
@@ -610,39 +735,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                       }
                       return null;
                     },
-                  ),
-                ),
-                const SizedBox(width: 16.0),
-                const SizedBox(width: 16.0),
-                Expanded(
-                  child: TextFormField(
-                    controller: _customerIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'Müşteri ID',
-                      border: OutlineInputBorder(),
-                    ),
-                    readOnly: true,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Müşteri ID gerekli';
-                      }
-                      return null;
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16.0),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _customerNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Müşteri Adı',
-                      border: OutlineInputBorder(),
-                    ),
-                    readOnly: true,
                   ),
                 ),
               ],
@@ -2060,8 +2152,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
             });
           },
           displayStringForOption: (Product p) {
-            final left = (p.productCode ?? p.sku ?? p.barcode ?? '').trim();
-            return left.isEmpty ? p.name : '$left • ${p.name}';
+            return p.name;
           },
           fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
             return TextFormField(
@@ -2109,19 +2200,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
               18.0, // Varsayılan KDV oranı
               p.salesCurrency,
             );
-            final state =
-                context.findAncestorStateOfType<_AddItemDialogState>();
-            if (state != null) {
-              state._productIdController.text = p.productCode ?? p.id;
-              state._productNameController.text = p.name;
-              state._unitPriceController.text = _formatTrCurrency(p.salesPrice);
-              state._taxRateController.text = '18'; // Varsayılan KDV oranı
-              state._productCurrencyCode = (p.salesCurrency).toUpperCase();
-              // Varsayılan satır para birimini ürün para birimine set et
-              state.setState(() {
-                state._lineCurrencyCode = (p.salesCurrency).toUpperCase();
-              });
-            }
+            // onSelected callback'i zaten tüm değerleri set ediyor
           },
         );
       },
@@ -2167,7 +2246,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   final _productIdController = TextEditingController();
   final _productNameController = TextEditingController();
   final _productDescriptionController = TextEditingController();
-  final _quantityController = TextEditingController();
+  final _quantityController = TextEditingController(text: '1');
   final _unitPriceController = TextEditingController();
   final _taxRateController = TextEditingController(text: '18');
   final _discountRateController = TextEditingController(text: '0');
@@ -2197,33 +2276,62 @@ class _AddItemDialogState extends State<_AddItemDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextFormField(
-              controller: _productIdController,
-              decoration: const InputDecoration(
-                labelText: 'Ürün ID / Kod',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Ürün ID/Kod gerekli';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 12),
             _ProductQuickPicker(
               onSelected: (id, name, price, tax, salesCurrency) {
-                _productIdController.text = id;
-                _productNameController.text = name ?? '';
-                _unitPriceController.text =
-                    price != null ? _formatTrCurrency(price) : '';
-                if (tax != null) {
-                  _taxRateController.text = tax.toStringAsFixed(0);
-                }
-                _productCurrencyCode = (salesCurrency).toUpperCase();
-                _lineCurrencyCode = _productCurrencyCode;
+                setState(() {
+                  _productIdController.text = id;
+                  _productNameController.text = name ?? '';
+                  _unitPriceController.text =
+                      price != null ? _formatTrCurrency(price) : '';
+                  if (tax != null) {
+                    _taxRateController.text = tax.toStringAsFixed(0);
+                  }
+                  _productCurrencyCode = (salesCurrency).toUpperCase();
+                  _lineCurrencyCode = _productCurrencyCode;
+                });
               },
             ),
+            if (_productIdController.text.isNotEmpty) ...[
+              const SizedBox(height: 16.0),
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
+                  borderRadius: BorderRadius.circular(8.0),
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.inventory_2,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Ürün ID / Kod: ',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurface
+                                .withValues(alpha: 0.7),
+                          ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        _productIdController.text,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 16.0),
             Row(
               children: [
@@ -2258,30 +2366,44 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                 ),
                 const SizedBox(width: 16.0),
                 Expanded(
-                  child: TextFormField(
-                    controller: _unitPriceController,
-                    decoration: InputDecoration(
-                      labelText: 'Birim Fiyat ($_lineCurrencyCode)',
-                      border: const OutlineInputBorder(),
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Birim fiyat gerekli';
+                  child: Focus(
+                    onFocusChange: (hasFocus) {
+                      if (!hasFocus) {
+                        final raw = _unitPriceController.text.trim();
+                        if (raw.isEmpty) return;
+                        final cleaned =
+                            raw.replaceAll('.', '').replaceAll(',', '.');
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed != null) {
+                          _unitPriceController.text = _formatTrCurrency(parsed);
+                        }
                       }
-                      final cleaned =
-                          value.replaceAll('.', '').replaceAll(',', '.');
-                      final parsed = double.tryParse(cleaned);
-                      if (parsed == null || parsed < 0) {
-                        return 'Geçerli fiyat giriniz';
-                      }
-                      return null;
                     },
-                    onChanged: (_) => setState(() {}),
+                    child: TextFormField(
+                      controller: _unitPriceController,
+                      decoration: InputDecoration(
+                        labelText: 'Birim Fiyat ($_lineCurrencyCode)',
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      ],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Birim fiyat gerekli';
+                        }
+                        final cleaned =
+                            value.replaceAll('.', '').replaceAll(',', '.');
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed == null || parsed < 0) {
+                          return 'Geçerli fiyat giriniz';
+                        }
+                        return null;
+                      },
+                      onChanged: (_) => setState(() {}),
+                    ),
                   ),
                 ),
               ],
@@ -2328,22 +2450,6 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                   ),
                 ],
               ),
-            TextFormField(
-              controller: _productNameController,
-              decoration: const InputDecoration(
-                labelText: 'Ürün Adı',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16.0),
-            TextFormField(
-              controller: _productDescriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Açıklama',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 2,
-            ),
             const SizedBox(height: 16.0),
             Row(
               children: [
@@ -2430,6 +2536,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                 ),
               ],
             ),
+            const SizedBox(height: 16.0),
+            TextFormField(
+              controller: _productDescriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Açıklama',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
+            ),
           ],
         ),
       ),
@@ -2447,7 +2562,32 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   }
 
   void _addItem() {
-    if (!_formKey.currentState!.validate()) {
+    print('_addItem çağrıldı');
+    
+    // Form validation'ı atla, manuel kontrol yap
+    if (_quantityController.text.isEmpty) {
+      print('Miktar boş');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Miktar gerekli')),
+      );
+      return;
+    }
+    
+    if (_unitPriceController.text.isEmpty) {
+      print('Birim fiyat boş');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Birim fiyat gerekli')),
+      );
+      return;
+    }
+
+    // Ürün seçilmiş mi kontrol et
+    print('Ürün ID: ${_productIdController.text}');
+    if (_productIdController.text.isEmpty) {
+      print('Ürün seçilmemiş');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen bir ürün seçiniz')),
+      );
       return;
     }
 
@@ -2470,13 +2610,21 @@ class _AddItemDialogState extends State<_AddItemDialog> {
             unitPrice, _lineCurrencyCode, widget.baseCurrencyCode);
       }
     }
-    final discountRate = double.tryParse(_discountRateController.text) ?? 0;
-    final taxRate = double.tryParse(_taxRateController.text) ?? 0;
+    final discountRate = double.tryParse(_discountRateController.text) ?? 0.0;
+    final taxRate = double.tryParse(_taxRateController.text) ?? 0.0;
     final gross = quantity * priceInBase;
     final discountAmount = (gross * (discountRate / 100));
     final net = gross - discountAmount;
     final taxAmount = net * (taxRate / 100);
     final totalAmount = net + taxAmount;
+
+    // Null kontrolü
+    if (taxRate.isNaN || taxAmount.isNaN || totalAmount.isNaN) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Hesaplama hatası oluştu')),
+      );
+      return;
+    }
 
     final item = SaleItem(
       id: '',
@@ -2498,7 +2646,9 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       currency: _lineCurrencyCode,
     );
 
+    print('Ürün ekleniyor: ${item.productName}');
     widget.onAdd(item);
+    print('Ürün eklendi, dialog kapatılıyor');
     Navigator.pop(context);
   }
 }
