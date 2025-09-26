@@ -582,7 +582,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     items: warehouses
                         .map((w) => DropdownMenuItem<String>(
                               value: w.id,
-                              child: Text('${w.code} • ${w.name}'),
+                              child: Text(w.code != null && w.code!.isNotEmpty 
+                                  ? '${w.name} (${w.code})' 
+                                  : w.name),
                             ))
                         .toList(),
                     onChanged: (v) => setState(() => _selectedWarehouseId = v),
