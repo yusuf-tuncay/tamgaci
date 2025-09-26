@@ -2440,11 +2440,20 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       if (v == widget.baseCurrencyCode) {
                         setState(() => _fxRateToTry = 1.0);
                       } else {
-                        await ExchangeRateService()
-                            .getExchangeRate(widget.baseCurrencyCode);
-                        final r = ExchangeRateService()
-                            .convertCurrency(1.0, v, widget.baseCurrencyCode);
-                        setState(() => _fxRateToTry = r);
+                        // Otomatik kur getirme
+                        try {
+                          await ExchangeRateService().getExchangeRate(v);
+                          final r = ExchangeRateService()
+                              .convertCurrency(1.0, v, widget.baseCurrencyCode);
+                          setState(() {
+                            _fxRateToTry = r;
+                            // Manuel kur alanını da otomatik doldur
+                            _manualRateController.text = _formatTrNumber(r);
+                          });
+                        } catch (e) {
+                          debugPrint('Otomatik kur alma hatası: $e');
+                          setState(() => _fxRateToTry = null);
+                        }
                       }
                     },
                   ),
@@ -2512,24 +2521,6 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
                       onChanged: (_) => setState(() {}),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          await ExchangeRateService()
-                              .getExchangeRate(widget.baseCurrencyCode);
-                          final rate = ExchangeRateService().convertCurrency(
-                              1.0, _lineCurrencyCode, widget.baseCurrencyCode);
-                          setState(() {
-                            _manualRateController.text = _formatTrNumber(rate);
-                          });
-                        },
-                        child: const Text('Kuru Getir'),
-                      ),
                     ),
                   ),
                 ],
