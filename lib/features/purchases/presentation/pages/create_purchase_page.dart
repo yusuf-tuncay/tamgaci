@@ -312,8 +312,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   const SizedBox(height: 16),
                   _buildPurchaseTypeSelector(),
                   const SizedBox(height: 16),
-                  _buildSupplierDisplay(),
-                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
@@ -1231,42 +1229,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     );
   }
 
-  Widget _buildSupplierDisplay() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-      decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(8),
-        color: Theme.of(context).colorScheme.surface,
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.business, color: AppColors.primary, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            'Tedarikçi: ',
-            style: GoogleFonts.poppins(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.7),
-              fontSize: 14,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              _selectedSupplier?.name ?? 'Tedarikçi seçilmedi',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildCurrencyAndFxRow() {
     return Row(
