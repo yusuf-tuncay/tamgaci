@@ -888,26 +888,302 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                 ),
               )
             else
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _items.length,
-                separatorBuilder: (context, index) =>
-                    const Divider(height: 1.0),
-                itemBuilder: (context, index) {
-                  final item = _items[index];
-                  return ListTile(
-                    title: Text(item.productName ?? item.productId),
-                    subtitle: Text(
-                        '${item.quantity} ${item.productSku ?? ''} • Birim: ${_formatMoney(item.unitPrice)} • KDV: %${item.taxRate.toStringAsFixed(0)} • İsk: %${item.discountRate.toStringAsFixed(0)}'),
-                    trailing: Text(_formatMoney(item.totalAmount)),
-                    onTap: () => _removeItem(index),
-                  );
-                },
-              ),
+              _buildProductsTable(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProductsTable() {
+    return Card(
+      child: Column(
+        children: [
+          // Tablo başlığı
+          Container(
+            padding: const EdgeInsets.all(12.0),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade100,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8.0),
+                topRight: Radius.circular(8.0),
+              ),
+            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < 600) {
+                  // Küçük ekran için basit başlık
+                  return const Row(
+                    children: [
+                      Expanded(
+                          child: Text('Ürün',
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                      SizedBox(width: 8),
+                      Text('Miktar',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(width: 8),
+                      Text('Birim',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(width: 8),
+                      Text('Toplam',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(width: 40),
+                    ],
+                  );
+                } else {
+                  // Büyük ekran için tam tablo başlığı
+                  return Row(
+                    children: [
+                      Expanded(flex: 3, child: _buildTableHeader('Ürün Adı')),
+                      Expanded(flex: 2, child: _buildTableHeader('Miktar')),
+                      Expanded(
+                          flex: 2, child: _buildTableHeader('Birim Fiyat')),
+                      Expanded(flex: 2, child: _buildTableHeader('KDV')),
+                      Expanded(flex: 2, child: _buildTableHeader('İskonto')),
+                      Expanded(flex: 2, child: _buildTableHeader('Toplam')),
+                      const SizedBox(width: 40), // Silme butonu için alan
+                    ],
+                  );
+                }
+              },
+            ),
+          ),
+
+          // Ürün listesi
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _items.length,
+            separatorBuilder: (context, index) => const Divider(height: 1.0),
+            itemBuilder: (context, index) {
+              final item = _items[index];
+              return _buildProductRow(item, index);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTableHeader(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontWeight: FontWeight.bold,
+        fontSize: 14,
+      ),
+    );
+  }
+
+  Widget _buildProductRow(SaleItem item, int index) {
+    return InkWell(
+      onTap: () => _editItem(index),
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth < 600) {
+              // Küçük ekran için basit görünüm
+              return _buildSmallScreenRow(item, index);
+            } else {
+              // Büyük ekran için tam tablo görünümü
+              return _buildLargeScreenRow(item, index);
+            }
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmallScreenRow(SaleItem item, int index) {
+    return Row(
+      children: [
+        // Ürün bilgileri
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.productName ?? item.productId,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (item.productDescription != null &&
+                  item.productDescription!.isNotEmpty)
+                Text(
+                  item.productDescription!,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 11,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+
+        const SizedBox(width: 8),
+
+        // Miktar
+        Text(
+          '${item.quantity.toStringAsFixed(0)}',
+          style: const TextStyle(fontSize: 12),
+        ),
+
+        const SizedBox(width: 8),
+
+        // Birim Fiyat
+        Text(
+          _formatMoney(item.unitPrice, currency: item.currency),
+          style: const TextStyle(fontSize: 12),
+        ),
+
+        const SizedBox(width: 8),
+
+        // Toplam
+        Text(
+          _formatMoney(item.totalAmount, currency: item.currency),
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.green,
+          ),
+        ),
+
+        const SizedBox(width: 8),
+
+        // Silme butonu
+        IconButton(
+          onPressed: () => _removeItem(index),
+          icon: const Icon(Icons.delete, color: Colors.red, size: 16),
+          tooltip: 'Ürünü Sil',
+          constraints: const BoxConstraints(),
+          padding: const EdgeInsets.all(4.0),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLargeScreenRow(SaleItem item, int index) {
+    return Row(
+      children: [
+        // Ürün Adı
+        Expanded(
+          flex: 3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.productName ?? item.productId,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (item.productDescription != null &&
+                  item.productDescription!.isNotEmpty)
+                Text(
+                  item.productDescription!,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+
+        // Miktar
+        Expanded(
+          flex: 2,
+          child: Text(
+            '${item.quantity.toStringAsFixed(0)} adet',
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+
+        // Birim Fiyat
+        Expanded(
+          flex: 2,
+          child: Text(
+            _formatMoney(item.unitPrice, currency: item.currency),
+            style: const TextStyle(fontSize: 14),
+          ),
+        ),
+
+        // KDV
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _formatMoney(item.taxAmount, currency: item.currency),
+                style: const TextStyle(fontSize: 14),
+              ),
+              Text(
+                '%${item.taxRate.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // İskonto
+        Expanded(
+          flex: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _formatMoney(item.discountAmount, currency: item.currency),
+                style: const TextStyle(fontSize: 14),
+              ),
+              Text(
+                '%${item.discountRate.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Toplam
+        Expanded(
+          flex: 2,
+          child: Text(
+            _formatMoney(item.totalAmount, currency: item.currency),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
+        ),
+
+        // Silme butonu
+        IconButton(
+          onPressed: () => _removeItem(index),
+          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+          tooltip: 'Ürünü Sil',
+          constraints: const BoxConstraints(),
+          padding: const EdgeInsets.all(8.0),
+        ),
+      ],
     );
   }
 
@@ -1472,6 +1748,25 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     setState(() {
       _items.removeAt(index);
     });
+  }
+
+  void _editItem(int index) {
+    final item = _items[index];
+    _showEditItemDialog(item, index);
+  }
+
+  void _showEditItemDialog(SaleItem item, int index) {
+    showDialog(
+      context: context,
+      builder: (context) => _EditItemDialog(
+        item: item,
+        onSave: (editedItem) {
+          setState(() {
+            _items[index] = editedItem;
+          });
+        },
+      ),
+    );
   }
 
   void _saveSale() async {
@@ -2672,11 +2967,11 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     final quantity = double.parse(_quantityController.text);
     final unitPrice = double.parse(
         _unitPriceController.text.replaceAll('.', '').replaceAll(',', '.'));
-    
+
     // unitPrice'ı orijinal para biriminde tut (USD ise USD olarak)
     final discountRate = double.tryParse(_discountRateController.text) ?? 0.0;
     final taxRate = double.tryParse(_taxRateController.text) ?? 0.0;
-    
+
     // Hesaplamaları orijinal para biriminde yap
     final gross = quantity * unitPrice;
     final discountAmount = (gross * (discountRate / 100));
@@ -2715,6 +3010,422 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     debugPrint('Ürün ekleniyor: ${item.productName}');
     widget.onAdd(item);
     debugPrint('Ürün eklendi, dialog kapatılıyor');
+    Navigator.pop(context);
+  }
+}
+
+/// Ürün düzenleme dialog'u
+class _EditItemDialog extends StatefulWidget {
+  final SaleItem item;
+  final void Function(SaleItem) onSave;
+
+  const _EditItemDialog({
+    required this.item,
+    required this.onSave,
+  });
+
+  @override
+  State<_EditItemDialog> createState() => _EditItemDialogState();
+}
+
+class _EditItemDialogState extends State<_EditItemDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _productIdController = TextEditingController();
+  final _productNameController = TextEditingController();
+  final _productDescriptionController = TextEditingController();
+  final _quantityController = TextEditingController();
+  final _unitPriceController = TextEditingController();
+  final _discountRateController = TextEditingController();
+  final _taxRateController = TextEditingController();
+
+  String _lineCurrencyCode = 'TRY';
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFields();
+  }
+
+  void _initializeFields() {
+    final item = widget.item;
+    _productIdController.text = item.productId;
+    _productNameController.text = item.productName ?? '';
+    _productDescriptionController.text = item.productDescription ?? '';
+    _quantityController.text = item.quantity.toString();
+    _unitPriceController.text = item.unitPrice.toString();
+    _discountRateController.text = item.discountRate.toString();
+    _taxRateController.text = item.taxRate.toString();
+    _lineCurrencyCode = item.currency;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Ürün Düzenle'),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Ürün seçimi
+              _ProductQuickPicker(
+                onSelected:
+                    (productId, productName, unitPrice, taxRate, currency) {
+                  setState(() {
+                    _productIdController.text = productId;
+                    _productNameController.text = productName ?? '';
+                    _lineCurrencyCode = currency;
+                    if (unitPrice != null) {
+                      _unitPriceController.text = unitPrice.toString();
+                    }
+                    if (taxRate != null) {
+                      _taxRateController.text = taxRate.toString();
+                    }
+                  });
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Ürün bilgileri
+              if (_productIdController.text.isNotEmpty) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Ürün ID: ${_productIdController.text}'),
+                      Text('Ürün: ${_productNameController.text}'),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Miktar ve birim fiyat
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _quantityController,
+                      decoration: const InputDecoration(
+                        labelText: 'Miktar',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      ],
+                      onChanged: (_) => setState(() {}),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Miktar gerekli';
+                        }
+                        final cleaned =
+                            value.replaceAll('.', '').replaceAll(',', '.');
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed == null || parsed <= 0) {
+                          return 'Geçerli miktar giriniz';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Focus(
+                      onFocusChange: (hasFocus) {
+                        if (!hasFocus) {
+                          final raw = _unitPriceController.text.trim();
+                          if (raw.isEmpty) return;
+                          final parsed = double.tryParse(
+                              raw.replaceAll('.', '').replaceAll(',', '.'));
+                          if (parsed != null) {
+                            _unitPriceController.text =
+                                _formatTrCurrency(parsed);
+                          }
+                        }
+                      },
+                      child: TextFormField(
+                        controller: _unitPriceController,
+                        decoration: InputDecoration(
+                          labelText: 'Birim Fiyat ($_lineCurrencyCode)',
+                          border: const OutlineInputBorder(),
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                        ],
+                        onChanged: (_) => setState(() {}),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Birim fiyat gerekli';
+                          }
+                          final cleaned =
+                              value.replaceAll('.', '').replaceAll(',', '.');
+                          final parsed = double.tryParse(cleaned);
+                          if (parsed == null || parsed < 0) {
+                            return 'Geçerli fiyat giriniz';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // İskonto ve KDV
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _discountRateController,
+                      decoration: const InputDecoration(
+                        labelText: 'İskonto Oranı (%)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      ],
+                      onChanged: (_) => setState(() {}),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'İskonto oranı gerekli';
+                        }
+                        final cleaned =
+                            value.replaceAll('.', '').replaceAll(',', '.');
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed == null || parsed < 0) {
+                          return 'Geçerli oran giriniz';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _taxRateController,
+                      decoration: const InputDecoration(
+                        labelText: 'KDV Oranı (%)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      ],
+                      onChanged: (_) => setState(() {}),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'KDV oranı gerekli';
+                        }
+                        final cleaned =
+                            value.replaceAll('.', '').replaceAll(',', '.');
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed == null || parsed < 0) {
+                          return 'Geçerli oran giriniz';
+                        }
+                        return null;
+                      },
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Açıklama
+              TextFormField(
+                controller: _productDescriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Açıklama (Maksimum 200 karakter)',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+                maxLength: 200,
+                onChanged: (value) {
+                  if (value.length > 200) {
+                    _productDescriptionController.text =
+                        value.substring(0, 200);
+                    _productDescriptionController.selection =
+                        TextSelection.fromPosition(
+                      const TextPosition(offset: 200),
+                    );
+                  }
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // Hesaplama özeti
+              _buildProductCalculation(),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('İptal'),
+        ),
+        ElevatedButton(
+          onPressed: _saveItem,
+          child: const Text('Kaydet'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProductCalculation() {
+    final quantity =
+        double.tryParse(_quantityController.text.replaceAll(',', '.')) ?? 0.0;
+    final unitPrice =
+        double.tryParse(_unitPriceController.text.replaceAll(',', '.')) ?? 0.0;
+
+    if (quantity <= 0 || unitPrice <= 0) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          'Miktar ve birim fiyat giriniz',
+          style: TextStyle(color: Colors.grey),
+        ),
+      );
+    }
+
+    final discountRate =
+        double.tryParse(_discountRateController.text.replaceAll(',', '.')) ??
+            0.0;
+    final taxRate =
+        double.tryParse(_taxRateController.text.replaceAll(',', '.')) ?? 0.0;
+
+    final gross = quantity * unitPrice;
+    final discountAmount = gross * (discountRate / 100);
+    final subtotal = gross - discountAmount;
+    final taxAmount = subtotal * (taxRate / 100);
+    final total = subtotal + taxAmount;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.blue.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Hesaplama Özeti:',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold, color: Colors.blue.shade700)),
+          const SizedBox(height: 8),
+          _buildCalculationRow(
+              'Ara Toplam:', _formatMoney(gross, currency: _lineCurrencyCode)),
+          _buildCalculationRow('İskonto:',
+              _formatMoney(discountAmount, currency: _lineCurrencyCode)),
+          _buildCalculationRow(
+              'KDV:', _formatMoney(taxAmount, currency: _lineCurrencyCode)),
+          const Divider(),
+          _buildCalculationRow(
+              'Toplam:', _formatMoney(total, currency: _lineCurrencyCode),
+              isTotal: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalculationRow(String label, String value,
+      {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  fontWeight: isTotal ? FontWeight.bold : FontWeight.normal)),
+          Text(value,
+              style: TextStyle(
+                  fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                  color: isTotal ? Colors.green : null)),
+        ],
+      ),
+    );
+  }
+
+  String _formatMoney(double value, {String? currency}) {
+    final c = currency ?? _lineCurrencyCode;
+    final symbols = {'TRY': '₺', 'USD': '\$', 'EUR': '€', 'GBP': '£'};
+    final sym = symbols[c] ?? '';
+    final v = _roundMoney(value);
+    return '$sym${v.toStringAsFixed(2)}';
+  }
+
+  double _roundMoney(double value) {
+    return (value * 100).round() / 100;
+  }
+
+  String _formatTrCurrency(double value) {
+    final formatter =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 2);
+    return formatter.format(value).trim();
+  }
+
+  void _saveItem() {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final quantity =
+        double.parse(_quantityController.text.replaceAll(',', '.'));
+    final unitPrice =
+        double.parse(_unitPriceController.text.replaceAll(',', '.'));
+    final discountRate =
+        double.parse(_discountRateController.text.replaceAll(',', '.'));
+    final taxRate = double.parse(_taxRateController.text.replaceAll(',', '.'));
+
+    final gross = quantity * unitPrice;
+    final discountAmount = gross * (discountRate / 100);
+    final subtotal = gross - discountAmount;
+    final taxAmount = subtotal * (taxRate / 100);
+    final total = subtotal + taxAmount;
+
+    final item = SaleItem(
+      id: '',
+      saleId: '',
+      productId: _productIdController.text,
+      productName: _productNameController.text,
+      productDescription: _productDescriptionController.text,
+      productSku: '',
+      quantity: quantity,
+      unitPrice: unitPrice,
+      discountRate: discountRate,
+      discountAmount: discountAmount,
+      taxRate: taxRate,
+      taxAmount: taxAmount,
+      totalAmount: total,
+      currency: _lineCurrencyCode,
+    );
+
+    widget.onSave(item);
     Navigator.pop(context);
   }
 }
