@@ -426,9 +426,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   const SizedBox(height: 16.0),
                   _buildItemsCard(),
                   const SizedBox(height: 16.0),
-                  _buildPaymentCard(),
-                  const SizedBox(height: 16.0),
                   _buildSummaryCard(),
+                  const SizedBox(height: 16.0),
+                  _buildPaymentCard(),
                 ],
               ),
             ),
@@ -1300,8 +1300,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       // Bu para biriminin ödeme para birimindeki karşılığını hesapla
       double totalInPaymentCurrencyForThisCurrency = total;
       if (currency != _paymentCurrencyCode) {
-        totalInPaymentCurrencyForThisCurrency =
-            ExchangeRateService().convertCurrency(total, currency, _paymentCurrencyCode);
+        totalInPaymentCurrencyForThisCurrency = ExchangeRateService()
+            .convertCurrency(total, currency, _paymentCurrencyCode);
       }
       totalInPaymentCurrency += totalInPaymentCurrencyForThisCurrency;
 
