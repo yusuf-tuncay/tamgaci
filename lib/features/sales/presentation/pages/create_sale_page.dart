@@ -703,7 +703,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _billingAddress,
+                    value: _buildAddressItems(isBilling: true).any((item) => item.value == _billingAddress) ? _billingAddress : null,
                     decoration: const InputDecoration(
                       labelText: 'Fatura Adresi',
                       border: OutlineInputBorder(),
@@ -723,7 +723,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _shippingAddress,
+                    value: _buildAddressItems(isBilling: false).any((item) => item.value == _shippingAddress) ? _shippingAddress : null,
                     decoration: const InputDecoration(
                       labelText: 'Sevk Adresi',
                       border: OutlineInputBorder(),
@@ -2459,7 +2459,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     // Final duplicate check - bu çok önemli!
     final finalItems = <DropdownMenuItem<String>>[];
     final finalSeen = <String>{};
-    
+
     for (final item in items) {
       if (item.value != null && !finalSeen.contains(item.value)) {
         finalSeen.add(item.value!);
