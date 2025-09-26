@@ -54,7 +54,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   bool _isCashPayment = true; // Peşin/Vadeli toggle
   int? _installmentCount;
   String _paymentCurrencyCode = 'TRY';
-  final TextEditingController _paymentFxController = TextEditingController();
 
   // Addresses
   String? _billingAddress;
@@ -150,7 +149,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     _customerNameController.dispose();
     _notesController.dispose();
     _interestRateController.dispose();
-    _paymentFxController.dispose();
     super.dispose();
   }
 
@@ -247,47 +245,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                         },
                       ),
                       const SizedBox(height: 8),
-                      if (_paymentCurrencyCode != 'TRY')
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _paymentFxController,
-                                decoration: InputDecoration(
-                                  labelText:
-                                      'Kur (1 $_paymentCurrencyCode = ? TRY)',
-                                  border: const OutlineInputBorder(),
-                                ),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                        decimal: true),
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(
-                                      RegExp(r'[0-9.,]')),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Flexible(
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: OutlinedButton(
-                                  onPressed: () async {
-                                    final rate = await ExchangeRateService()
-                                        .getExchangeRate(_paymentCurrencyCode);
-                                    if (rate != null) {
-                                      setState(() {
-                                        _paymentFxController.text =
-                                            rate.rate.toStringAsFixed(4);
-                                      });
-                                    }
-                                  },
-                                  child: const Text('Kuru Getir'),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                     ],
                   );
                 },
@@ -2008,19 +1965,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       if (_isCashPayment) {
         double fxRate = 1.0;
         if (_paymentCurrencyCode != _baseCurrencyCode) {
-          final manualText = _paymentFxController.text.trim();
-          final manual = manualText.isNotEmpty
-              ? double.tryParse(
-                  manualText.replaceAll('.', '').replaceAll(',', '.'))
-              : null;
-          if (manual != null && manual > 0) {
-            fxRate = manual;
-          } else {
-            await ExchangeRateService().getExchangeRate(_paymentCurrencyCode);
-            final amt = ExchangeRateService()
-                .convertCurrency(1.0, _paymentCurrencyCode, _baseCurrencyCode);
-            fxRate = amt > 0 ? amt : 1.0;
-          }
+          await ExchangeRateService().getExchangeRate(_paymentCurrencyCode);
+          final amt = ExchangeRateService()
+              .convertCurrency(1.0, _paymentCurrencyCode, _baseCurrencyCode);
+          fxRate = amt > 0 ? amt : 1.0;
         }
 
         final transactionService = TransactionService();
