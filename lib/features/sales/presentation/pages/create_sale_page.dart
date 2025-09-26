@@ -703,7 +703,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _billingAddress,
+                    initialValue: _billingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Fatura Adresi',
                       border: OutlineInputBorder(),
@@ -723,7 +723,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _shippingAddress,
+                    initialValue: _shippingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Sevk Adresi',
                       border: OutlineInputBorder(),
@@ -2391,83 +2391,57 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
   List<DropdownMenuItem<String>> _buildAddressItems({required bool isBilling}) {
     final customerId = _customerIdController.text;
+    final items = <DropdownMenuItem<String>>[];
+    final seen = <String>{};
+
+    // Customer seçili değilse sadece local adresleri göster
     if (customerId.isEmpty) {
       final addr = isBilling ? _billingAddress : _shippingAddress;
-      if (addr == null) {
-        return [
-          const DropdownMenuItem(
-            value: _kNewAddressValue,
-            child: Row(
-              children: [
-                Icon(Icons.add_location_alt_outlined, size: 18),
-                SizedBox(width: 6),
-                Expanded(child: Text('Yeni adres ekle')),
-              ],
-            ),
-          )
-        ];
+      if (addr != null && addr.isNotEmpty && !seen.contains(addr)) {
+        seen.add(addr);
+        items.add(DropdownMenuItem(
+          value: addr,
+          child: Text(addr, overflow: TextOverflow.ellipsis),
+        ));
       }
-      return [
-        DropdownMenuItem(
-            value: addr, child: Text(addr, overflow: TextOverflow.ellipsis)),
-        const DropdownMenuItem(
-          value: _kNewAddressValue,
-          child: Row(
-            children: [
-              Icon(Icons.add_location_alt_outlined, size: 18),
-              SizedBox(width: 6),
-              Expanded(child: Text('Yeni adres ekle')),
-            ],
-          ),
-        )
-      ];
-    }
-
-    // Prefer up-to-date single customer fetch
-    final asyncCustomer = ref.read(customerProvider(customerId));
-    String? baseAddress;
-    if (asyncCustomer.hasValue && asyncCustomer.value != null) {
-      baseAddress = isBilling
-          ? asyncCustomer.value!.address
-          : (asyncCustomer.value!.shippingAddress ??
-              asyncCustomer.value!.address);
     } else {
-      baseAddress = isBilling ? _billingAddress : _shippingAddress;
-    }
+      // Customer seçiliyse customer adreslerini al
+      final asyncCustomer = ref.read(customerProvider(customerId));
+      String? baseAddress;
+      
+      if (asyncCustomer.hasValue && asyncCustomer.value != null) {
+        baseAddress = isBilling
+            ? asyncCustomer.value!.address
+            : (asyncCustomer.value!.shippingAddress ??
+                asyncCustomer.value!.address);
+      } else {
+        baseAddress = isBilling ? _billingAddress : _shippingAddress;
+      }
 
-    final items = <DropdownMenuItem<String>>[];
-    if (baseAddress != null && baseAddress.isNotEmpty) {
-      items.add(DropdownMenuItem(
-        value: baseAddress,
-        child: Text(
-          baseAddress,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ));
-    }
-    // If customer has branches, include branch addresses
-    if (asyncCustomer.hasValue && asyncCustomer.value?.branches != null) {
-      for (final br in asyncCustomer.value!.branches!) {
-        if (br.address.isNotEmpty) {
-          items.add(DropdownMenuItem(
+      // Ana adres
+      if (baseAddress != null && baseAddress.isNotEmpty && !seen.contains(baseAddress)) {
+        seen.add(baseAddress);
+        items.add(DropdownMenuItem(
+          value: baseAddress,
+          child: Text(baseAddress, overflow: TextOverflow.ellipsis),
+        ));
+      }
+
+      // Branch adresleri
+      if (asyncCustomer.hasValue && asyncCustomer.value?.branches != null) {
+        for (final br in asyncCustomer.value!.branches!) {
+          if (br.address.isNotEmpty && !seen.contains(br.address)) {
+            seen.add(br.address);
+            items.add(DropdownMenuItem(
               value: br.address,
               child: Text('${br.name} • ${br.address}',
-                  overflow: TextOverflow.ellipsis)));
+                  overflow: TextOverflow.ellipsis),
+            ));
+          }
         }
       }
     }
-    // De-duplicate items by value
-    final seen = <String>{};
-    final deduped = <DropdownMenuItem<String>>[];
-    for (final it in items) {
-      final val = it.value;
-      if (val != null && !seen.contains(val)) {
-        seen.add(val);
-        deduped.add(it);
-      }
-    }
-    items.clear();
-    items.addAll(deduped);
+
     // Yeni adres ekle seçeneği
     items.add(const DropdownMenuItem(
       value: _kNewAddressValue,
@@ -2479,6 +2453,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         ],
       ),
     ));
+
     return items;
   }
 
