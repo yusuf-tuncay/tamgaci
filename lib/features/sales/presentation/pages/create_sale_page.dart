@@ -2441,7 +2441,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                               1.0, _lineCurrencyCode, widget.baseCurrencyCode);
                           setState(() {
                             _manualRateController.text =
-                                rate.toStringAsFixed(4);
+                                _formatTrNumber(rate);
                           });
                         },
                         child: const Text('Kuru Getir'),
@@ -2563,7 +2563,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
 
   void _addItem() {
     print('_addItem çağrıldı');
-    
+
     // Form validation'ı atla, manuel kontrol yap
     if (_quantityController.text.isEmpty) {
       print('Miktar boş');
@@ -2572,7 +2572,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       );
       return;
     }
-    
+
     if (_unitPriceController.text.isEmpty) {
       print('Birim fiyat boş');
       ScaffoldMessenger.of(context).showSnackBar(
