@@ -54,6 +54,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   bool _isCashPayment = true; // Peşin/Vadeli toggle
   int? _installmentCount;
   String _paymentCurrencyCode = '';
+  double? _paymentAmount; // Ödenecek miktar
+  final _paymentAmountController = TextEditingController();
 
   // Addresses
   String? _billingAddress;
@@ -149,6 +151,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     _customerNameController.dispose();
     _notesController.dispose();
     _interestRateController.dispose();
+    _paymentAmountController.dispose();
     super.dispose();
   }
 
@@ -245,6 +248,26 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                         },
                       ),
                       const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _paymentAmountController,
+                        decoration: const InputDecoration(
+                          labelText: 'Ödenecek Miktar (Opsiyonel)',
+                          border: OutlineInputBorder(),
+                          hintText: 'Boş bırakılabilir',
+                        ),
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                        ],
+                        onChanged: (value) {
+                          if (value.trim().isEmpty) {
+                            setState(() => _paymentAmount = null);
+                          } else {
+                            final parsed = double.tryParse(value.replaceAll(',', '.'));
+                            setState(() => _paymentAmount = parsed);
+                          }
+                        },
+                      ),
                     ],
                   );
                 },
@@ -2008,6 +2031,115 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         await transactionService.createTransaction(t);
       } catch (_) {}
 
+      // Ödeme miktarı girilmişse tahsilat kaydı oluştur
+      if (_paymentAmount != null && _paymentAmount! > 0) {
+        double fxRate = 1.0;
+        if (_paymentCurrencyCode.isNotEmpty && _paymentCurrencyCode != _baseCurrencyCode) {
+          await ExchangeRateService().getExchangeRate(_paymentCurrencyCode);
+          final amt = ExchangeRateService()
+              .convertCurrency(1.0, _paymentCurrencyCode, _baseCurrencyCode);
+          fxRate = amt > 0 ? amt : 1.0;
+        }
+
+        final transactionService = TransactionService();
+        final now = DateTime.now();
+        final customerId = _customerIdController.text;
+        final paymentCurrency = _paymentCurrencyCode.isNotEmpty ? _paymentCurrencyCode : _baseCurrencyCode;
+
+        // 1) Müşteri ekstresi ödeme işlemi (base para birimi)
+        double paymentAmountInBase = 0.0;
+        try {
+          paymentAmountInBase = paymentCurrency == _baseCurrencyCode
+              ? _paymentAmount!
+              : ExchangeRateService().convertCurrency(_paymentAmount!, paymentCurrency, _baseCurrencyCode);
+
+          final payTxn = Transaction(
+            id: '',
+            customerId: customerId,
+            supplierId: null,
+            type: TransactionType.payment,
+            amount: paymentAmountInBase,
+            currency: _baseCurrencyCode,
+            description: 'Satış tahsilatı ($paymentCurrency)',
+            reference: _saleNumberController.text,
+            transactionDate: now,
+            dueDate: null,
+            invoiceId: saleId,
+            paymentMethod: _paymentMethod,
+            documentNumber: _saleNumberController.text,
+            status: TransactionStatus.completed,
+            companyId: '',
+            createdAt: now,
+            updatedAt: now,
+            createdBy: 'system',
+            updatedBy: null,
+            metadata: {
+              'paymentCurrency': paymentCurrency,
+              'paymentFxToBase': fxRate,
+              'paymentAmountInPaymentCcy': _paymentAmount!,
+              'baseCurrency': _baseCurrencyCode,
+            },
+          );
+          await transactionService.createTransaction(payTxn);
+        } catch (_) {}
+
+        // 2) Nakit yönetimi: uygun kasayı bul ve gelir işlemi oluştur
+        try {
+          // Kasaları çek
+          final notifier = ref.read(cashManagementNotifierProvider.notifier);
+          await notifier.getCashAccounts();
+          final state = ref.read(cashManagementNotifierProvider);
+          final accounts = state.cashAccounts;
+          
+          // Öncelik: ödeme para birimi ile aynı olan kasa → yoksa base para birimli kasa
+          final target = accounts.firstWhere(
+            (a) => a.currency.toUpperCase() == paymentCurrency.toUpperCase(),
+            orElse: () => accounts.firstWhere(
+              (a) => a.currency.toUpperCase() == _baseCurrencyCode.toUpperCase(),
+              orElse: () => accounts.isNotEmpty
+                  ? accounts.first
+                  : throw Exception('Kasa bulunamadı'),
+            ),
+          );
+
+          final amountInAccountCurrency = target.currency.toUpperCase() == paymentCurrency.toUpperCase()
+              ? _paymentAmount!
+              : ExchangeRateService().convertCurrency(_paymentAmount!, paymentCurrency, target.currency);
+
+          final useCase = ref.read(createCashTransactionUseCaseProvider);
+          final trx = cm.CashTransaction(
+            id: '',
+            transactionNumber: '',
+            type: cm.CashTransactionType.income,
+            category: cm.CashTransactionCategory.sales,
+            status: cm.CashTransactionStatus.completed,
+            fromAccountId: target.id,
+            toAccountId: null,
+            amount: amountInAccountCurrency,
+            currency: target.currency,
+            description: 'Satış tahsilatı ${_saleNumberController.text} ($paymentCurrency)',
+            reference: _saleNumberController.text,
+            relatedDocumentId: saleId,
+            relatedDocumentType: 'sale',
+            transactionDate: now,
+            dueDate: null,
+            notes: null,
+            attachments: const [],
+            metadata: {
+              'baseCurrency': _baseCurrencyCode,
+              'paymentCurrency': paymentCurrency,
+              'fxToBase': fxRate,
+              'amountInBase': paymentAmountInBase,
+            },
+            createdAt: now,
+            updatedAt: now,
+            createdBy: 'system',
+            updatedBy: null,
+          );
+          await useCase.call(trx);
+        } catch (_) {}
+      }
+
       // Peşin ödemeyse: müşteri ekstresine payment ve nakit yönetime kasa geliri
       if (_isCashPayment) {
         double fxRate = 1.0;
@@ -2397,16 +2529,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     // Customer seçili değilse her iki adresi de göster
     if (customerId.isEmpty) {
       // Fatura adresi
-      if (_billingAddress != null && _billingAddress!.isNotEmpty && !seen.contains(_billingAddress!)) {
+      if (_billingAddress != null &&
+          _billingAddress!.isNotEmpty &&
+          !seen.contains(_billingAddress!)) {
         seen.add(_billingAddress!);
         items.add(DropdownMenuItem(
           value: _billingAddress!,
           child: Text(_billingAddress!, overflow: TextOverflow.ellipsis),
         ));
       }
-      
+
       // Sevk adresi (fatura adresinden farklıysa)
-      if (_shippingAddress != null && _shippingAddress!.isNotEmpty && !seen.contains(_shippingAddress!)) {
+      if (_shippingAddress != null &&
+          _shippingAddress!.isNotEmpty &&
+          !seen.contains(_shippingAddress!)) {
         seen.add(_shippingAddress!);
         items.add(DropdownMenuItem(
           value: _shippingAddress!,
@@ -2451,17 +2587,21 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           }
         }
       }
-      
+
       // Local adresleri de ekle (customer seçili olsa bile)
-      if (_billingAddress != null && _billingAddress!.isNotEmpty && !seen.contains(_billingAddress!)) {
+      if (_billingAddress != null &&
+          _billingAddress!.isNotEmpty &&
+          !seen.contains(_billingAddress!)) {
         seen.add(_billingAddress!);
         items.add(DropdownMenuItem(
           value: _billingAddress!,
           child: Text(_billingAddress!, overflow: TextOverflow.ellipsis),
         ));
       }
-      
-      if (_shippingAddress != null && _shippingAddress!.isNotEmpty && !seen.contains(_shippingAddress!)) {
+
+      if (_shippingAddress != null &&
+          _shippingAddress!.isNotEmpty &&
+          !seen.contains(_shippingAddress!)) {
         seen.add(_shippingAddress!);
         items.add(DropdownMenuItem(
           value: _shippingAddress!,
