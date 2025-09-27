@@ -703,7 +703,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _billingAddress,
+                    initialValue: _billingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Fatura Adresi',
                       border: OutlineInputBorder(),
@@ -723,7 +723,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   child: DropdownButtonFormField<String>(
                     isExpanded: true,
                     menuMaxHeight: 320,
-                    value: _shippingAddress,
+                    initialValue: _shippingAddress,
                     decoration: const InputDecoration(
                       labelText: 'Sevk Adresi',
                       border: OutlineInputBorder(),
@@ -2394,14 +2394,23 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     final items = <DropdownMenuItem<String>>[];
     final seen = <String>{};
 
-    // Customer seçili değilse sadece local adresleri göster
+    // Customer seçili değilse her iki adresi de göster
     if (customerId.isEmpty) {
-      final addr = isBilling ? _billingAddress : _shippingAddress;
-      if (addr != null && addr.isNotEmpty && !seen.contains(addr)) {
-        seen.add(addr);
+      // Fatura adresi
+      if (_billingAddress != null && _billingAddress!.isNotEmpty && !seen.contains(_billingAddress!)) {
+        seen.add(_billingAddress!);
         items.add(DropdownMenuItem(
-          value: addr,
-          child: Text(addr, overflow: TextOverflow.ellipsis),
+          value: _billingAddress!,
+          child: Text(_billingAddress!, overflow: TextOverflow.ellipsis),
+        ));
+      }
+      
+      // Sevk adresi (fatura adresinden farklıysa)
+      if (_shippingAddress != null && _shippingAddress!.isNotEmpty && !seen.contains(_shippingAddress!)) {
+        seen.add(_shippingAddress!);
+        items.add(DropdownMenuItem(
+          value: _shippingAddress!,
+          child: Text(_shippingAddress!, overflow: TextOverflow.ellipsis),
         ));
       }
     } else {
@@ -2441,6 +2450,23 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             ));
           }
         }
+      }
+      
+      // Local adresleri de ekle (customer seçili olsa bile)
+      if (_billingAddress != null && _billingAddress!.isNotEmpty && !seen.contains(_billingAddress!)) {
+        seen.add(_billingAddress!);
+        items.add(DropdownMenuItem(
+          value: _billingAddress!,
+          child: Text(_billingAddress!, overflow: TextOverflow.ellipsis),
+        ));
+      }
+      
+      if (_shippingAddress != null && _shippingAddress!.isNotEmpty && !seen.contains(_shippingAddress!)) {
+        seen.add(_shippingAddress!);
+        items.add(DropdownMenuItem(
+          value: _shippingAddress!,
+          child: Text(_shippingAddress!, overflow: TextOverflow.ellipsis),
+        ));
       }
     }
 
