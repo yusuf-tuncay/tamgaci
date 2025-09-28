@@ -263,7 +263,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                           if (value.trim().isEmpty) {
                             setState(() => _paymentAmount = null);
                           } else {
-                            final parsed = double.tryParse(value.replaceAll(',', '.'));
+                            final parsed =
+                                double.tryParse(value.replaceAll(',', '.'));
                             setState(() => _paymentAmount = parsed);
                           }
                         },
@@ -1720,27 +1721,58 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
   Widget _buildGrandTotalCardWithPaymentCurrency(
       double totalInPaymentCurrency, String paymentCurrency) {
+    // Toplam ürün miktarını hesapla
+    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
           children: [
-            Text(
-              'GENEL TOPLAM ($paymentCurrency):',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+            // Toplam ürün miktarı
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Toplam ürün miktarı:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  totalQuantity.toStringAsFixed(0),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              _formatMoney(totalInPaymentCurrency, currency: paymentCurrency),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.green.shade700,
-              ),
+            const SizedBox(height: 12),
+            // Genel toplam
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'GENEL TOPLAM ($paymentCurrency):',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  _formatMoney(totalInPaymentCurrency, currency: paymentCurrency),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -1749,27 +1781,58 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   }
 
   Widget _buildGrandTotalCard(double totalInTRY) {
+    // Toplam ürün miktarını hesapla
+    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
           children: [
-            const Text(
-              'GENEL TOPLAM (TRY):',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.black87,
-              ),
+            // Toplam ürün miktarı
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Toplam ürün miktarı:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  totalQuantity.toStringAsFixed(0),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              _formatMoney(totalInTRY, currency: 'TRY'),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.green.shade700,
-              ),
+            const SizedBox(height: 12),
+            // Genel toplam
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'GENEL TOPLAM (TRY):',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  _formatMoney(totalInTRY, currency: 'TRY'),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -2034,7 +2097,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       // Ödeme miktarı girilmişse tahsilat kaydı oluştur
       if (_paymentAmount != null && _paymentAmount! > 0) {
         double fxRate = 1.0;
-        if (_paymentCurrencyCode.isNotEmpty && _paymentCurrencyCode != _baseCurrencyCode) {
+        if (_paymentCurrencyCode.isNotEmpty &&
+            _paymentCurrencyCode != _baseCurrencyCode) {
           await ExchangeRateService().getExchangeRate(_paymentCurrencyCode);
           final amt = ExchangeRateService()
               .convertCurrency(1.0, _paymentCurrencyCode, _baseCurrencyCode);
@@ -2044,14 +2108,17 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         final transactionService = TransactionService();
         final now = DateTime.now();
         final customerId = _customerIdController.text;
-        final paymentCurrency = _paymentCurrencyCode.isNotEmpty ? _paymentCurrencyCode : _baseCurrencyCode;
+        final paymentCurrency = _paymentCurrencyCode.isNotEmpty
+            ? _paymentCurrencyCode
+            : _baseCurrencyCode;
 
         // 1) Müşteri ekstresi ödeme işlemi (base para birimi)
         double paymentAmountInBase = 0.0;
         try {
           paymentAmountInBase = paymentCurrency == _baseCurrencyCode
               ? _paymentAmount!
-              : ExchangeRateService().convertCurrency(_paymentAmount!, paymentCurrency, _baseCurrencyCode);
+              : ExchangeRateService().convertCurrency(
+                  _paymentAmount!, paymentCurrency, _baseCurrencyCode);
 
           final payTxn = Transaction(
             id: '',
@@ -2090,21 +2157,24 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           await notifier.getCashAccounts();
           final state = ref.read(cashManagementNotifierProvider);
           final accounts = state.cashAccounts;
-          
+
           // Öncelik: ödeme para birimi ile aynı olan kasa → yoksa base para birimli kasa
           final target = accounts.firstWhere(
             (a) => a.currency.toUpperCase() == paymentCurrency.toUpperCase(),
             orElse: () => accounts.firstWhere(
-              (a) => a.currency.toUpperCase() == _baseCurrencyCode.toUpperCase(),
+              (a) =>
+                  a.currency.toUpperCase() == _baseCurrencyCode.toUpperCase(),
               orElse: () => accounts.isNotEmpty
                   ? accounts.first
                   : throw Exception('Kasa bulunamadı'),
             ),
           );
 
-          final amountInAccountCurrency = target.currency.toUpperCase() == paymentCurrency.toUpperCase()
-              ? _paymentAmount!
-              : ExchangeRateService().convertCurrency(_paymentAmount!, paymentCurrency, target.currency);
+          final amountInAccountCurrency =
+              target.currency.toUpperCase() == paymentCurrency.toUpperCase()
+                  ? _paymentAmount!
+                  : ExchangeRateService().convertCurrency(
+                      _paymentAmount!, paymentCurrency, target.currency);
 
           final useCase = ref.read(createCashTransactionUseCaseProvider);
           final trx = cm.CashTransaction(
@@ -2117,7 +2187,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             toAccountId: null,
             amount: amountInAccountCurrency,
             currency: target.currency,
-            description: 'Satış tahsilatı ${_saleNumberController.text} ($paymentCurrency)',
+            description:
+                'Satış tahsilatı ${_saleNumberController.text} ($paymentCurrency)',
             reference: _saleNumberController.text,
             relatedDocumentId: saleId,
             relatedDocumentType: 'sale',
