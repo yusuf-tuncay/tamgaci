@@ -1369,16 +1369,18 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
               break;
             }
           }
-          
+
           if (usedFxRate != null && usedFxRate > 0) {
             // Ürün kurlarını kullan
             totalInPaymentCurrencyForThisCurrency = total * usedFxRate;
-            debugPrint('DEBUG: Genel toplam ürün kuru kullanıldı - $total $currency x $usedFxRate = $totalInPaymentCurrencyForThisCurrency $_paymentCurrencyCode');
+            debugPrint(
+                'DEBUG: Genel toplam ürün kuru kullanıldı - $total $currency x $usedFxRate = $totalInPaymentCurrencyForThisCurrency $_paymentCurrencyCode');
           } else {
             // Kur bilgisi yoksa real-time kur kullan
             totalInPaymentCurrencyForThisCurrency = ExchangeRateService()
                 .convertCurrency(total, currency, _paymentCurrencyCode);
-            debugPrint('DEBUG: Genel toplam real-time kur kullanıldı - $total $currency = $totalInPaymentCurrencyForThisCurrency $_paymentCurrencyCode');
+            debugPrint(
+                'DEBUG: Genel toplam real-time kur kullanıldı - $total $currency = $totalInPaymentCurrencyForThisCurrency $_paymentCurrencyCode');
           }
         } catch (e) {
           debugPrint('Genel toplam para birimi dönüşüm hatası: $e');
@@ -2033,6 +2035,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         paymentCurrencyCode: _paymentCurrencyCode,
         baseCurrencyCode: _baseCurrencyCode,
         existingItems: _items,
+        customerDiscountRate: _customerDefaultDiscountRate,
       ),
     );
   }
@@ -3038,11 +3041,13 @@ class _AddItemDialog extends StatefulWidget {
   final String paymentCurrencyCode;
   final String baseCurrencyCode;
   final List<SaleItem> existingItems;
+  final double customerDiscountRate;
   const _AddItemDialog(
       {required this.onAdd,
       required this.paymentCurrencyCode,
       required this.baseCurrencyCode,
-      required this.existingItems});
+      required this.existingItems,
+      required this.customerDiscountRate});
 
   @override
   State<_AddItemDialog> createState() => _AddItemDialogState();
@@ -3064,13 +3069,19 @@ class _AddItemDialogState extends State<_AddItemDialog> {
 
   // Orijinal fiyat ve müşteri iskonto bilgileri
   double? _originalPrice;
-  final double _customerDiscountRate = 0.0;
+  double _customerDiscountRate = 0.0;
   bool _showCurrencySelection = true;
   bool _showExchangeRate = true;
+  
+  // Ürün bazında hatırlama için
+  static final Map<String, Map<String, double>> _productMemory = {};
+  String? _currentProductId;
 
   @override
   void initState() {
     super.initState();
+    // Müşteri iskonto oranını al
+    _customerDiscountRate = widget.customerDiscountRate;
     // Aynı para birimindeki ürün varsa kur seçimi gösterme
     _checkExistingCurrency();
   }
@@ -3109,6 +3120,54 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     });
   }
 
+  void _onProductSelected(String id, String? name, double? price, double? tax, String salesCurrency) {
+    setState(() {
+      _currentProductId = id;
+      _productIdController.text = id;
+      _productNameController.text = name ?? '';
+      _unitPriceController.text = price != null ? _formatTrCurrency(price) : '';
+      _productCurrencyCode = salesCurrency.toUpperCase();
+      _lineCurrencyCode = _productCurrencyCode;
+      
+      // Ürünün KDV oranını ayarla
+      if (tax != null) {
+        _taxRateController.text = tax.toStringAsFixed(0);
+      }
+      
+      // Müşteri iskonto oranını ayarla
+      _discountRateController.text = _customerDiscountRate.toStringAsFixed(0);
+      
+      // Bu ürün için daha önce girilen değerleri kontrol et
+      _loadProductMemory(id);
+    });
+  }
+
+  void _loadProductMemory(String productId) {
+    if (_productMemory.containsKey(productId)) {
+      final memory = _productMemory[productId]!;
+      setState(() {
+        // Daha önce girilen KDV oranını yükle
+        if (memory.containsKey('taxRate')) {
+          _taxRateController.text = memory['taxRate']!.toStringAsFixed(0);
+        }
+        // Daha önce girilen iskonto oranını yükle
+        if (memory.containsKey('discountRate')) {
+          _discountRateController.text = memory['discountRate']!.toStringAsFixed(0);
+        }
+      });
+    }
+  }
+
+  void _saveProductMemory(String productId) {
+    final taxRate = double.tryParse(_taxRateController.text) ?? 0.0;
+    final discountRate = double.tryParse(_discountRateController.text) ?? 0.0;
+    
+    _productMemory[productId] = {
+      'taxRate': taxRate,
+      'discountRate': discountRate,
+    };
+  }
+
   @override
   void dispose() {
     _productIdController.dispose();
@@ -3132,17 +3191,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
           children: [
             _ProductQuickPicker(
               onSelected: (id, name, price, tax, salesCurrency) {
-                setState(() {
-                  _productIdController.text = id;
-                  _productNameController.text = name ?? '';
-                  _unitPriceController.text =
-                      price != null ? _formatTrCurrency(price) : '';
-                  if (tax != null) {
-                    _taxRateController.text = tax.toStringAsFixed(0);
-                  }
-                  _productCurrencyCode = (salesCurrency).toUpperCase();
-                  _lineCurrencyCode = _productCurrencyCode;
-                });
+                _onProductSelected(id, name, price, tax, salesCurrency);
               },
             ),
             if (_productIdController.text.isNotEmpty) ...[
@@ -3566,6 +3615,11 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       fxRateToBase: _fxRateToTry, // Ürün eklerken girilen kur bilgisini aktar
     );
 
+    // Ürün hafızasını kaydet
+    if (_currentProductId != null) {
+      _saveProductMemory(_currentProductId!);
+    }
+    
     debugPrint('Ürün ekleniyor: ${item.productName}');
     widget.onAdd(item);
     debugPrint('Ürün eklendi, dialog kapatılıyor');
