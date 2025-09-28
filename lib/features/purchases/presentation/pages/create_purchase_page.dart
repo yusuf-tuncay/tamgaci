@@ -496,20 +496,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
               const SizedBox(height: 24),
 
               // Özet Bölümü
-              FutureBuilder<Widget>(
-                future: _buildSummaryCard(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Center(child: CircularProgressIndicator()),
-                      ),
-                    );
-                  }
-                  return snapshot.data ?? const SizedBox.shrink();
-                },
-              ),
+              _buildSummaryCard(),
 
               const SizedBox(height: 24),
 
@@ -1413,7 +1400,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   // Multi-currency summary metodları (satış modülünden)
-  Future<Widget> _buildSummaryCard() async {
+  Widget _buildSummaryCard() {
     if (_items.isEmpty) {
       return const Card(
         child: Padding(
@@ -1481,6 +1468,26 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       debugPrint(
           'DEBUG: Özet hesaplama - Currency: $currency, Subtotal: $subtotal, TotalDiscount: $totalDiscount, TotalTax: $totalTax, Total: $total');
 
+      // Para birimi dönüşümü hesapla
+      double convertedTotal = total;
+      if (currency != targetCurrency) {
+        try {
+          // Senkron dönüşüm için ExchangeRateService'i kullan
+          final rate = ExchangeRateService().getExchangeRate(currency);
+          if (rate != null) {
+            convertedTotal = ExchangeRateService().convertCurrency(total, currency, targetCurrency);
+            debugPrint('DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $convertedTotal');
+          }
+        } catch (e) {
+          debugPrint('DEBUG: Para birimi dönüşüm hatası: $e');
+        }
+      } else {
+        debugPrint('DEBUG: Aynı para birimi - $currency: $total');
+      }
+
+      totalInTargetCurrency += convertedTotal;
+      debugPrint('DEBUG: totalInTargetCurrency güncellendi: $totalInTargetCurrency');
+
       currencyCards.add(_buildCurrencySummaryCard(
         currency: currency,
         subtotal: subtotal,
@@ -1489,11 +1496,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         total: total,
         targetCurrency: targetCurrency,
         onTotalCalculated: (targetAmount) {
-          debugPrint(
-              'DEBUG: onTotalCalculated çağrıldı - targetAmount: $targetAmount');
-          totalInTargetCurrency += targetAmount;
-          debugPrint(
-              'DEBUG: totalInTargetCurrency güncellendi: $totalInTargetCurrency');
+          // Bu callback artık kullanılmıyor ama metodun imzası için gerekli
         },
       ));
     }
@@ -1557,11 +1560,15 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   ),
                 ),
                 const SizedBox(height: 12.0),
-                _buildSummaryRow('Ara Toplam:', subtotal, currency, targetCurrency: targetCurrency),
-                _buildSummaryRow('İndirim:', -discount, currency, targetCurrency: targetCurrency),
-                _buildSummaryRow('KDV:', tax, currency, targetCurrency: targetCurrency),
+                _buildSummaryRow('Ara Toplam:', subtotal, currency,
+                    targetCurrency: targetCurrency),
+                _buildSummaryRow('İndirim:', -discount, currency,
+                    targetCurrency: targetCurrency),
+                _buildSummaryRow('KDV:', tax, currency,
+                    targetCurrency: targetCurrency),
                 const Divider(),
-                _buildSummaryRow('Toplam:', total, currency, isTotal: true, targetCurrency: targetCurrency),
+                _buildSummaryRow('Toplam:', total, currency,
+                    isTotal: true, targetCurrency: targetCurrency),
               ],
             ),
           ),
@@ -1584,13 +1591,15 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
               fontSize: isTotal ? 16.0 : 14.0,
             ),
           ),
-          _buildCurrencyAmount(amount, currency, isTotal: isTotal, targetCurrency: targetCurrency),
+          _buildCurrencyAmount(amount, currency,
+              isTotal: isTotal, targetCurrency: targetCurrency),
         ],
       ),
     );
   }
 
-  Widget _buildCurrencyAmount(double amount, String currency, {bool isTotal = false, String? targetCurrency}) {
+  Widget _buildCurrencyAmount(double amount, String currency,
+      {bool isTotal = false, String? targetCurrency}) {
     if (targetCurrency != null && currency != targetCurrency) {
       // Farklı para birimi ise dönüştürülmüş değeri göster
       return FutureBuilder<double?>(
@@ -1644,13 +1653,15 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     }
   }
 
-  Future<double?> _convertToTargetCurrency(double amount, String fromCurrency, String toCurrency) async {
+  Future<double?> _convertToTargetCurrency(
+      double amount, String fromCurrency, String toCurrency) async {
     try {
       if (fromCurrency == toCurrency) return amount;
-      
+
       final rate = await ExchangeRateService().getExchangeRate(fromCurrency);
       if (rate != null) {
-        return ExchangeRateService().convertCurrency(amount, fromCurrency, toCurrency);
+        return ExchangeRateService()
+            .convertCurrency(amount, fromCurrency, toCurrency);
       }
       return null;
     } catch (e) {
