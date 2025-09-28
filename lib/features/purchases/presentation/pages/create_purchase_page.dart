@@ -171,7 +171,12 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     final settings = ref.read(settingsProvider).valueOrNull;
     if (settings != null) {
       setState(() {
-        _currencyCode = settings.currency.name.toUpperCase();
+        // TL -> TRY dönüşümü
+        String currencyName = settings.currency.name.toUpperCase();
+        if (currencyName == 'TL') {
+          currencyName = 'TRY';
+        }
+        _currencyCode = currencyName;
       });
     }
 
@@ -639,7 +644,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       ),
     );
   }
-
 
   void _addPurchaseItem() {
     // Müşteri seçili değilse uyarı ver
