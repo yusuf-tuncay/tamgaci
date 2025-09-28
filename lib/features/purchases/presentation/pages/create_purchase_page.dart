@@ -2124,9 +2124,11 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       customerDiscountRate > 0) {
                     _discountRateController.text =
                         customerDiscountRate.toStringAsFixed(1);
-                    debugPrint('DEBUG: Müşteri sabit iskontosu otomatik dolduruldu: $customerDiscountRate');
+                    debugPrint(
+                        'DEBUG: Müşteri sabit iskontosu otomatik dolduruldu: $customerDiscountRate');
                   } else {
-                    debugPrint('DEBUG: Müşteri sabit iskontosu yok veya 0: $customerDiscountRate');
+                    debugPrint(
+                        'DEBUG: Müşteri sabit iskontosu yok veya 0: $customerDiscountRate');
                   }
                 });
               },
@@ -2309,31 +2311,17 @@ class _AddItemDialogState extends State<_AddItemDialog> {
             Row(
               children: [
                 Expanded(
-                  child: Focus(
-                    onFocusChange: (hasFocus) {
-                      if (!hasFocus) {
-                        final raw = _discountRateController.text.trim();
-                        if (raw.isEmpty) return;
-                        final parsed = double.tryParse(
-                            raw.replaceAll('.', '').replaceAll(',', '.'));
-                        if (parsed != null) {
-                          _discountRateController.text =
-                              _formatTrNumber(parsed);
-                        }
-                      }
-                    },
-                    child: TextFormField(
-                      controller: _discountRateController,
-                      decoration: const InputDecoration(
-                        labelText: 'İskonto (%)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                      ],
+                  child: TextFormField(
+                    controller: _discountRateController,
+                    decoration: const InputDecoration(
+                      labelText: 'İskonto (%)',
+                      border: OutlineInputBorder(),
                     ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 16.0),
@@ -2433,7 +2421,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     final gross = quantity * unitPrice;
 
     // İskonto hesaplama: Kullanıcının girdiği oranı kullan (müşteri sabit iskontosu otomatik doldurulmuş olabilir)
-    debugPrint('DEBUG: _addItem - discountRate: $discountRate, _customerDiscountRate: $_customerDiscountRate');
+    debugPrint(
+        'DEBUG: _addItem - discountRate: $discountRate, _customerDiscountRate: $_customerDiscountRate');
     final double finalDiscountAmount = gross * (discountRate / 100);
 
     final net = gross - finalDiscountAmount;
@@ -2589,8 +2578,10 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                           if (widget.customerId != null &&
                               widget.customerId!.isNotEmpty) {
                             try {
+                              debugPrint('DEBUG: Müşteri ID: ${widget.customerId}');
                               final customer = await ref.read(
                                   customerProvider(widget.customerId!).future);
+                              debugPrint('DEBUG: Müşteri bilgisi: $customer');
                               if (customer != null &&
                                   customer.fixedDiscountRate != null &&
                                   customer.fixedDiscountRate! > 0) {
@@ -2598,10 +2589,15 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                                     customer.fixedDiscountRate!;
                                 finalPrice = originalPrice *
                                     (1 - customerDiscountRate / 100);
+                                debugPrint('DEBUG: Müşteri sabit iskontosu uygulandı: $customerDiscountRate');
+                              } else {
+                                debugPrint('DEBUG: Müşteri sabit iskontosu yok: ${customer?.fixedDiscountRate}');
                               }
                             } catch (e) {
-                              debugPrint('Müşteri bilgisi alınamadı: $e');
+                              debugPrint('DEBUG: Müşteri bilgisi alınamadı: $e');
                             }
+                          } else {
+                            debugPrint('DEBUG: Müşteri ID yok: ${widget.customerId}');
                           }
 
                           widget.onSelected(
