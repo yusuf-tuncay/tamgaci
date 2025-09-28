@@ -2231,6 +2231,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   double? _originalPrice;
   double _customerDiscountRate = 0.0;
   bool _showCurrencySelection = true;
+  bool _showExchangeRate = true;
 
   @override
   void initState() {
@@ -2244,10 +2245,11 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     final existingCurrencies =
         widget.existingItems.map((item) => item.currency).toSet();
     
-    // Eğer mevcut ürün yoksa, para birimi seçimi göster
+    // Eğer mevcut ürün yoksa, para birimi seçimi ve kur bilgisi göster
     if (existingCurrencies.isEmpty) {
       setState(() {
         _showCurrencySelection = true;
+        _showExchangeRate = true;
         _lineCurrencyCode = 'TRY'; // Varsayılan para birimi
       });
       return;
@@ -2257,6 +2259,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     if (existingCurrencies.length == 1 && existingCurrencies.contains('TRY')) {
       setState(() {
         _showCurrencySelection = true;
+        _showExchangeRate = true;
         _lineCurrencyCode = 'TRY';
       });
       return;
@@ -2266,6 +2269,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     // Kullanıcı yeni para birimi seçebilir, para birimi seçimi göster
     setState(() {
       _showCurrencySelection = true;
+      _showExchangeRate = true;
       _lineCurrencyCode = 'TRY'; // Varsayılan para birimi
     });
   }
@@ -2386,23 +2390,42 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       onChanged: (v) async {
                         if (v == null) return;
                         setState(() => _lineCurrencyCode = v);
-                        // Kur: 1 LINE = ? BASE
-                        if (v == widget.baseCurrencyCode) {
-                          setState(() => _fxRateToTry = 1.0);
+                        
+                        // Aynı para birimindeki ürün var mı kontrol et
+                        final existingItem = widget.existingItems.firstWhere(
+                          (item) => item.currency == v,
+                          orElse: () => _PurchaseItemForm(),
+                        );
+                        
+                        if (existingItem.currency == v && existingItem.fxRateToBase != null) {
+                          // Aynı para birimindeki ürün varsa, kur bilgisini gizle ve mevcut kur bilgisini kullan
+                          setState(() {
+                            _showExchangeRate = false;
+                            _fxRateToTry = existingItem.fxRateToBase;
+                            _manualRateController.text = _formatTrNumber(existingItem.fxRateToBase!);
+                          });
                         } else {
-                          // Otomatik kur getirme
-                          try {
-                            await ExchangeRateService().getExchangeRate(v);
-                            final r = ExchangeRateService().convertCurrency(
-                                1.0, v, widget.baseCurrencyCode);
-                            setState(() {
-                              _fxRateToTry = r;
-                              // Manuel kur alanını da otomatik doldur
-                              _manualRateController.text = _formatTrNumber(r);
-                            });
-                          } catch (e) {
-                            debugPrint('Otomatik kur alma hatası: $e');
-                            setState(() => _fxRateToTry = null);
+                          // Aynı para birimindeki ürün yoksa, kur bilgisini göster
+                          setState(() => _showExchangeRate = true);
+                          
+                          // Kur: 1 LINE = ? BASE
+                          if (v == widget.baseCurrencyCode) {
+                            setState(() => _fxRateToTry = 1.0);
+                          } else {
+                            // Otomatik kur getirme
+                            try {
+                              await ExchangeRateService().getExchangeRate(v);
+                              final r = ExchangeRateService().convertCurrency(
+                                  1.0, v, widget.baseCurrencyCode);
+                              setState(() {
+                                _fxRateToTry = r;
+                                // Manuel kur alanını da otomatik doldur
+                                _manualRateController.text = _formatTrNumber(r);
+                              });
+                            } catch (e) {
+                              debugPrint('Otomatik kur alma hatası: $e');
+                              setState(() => _fxRateToTry = null);
+                            }
                           }
                         }
                       },
@@ -2485,7 +2508,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ],
             ),
             const SizedBox(height: 6),
-            if (_lineCurrencyCode != _productCurrencyCode &&
+            if (_showExchangeRate && _lineCurrencyCode != _productCurrencyCode &&
                 _lineCurrencyCode != widget.baseCurrencyCode)
               Row(
                 children: [
