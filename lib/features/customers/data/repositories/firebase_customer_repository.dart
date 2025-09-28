@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/entities/customer_enums.dart';
 import '../../domain/repositories/customer_repository.dart';
@@ -430,14 +431,26 @@ class FirebaseCustomerRepository implements CustomerRepository {
         updatedBy: _uid(),
       );
 
+      // Debug: Firestore'a kayıt öncesi
+      debugPrint('DEBUG: Firestore\'a kayıt öncesi - maturityDays: ${customerEntity.maturityDays}');
+      debugPrint('DEBUG: Firestore\'a kayıt öncesi - fixedDiscountRate: ${customerEntity.fixedDiscountRate}');
+      
+      final firestoreData = customerEntity.toFirestore();
+      debugPrint('DEBUG: Firestore data - maturityDays: ${firestoreData['maturityDays']}');
+      debugPrint('DEBUG: Firestore data - fixedDiscountRate: ${firestoreData['fixedDiscountRate']}');
+
       await _firestore
           .collection('tenants')
           .doc(tenantId)
           .collection('customers')
           .doc(customer.id)
-          .update(customerEntity.toFirestore());
+          .update(firestoreData);
+          
+      // Debug: Firestore'a kayıt sonrası
+      debugPrint('DEBUG: Firestore\'a kayıt başarılı!');
     } catch (e) {
       AppLogger.error('Error updating customer', e);
+      debugPrint('DEBUG: Firestore kayıt hatası: $e');
       rethrow;
     }
   }
