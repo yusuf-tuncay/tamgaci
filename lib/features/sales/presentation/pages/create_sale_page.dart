@@ -257,25 +257,18 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                          FilteringTextInputFormatter.digitsOnly,
+                          _PaymentAmountFormatter(),
                         ],
                         onChanged: (value) {
                           if (value.trim().isEmpty) {
                             setState(() => _paymentAmount = null);
                           } else {
-                            // Sadece rakamları al
+                            // Sadece rakamları al ve parse et
                             final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
                             if (cleanValue.isNotEmpty) {
                               final parsed = double.tryParse(cleanValue);
                               setState(() => _paymentAmount = parsed);
-                              
-                              // Anlık formatlama
-                              final formatter = NumberFormat('#,##0.00', 'tr_TR');
-                              final formatted = formatter.format(parsed ?? 0);
-                              _paymentAmountController.value = TextEditingValue(
-                                text: formatted,
-                                selection: TextSelection.collapsed(offset: formatted.length),
-                              );
                             }
                           }
                         },
@@ -3347,6 +3340,39 @@ class _AddItemDialogState extends State<_AddItemDialog> {
 }
 
 /// Ürün düzenleme dialog'u
+class _PaymentAmountFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isEmpty) {
+      return newValue;
+    }
+
+    // Sadece rakamları al
+    final cleanValue = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    if (cleanValue.isEmpty) {
+      return const TextEditingValue(text: '');
+    }
+
+    // Sayıyı parse et
+    final number = double.tryParse(cleanValue);
+    if (number == null) {
+      return oldValue;
+    }
+
+    // Formatla
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    final formatted = formatter.format(number);
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 class _EditItemDialog extends StatefulWidget {
   final SaleItem item;
   final void Function(SaleItem) onSave;
