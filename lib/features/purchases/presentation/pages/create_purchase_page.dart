@@ -668,6 +668,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             : null,
         purchaseType: _purchaseType,
         existingItems: _items,
+        customerDiscountRate: _customerDefaultDiscountRate,
       ),
     );
   }
@@ -2199,6 +2200,7 @@ class _AddItemDialog extends StatefulWidget {
   final String? customerId;
   final PurchaseType purchaseType;
   final List<_PurchaseItemForm> existingItems;
+  final double customerDiscountRate;
 
   const _AddItemDialog({
     required this.onAdd,
@@ -2207,6 +2209,7 @@ class _AddItemDialog extends StatefulWidget {
     this.customerId,
     required this.purchaseType,
     required this.existingItems,
+    required this.customerDiscountRate,
   });
 
   @override
@@ -2233,11 +2236,28 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   bool _showCurrencySelection = true;
   bool _showExchangeRate = true;
 
+  // Ürün bazında hatırlama için
+  static final Map<String, Map<String, double>> _productMemory = {};
+  String? _currentProductId;
+
   @override
   void initState() {
     super.initState();
+    // Müşteri iskonto oranını al
+    _customerDiscountRate = widget.customerDiscountRate;
     // Aynı para birimindeki ürün varsa kur seçimi gösterme
     _checkExistingCurrency();
+  }
+
+  @override
+  void didUpdateWidget(_AddItemDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Müşteri iskonto oranı güncellendiğinde güncelle
+    if (oldWidget.customerDiscountRate != widget.customerDiscountRate) {
+      _customerDiscountRate = widget.customerDiscountRate;
+      debugPrint(
+          'DEBUG: Müşteri iskonto oranı güncellendi: $_customerDiscountRate');
+    }
   }
 
   void _checkExistingCurrency() {
@@ -2287,6 +2307,77 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     super.dispose();
   }
 
+  void _onProductSelected(String id, String? name, double? price, double? tax,
+      String salesCurrency) {
+    setState(() {
+      _currentProductId = id;
+      _productIdController.text = id;
+      _productNameController.text = name ?? '';
+      _unitPriceController.text = price != null ? _formatTrCurrency(price) : '';
+      _productCurrencyCode = salesCurrency.toUpperCase();
+      _lineCurrencyCode = _productCurrencyCode;
+
+      // Bu ürün için daha önce girilen değerleri kontrol et
+      debugPrint(
+          'DEBUG: Ürün seçildi - ID: $id, Tax: $tax, CustomerDiscount: $_customerDiscountRate');
+
+      if (_productMemory.containsKey(id)) {
+        // Hafızada varsa, hafızadaki değerleri kullan
+        final memory = _productMemory[id]!;
+        debugPrint(
+            'DEBUG: Hafızada bulundu - TaxRate: ${memory['taxRate']}, DiscountRate: ${memory['discountRate']}');
+
+        if (memory.containsKey('taxRate')) {
+          _taxRateController.text = memory['taxRate']!.toStringAsFixed(0);
+        } else {
+          // Hafızada yoksa ürünün KDV oranını kullan
+          if (tax != null) {
+            _taxRateController.text = tax.toStringAsFixed(0);
+            debugPrint('DEBUG: Ürün KDV oranı kullanıldı: $tax');
+          }
+        }
+
+        if (memory.containsKey('discountRate')) {
+          _discountRateController.text =
+              memory['discountRate']!.toStringAsFixed(0);
+        } else {
+          // Hafızada yoksa müşteri iskonto oranını kullan
+          _discountRateController.text =
+              _customerDiscountRate.toStringAsFixed(0);
+          debugPrint(
+              'DEBUG: Müşteri iskonto oranı kullanıldı: $_customerDiscountRate');
+        }
+      } else {
+        // Hafızada yoksa otomatik değerleri kullan
+        debugPrint('DEBUG: Hafızada yok, otomatik değerler kullanılıyor');
+
+        // Ürünün KDV oranını ayarla
+        if (tax != null) {
+          _taxRateController.text = tax.toStringAsFixed(0);
+          debugPrint('DEBUG: Ürün KDV oranı ayarlandı: $tax');
+        }
+
+        // Müşteri iskonto oranını ayarla
+        _discountRateController.text = _customerDiscountRate.toStringAsFixed(0);
+        debugPrint(
+            'DEBUG: Müşteri iskonto oranı ayarlandı: $_customerDiscountRate');
+      }
+    });
+  }
+
+  void _saveProductMemory(String productId) {
+    final taxRate = double.tryParse(_taxRateController.text) ?? 0.0;
+    final discountRate = double.tryParse(_discountRateController.text) ?? 0.0;
+
+    _productMemory[productId] = {
+      'taxRate': taxRate,
+      'discountRate': discountRate,
+    };
+
+    debugPrint(
+        'DEBUG: Ürün hafızaya kaydedildi - ID: $productId, TaxRate: $taxRate, DiscountRate: $discountRate');
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -2300,33 +2391,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               purchaseType: widget.purchaseType,
               onSelected: (id, name, price, tax, salesCurrency,
                   {originalPrice, customerDiscountRate}) {
-                setState(() {
-                  _productIdController.text = id;
-                  _productNameController.text = name ?? '';
-                  _unitPriceController.text =
-                      price != null ? _formatTrCurrency(price) : '';
-                  if (tax != null) {
-                    _taxRateController.text = tax.toStringAsFixed(0);
-                  }
-                  _productCurrencyCode = (salesCurrency).toUpperCase();
-                  _lineCurrencyCode = _productCurrencyCode;
-
-                  // Orijinal fiyat ve müşteri iskonto bilgilerini sakla
-                  _originalPrice = originalPrice;
-                  _customerDiscountRate = customerDiscountRate ?? 0.0;
-
-                  // Müşteri sabit iskontosunu iskonto alanına otomatik doldur
-                  if (customerDiscountRate != null &&
-                      customerDiscountRate > 0) {
-                    _discountRateController.text =
-                        customerDiscountRate.toStringAsFixed(1);
-                    debugPrint(
-                        'DEBUG: Müşteri sabit iskontosu otomatik dolduruldu: $customerDiscountRate');
-                  } else {
-                    debugPrint(
-                        'DEBUG: Müşteri sabit iskontosu yok veya 0: $customerDiscountRate');
-                  }
-                });
+                _onProductSelected(id, name, price, tax, salesCurrency);
               },
             ),
             if (_productIdController.text.isNotEmpty) ...[
@@ -2531,13 +2596,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       onChanged: (value) {
                         // Kullanıcı kur bilgisini girdiğinde _fxRateToTry'ı güncelle
                         if (value.isNotEmpty) {
-                          final cleaned = value.replaceAll('.', '').replaceAll(',', '.');
+                          final cleaned =
+                              value.replaceAll('.', '').replaceAll(',', '.');
                           final parsed = double.tryParse(cleaned);
                           if (parsed != null) {
                             setState(() {
                               _fxRateToTry = parsed;
                             });
-                            debugPrint('DEBUG: Manuel kur girildi - _fxRateToTry: $_fxRateToTry');
+                            debugPrint(
+                                'DEBUG: Manuel kur girildi - _fxRateToTry: $_fxRateToTry');
                           }
                         } else {
                           setState(() {
@@ -2728,6 +2795,11 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     item.quantityController.text = quantity.toString();
     item.unitPriceController.text = unitPrice.toString();
     item.taxRateController.text = taxRate.toString();
+
+    // Ürün hafızaya kaydet
+    if (_currentProductId != null) {
+      _saveProductMemory(_currentProductId!);
+    }
 
     widget.onAdd(item);
     Navigator.of(context).pop();
