@@ -2244,35 +2244,30 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     final existingCurrencies =
         widget.existingItems.map((item) => item.currency).toSet();
     
-    // TRY için kur gerekmez, diğer para birimleri için kontrol et
-    if (existingCurrencies.contains('TRY')) {
-      // TRY varsa, TRY kullan (kur gerekmez)
+    // Eğer mevcut ürün yoksa, para birimi seçimi göster
+    if (existingCurrencies.isEmpty) {
       setState(() {
-        _lineCurrencyCode = 'TRY';
-        _showCurrencySelection = false;
-        _fxRateToTry = 1.0; // TRY için kur 1
+        _showCurrencySelection = true;
+        _lineCurrencyCode = 'TRY'; // Varsayılan para birimi
       });
-    } else if (existingCurrencies.isNotEmpty) {
-      // TRY yoksa, ilk mevcut para birimini kullan
-      final firstCurrency = existingCurrencies.first;
-      setState(() {
-        _lineCurrencyCode = firstCurrency;
-        _showCurrencySelection = false;
-      });
-
-      // Mevcut ürünün kur bilgisini kullan
-      final existingItem = widget.existingItems.firstWhere(
-        (item) => item.currency == firstCurrency,
-        orElse: () => widget.existingItems.first,
-      );
-      if (existingItem.fxRateToBase != null) {
-        setState(() {
-          _fxRateToTry = existingItem.fxRateToBase;
-          _manualRateController.text =
-              _formatTrNumber(existingItem.fxRateToBase!);
-        });
-      }
+      return;
     }
+    
+    // Eğer sadece TRY varsa, para birimi seçimi göster (kullanıcı farklı para birimi seçebilir)
+    if (existingCurrencies.length == 1 && existingCurrencies.contains('TRY')) {
+      setState(() {
+        _showCurrencySelection = true;
+        _lineCurrencyCode = 'TRY';
+      });
+      return;
+    }
+    
+    // Eğer birden fazla para birimi varsa veya TRY dışında para birimi varsa
+    // Kullanıcı yeni para birimi seçebilir, para birimi seçimi göster
+    setState(() {
+      _showCurrencySelection = true;
+      _lineCurrencyCode = 'TRY'; // Varsayılan para birimi
+    });
   }
 
   @override
