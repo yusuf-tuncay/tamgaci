@@ -3072,7 +3072,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   double _customerDiscountRate = 0.0;
   bool _showCurrencySelection = true;
   bool _showExchangeRate = true;
-  
+
   // Ürün bazında hatırlama için
   static final Map<String, Map<String, double>> _productMemory = {};
   String? _currentProductId;
@@ -3120,7 +3120,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     });
   }
 
-  void _onProductSelected(String id, String? name, double? price, double? tax, String salesCurrency) {
+  void _onProductSelected(String id, String? name, double? price, double? tax,
+      String salesCurrency) {
     setState(() {
       _currentProductId = id;
       _productIdController.text = id;
@@ -3128,40 +3129,54 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       _unitPriceController.text = price != null ? _formatTrCurrency(price) : '';
       _productCurrencyCode = salesCurrency.toUpperCase();
       _lineCurrencyCode = _productCurrencyCode;
-      
-      // Ürünün KDV oranını ayarla
-      if (tax != null) {
-        _taxRateController.text = tax.toStringAsFixed(0);
-      }
-      
-      // Müşteri iskonto oranını ayarla
-      _discountRateController.text = _customerDiscountRate.toStringAsFixed(0);
-      
+
       // Bu ürün için daha önce girilen değerleri kontrol et
-      _loadProductMemory(id);
+      debugPrint('DEBUG: Ürün seçildi - ID: $id, Tax: $tax, CustomerDiscount: $_customerDiscountRate');
+      
+      if (_productMemory.containsKey(id)) {
+        // Hafızada varsa, hafızadaki değerleri kullan
+        final memory = _productMemory[id]!;
+        debugPrint('DEBUG: Hafızada bulundu - TaxRate: ${memory['taxRate']}, DiscountRate: ${memory['discountRate']}');
+        
+        if (memory.containsKey('taxRate')) {
+          _taxRateController.text = memory['taxRate']!.toStringAsFixed(0);
+        } else {
+          // Hafızada yoksa ürünün KDV oranını kullan
+          if (tax != null) {
+            _taxRateController.text = tax.toStringAsFixed(0);
+            debugPrint('DEBUG: Ürün KDV oranı kullanıldı: $tax');
+          }
+        }
+        
+        if (memory.containsKey('discountRate')) {
+          _discountRateController.text = memory['discountRate']!.toStringAsFixed(0);
+        } else {
+          // Hafızada yoksa müşteri iskonto oranını kullan
+          _discountRateController.text = _customerDiscountRate.toStringAsFixed(0);
+          debugPrint('DEBUG: Müşteri iskonto oranı kullanıldı: $_customerDiscountRate');
+        }
+      } else {
+        // Hafızada yoksa otomatik değerleri kullan
+        debugPrint('DEBUG: Hafızada yok, otomatik değerler kullanılıyor');
+        
+        // Ürünün KDV oranını ayarla
+        if (tax != null) {
+          _taxRateController.text = tax.toStringAsFixed(0);
+          debugPrint('DEBUG: Ürün KDV oranı ayarlandı: $tax');
+        }
+        
+        // Müşteri iskonto oranını ayarla
+        _discountRateController.text = _customerDiscountRate.toStringAsFixed(0);
+        debugPrint('DEBUG: Müşteri iskonto oranı ayarlandı: $_customerDiscountRate');
+      }
     });
   }
 
-  void _loadProductMemory(String productId) {
-    if (_productMemory.containsKey(productId)) {
-      final memory = _productMemory[productId]!;
-      setState(() {
-        // Daha önce girilen KDV oranını yükle
-        if (memory.containsKey('taxRate')) {
-          _taxRateController.text = memory['taxRate']!.toStringAsFixed(0);
-        }
-        // Daha önce girilen iskonto oranını yükle
-        if (memory.containsKey('discountRate')) {
-          _discountRateController.text = memory['discountRate']!.toStringAsFixed(0);
-        }
-      });
-    }
-  }
 
   void _saveProductMemory(String productId) {
     final taxRate = double.tryParse(_taxRateController.text) ?? 0.0;
     final discountRate = double.tryParse(_discountRateController.text) ?? 0.0;
-    
+
     _productMemory[productId] = {
       'taxRate': taxRate,
       'discountRate': discountRate,
@@ -3619,7 +3634,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     if (_currentProductId != null) {
       _saveProductMemory(_currentProductId!);
     }
-    
+
     debugPrint('Ürün ekleniyor: ${item.productName}');
     widget.onAdd(item);
     debugPrint('Ürün eklendi, dialog kapatılıyor');
