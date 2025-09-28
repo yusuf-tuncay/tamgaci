@@ -2436,19 +2436,12 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                         if (v == null) return;
                         setState(() => _lineCurrencyCode = v);
 
-                        debugPrint('DEBUG: Para birimi seçildi: $v, Müşteri para birimi: ${widget.baseCurrencyCode}');
+                        debugPrint(
+                            'DEBUG: Para birimi seçildi: $v, Müşteri para birimi: ${widget.baseCurrencyCode}, Ürün para birimi: $_productCurrencyCode');
 
-                        // Müşterinin para birimine göre kur bilgisi göster/gizle
-                        if (v == widget.baseCurrencyCode) {
-                          // Seçilen para birimi müşterinin para birimiyle aynıysa kur bilgisi gizle
-                          setState(() {
-                            _showExchangeRate = false;
-                            _fxRateToTry = null;
-                            _manualRateController.clear();
-                          });
-                          debugPrint('DEBUG: Kur bilgisi gizlendi - aynı para birimi');
-                        } else {
-                          // Seçilen para birimi müşterinin para biriminden farklıysa kur bilgisi göster
+                        // Ürünün para birimi ile müşterinin para birimi farklıysa kur bilgisi göster
+                        if (_productCurrencyCode != widget.baseCurrencyCode) {
+                          // Ürünün para birimi müşterinin para biriminden farklıysa kur bilgisi göster
                           // Aynı para birimindeki ürün var mı kontrol et
                           final existingItem = widget.existingItems.firstWhere(
                             (item) => item.currency == v,
@@ -2464,11 +2457,13 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                               _manualRateController.text =
                                   _formatTrNumber(existingItem.fxRateToBase!);
                             });
-                            debugPrint('DEBUG: Mevcut ürün kuru kullanıldı: ${existingItem.fxRateToBase}');
+                            debugPrint(
+                                'DEBUG: Mevcut ürün kuru kullanıldı: ${existingItem.fxRateToBase}');
                           } else {
                             // Aynı para birimindeki ürün yoksa, kur bilgisini göster
                             setState(() => _showExchangeRate = true);
-                            debugPrint('DEBUG: Kur bilgisi gösterildi - farklı para birimi');
+                            debugPrint(
+                                'DEBUG: Kur bilgisi gösterildi - farklı para birimi');
 
                             // Otomatik kur getirme
                             try {
@@ -2486,6 +2481,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                               setState(() => _fxRateToTry = null);
                             }
                           }
+                        } else {
+                          // Ürünün para birimi müşterinin para birimiyle aynıysa kur bilgisi gizle
+                          setState(() {
+                            _showExchangeRate = false;
+                            _fxRateToTry = null;
+                            _manualRateController.clear();
+                          });
+                          debugPrint(
+                              'DEBUG: Kur bilgisi gizlendi - aynı para birimi');
                         }
                       },
                     ),
@@ -2568,7 +2572,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
             ),
             const SizedBox(height: 6),
             if (_showExchangeRate &&
-                _lineCurrencyCode != widget.baseCurrencyCode)
+                _productCurrencyCode != widget.baseCurrencyCode)
               Row(
                 children: [
                   Expanded(
