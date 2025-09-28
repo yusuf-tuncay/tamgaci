@@ -1530,6 +1530,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         onTotalCalculated: (targetAmount) {
           // Bu callback artık kullanılmıyor ama metodun imzası için gerekli
         },
+        items: items,
       ));
     }
 
@@ -1554,6 +1555,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     required double total,
     required String targetCurrency,
     required Function(double) onTotalCalculated,
+    required List<_PurchaseItemForm> items,
   }) {
     return FutureBuilder<ExchangeRate?>(
       future: currency == targetCurrency
@@ -1600,7 +1602,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                     targetCurrency: targetCurrency, items: items),
                 const Divider(),
                 _buildSummaryRow('Toplam:', total, currency,
-                    isTotal: true, targetCurrency: targetCurrency, items: items),
+                    isTotal: true,
+                    targetCurrency: targetCurrency,
+                    items: items),
               ],
             ),
           ),
@@ -1610,7 +1614,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildSummaryRow(String label, double amount, String currency,
-      {bool isTotal = false, String? targetCurrency, List<_PurchaseItemForm>? items}) {
+      {bool isTotal = false,
+      String? targetCurrency,
+      List<_PurchaseItemForm>? items}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -1631,7 +1637,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildCurrencyAmount(double amount, String currency,
-      {bool isTotal = false, String? targetCurrency, List<_PurchaseItemForm>? items}) {
+      {bool isTotal = false,
+      String? targetCurrency,
+      List<_PurchaseItemForm>? items}) {
     if (targetCurrency != null && currency != targetCurrency) {
       // Farklı para birimi ise dönüştürülmüş değeri göster
       return FutureBuilder<double?>(
@@ -1687,7 +1695,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Future<double?> _convertToTargetCurrencyWithProductRate(
-      double amount, String fromCurrency, String toCurrency, List<_PurchaseItemForm> items) async {
+      double amount,
+      String fromCurrency,
+      String toCurrency,
+      List<_PurchaseItemForm> items) async {
     try {
       if (fromCurrency == toCurrency) return amount;
 
@@ -2230,7 +2241,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
 
   void _checkExistingCurrency() {
     // Mevcut ürünlerde aynı para birimi var mı kontrol et
-    final existingCurrencies = widget.existingItems.map((item) => item.currency).toSet();
+    final existingCurrencies =
+        widget.existingItems.map((item) => item.currency).toSet();
     if (existingCurrencies.isNotEmpty) {
       // İlk mevcut para birimini kullan
       final firstCurrency = existingCurrencies.first;
@@ -2238,7 +2250,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
         _lineCurrencyCode = firstCurrency;
         _showCurrencySelection = false;
       });
-      
+
       // Mevcut ürünün kur bilgisini kullan
       final existingItem = widget.existingItems.firstWhere(
         (item) => item.currency == firstCurrency,
@@ -2247,7 +2259,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       if (existingItem.fxRateToBase != null) {
         setState(() {
           _fxRateToTry = existingItem.fxRateToBase;
-          _manualRateController.text = _formatTrNumber(existingItem.fxRateToBase!);
+          _manualRateController.text =
+              _formatTrNumber(existingItem.fxRateToBase!);
         });
       }
     }
@@ -2376,8 +2389,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                           // Otomatik kur getirme
                           try {
                             await ExchangeRateService().getExchangeRate(v);
-                            final r = ExchangeRateService()
-                                .convertCurrency(1.0, v, widget.baseCurrencyCode);
+                            final r = ExchangeRateService().convertCurrency(
+                                1.0, v, widget.baseCurrencyCode);
                             setState(() {
                               _fxRateToTry = r;
                               // Manuel kur alanını da otomatik doldur
