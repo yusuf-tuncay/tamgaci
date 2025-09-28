@@ -274,6 +274,11 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
       final parsedFixedDiscount =
           CurrencyHelper.parseCurrency(_fixedDiscountRateController.text);
 
+      // Debug mesajları
+      debugPrint('DEBUG: Ödeme vadesi: ${_maturityDaysController.text}');
+      debugPrint('DEBUG: Sabit iskonto oranı: ${_fixedDiscountRateController.text}');
+      debugPrint('DEBUG: Parsed fixed discount: $parsedFixedDiscount');
+
       // Mevcut müşteriyi güncelle
       final customers = await ref.read(customersProvider.future);
       final existingCustomer = customers.firstWhere(
@@ -337,6 +342,10 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
         updatedAt: DateTime.now(),
         updatedBy: uid,
       );
+
+      // Debug mesajları - güncellenmiş müşteri
+      debugPrint('DEBUG: Güncellenmiş müşteri - maturityDays: ${customer.maturityDays}');
+      debugPrint('DEBUG: Güncellenmiş müşteri - fixedDiscountRate: ${customer.fixedDiscountRate}');
 
       await ref.read(customerRepositoryProvider).updateCustomer(customer);
       AppLogger.info('Customer updated successfully: ${customer.name}');
