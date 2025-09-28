@@ -804,7 +804,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                           Expanded(
                             child: CustomDropdown<String>(
                               value: _currency,
-                              label: 'Para Birimi',
+                              label: 'Para Birimi (Değiştirilemez)',
                               items: const [
                                 'TRY',
                                 'USD',
@@ -831,11 +831,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                                 'AED'
                               ],
                               itemBuilder: (currency) => Text(currency),
-                              onChanged: (value) {
-                                setState(() {
-                                  _currency = value!;
-                                });
-                              },
+                              onChanged: null, // Sadece okunur yap
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -864,7 +860,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                         children: [
                           Expanded(
                             child: AutoFormattedTextField(
-                              label: 'Açılış Bakiyesi',
+                              label: 'Açılış Bakiyesi (Değiştirilemez)',
                               hint: '0,00 (eksi değer girilebilir)',
                               controller: _openingBalanceController,
                               keyboardType:
@@ -878,6 +874,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                                 return _formatMoneyTyping(raw,
                                     allowNegative: true);
                               },
+                              enabled: false, // Sadece okunur yap
                             ),
                           ),
                           const SizedBox(width: 16),
