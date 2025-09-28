@@ -667,6 +667,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             ? _customerIdController.text
             : null,
         purchaseType: _purchaseType,
+        existingItems: _items,
       ),
     );
   }
@@ -1592,14 +1593,14 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                 ),
                 const SizedBox(height: 12.0),
                 _buildSummaryRow('Ara Toplam:', subtotal, currency,
-                    targetCurrency: targetCurrency),
+                    targetCurrency: targetCurrency, items: items),
                 _buildSummaryRow('İndirim:', -discount, currency,
-                    targetCurrency: targetCurrency),
+                    targetCurrency: targetCurrency, items: items),
                 _buildSummaryRow('KDV:', tax, currency,
-                    targetCurrency: targetCurrency),
+                    targetCurrency: targetCurrency, items: items),
                 const Divider(),
                 _buildSummaryRow('Toplam:', total, currency,
-                    isTotal: true, targetCurrency: targetCurrency),
+                    isTotal: true, targetCurrency: targetCurrency, items: items),
               ],
             ),
           ),
@@ -1609,7 +1610,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildSummaryRow(String label, double amount, String currency,
-      {bool isTotal = false, String? targetCurrency}) {
+      {bool isTotal = false, String? targetCurrency, List<_PurchaseItemForm>? items}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -1623,19 +1624,19 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             ),
           ),
           _buildCurrencyAmount(amount, currency,
-              isTotal: isTotal, targetCurrency: targetCurrency),
+              isTotal: isTotal, targetCurrency: targetCurrency, items: items),
         ],
       ),
     );
   }
 
   Widget _buildCurrencyAmount(double amount, String currency,
-      {bool isTotal = false, String? targetCurrency}) {
+      {bool isTotal = false, String? targetCurrency, List<_PurchaseItemForm>? items}) {
     if (targetCurrency != null && currency != targetCurrency) {
       // Farklı para birimi ise dönüştürülmüş değeri göster
       return FutureBuilder<double?>(
         future: _convertToTargetCurrencyWithProductRate(
-            amount, currency, targetCurrency),
+            amount, currency, targetCurrency, items ?? []),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final convertedAmount = snapshot.data!;
@@ -1686,26 +1687,30 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Future<double?> _convertToTargetCurrencyWithProductRate(
-      double amount, String fromCurrency, String toCurrency) async {
+      double amount, String fromCurrency, String toCurrency, List<_PurchaseItemForm> items) async {
     try {
       if (fromCurrency == toCurrency) return amount;
 
       // Bu para birimindeki ürünlerin kurlarını kontrol et
       double? usedFxRate;
-      
+
       // İlk ürünün kurunu kullan (aynı para birimindeki tüm ürünler aynı kur kullanmalı)
-      for (final item in _items) {
-        if (item.currency == fromCurrency && item.fxRateToBase != null && item.fxRateToBase! > 0) {
+      for (final item in items) {
+        if (item.currency == fromCurrency &&
+            item.fxRateToBase != null &&
+            item.fxRateToBase! > 0) {
           usedFxRate = item.fxRateToBase;
-          debugPrint('DEBUG: Özet kur bilgisi bulundu - $fromCurrency: ${item.fxRateToBase}');
+          debugPrint(
+              'DEBUG: Özet kur bilgisi bulundu - $fromCurrency: ${item.fxRateToBase}');
           break;
         }
       }
-      
+
       if (usedFxRate != null && usedFxRate > 0) {
         // Ürün kurlarını kullan
         final converted = amount * usedFxRate;
-        debugPrint('DEBUG: Özet ürün kuru kullanıldı - $amount $fromCurrency x $usedFxRate = $converted $toCurrency');
+        debugPrint(
+            'DEBUG: Özet ürün kuru kullanıldı - $amount $fromCurrency x $usedFxRate = $converted $toCurrency');
         return converted;
       } else {
         // Kur bilgisi yoksa real-time kur kullan
@@ -1713,7 +1718,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         if (rate != null) {
           final converted = ExchangeRateService()
               .convertCurrency(amount, fromCurrency, toCurrency);
-          debugPrint('DEBUG: Özet real-time kur kullanıldı - $amount $fromCurrency = $converted $toCurrency');
+          debugPrint(
+              'DEBUG: Özet real-time kur kullanıldı - $amount $fromCurrency = $converted $toCurrency');
           return converted;
         }
         return null;
@@ -1723,7 +1729,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       return null;
     }
   }
-
 
   Widget _buildGrandTotalCard(
       double totalInTargetCurrency, String targetCurrency) {
@@ -2182,6 +2187,7 @@ class _AddItemDialog extends StatefulWidget {
   final String baseCurrencyCode;
   final String? customerId;
   final PurchaseType purchaseType;
+  final List<_PurchaseItemForm> existingItems;
 
   const _AddItemDialog({
     required this.onAdd,
@@ -2189,6 +2195,7 @@ class _AddItemDialog extends StatefulWidget {
     required this.baseCurrencyCode,
     this.customerId,
     required this.purchaseType,
+    required this.existingItems,
   });
 
   @override
@@ -2212,6 +2219,39 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   // Orijinal fiyat ve müşteri iskonto bilgileri
   double? _originalPrice;
   double _customerDiscountRate = 0.0;
+  bool _showCurrencySelection = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Aynı para birimindeki ürün varsa kur seçimi gösterme
+    _checkExistingCurrency();
+  }
+
+  void _checkExistingCurrency() {
+    // Mevcut ürünlerde aynı para birimi var mı kontrol et
+    final existingCurrencies = widget.existingItems.map((item) => item.currency).toSet();
+    if (existingCurrencies.isNotEmpty) {
+      // İlk mevcut para birimini kullan
+      final firstCurrency = existingCurrencies.first;
+      setState(() {
+        _lineCurrencyCode = firstCurrency;
+        _showCurrencySelection = false;
+      });
+      
+      // Mevcut ürünün kur bilgisini kullan
+      final existingItem = widget.existingItems.firstWhere(
+        (item) => item.currency == firstCurrency,
+        orElse: () => widget.existingItems.first,
+      );
+      if (existingItem.fxRateToBase != null) {
+        setState(() {
+          _fxRateToTry = existingItem.fxRateToBase;
+          _manualRateController.text = _formatTrNumber(existingItem.fxRateToBase!);
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -2310,46 +2350,79 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ),
             ],
             const SizedBox(height: 16.0),
+            if (_showCurrencySelection) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _lineCurrencyCode,
+                      decoration: const InputDecoration(
+                        labelText: 'Satır Para Birimi',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const ['TRY', 'USD', 'EUR', 'GBP']
+                          .map((c) => DropdownMenuItem(
+                                value: c,
+                                child: Text(c),
+                              ))
+                          .toList(),
+                      onChanged: (v) async {
+                        if (v == null) return;
+                        setState(() => _lineCurrencyCode = v);
+                        // Kur: 1 LINE = ? BASE
+                        if (v == widget.baseCurrencyCode) {
+                          setState(() => _fxRateToTry = 1.0);
+                        } else {
+                          // Otomatik kur getirme
+                          try {
+                            await ExchangeRateService().getExchangeRate(v);
+                            final r = ExchangeRateService()
+                                .convertCurrency(1.0, v, widget.baseCurrencyCode);
+                            setState(() {
+                              _fxRateToTry = r;
+                              // Manuel kur alanını da otomatik doldur
+                              _manualRateController.text = _formatTrNumber(r);
+                            });
+                          } catch (e) {
+                            debugPrint('Otomatik kur alma hatası: $e');
+                            setState(() => _fxRateToTry = null);
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+            ] else ...[
+              // Aynı para birimi kullanılıyor, bilgi göster
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.blue.shade600, size: 20),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: Text(
+                        'Para birimi: $_lineCurrencyCode (İlk ürünün kur bilgisi kullanılıyor)',
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+            ],
             Row(
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _lineCurrencyCode,
-                    decoration: const InputDecoration(
-                      labelText: 'Satır Para Birimi',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const ['TRY', 'USD', 'EUR', 'GBP']
-                        .map((c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(c),
-                            ))
-                        .toList(),
-                    onChanged: (v) async {
-                      if (v == null) return;
-                      setState(() => _lineCurrencyCode = v);
-                      // Kur: 1 LINE = ? BASE
-                      if (v == widget.baseCurrencyCode) {
-                        setState(() => _fxRateToTry = 1.0);
-                      } else {
-                        // Otomatik kur getirme
-                        try {
-                          await ExchangeRateService().getExchangeRate(v);
-                          final r = ExchangeRateService()
-                              .convertCurrency(1.0, v, widget.baseCurrencyCode);
-                          setState(() {
-                            _fxRateToTry = r;
-                            // Manuel kur alanını da otomatik doldur
-                            _manualRateController.text = _formatTrNumber(r);
-                          });
-                        } catch (e) {
-                          debugPrint('Otomatik kur alma hatası: $e');
-                          setState(() => _fxRateToTry = null);
-                        }
-                      }
-                    },
-                  ),
-                ),
                 const SizedBox(width: 16.0),
                 Expanded(
                   child: Focus(
