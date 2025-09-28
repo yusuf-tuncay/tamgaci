@@ -276,7 +276,8 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
 
       // Debug mesajları
       debugPrint('DEBUG: Ödeme vadesi: ${_maturityDaysController.text}');
-      debugPrint('DEBUG: Sabit iskonto oranı: ${_fixedDiscountRateController.text}');
+      debugPrint(
+          'DEBUG: Sabit iskonto oranı: ${_fixedDiscountRateController.text}');
       debugPrint('DEBUG: Parsed fixed discount: $parsedFixedDiscount');
 
       // Mevcut müşteriyi güncelle
@@ -344,14 +345,26 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
       );
 
       // Debug mesajları - güncellenmiş müşteri
-      debugPrint('DEBUG: Güncellenmiş müşteri - maturityDays: ${customer.maturityDays}');
-      debugPrint('DEBUG: Güncellenmiş müşteri - fixedDiscountRate: ${customer.fixedDiscountRate}');
+      debugPrint(
+          'DEBUG: Güncellenmiş müşteri - maturityDays: ${customer.maturityDays}');
+      debugPrint(
+          'DEBUG: Güncellenmiş müşteri - fixedDiscountRate: ${customer.fixedDiscountRate}');
 
       await ref.read(customerRepositoryProvider).updateCustomer(customer);
       AppLogger.info('Customer updated successfully: ${customer.name}');
 
       // Provider'ı yenile
       ref.invalidate(customersProvider);
+      
+      // Debug: Provider yenilendikten sonra müşteri verilerini kontrol et
+      debugPrint('DEBUG: Provider yenilendikten sonra müşteri verileri kontrol ediliyor...');
+      final updatedCustomers = await ref.read(customersProvider.future);
+      final updatedCustomer = updatedCustomers.firstWhere(
+        (c) => c.id == widget.customerId,
+        orElse: () => throw Exception('Müşteri bulunamadı'),
+      );
+      debugPrint('DEBUG: Yenilenen müşteri - maturityDays: ${updatedCustomer.maturityDays}');
+      debugPrint('DEBUG: Yenilenen müşteri - fixedDiscountRate: ${updatedCustomer.fixedDiscountRate}');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
