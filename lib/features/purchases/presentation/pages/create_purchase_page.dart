@@ -2124,6 +2124,9 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       customerDiscountRate > 0) {
                     _discountRateController.text =
                         customerDiscountRate.toStringAsFixed(1);
+                    debugPrint('DEBUG: Müşteri sabit iskontosu otomatik dolduruldu: $customerDiscountRate');
+                  } else {
+                    debugPrint('DEBUG: Müşteri sabit iskontosu yok veya 0: $customerDiscountRate');
                   }
                 });
               },
@@ -2430,6 +2433,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     final gross = quantity * unitPrice;
 
     // İskonto hesaplama: Kullanıcının girdiği oranı kullan (müşteri sabit iskontosu otomatik doldurulmuş olabilir)
+    debugPrint('DEBUG: _addItem - discountRate: $discountRate, _customerDiscountRate: $_customerDiscountRate');
     final double finalDiscountAmount = gross * (discountRate / 100);
 
     final net = gross - finalDiscountAmount;
