@@ -71,6 +71,15 @@ import 'package:tamgaci/features/directory/domain/entities/contact.dart';
 import 'package:tamgaci/features/products/presentation/pages/products_list_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/product_detail_page.dart';
 
+// Payments (Tahsilat) imports
+import 'package:tamgaci/features/payments/presentation/pages/payments_home_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/cash_payments_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/check_payments_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/promissory_payments_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/transfer_payments_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/voucher_payments_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/balance_payments_page.dart';
+
 /// Tamgaci Uygulaması Route Yönetim Sınıfı
 /// Tüm sayfa route'larını merkezi olarak yönetir
 class TamgaciRoutes {
@@ -319,6 +328,29 @@ class TamgaciRoutes {
 
   /// Yapım aşamasında sayfası
   static const String underConstruction = '/under-construction';
+
+  // ========== PAYMENTS (TAHSİLAT) ROUTE'LARI ==========
+
+  /// Tahsilat ana sayfası
+  static const String paymentsHome = '/payments';
+
+  /// Nakit, Kredi Kartı, Banka işlemleri
+  static const String cashPayments = '/payments/cash';
+
+  /// Çek işlemleri
+  static const String checkPayments = '/payments/check';
+
+  /// Senet Al/Ver işlemleri
+  static const String promissoryPayments = '/payments/promissory';
+
+  /// Cari Virman işlemleri
+  static const String transferPayments = '/payments/transfer';
+
+  /// Borç-Alacak Fişleri
+  static const String voucherPayments = '/payments/voucher';
+
+  /// Bakiye Düzelt işlemleri
+  static const String balancePayments = '/payments/balance';
 
   // ========== ROUTE GENERATOR ==========
 
@@ -746,6 +778,29 @@ class TamgaciRoutes {
 
       // ========== ENVANTER ROUTE'LARI ==========
 
+      // ========== PAYMENTS (TAHSİLAT) ROUTE'LARI ==========
+
+      case paymentsHome:
+        return _createRoute(const PaymentsHomePage(), settings: settings);
+
+      case cashPayments:
+        return _createRoute(const CashPaymentsPage(), settings: settings);
+
+      case checkPayments:
+        return _createRoute(const CheckPaymentsPage(), settings: settings);
+
+      case promissoryPayments:
+        return _createRoute(const PromissoryPaymentsPage(), settings: settings);
+
+      case transferPayments:
+        return _createRoute(const TransferPaymentsPage(), settings: settings);
+
+      case voucherPayments:
+        return _createRoute(const VoucherPaymentsPage(), settings: settings);
+
+      case balancePayments:
+        return _createRoute(const BalancePaymentsPage(), settings: settings);
+
       // ========== SHARED ROUTE'LAR ==========
 
       case underConstruction:
@@ -957,6 +1012,22 @@ class TamgaciRoutes {
         return 'Tedarikçiler';
       case productsList:
         return 'Ürünler';
+
+      // Tahsilat modülü başlıkları
+      case paymentsHome:
+        return 'Tahsilat Modülü';
+      case cashPayments:
+        return 'Nakit, Kredi Kartı, Banka';
+      case checkPayments:
+        return 'Çek İşlemleri';
+      case promissoryPayments:
+        return 'Senet Al/Ver';
+      case transferPayments:
+        return 'Cari Virman';
+      case voucherPayments:
+        return 'Borç-Alacak Fişleri';
+      case balancePayments:
+        return 'Bakiye Düzelt';
 
       // Eski cash route'ları kaldırıldı
       case reportsOverview:
