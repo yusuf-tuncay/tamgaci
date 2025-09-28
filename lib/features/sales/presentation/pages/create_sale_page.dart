@@ -3005,7 +3005,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
               p.id,
               p.name,
               p.salesPrice,
-              18.0, // Varsayılan KDV oranı
+              p.salesTaxRate, // Ürünün gerçek KDV oranı
               p.salesCurrency,
             );
             // onSelected callback'i zaten tüm değerleri set ediyor
@@ -3086,6 +3086,16 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     _checkExistingCurrency();
   }
 
+  @override
+  void didUpdateWidget(_AddItemDialog oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Müşteri iskonto oranı güncellendiğinde güncelle
+    if (oldWidget.customerDiscountRate != widget.customerDiscountRate) {
+      _customerDiscountRate = widget.customerDiscountRate;
+      debugPrint('DEBUG: Müşteri iskonto oranı güncellendi: $_customerDiscountRate');
+    }
+  }
+
   void _checkExistingCurrency() {
     // Mevcut ürünlerde aynı para birimi var mı kontrol et
     final existingCurrencies =
@@ -3131,13 +3141,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       _lineCurrencyCode = _productCurrencyCode;
 
       // Bu ürün için daha önce girilen değerleri kontrol et
-      debugPrint('DEBUG: Ürün seçildi - ID: $id, Tax: $tax, CustomerDiscount: $_customerDiscountRate');
-      
+      debugPrint(
+          'DEBUG: Ürün seçildi - ID: $id, Tax: $tax, CustomerDiscount: $_customerDiscountRate');
+
       if (_productMemory.containsKey(id)) {
         // Hafızada varsa, hafızadaki değerleri kullan
         final memory = _productMemory[id]!;
-        debugPrint('DEBUG: Hafızada bulundu - TaxRate: ${memory['taxRate']}, DiscountRate: ${memory['discountRate']}');
-        
+        debugPrint(
+            'DEBUG: Hafızada bulundu - TaxRate: ${memory['taxRate']}, DiscountRate: ${memory['discountRate']}');
+
         if (memory.containsKey('taxRate')) {
           _taxRateController.text = memory['taxRate']!.toStringAsFixed(0);
         } else {
@@ -3147,31 +3159,34 @@ class _AddItemDialogState extends State<_AddItemDialog> {
             debugPrint('DEBUG: Ürün KDV oranı kullanıldı: $tax');
           }
         }
-        
+
         if (memory.containsKey('discountRate')) {
-          _discountRateController.text = memory['discountRate']!.toStringAsFixed(0);
+          _discountRateController.text =
+              memory['discountRate']!.toStringAsFixed(0);
         } else {
           // Hafızada yoksa müşteri iskonto oranını kullan
-          _discountRateController.text = _customerDiscountRate.toStringAsFixed(0);
-          debugPrint('DEBUG: Müşteri iskonto oranı kullanıldı: $_customerDiscountRate');
+          _discountRateController.text =
+              _customerDiscountRate.toStringAsFixed(0);
+          debugPrint(
+              'DEBUG: Müşteri iskonto oranı kullanıldı: $_customerDiscountRate');
         }
       } else {
         // Hafızada yoksa otomatik değerleri kullan
         debugPrint('DEBUG: Hafızada yok, otomatik değerler kullanılıyor');
-        
+
         // Ürünün KDV oranını ayarla
         if (tax != null) {
           _taxRateController.text = tax.toStringAsFixed(0);
           debugPrint('DEBUG: Ürün KDV oranı ayarlandı: $tax');
         }
-        
+
         // Müşteri iskonto oranını ayarla
         _discountRateController.text = _customerDiscountRate.toStringAsFixed(0);
-        debugPrint('DEBUG: Müşteri iskonto oranı ayarlandı: $_customerDiscountRate');
+        debugPrint(
+            'DEBUG: Müşteri iskonto oranı ayarlandı: $_customerDiscountRate');
       }
     });
   }
-
 
   void _saveProductMemory(String productId) {
     final taxRate = double.tryParse(_taxRateController.text) ?? 0.0;
