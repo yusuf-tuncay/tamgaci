@@ -13,6 +13,7 @@ import '../../../purchases/presentation/providers/purchase_providers.dart';
 import '../../../purchases/domain/entities/purchase.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../suppliers/domain/entities/supplier.dart';
+import '../../../customers/presentation/providers/customer_providers.dart';
 import '../../../../core/services/utils/exchange_rate_service.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
 import '../../../../core/utils/currency_helper.dart';
@@ -33,12 +34,16 @@ class CreatePurchasePage extends ConsumerStatefulWidget {
   final String? purchaseId; // Düzenleme için ID, null ise yeni oluşturma
   final String? supplierId; // Müşteri detayından gelen tedarikçi ID
   final String? supplierName; // Müşteri detayından gelen tedarikçi adı
+  final String? customerId; // Müşteri detayından gelen müşteri ID
+  final String? customerName; // Müşteri detayından gelen müşteri adı
 
   const CreatePurchasePage({
     super.key,
     this.purchaseId,
     this.supplierId,
     this.supplierName,
+    this.customerId,
+    this.customerName,
   });
 
   @override
@@ -56,10 +61,13 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   final _paymentTermsController = TextEditingController();
   final _shippingCostController = TextEditingController(text: '0');
 
+  // Customer management (satış modülünden)
+  final _customerIdController = TextEditingController();
+  final _customerNameController = TextEditingController();
+
   // Form state
   Supplier? _selectedSupplier;
   DateTime _purchaseDate = DateTime.now();
-  DateTime? _dueDate;
   String _currencyCode = 'TRY';
   Warehouse? _selectedWarehouse;
   PurchaseType _purchaseType =
@@ -72,9 +80,25 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   final List<_InstallmentForm> _installments = <_InstallmentForm>[];
   // final double _discountAmount = 0.0; // Will be used in future
 
+  // Customer management state (satış modülünden)
+  final double _customerDefaultDiscountRate = 0.0;
+
   @override
   void initState() {
     super.initState();
+
+    // Müşteri detayından gelen müşteri bilgilerini hemen ayarla
+    if (widget.customerId != null && widget.customerName != null) {
+      _customerIdController.text = widget.customerId!;
+      _customerNameController.text = widget.customerName!;
+      debugPrint('Müşteri otomatik seçildi: ${widget.customerName}');
+    } else if (widget.supplierId != null && widget.supplierName != null) {
+      // Eğer customer parametreleri yoksa supplier parametrelerini kullan
+      _customerIdController.text = widget.supplierId!;
+      _customerNameController.text = widget.supplierName!;
+      debugPrint('Müşteri otomatik seçildi (supplier): ${widget.supplierName}');
+    }
+
     _initDefaults();
   }
 
@@ -312,34 +336,18 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   const SizedBox(height: 16),
                   _buildPurchaseTypeSelector(),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildDateField(
-                          label: 'Alış Tarihi',
-                          value: _purchaseDate,
-                          onChanged: (date) {
-                            if (date != null) {
-                              setState(() {
-                                _purchaseDate = date;
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildDateField(
-                          label: 'Vade Tarihi',
-                          value: _dueDate,
-                          onChanged: (date) {
-                            setState(() {
-                              _dueDate = date;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
+                  _buildCustomerSelector(),
+                  const SizedBox(height: 16),
+                  _buildDateField(
+                    label: 'Alış Tarihi',
+                    value: _purchaseDate,
+                    onChanged: (date) {
+                      if (date != null) {
+                        setState(() {
+                          _purchaseDate = date;
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
@@ -405,10 +413,11 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                                   ),
                                   for (final w in list)
                                     DropdownMenuItem(
-                                        value: w.id, 
-                                        child: Text(w.code != null && w.code!.isNotEmpty 
-                                            ? '${w.name} (${w.code})' 
-                                            : w.name)),
+                                        value: w.id,
+                                        child: Text(
+                                            w.code != null && w.code!.isNotEmpty
+                                                ? '${w.name} (${w.code})'
+                                                : w.name)),
                                 ];
                                 String? value = _selectedWarehouse?.id;
                                 final values =
@@ -465,79 +474,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                                 setState(() => _receiveToInventory = v ?? true),
                             dense: true,
                             title: const Text('Teslim al (stok girişi)'),
-                            contentPadding: EdgeInsets.zero,
-                            controlAffinity: ListTileControlAffinity.leading,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
-
-              // İade alışı için sadece depo seçimi
-              if (_purchaseType == PurchaseType.returnPurchase) ...[
-                _buildSectionCard(
-                  'Depo Bilgileri',
-                  Icons.warehouse,
-                  [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _selectedWarehouse?.id,
-                            decoration:
-                                const InputDecoration(labelText: 'Depo'),
-                            isExpanded: true,
-                            items: ref.watch(warehousesProvider).maybeWhen(
-                                  data: (list) => [
-                                    const DropdownMenuItem(
-                                      value: 'no_stock',
-                                      child: Text('Stoksuz Ürün'),
-                                    ),
-                                    for (final w in list)
-                                      DropdownMenuItem(
-                                          value: w.id, 
-                                          child: Text(w.code != null && w.code!.isNotEmpty 
-                                              ? '${w.name} (${w.code})' 
-                                              : w.name)),
-                                  ],
-                                  orElse: () => [
-                                    const DropdownMenuItem(
-                                      value: 'no_stock',
-                                      child: Text('Stoksuz Ürün'),
-                                    ),
-                                  ],
-                                ),
-                            onChanged: (id) async {
-                              if (id == 'no_stock') {
-                                setState(() {
-                                  _selectedWarehouse = null;
-                                  _receiveToInventory =
-                                      false; // Stoksuz ürün için stok girişi false
-                                });
-                              } else {
-                                final list =
-                                    await ref.read(warehousesProvider.future);
-                                setState(() {
-                                  _selectedWarehouse =
-                                      list.firstWhere((w) => w.id == id);
-                                  _receiveToInventory =
-                                      true; // Normal depo için stok girişi true
-                                });
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: CheckboxListTile(
-                            value: _receiveToInventory,
-                            onChanged: (v) =>
-                                setState(() => _receiveToInventory = v ?? true),
-                            dense: true,
-                            title: const Text('Stok girişi yap'),
                             contentPadding: EdgeInsets.zero,
                             controlAffinity: ListTileControlAffinity.leading,
                           ),
@@ -900,19 +836,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       return;
     }
 
-    // Vadeli alış uyumu: vade tarihi seçilmişse pending olarak bırak; aksi nakit varsayımı
-    if (_dueDate != null && _dueDate!.isBefore(_purchaseDate)) {
-      final scheme = Theme.of(context).colorScheme;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Vade tarihi alış tarihinden önce olamaz',
-                style: TextStyle(color: scheme.onError)),
-            backgroundColor: scheme.error,
-            behavior: SnackBarBehavior.floating),
-      );
-      return;
-    }
-
     setState(() => _isSaving = true);
     try {
       // Calculate totals
@@ -941,7 +864,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         supplierId: _selectedSupplier!.id,
         supplierName: _selectedSupplier!.name,
         purchaseDate: _purchaseDate,
-        dueDate: _dueDate,
+        dueDate: null,
         receivedDate: null,
         subtotal: double.parse(subtotal.toStringAsFixed(decimals)),
         taxRate: _items.isNotEmpty ? _items.first.taxRate : 0,
@@ -1229,7 +1152,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     );
   }
 
-
   Widget _buildCurrencyAndFxRow() {
     return Row(
       children: [
@@ -1465,6 +1387,93 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   // Item form model helper ends
+
+  // Müşteri seçimi metodları (satış modülünden)
+  Widget _buildCustomerSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Müşteri Seçimi',
+          style: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: TextFormField(
+                controller: _customerNameController,
+                decoration: InputDecoration(
+                  labelText: 'Müşteri Adı',
+                  border: const OutlineInputBorder(),
+                  hintText: _customerNameController.text.isNotEmpty
+                      ? 'Müşteri seçili'
+                      : 'Müşteri seçin',
+                ),
+                readOnly: true,
+                onTap: _customerNameController.text.isNotEmpty
+                    ? null
+                    : _showCustomerSelectionDialog,
+              ),
+            ),
+            if (_customerNameController.text.isEmpty) ...[
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: _showCustomerSelectionDialog,
+                icon: const Icon(Icons.search),
+                tooltip: 'Müşteri Ara',
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showCustomerSelectionDialog() async {
+    // Müşteri seçimi dialog'u
+    final customers = await ref.read(customersProvider.future);
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Müşteri Seç'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            itemCount: customers.length,
+            itemBuilder: (context, index) {
+              final customer = customers[index];
+              return ListTile(
+                title: Text(customer.name),
+                subtitle: Text(customer.email ?? ''),
+                onTap: () {
+                  setState(() {
+                    _customerIdController.text = customer.id;
+                    _customerNameController.text = customer.name;
+                  });
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PurchaseItemForm {
