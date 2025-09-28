@@ -1533,6 +1533,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         }
 
         return Card(
+          margin: const EdgeInsets.only(bottom: 16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -2566,9 +2567,9 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                           onSelected(product);
 
                           // Alış türüne göre fiyat seçimi
-                          double originalPrice;
-                          double finalPrice;
-                          String currency;
+                          double? originalPrice;
+                          double? finalPrice;
+                          String? currency;
 
                           if (widget.purchaseType == PurchaseType.purchase) {
                             // Normal Alış: Alış fiyatı kullan
