@@ -1468,25 +1468,43 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       debugPrint(
           'DEBUG: Özet hesaplama - Currency: $currency, Subtotal: $subtotal, TotalDiscount: $totalDiscount, TotalTax: $totalTax, Total: $total');
 
-      // Para birimi dönüşümü hesapla
-      double convertedTotal = total;
+      // Para birimi dönüşümü hesapla (ürünlerin kendi kurlarını kullan)
+      double convertedTotal = 0.0;
       if (currency != targetCurrency) {
-        try {
-          // Senkron dönüşüm için ExchangeRateService'i kullan
-          final rate = ExchangeRateService().getExchangeRate(currency);
-          if (rate != null) {
-            convertedTotal = ExchangeRateService().convertCurrency(total, currency, targetCurrency);
-            debugPrint('DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $convertedTotal');
+        // Her ürünün kendi kurunu kullanarak dönüştür
+        for (final item in items) {
+          double itemTotal = (item.unitPrice * item.quantity) - item.discountAmount + item.taxAmount;
+          if (item.fxRateToBase != null && item.fxRateToBase! > 0) {
+            // Ürünün kendi kurunu kullan
+            double convertedItemTotal = itemTotal * item.fxRateToBase!;
+            convertedTotal += convertedItemTotal;
+            debugPrint('DEBUG: Ürün kuru kullanıldı - ${item.productName}: $itemTotal $currency x ${item.fxRateToBase} = $convertedItemTotal $targetCurrency');
+          } else {
+            // Kur bilgisi yoksa real-time kur kullan
+            try {
+              final rate = ExchangeRateService().getExchangeRate(currency);
+              if (rate != null) {
+                double convertedItemTotal = ExchangeRateService().convertCurrency(itemTotal, currency, targetCurrency);
+                convertedTotal += convertedItemTotal;
+                debugPrint('DEBUG: Real-time kur kullanıldı - ${item.productName}: $itemTotal $currency = $convertedItemTotal $targetCurrency');
+              } else {
+                convertedTotal += itemTotal; // Fallback
+              }
+            } catch (e) {
+              debugPrint('DEBUG: Para birimi dönüşüm hatası: $e');
+              convertedTotal += itemTotal; // Fallback
+            }
           }
-        } catch (e) {
-          debugPrint('DEBUG: Para birimi dönüşüm hatası: $e');
         }
+        debugPrint('DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $convertedTotal');
       } else {
+        convertedTotal = total;
         debugPrint('DEBUG: Aynı para birimi - $currency: $total');
       }
 
       totalInTargetCurrency += convertedTotal;
-      debugPrint('DEBUG: totalInTargetCurrency güncellendi: $totalInTargetCurrency');
+      debugPrint(
+          'DEBUG: totalInTargetCurrency güncellendi: $totalInTargetCurrency');
 
       currencyCards.add(_buildCurrencySummaryCard(
         currency: currency,
@@ -1654,14 +1672,23 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Future<double?> _convertToTargetCurrency(
-      double amount, String fromCurrency, String toCurrency) async {
+      double amount, String fromCurrency, String toCurrency, {double? fxRate}) async {
     try {
       if (fromCurrency == toCurrency) return amount;
 
+      // Ürün kurunu kullan (varsa)
+      if (fxRate != null && fxRate > 0) {
+        debugPrint('DEBUG: Ürün kuru kullanılıyor - $amount $fromCurrency x $fxRate = ${amount * fxRate} $toCurrency');
+        return amount * fxRate;
+      }
+
+      // Real-time kur kullan
       final rate = await ExchangeRateService().getExchangeRate(fromCurrency);
       if (rate != null) {
-        return ExchangeRateService()
+        final converted = ExchangeRateService()
             .convertCurrency(amount, fromCurrency, toCurrency);
+        debugPrint('DEBUG: Real-time kur kullanılıyor - $amount $fromCurrency = $converted $toCurrency');
+        return converted;
       }
       return null;
     } catch (e) {
@@ -1831,6 +1858,7 @@ class _PurchaseItemForm {
   double discountRate = 0;
   double discountAmount = 0;
   String currency = 'TRY';
+  double? fxRateToBase; // Ürün eklerken girilen kur
 
   final TextEditingController quantityController =
       TextEditingController(text: '1');
