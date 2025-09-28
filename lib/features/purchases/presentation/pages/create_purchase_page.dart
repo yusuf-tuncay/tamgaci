@@ -1454,7 +1454,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     // Her para birimi için hesaplamalar
     final List<Widget> currencyCards = [];
     double totalInTargetCurrency = 0.0;
-    
+
     // Alış türüne göre hedef para birimi belirle
     String targetCurrency = 'TRY';
     if (_purchaseType == PurchaseType.returnPurchase) {
@@ -1487,6 +1487,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         discount: totalDiscount,
         tax: totalTax,
         total: total,
+        targetCurrency: targetCurrency,
         onTotalCalculated: (targetAmount) {
           totalInTargetCurrency += targetAmount;
         },
@@ -1512,30 +1513,49 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     required double discount,
     required double tax,
     required double total,
+    required String targetCurrency,
     required Function(double) onTotalCalculated,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$currency Özeti',
-              style: const TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold,
-              ),
+    return FutureBuilder<ExchangeRate?>(
+      future: currency == targetCurrency
+          ? Future.value(null)
+          : ExchangeRateService().getExchangeRate(currency),
+      builder: (context, snapshot) {
+        final rate = snapshot.data;
+        double totalInTargetCurrency = total;
+
+        if (rate != null && currency != targetCurrency) {
+          totalInTargetCurrency = ExchangeRateService()
+              .convertCurrency(total, currency, targetCurrency);
+          onTotalCalculated(totalInTargetCurrency);
+        } else if (currency == targetCurrency) {
+          onTotalCalculated(total);
+        }
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$currency Özeti',
+                  style: const TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12.0),
+                _buildSummaryRow('Ara Toplam:', subtotal, currency),
+                _buildSummaryRow('İndirim:', -discount, currency),
+                _buildSummaryRow('KDV:', tax, currency),
+                const Divider(),
+                _buildSummaryRow('Toplam:', total, currency, isTotal: true),
+              ],
             ),
-            const SizedBox(height: 12.0),
-            _buildSummaryRow('Ara Toplam:', subtotal, currency),
-            _buildSummaryRow('İndirim:', -discount, currency),
-            _buildSummaryRow('KDV:', tax, currency),
-            const Divider(),
-            _buildSummaryRow('Toplam:', total, currency, isTotal: true),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -1566,7 +1586,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     );
   }
 
-  Widget _buildGrandTotalCard(double totalInTargetCurrency, String targetCurrency) {
+  Widget _buildGrandTotalCard(
+      double totalInTargetCurrency, String targetCurrency) {
     // Toplam ürün miktarını hesapla
     final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
 
@@ -1611,7 +1632,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   ),
                 ),
                 Text(
-                  CurrencyHelper.formatCurrency(totalInTargetCurrency, targetCurrency),
+                  CurrencyHelper.formatCurrency(
+                      totalInTargetCurrency, targetCurrency),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -2534,7 +2556,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                           CurrencyHelper.formatCurrency(
                             widget.purchaseType == PurchaseType.purchase
                                 ? (product.purchasePrice ?? 0.0)
-                                : (product.salesPrice ?? 0.0),
+                                : (product.salesPrice),
                             widget.purchaseType == PurchaseType.purchase
                                 ? (product.purchaseCurrency ?? 'TRY')
                                 : (product.salesCurrency ?? 'TRY'),
