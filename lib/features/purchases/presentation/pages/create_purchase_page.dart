@@ -1489,7 +1489,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         total: total,
         targetCurrency: targetCurrency,
         onTotalCalculated: (targetAmount) {
+          debugPrint('DEBUG: onTotalCalculated çağrıldı - targetAmount: $targetAmount');
           totalInTargetCurrency += targetAmount;
+          debugPrint('DEBUG: totalInTargetCurrency güncellendi: $totalInTargetCurrency');
         },
       ));
     }
@@ -1527,8 +1529,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         if (rate != null && currency != targetCurrency) {
           totalInTargetCurrency = ExchangeRateService()
               .convertCurrency(total, currency, targetCurrency);
+          debugPrint('DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $totalInTargetCurrency');
           onTotalCalculated(totalInTargetCurrency);
         } else if (currency == targetCurrency) {
+          debugPrint('DEBUG: Aynı para birimi - $currency: $total');
           onTotalCalculated(total);
         }
 
@@ -1591,6 +1595,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       double totalInTargetCurrency, String targetCurrency) {
     // Toplam ürün miktarını hesapla
     final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+    debugPrint('DEBUG: _buildGrandTotalCard - totalInTargetCurrency: $totalInTargetCurrency, targetCurrency: $targetCurrency');
 
     return Card(
       child: Padding(
@@ -2560,7 +2565,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                                 : (product.salesPrice),
                             widget.purchaseType == PurchaseType.purchase
                                 ? (product.purchaseCurrency ?? 'TRY')
-                                : (product.salesCurrency ?? 'TRY'),
+                                : (product.salesCurrency),
                           ),
                         ),
                         onTap: () async {
@@ -2578,9 +2583,9 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                             currency = product.purchaseCurrency ?? 'TRY';
                           } else {
                             // İade Alışı: Satış fiyatı kullan
-                            originalPrice = product.salesPrice ?? 0.0;
-                            finalPrice = product.salesPrice ?? 0.0;
-                            currency = product.salesCurrency ?? 'TRY';
+                            originalPrice = product.salesPrice;
+                            finalPrice = product.salesPrice;
+                            currency = product.salesCurrency;
                           }
                           double customerDiscountRate = 0.0;
 
