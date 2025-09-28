@@ -257,15 +257,18 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                         ),
                         keyboardType: TextInputType.number,
                         inputFormatters: [
-                          FilteringTextInputFormatter.digitsOnly,
                           _PaymentAmountFormatter(),
                         ],
                         onChanged: (value) {
                           if (value.trim().isEmpty) {
                             setState(() => _paymentAmount = null);
                           } else {
-                            // Sadece rakamları al ve parse et
-                            final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
+                            // Nokta ve virgülü koruyarak parse et
+                            String cleanValue = value.replaceAll(RegExp(r'[^\d.,]'), '');
+                            
+                            // Virgülü nokta ile değiştir (double.parse için)
+                            cleanValue = cleanValue.replaceAll(',', '.');
+                            
                             if (cleanValue.isNotEmpty) {
                               final parsed = double.tryParse(cleanValue);
                               setState(() => _paymentAmount = parsed);
@@ -3350,21 +3353,81 @@ class _PaymentAmountFormatter extends TextInputFormatter {
       return newValue;
     }
 
-    // Sadece rakamları al
-    final cleanValue = newValue.text.replaceAll(RegExp(r'[^\d]'), '');
+    // Sadece rakamları, nokta ve virgülü al
+    final cleanValue = newValue.text.replaceAll(RegExp(r'[^\d.,]'), '');
     if (cleanValue.isEmpty) {
       return const TextEditingValue(text: '');
     }
 
-    // Sayıyı parse et
-    final number = double.tryParse(cleanValue);
-    if (number == null) {
-      return oldValue;
+    // Eğer sadece rakamlar varsa, ondalık kısmı olmayan sayı olarak kabul et
+    if (!cleanValue.contains('.') && !cleanValue.contains(',')) {
+      // Sadece rakamlar - binlik ayırıcı ekle
+      final number = int.tryParse(cleanValue);
+      if (number == null) return oldValue;
+      
+      final formatter = NumberFormat('#,##0', 'tr_TR');
+      final formatted = formatter.format(number);
+      
+      return TextEditingValue(
+        text: formatted,
+        selection: TextSelection.collapsed(offset: formatted.length),
+      );
     }
 
-    // Formatla
-    final formatter = NumberFormat('#,##0.00', 'tr_TR');
-    final formatted = formatter.format(number);
+    // Ondalık sayı formatı
+    String formatted = cleanValue;
+    
+    // Nokta ve virgül kontrolü
+    final dotCount = cleanValue.split('.').length - 1;
+    final commaCount = cleanValue.split(',').length - 1;
+    
+    if (dotCount > 1 || commaCount > 1) {
+      return oldValue; // Geçersiz format
+    }
+    
+    // Nokta ondalık ayırıcı, virgül kuruş ayırıcı
+    if (cleanValue.contains('.') && cleanValue.contains(',')) {
+      // Hem nokta hem virgül var - nokta binlik, virgül kuruş
+      final parts = cleanValue.split(',');
+      if (parts.length == 2) {
+        final mainPart = parts[0].replaceAll('.', '');
+        final decimalPart = parts[1];
+        
+        if (decimalPart.length <= 2) {
+          final number = int.tryParse(mainPart);
+          if (number != null) {
+            final formatter = NumberFormat('#,##0', 'tr_TR');
+            final formattedMain = formatter.format(number);
+            formatted = '$formattedMain,$decimalPart';
+          }
+        } else {
+          return oldValue; // Kuruş kısmı 2 haneden fazla
+        }
+      }
+    } else if (cleanValue.contains(',')) {
+      // Sadece virgül var - kuruş ayırıcı
+      final parts = cleanValue.split(',');
+      if (parts.length == 2 && parts[1].length <= 2) {
+        final mainPart = parts[0];
+        final decimalPart = parts[1];
+        
+        final number = int.tryParse(mainPart);
+        if (number != null) {
+          final formatter = NumberFormat('#,##0', 'tr_TR');
+          final formattedMain = formatter.format(number);
+          formatted = '$formattedMain,$decimalPart';
+        }
+      } else {
+        return oldValue;
+      }
+    } else if (cleanValue.contains('.')) {
+      // Sadece nokta var - binlik ayırıcı
+      final number = int.tryParse(cleanValue.replaceAll('.', ''));
+      if (number != null) {
+        final formatter = NumberFormat('#,##0', 'tr_TR');
+        formatted = formatter.format(number);
+      }
+    }
 
     return TextEditingValue(
       text: formatted,
