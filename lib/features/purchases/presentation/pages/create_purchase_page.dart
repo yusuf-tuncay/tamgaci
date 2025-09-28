@@ -666,6 +666,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         customerId: _customerIdController.text.isNotEmpty
             ? _customerIdController.text
             : null,
+        purchaseType: _purchaseType,
       ),
     );
   }
@@ -1973,12 +1974,14 @@ class _AddItemDialog extends StatefulWidget {
   final String paymentCurrencyCode;
   final String baseCurrencyCode;
   final String? customerId;
+  final PurchaseType purchaseType;
 
   const _AddItemDialog({
     required this.onAdd,
     required this.paymentCurrencyCode,
     required this.baseCurrencyCode,
     this.customerId,
+    required this.purchaseType,
   });
 
   @override
@@ -2026,6 +2029,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
           children: [
             _ProductQuickPicker(
               customerId: widget.customerId,
+              purchaseType: widget.purchaseType,
               onSelected: (id, name, price, tax, salesCurrency,
                   {originalPrice, customerDiscountRate}) {
                 setState(() {
@@ -2407,10 +2411,12 @@ class _ProductQuickPicker extends ConsumerStatefulWidget {
     double? customerDiscountRate,
   }) onSelected;
   final String? customerId;
+  final PurchaseType purchaseType;
 
   const _ProductQuickPicker({
     required this.onSelected,
     this.customerId,
+    required this.purchaseType,
   });
 
   @override
@@ -2483,19 +2489,33 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                         ),
                         trailing: Text(
                           CurrencyHelper.formatCurrency(
-                            product.purchasePrice ?? 0,
-                            'TRY',
+                            widget.purchaseType == PurchaseType.purchase 
+                                ? (product.purchasePrice ?? 0.0)
+                                : (product.salesPrice ?? 0.0),
+                            widget.purchaseType == PurchaseType.purchase 
+                                ? (product.purchaseCurrency ?? 'TRY')
+                                : (product.salesCurrency ?? 'TRY'),
                           ),
                         ),
                         onTap: () async {
                           onSelected(product);
 
-                          // Müşteri bilgilerini al
-                          double originalPrice =
-                              product.salesPrice; // Orijinal satış fiyatı
-                          double finalPrice =
-                              product.salesPrice; // İade için satış fiyatı
-                          String currency = product.salesCurrency;
+                          // Alış türüne göre fiyat seçimi
+                          double originalPrice;
+                          double finalPrice;
+                          String currency;
+                          
+                          if (widget.purchaseType == PurchaseType.purchase) {
+                            // Normal Alış: Alış fiyatı kullan
+                            originalPrice = product.purchasePrice ?? 0.0;
+                            finalPrice = product.purchasePrice ?? 0.0;
+                            currency = product.purchaseCurrency ?? 'TRY';
+                          } else {
+                            // İade Alışı: Satış fiyatı kullan
+                            originalPrice = product.salesPrice ?? 0.0;
+                            finalPrice = product.salesPrice ?? 0.0;
+                            currency = product.salesCurrency ?? 'TRY';
+                          }
                           double customerDiscountRate = 0.0;
 
                           // Müşteri seçiliyse sabit iskonto uygula
