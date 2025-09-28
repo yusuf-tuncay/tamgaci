@@ -263,9 +263,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                           if (value.trim().isEmpty) {
                             setState(() => _paymentAmount = null);
                           } else {
-                            final parsed =
-                                double.tryParse(value.replaceAll(',', '.'));
-                            setState(() => _paymentAmount = parsed);
+                            // Sadece rakamları al
+                            final cleanValue = value.replaceAll(RegExp(r'[^\d]'), '');
+                            if (cleanValue.isNotEmpty) {
+                              final parsed = double.tryParse(cleanValue);
+                              setState(() => _paymentAmount = parsed);
+                              
+                              // Anlık formatlama
+                              final formatter = NumberFormat('#,##0.00', 'tr_TR');
+                              final formatted = formatter.format(parsed ?? 0);
+                              _paymentAmountController.value = TextEditingValue(
+                                text: formatted,
+                                selection: TextSelection.collapsed(offset: formatted.length),
+                              );
+                            }
                           }
                         },
                       ),
@@ -1723,7 +1734,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       double totalInPaymentCurrency, String paymentCurrency) {
     // Toplam ürün miktarını hesapla
     final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -1765,7 +1776,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   ),
                 ),
                 Text(
-                  _formatMoney(totalInPaymentCurrency, currency: paymentCurrency),
+                  _formatMoney(totalInPaymentCurrency,
+                      currency: paymentCurrency),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
@@ -1783,7 +1795,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   Widget _buildGrandTotalCard(double totalInTRY) {
     // Toplam ürün miktarını hesapla
     final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
