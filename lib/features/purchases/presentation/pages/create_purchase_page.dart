@@ -2244,7 +2244,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     // Mevcut ürünlerde aynı para birimi var mı kontrol et
     final existingCurrencies =
         widget.existingItems.map((item) => item.currency).toSet();
-    
+
     // Eğer mevcut ürün yoksa, para birimi seçimi ve kur bilgisi göster
     if (existingCurrencies.isEmpty) {
       setState(() {
@@ -2254,7 +2254,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       });
       return;
     }
-    
+
     // Eğer sadece TRY varsa, para birimi seçimi göster (kullanıcı farklı para birimi seçebilir)
     if (existingCurrencies.length == 1 && existingCurrencies.contains('TRY')) {
       setState(() {
@@ -2264,7 +2264,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       });
       return;
     }
-    
+
     // Eğer birden fazla para birimi varsa veya TRY dışında para birimi varsa
     // Kullanıcı yeni para birimi seçebilir, para birimi seçimi göster
     setState(() {
@@ -2390,24 +2390,26 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       onChanged: (v) async {
                         if (v == null) return;
                         setState(() => _lineCurrencyCode = v);
-                        
+
                         // Aynı para birimindeki ürün var mı kontrol et
                         final existingItem = widget.existingItems.firstWhere(
                           (item) => item.currency == v,
                           orElse: () => _PurchaseItemForm(),
                         );
-                        
-                        if (existingItem.currency == v && existingItem.fxRateToBase != null) {
+
+                        if (existingItem.currency == v &&
+                            existingItem.fxRateToBase != null) {
                           // Aynı para birimindeki ürün varsa, kur bilgisini gizle ve mevcut kur bilgisini kullan
                           setState(() {
                             _showExchangeRate = false;
                             _fxRateToTry = existingItem.fxRateToBase;
-                            _manualRateController.text = _formatTrNumber(existingItem.fxRateToBase!);
+                            _manualRateController.text =
+                                _formatTrNumber(existingItem.fxRateToBase!);
                           });
                         } else {
                           // Aynı para birimindeki ürün yoksa, kur bilgisini göster
                           setState(() => _showExchangeRate = true);
-                          
+
                           // Kur: 1 LINE = ? BASE
                           if (v == widget.baseCurrencyCode) {
                             setState(() => _fxRateToTry = 1.0);
@@ -2508,7 +2510,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ],
             ),
             const SizedBox(height: 6),
-            if (_showExchangeRate && _lineCurrencyCode != _productCurrencyCode &&
+            if (_showExchangeRate &&
+                _lineCurrencyCode != _productCurrencyCode &&
                 _lineCurrencyCode != widget.baseCurrencyCode)
               Row(
                 children: [
@@ -2525,7 +2528,23 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (value) {
+                        // Kullanıcı kur bilgisini girdiğinde _fxRateToTry'ı güncelle
+                        if (value.isNotEmpty) {
+                          final cleaned = value.replaceAll('.', '').replaceAll(',', '.');
+                          final parsed = double.tryParse(cleaned);
+                          if (parsed != null) {
+                            setState(() {
+                              _fxRateToTry = parsed;
+                            });
+                            debugPrint('DEBUG: Manuel kur girildi - _fxRateToTry: $_fxRateToTry');
+                          }
+                        } else {
+                          setState(() {
+                            _fxRateToTry = null;
+                          });
+                        }
+                      },
                     ),
                   ),
                 ],
