@@ -739,7 +739,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         },
         paymentCurrencyCode: _paymentCurrencyCode,
         baseCurrencyCode: _baseCurrencyCode,
-        customerId: _customerIdController.text.isNotEmpty ? _customerIdController.text : null,
+        customerId: _customerIdController.text.isNotEmpty
+            ? _customerIdController.text
+            : null,
       ),
     );
   }
@@ -2068,6 +2070,10 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   double? _fxRateToTry;
   String _productCurrencyCode = 'TRY';
   final TextEditingController _manualRateController = TextEditingController();
+  
+  // Orijinal fiyat ve müşteri iskonto bilgileri
+  double? _originalPrice;
+  double _customerDiscountRate = 0.0;
 
   @override
   void dispose() {
@@ -2092,7 +2098,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
           children: [
             _ProductQuickPicker(
               customerId: widget.customerId,
-              onSelected: (id, name, price, tax, salesCurrency) {
+              onSelected: (id, name, price, tax, salesCurrency, {originalPrice, customerDiscountRate}) {
                 setState(() {
                   _productIdController.text = id;
                   _productNameController.text = name ?? '';
@@ -2103,6 +2109,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                   }
                   _productCurrencyCode = (salesCurrency).toUpperCase();
                   _lineCurrencyCode = _productCurrencyCode;
+                  
+                  // Orijinal fiyat ve müşteri iskonto bilgilerini sakla
+                  _originalPrice = originalPrice;
+                  _customerDiscountRate = customerDiscountRate ?? 0.0;
+                  
+                  // Müşteri sabit iskontosunu iskonto alanına otomatik doldur
+                  if (customerDiscountRate != null && customerDiscountRate > 0) {
+                    _discountRateController.text = customerDiscountRate.toStringAsFixed(1);
+                  }
                 });
               },
             ),
@@ -2406,8 +2421,17 @@ class _AddItemDialogState extends State<_AddItemDialog> {
 
     // Hesaplamaları orijinal para biriminde yap
     final gross = quantity * unitPrice;
-    final discountAmount = (gross * (discountRate / 100));
-    final net = gross - discountAmount;
+    
+    // İskonto hesaplama: Müşteri sabit iskontosu varsa onu kullan, yoksa kullanıcının girdiği oranı kullan
+    double finalDiscountRate = discountRate;
+    if (_customerDiscountRate > 0) {
+      // Müşteri sabit iskontosu varsa onu kullan (kullanıcı değiştirebilir)
+      finalDiscountRate = _customerDiscountRate;
+    }
+    
+    final double finalDiscountAmount = gross * (finalDiscountRate / 100);
+    
+    final net = gross - finalDiscountAmount;
     final taxAmount = net * (taxRate / 100);
     final totalAmount = net + taxAmount;
 
@@ -2424,8 +2448,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     item.productName = _productNameController.text;
     item.quantity = quantity;
     item.unitPrice = unitPrice;
-    item.discountRate = discountRate;
-    item.discountAmount = discountAmount;
+    item.discountRate = finalDiscountRate;
+    item.discountAmount = finalDiscountAmount;
     item.taxRate = taxRate;
     item.currency = _lineCurrencyCode;
 
@@ -2456,8 +2480,10 @@ class _ProductQuickPicker extends ConsumerStatefulWidget {
     String? name,
     double? price,
     double? taxRate,
-    String salesCurrency,
-  ) onSelected;
+    String salesCurrency, {
+    double? originalPrice,
+    double? customerDiscountRate,
+  }) onSelected;
   final String? customerId;
 
   const _ProductQuickPicker({
@@ -2541,29 +2567,38 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                         ),
                         onTap: () async {
                           onSelected(product);
-                          
+
                           // Müşteri bilgilerini al
+                          double originalPrice = product.salesPrice; // Orijinal satış fiyatı
                           double finalPrice = product.salesPrice; // İade için satış fiyatı
                           String currency = product.salesCurrency;
-                          
+                          double customerDiscountRate = 0.0;
+
                           // Müşteri seçiliyse sabit iskonto uygula
-                          if (widget.customerId != null && widget.customerId!.isNotEmpty) {
+                          if (widget.customerId != null &&
+                              widget.customerId!.isNotEmpty) {
                             try {
-                              final customer = await ref.read(customerProvider(widget.customerId!).future);
-                              if (customer != null && customer.fixedDiscountRate != null && customer.fixedDiscountRate! > 0) {
-                                finalPrice = finalPrice * (1 - customer.fixedDiscountRate! / 100);
+                              final customer = await ref.read(
+                                  customerProvider(widget.customerId!).future);
+                              if (customer != null &&
+                                  customer.fixedDiscountRate != null &&
+                                  customer.fixedDiscountRate! > 0) {
+                                customerDiscountRate = customer.fixedDiscountRate!;
+                                finalPrice = originalPrice * (1 - customerDiscountRate / 100);
                               }
                             } catch (e) {
                               debugPrint('Müşteri bilgisi alınamadı: $e');
                             }
                           }
-                          
+
                           widget.onSelected(
                             product.id,
                             product.name,
                             finalPrice,
                             product.salesTaxRate,
                             currency,
+                            originalPrice: originalPrice,
+                            customerDiscountRate: customerDiscountRate,
                           );
                         },
                       );
