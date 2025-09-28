@@ -496,7 +496,20 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
               const SizedBox(height: 24),
 
               // Özet Bölümü
-              _buildSummaryCard(),
+              FutureBuilder<Widget>(
+                future: _buildSummaryCard(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Center(child: CircularProgressIndicator()),
+                      ),
+                    );
+                  }
+                  return snapshot.data ?? const SizedBox.shrink();
+                },
+              ),
 
               const SizedBox(height: 24),
 
@@ -1400,7 +1413,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   // Multi-currency summary metodları (satış modülünden)
-  Widget _buildSummaryCard() {
+  Future<Widget> _buildSummaryCard() async {
     if (_items.isEmpty) {
       return const Card(
         child: Padding(
@@ -1440,7 +1453,18 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
     // Her para birimi için hesaplamalar
     final List<Widget> currencyCards = [];
-    double totalInTRY = 0.0;
+    double totalInTargetCurrency = 0.0;
+    
+    // Alış türüne göre hedef para birimi belirle
+    String targetCurrency = 'TRY';
+    if (_purchaseType == PurchaseType.returnPurchase) {
+      // İade Alışı: Müşterinin varsayılan para birimi
+      // TODO: Customer entity'sine defaultCurrency field'ı eklenmeli
+      targetCurrency = 'TRY'; // Şimdilik TRY kullanılıyor
+    } else {
+      // Normal Alış: Ödeme para birimi
+      targetCurrency = _currencyCode;
+    }
 
     for (final currency in itemsByCurrency.keys) {
       final items = itemsByCurrency[currency]!;
@@ -1463,8 +1487,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         discount: totalDiscount,
         tax: totalTax,
         total: total,
-        onTotalCalculated: (tryAmount) {
-          totalInTRY += tryAmount;
+        onTotalCalculated: (targetAmount) {
+          totalInTargetCurrency += targetAmount;
         },
       ));
     }
@@ -1476,7 +1500,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         // GENEL TOPLAM kartı (birden fazla para birimi varsa)
         if (currencyCards.length > 1) ...[
           const SizedBox(height: 16.0),
-          _buildGrandTotalCard(totalInTRY),
+          _buildGrandTotalCard(totalInTargetCurrency, targetCurrency),
         ],
       ],
     );
@@ -1542,7 +1566,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     );
   }
 
-  Widget _buildGrandTotalCard(double totalInTRY) {
+  Widget _buildGrandTotalCard(double totalInTargetCurrency, String targetCurrency) {
     // Toplam ürün miktarını hesapla
     final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
 
@@ -1578,16 +1602,16 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'GENEL TOPLAM (TRY):',
-                  style: TextStyle(
+                Text(
+                  'GENEL TOPLAM ($targetCurrency):',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                     color: Colors.black87,
                   ),
                 ),
                 Text(
-                  CurrencyHelper.formatCurrency(totalInTRY, 'TRY'),
+                  CurrencyHelper.formatCurrency(totalInTargetCurrency, targetCurrency),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
