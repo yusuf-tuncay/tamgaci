@@ -1473,27 +1473,33 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       if (currency != targetCurrency) {
         // Bu para birimindeki ürünlerin kurlarını kontrol et
         double? usedFxRate;
-        
+
         // İlk ürünün kurunu kullan (aynı para birimindeki tüm ürünler aynı kur kullanmalı)
         for (final item in items) {
-          if (item.currency == currency && item.fxRateToBase != null && item.fxRateToBase! > 0) {
+          if (item.currency == currency &&
+              item.fxRateToBase != null &&
+              item.fxRateToBase! > 0) {
             usedFxRate = item.fxRateToBase;
-            debugPrint('DEBUG: Para birimi kur bilgisi bulundu - $currency: ${item.fxRateToBase}');
+            debugPrint(
+                'DEBUG: Para birimi kur bilgisi bulundu - $currency: ${item.fxRateToBase}');
             break;
           }
         }
-        
+
         if (usedFxRate != null && usedFxRate > 0) {
           // Ürün kurlarını kullan
           convertedTotal = total * usedFxRate;
-          debugPrint('DEBUG: Ürün kuru kullanıldı - $total $currency x $usedFxRate = $convertedTotal $targetCurrency');
+          debugPrint(
+              'DEBUG: Ürün kuru kullanıldı - $total $currency x $usedFxRate = $convertedTotal $targetCurrency');
         } else {
           // Kur bilgisi yoksa real-time kur kullan
           try {
             final rate = ExchangeRateService().getExchangeRate(currency);
             if (rate != null) {
-              convertedTotal = ExchangeRateService().convertCurrency(total, currency, targetCurrency);
-              debugPrint('DEBUG: Real-time kur kullanıldı - $total $currency = $convertedTotal $targetCurrency');
+              convertedTotal = ExchangeRateService()
+                  .convertCurrency(total, currency, targetCurrency);
+              debugPrint(
+                  'DEBUG: Real-time kur kullanıldı - $total $currency = $convertedTotal $targetCurrency');
             } else {
               convertedTotal = total; // Fallback
             }
@@ -1628,7 +1634,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     if (targetCurrency != null && currency != targetCurrency) {
       // Farklı para birimi ise dönüştürülmüş değeri göster
       return FutureBuilder<double?>(
-        future: _convertToTargetCurrency(amount, currency, targetCurrency),
+        future: _convertToTargetCurrencyWithProductRate(
+            amount, currency, targetCurrency),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             final convertedAmount = snapshot.data!;
@@ -1678,34 +1685,45 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     }
   }
 
-  Future<double?> _convertToTargetCurrency(
-      double amount, String fromCurrency, String toCurrency,
-      {double? fxRate}) async {
+  Future<double?> _convertToTargetCurrencyWithProductRate(
+      double amount, String fromCurrency, String toCurrency) async {
     try {
       if (fromCurrency == toCurrency) return amount;
 
-      // Ürün kurunu kullan (varsa)
-      if (fxRate != null && fxRate > 0) {
-        debugPrint(
-            'DEBUG: Ürün kuru kullanılıyor - $amount $fromCurrency x $fxRate = ${amount * fxRate} $toCurrency');
-        return amount * fxRate;
+      // Bu para birimindeki ürünlerin kurlarını kontrol et
+      double? usedFxRate;
+      
+      // İlk ürünün kurunu kullan (aynı para birimindeki tüm ürünler aynı kur kullanmalı)
+      for (final item in _items) {
+        if (item.currency == fromCurrency && item.fxRateToBase != null && item.fxRateToBase! > 0) {
+          usedFxRate = item.fxRateToBase;
+          debugPrint('DEBUG: Özet kur bilgisi bulundu - $fromCurrency: ${item.fxRateToBase}');
+          break;
+        }
       }
-
-      // Real-time kur kullan
-      final rate = await ExchangeRateService().getExchangeRate(fromCurrency);
-      if (rate != null) {
-        final converted = ExchangeRateService()
-            .convertCurrency(amount, fromCurrency, toCurrency);
-        debugPrint(
-            'DEBUG: Real-time kur kullanılıyor - $amount $fromCurrency = $converted $toCurrency');
+      
+      if (usedFxRate != null && usedFxRate > 0) {
+        // Ürün kurlarını kullan
+        final converted = amount * usedFxRate;
+        debugPrint('DEBUG: Özet ürün kuru kullanıldı - $amount $fromCurrency x $usedFxRate = $converted $toCurrency');
         return converted;
+      } else {
+        // Kur bilgisi yoksa real-time kur kullan
+        final rate = await ExchangeRateService().getExchangeRate(fromCurrency);
+        if (rate != null) {
+          final converted = ExchangeRateService()
+              .convertCurrency(amount, fromCurrency, toCurrency);
+          debugPrint('DEBUG: Özet real-time kur kullanıldı - $amount $fromCurrency = $converted $toCurrency');
+          return converted;
+        }
+        return null;
       }
-      return null;
     } catch (e) {
-      debugPrint('Para birimi dönüşüm hatası: $e');
+      debugPrint('Özet para birimi dönüşüm hatası: $e');
       return null;
     }
   }
+
 
   Widget _buildGrandTotalCard(
       double totalInTargetCurrency, String targetCurrency) {
