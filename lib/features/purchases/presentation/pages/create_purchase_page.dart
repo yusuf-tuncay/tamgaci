@@ -1471,34 +1471,35 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       // Para birimi dönüşümü hesapla (ürünlerin kendi kurlarını kullan)
       double convertedTotal = 0.0;
       if (currency != targetCurrency) {
-        // Her ürünün kendi kurunu kullanarak dönüştür
+        // Bu para birimindeki ürünlerin kurlarını kontrol et
+        double? usedFxRate;
+        
+        // İlk ürünün kurunu kullan (aynı para birimindeki tüm ürünler aynı kur kullanmalı)
         for (final item in items) {
-          double itemTotal = (item.unitPrice * item.quantity) -
-              item.discountAmount +
-              item.taxAmount;
-          if (item.fxRateToBase != null && item.fxRateToBase! > 0) {
-            // Ürünün kendi kurunu kullan
-            double convertedItemTotal = itemTotal * item.fxRateToBase!;
-            convertedTotal += convertedItemTotal;
-            debugPrint(
-                'DEBUG: Ürün kuru kullanıldı - ${item.productName}: $itemTotal $currency x ${item.fxRateToBase} = $convertedItemTotal $targetCurrency');
-          } else {
-            // Kur bilgisi yoksa real-time kur kullan
-            try {
-              final rate = ExchangeRateService().getExchangeRate(currency);
-              if (rate != null) {
-                double convertedItemTotal = ExchangeRateService()
-                    .convertCurrency(itemTotal, currency, targetCurrency);
-                convertedTotal += convertedItemTotal;
-                debugPrint(
-                    'DEBUG: Real-time kur kullanıldı - ${item.productName}: $itemTotal $currency = $convertedItemTotal $targetCurrency');
-              } else {
-                convertedTotal += itemTotal; // Fallback
-              }
-            } catch (e) {
-              debugPrint('DEBUG: Para birimi dönüşüm hatası: $e');
-              convertedTotal += itemTotal; // Fallback
+          if (item.currency == currency && item.fxRateToBase != null && item.fxRateToBase! > 0) {
+            usedFxRate = item.fxRateToBase;
+            debugPrint('DEBUG: Para birimi kur bilgisi bulundu - $currency: ${item.fxRateToBase}');
+            break;
+          }
+        }
+        
+        if (usedFxRate != null && usedFxRate > 0) {
+          // Ürün kurlarını kullan
+          convertedTotal = total * usedFxRate;
+          debugPrint('DEBUG: Ürün kuru kullanıldı - $total $currency x $usedFxRate = $convertedTotal $targetCurrency');
+        } else {
+          // Kur bilgisi yoksa real-time kur kullan
+          try {
+            final rate = ExchangeRateService().getExchangeRate(currency);
+            if (rate != null) {
+              convertedTotal = ExchangeRateService().convertCurrency(total, currency, targetCurrency);
+              debugPrint('DEBUG: Real-time kur kullanıldı - $total $currency = $convertedTotal $targetCurrency');
+            } else {
+              convertedTotal = total; // Fallback
             }
+          } catch (e) {
+            debugPrint('DEBUG: Para birimi dönüşüm hatası: $e');
+            convertedTotal = total; // Fallback
           }
         }
         debugPrint(
@@ -2562,12 +2563,13 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     item.discountAmount = finalDiscountAmount;
     item.taxRate = taxRate;
     item.currency = _lineCurrencyCode;
-    item.fxRateToBase = _fxRateToTry; // Ürün eklerken girilen kur bilgisini aktar
+    item.fxRateToBase =
+        _fxRateToTry; // Ürün eklerken girilen kur bilgisini aktar
 
     // Debug: İskonto bilgilerini yazdır
     debugPrint(
         'DEBUG: İskonto hesaplama - Gross: $gross, DiscountRate: $discountRate, FinalDiscountAmount: $finalDiscountAmount');
-    
+
     // Debug: Kur bilgisini yazdır
     debugPrint(
         'DEBUG: Kur bilgisi aktarıldı - fxRateToBase: ${item.fxRateToBase}, currency: ${item.currency}');
