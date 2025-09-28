@@ -1473,20 +1473,25 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       if (currency != targetCurrency) {
         // Her ürünün kendi kurunu kullanarak dönüştür
         for (final item in items) {
-          double itemTotal = (item.unitPrice * item.quantity) - item.discountAmount + item.taxAmount;
+          double itemTotal = (item.unitPrice * item.quantity) -
+              item.discountAmount +
+              item.taxAmount;
           if (item.fxRateToBase != null && item.fxRateToBase! > 0) {
             // Ürünün kendi kurunu kullan
             double convertedItemTotal = itemTotal * item.fxRateToBase!;
             convertedTotal += convertedItemTotal;
-            debugPrint('DEBUG: Ürün kuru kullanıldı - ${item.productName}: $itemTotal $currency x ${item.fxRateToBase} = $convertedItemTotal $targetCurrency');
+            debugPrint(
+                'DEBUG: Ürün kuru kullanıldı - ${item.productName}: $itemTotal $currency x ${item.fxRateToBase} = $convertedItemTotal $targetCurrency');
           } else {
             // Kur bilgisi yoksa real-time kur kullan
             try {
               final rate = ExchangeRateService().getExchangeRate(currency);
               if (rate != null) {
-                double convertedItemTotal = ExchangeRateService().convertCurrency(itemTotal, currency, targetCurrency);
+                double convertedItemTotal = ExchangeRateService()
+                    .convertCurrency(itemTotal, currency, targetCurrency);
                 convertedTotal += convertedItemTotal;
-                debugPrint('DEBUG: Real-time kur kullanıldı - ${item.productName}: $itemTotal $currency = $convertedItemTotal $targetCurrency');
+                debugPrint(
+                    'DEBUG: Real-time kur kullanıldı - ${item.productName}: $itemTotal $currency = $convertedItemTotal $targetCurrency');
               } else {
                 convertedTotal += itemTotal; // Fallback
               }
@@ -1496,7 +1501,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             }
           }
         }
-        debugPrint('DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $convertedTotal');
+        debugPrint(
+            'DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $convertedTotal');
       } else {
         convertedTotal = total;
         debugPrint('DEBUG: Aynı para birimi - $currency: $total');
@@ -1672,13 +1678,15 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Future<double?> _convertToTargetCurrency(
-      double amount, String fromCurrency, String toCurrency, {double? fxRate}) async {
+      double amount, String fromCurrency, String toCurrency,
+      {double? fxRate}) async {
     try {
       if (fromCurrency == toCurrency) return amount;
 
       // Ürün kurunu kullan (varsa)
       if (fxRate != null && fxRate > 0) {
-        debugPrint('DEBUG: Ürün kuru kullanılıyor - $amount $fromCurrency x $fxRate = ${amount * fxRate} $toCurrency');
+        debugPrint(
+            'DEBUG: Ürün kuru kullanılıyor - $amount $fromCurrency x $fxRate = ${amount * fxRate} $toCurrency');
         return amount * fxRate;
       }
 
@@ -1687,7 +1695,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       if (rate != null) {
         final converted = ExchangeRateService()
             .convertCurrency(amount, fromCurrency, toCurrency);
-        debugPrint('DEBUG: Real-time kur kullanılıyor - $amount $fromCurrency = $converted $toCurrency');
+        debugPrint(
+            'DEBUG: Real-time kur kullanılıyor - $amount $fromCurrency = $converted $toCurrency');
         return converted;
       }
       return null;
@@ -2553,10 +2562,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     item.discountAmount = finalDiscountAmount;
     item.taxRate = taxRate;
     item.currency = _lineCurrencyCode;
+    item.fxRateToBase = _fxRateToTry; // Ürün eklerken girilen kur bilgisini aktar
 
     // Debug: İskonto bilgilerini yazdır
     debugPrint(
         'DEBUG: İskonto hesaplama - Gross: $gross, DiscountRate: $discountRate, FinalDiscountAmount: $finalDiscountAmount');
+    
+    // Debug: Kur bilgisini yazdır
+    debugPrint(
+        'DEBUG: Kur bilgisi aktarıldı - fxRateToBase: ${item.fxRateToBase}, currency: ${item.currency}');
 
     // Controller'ları güncelle
     item.quantityController.text = quantity.toString();
