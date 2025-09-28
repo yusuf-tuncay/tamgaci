@@ -56,6 +56,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   String _paymentCurrencyCode = '';
   double? _paymentAmount; // Ödenecek miktar
   final _paymentAmountController = TextEditingController();
+  final _paymentAmountFocusNode = FocusNode();
 
   // Addresses
   String? _billingAddress;
@@ -152,6 +153,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     _notesController.dispose();
     _interestRateController.dispose();
     _paymentAmountController.dispose();
+    _paymentAmountFocusNode.dispose();
     super.dispose();
   }
 
@@ -250,6 +252,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _paymentAmountController,
+                        focusNode: _paymentAmountFocusNode,
                         decoration: const InputDecoration(
                           labelText: 'Ödenecek Miktar (Opsiyonel)',
                           border: OutlineInputBorder(),
@@ -264,14 +267,32 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                             setState(() => _paymentAmount = null);
                           } else {
                             // Nokta ve virgülü koruyarak parse et
-                            String cleanValue = value.replaceAll(RegExp(r'[^\d.,]'), '');
-                            
+                            String cleanValue =
+                                value.replaceAll(RegExp(r'[^\d.,]'), '');
+
                             // Virgülü nokta ile değiştir (double.parse için)
                             cleanValue = cleanValue.replaceAll(',', '.');
-                            
+
                             if (cleanValue.isNotEmpty) {
                               final parsed = double.tryParse(cleanValue);
                               setState(() => _paymentAmount = parsed);
+                            }
+                          }
+                        },
+                        onTapOutside: (event) {
+                          // Focus kaybedildiğinde küsüratsız sayılara ,00 ekle
+                          final currentText = _paymentAmountController.text;
+                          if (currentText.isNotEmpty && !currentText.contains(',')) {
+                            // Sadece rakamlar varsa ve virgül yoksa ,00 ekle
+                            final cleanValue = currentText.replaceAll(RegExp(r'[^\d]'), '');
+                            if (cleanValue.isNotEmpty) {
+                              final number = int.tryParse(cleanValue);
+                              if (number != null) {
+                                final formatter = NumberFormat('#,##0', 'tr_TR');
+                                final formatted = formatter.format(number);
+                                _paymentAmountController.text = '$formatted,00';
+                                setState(() => _paymentAmount = number.toDouble());
+                              }
                             }
                           }
                         },
@@ -3364,10 +3385,10 @@ class _PaymentAmountFormatter extends TextInputFormatter {
       // Sadece rakamlar - binlik ayırıcı ekle
       final number = int.tryParse(cleanValue);
       if (number == null) return oldValue;
-      
+
       final formatter = NumberFormat('#,##0', 'tr_TR');
       final formatted = formatter.format(number);
-      
+
       return TextEditingValue(
         text: formatted,
         selection: TextSelection.collapsed(offset: formatted.length),
@@ -3376,15 +3397,15 @@ class _PaymentAmountFormatter extends TextInputFormatter {
 
     // Ondalık sayı formatı
     String formatted = cleanValue;
-    
+
     // Nokta ve virgül kontrolü
     final dotCount = cleanValue.split('.').length - 1;
     final commaCount = cleanValue.split(',').length - 1;
-    
+
     if (dotCount > 1 || commaCount > 1) {
       return oldValue; // Geçersiz format
     }
-    
+
     // Nokta ondalık ayırıcı, virgül kuruş ayırıcı
     if (cleanValue.contains('.') && cleanValue.contains(',')) {
       // Hem nokta hem virgül var - nokta binlik, virgül kuruş
@@ -3392,7 +3413,7 @@ class _PaymentAmountFormatter extends TextInputFormatter {
       if (parts.length == 2) {
         final mainPart = parts[0].replaceAll('.', '');
         final decimalPart = parts[1];
-        
+
         if (decimalPart.length <= 2) {
           final number = int.tryParse(mainPart);
           if (number != null) {
@@ -3410,7 +3431,7 @@ class _PaymentAmountFormatter extends TextInputFormatter {
       if (parts.length == 2 && parts[1].length <= 2) {
         final mainPart = parts[0];
         final decimalPart = parts[1];
-        
+
         final number = int.tryParse(mainPart);
         if (number != null) {
           final formatter = NumberFormat('#,##0', 'tr_TR');
