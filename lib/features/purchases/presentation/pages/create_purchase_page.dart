@@ -739,6 +739,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         },
         paymentCurrencyCode: _paymentCurrencyCode,
         baseCurrencyCode: _baseCurrencyCode,
+        customerId: _customerIdController.text.isNotEmpty ? _customerIdController.text : null,
       ),
     );
   }
@@ -2041,11 +2042,13 @@ class _AddItemDialog extends StatefulWidget {
   final void Function(_PurchaseItemForm) onAdd;
   final String paymentCurrencyCode;
   final String baseCurrencyCode;
+  final String? customerId;
 
   const _AddItemDialog({
     required this.onAdd,
     required this.paymentCurrencyCode,
     required this.baseCurrencyCode,
+    this.customerId,
   });
 
   @override
@@ -2088,6 +2091,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _ProductQuickPicker(
+              customerId: widget.customerId,
               onSelected: (id, name, price, tax, salesCurrency) {
                 setState(() {
                   _productIdController.text = id;
@@ -2454,8 +2458,12 @@ class _ProductQuickPicker extends ConsumerStatefulWidget {
     double? taxRate,
     String salesCurrency,
   ) onSelected;
+  final String? customerId;
 
-  const _ProductQuickPicker({required this.onSelected});
+  const _ProductQuickPicker({
+    required this.onSelected,
+    this.customerId,
+  });
 
   @override
   ConsumerState<_ProductQuickPicker> createState() =>
@@ -2531,14 +2539,31 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                             'TRY',
                           ),
                         ),
-                        onTap: () {
+                        onTap: () async {
                           onSelected(product);
+                          
+                          // Müşteri bilgilerini al
+                          double finalPrice = product.salesPrice; // İade için satış fiyatı
+                          String currency = product.salesCurrency;
+                          
+                          // Müşteri seçiliyse sabit iskonto uygula
+                          if (widget.customerId != null && widget.customerId!.isNotEmpty) {
+                            try {
+                              final customer = await ref.read(customerProvider(widget.customerId!).future);
+                              if (customer != null && customer.fixedDiscountRate != null && customer.fixedDiscountRate! > 0) {
+                                finalPrice = finalPrice * (1 - customer.fixedDiscountRate! / 100);
+                              }
+                            } catch (e) {
+                              debugPrint('Müşteri bilgisi alınamadı: $e');
+                            }
+                          }
+                          
                           widget.onSelected(
                             product.id,
                             product.name,
-                            product.purchasePrice,
+                            finalPrice,
                             product.salesTaxRate,
-                            'TRY', // Alış için TRY varsayılan
+                            currency,
                           );
                         },
                       );
