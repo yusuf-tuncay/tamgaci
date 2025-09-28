@@ -391,7 +391,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                                   value = 'no_stock';
                                 }
                                 return DropdownButtonFormField<String>(
-                                  initialValue: value,
+                                  value: value,
                                   decoration:
                                       const InputDecoration(labelText: 'Depo'),
                                   isExpanded: true,
@@ -417,7 +417,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                               },
                               loading: () => const LinearProgressIndicator(),
                               error: (e, _) => DropdownButtonFormField<String>(
-                                initialValue: 'no_stock',
+                                value: 'no_stock',
                                 decoration:
                                     const InputDecoration(labelText: 'Depo'),
                                 items: const [
