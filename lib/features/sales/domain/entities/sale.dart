@@ -304,6 +304,7 @@ class SaleItem {
   final String? description; // Açıklama
   final String? notes; // Notlar
   final String currency; // Para birimi
+  final double? fxRateToBase; // Kur bilgisi (base currency'ye dönüşüm oranı)
 
   const SaleItem({
     required this.id,
@@ -322,6 +323,7 @@ class SaleItem {
     this.description,
     this.notes,
     required this.currency,
+    this.fxRateToBase,
   });
 
   /// Net tutar (indirim sonrası)
@@ -347,6 +349,7 @@ class SaleItem {
     String? description,
     String? notes,
     String? currency,
+    double? fxRateToBase,
   }) {
     return SaleItem(
       id: id ?? this.id,
@@ -364,6 +367,7 @@ class SaleItem {
       description: description ?? this.description,
       notes: notes ?? this.notes,
       currency: currency ?? this.currency,
+      fxRateToBase: fxRateToBase ?? this.fxRateToBase,
     );
   }
 
@@ -385,6 +389,7 @@ class SaleItem {
       description: json['description'] as String?,
       notes: json['notes'] as String?,
       currency: json['currency'] as String? ?? 'TRY',
+      fxRateToBase: json['fxRateToBase'] != null ? (json['fxRateToBase'] as num).toDouble() : null,
     );
   }
 
@@ -406,6 +411,7 @@ class SaleItem {
       'description': description,
       'notes': notes,
       'currency': currency,
+      'fxRateToBase': fxRateToBase,
     };
   }
 

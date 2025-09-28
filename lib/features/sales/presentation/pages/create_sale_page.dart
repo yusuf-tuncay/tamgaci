@@ -282,16 +282,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                         onTapOutside: (event) {
                           // Focus kaybedildiğinde küsüratsız sayılara ,00 ekle
                           final currentText = _paymentAmountController.text;
-                          if (currentText.isNotEmpty && !currentText.contains(',')) {
+                          if (currentText.isNotEmpty &&
+                              !currentText.contains(',')) {
                             // Sadece rakamlar varsa ve virgül yoksa ,00 ekle
-                            final cleanValue = currentText.replaceAll(RegExp(r'[^\d]'), '');
+                            final cleanValue =
+                                currentText.replaceAll(RegExp(r'[^\d]'), '');
                             if (cleanValue.isNotEmpty) {
                               final number = int.tryParse(cleanValue);
                               if (number != null) {
-                                final formatter = NumberFormat('#,##0', 'tr_TR');
+                                final formatter =
+                                    NumberFormat('#,##0', 'tr_TR');
                                 final formatted = formatter.format(number);
                                 _paymentAmountController.text = '$formatted,00';
-                                setState(() => _paymentAmount = number.toDouble());
+                                setState(
+                                    () => _paymentAmount = number.toDouble());
                               }
                             }
                           }
@@ -1960,6 +1964,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         },
         paymentCurrencyCode: _paymentCurrencyCode,
         baseCurrencyCode: _baseCurrencyCode,
+        existingItems: _items,
       ),
     );
   }
@@ -2964,10 +2969,12 @@ class _AddItemDialog extends StatefulWidget {
   final void Function(SaleItem) onAdd;
   final String paymentCurrencyCode;
   final String baseCurrencyCode;
+  final List<SaleItem> existingItems;
   const _AddItemDialog(
       {required this.onAdd,
       required this.paymentCurrencyCode,
-      required this.baseCurrencyCode});
+      required this.baseCurrencyCode,
+      required this.existingItems});
 
   @override
   State<_AddItemDialog> createState() => _AddItemDialogState();
@@ -2986,6 +2993,53 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   double? _fxRateToTry;
   String _productCurrencyCode = 'TRY';
   final TextEditingController _manualRateController = TextEditingController();
+  
+  // Orijinal fiyat ve müşteri iskonto bilgileri
+  double? _originalPrice;
+  double _customerDiscountRate = 0.0;
+  bool _showCurrencySelection = true;
+  bool _showExchangeRate = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Aynı para birimindeki ürün varsa kur seçimi gösterme
+    _checkExistingCurrency();
+  }
+
+  void _checkExistingCurrency() {
+    // Mevcut ürünlerde aynı para birimi var mı kontrol et
+    final existingCurrencies =
+        widget.existingItems.map((item) => item.currency).toSet();
+    
+    // Eğer mevcut ürün yoksa, para birimi seçimi ve kur bilgisi göster
+    if (existingCurrencies.isEmpty) {
+      setState(() {
+        _showCurrencySelection = true;
+        _showExchangeRate = true;
+        _lineCurrencyCode = 'TRY'; // Varsayılan para birimi
+      });
+      return;
+    }
+    
+    // Eğer sadece TRY varsa, para birimi seçimi göster (kullanıcı farklı para birimi seçebilir)
+    if (existingCurrencies.length == 1 && existingCurrencies.contains('TRY')) {
+      setState(() {
+        _showCurrencySelection = true;
+        _showExchangeRate = true;
+        _lineCurrencyCode = 'TRY';
+      });
+      return;
+    }
+    
+    // Eğer birden fazla para birimi varsa veya TRY dışında para birimi varsa
+    // Kullanıcı yeni para birimi seçebilir, para birimi seçimi göster
+    setState(() {
+      _showCurrencySelection = true;
+      _showExchangeRate = true;
+      _lineCurrencyCode = 'TRY'; // Varsayılan para birimi
+    });
+  }
 
   @override
   void dispose() {
@@ -3065,46 +3119,112 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ),
             ],
             const SizedBox(height: 16.0),
+            if (_showCurrencySelection) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _lineCurrencyCode,
+                      decoration: const InputDecoration(
+                        labelText: 'Satır Para Birimi',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const ['TRY', 'USD', 'EUR', 'GBP']
+                          .map((c) => DropdownMenuItem(
+                                value: c,
+                                child: Text(c),
+                              ))
+                          .toList(),
+                      onChanged: (v) async {
+                        if (v == null) return;
+                        setState(() => _lineCurrencyCode = v);
+                        
+                        // Aynı para birimindeki ürün var mı kontrol et
+                        final existingItem = widget.existingItems.firstWhere(
+                          (item) => item.currency == v,
+                          orElse: () => SaleItem(
+                            id: '',
+                            saleId: '',
+                            productId: '',
+                            productName: '',
+                            quantity: 0,
+                            unitPrice: 0,
+                            discountRate: 0,
+                            discountAmount: 0,
+                            taxRate: 0,
+                            taxAmount: 0,
+                            totalAmount: 0,
+                            currency: '',
+                            description: '',
+                          ),
+                        );
+                        
+                        if (existingItem.currency == v && existingItem.fxRateToBase != null) {
+                          // Aynı para birimindeki ürün varsa, kur bilgisini gizle ve mevcut kur bilgisini kullan
+                          setState(() {
+                            _showExchangeRate = false;
+                            _fxRateToTry = existingItem.fxRateToBase;
+                            _manualRateController.text = _formatTrNumber(existingItem.fxRateToBase!);
+                          });
+                        } else {
+                          // Aynı para birimindeki ürün yoksa, kur bilgisini göster
+                          setState(() => _showExchangeRate = true);
+                          
+                          // Kur: 1 LINE = ? BASE
+                          if (v == widget.baseCurrencyCode) {
+                            setState(() => _fxRateToTry = 1.0);
+                          } else {
+                            // Otomatik kur getirme
+                            try {
+                              await ExchangeRateService().getExchangeRate(v);
+                              final r = ExchangeRateService()
+                                  .convertCurrency(1.0, v, widget.baseCurrencyCode);
+                              setState(() {
+                                _fxRateToTry = r;
+                                // Manuel kur alanını da otomatik doldur
+                                _manualRateController.text = _formatTrNumber(r);
+                              });
+                            } catch (e) {
+                              debugPrint('Otomatik kur alma hatası: $e');
+                              setState(() => _fxRateToTry = null);
+                            }
+                          }
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+            ] else ...[
+              // Aynı para birimi kullanılıyor, bilgi göster
+              Container(
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8.0),
+                  border: Border.all(color: Colors.blue.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.blue.shade600, size: 20),
+                    const SizedBox(width: 8.0),
+                    Expanded(
+                      child: Text(
+                        'Para birimi: $_lineCurrencyCode (İlk ürünün kur bilgisi kullanılıyor)',
+                        style: TextStyle(
+                          color: Colors.blue.shade800,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16.0),
+            ],
             Row(
               children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _lineCurrencyCode,
-                    decoration: const InputDecoration(
-                      labelText: 'Satır Para Birimi',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const ['TRY', 'USD', 'EUR', 'GBP']
-                        .map((c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(c),
-                            ))
-                        .toList(),
-                    onChanged: (v) async {
-                      if (v == null) return;
-                      setState(() => _lineCurrencyCode = v);
-                      // Kur: 1 LINE = ? BASE
-                      if (v == widget.baseCurrencyCode) {
-                        setState(() => _fxRateToTry = 1.0);
-                      } else {
-                        // Otomatik kur getirme
-                        try {
-                          await ExchangeRateService().getExchangeRate(v);
-                          final r = ExchangeRateService()
-                              .convertCurrency(1.0, v, widget.baseCurrencyCode);
-                          setState(() {
-                            _fxRateToTry = r;
-                            // Manuel kur alanını da otomatik doldur
-                            _manualRateController.text = _formatTrNumber(r);
-                          });
-                        } catch (e) {
-                          debugPrint('Otomatik kur alma hatası: $e');
-                          setState(() => _fxRateToTry = null);
-                        }
-                      }
-                    },
-                  ),
-                ),
                 const SizedBox(width: 16.0),
                 Expanded(
                   child: Focus(
@@ -3150,7 +3270,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ],
             ),
             const SizedBox(height: 6),
-            if (_lineCurrencyCode != _productCurrencyCode &&
+            if (_showExchangeRate && _lineCurrencyCode != _productCurrencyCode &&
                 _lineCurrencyCode != widget.baseCurrencyCode)
               Row(
                 children: [
@@ -3167,7 +3287,23 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                       ],
-                      onChanged: (_) => setState(() {}),
+                      onChanged: (value) {
+                        // Kullanıcı kur bilgisini girdiğinde _fxRateToTry'ı güncelle
+                        if (value.isNotEmpty) {
+                          final cleaned = value.replaceAll('.', '').replaceAll(',', '.');
+                          final parsed = double.tryParse(cleaned);
+                          if (parsed != null) {
+                            setState(() {
+                              _fxRateToTry = parsed;
+                            });
+                            debugPrint('DEBUG: Manuel kur girildi - _fxRateToTry: $_fxRateToTry');
+                          }
+                        } else {
+                          setState(() {
+                            _fxRateToTry = null;
+                          });
+                        }
+                      },
                     ),
                   ),
                 ],
@@ -3354,6 +3490,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       taxAmount: taxAmount,
       totalAmount: totalAmount,
       currency: _lineCurrencyCode, // Orijinal para birimi (USD)
+      fxRateToBase: _fxRateToTry, // Ürün eklerken girilen kur bilgisini aktar
     );
 
     debugPrint('Ürün ekleniyor: ${item.productName}');
