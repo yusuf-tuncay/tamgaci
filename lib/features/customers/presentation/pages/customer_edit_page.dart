@@ -353,18 +353,34 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
       await ref.read(customerRepositoryProvider).updateCustomer(customer);
       AppLogger.info('Customer updated successfully: ${customer.name}');
 
-      // Provider'ı yenile
+      // Provider'ı zorla yenile
       ref.invalidate(customersProvider);
-      
+
       // Debug: Provider yenilendikten sonra müşteri verilerini kontrol et
-      debugPrint('DEBUG: Provider yenilendikten sonra müşteri verileri kontrol ediliyor...');
+      debugPrint(
+          'DEBUG: Provider yenilendikten sonra müşteri verileri kontrol ediliyor...');
+      
+      // Provider'ı zorla yenile ve bekle
+      final _ = ref.refresh(customersProvider);
+      
       final updatedCustomers = await ref.read(customersProvider.future);
       final updatedCustomer = updatedCustomers.firstWhere(
         (c) => c.id == widget.customerId,
         orElse: () => throw Exception('Müşteri bulunamadı'),
       );
-      debugPrint('DEBUG: Yenilenen müşteri - maturityDays: ${updatedCustomer.maturityDays}');
-      debugPrint('DEBUG: Yenilenen müşteri - fixedDiscountRate: ${updatedCustomer.fixedDiscountRate}');
+      debugPrint(
+          'DEBUG: Yenilenen müşteri - maturityDays: ${updatedCustomer.maturityDays}');
+      debugPrint(
+          'DEBUG: Yenilenen müşteri - fixedDiscountRate: ${updatedCustomer.fixedDiscountRate}');
+      
+      // Eğer hala NULL ise, Firestore'dan direkt çek
+      if (updatedCustomer.maturityDays == null || updatedCustomer.fixedDiscountRate == null) {
+        debugPrint('DEBUG: Provider verileri NULL, Firestore\'dan direkt çekiliyor...');
+        // Firestore'dan direkt müşteri verisini çek
+        final directCustomer = await ref.read(customerRepositoryProvider).getCustomerById(widget.customerId);
+        debugPrint('DEBUG: Direkt Firestore müşteri - maturityDays: ${directCustomer?.maturityDays}');
+        debugPrint('DEBUG: Direkt Firestore müşteri - fixedDiscountRate: ${directCustomer?.fixedDiscountRate}');
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
