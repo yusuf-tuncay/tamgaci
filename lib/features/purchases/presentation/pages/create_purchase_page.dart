@@ -1557,11 +1557,11 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   ),
                 ),
                 const SizedBox(height: 12.0),
-                _buildSummaryRow('Ara Toplam:', subtotal, currency),
-                _buildSummaryRow('İndirim:', -discount, currency),
-                _buildSummaryRow('KDV:', tax, currency),
+                _buildSummaryRow('Ara Toplam:', subtotal, currency, targetCurrency: targetCurrency),
+                _buildSummaryRow('İndirim:', -discount, currency, targetCurrency: targetCurrency),
+                _buildSummaryRow('KDV:', tax, currency, targetCurrency: targetCurrency),
                 const Divider(),
-                _buildSummaryRow('Toplam:', total, currency, isTotal: true),
+                _buildSummaryRow('Toplam:', total, currency, isTotal: true, targetCurrency: targetCurrency),
               ],
             ),
           ),
@@ -1571,7 +1571,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildSummaryRow(String label, double amount, String currency,
-      {bool isTotal = false}) {
+      {bool isTotal = false, String? targetCurrency}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -1584,17 +1584,79 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
               fontSize: isTotal ? 16.0 : 14.0,
             ),
           ),
-          Text(
-            CurrencyHelper.formatCurrency(amount, currency),
-            style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
-              fontSize: isTotal ? 16.0 : 14.0,
-              color: isTotal ? AppColors.primary : null,
-            ),
-          ),
+          _buildCurrencyAmount(amount, currency, isTotal: isTotal, targetCurrency: targetCurrency),
         ],
       ),
     );
+  }
+
+  Widget _buildCurrencyAmount(double amount, String currency, {bool isTotal = false, String? targetCurrency}) {
+    if (targetCurrency != null && currency != targetCurrency) {
+      // Farklı para birimi ise dönüştürülmüş değeri göster
+      return FutureBuilder<double?>(
+        future: _convertToTargetCurrency(amount, currency, targetCurrency),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            final convertedAmount = snapshot.data!;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  CurrencyHelper.formatCurrency(amount, currency),
+                  style: TextStyle(
+                    fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                    fontSize: isTotal ? 16.0 : 14.0,
+                    color: isTotal ? AppColors.primary : null,
+                  ),
+                ),
+                Text(
+                  '(${CurrencyHelper.formatCurrency(convertedAmount, targetCurrency)})',
+                  style: TextStyle(
+                    fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                    fontSize: isTotal ? 14.0 : 12.0,
+                    color: isTotal ? AppColors.primary : Colors.grey[600],
+                  ),
+                ),
+              ],
+            );
+          } else {
+            return Text(
+              CurrencyHelper.formatCurrency(amount, currency),
+              style: TextStyle(
+                fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+                fontSize: isTotal ? 16.0 : 14.0,
+                color: isTotal ? AppColors.primary : null,
+              ),
+            );
+          }
+        },
+      );
+    } else {
+      // Aynı para birimi ise normal göster
+      return Text(
+        CurrencyHelper.formatCurrency(amount, currency),
+        style: TextStyle(
+          fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+          fontSize: isTotal ? 16.0 : 14.0,
+          color: isTotal ? AppColors.primary : null,
+        ),
+      );
+    }
+  }
+
+  Future<double?> _convertToTargetCurrency(double amount, String fromCurrency, String toCurrency) async {
+    try {
+      if (fromCurrency == toCurrency) return amount;
+      
+      final rate = await ExchangeRateService().getExchangeRate(fromCurrency);
+      if (rate != null) {
+        return ExchangeRateService().convertCurrency(amount, fromCurrency, toCurrency);
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Para birimi dönüşüm hatası: $e');
+      return null;
+    }
   }
 
   Widget _buildGrandTotalCard(
