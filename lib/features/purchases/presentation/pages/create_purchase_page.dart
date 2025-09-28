@@ -1543,36 +1543,55 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildGrandTotalCard(double totalInTRY) {
+    // Toplam ürün miktarını hesapla
+    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Genel Toplam',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12.0),
+            // Toplam ürün miktarı
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Toplam:',
+                  'Toplam ürün miktarı:',
                   style: TextStyle(
-                    fontSize: 16.0,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  totalQuantity.toStringAsFixed(0),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Genel toplam
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'GENEL TOPLAM (TRY):',
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
                   ),
                 ),
                 Text(
                   CurrencyHelper.formatCurrency(totalInTRY, 'TRY'),
-                  style: const TextStyle(
-                    fontSize: 18.0,
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
+                    fontSize: 18,
+                    color: Colors.green.shade700,
                   ),
                 ),
               ],
@@ -2489,10 +2508,10 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                         ),
                         trailing: Text(
                           CurrencyHelper.formatCurrency(
-                            widget.purchaseType == PurchaseType.purchase 
+                            widget.purchaseType == PurchaseType.purchase
                                 ? (product.purchasePrice ?? 0.0)
                                 : (product.salesPrice ?? 0.0),
-                            widget.purchaseType == PurchaseType.purchase 
+                            widget.purchaseType == PurchaseType.purchase
                                 ? (product.purchaseCurrency ?? 'TRY')
                                 : (product.salesCurrency ?? 'TRY'),
                           ),
@@ -2504,7 +2523,7 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                           double originalPrice;
                           double finalPrice;
                           String currency;
-                          
+
                           if (widget.purchaseType == PurchaseType.purchase) {
                             // Normal Alış: Alış fiyatı kullan
                             originalPrice = product.purchasePrice ?? 0.0;
