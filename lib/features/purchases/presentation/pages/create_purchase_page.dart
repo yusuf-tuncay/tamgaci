@@ -2243,8 +2243,17 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     // Mevcut ürünlerde aynı para birimi var mı kontrol et
     final existingCurrencies =
         widget.existingItems.map((item) => item.currency).toSet();
-    if (existingCurrencies.isNotEmpty) {
-      // İlk mevcut para birimini kullan
+    
+    // TRY için kur gerekmez, diğer para birimleri için kontrol et
+    if (existingCurrencies.contains('TRY')) {
+      // TRY varsa, TRY kullan (kur gerekmez)
+      setState(() {
+        _lineCurrencyCode = 'TRY';
+        _showCurrencySelection = false;
+        _fxRateToTry = 1.0; // TRY için kur 1
+      });
+    } else if (existingCurrencies.isNotEmpty) {
+      // TRY yoksa, ilk mevcut para birimini kullan
       final firstCurrency = existingCurrencies.first;
       setState(() {
         _lineCurrencyCode = firstCurrency;
