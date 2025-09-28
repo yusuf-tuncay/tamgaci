@@ -1311,6 +1311,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         onTotalCalculated: (tryAmount) {
           totalInTRY += tryAmount;
         },
+        items: items,
       ));
     }
 
@@ -1371,6 +1372,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         onTotalCalculated: (paymentCurrencyAmount) {
           // Bu callback artık kullanılmıyor ama metodun imzası için gerekli
         },
+        items: items,
       ));
     }
 
@@ -1486,18 +1488,16 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     required double total,
     required String paymentCurrency,
     required Function(double) onTotalCalculated,
+    required List<SaleItem> items,
   }) {
-    return FutureBuilder<ExchangeRate?>(
-      future: currency == paymentCurrency
-          ? Future.value(null)
-          : ExchangeRateService().getExchangeRate(currency),
+    return FutureBuilder<double?>(
+      future: _convertToTargetCurrencyWithProductRate(
+          total, currency, paymentCurrency, items),
       builder: (context, snapshot) {
-        final rate = snapshot.data;
         double totalInPaymentCurrency = total;
 
-        if (rate != null && currency != paymentCurrency) {
-          totalInPaymentCurrency = ExchangeRateService()
-              .convertCurrency(total, currency, paymentCurrency);
+        if (snapshot.hasData && snapshot.data != null) {
+          totalInPaymentCurrency = snapshot.data!;
           onTotalCalculated(totalInPaymentCurrency);
         } else if (currency == paymentCurrency) {
           onTotalCalculated(total);
@@ -1540,9 +1540,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                 const SizedBox(height: 8.0),
 
                 // Kur bilgisi (ödeme para birimi dışındaki para birimleri için)
-                if (rate != null && currency != paymentCurrency) ...[
+                if (currency != paymentCurrency) ...[
                   Text(
-                    'Kur: 1 $currency = ${rate.rate.toStringAsFixed(4)} $paymentCurrency',
+                    'Kur: 1 $currency = ${(totalInPaymentCurrency / total).toStringAsFixed(4)} $paymentCurrency',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
@@ -1603,6 +1603,48 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     );
   }
 
+  /// Ürün kurlarını kullanarak para birimi dönüşümü yapar
+  Future<double?> _convertToTargetCurrencyWithProductRate(
+      double amount, String fromCurrency, String toCurrency, List<SaleItem> items) async {
+    try {
+      if (fromCurrency == toCurrency) return amount;
+
+      // Bu para birimindeki ürünlerin kurlarını kontrol et
+      double? usedFxRate;
+
+      // İlk ürünün kurunu kullan (aynı para birimindeki tüm ürünler aynı kur kullanmalı)
+      for (final item in items) {
+        if (item.currency == fromCurrency &&
+            item.fxRateToBase != null &&
+            item.fxRateToBase! > 0) {
+          usedFxRate = item.fxRateToBase;
+          debugPrint('DEBUG: Özet kur bilgisi bulundu - $fromCurrency: ${item.fxRateToBase}');
+          break;
+        }
+      }
+
+      if (usedFxRate != null && usedFxRate > 0) {
+        // Ürün kurlarını kullan
+        final converted = amount * usedFxRate;
+        debugPrint('DEBUG: Özet ürün kuru kullanıldı - $amount $fromCurrency x $usedFxRate = $converted $toCurrency');
+        return converted;
+      } else {
+        // Kur bilgisi yoksa real-time kur kullan
+        final rate = await ExchangeRateService().getExchangeRate(fromCurrency);
+        if (rate != null) {
+          final converted = ExchangeRateService()
+              .convertCurrency(amount, fromCurrency, toCurrency);
+          debugPrint('DEBUG: Özet real-time kur kullanıldı - $amount $fromCurrency = $converted $toCurrency');
+          return converted;
+        }
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Özet para birimi dönüşüm hatası: $e');
+      return null;
+    }
+  }
+
   Widget _buildCurrencySummaryCard({
     required String currency,
     required double subtotal,
@@ -1610,18 +1652,16 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     required double tax,
     required double total,
     required Function(double) onTotalCalculated,
+    required List<SaleItem> items,
   }) {
-    return FutureBuilder<ExchangeRate?>(
-      future: currency == 'TRY'
-          ? Future.value(null)
-          : ExchangeRateService().getExchangeRate(currency),
+    return FutureBuilder<double?>(
+      future: _convertToTargetCurrencyWithProductRate(
+          total, currency, 'TRY', items),
       builder: (context, snapshot) {
-        final rate = snapshot.data;
         double totalInTRY = total;
 
-        if (rate != null) {
-          totalInTRY =
-              ExchangeRateService().convertCurrency(total, currency, 'TRY');
+        if (snapshot.hasData && snapshot.data != null) {
+          totalInTRY = snapshot.data!;
           onTotalCalculated(totalInTRY);
         } else if (currency == 'TRY') {
           onTotalCalculated(total);
@@ -1664,9 +1704,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                 const SizedBox(height: 8.0),
 
                 // Kur bilgisi (TRY dışındaki para birimleri için)
-                if (rate != null) ...[
+                if (currency != 'TRY') ...[
                   Text(
-                    'Kur: 1 $currency = ${rate.rate.toStringAsFixed(4)} TRY',
+                    'Kur: 1 $currency = ${(totalInTRY / total).toStringAsFixed(4)} TRY',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey.shade600,
@@ -1704,7 +1744,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                               color: Colors.green.shade700,
                             ),
                           ),
-                          if (rate != null) ...[
+                          if (currency != 'TRY') ...[
                             const SizedBox(height: 2.0),
                             Text(
                               '(${_formatMoney(totalInTRY, currency: 'TRY')})',
@@ -2993,10 +3033,10 @@ class _AddItemDialogState extends State<_AddItemDialog> {
   double? _fxRateToTry;
   String _productCurrencyCode = 'TRY';
   final TextEditingController _manualRateController = TextEditingController();
-  
+
   // Orijinal fiyat ve müşteri iskonto bilgileri
   double? _originalPrice;
-  double _customerDiscountRate = 0.0;
+  final double _customerDiscountRate = 0.0;
   bool _showCurrencySelection = true;
   bool _showExchangeRate = true;
 
@@ -3011,7 +3051,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     // Mevcut ürünlerde aynı para birimi var mı kontrol et
     final existingCurrencies =
         widget.existingItems.map((item) => item.currency).toSet();
-    
+
     // Eğer mevcut ürün yoksa, para birimi seçimi ve kur bilgisi göster
     if (existingCurrencies.isEmpty) {
       setState(() {
@@ -3021,7 +3061,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       });
       return;
     }
-    
+
     // Eğer sadece TRY varsa, para birimi seçimi göster (kullanıcı farklı para birimi seçebilir)
     if (existingCurrencies.length == 1 && existingCurrencies.contains('TRY')) {
       setState(() {
@@ -3031,7 +3071,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
       });
       return;
     }
-    
+
     // Eğer birden fazla para birimi varsa veya TRY dışında para birimi varsa
     // Kullanıcı yeni para birimi seçebilir, para birimi seçimi göster
     setState(() {
@@ -3138,11 +3178,11 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       onChanged: (v) async {
                         if (v == null) return;
                         setState(() => _lineCurrencyCode = v);
-                        
+
                         // Aynı para birimindeki ürün var mı kontrol et
                         final existingItem = widget.existingItems.firstWhere(
                           (item) => item.currency == v,
-                          orElse: () => SaleItem(
+                          orElse: () => const SaleItem(
                             id: '',
                             saleId: '',
                             productId: '',
@@ -3158,18 +3198,20 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                             description: '',
                           ),
                         );
-                        
-                        if (existingItem.currency == v && existingItem.fxRateToBase != null) {
+
+                        if (existingItem.currency == v &&
+                            existingItem.fxRateToBase != null) {
                           // Aynı para birimindeki ürün varsa, kur bilgisini gizle ve mevcut kur bilgisini kullan
                           setState(() {
                             _showExchangeRate = false;
                             _fxRateToTry = existingItem.fxRateToBase;
-                            _manualRateController.text = _formatTrNumber(existingItem.fxRateToBase!);
+                            _manualRateController.text =
+                                _formatTrNumber(existingItem.fxRateToBase!);
                           });
                         } else {
                           // Aynı para birimindeki ürün yoksa, kur bilgisini göster
                           setState(() => _showExchangeRate = true);
-                          
+
                           // Kur: 1 LINE = ? BASE
                           if (v == widget.baseCurrencyCode) {
                             setState(() => _fxRateToTry = 1.0);
@@ -3177,8 +3219,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                             // Otomatik kur getirme
                             try {
                               await ExchangeRateService().getExchangeRate(v);
-                              final r = ExchangeRateService()
-                                  .convertCurrency(1.0, v, widget.baseCurrencyCode);
+                              final r = ExchangeRateService().convertCurrency(
+                                  1.0, v, widget.baseCurrencyCode);
                               setState(() {
                                 _fxRateToTry = r;
                                 // Manuel kur alanını da otomatik doldur
@@ -3270,7 +3312,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               ],
             ),
             const SizedBox(height: 6),
-            if (_showExchangeRate && _lineCurrencyCode != _productCurrencyCode &&
+            if (_showExchangeRate &&
+                _lineCurrencyCode != _productCurrencyCode &&
                 _lineCurrencyCode != widget.baseCurrencyCode)
               Row(
                 children: [
@@ -3290,13 +3333,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                       onChanged: (value) {
                         // Kullanıcı kur bilgisini girdiğinde _fxRateToTry'ı güncelle
                         if (value.isNotEmpty) {
-                          final cleaned = value.replaceAll('.', '').replaceAll(',', '.');
+                          final cleaned =
+                              value.replaceAll('.', '').replaceAll(',', '.');
                           final parsed = double.tryParse(cleaned);
                           if (parsed != null) {
                             setState(() {
                               _fxRateToTry = parsed;
                             });
-                            debugPrint('DEBUG: Manuel kur girildi - _fxRateToTry: $_fxRateToTry');
+                            debugPrint(
+                                'DEBUG: Manuel kur girildi - _fxRateToTry: $_fxRateToTry');
                           }
                         } else {
                           setState(() {
