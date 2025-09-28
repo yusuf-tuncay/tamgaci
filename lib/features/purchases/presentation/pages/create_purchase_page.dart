@@ -14,7 +14,6 @@ import '../../../purchases/presentation/providers/purchase_providers.dart';
 import '../../../purchases/domain/entities/purchase.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../products/presentation/providers/product_providers.dart';
-import '../../../suppliers/domain/entities/supplier.dart';
 import '../../../customers/presentation/providers/customer_providers.dart';
 import '../../../../core/services/utils/exchange_rate_service.dart';
 import '../../../settings/presentation/providers/settings_providers.dart';
@@ -68,7 +67,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   final _customerNameController = TextEditingController();
 
   // Form state
-  Supplier? _selectedSupplier;
   DateTime _purchaseDate = DateTime.now();
   String _currencyCode = 'TRY';
   Warehouse? _selectedWarehouse;
@@ -186,22 +184,11 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     // Numbering
     await _generatePurchaseNumberFromRepo();
 
-    // Müşteri detayından gelen tedarikçi bilgilerini ayarla
+    // Müşteri detayından gelen müşteri bilgilerini ayarla
     if (widget.supplierId != null && widget.supplierName != null) {
       setState(() {
-        _selectedSupplier = Supplier(
-          id: widget.supplierId!,
-          name: widget.supplierName!,
-          email: '',
-          phone: '',
-          address: '',
-          taxNumber: '',
-          supplierType: SupplierType.company,
-          status: SupplierStatus.active,
-          companyId: '',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
+        _customerIdController.text = widget.supplierId!;
+        _customerNameController.text = widget.supplierName!;
       });
     }
 
@@ -758,11 +745,11 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
   Future<void> _savePurchase() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedSupplier == null) {
+    if (_customerIdController.text.isEmpty) {
       final scheme = Theme.of(context).colorScheme;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Tedarikçi seçilmelidir',
+          content: Text('Müşteri seçilmelidir',
               style: TextStyle(color: scheme.onError)),
           backgroundColor: scheme.error,
           behavior: SnackBarBehavior.floating,
@@ -808,8 +795,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             ? PurchasePaymentStatus
                 .paid // İade alışı için ödeme tamamlanmış sayılır
             : PurchasePaymentStatus.pending,
-        supplierId: _selectedSupplier!.id,
-        supplierName: _selectedSupplier!.name,
+        supplierId: _customerIdController.text,
+        supplierName: _customerNameController.text,
         purchaseDate: _purchaseDate,
         dueDate: null,
         receivedDate: null,
@@ -865,7 +852,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   relatedEntityId: _purchaseNumberController.text,
                   relatedEntityType: 'purchase',
                   metadata: {
-                    'supplierId': _selectedSupplier!.id,
+                    'supplierId': _customerIdController.text,
                   },
                 ),
               );
@@ -1379,9 +1366,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 'Toplam:',
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                style: TextStyle(fontWeight: FontWeight.w500),
               ),
               Text(
                 CurrencyHelper.formatCurrency(item.lineTotal, item.currency),
@@ -2054,7 +2041,7 @@ class _AddItemDialog extends StatefulWidget {
   final void Function(_PurchaseItemForm) onAdd;
   final String paymentCurrencyCode;
   final String baseCurrencyCode;
-  
+
   const _AddItemDialog({
     required this.onAdd,
     required this.paymentCurrencyCode,
@@ -2437,7 +2424,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     item.discountAmount = discountAmount;
     item.taxRate = taxRate;
     item.currency = _lineCurrencyCode;
-    
+
     // Controller'ları güncelle
     item.quantityController.text = quantity.toString();
     item.unitPriceController.text = unitPrice.toString();
