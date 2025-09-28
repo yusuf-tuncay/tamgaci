@@ -359,10 +359,10 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
       // Debug: Provider yenilendikten sonra müşteri verilerini kontrol et
       debugPrint(
           'DEBUG: Provider yenilendikten sonra müşteri verileri kontrol ediliyor...');
-      
+
       // Provider'ı zorla yenile ve bekle
       final _ = ref.refresh(customersProvider);
-      
+
       final updatedCustomers = await ref.read(customersProvider.future);
       final updatedCustomer = updatedCustomers.firstWhere(
         (c) => c.id == widget.customerId,
@@ -372,14 +372,20 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
           'DEBUG: Yenilenen müşteri - maturityDays: ${updatedCustomer.maturityDays}');
       debugPrint(
           'DEBUG: Yenilenen müşteri - fixedDiscountRate: ${updatedCustomer.fixedDiscountRate}');
-      
+
       // Eğer hala NULL ise, Firestore'dan direkt çek
-      if (updatedCustomer.maturityDays == null || updatedCustomer.fixedDiscountRate == null) {
-        debugPrint('DEBUG: Provider verileri NULL, Firestore\'dan direkt çekiliyor...');
+      if (updatedCustomer.maturityDays == null ||
+          updatedCustomer.fixedDiscountRate == null) {
+        debugPrint(
+            'DEBUG: Provider verileri NULL, Firestore\'dan direkt çekiliyor...');
         // Firestore'dan direkt müşteri verisini çek
-        final directCustomer = await ref.read(customerRepositoryProvider).getCustomerById(widget.customerId);
-        debugPrint('DEBUG: Direkt Firestore müşteri - maturityDays: ${directCustomer?.maturityDays}');
-        debugPrint('DEBUG: Direkt Firestore müşteri - fixedDiscountRate: ${directCustomer?.fixedDiscountRate}');
+        final directCustomer = await ref
+            .read(customerRepositoryProvider)
+            .getCustomerById(widget.customerId);
+        debugPrint(
+            'DEBUG: Direkt Firestore müşteri - maturityDays: ${directCustomer?.maturityDays}');
+        debugPrint(
+            'DEBUG: Direkt Firestore müşteri - fixedDiscountRate: ${directCustomer?.fixedDiscountRate}');
       }
 
       if (mounted) {
@@ -837,45 +843,32 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                     title: 'Finansal Bilgiler',
                     icon: Icons.account_balance_wallet_outlined,
                     children: [
+                      // Para Birimi - Sadece Okunur (Güzel Görünüm)
+                      _buildReadOnlyField(
+                        label: 'Para Birimi',
+                        value: _currency,
+                        icon: Icons.currency_exchange,
+                        subtitle: 'Bu alan değiştirilemez',
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Açılış Bakiyesi - Sadece Okunur (Güzel Görünüm)
+                      _buildReadOnlyField(
+                        label: 'Açılış Bakiyesi',
+                        value: _openingBalanceController.text.isNotEmpty 
+                            ? '${_openingBalanceController.text} $_currency'
+                            : '0,00 $_currency',
+                        icon: Icons.account_balance,
+                        subtitle: 'Bu alan değiştirilemez',
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      // Düzenlenebilir Alanlar
                       Row(
                         children: [
                           Expanded(
-                            child: CustomDropdown<String>(
-                              value: _currency,
-                              label: 'Para Birimi (Değiştirilemez)',
-                              items: const [
-                                'TRY',
-                                'USD',
-                                'EUR',
-                                'GBP',
-                                'CHF',
-                                'JPY',
-                                'CAD',
-                                'AUD',
-                                'DKK',
-                                'SEK',
-                                'NOK',
-                                'SAR',
-                                'KWD',
-                                'BGN',
-                                'RON',
-                                'RUB',
-                                'IRR',
-                                'CNY',
-                                'PKR',
-                                'QAR',
-                                'XDR',
-                                'XAU',
-                                'AED'
-                              ],
-                              itemBuilder: (currency) => Text(currency),
-                              onChanged: null, // Sadece okunur yap
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
                             child: AutoFormattedTextField(
-                              label: 'Kredi Limiti',
+                              label: 'Kredi Limiti *',
                               hint: '0,00',
                               controller: _creditLimitController,
                               keyboardType:
@@ -889,49 +882,26 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                                 return _formatMoneyTyping(raw,
                                     allowNegative: false);
                               },
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: AutoFormattedTextField(
-                              label: 'Açılış Bakiyesi (Değiştirilemez)',
-                              hint: '0,00 (eksi değer girilebilir)',
-                              controller: _openingBalanceController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true, signed: true),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp(r'[-0-9.,]')),
-                              ],
-                              formatter: (raw) {
-                                return _formatMoneyTyping(raw,
-                                    allowNegative: true);
-                              },
-                              enabled: false, // Sadece okunur yap
+                              validator: (value) => Validators.required(value, 'Kredi limiti'),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
                             child: CustomTextField(
                               controller: _maturityDaysController,
-                              label: 'Ödeme Vadesi (Gün)',
+                              label: 'Ödeme Vadesi (Gün) *',
                               hint: '30',
                               keyboardType: TextInputType.number,
                               validator: (value) => value?.isNotEmpty == true
                                   ? Validators.integer(value)
-                                  : null,
+                                  : Validators.required(value, 'Ödeme vadesi'),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       AutoFormattedTextField(
-                        label: 'Sabit İskonto Oranı (%)',
+                        label: 'Sabit İskonto Oranı (%) *',
                         hint: '0,00',
                         controller: _fixedDiscountRateController,
                         keyboardType: const TextInputType.numberWithOptions(
@@ -942,6 +912,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                         formatter: (raw) {
                           return _formatMoneyTyping(raw, allowNegative: false);
                         },
+                        validator: (value) => Validators.required(value, 'Sabit iskonto oranı'),
                       ),
                     ],
                   ),
@@ -975,6 +946,9 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                               label: 'Yetkili Kişi Telefonu',
                               hint: '0555 123 45 67',
                               keyboardType: TextInputType.phone,
+                              validator: (value) => value?.isNotEmpty == true
+                                  ? Validators.phone(value)
+                                  : null,
                             ),
                           ),
                         ],
@@ -1522,6 +1496,10 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                   controller: phoneController,
                   label: 'Telefon',
                   hint: '0555 123 45 67',
+                  keyboardType: TextInputType.phone,
+                  validator: (value) => value?.isNotEmpty == true
+                      ? Validators.phone(value)
+                      : null,
                   onChanged: (val) {
                     _branches[index] = _branches[index].copyWith(phone: val);
                   },
@@ -1533,6 +1511,10 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                   controller: emailController,
                   label: 'E-posta',
                   hint: 'mail@ornek.com',
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) => value?.isNotEmpty == true
+                      ? Validators.email(value)
+                      : null,
                   onChanged: (val) {
                     _branches[index] = _branches[index].copyWith(email: val);
                   },
@@ -1600,6 +1582,66 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                   : const Text('Müşteriyi Sil'),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// Sadece okunur alanlar için güzel görünüm
+  Widget _buildReadOnlyField({
+    required String label,
+    required String value,
+    required IconData icon,
+    String? subtitle,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey[300]!,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                icon,
+                color: Colors.grey[600],
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
