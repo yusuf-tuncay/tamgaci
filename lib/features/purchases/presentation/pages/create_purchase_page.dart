@@ -1528,6 +1528,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       final totalTax = items.fold(0.0, (sum, item) => sum + item.taxAmount);
       final total = subtotal - totalDiscount + totalTax;
 
+      // Debug: Özet hesaplama bilgilerini yazdır
+      debugPrint(
+          'DEBUG: Özet hesaplama - Currency: $currency, Subtotal: $subtotal, TotalDiscount: $totalDiscount, TotalTax: $totalTax, Total: $total');
+
       currencyCards.add(_buildCurrencySummaryCard(
         currency: currency,
         subtotal: subtotal,
@@ -2449,6 +2453,10 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     item.discountAmount = finalDiscountAmount;
     item.taxRate = taxRate;
     item.currency = _lineCurrencyCode;
+
+    // Debug: İskonto bilgilerini yazdır
+    debugPrint(
+        'DEBUG: İskonto hesaplama - Gross: $gross, DiscountRate: $discountRate, FinalDiscountAmount: $finalDiscountAmount');
 
     // Controller'ları güncelle
     item.quantityController.text = quantity.toString();
