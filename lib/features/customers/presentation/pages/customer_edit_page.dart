@@ -667,15 +667,13 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                             Validators.required(value, 'Müşteri adı'),
                       ),
                       const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _customerCodeController,
+                      _buildReadOnlyField(
                         label: 'Müşteri Kodu',
-                        hint: 'Müşteri kodu',
-                        readOnly: true,
-                        suffixIcon: Icon(
-                          Icons.lock_outline,
-                          color: Colors.grey[600],
-                        ),
+                        value: _customerCodeController.text.isNotEmpty 
+                            ? _customerCodeController.text
+                            : 'Otomatik oluşturulacak',
+                        icon: Icons.badge_outlined,
+                        subtitle: 'Bu alan otomatik oluşturulur',
                       ),
                       const SizedBox(height: 16),
                       Row(
@@ -851,18 +849,18 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                         subtitle: 'Bu alan değiştirilemez',
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Açılış Bakiyesi - Sadece Okunur (Güzel Görünüm)
                       _buildReadOnlyField(
                         label: 'Açılış Bakiyesi',
-                        value: _openingBalanceController.text.isNotEmpty 
+                        value: _openingBalanceController.text.isNotEmpty
                             ? '${_openingBalanceController.text} $_currency'
                             : '0,00 $_currency',
                         icon: Icons.account_balance,
                         subtitle: 'Bu alan değiştirilemez',
                       ),
                       const SizedBox(height: 20),
-                      
+
                       // Düzenlenebilir Alanlar
                       Row(
                         children: [
@@ -882,7 +880,8 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                                 return _formatMoneyTyping(raw,
                                     allowNegative: false);
                               },
-                              validator: (value) => Validators.required(value, 'Kredi limiti'),
+                              validator: (value) =>
+                                  Validators.required(value, 'Kredi limiti'),
                             ),
                           ),
                           const SizedBox(width: 16),
@@ -912,7 +911,8 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                         formatter: (raw) {
                           return _formatMoneyTyping(raw, allowNegative: false);
                         },
-                        validator: (value) => Validators.required(value, 'Sabit iskonto oranı'),
+                        validator: (value) =>
+                            Validators.required(value, 'Sabit iskonto oranı'),
                       ),
                     ],
                   ),
@@ -959,6 +959,58 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                         label: 'Notlar',
                         hint: 'Müşteriyle ilgili önemli bilgiler',
                         maxLines: 4,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Sistem Bilgileri
+                  _buildSectionCard(
+                    title: 'Sistem Bilgileri',
+                    icon: Icons.settings_outlined,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildReadOnlyField(
+                              label: 'Oluşturulma Tarihi',
+                              value: 'Sistem tarafından belirlenir',
+                              icon: Icons.calendar_today,
+                              subtitle: 'Bu alan değiştirilemez',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildReadOnlyField(
+                              label: 'Güncellenme Tarihi',
+                              value: 'Sistem tarafından belirlenir',
+                              icon: Icons.update,
+                              subtitle: 'Bu alan değiştirilemez',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildReadOnlyField(
+                              label: 'Oluşturan Kişi',
+                              value: 'Sistem',
+                              icon: Icons.person_add,
+                              subtitle: 'Bu alan değiştirilemez',
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildReadOnlyField(
+                              label: 'Güncelleyen Kişi',
+                              value: 'Sistem',
+                              icon: Icons.person_outline,
+                              subtitle: 'Bu alan değiştirilemez',
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -1618,9 +1670,9 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
               ),
             ],
           ),
@@ -1628,18 +1680,18 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[500],
-                fontStyle: FontStyle.italic,
-              ),
+                    color: Colors.grey[500],
+                    fontStyle: FontStyle.italic,
+                  ),
             ),
           ],
         ],
