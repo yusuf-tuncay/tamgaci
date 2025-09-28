@@ -1489,9 +1489,11 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         total: total,
         targetCurrency: targetCurrency,
         onTotalCalculated: (targetAmount) {
-          debugPrint('DEBUG: onTotalCalculated çağrıldı - targetAmount: $targetAmount');
+          debugPrint(
+              'DEBUG: onTotalCalculated çağrıldı - targetAmount: $targetAmount');
           totalInTargetCurrency += targetAmount;
-          debugPrint('DEBUG: totalInTargetCurrency güncellendi: $totalInTargetCurrency');
+          debugPrint(
+              'DEBUG: totalInTargetCurrency güncellendi: $totalInTargetCurrency');
         },
       ));
     }
@@ -1523,17 +1525,21 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           ? Future.value(null)
           : ExchangeRateService().getExchangeRate(currency),
       builder: (context, snapshot) {
-        final rate = snapshot.data;
-        double totalInTargetCurrency = total;
+        double totalInTargetCurrency = total; // Default to original total
 
-        if (rate != null && currency != targetCurrency) {
-          totalInTargetCurrency = ExchangeRateService()
-              .convertCurrency(total, currency, targetCurrency);
-          debugPrint('DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $totalInTargetCurrency');
-          onTotalCalculated(totalInTargetCurrency);
-        } else if (currency == targetCurrency) {
-          debugPrint('DEBUG: Aynı para birimi - $currency: $total');
-          onTotalCalculated(total);
+        // Only perform conversion and call callback when the future is done
+        if (snapshot.connectionState == ConnectionState.done) {
+          final rate = snapshot.data;
+          if (rate != null && currency != targetCurrency) {
+            totalInTargetCurrency = ExchangeRateService()
+                .convertCurrency(total, currency, targetCurrency);
+            debugPrint(
+                'DEBUG: Para birimi dönüştürüldü - $currency -> $targetCurrency: $totalInTargetCurrency');
+            onTotalCalculated(totalInTargetCurrency);
+          } else if (currency == targetCurrency) {
+            debugPrint('DEBUG: Aynı para birimi - $currency: $total');
+            onTotalCalculated(total);
+          }
         }
 
         return Card(
@@ -1595,7 +1601,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       double totalInTargetCurrency, String targetCurrency) {
     // Toplam ürün miktarını hesapla
     final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
-    debugPrint('DEBUG: _buildGrandTotalCard - totalInTargetCurrency: $totalInTargetCurrency, targetCurrency: $targetCurrency');
+    debugPrint(
+        'DEBUG: _buildGrandTotalCard - totalInTargetCurrency: $totalInTargetCurrency, targetCurrency: $targetCurrency');
 
     return Card(
       child: Padding(
