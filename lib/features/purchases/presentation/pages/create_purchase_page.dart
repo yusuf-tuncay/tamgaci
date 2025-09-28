@@ -501,8 +501,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildItemsTotalsHeader(),
-                    const SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: _isSaving ? null : _savePurchase,
                       style: ElevatedButton.styleFrom(
@@ -642,84 +640,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     );
   }
 
-  Widget _buildItemsTotalsHeader() {
-    double subtotal = 0, discount = 0, tax = 0;
-    for (final it in _items) {
-      final q = double.tryParse(it.quantityController.text) ?? 0;
-      final up = double.tryParse(it.unitPriceController.text) ?? 0;
-      final lineNet = q * up - it.discountAmount;
-      subtotal += lineNet;
-      discount += it.discountAmount;
-      tax +=
-          lineNet * ((double.tryParse(it.taxRateController.text) ?? 0) / 100);
-    }
-    final shipping = double.tryParse(_shippingCostController.text) ?? 0;
-    final total = subtotal + tax + shipping;
-
-    final baseCurrency =
-        ref.read(settingsProvider).valueOrNull?.currency.name ?? 'TRY';
-    // Note: To convert to base currency, integrate rates; for now assume same
-    final subtotalBase = subtotal;
-    final discountBase = discount;
-    final taxBase = tax;
-    final shippingBase = shipping;
-    final totalBase = total;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(children: [
-            Expanded(
-                child: Text(
-                    'Ara Toplam: ${CurrencyHelper.formatCurrency(subtotal, _currencyCode)}')),
-            Expanded(
-                child: Text(
-                    'İndirim: ${CurrencyHelper.formatCurrency(discount, _currencyCode)}')),
-            Expanded(
-                child: Text(
-                    'KDV: ${CurrencyHelper.formatCurrency(tax, _currencyCode)}')),
-            Expanded(
-                child: Text(
-                    'Kargo: ${CurrencyHelper.formatCurrency(shipping, _currencyCode)}')),
-          ]),
-          const SizedBox(height: 6),
-          Row(children: [
-            Expanded(
-                child: Text(
-                    'Ara Toplam ($baseCurrency): ${CurrencyHelper.formatCurrency(subtotalBase, baseCurrency)}')),
-            Expanded(
-                child: Text(
-                    'İndirim ($baseCurrency): ${CurrencyHelper.formatCurrency(discountBase, baseCurrency)}')),
-            Expanded(
-                child: Text(
-                    'KDV ($baseCurrency): ${CurrencyHelper.formatCurrency(taxBase, baseCurrency)}')),
-            Expanded(
-                child: Text(
-                    'Kargo ($baseCurrency): ${CurrencyHelper.formatCurrency(shippingBase, baseCurrency)}')),
-          ]),
-          const Divider(height: 12),
-          Row(children: [
-            Expanded(
-                child: Text(
-                    'Genel Toplam: ${CurrencyHelper.formatCurrency(total, _currencyCode)}',
-                    style: const TextStyle(fontWeight: FontWeight.w600))),
-            Expanded(
-                child: Text(
-                    'Genel Toplam ($baseCurrency): ${CurrencyHelper.formatCurrency(totalBase, baseCurrency)}',
-                    style: const TextStyle(fontWeight: FontWeight.w600))),
-          ]),
-        ],
-      ),
-    );
-  }
 
   void _addPurchaseItem() {
     // Müşteri seçili değilse uyarı ver
@@ -2578,7 +2498,8 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                           if (widget.customerId != null &&
                               widget.customerId!.isNotEmpty) {
                             try {
-                              debugPrint('DEBUG: Müşteri ID: ${widget.customerId}');
+                              debugPrint(
+                                  'DEBUG: Müşteri ID: ${widget.customerId}');
                               final customer = await ref.read(
                                   customerProvider(widget.customerId!).future);
                               debugPrint('DEBUG: Müşteri bilgisi: $customer');
@@ -2589,15 +2510,19 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                                     customer.fixedDiscountRate!;
                                 finalPrice = originalPrice *
                                     (1 - customerDiscountRate / 100);
-                                debugPrint('DEBUG: Müşteri sabit iskontosu uygulandı: $customerDiscountRate');
+                                debugPrint(
+                                    'DEBUG: Müşteri sabit iskontosu uygulandı: $customerDiscountRate');
                               } else {
-                                debugPrint('DEBUG: Müşteri sabit iskontosu yok: ${customer?.fixedDiscountRate}');
+                                debugPrint(
+                                    'DEBUG: Müşteri sabit iskontosu yok: ${customer?.fixedDiscountRate}');
                               }
                             } catch (e) {
-                              debugPrint('DEBUG: Müşteri bilgisi alınamadı: $e');
+                              debugPrint(
+                                  'DEBUG: Müşteri bilgisi alınamadı: $e');
                             }
                           } else {
-                            debugPrint('DEBUG: Müşteri ID yok: ${widget.customerId}');
+                            debugPrint(
+                                'DEBUG: Müşteri ID yok: ${widget.customerId}');
                           }
 
                           widget.onSelected(
