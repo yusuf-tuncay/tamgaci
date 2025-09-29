@@ -254,7 +254,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
           Column(
             children: [
               DropdownButtonFormField<WarehouseType>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: InputDecoration(
                   labelText: 'Depo Türü *',
                   border: OutlineInputBorder(
@@ -275,7 +275,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<WarehouseStatus>(
-                value: _selectedStatus,
+                initialValue: _selectedStatus,
                 decoration: InputDecoration(
                   labelText: 'Durum *',
                   border: OutlineInputBorder(

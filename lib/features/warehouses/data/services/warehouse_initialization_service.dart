@@ -6,7 +6,8 @@ import '../repositories/firebase_warehouse_repository.dart';
 
 /// Depo Başlatma Servisi
 class WarehouseInitializationService {
-  final FirebaseWarehouseRepository _warehouseRepository = FirebaseWarehouseRepository();
+  final FirebaseWarehouseRepository _warehouseRepository =
+      FirebaseWarehouseRepository();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// Kullanıcı için varsayılan depo oluştur
@@ -14,14 +15,16 @@ class WarehouseInitializationService {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        AppLogger.warning('User not authenticated, skipping default warehouse creation');
+        AppLogger.warning(
+            'User not authenticated, skipping default warehouse creation');
         return;
       }
 
       // Kullanıcının tenantId'sini al
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (!userDoc.exists) {
-        AppLogger.warning('User document not found, skipping default warehouse creation');
+        AppLogger.warning(
+            'User document not found, skipping default warehouse creation');
         return;
       }
 
@@ -29,7 +32,8 @@ class WarehouseInitializationService {
       final tenantId = userData['tenantId'] as String?;
 
       if (tenantId == null || tenantId.isEmpty) {
-        AppLogger.warning('User has no tenantId, skipping default warehouse creation');
+        AppLogger.warning(
+            'User has no tenantId, skipping default warehouse creation');
         return;
       }
 
@@ -42,7 +46,8 @@ class WarehouseInitializationService {
           .get();
 
       if (existingWarehouses.docs.isNotEmpty) {
-        AppLogger.info('Default warehouse already exists for tenant: $tenantId');
+        AppLogger.info(
+            'Default warehouse already exists for tenant: $tenantId');
         return;
       }
 
@@ -65,7 +70,8 @@ class WarehouseInitializationService {
       );
 
       await _warehouseRepository.createWarehouse(defaultWarehouse);
-      AppLogger.info('Default warehouse created successfully for user: ${user.uid}');
+      AppLogger.info(
+          'Default warehouse created successfully for user: ${user.uid}');
     } catch (e) {
       AppLogger.error('Error creating default warehouse', e);
       // Hata durumunda sessizce devam et, kullanıcı deneyimini bozmasın
@@ -76,11 +82,11 @@ class WarehouseInitializationService {
   Future<void> createDefaultWarehousesForAllUsers() async {
     try {
       final usersSnapshot = await _firestore.collection('users').get();
-      
+
       for (final userDoc in usersSnapshot.docs) {
         final userData = userDoc.data();
         final tenantId = userData['tenantId'] as String?;
-        
+
         if (tenantId != null && tenantId.isNotEmpty) {
           // Bu tenant için varsayılan depo var mı kontrol et
           final existingWarehouses = await _firestore
@@ -114,7 +120,7 @@ class WarehouseInitializationService {
           }
         }
       }
-      
+
       AppLogger.info('Default warehouses creation process completed');
     } catch (e) {
       AppLogger.error('Error creating default warehouses for all users', e);
