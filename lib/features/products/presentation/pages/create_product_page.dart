@@ -66,6 +66,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     super.initState();
     _autoGenerateProductCode = true;
     _autoGenerateBarcode = true;
+    _stockQuantityController.text = '0'; // Varsayılan stok miktarı
   }
 
   @override
@@ -101,14 +102,6 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           ? TamgaciConstants.backgroundColorDark
           : TamgaciConstants.backgroundColor,
       appBar: AppBar(
-        title: Text(
-          'Yeni Ürün',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
@@ -134,7 +127,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           children: [
             // Premium Header
             _buildPremiumHeader(),
-            
+
             // Form Content
             Expanded(
               child: SingleChildScrollView(
@@ -169,7 +162,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 ),
               ),
             ),
-            
+
             // Save Button
             _buildSaveButton(),
           ],
@@ -645,32 +638,44 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               builder: (context, ref, child) {
                 final warehousesAsync = ref.watch(warehousesProvider);
                 return warehousesAsync.when(
-                  data: (warehouses) => DropdownButtonFormField<Warehouse>(
-                    initialValue: _selectedWarehouse,
-                    decoration: const InputDecoration(
-                      labelText: 'Depo Seçimi *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.warehouse),
-                    ),
-                    items: warehouses.map((warehouse) {
-                      return DropdownMenuItem(
-                        value: warehouse,
-                        child: Text(warehouse.name),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedWarehouse = value;
+                  data: (warehouses) {
+                    // Varsayılan depo seçimi (ilk depo)
+                    if (_selectedWarehouse == null && warehouses.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        setState(() {
+                          _selectedWarehouse = warehouses.first;
+                        });
                       });
-                    },
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Depo seçimi zorunludur';
-                      }
-                      return null;
-                    },
-                  ),
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                    }
+
+                    return DropdownButtonFormField<Warehouse>(
+                      value: _selectedWarehouse,
+                      decoration: const InputDecoration(
+                        labelText: 'Depo Seçimi *',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.warehouse),
+                      ),
+                      items: warehouses.map((warehouse) {
+                        return DropdownMenuItem(
+                          value: warehouse,
+                          child: Text(warehouse.name),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedWarehouse = value;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Depo seçimi zorunludur';
+                        }
+                        return null;
+                      },
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (error, stack) => Text('Hata: $error'),
                 );
               },
