@@ -144,7 +144,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         _salesCurrency = product.salesCurrency;
         _purchaseCurrency = product.purchaseCurrency;
         _images = List<String>.from(product.images);
-        
+
         // Düzenleme modunda depo seçimini yap
         if (product.warehouseId != null) {
           // Mevcut depo bilgilerini sakla, dropdown'da eşleşecek
@@ -1329,6 +1329,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         await ref
             .read(productOperationsProvider.notifier)
             .updateProduct(product);
+
+        // Stream provider'ı refresh et
+        ref.invalidate(productsStreamProvider);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1342,6 +1346,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         await ref
             .read(productOperationsProvider.notifier)
             .createProduct(product);
+
+        // Stream provider'ı refresh et
+        ref.invalidate(productsStreamProvider);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

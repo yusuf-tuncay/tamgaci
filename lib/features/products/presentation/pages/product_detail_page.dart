@@ -88,7 +88,8 @@ class ProductDetailPage extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.inventory, size: 16, color: Colors.white.withValues(alpha: 0.8)),
+                    Icon(Icons.inventory,
+                        size: 16, color: Colors.white.withValues(alpha: 0.8)),
                     const SizedBox(width: 4),
                     Text(
                       'Stok: ${product.totalStockQuantity}',
@@ -99,7 +100,8 @@ class ProductDetailPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.attach_money, size: 16, color: Colors.white.withValues(alpha: 0.8)),
+                    Icon(Icons.attach_money,
+                        size: 16, color: Colors.white.withValues(alpha: 0.8)),
                     const SizedBox(width: 4),
                     Text(
                       '₺${product.salesPrice.toStringAsFixed(2)}',
@@ -175,18 +177,18 @@ class ProductDetailPage extends ConsumerWidget {
                   icon: const Icon(Icons.arrow_back, color: Colors.black87),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                       actions: [
-                         IconButton(
-                           onPressed: () => _showProductActions(context, product, ref),
-                           icon: const Icon(Icons.more_vert, color: Colors.black87),
-                         ),
-                       ],
+                actions: [
+                  IconButton(
+                    onPressed: () => _showProductActions(context, product, ref),
+                    icon: const Icon(Icons.more_vert, color: Colors.black87),
+                  ),
+                ],
               ),
               body: Column(
                 children: [
                   // Premium Header
                   _buildPremiumHeader(product),
-                  
+
                   // Content
                   Expanded(
                     child: SingleChildScrollView(
@@ -230,7 +232,7 @@ class ProductDetailPage extends ConsumerWidget {
                   ),
                 ],
               ),
-            );  
+            );
           },
           loading: () => const Scaffold(
             appBar: CustomAppBar(
@@ -292,7 +294,8 @@ class ProductDetailPage extends ConsumerWidget {
                   return Container(
                     margin: const EdgeInsets.only(right: 8),
                     child: GestureDetector(
-                      onTap: () => _showImageDialog(context, product.images, index),
+                      onTap: () =>
+                          _showImageDialog(context, product.images, index),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
@@ -336,11 +339,12 @@ class ProductDetailPage extends ConsumerWidget {
     );
   }
 
-  void _showImageDialog(BuildContext context, List<String> images, int initialIndex) {
+  void _showImageDialog(
+      BuildContext context, List<String> images, int initialIndex) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
-        child: Container(
+        child: SizedBox(
           width: double.infinity,
           height: double.infinity,
           child: PageView.builder(
@@ -552,7 +556,7 @@ class ProductDetailPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Warehouse bilgileri
             if (product.warehouseName != null) ...[
               _buildInfoRow(
@@ -569,7 +573,8 @@ class ProductDetailPage extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  border:
+                      Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -588,7 +593,7 @@ class ProductDetailPage extends ConsumerWidget {
               ),
               const SizedBox(height: 16),
             ],
-            
+
             // Stok bilgileri
             _buildInfoRow(
               'Stok Durumu',
@@ -794,7 +799,8 @@ class ProductDetailPage extends ConsumerWidget {
     }
   }
 
-  void _showProductActions(BuildContext context, Product product, WidgetRef ref) {
+  void _showProductActions(
+      BuildContext context, Product product, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -836,7 +842,8 @@ class ProductDetailPage extends ConsumerWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, Product product, WidgetRef ref) {
+  void _showDeleteConfirmation(
+      BuildContext context, Product product, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -860,7 +867,8 @@ class ProductDetailPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _deleteProduct(BuildContext context, Product product, WidgetRef ref) async {
+  Future<void> _deleteProduct(
+      BuildContext context, Product product, WidgetRef ref) async {
     try {
       // Firebase Storage'dan fotoğrafları sil
       if (product.images.isNotEmpty) {
@@ -869,8 +877,13 @@ class ProductDetailPage extends ConsumerWidget {
       }
 
       // Ürünü sil
-      await ref.read(productOperationsProvider.notifier).deleteProduct(product.id);
-      
+      await ref
+          .read(productOperationsProvider.notifier)
+          .deleteProduct(product.id);
+
+      // Stream provider'ı refresh et
+      ref.invalidate(productsStreamProvider);
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
