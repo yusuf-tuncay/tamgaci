@@ -479,13 +479,21 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: WarehouseType.values.map((type) {
-        return RadioListTile<WarehouseType>(
+        return ListTile(
           title: Text(type.displayName),
-          value: type,
-          groupValue: _selectedType,
-          onChanged: (value) {
+          leading: Radio<WarehouseType>(
+            value: type,
+            groupValue: _selectedType,
+            onChanged: (value) {
+              setState(() {
+                _selectedType = value!;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          onTap: () {
             setState(() {
-              _selectedType = value!;
+              _selectedType = type;
             });
             Navigator.pop(context);
           },
@@ -498,13 +506,21 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: WarehouseStatus.values.map((status) {
-        return RadioListTile<WarehouseStatus>(
+        return ListTile(
           title: Text(status.displayName),
-          value: status,
-          groupValue: _selectedStatus,
-          onChanged: (value) {
+          leading: Radio<WarehouseStatus>(
+            value: status,
+            groupValue: _selectedStatus,
+            onChanged: (value) {
+              setState(() {
+                _selectedStatus = value!;
+              });
+              Navigator.pop(context);
+            },
+          ),
+          onTap: () {
             setState(() {
-              _selectedStatus = value!;
+              _selectedStatus = status;
             });
             Navigator.pop(context);
           },
