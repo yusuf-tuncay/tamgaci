@@ -882,10 +882,13 @@ class ProductDetailPage extends ConsumerWidget {
           .read(productOperationsProvider.notifier)
           .deleteProduct(product.id);
 
+      print('✅ Product deleted successfully, refreshing stream...');
+
       // Stream provider'ı refresh et - mounted kontrolü ile
       if (context.mounted) {
         // ignore: unused_result
         ref.refresh(productsStreamProvider);
+        print('🔄 Stream provider refreshed');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

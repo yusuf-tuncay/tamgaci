@@ -1349,10 +1349,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             .read(productOperationsProvider.notifier)
             .createProduct(product);
 
+        print('✅ Product created successfully, refreshing stream...');
+
         if (mounted) {
           // Stream provider'ı refresh et - mounted kontrolü ile
           // ignore: unused_result
           ref.refresh(productsStreamProvider);
+          print('🔄 Stream provider refreshed');
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

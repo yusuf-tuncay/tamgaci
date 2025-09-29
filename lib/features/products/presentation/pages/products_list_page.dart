@@ -204,6 +204,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
 
         return productsAsync.when(
           data: (products) {
+            print('🔄 Products list updated: ${products.length} products');
             final filteredProducts = _getFilteredProducts(products);
 
             if (filteredProducts.isEmpty) {

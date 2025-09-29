@@ -209,6 +209,7 @@ class FirebaseProductRepository implements ProductRepository {
         transaction.set(docRef, data);
       });
 
+      print('🔥 Firebase: Product created with ID: ${docRef.id}');
       AppLogger.info('Product created successfully', {'productId': docRef.id});
     } catch (e) {
       AppLogger.error('Error creating product', e);
@@ -256,6 +257,7 @@ class FirebaseProductRepository implements ProductRepository {
           .doc(id)
           .delete();
 
+      print('🔥 Firebase: Product deleted with ID: $id');
       AppLogger.info('Product deleted successfully', {'productId': id});
     } catch (e) {
       AppLogger.error('Error deleting product', e);
@@ -346,9 +348,13 @@ class FirebaseProductRepository implements ProductRepository {
           .where('isActive', isEqualTo: true)
           .orderBy('name')
           .snapshots()
-          .map((snapshot) => snapshot.docs
-              .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
-              .toList());
+          .map((snapshot) {
+            final products = snapshot.docs
+                .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
+                .toList();
+            print('🔥 Firebase Stream: ${products.length} active products found');
+            return products;
+          });
     });
   }
 
@@ -482,7 +488,7 @@ class FirebaseProductRepository implements ProductRepository {
         final products = snapshot.docs
             .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
             .toList();
-        
+
         return products.where((product) => product.isLowStock).toList();
       });
     });
@@ -506,8 +512,10 @@ class FirebaseProductRepository implements ProductRepository {
         final products = snapshot.docs
             .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
             .toList();
-        
-        return products.where((product) => product.totalStockQuantity <= 0).toList();
+
+        return products
+            .where((product) => product.totalStockQuantity <= 0)
+            .toList();
       });
     });
   }
