@@ -64,7 +64,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
 
   @override
   Widget build(BuildContext context) {
-    final productsAsync = ref.watch(productNotifierProvider);
+    final productsAsync = ref.watch(productsStreamProvider);
     final statisticsAsync = ref.watch(productStatisticsProvider);
 
     return ResponsiveScaffold(
@@ -604,7 +604,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              ref.read(productNotifierProvider.notifier).refresh();
+              // ignore: unused_result
+              ref.refresh(productsStreamProvider);
             },
             child: Text(
               'Tekrar Dene',
@@ -662,8 +663,12 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
         ListTile(
           title: Text('Tümü', style: GoogleFonts.poppins()),
           leading: Icon(
-            _selectedCategory == 'Tümü' ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: _selectedCategory == 'Tümü' ? const Color(0xFF6366F1) : Colors.grey,
+            _selectedCategory == 'Tümü'
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color: _selectedCategory == 'Tümü'
+                ? const Color(0xFF6366F1)
+                : Colors.grey,
           ),
           onTap: () {
             setState(() {
@@ -684,8 +689,11 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
         ListTile(
           title: Text('Tümü', style: GoogleFonts.poppins()),
           leading: Icon(
-            _selectedType == null ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: _selectedType == null ? const Color(0xFF6366F1) : Colors.grey,
+            _selectedType == null
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color:
+                _selectedType == null ? const Color(0xFF6366F1) : Colors.grey,
           ),
           onTap: () {
             setState(() {
@@ -698,8 +706,11 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           return ListTile(
             title: Text(type.displayName, style: GoogleFonts.poppins()),
             leading: Icon(
-              _selectedType == type ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: _selectedType == type ? const Color(0xFF6366F1) : Colors.grey,
+              _selectedType == type
+                  ? Icons.radio_button_checked
+                  : Icons.radio_button_unchecked,
+              color:
+                  _selectedType == type ? const Color(0xFF6366F1) : Colors.grey,
             ),
             onTap: () {
               setState(() {

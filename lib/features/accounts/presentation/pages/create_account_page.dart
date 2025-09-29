@@ -789,7 +789,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
   }
 
   Widget _buildSaveButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(

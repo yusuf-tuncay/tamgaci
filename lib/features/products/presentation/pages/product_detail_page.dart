@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/routes/routes.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart' as custom_error;
@@ -882,40 +883,18 @@ class ProductDetailPage extends ConsumerWidget {
           .read(productOperationsProvider.notifier)
           .deleteProduct(product.id);
 
-      print('✅ Product deleted successfully, refreshing stream...');
-
-      // Stream provider'ı refresh et - navigation'dan önce
-      try {
-        ref.invalidate(productsStreamProvider);
-        print('🔄 Stream provider invalidated');
-      } catch (e) {
-        print('❌ Error invalidating stream: $e');
-      }
-
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ürün başarıyla silindi'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        
-        // Ürün listesine geri dön - daha güvenli navigation
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context);
-        } else {
-          Navigator.popUntil(context, (route) => route.isFirst);
-        }
+        // Liste ekranına kesin dönüş: tüm stack'i temizleyip products'a git
+        Future.microtask(() {
+          if (!context.mounted) return;
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            TamgaciRoutes.productsList,
+            (route) => false,
+          );
+        });
       }
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ürün silinirken hata: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Ürün silinirken hata: $e');
     }
   }
 }

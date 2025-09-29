@@ -41,7 +41,12 @@ class GlobalErrorHandler {
     );
 
     if (kDebugMode) {
-      FlutterError.presentError(details);
+      // On debug (all platforms), avoid invoking FlutterError.presentError to prevent
+      // web DiagnosticsNode/LegacyJavaScriptObject crashes; log succinctly instead.
+      debugPrint('Flutter Error: ${details.exceptionAsString()}');
+      if (details.stack != null) {
+        debugPrint(details.stack.toString());
+      }
     } else {
       // In production, log the error and show user-friendly message
       _showErrorDialog('Bir hata oluştu. Lütfen tekrar deneyin.');

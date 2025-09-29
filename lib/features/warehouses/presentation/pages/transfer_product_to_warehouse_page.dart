@@ -290,7 +290,7 @@ class _TransferProductToWarehousePageState
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<Warehouse>(
-          value: _selectedFromWarehouse,
+          initialValue: _selectedFromWarehouse,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -350,7 +350,7 @@ class _TransferProductToWarehousePageState
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<Product>(
-          value: _selectedProduct,
+          initialValue: _selectedProduct,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -467,7 +467,7 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildSaveButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(

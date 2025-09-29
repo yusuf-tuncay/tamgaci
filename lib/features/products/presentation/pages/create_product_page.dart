@@ -12,6 +12,7 @@ import '../../../../core/theme/constants.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/utils/barcode_generator.dart';
 import '../providers/product_providers.dart';
+import '../../../../core/routes/routes.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
 import '../../../warehouses/presentation/providers/warehouse_providers.dart';
 import '../../data/services/firebase_storage_service.dart';
@@ -92,25 +93,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         },
         loading: () {},
         error: (error, stack) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Ürün bilgileri yüklenemedi: $error'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
+          debugPrint('Ürün bilgileri yüklenemedi: $error');
         },
       );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Hata: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Hata: $e');
     }
   }
 
@@ -188,14 +175,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fotoğraf seçilirken hata: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Fotoğraf seçilirken hata: $e');
     }
   }
 
@@ -1245,14 +1225,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 productId, _selectedImages);
           }
         } catch (storageError) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Fotoğraf yükleme hatası: $storageError'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
+          debugPrint('Fotoğraf yükleme hatası: $storageError');
           // Fotoğraf yükleme hatası olsa bile ürünü kaydet
         }
       }
@@ -1331,57 +1304,36 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             .read(productOperationsProvider.notifier)
             .updateProduct(product);
 
-        // Stream provider'ı refresh et - navigation'dan önce
-        try {
-          ref.invalidate(productsStreamProvider);
-          print('🔄 Stream provider invalidated');
-        } catch (e) {
-          print('❌ Error invalidating stream: $e');
-        }
+        // Liste sayfası canlı dinliyor; manuel refresh gereksiz
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ürün başarıyla güncellendi'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).pop();
+          Future.microtask(() {
+            if (!mounted) return;
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              TamgaciRoutes.productsList,
+              (route) => false,
+            );
+          });
         }
       } else {
         await ref
             .read(productOperationsProvider.notifier)
             .createProduct(product);
 
-        print('✅ Product created successfully, refreshing stream...');
-
-        // Stream provider'ı refresh et - navigation'dan önce
-        try {
-          ref.invalidate(productsStreamProvider);
-          print('🔄 Stream provider invalidated');
-        } catch (e) {
-          print('❌ Error invalidating stream: $e');
-        }
+        debugPrint('✅ Product created successfully');
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Ürün başarıyla oluşturuldu'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.of(context).pop();
+          Future.microtask(() {
+            if (!mounted) return;
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              TamgaciRoutes.productsList,
+              (route) => false,
+            );
+          });
         }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Hata: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      debugPrint('Hata: $e');
     } finally {
       if (mounted) {
         setState(() {
