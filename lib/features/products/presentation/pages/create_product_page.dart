@@ -86,27 +86,31 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       final productAsync = ref.read(productDetailProvider(widget.productId!));
       await productAsync.when(
         data: (product) {
-          if (product != null) {
+          if (product != null && mounted) {
             _populateFormWithProduct(product);
           }
         },
         loading: () {},
         error: (error, stack) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Ürün bilgileri yüklenemedi: $error'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Ürün bilgileri yüklenemedi: $error'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         },
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hata: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -148,41 +152,48 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       final ImagePicker picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage();
       
-      if (images.isNotEmpty) {
-        setState(() {
+      if (images.isNotEmpty && mounted) {
+        if (kIsWeb) {
+          // Web için bytes kullan
           for (final image in images) {
-            if (kIsWeb) {
-              // Web için bytes kullan
-              image.readAsBytes().then((bytes) {
-                setState(() {
-                  _selectedImageBytes.add(bytes);
-                });
+            final bytes = await image.readAsBytes();
+            if (mounted) {
+              setState(() {
+                _selectedImageBytes.add(bytes);
               });
-            } else {
-              // Mobil için File kullan
-              _selectedImages.add(File(image.path));
             }
           }
-        });
+        } else {
+          // Mobil için File kullan
+          setState(() {
+            for (final image in images) {
+              _selectedImages.add(File(image.path));
+            }
+          });
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Fotoğraf seçilirken hata: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fotoğraf seçilirken hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   void _removeImage(int index) {
-    setState(() {
-      if (kIsWeb) {
-        _selectedImageBytes.removeAt(index);
-      } else {
-        _selectedImages.removeAt(index);
-      }
-    });
+    if (mounted) {
+      setState(() {
+        if (kIsWeb) {
+          _selectedImageBytes.removeAt(index);
+        } else {
+          _selectedImages.removeAt(index);
+        }
+      });
+    }
   }
 
   @override
@@ -972,7 +983,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             const SizedBox(height: 16),
 
             // Seçilen fotoğraflar
-            if ((kIsWeb ? _selectedImageBytes.isNotEmpty : _selectedImages.isNotEmpty)) ...[
+            if ((kIsWeb
+                ? _selectedImageBytes.isNotEmpty
+                : _selectedImages.isNotEmpty)) ...[
               Text(
                 'Seçilen Fotoğraflar (${kIsWeb ? _selectedImageBytes.length : _selectedImages.length})',
                 style: GoogleFonts.poppins(
@@ -986,7 +999,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 height: 120,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: kIsWeb ? _selectedImageBytes.length : _selectedImages.length,
+                  itemCount: kIsWeb
+                      ? _selectedImageBytes.length
+                      : _selectedImages.length,
                   itemBuilder: (context, index) {
                     return Container(
                       margin: const EdgeInsets.only(right: 8),
@@ -1148,12 +1163,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
       // Fotoğrafları Firebase Storage'a yükle
       List<String> imageUrls = [];
-      if (kIsWeb ? _selectedImageBytes.isNotEmpty : _selectedImages.isNotEmpty) {
+      if (kIsWeb
+          ? _selectedImageBytes.isNotEmpty
+          : _selectedImages.isNotEmpty) {
         final storageService = FirebaseStorageService();
         if (kIsWeb) {
-          imageUrls = await storageService.uploadProductImageBytesList(productId, _selectedImageBytes);
+          imageUrls = await storageService.uploadProductImageBytesList(
+              productId, _selectedImageBytes);
         } else {
-          imageUrls = await storageService.uploadProductImages(productId, _selectedImages);
+          imageUrls = await storageService.uploadProductImages(
+              productId, _selectedImages);
         }
       }
 
