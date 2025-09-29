@@ -5,6 +5,8 @@ import '../../domain/entities/warehouse.dart';
 import '../../domain/entities/warehouse_transfer.dart';
 import '../providers/warehouse_providers.dart';
 import '../providers/warehouse_transfer_providers.dart';
+import '../../../products/domain/entities/product.dart';
+import '../../../products/presentation/providers/product_providers.dart';
 
 /// Ürün Getirme Sayfası (Başka depodan bu depoya)
 class TransferProductToWarehousePage extends ConsumerStatefulWidget {
@@ -16,21 +18,22 @@ class TransferProductToWarehousePage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TransferProductToWarehousePage> createState() => _TransferProductToWarehousePageState();
+  ConsumerState<TransferProductToWarehousePage> createState() =>
+      _TransferProductToWarehousePageState();
 }
 
-class _TransferProductToWarehousePageState extends ConsumerState<TransferProductToWarehousePage> {
+class _TransferProductToWarehousePageState
+    extends ConsumerState<TransferProductToWarehousePage> {
   final _formKey = GlobalKey<FormState>();
-  final _productNameController = TextEditingController();
   final _quantityController = TextEditingController();
   final _notesController = TextEditingController();
   
   Warehouse? _selectedFromWarehouse;
+  Product? _selectedProduct;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _productNameController.dispose();
     _quantityController.dispose();
     _notesController.dispose();
     super.dispose();
@@ -39,6 +42,7 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
   @override
   Widget build(BuildContext context) {
     final warehousesAsync = ref.watch(warehousesProvider);
+    final productsAsync = ref.watch(productsStreamProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -76,18 +80,21 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
         ],
       ),
       body: warehousesAsync.when(
-        data: (warehouses) => _buildBody(warehouses),
+        data: (warehouses) => productsAsync.when(
+          data: (products) => _buildBody(warehouses, products),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => _buildErrorState(error),
+        ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => _buildErrorState(error),
       ),
     );
   }
 
-  Widget _buildBody(List<Warehouse> warehouses) {
+  Widget _buildBody(List<Warehouse> warehouses, List<Product> products) {
     // Hedef depo hariç diğer depoları filtrele
-    final availableWarehouses = warehouses
-        .where((w) => w.id != widget.targetWarehouse.id)
-        .toList();
+    final availableWarehouses =
+        warehouses.where((w) => w.id != widget.targetWarehouse.id).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -100,7 +107,7 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
             const SizedBox(height: 20),
             _buildTransferInfoCard(),
             const SizedBox(height: 20),
-            _buildFormCard(availableWarehouses),
+            _buildFormCard(availableWarehouses, products),
             const SizedBox(height: 20),
             _buildSaveButton(),
           ],
@@ -231,7 +238,7 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
     );
   }
 
-  Widget _buildFormCard(List<Warehouse> availableWarehouses) {
+  Widget _buildFormCard(List<Warehouse> availableWarehouses, List<Product> products) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -259,7 +266,7 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
           const SizedBox(height: 16),
           _buildWarehouseDropdown(availableWarehouses),
           const SizedBox(height: 16),
-          _buildProductNameField(),
+          _buildProductDropdown(products),
           const SizedBox(height: 16),
           _buildQuantityField(),
           const SizedBox(height: 16),
@@ -297,7 +304,8 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Color(0xFF6366F1)),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: Text(
             'Kaynak depo seçin',
@@ -328,31 +336,77 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
     );
   }
 
-  Widget _buildProductNameField() {
-    return TextFormField(
-      controller: _productNameController,
-      decoration: InputDecoration(
-        labelText: 'Ürün Adı *',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+  Widget _buildProductDropdown(List<Product> products) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Ürün *',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<Product>(
+          value: _selectedProduct,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFF6366F1)),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          hint: Text(
+            'Ürün seçin',
+            style: GoogleFonts.poppins(color: Colors.grey[500]),
+          ),
+          items: products.map((product) {
+            return DropdownMenuItem<Product>(
+              value: product,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (product.productCode != null)
+                    Text(
+                      'Kod: ${product.productCode}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (Product? value) {
+            setState(() {
+              _selectedProduct = value;
+            });
+          },
+          validator: (value) {
+            if (value == null) {
+              return 'Ürün seçiniz';
+            }
+            return null;
+          },
         ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF6366F1)),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Ürün adı giriniz';
-        }
-        return null;
-      },
+      ],
     );
   }
 
@@ -484,7 +538,7 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
 
   Future<void> _saveTransfer() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedFromWarehouse == null) return;
+    if (_selectedFromWarehouse == null || _selectedProduct == null) return;
 
     setState(() {
       _isLoading = true;
@@ -494,20 +548,24 @@ class _TransferProductToWarehousePageState extends ConsumerState<TransferProduct
       final transfer = WarehouseTransfer(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         tenantId: '', // Will be set by repository
-        productId: '', // Will be set when product is selected
-        productName: _productNameController.text.trim(),
+        productId: _selectedProduct!.id,
+        productName: _selectedProduct!.name,
         fromWarehouseId: _selectedFromWarehouse!.id,
         fromWarehouseName: _selectedFromWarehouse!.name,
         toWarehouseId: widget.targetWarehouse.id,
         toWarehouseName: widget.targetWarehouse.name,
         quantity: int.parse(_quantityController.text.trim()),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+        notes: _notesController.text.trim().isEmpty
+            ? null
+            : _notesController.text.trim(),
         createdBy: '', // Will be set by repository
         createdAt: DateTime.now(),
         status: 'pending',
       );
 
-      await ref.read(warehouseTransferNotifierProvider.notifier).createTransfer(transfer);
+      await ref
+          .read(warehouseTransferNotifierProvider.notifier)
+          .createTransfer(transfer);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
