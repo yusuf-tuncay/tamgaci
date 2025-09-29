@@ -639,11 +639,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 final warehousesAsync = ref.watch(warehousesProvider);
                 return warehousesAsync.when(
                   data: (warehouses) {
-                    // Varsayılan depo seçimi (ilk depo)
+                    // Varsayılan depo seçimi (isDefault: true olan depo)
                     if (_selectedWarehouse == null && warehouses.isNotEmpty) {
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         setState(() {
-                          _selectedWarehouse = warehouses.first;
+                          // Önce varsayılan depoyu bul
+                          final defaultWarehouse = warehouses.firstWhere(
+                            (warehouse) => warehouse.isDefault,
+                            orElse: () => warehouses.first, // Varsayılan yoksa ilk depo
+                          );
+                          _selectedWarehouse = defaultWarehouse;
                         });
                       });
                     }
