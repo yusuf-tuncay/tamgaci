@@ -36,7 +36,8 @@ final warehousesByTypeProvider =
 
 /// Warehouses by Status Provider
 final warehousesByStatusProvider =
-    FutureProvider.family<List<Warehouse>, WarehouseStatus>((ref, status) async {
+    FutureProvider.family<List<Warehouse>, WarehouseStatus>(
+        (ref, status) async {
   final repository = ref.read(warehouseRepositoryProvider);
   return await repository.getWarehousesByStatus(status);
 });
@@ -116,6 +117,7 @@ class WarehouseNotifier extends StateNotifier<AsyncValue<List<Warehouse>>> {
 }
 
 final warehouseNotifierProvider =
-    StateNotifierProvider<WarehouseNotifier, AsyncValue<List<Warehouse>>>((ref) {
+    StateNotifierProvider<WarehouseNotifier, AsyncValue<List<Warehouse>>>(
+        (ref) {
   return WarehouseNotifier(ref.watch(warehouseRepositoryProvider));
 });

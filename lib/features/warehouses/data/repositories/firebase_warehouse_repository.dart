@@ -167,9 +167,7 @@ class FirebaseWarehouseRepository implements WarehouseRepository {
           .doc(tenantId)
           .collection('warehouses')
           .orderBy('name')
-          .startAt([query])
-          .endAt([query + '\uf8ff'])
-          .get();
+          .startAt([query]).endAt(['$query\uf8ff']).get();
 
       return snapshot.docs
           .map((doc) => FirebaseWarehouseEntity.fromFirestore(doc).toDomain())
@@ -197,7 +195,8 @@ class FirebaseWarehouseRepository implements WarehouseRepository {
         updatedAt: DateTime.now(),
       );
 
-      final warehouseEntity = FirebaseWarehouseEntity.fromDomain(warehouseWithTenant);
+      final warehouseEntity =
+          FirebaseWarehouseEntity.fromDomain(warehouseWithTenant);
       final docRef = await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -227,7 +226,8 @@ class FirebaseWarehouseRepository implements WarehouseRepository {
         updatedAt: DateTime.now(),
       );
 
-      final warehouseEntity = FirebaseWarehouseEntity.fromDomain(warehouseWithTenant);
+      final warehouseEntity =
+          FirebaseWarehouseEntity.fromDomain(warehouseWithTenant);
       await _firestore
           .collection('tenants')
           .doc(tenantId)

@@ -9,7 +9,8 @@ import 'package:tamgaci/features/customers/presentation/pages/enhanced_customers
 import 'package:tamgaci/features/customers/presentation/pages/enhanced_customer_detail_page_v2.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/enhanced_suppliers_list_page.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/enhanced_supplier_detail_page.dart';
-import 'package:tamgaci/features/products/presentation/pages/warehouses_list_page.dart';
+import 'package:tamgaci/features/warehouses/presentation/pages/warehouses_home_page.dart';
+import 'package:tamgaci/features/warehouses/domain/entities/warehouse.dart';
 import 'package:tamgaci/features/sales/presentation/pages/enhanced_sales_list_page.dart';
 import 'package:tamgaci/features/sales/presentation/pages/sale_detail_page.dart';
 import 'package:tamgaci/features/sales/presentation/pages/create_sale_page.dart';
@@ -62,8 +63,8 @@ import 'package:tamgaci/features/income/presentation/pages/income_detail_page.da
 import 'package:tamgaci/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/inventory_page.dart';
 // import 'package:tamgaci/features/inventory/presentation/pages/warehouse_list_page.dart'; // Unused
-import 'package:tamgaci/features/inventory/presentation/pages/create_warehouse_page.dart';
-import 'package:tamgaci/features/inventory/presentation/pages/warehouse_detail_page.dart';
+import 'package:tamgaci/features/warehouses/presentation/pages/create_warehouse_page.dart';
+import 'package:tamgaci/features/warehouses/presentation/pages/warehouse_detail_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/stock_list_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/create_stock_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/stock_detail_page.dart';
@@ -740,22 +741,22 @@ class TamgaciRoutes {
         return _createRoute(const InventoryPage(), settings: settings);
 
       case warehouseList:
-        return _createRoute(const WarehousesListPage(), settings: settings);
+        return _createRoute(const WarehousesHomePage(), settings: settings);
 
       case createWarehouse:
         return _createRoute(const CreateWarehousePage(), settings: settings);
 
       case editWarehouse:
-        final warehouseId = arguments as String?;
+        final warehouse = arguments as Warehouse?;
         return _createRoute(
-          CreateWarehousePage(warehouseId: warehouseId),
+          CreateWarehousePage(existingWarehouse: warehouse),
           settings: settings,
         );
 
       case warehouseDetail:
-        final warehouseId = arguments as String?;
+        final warehouse = arguments as Warehouse?;
         return _createRoute(
-          WarehouseDetailPage(warehouseId: warehouseId ?? ''),
+          WarehouseDetailPage(warehouse: warehouse!),
           settings: settings,
         );
 
