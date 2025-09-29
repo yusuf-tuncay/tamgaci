@@ -1330,10 +1330,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             .read(productOperationsProvider.notifier)
             .updateProduct(product);
 
-        // Stream provider'ı refresh et
-        ref.invalidate(productsStreamProvider);
-
         if (mounted) {
+          // Stream provider'ı refresh et - mounted kontrolü ile
+          ref.invalidate(productsStreamProvider);
+          
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ürün başarıyla güncellendi'),
@@ -1347,10 +1347,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             .read(productOperationsProvider.notifier)
             .createProduct(product);
 
-        // Stream provider'ı refresh et
-        ref.invalidate(productsStreamProvider);
-
         if (mounted) {
+          // Stream provider'ı refresh et - mounted kontrolü ile
+          ref.invalidate(productsStreamProvider);
+          
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ürün başarıyla oluşturuldu'),
