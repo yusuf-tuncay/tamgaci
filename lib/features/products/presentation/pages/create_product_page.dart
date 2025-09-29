@@ -135,21 +135,23 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _notesController.text = product.notes ?? '';
     _stockQuantityController.text = product.stockQuantity.toString();
 
-    setState(() {
-      _selectedType = product.type;
-      _selectedStockTracking = product.stockTracking;
-      _salesTaxInclusive = product.salesTaxInclusive;
-      _purchaseTaxInclusive = product.purchaseTaxInclusive;
-      _salesCurrency = product.salesCurrency;
-      _purchaseCurrency = product.purchaseCurrency;
-      _images = List<String>.from(product.images);
-
-      // Düzenleme modunda depo seçimini yap
-      if (product.warehouseId != null) {
-        // Mevcut depo bilgilerini sakla, dropdown'da eşleşecek
-        _currentWarehouseId = product.warehouseId;
-      }
-    });
+    if (mounted) {
+      setState(() {
+        _selectedType = product.type;
+        _selectedStockTracking = product.stockTracking;
+        _salesTaxInclusive = product.salesTaxInclusive;
+        _purchaseTaxInclusive = product.purchaseTaxInclusive;
+        _salesCurrency = product.salesCurrency;
+        _purchaseCurrency = product.purchaseCurrency;
+        _images = List<String>.from(product.images);
+        
+        // Düzenleme modunda depo seçimini yap
+        if (product.warehouseId != null) {
+          // Mevcut depo bilgilerini sakla, dropdown'da eşleşecek
+          _currentWarehouseId = product.warehouseId;
+        }
+      });
+    }
   }
 
   Future<void> _pickImages() async {
@@ -493,9 +495,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  _selectedType = value!;
-                });
+                if (mounted) {
+                  setState(() {
+                    _selectedType = value!;
+                  });
+                }
               },
             ),
 
@@ -632,9 +636,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       );
                     }).toList(),
                     onChanged: (value) {
-                      setState(() {
-                        _salesCurrency = value!;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _salesCurrency = value!;
+                        });
+                      }
                     },
                   ),
                 ),
@@ -677,9 +683,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       }),
                     ],
                     onChanged: (value) {
-                      setState(() {
-                        _purchaseCurrency = value;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _purchaseCurrency = value;
+                        });
+                      }
                     },
                   ),
                 ),
@@ -742,9 +750,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       );
                     }).toList(),
                     onChanged: (value) {
-                      setState(() {
-                        _salesTaxInclusive = value!;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _salesTaxInclusive = value!;
+                        });
+                      }
                     },
                   ),
                 ),
@@ -767,9 +777,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       }),
                     ],
                     onChanged: (value) {
-                      setState(() {
-                        _purchaseTaxInclusive = value;
-                      });
+                      if (mounted) {
+                        setState(() {
+                          _purchaseTaxInclusive = value;
+                        });
+                      }
                     },
                   ),
                 ),
@@ -862,9 +874,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                         );
                       }).toList(),
                       onChanged: (value) {
-                        setState(() {
-                          _selectedWarehouse = value;
-                        });
+                        if (mounted) {
+                          setState(() {
+                            _selectedWarehouse = value;
+                          });
+                        }
                       },
                       validator: (value) {
                         if (value == null) {
@@ -897,9 +911,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 );
               }).toList(),
               onChanged: (value) {
-                setState(() {
-                  _selectedStockTracking = value!;
-                });
+                if (mounted) {
+                  setState(() {
+                    _selectedStockTracking = value!;
+                  });
+                }
               },
             ),
 
@@ -1183,25 +1199,31 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     // Basit ürün kodu üretimi
     final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
     _productCodeController.text = 'PRD-$timestamp';
-    setState(() {
-      _autoGenerateProductCode = true;
-    });
+    if (mounted) {
+      setState(() {
+        _autoGenerateProductCode = true;
+      });
+    }
   }
 
   void _generateBarcode() {
     final barcode = BarcodeGenerator.generateRandomGS1Barcode();
     _barcodeController.text = barcode;
-    setState(() {
-      _autoGenerateBarcode = true;
-    });
+    if (mounted) {
+      setState(() {
+        _autoGenerateBarcode = true;
+      });
+    }
   }
 
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
       final productId =
