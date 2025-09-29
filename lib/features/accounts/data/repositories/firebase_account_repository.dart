@@ -95,11 +95,21 @@ class FirebaseAccountRepository implements AccountRepository {
   Future<String> createAccount(Account account) async {
     try {
       final tenantId = await _tenantId();
+      final userId = _uid();
       if (tenantId.isEmpty) {
         throw Exception('Tenant ID is required for multi-tenant architecture');
       }
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
 
-      final accountWithTenant = account.copyWith(tenantId: tenantId);
+      final accountWithTenant = account.copyWith(
+        tenantId: tenantId,
+        createdBy: userId,
+        updatedBy: userId,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
       final accountEntity = FirebaseAccountEntity.fromDomain(accountWithTenant);
 
       final docRef = await _firestore
@@ -120,7 +130,16 @@ class FirebaseAccountRepository implements AccountRepository {
   Future<void> updateAccount(Account account) async {
     try {
       final tenantId = await _tenantId();
-      final accountWithTenant = account.copyWith(tenantId: tenantId);
+      final userId = _uid();
+      if (userId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final accountWithTenant = account.copyWith(
+        tenantId: tenantId,
+        updatedBy: userId,
+        updatedAt: DateTime.now(),
+      );
       final accountEntity = FirebaseAccountEntity.fromDomain(accountWithTenant);
 
       await _firestore
@@ -141,7 +160,7 @@ class FirebaseAccountRepository implements AccountRepository {
   Future<void> deleteAccount(String id) async {
     try {
       final tenantId = await _tenantId();
-      
+
       // Önce hesabı kontrol et
       final accountDoc = await _firestore
           .collection('tenants')
@@ -149,18 +168,18 @@ class FirebaseAccountRepository implements AccountRepository {
           .collection('accounts')
           .doc(id)
           .get();
-      
+
       if (!accountDoc.exists) {
         throw Exception('Hesap bulunamadı');
       }
-      
+
       final accountData = accountDoc.data() as Map<String, dynamic>;
       final isDefault = accountData['isDefault'] as bool? ?? false;
-      
+
       if (isDefault) {
         throw Exception('Varsayılan hesaplar silinemez');
       }
-      
+
       await _firestore
           .collection('tenants')
           .doc(tenantId)
