@@ -72,7 +72,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     super.initState();
     _autoGenerateProductCode = true;
     _autoGenerateBarcode = true;
-    _stockQuantityController.text = '0'; // Varsayılan stok miktarı
+    _stockQuantityController.text = ''; // Varsayılan stok miktarı
 
     // Düzenleme modu için ürün bilgilerini yükle
     if (widget.productId != null) {
@@ -150,7 +150,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     try {
       final ImagePicker picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage();
-      
+
       if (images.isNotEmpty && mounted) {
         // Tüm işlemleri tek seferde yap
         if (kIsWeb) {
@@ -159,7 +159,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             final bytes = await image.readAsBytes();
             newBytes.add(bytes);
           }
-          
+
           if (mounted) {
             setState(() {
               _selectedImageBytes.addAll(newBytes);
@@ -170,7 +170,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           for (final image in images) {
             newFiles.add(File(image.path));
           }
-          
+
           if (mounted) {
             setState(() {
               _selectedImages.addAll(newFiles);
@@ -894,16 +894,18 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     decoration: const InputDecoration(
                       labelText: 'Başlangıç Stok Miktarı',
                       border: OutlineInputBorder(),
-                      hintText: '0',
+                      hintText: 'Stok miktarını girin',
                       prefixIcon: Icon(Icons.inventory),
                     ),
                     keyboardType: TextInputType.number,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Stok miktarı zorunludur';
-                      }
-                      if (int.tryParse(value) == null) {
-                        return 'Geçerli bir sayı giriniz';
+                      if (value != null && value.isNotEmpty) {
+                        if (int.tryParse(value) == null) {
+                          return 'Geçerli bir sayı giriniz';
+                        }
+                        if (int.parse(value) < 0) {
+                          return 'Stok miktarı negatif olamaz';
+                        }
                       }
                       return null;
                     },
@@ -1026,7 +1028,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                         width: 100,
                                         height: 100,
                                         color: Colors.grey[300],
-                                        child: Icon(Icons.broken_image, color: Colors.grey[600]),
+                                        child: Icon(Icons.broken_image,
+                                            color: Colors.grey[600]),
                                       );
                                     },
                                   )
@@ -1040,7 +1043,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                         width: 100,
                                         height: 100,
                                         color: Colors.grey[300],
-                                        child: Icon(Icons.broken_image, color: Colors.grey[600]),
+                                        child: Icon(Icons.broken_image,
+                                            color: Colors.grey[600]),
                                       );
                                     },
                                   ),
@@ -1254,7 +1258,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         stockTracking: _selectedStockTracking,
         warehouseId: _selectedWarehouse?.id,
         warehouseName: _selectedWarehouse?.name,
-        stockQuantity: int.parse(_stockQuantityController.text),
+        stockQuantity: _stockQuantityController.text.trim().isEmpty 
+            ? 0 
+            : int.parse(_stockQuantityController.text),
         criticalStockQuantity: _criticalStockController.text.trim().isEmpty
             ? null
             : int.parse(_criticalStockController.text),
