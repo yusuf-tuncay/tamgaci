@@ -467,6 +467,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                         child: AccountCard(
                           account: account,
                           onTap: () => _navigateToAccountDetail(account),
+                          onEdit: () => _editAccount(account),
+                          onDelete: () => _deleteAccount(account),
                         ),
                       ),
                     );
@@ -926,5 +928,94 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   void _refreshAccounts() {
     ref.invalidate(accountsProvider);
     ref.invalidate(accountStatisticsProvider);
+  }
+
+  void _editAccount(Account account) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateAccountPage(existingAccount: account),
+      ),
+    );
+  }
+
+  void _deleteAccount(Account account) {
+    // Varsayılan hesaplar silinemez
+    if (account.isDefault) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Varsayılan hesaplar silinemez',
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.orange[600],
+        ),
+      );
+      return;
+    }
+
+    // Silme onayı
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Hesabı Sil',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          '${account.name} hesabını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'İptal',
+              style: GoogleFonts.poppins(color: Colors.grey[600]),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _confirmDeleteAccount(account);
+            },
+            child: Text(
+              'Sil',
+              style: GoogleFonts.poppins(color: Colors.red[600]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteAccount(Account account) async {
+    try {
+      await ref.read(accountNotifierProvider.notifier).deleteAccount(account.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${account.name} hesabı başarıyla silindi',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.green[600],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Hesap silinemedi: $e',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red[600],
+          ),
+        );
+      }
+    }
   }
 }
