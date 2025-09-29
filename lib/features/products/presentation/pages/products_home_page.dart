@@ -179,7 +179,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     );
   }
 
-  Widget _buildStatisticsSection(AsyncValue<Map<String, dynamic>> statisticsAsync) {
+  Widget _buildStatisticsSection(
+      AsyncValue<Map<String, dynamic>> statisticsAsync) {
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -227,7 +228,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -283,9 +285,13 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   Widget _buildLoadingStatistics() {
     return Row(
       children: [
-        Expanded(child: _buildStatCard('Toplam Ürün', '...', Icons.inventory, Colors.blue)),
+        Expanded(
+            child: _buildStatCard(
+                'Toplam Ürün', '...', Icons.inventory, Colors.blue)),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard('Stok Değeri', '...', Icons.attach_money, Colors.green)),
+        Expanded(
+            child: _buildStatCard(
+                'Stok Değeri', '...', Icons.attach_money, Colors.green)),
       ],
     );
   }
@@ -293,9 +299,13 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   Widget _buildErrorStatistics() {
     return Row(
       children: [
-        Expanded(child: _buildStatCard('Toplam Ürün', '0', Icons.inventory, Colors.blue)),
+        Expanded(
+            child: _buildStatCard(
+                'Toplam Ürün', '0', Icons.inventory, Colors.blue)),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard('Stok Değeri', '₺0', Icons.attach_money, Colors.green)),
+        Expanded(
+            child: _buildStatCard(
+                'Stok Değeri', '₺0', Icons.attach_money, Colors.green)),
       ],
     );
   }
@@ -343,7 +353,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                         const SizedBox(width: 12),
                         _buildFilterButton('Kategori', _selectedCategory),
                         const SizedBox(width: 8),
-                        _buildFilterButton('Tür', _selectedType?.displayName ?? 'Tümü'),
+                        _buildFilterButton(
+                            'Tür', _selectedType?.displayName ?? 'Tümü'),
                       ],
                     ),
                     if (_showLowStockOnly)
@@ -356,7 +367,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.warning, color: Colors.orange[600], size: 16),
+                            Icon(Icons.warning,
+                                color: Colors.orange[600], size: 16),
                             const SizedBox(width: 8),
                             Text(
                               'Sadece düşük stoklu ürünler gösteriliyor',
@@ -372,7 +384,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                                   _showLowStockOnly = false;
                                 });
                               },
-                              child: Icon(Icons.close, color: Colors.orange[600], size: 16),
+                              child: Icon(Icons.close,
+                                  color: Colors.orange[600], size: 16),
                             ),
                           ],
                         ),
@@ -474,7 +487,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                                 position: _slideAnimation,
                                 child: ProductCard(
                                   product: product,
-                                  onTap: () => _navigateToProductDetail(product),
+                                  onTap: () =>
+                                      _navigateToProductDetail(product),
                                 ),
                               ),
                             );
@@ -507,7 +521,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
       }
 
       // Category filter
-      if (_selectedCategory != 'Tümü' && product.category != _selectedCategory) {
+      if (_selectedCategory != 'Tümü' &&
+          product.category != _selectedCategory) {
         return false;
       }
 
@@ -646,16 +661,16 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
       children: [
         ListTile(
           title: Text('Tümü', style: GoogleFonts.poppins()),
-          leading: Radio<String>(
-            value: 'Tümü',
-            groupValue: _selectedCategory,
-            onChanged: (value) {
-              setState(() {
-                _selectedCategory = value!;
-              });
-              Navigator.pop(context);
-            },
+          leading: Icon(
+            _selectedCategory == 'Tümü' ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+            color: _selectedCategory == 'Tümü' ? const Color(0xFF6366F1) : Colors.grey,
           ),
+          onTap: () {
+            setState(() {
+              _selectedCategory = 'Tümü';
+            });
+            Navigator.pop(context);
+          },
         ),
         // Kategoriler burada listelenecek
       ],
@@ -668,30 +683,30 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
       children: [
         ListTile(
           title: Text('Tümü', style: GoogleFonts.poppins()),
-          leading: Radio<ProductType?>(
-            value: null,
-            groupValue: _selectedType,
-            onChanged: (value) {
-              setState(() {
-                _selectedType = value;
-              });
-              Navigator.pop(context);
-            },
+          leading: Icon(
+            _selectedType == null ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+            color: _selectedType == null ? const Color(0xFF6366F1) : Colors.grey,
           ),
+          onTap: () {
+            setState(() {
+              _selectedType = null;
+            });
+            Navigator.pop(context);
+          },
         ),
         ...ProductType.values.map((type) {
           return ListTile(
             title: Text(type.displayName, style: GoogleFonts.poppins()),
-            leading: Radio<ProductType?>(
-              value: type,
-              groupValue: _selectedType,
-              onChanged: (value) {
-                setState(() {
-                  _selectedType = value;
-                });
-                Navigator.pop(context);
-              },
+            leading: Icon(
+              _selectedType == type ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: _selectedType == type ? const Color(0xFF6366F1) : Colors.grey,
             ),
+            onTap: () {
+              setState(() {
+                _selectedType = type;
+              });
+              Navigator.pop(context);
+            },
           );
         }),
       ],

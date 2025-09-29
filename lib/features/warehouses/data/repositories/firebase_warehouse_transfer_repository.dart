@@ -5,7 +5,8 @@ import '../../domain/repositories/warehouse_transfer_repository.dart';
 import '../models/firebase_warehouse_transfer_entity.dart';
 
 /// Firebase Warehouse Transfer Repository Implementation
-class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository {
+class FirebaseWarehouseTransferRepository
+    implements WarehouseTransferRepository {
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
@@ -18,7 +19,7 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   String _tenantId() {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Kullanıcı giriş yapmamış');
-    
+
     // Bu kısımda kullanıcının tenantId'sini almak için
     // user document'ından tenantId'yi okumamız gerekiyor
     // Şimdilik basit bir implementasyon yapıyoruz
@@ -36,7 +37,7 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
     try {
       final tenantId = _tenantId();
       final userId = _uid();
-      
+
       final transferWithTenant = transfer.copyWith(
         tenantId: tenantId,
         createdBy: userId,
@@ -44,8 +45,9 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
         status: 'pending',
       );
 
-      final firebaseEntity = FirebaseWarehouseTransferEntity.fromDomain(transferWithTenant);
-      
+      final firebaseEntity =
+          FirebaseWarehouseTransferEntity.fromDomain(transferWithTenant);
+
       await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -63,15 +65,15 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   Future<WarehouseTransfer> updateTransfer(WarehouseTransfer transfer) async {
     try {
       final tenantId = _tenantId();
-      final userId = _uid();
-      
+
       final transferWithTenant = transfer.copyWith(
         tenantId: tenantId,
         updatedAt: DateTime.now(),
       );
 
-      final firebaseEntity = FirebaseWarehouseTransferEntity.fromDomain(transferWithTenant);
-      
+      final firebaseEntity =
+          FirebaseWarehouseTransferEntity.fromDomain(transferWithTenant);
+
       await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -89,7 +91,7 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   Future<void> deleteTransfer(String id) async {
     try {
       final tenantId = _tenantId();
-      
+
       await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -105,7 +107,7 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   Future<WarehouseTransfer?> getTransfer(String id) async {
     try {
       final tenantId = _tenantId();
-      
+
       final doc = await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -126,7 +128,7 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   Future<List<WarehouseTransfer>> getTransfers() async {
     try {
       final tenantId = _tenantId();
-      
+
       final querySnapshot = await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -135,7 +137,8 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
           .get();
 
       return querySnapshot.docs
-          .map((doc) => FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
+          .map((doc) =>
+              FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
           .toList();
     } catch (e) {
       throw Exception('Transferler getirilemedi: $e');
@@ -143,10 +146,11 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   }
 
   @override
-  Future<List<WarehouseTransfer>> getTransfersByWarehouse(String warehouseId) async {
+  Future<List<WarehouseTransfer>> getTransfersByWarehouse(
+      String warehouseId) async {
     try {
       final tenantId = _tenantId();
-      
+
       final querySnapshot = await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -162,22 +166,24 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
           .get();
 
       final allTransfers = <WarehouseTransfer>[];
-      
+
       allTransfers.addAll(
         querySnapshot.docs
-            .map((doc) => FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
+            .map((doc) =>
+                FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
             .toList(),
       );
-      
+
       allTransfers.addAll(
         querySnapshot2.docs
-            .map((doc) => FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
+            .map((doc) =>
+                FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
             .toList(),
       );
 
       // Tarihe göre sırala
       allTransfers.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      
+
       return allTransfers;
     } catch (e) {
       throw Exception('Depo transferleri getirilemedi: $e');
@@ -185,10 +191,11 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   }
 
   @override
-  Future<List<WarehouseTransfer>> getTransfersByProduct(String productId) async {
+  Future<List<WarehouseTransfer>> getTransfersByProduct(
+      String productId) async {
     try {
       final tenantId = _tenantId();
-      
+
       final querySnapshot = await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -198,7 +205,8 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
           .get();
 
       return querySnapshot.docs
-          .map((doc) => FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
+          .map((doc) =>
+              FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
           .toList();
     } catch (e) {
       throw Exception('Ürün transferleri getirilemedi: $e');
@@ -209,7 +217,7 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
   Future<List<WarehouseTransfer>> getTransfersByStatus(String status) async {
     try {
       final tenantId = _tenantId();
-      
+
       final querySnapshot = await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -219,7 +227,8 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
           .get();
 
       return querySnapshot.docs
-          .map((doc) => FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
+          .map((doc) =>
+              FirebaseWarehouseTransferEntity.fromFirestore(doc).toDomain())
           .toList();
     } catch (e) {
       throw Exception('Durum transferleri getirilemedi: $e');
@@ -236,12 +245,12 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
     try {
       final transfer = await getTransfer(id);
       if (transfer == null) throw Exception('Transfer bulunamadı');
-      
+
       final completedTransfer = transfer.copyWith(
         status: 'completed',
         updatedAt: DateTime.now(),
       );
-      
+
       return await updateTransfer(completedTransfer);
     } catch (e) {
       throw Exception('Transfer tamamlanamadı: $e');
@@ -253,12 +262,12 @@ class FirebaseWarehouseTransferRepository implements WarehouseTransferRepository
     try {
       final transfer = await getTransfer(id);
       if (transfer == null) throw Exception('Transfer bulunamadı');
-      
+
       final cancelledTransfer = transfer.copyWith(
         status: 'cancelled',
         updatedAt: DateTime.now(),
       );
-      
+
       return await updateTransfer(cancelledTransfer);
     } catch (e) {
       throw Exception('Transfer iptal edilemedi: $e');
