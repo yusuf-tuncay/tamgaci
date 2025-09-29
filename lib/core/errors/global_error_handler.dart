@@ -34,6 +34,19 @@ class GlobalErrorHandler {
 
   /// Handle Flutter framework errors
   void _handleFlutterError(FlutterErrorDetails details) {
+    final errorString = details.exceptionAsString();
+
+    // Disposed view hatalarını özel olarak yakala
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('disposed EngineFlutterView') ||
+        errorString.contains('Trying to render a disposed')) {
+      // Bu hataları sessizce geç - Flutter Web'de yaygın bir sorun
+      if (kDebugMode) {
+        debugPrint('⚠️ Disposed view error (ignored): ${details.exception}');
+      }
+      return;
+    }
+
     AppLogger.error(
       'Flutter Error: ${details.exception}',
       details.exception,

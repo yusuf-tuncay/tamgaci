@@ -872,10 +872,17 @@ class ProductDetailPage extends ConsumerWidget {
   Future<void> _deleteProduct(
       BuildContext context, Product product, WidgetRef ref) async {
     try {
+      debugPrint('🗑️ Ürün silme işlemi başlatılıyor: ${product.id}');
+
+      // Navigation'ı önceden hazırla
+      debugPrint('🚀 Navigation hazırlanıyor...');
+      final navigator = Navigator.of(context);
+
       // Firebase Storage'dan fotoğrafları sil
       if (product.images.isNotEmpty) {
         final storageService = FirebaseStorageService();
         await storageService.deleteProductImages(product.images);
+        debugPrint('📸 Fotoğraflar silindi');
       }
 
       // Ürünü sil
@@ -883,18 +890,32 @@ class ProductDetailPage extends ConsumerWidget {
           .read(productOperationsProvider.notifier)
           .deleteProduct(product.id);
 
-      if (context.mounted) {
-        // Liste ekranına kesin dönüş: tüm stack'i temizleyip products'a git
-        Future.microtask(() {
-          if (!context.mounted) return;
-          Navigator.of(context).pushNamedAndRemoveUntil(
-            TamgaciRoutes.productsList,
-            (route) => false,
-          );
-        });
-      }
+      debugPrint('✅ Ürün başarıyla silindi');
+
+      // Stream'in güncellenmesi için bekleme
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      debugPrint(
+          '🚀 Ürün listesi sayfasına yönlendiriliyor: ${TamgaciRoutes.productsList}');
+      // Tüm stack'i temizleyip ürün listesi sayfasına git
+      navigator.pushNamedAndRemoveUntil(
+        TamgaciRoutes.productsList,
+        (route) => false,
+      );
+      debugPrint('✅ Navigation tamamlandı');
     } catch (e) {
-      debugPrint('Ürün silinirken hata: $e');
+      debugPrint('❌ Ürün silinirken hata: $e');
+      // Hata durumunda da navigation yap
+      try {
+        final navigator = Navigator.of(context);
+        navigator.pushNamedAndRemoveUntil(
+          TamgaciRoutes.productsList,
+          (route) => false,
+        );
+        debugPrint('✅ Hata durumu navigation tamamlandı');
+      } catch (navError) {
+        debugPrint('❌ Navigation hatası: $navError');
+      }
     }
   }
 }
