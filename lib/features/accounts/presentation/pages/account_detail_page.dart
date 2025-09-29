@@ -71,7 +71,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           _buildActionsSection(),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
@@ -112,7 +111,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               position: _slideAnimation,
               child: Container(
                 margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
@@ -124,7 +124,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border:
+                      Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFF6366F1).withValues(alpha: 0.25),
@@ -499,18 +500,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  Widget _buildFloatingActionButton() {
-    return FloatingActionButton.extended(
-      onPressed: _addTransaction,
-      backgroundColor: Colors.blue[600],
-      foregroundColor: Colors.white,
-      icon: const Icon(Icons.add),
-      label: Text(
-        'İşlem Ekle',
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-      ),
-    );
-  }
 
   void _editAccount() {
     Navigator.push(
@@ -567,9 +556,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     // İşlemler sayfasına git
   }
 
-  void _addTransaction() {
-    // İşlem ekleme sayfasına git
-  }
 
   void _updateBalance() {
     showDialog(
