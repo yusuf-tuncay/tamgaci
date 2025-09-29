@@ -884,18 +884,22 @@ class ProductDetailPage extends ConsumerWidget {
 
       print('✅ Product deleted successfully, refreshing stream...');
 
-      // Stream provider'ı refresh et - mounted kontrolü ile
-      if (context.mounted) {
+      // Stream provider'ı refresh et - navigation'dan önce
+      try {
         ref.invalidate(productsStreamProvider);
         print('🔄 Stream provider invalidated');
+      } catch (e) {
+        print('❌ Error invalidating stream: $e');
+      }
 
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Ürün başarıyla silindi'),
             backgroundColor: Colors.green,
           ),
         );
-
+        
         // Ürün listesine geri dön - daha güvenli navigation
         if (Navigator.canPop(context)) {
           Navigator.pop(context);

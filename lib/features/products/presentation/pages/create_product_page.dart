@@ -1331,11 +1331,15 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             .read(productOperationsProvider.notifier)
             .updateProduct(product);
 
-        if (mounted) {
-          // Stream provider'ı refresh et - mounted kontrolü ile
+        // Stream provider'ı refresh et - navigation'dan önce
+        try {
           ref.invalidate(productsStreamProvider);
           print('🔄 Stream provider invalidated');
+        } catch (e) {
+          print('❌ Error invalidating stream: $e');
+        }
 
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ürün başarıyla güncellendi'),
@@ -1351,11 +1355,15 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
         print('✅ Product created successfully, refreshing stream...');
 
-        if (mounted) {
-          // Stream provider'ı refresh et - mounted kontrolü ile
+        // Stream provider'ı refresh et - navigation'dan önce
+        try {
           ref.invalidate(productsStreamProvider);
           print('🔄 Stream provider invalidated');
+        } catch (e) {
+          print('❌ Error invalidating stream: $e');
+        }
 
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ürün başarıyla oluşturuldu'),
