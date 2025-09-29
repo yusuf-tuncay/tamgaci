@@ -102,23 +102,19 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           ? TamgaciConstants.backgroundColorDark
           : TamgaciConstants.backgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0xFF6366F1),
-                Color(0xFF8B5CF6),
-              ],
-            ),
+        title: Text(
+          'Yeni Ürün',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
+        ),
+        backgroundColor: Colors.white,
+        elevation: 1,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Form(
@@ -173,34 +169,69 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   Widget _buildPremiumHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF6366F1),
-            Color(0xFF8B5CF6),
+            Color(0xFF6366F1), // Indigo-500
+            Color(0xFF8B5CF6), // Violet-500
+            Color(0xFF7C3AED), // Violet-600
           ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Yeni Ürün Oluştur',
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          // Icon container
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.add_box,
               color: Colors.white,
+              size: 24,
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Ürün bilgilerini doldurun ve depo seçin',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.9),
+          const SizedBox(width: 16),
+          // Text content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Yeni Ürün Oluştur',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ürün bilgilerini doldurun ve depo seçin',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -646,7 +677,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                           // Önce varsayılan depoyu bul
                           final defaultWarehouse = warehouses.firstWhere(
                             (warehouse) => warehouse.isDefault,
-                            orElse: () => warehouses.first, // Varsayılan yoksa ilk depo
+                            orElse: () =>
+                                warehouses.first, // Varsayılan yoksa ilk depo
                           );
                           _selectedWarehouse = defaultWarehouse;
                         });
