@@ -26,7 +26,7 @@ class ProductCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -34,23 +34,14 @@ class ProductCard extends StatelessWidget {
                 width: 1,
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildProductIcon(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 4),
-                      _buildProductInfo(),
-                      const SizedBox(height: 6),
-                      _buildWarehouseAndStockInfo(),
-                    ],
-                  ),
-                ),
-                _buildRightSideInfo(),
+                _buildHeader(),
+                const SizedBox(height: 12),
+                _buildProductInfo(),
+                const SizedBox(height: 12),
+                _buildBottomInfo(),
               ],
             ),
           ),
@@ -62,16 +53,33 @@ class ProductCard extends StatelessWidget {
   Widget _buildHeader() {
     return Row(
       children: [
+        _buildProductIcon(),
+        const SizedBox(width: 12),
         Expanded(
-          child: Text(
-            product.name,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                product.name,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (product.productCode != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Kod: ${product.productCode}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         _buildStatusChip(),
@@ -139,33 +147,27 @@ class ProductCard extends StatelessWidget {
   }
 
   Widget _buildProductInfo() {
-    return Row(
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
       children: [
-        if (product.productCode != null) ...[
-          Text(
-            'Kod: ${product.productCode}',
-            style: GoogleFonts.poppins(
-              fontSize: 11,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-        if (product.category != null) ...[
+        if (product.category != null)
           _buildInfoChip(
             Icons.category,
             product.category!,
             Colors.blue,
           ),
-          const SizedBox(width: 4),
-        ],
-        if (product.brand != null) ...[
+        if (product.brand != null)
           _buildInfoChip(
             Icons.business,
             product.brand!,
             Colors.purple,
           ),
-        ],
+        _buildInfoChip(
+          _getTypeIcon(),
+          product.type.displayName,
+          _getTypeColor(),
+        ),
       ],
     );
   }
@@ -195,98 +197,93 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildWarehouseAndStockInfo() {
+  Widget _buildBottomInfo() {
     return Row(
       children: [
         // Warehouse info
-        if (product.warehouseName != null) ...[
-          Icon(Icons.warehouse, size: 12, color: Colors.blue[600]),
-          const SizedBox(width: 4),
-          Text(
-            product.warehouseName!,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.blue[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 8),
-        ] else ...[
-          Icon(Icons.warning, size: 12, color: Colors.orange[600]),
-          const SizedBox(width: 4),
-          Text(
-            'Depo yok',
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.orange[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-        // Stock info
-        Icon(Icons.inventory, size: 12, color: _getStockColor()),
-        const SizedBox(width: 4),
-        Text(
-          '${product.totalStockQuantity}',
-          style: GoogleFonts.poppins(
-            fontSize: 10,
-            color: _getStockColor(),
-            fontWeight: FontWeight.w600,
+        Expanded(
+          child: Row(
+            children: [
+              if (product.warehouseName != null) ...[
+                Icon(Icons.warehouse, size: 14, color: Colors.blue[600]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    product.warehouseName!,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.blue[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ] else ...[
+                Icon(Icons.warning, size: 14, color: Colors.orange[600]),
+                const SizedBox(width: 4),
+                Text(
+                  'Depo yok',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.orange[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        if (product.criticalStockQuantity != null &&
-            product.totalStockQuantity <= product.criticalStockQuantity!) ...[
-          const SizedBox(width: 4),
-          Icon(Icons.warning, size: 10, color: Colors.orange[600]),
-        ],
+        const SizedBox(width: 16),
+        // Stock info
+        Row(
+          children: [
+            Icon(Icons.inventory, size: 14, color: _getStockColor()),
+            const SizedBox(width: 4),
+            Text(
+              '${product.totalStockQuantity}',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: _getStockColor(),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (product.criticalStockQuantity != null &&
+                product.totalStockQuantity <= product.criticalStockQuantity!) ...[
+              const SizedBox(width: 4),
+              Icon(Icons.warning, size: 12, color: Colors.orange[600]),
+            ],
+          ],
+        ),
+        const SizedBox(width: 16),
+        // Price info
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              '₺${product.salesPrice.toStringAsFixed(2)}',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Colors.green[600],
+              ),
+            ),
+            if (product.purchasePrice != null) ...[
+              const SizedBox(height: 2),
+              Text(
+                '₺${product.purchasePrice!.toStringAsFixed(2)}',
+                style: GoogleFonts.poppins(
+                  fontSize: 11,
+                  color: Colors.blue[600],
+                ),
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }
 
-  Widget _buildRightSideInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // Price info
-        Text(
-          '₺${product.salesPrice.toStringAsFixed(2)}',
-          style: GoogleFonts.poppins(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.green[600],
-          ),
-        ),
-        if (product.purchasePrice != null) ...[
-          const SizedBox(height: 2),
-          Text(
-            '₺${product.purchasePrice!.toStringAsFixed(2)}',
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.blue[600],
-            ),
-          ),
-        ],
-        const SizedBox(height: 4),
-        // Type indicator
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: _getTypeColor().withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Text(
-            product.type.displayName,
-            style: GoogleFonts.poppins(
-              fontSize: 8,
-              color: _getTypeColor(),
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   Color _getTypeColor() {
     switch (product.type) {
