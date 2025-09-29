@@ -6,15 +6,11 @@ import '../../domain/entities/account.dart';
 class AccountCard extends StatelessWidget {
   final Account account;
   final VoidCallback? onTap;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
 
   const AccountCard({
     super.key,
     required this.account,
     this.onTap,
-    this.onEdit,
-    this.onDelete,
   });
 
   @override
@@ -43,8 +39,6 @@ class AccountCard extends StatelessWidget {
                 _buildAccountInfo(),
                 const SizedBox(height: 16),
                 _buildBalanceInfo(),
-                const SizedBox(height: 16),
-                _buildFooter(),
               ],
             ),
           ),
@@ -263,81 +257,6 @@ class AccountCard extends StatelessWidget {
     );
   }
 
-  Widget _buildFooter() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildActionButton(
-            'Detaylar',
-            Icons.visibility,
-            onTap,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionButton(
-            'Düzenle',
-            Icons.edit,
-            onEdit,
-          ),
-        ),
-        // Varsayılan hesaplar için silme butonunu gizle
-        if (!account.isDefault) ...[
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildActionButton(
-              'Sil',
-              Icons.delete,
-              onDelete,
-              isDestructive: true,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildActionButton(
-    String label,
-    IconData icon,
-    VoidCallback? onPressed, {
-    bool isDestructive = false,
-  }) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.2),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 16,
-                color: isDestructive
-                    ? Colors.red[300]
-                    : Colors.white.withValues(alpha: 0.9),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isDestructive
-                      ? Colors.red[300]
-                      : Colors.white.withValues(alpha: 0.9),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   LinearGradient _getAccountGradient() {
     switch (account.type) {

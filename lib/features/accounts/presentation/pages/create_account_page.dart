@@ -145,21 +145,6 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
         ),
       ),
       actions: [
-        if (_isLoading)
-          const Padding(
-            padding: EdgeInsets.all(16),
-            child: SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-          )
-        else
-          IconButton(
-            icon: const Icon(Icons.save, color: Colors.black87, size: 24),
-            onPressed: _saveAccount,
-            tooltip: 'Kaydet',
-          ),
         IconButton(
           icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
           onPressed: _showMoreOptions,
@@ -186,7 +171,9 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
             _buildBalanceInfoCard(),
             const SizedBox(height: 16),
             _buildAdditionalInfoCard(),
-            const SizedBox(height: 100), // FAB için boşluk
+            const SizedBox(height: 24),
+            _buildSaveButton(),
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -693,6 +680,19 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                 _clearForm();
               },
             ),
+            // Sadece düzenleme modunda ve varsayılan olmayan hesaplar için silme butonu
+            if (widget.existingAccount != null && !widget.existingAccount!.isDefault)
+              ListTile(
+                leading: const Icon(Icons.delete, color: Colors.red),
+                title: Text(
+                  'Hesabı Sil',
+                  style: GoogleFonts.poppins(color: Colors.red),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showDeleteConfirmation();
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.help_outline),
               title: Text(
@@ -706,6 +706,124 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Hesabı Sil',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          '${widget.existingAccount!.name} hesabını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'İptal',
+              style: GoogleFonts.poppins(color: Colors.grey[600]),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _deleteAccount();
+            },
+            child: Text(
+              'Sil',
+              style: GoogleFonts.poppins(color: Colors.red[600]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    if (widget.existingAccount == null) return;
+
+    try {
+      setState(() => _isLoading = true);
+
+      await ref
+          .read(accountNotifierProvider.notifier)
+          .deleteAccount(widget.existingAccount!.id);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '${widget.existingAccount!.name} hesabı başarıyla silindi',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.green[600],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Hesap silinemedi: $e',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red[600],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Widget _buildSaveButton() {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _saveAccount,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF6366F1),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          shadowColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.save, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.existingAccount != null ? 'Güncelle' : 'Kaydet',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
