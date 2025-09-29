@@ -4,6 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import '../../domain/entities/product.dart';
@@ -54,8 +56,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   String? _purchaseCurrency;
   Warehouse? _selectedWarehouse;
   final List<String> _tags = [];
-  final List<String> _images = [];
+  List<String> _images = [];
   final List<String> _linkedProducts = [];
+  final List<File> _selectedImages = [];
 
   bool _isLoading = false;
   bool _autoGenerateBarcode = false;
@@ -67,7 +70,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _autoGenerateProductCode = true;
     _autoGenerateBarcode = true;
     _stockQuantityController.text = '0'; // Varsayılan stok miktarı
-    
+
     // Düzenleme modu için ürün bilgilerini yükle
     if (widget.productId != null) {
       _loadProductForEdit();
@@ -114,15 +117,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _purchasePriceController.text = product.purchasePrice?.toString() ?? '';
     _salesTaxRateController.text = product.salesTaxRate.toString();
     _purchaseTaxRateController.text = product.purchaseTaxRate?.toString() ?? '';
-    _purchaseDiscountController.text = product.purchaseDiscount?.toString() ?? '';
+    _purchaseDiscountController.text =
+        product.purchaseDiscount?.toString() ?? '';
     _sctController.text = product.sct?.toString() ?? '';
     _shelfLocationController.text = product.shelfLocation ?? '';
-    _criticalStockController.text = product.criticalStockQuantity?.toString() ?? '';
+    _criticalStockController.text =
+        product.criticalStockQuantity?.toString() ?? '';
     _gtipCodeController.text = product.gtipCode ?? '';
     _countryCodeController.text = product.countryCode ?? '';
     _notesController.text = product.notes ?? '';
     _stockQuantityController.text = product.stockQuantity.toString();
-    
+
     setState(() {
       _selectedType = product.type;
       _selectedStockTracking = product.stockTracking;
@@ -130,6 +135,33 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       _purchaseTaxInclusive = product.purchaseTaxInclusive;
       _salesCurrency = product.salesCurrency;
       _purchaseCurrency = product.purchaseCurrency;
+      _images = List<String>.from(product.images);
+    });
+  }
+
+  Future<void> _pickImages() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final List<XFile> images = await picker.pickMultiImage();
+      
+      if (images.isNotEmpty) {
+        setState(() {
+          _selectedImages.addAll(images.map((image) => File(image.path)));
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fotoğraf seçilirken hata: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
     });
   }
 
@@ -217,6 +249,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     _buildSectionTitle('Ek Bilgiler'),
                     _buildAdditionalInfoSection(),
 
+                    const SizedBox(height: 24),
+
+                    // Fotoğraflar
+                    _buildSectionTitle('Ürün Fotoğrafları'),
+                    _buildImageSection(),
+
                     const SizedBox(height: 100), // Save button için boşluk
                   ],
                 ),
@@ -280,7 +318,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.productId != null ? 'Ürün Düzenle' : 'Yeni Ürün Oluştur',
+                  widget.productId != null
+                      ? 'Ürün Düzenle'
+                      : 'Yeni Ürün Oluştur',
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -289,9 +329,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  widget.productId != null 
-                    ? 'Ürün bilgilerini güncelleyin'
-                    : 'Ürün bilgilerini doldurun ve depo seçin',
+                  widget.productId != null
+                      ? 'Ürün bilgilerini güncelleyin'
+                      : 'Ürün bilgilerini doldurun ve depo seçin',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -752,7 +792,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     }
 
                     return DropdownButtonFormField<Warehouse>(
-                      value: _selectedWarehouse,
+                      initialValue: _selectedWarehouse,
                       decoration: const InputDecoration(
                         labelText: 'Depo Seçimi *',
                         border: OutlineInputBorder(),
@@ -866,6 +906,139 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     );
   }
 
+  Widget _buildImageSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.photo_library, color: Colors.blue[600]),
+                const SizedBox(width: 8),
+                Text(
+                  'Ürün Fotoğrafları',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Fotoğraf ekleme butonu
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _pickImages,
+                icon: const Icon(Icons.add_photo_alternate),
+                label: const Text('Fotoğraf Ekle'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[50],
+                  foregroundColor: Colors.blue[700],
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.blue[200]!),
+                  ),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+            
+            // Seçilen fotoğraflar
+            if (_selectedImages.isNotEmpty) ...[
+              Text(
+                'Seçilen Fotoğraflar (${_selectedImages.length})',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 120,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _selectedImages.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              _selectedImages[index],
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => _removeImage(index),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.photo_library_outlined,
+                      size: 48,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Henüz fotoğraf eklenmedi',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAdditionalInfoSection() {
     return Card(
       child: Padding(
@@ -944,7 +1117,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
     try {
       final product = Product(
-        id: widget.productId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        id: widget.productId ??
+            DateTime.now().millisecondsSinceEpoch.toString(),
         tenantId: '', // Repository'de set edilecek
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -1011,7 +1185,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
       // Save or update product using repository
       if (widget.productId != null) {
-        await ref.read(productOperationsProvider.notifier).updateProduct(product);
+        await ref
+            .read(productOperationsProvider.notifier)
+            .updateProduct(product);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1022,7 +1198,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           Navigator.of(context).pop();
         }
       } else {
-        await ref.read(productOperationsProvider.notifier).createProduct(product);
+        await ref
+            .read(productOperationsProvider.notifier)
+            .createProduct(product);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
