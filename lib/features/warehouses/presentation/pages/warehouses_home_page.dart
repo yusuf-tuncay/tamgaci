@@ -7,6 +7,9 @@ import '../widgets/warehouse_card.dart';
 import '../../data/services/warehouse_initialization_service.dart';
 import 'create_warehouse_page.dart';
 import 'warehouse_detail_page.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 
 /// Depolar Ana Sayfası
 class WarehousesHomePage extends ConsumerStatefulWidget {
@@ -78,53 +81,32 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
     final warehousesAsync = ref.watch(warehouseNotifierProvider);
     final statisticsAsync = ref.watch(warehouseStatisticsProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      drawer: const Drawer(
-        width: 280,
-        child: Center(
-          child: Text('Drawer Menu'),
-        ),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          _buildHeaderSection(),
-          _buildStatisticsSection(statisticsAsync),
-          _buildFiltersSection(),
-          _buildWarehousesSection(warehousesAsync),
-        ],
-      ),
-      floatingActionButton: _buildFloatingActionButton(),
+    return ResponsiveScaffold(
+      appBar: const CustomAppBar(title: 'Depolar', showDrawer: true),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
+      body: _buildMobileLayout(warehousesAsync, statisticsAsync),
     );
   }
 
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      expandedHeight: 60,
-      floating: false,
-      pinned: true,
-      backgroundColor: Colors.white,
-      elevation: 1,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black87, size: 24),
-          onPressed: () => Scaffold.of(context).openDrawer(),
+  Widget _buildMobileLayout(
+    AsyncValue<List<Warehouse>> warehousesAsync,
+    AsyncValue<Map<String, dynamic>> statisticsAsync,
+  ) {
+    return Stack(
+      children: [
+        CustomScrollView(
+          slivers: [
+            _buildHeaderSection(),
+            _buildStatisticsSection(statisticsAsync),
+            _buildFiltersSection(),
+            _buildWarehousesSection(warehousesAsync),
+          ],
         ),
-      ),
-      title: Text(
-        'Depolar',
-        style: GoogleFonts.poppins(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
-      ),
-      actions: [
-        IconButton(
-          onPressed: _refreshWarehouses,
-          icon: const Icon(Icons.refresh, color: Colors.black87, size: 24),
-          tooltip: 'Yenile',
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: _buildFloatingActionButton(),
         ),
       ],
     );
@@ -597,8 +579,9 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
         final query = _searchQuery.toLowerCase();
         final nameMatch = warehouse.name.toLowerCase().contains(query);
         final addressMatch = warehouse.address.toLowerCase().contains(query);
-        final cityMatch = warehouse.city?.toLowerCase().contains(query) ?? false;
-        
+        final cityMatch =
+            warehouse.city?.toLowerCase().contains(query) ?? false;
+
         if (!nameMatch && !addressMatch && !cityMatch) {
           return false;
         }
