@@ -251,52 +251,48 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
             maxLines: 3,
           ),
           const SizedBox(height: 16),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: DropdownButtonFormField<WarehouseType>(
-                  value: _selectedType,
-                  decoration: InputDecoration(
-                    labelText: 'Depo Türü *',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              DropdownButtonFormField<WarehouseType>(
+                value: _selectedType,
+                decoration: InputDecoration(
+                  labelText: 'Depo Türü *',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  items: WarehouseType.values.map((type) {
-                    return DropdownMenuItem(
-                      value: type,
-                      child: Text(type.displayName),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedType = value!;
-                    });
-                  },
                 ),
+                items: WarehouseType.values.map((type) {
+                  return DropdownMenuItem(
+                    value: type,
+                    child: Text(type.displayName),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedType = value!;
+                  });
+                },
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: DropdownButtonFormField<WarehouseStatus>(
-                  value: _selectedStatus,
-                  decoration: InputDecoration(
-                    labelText: 'Durum *',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<WarehouseStatus>(
+                value: _selectedStatus,
+                decoration: InputDecoration(
+                  labelText: 'Durum *',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  items: WarehouseStatus.values.map((status) {
-                    return DropdownMenuItem(
-                      value: status,
-                      child: Text(status.displayName),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedStatus = value!;
-                    });
-                  },
                 ),
+                items: WarehouseStatus.values.map((status) {
+                  return DropdownMenuItem(
+                    value: status,
+                    child: Text(status.displayName),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStatus = value!;
+                  });
+                },
               ),
             ],
           ),
@@ -647,7 +643,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   Widget _buildSaveButton() {
-    return Container(
+    return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(

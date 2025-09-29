@@ -70,6 +70,8 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
           _buildLocationSection(),
           _buildContactSection(),
           _buildCapacitySection(),
+          _buildProductsSection(),
+          _buildActionsSection(),
         ],
       ),
     );
@@ -391,8 +393,9 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
   }
 
   Widget _buildCapacitySection() {
-    if (widget.warehouse.capacity == null)
+    if (widget.warehouse.capacity == null) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
@@ -673,5 +676,290 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
       case WarehouseStatus.suspended:
         return Colors.purple;
     }
+  }
+
+  Widget _buildProductsSection() {
+    return SliverToBoxAdapter(
+      child: AnimatedBuilder(
+        animation: _fadeAnimation,
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.inventory_2, color: Colors.blue[600], size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Depodaki Ürünler',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          '0 ürün',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[200]!),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.inventory_outlined,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Henüz ürün yok',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Bu depoya ürün eklemek için aşağıdaki butonları kullanın',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[500],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActionsSection() {
+    return SliverToBoxAdapter(
+      child: AnimatedBuilder(
+        animation: _fadeAnimation,
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Depo İşlemleri',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildActionButton(
+                      'Ürün Ekle',
+                      'Bu depoya yeni ürün ekle',
+                      Icons.add_box,
+                      Colors.green,
+                      () => _addProductToWarehouse(),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
+                      'Ürün Getir',
+                      'Başka depodan ürün getir',
+                      Icons.input,
+                      Colors.blue,
+                      () => _transferProductToWarehouse(),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
+                      'Ürün Gönder',
+                      'Bu depodan başka depoya ürün gönder',
+                      Icons.output,
+                      Colors.orange,
+                      () => _transferProductFromWarehouse(),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
+                      'Stok Sayımı',
+                      'Depo stok sayımı yap',
+                      Icons.inventory,
+                      Colors.purple,
+                      () => _performStockCount(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey[400],
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addProductToWarehouse() {
+    // TODO: Ürün ekleme sayfasına git
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Ürün ekleme özelliği yakında eklenecek',
+          style: GoogleFonts.poppins(),
+        ),
+        backgroundColor: Colors.blue[600],
+      ),
+    );
+  }
+
+  void _transferProductToWarehouse() {
+    // TODO: Ürün transfer sayfasına git (getir)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Ürün getirme özelliği yakında eklenecek',
+          style: GoogleFonts.poppins(),
+        ),
+        backgroundColor: Colors.blue[600],
+      ),
+    );
+  }
+
+  void _transferProductFromWarehouse() {
+    // TODO: Ürün transfer sayfasına git (gönder)
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Ürün gönderme özelliği yakında eklenecek',
+          style: GoogleFonts.poppins(),
+        ),
+        backgroundColor: Colors.orange[600],
+      ),
+    );
+  }
+
+  void _performStockCount() {
+    // TODO: Stok sayım sayfasına git
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Stok sayım özelliği yakında eklenecek',
+          style: GoogleFonts.poppins(),
+        ),
+        backgroundColor: Colors.purple[600],
+      ),
+    );
   }
 }
