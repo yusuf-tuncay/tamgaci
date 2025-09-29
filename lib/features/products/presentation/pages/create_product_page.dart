@@ -10,6 +10,8 @@ import '../../../../core/widgets/formatted_text_field.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/utils/barcode_generator.dart';
 import '../providers/product_providers.dart';
+import '../../../warehouses/domain/entities/warehouse.dart';
+import '../../../warehouses/presentation/providers/warehouse_providers.dart';
 
 /// Ürün oluşturma sayfası
 class CreateProductPage extends ConsumerStatefulWidget {
@@ -43,6 +45,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   final _gtipCodeController = TextEditingController();
   final _countryCodeController = TextEditingController();
   final _notesController = TextEditingController();
+  final _stockQuantityController = TextEditingController();
 
   ProductType _selectedType = ProductType.stocked;
   StockTrackingType _selectedStockTracking = StockTrackingType.normal;
@@ -50,6 +53,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   TaxInclusiveOption? _purchaseTaxInclusive;
   String _salesCurrency = 'TRY';
   String? _purchaseCurrency;
+  Warehouse? _selectedWarehouse;
   final List<String> _tags = [];
   final List<String> _images = [];
   final List<String> _linkedProducts = [];
@@ -84,6 +88,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _gtipCodeController.dispose();
     _countryCodeController.dispose();
     _notesController.dispose();
+    _stockQuantityController.dispose();
     super.dispose();
   }
 
@@ -96,55 +101,162 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       backgroundColor: isDark
           ? TamgaciConstants.backgroundColorDark
           : TamgaciConstants.backgroundColor,
-      appBar: CustomAppBar(
-        title: 'Yeni Ürün',
-        showBackButton: true,
-        showDrawer: false,
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveProduct,
-            child: Text(
-              'Kaydet',
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: _isLoading ? Colors.grey : TamgaciConstants.primaryColor,
+      appBar: AppBar(
+        title: Text(
+          'Yeni Ürün',
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF6366F1),
+                Color(0xFF8B5CF6),
+              ],
+            ),
+          ),
+        ),
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          children: [
+            // Premium Header
+            _buildPremiumHeader(),
+            
+            // Form Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Temel Bilgiler
+                    _buildSectionTitle('Temel Bilgiler'),
+                    _buildBasicInfoSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Fiyat ve Vergi Bilgileri
+                    _buildSectionTitle('Fiyat ve Vergi Bilgileri'),
+                    _buildPricingSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Stok ve Depo Bilgileri
+                    _buildSectionTitle('Stok ve Depo Bilgileri'),
+                    _buildStockSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Ek Bilgiler
+                    _buildSectionTitle('Ek Bilgiler'),
+                    _buildAdditionalInfoSection(),
+
+                    const SizedBox(height: 100), // Save button için boşluk
+                  ],
+                ),
               ),
+            ),
+            
+            // Save Button
+            _buildSaveButton(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPremiumHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF6366F1),
+            Color(0xFF8B5CF6),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Yeni Ürün Oluştur',
+            style: GoogleFonts.poppins(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Ürün bilgilerini doldurun ve depo seçin',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Temel Bilgiler
-              _buildSectionTitle('Temel Bilgiler'),
-              _buildBasicInfoSection(),
+    );
+  }
 
-              const SizedBox(height: 24),
-
-              // Fiyat ve Vergi Bilgileri
-              _buildSectionTitle('Fiyat ve Vergi Bilgileri'),
-              _buildPricingSection(),
-
-              const SizedBox(height: 24),
-
-              // Stok ve Depo Bilgileri
-              _buildSectionTitle('Stok ve Depo Bilgileri'),
-              _buildStockSection(),
-
-              const SizedBox(height: 24),
-
-              // Ek Bilgiler
-              _buildSectionTitle('Ek Bilgiler'),
-              _buildAdditionalInfoSection(),
-
-              const SizedBox(height: 40),
-            ],
+  Widget _buildSaveButton() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
+        ],
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: _isLoading ? null : _saveProduct,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF6366F1),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  'Ürünü Kaydet',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
         ),
       ),
     );
@@ -529,6 +641,44 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            // Warehouse seçimi
+            Consumer(
+              builder: (context, ref, child) {
+                final warehousesAsync = ref.watch(warehousesProvider);
+                return warehousesAsync.when(
+                  data: (warehouses) => DropdownButtonFormField<Warehouse>(
+                    value: _selectedWarehouse,
+                    decoration: const InputDecoration(
+                      labelText: 'Depo Seçimi *',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.warehouse),
+                    ),
+                    items: warehouses.map((warehouse) {
+                      return DropdownMenuItem(
+                        value: warehouse,
+                        child: Text(warehouse.name),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedWarehouse = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null) {
+                        return 'Depo seçimi zorunludur';
+                      }
+                      return null;
+                    },
+                  ),
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Text('Hata: $error'),
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
             // Stok takibi türü
             DropdownButtonFormField<StockTrackingType>(
               initialValue: _selectedStockTracking,
@@ -551,9 +701,31 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
             const SizedBox(height: 16),
 
-            // Kritik stok ve raf yeri
+            // Başlangıç stok miktarı ve kritik stok
             Row(
               children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _stockQuantityController,
+                    decoration: const InputDecoration(
+                      labelText: 'Başlangıç Stok Miktarı',
+                      border: OutlineInputBorder(),
+                      hintText: '0',
+                      prefixIcon: Icon(Icons.inventory),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Stok miktarı zorunludur';
+                      }
+                      if (int.tryParse(value) == null) {
+                        return 'Geçerli bir sayı giriniz';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: TextFormField(
                     controller: _criticalStockController,
@@ -561,22 +733,25 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       labelText: 'Kritik Stok Miktarı',
                       border: OutlineInputBorder(),
                       hintText: '0',
+                      prefixIcon: Icon(Icons.warning),
                     ),
                     keyboardType: TextInputType.number,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextFormField(
-                    controller: _shelfLocationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Raf Yeri',
-                      border: OutlineInputBorder(),
-                      hintText: 'A-1-2',
-                    ),
-                  ),
-                ),
               ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Raf yeri
+            TextFormField(
+              controller: _shelfLocationController,
+              decoration: const InputDecoration(
+                labelText: 'Raf Yeri',
+                border: OutlineInputBorder(),
+                hintText: 'A-1-2',
+                prefixIcon: Icon(Icons.location_on),
+              ),
             ),
           ],
         ),
@@ -703,6 +878,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             ? null
             : _shelfLocationController.text.trim(),
         stockTracking: _selectedStockTracking,
+        warehouseId: _selectedWarehouse?.id,
+        warehouseName: _selectedWarehouse?.name,
+        stockQuantity: int.parse(_stockQuantityController.text),
         criticalStockQuantity: _criticalStockController.text.trim().isEmpty
             ? null
             : int.parse(_criticalStockController.text),
