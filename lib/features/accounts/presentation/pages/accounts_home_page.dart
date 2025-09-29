@@ -7,6 +7,7 @@ import '../widgets/account_card.dart';
 import '../widgets/account_statistics_card.dart';
 import '../../data/services/account_initialization_service.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../core/services/firebase/firebase_auth_service.dart';
 import 'create_account_page.dart';
 import 'account_detail_page.dart';
 
@@ -55,8 +56,9 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
 
     _animationController.forward();
 
-    // Varsayılan hesapları oluştur
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // TenantId oluştur (eğer yoksa) ve varsayılan hesapları oluştur
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await FirebaseAuthService.createTenantIdForCurrentUser();
       _initializeDefaultAccounts();
     });
   }
