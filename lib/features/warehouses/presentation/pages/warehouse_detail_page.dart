@@ -706,7 +706,8 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.inventory_2, color: Colors.blue[600], size: 20),
+                        Icon(Icons.inventory_2,
+                            color: Colors.blue[600], size: 20),
                         const SizedBox(width: 8),
                         Text(
                           'Depodaki Ürünler',
@@ -808,14 +809,6 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
                     ),
                     const SizedBox(height: 16),
                     _buildActionButton(
-                      'Ürün Ekle',
-                      'Bu depoya yeni ürün ekle',
-                      Icons.add_box,
-                      Colors.green,
-                      () => _addProductToWarehouse(),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildActionButton(
                       'Ürün Getir',
                       'Başka depodan ürün getir',
                       Icons.input,
@@ -911,54 +904,168 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
     );
   }
 
-  void _addProductToWarehouse() {
-    // TODO: Ürün ekleme sayfasına git
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Ürün ekleme özelliği yakında eklenecek',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: Colors.blue[600],
-      ),
-    );
-  }
 
   void _transferProductToWarehouse() {
-    // TODO: Ürün transfer sayfasına git (getir)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Ürün getirme özelliği yakında eklenecek',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: Colors.blue[600],
-      ),
+    _showTransferDialog(
+      title: 'Ürün Getir',
+      subtitle: 'Başka depodan bu depoya ürün getir',
+      icon: Icons.input,
+      color: Colors.blue,
     );
   }
 
   void _transferProductFromWarehouse() {
-    // TODO: Ürün transfer sayfasına git (gönder)
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Ürün gönderme özelliği yakında eklenecek',
-          style: GoogleFonts.poppins(),
-        ),
-        backgroundColor: Colors.orange[600],
-      ),
+    _showTransferDialog(
+      title: 'Ürün Gönder',
+      subtitle: 'Bu depodan başka depoya ürün gönder',
+      icon: Icons.output,
+      color: Colors.orange,
     );
   }
 
   void _performStockCount() {
-    // TODO: Stok sayım sayfasına git
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Stok sayım özelliği yakında eklenecek',
-          style: GoogleFonts.poppins(),
+    _showStockCountDialog();
+  }
+
+  void _showTransferDialog({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        backgroundColor: Colors.purple[600],
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              subtitle,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Bu özellik yakında eklenecek',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showStockCountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.purple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.inventory, color: Colors.purple, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Stok Sayımı',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Depo stok sayımı yaparak mevcut ürün miktarlarını kontrol edin',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Bu özellik yakında eklenecek',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                color: Colors.grey[500],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Colors.purple,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
