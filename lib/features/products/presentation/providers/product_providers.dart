@@ -51,6 +51,99 @@ final outOfStockProductsStreamProvider = StreamProvider<List<Product>>((ref) {
   return repository.getOutOfStockProducts();
 });
 
+/// Depoya göre ürünler stream provider'ı
+final productsByWarehouseStreamProvider = StreamProvider.family<List<Product>, String>((ref, warehouseId) {
+  final repository = ref.watch(productRepositoryProvider);
+  return repository.getProductsByWarehouse(warehouseId);
+});
+
+/// Depo bazında düşük stoklu ürünler stream provider'ı
+final lowStockProductsByWarehouseStreamProvider = StreamProvider.family<List<Product>, String>((ref, warehouseId) {
+  final repository = ref.watch(productRepositoryProvider);
+  return repository.getLowStockProductsByWarehouse(warehouseId);
+});
+
+/// Depo bazında stokta olmayan ürünler stream provider'ı
+final outOfStockProductsByWarehouseStreamProvider = StreamProvider.family<List<Product>, String>((ref, warehouseId) {
+  final repository = ref.watch(productRepositoryProvider);
+  return repository.getOutOfStockProductsByWarehouse(warehouseId);
+});
+
+/// Ürün detay provider'ı
+final productDetailProvider = FutureProvider.family<Product?, String>((ref, productId) async {
+  final repository = ref.watch(productRepositoryProvider);
+  return repository.getProductById(productId);
+});
+
+/// Ürün istatistikleri provider'ı
+final productStatisticsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final repository = ref.watch(productRepositoryProvider);
+  final totalProducts = await repository.getActiveProductCount();
+  final totalStockValue = await repository.getTotalStockValue();
+  
+  return {
+    'totalProducts': totalProducts,
+    'totalStockValue': totalStockValue,
+  };
+});
+
+/// Ürün notifier provider'ı
+class ProductNotifier extends StateNotifier<AsyncValue<List<Product>>> {
+  final ProductRepository _repository;
+
+  ProductNotifier(this._repository) : super(const AsyncValue.loading()) {
+    _loadProducts();
+  }
+
+  Future<void> _loadProducts() async {
+    try {
+      state = const AsyncValue.loading();
+      final products = await _repository.getActiveProducts().first;
+      state = AsyncValue.data(products);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> createProduct(Product product) async {
+    try {
+      await _repository.createProduct(product);
+      await _loadProducts();
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> updateProduct(Product product) async {
+    try {
+      await _repository.updateProduct(product);
+      await _loadProducts();
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> deleteProduct(String id) async {
+    try {
+      await _repository.deleteProduct(id);
+      await _loadProducts();
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  Future<void> refresh() async {
+    await _loadProducts();
+  }
+}
+
+/// Ürün notifier provider'ı
+final productNotifierProvider = StateNotifierProvider<ProductNotifier, AsyncValue<List<Product>>>((ref) {
+  final repository = ref.watch(productRepositoryProvider);
+  return ProductNotifier(repository);
+});
+
+
 /// Kategoriler stream provider'ı
 final productCategoriesStreamProvider = StreamProvider<List<String>>((ref) {
   final repository = ref.watch(productRepositoryProvider);
@@ -74,12 +167,6 @@ final productsByCategoryProvider =
   return repository.getProductsByCategory(category);
 });
 
-/// Ürün detay provider'ı
-final productDetailProvider =
-    FutureProvider.family<Product?, String>((ref, id) {
-  final repository = ref.watch(productRepositoryProvider);
-  return repository.getProductById(id);
-});
 
 /// Aktif ürün sayısı provider'ı
 final activeProductCountProvider = FutureProvider<int>((ref) {

@@ -443,6 +443,76 @@ class FirebaseProductRepository implements ProductRepository {
   }
 
   @override
+  Stream<List<Product>> getProductsByWarehouse(String warehouseId) {
+    return Stream.fromFuture(_tenantId()).asyncExpand((tenantId) {
+      if (tenantId.isEmpty) {
+        return Stream.value(<Product>[]);
+      }
+
+      return _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .where('warehouseId', isEqualTo: warehouseId)
+          .where('isActive', isEqualTo: true)
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs
+            .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
+            .toList();
+      });
+    });
+  }
+
+  @override
+  Stream<List<Product>> getLowStockProductsByWarehouse(String warehouseId) {
+    return Stream.fromFuture(_tenantId()).asyncExpand((tenantId) {
+      if (tenantId.isEmpty) {
+        return Stream.value(<Product>[]);
+      }
+
+      return _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .where('warehouseId', isEqualTo: warehouseId)
+          .where('isActive', isEqualTo: true)
+          .snapshots()
+          .map((snapshot) {
+        final products = snapshot.docs
+            .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
+            .toList();
+        
+        return products.where((product) => product.isLowStock).toList();
+      });
+    });
+  }
+
+  @override
+  Stream<List<Product>> getOutOfStockProductsByWarehouse(String warehouseId) {
+    return Stream.fromFuture(_tenantId()).asyncExpand((tenantId) {
+      if (tenantId.isEmpty) {
+        return Stream.value(<Product>[]);
+      }
+
+      return _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .where('warehouseId', isEqualTo: warehouseId)
+          .where('isActive', isEqualTo: true)
+          .snapshots()
+          .map((snapshot) {
+        final products = snapshot.docs
+            .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
+            .toList();
+        
+        return products.where((product) => product.totalStockQuantity <= 0).toList();
+      });
+    });
+  }
+
+  @override
   Stream<List<String>> getCategories() {
     return Stream.fromFuture(_tenantId()).asyncExpand((tenantId) {
       if (tenantId.isEmpty) {

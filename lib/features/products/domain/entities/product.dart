@@ -53,9 +53,12 @@ class Product {
   final TaxInclusiveOption? purchaseTaxInclusive; // Alış fiyatına KDV dahil
   final double? purchaseDiscount; // Alış iskontosu (%)
   final double? sct; // ÖTV (Özel Tüketim Vergisi) (%)
+  final String? warehouseId; // Hangi depoda bulunduğu
+  final String? warehouseName; // Depo adı
   final String? shelfLocation; // Raf yeri (depo modülüyle takip)
   final StockTrackingType stockTracking; // Stok takibi türü
   final int? criticalStockQuantity; // Kritik stok miktarı
+  final int stockQuantity; // Mevcut stok miktarı
   final String? gtipCode; // GTIP kodu
   final String? countryCode; // Ülke kodu
   final List<String> tags; // Etiketler
@@ -94,9 +97,12 @@ class Product {
     this.purchaseTaxInclusive,
     this.purchaseDiscount,
     this.sct,
+    this.warehouseId,
+    this.warehouseName,
     this.shelfLocation,
     this.stockTracking = StockTrackingType.normal,
     this.criticalStockQuantity,
+    this.stockQuantity = 0,
     this.gtipCode,
     this.countryCode,
     this.tags = const [],
@@ -133,7 +139,7 @@ class Product {
   /// Toplam stok miktarı (varyantlar dahil)
   int get totalStockQuantity {
     if (variants == null || variants!.isEmpty) {
-      return 0; // Ana ürün stok miktarı yok, sadece varyantlar var
+      return stockQuantity; // Ana ürün stok miktarı
     }
     return variants!
         .fold<int>(0, (sum, variant) => sum + variant.stockQuantity);
@@ -175,9 +181,12 @@ class Product {
     TaxInclusiveOption? purchaseTaxInclusive,
     double? purchaseDiscount,
     double? sct,
+    String? warehouseId,
+    String? warehouseName,
     String? shelfLocation,
     StockTrackingType? stockTracking,
     int? criticalStockQuantity,
+    int? stockQuantity,
     String? gtipCode,
     String? countryCode,
     List<String>? tags,
@@ -215,10 +224,13 @@ class Product {
       purchaseTaxInclusive: purchaseTaxInclusive ?? this.purchaseTaxInclusive,
       purchaseDiscount: purchaseDiscount ?? this.purchaseDiscount,
       sct: sct ?? this.sct,
+      warehouseId: warehouseId ?? this.warehouseId,
+      warehouseName: warehouseName ?? this.warehouseName,
       shelfLocation: shelfLocation ?? this.shelfLocation,
       stockTracking: stockTracking ?? this.stockTracking,
       criticalStockQuantity:
           criticalStockQuantity ?? this.criticalStockQuantity,
+      stockQuantity: stockQuantity ?? this.stockQuantity,
       gtipCode: gtipCode ?? this.gtipCode,
       countryCode: countryCode ?? this.countryCode,
       tags: tags ?? this.tags,
@@ -271,12 +283,15 @@ class Product {
           : null,
       purchaseDiscount: (json['purchaseDiscount'] as num?)?.toDouble(),
       sct: (json['sct'] as num?)?.toDouble(),
+      warehouseId: json['warehouseId'] as String?,
+      warehouseName: json['warehouseName'] as String?,
       shelfLocation: json['shelfLocation'] as String?,
       stockTracking: StockTrackingType.values.firstWhere(
         (e) => e.name == json['stockTracking'],
         orElse: () => StockTrackingType.normal,
       ),
       criticalStockQuantity: json['criticalStockQuantity'] as int?,
+      stockQuantity: json['stockQuantity'] as int? ?? 0,
       gtipCode: json['gtipCode'] as String?,
       countryCode: json['countryCode'] as String?,
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
@@ -325,9 +340,12 @@ class Product {
       'purchaseTaxInclusive': purchaseTaxInclusive?.name,
       'purchaseDiscount': purchaseDiscount,
       'sct': sct,
+      'warehouseId': warehouseId,
+      'warehouseName': warehouseName,
       'shelfLocation': shelfLocation,
       'stockTracking': stockTracking.name,
       'criticalStockQuantity': criticalStockQuantity,
+      'stockQuantity': stockQuantity,
       'gtipCode': gtipCode,
       'countryCode': countryCode,
       'tags': tags,

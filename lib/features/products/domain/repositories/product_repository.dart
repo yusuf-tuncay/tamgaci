@@ -20,11 +20,20 @@ abstract class ProductRepository {
   /// Kategoriye göre ürünleri getir
   Stream<List<Product>> getProductsByCategory(String category);
 
+  /// Depoya göre ürünleri getir
+  Stream<List<Product>> getProductsByWarehouse(String warehouseId);
+
   /// Düşük stoklu ürünleri getir
   Stream<List<Product>> getLowStockProducts();
 
   /// Stokta olmayan ürünleri getir
   Stream<List<Product>> getOutOfStockProducts();
+
+  /// Depo bazında düşük stoklu ürünleri getir
+  Stream<List<Product>> getLowStockProductsByWarehouse(String warehouseId);
+
+  /// Depo bazında stokta olmayan ürünleri getir
+  Stream<List<Product>> getOutOfStockProductsByWarehouse(String warehouseId);
 
   /// Arama yap
   Stream<List<Product>> searchProducts(String query);
