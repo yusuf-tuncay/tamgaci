@@ -883,7 +883,7 @@ class ProductDetailPage extends ConsumerWidget {
 
       // Stream provider'ı refresh et - mounted kontrolü ile
       if (context.mounted) {
-        ref.invalidate(productsStreamProvider);
+        ref.refresh(productsStreamProvider);
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

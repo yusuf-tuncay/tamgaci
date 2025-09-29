@@ -1332,7 +1332,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
         if (mounted) {
           // Stream provider'ı refresh et - mounted kontrolü ile
-          ref.invalidate(productsStreamProvider);
+          ref.refresh(productsStreamProvider);
           
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1349,7 +1349,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
         if (mounted) {
           // Stream provider'ı refresh et - mounted kontrolü ile
-          ref.invalidate(productsStreamProvider);
+          ref.refresh(productsStreamProvider);
           
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
