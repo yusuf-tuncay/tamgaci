@@ -75,7 +75,7 @@ import 'package:tamgaci/features/directory/presentation/pages/contact_detail_pag
 import 'package:tamgaci/features/directory/presentation/pages/edit_contact_page.dart';
 import 'package:tamgaci/features/directory/domain/entities/contact.dart';
 
-import 'package:tamgaci/features/products/presentation/pages/products_list_page.dart';
+import 'package:tamgaci/features/products/presentation/pages/products_home_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/product_detail_page.dart';
 
 // Payments (Tahsilat) imports
@@ -694,7 +694,7 @@ class TamgaciRoutes {
       // ========== ÜRÜN ROUTE'LARI ==========
 
       case productsList:
-        return _createRoute(const ProductsListPage(), settings: settings);
+        return _createRoute(const ProductsHomePage(), settings: settings);
 
       case createProduct:
         return _createRoute(const CreateProductPage(), settings: settings);
