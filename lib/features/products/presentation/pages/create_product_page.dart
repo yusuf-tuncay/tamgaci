@@ -57,6 +57,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   String _salesCurrency = 'TRY';
   String? _purchaseCurrency;
   Warehouse? _selectedWarehouse;
+  String? _currentWarehouseId; // Düzenleme modunda mevcut depo ID'si
   final List<String> _tags = [];
   List<String> _images = [];
   final List<String> _linkedProducts = [];
@@ -143,6 +144,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       _salesCurrency = product.salesCurrency;
       _purchaseCurrency = product.purchaseCurrency;
       _images = List<String>.from(product.images);
+      
+      // Düzenleme modunda depo seçimini yap
+      if (product.warehouseId != null) {
+        // Mevcut depo bilgilerini sakla, dropdown'da eşleşecek
+        _currentWarehouseId = product.warehouseId;
+      }
     });
   }
 
@@ -815,21 +822,28 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   data: (warehouses) {
                     // Varsayılan depo seçimi (isDefault: true olan depo)
                     if (_selectedWarehouse == null && warehouses.isNotEmpty) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        setState(() {
-                          // Önce varsayılan depoyu bul
-                          final defaultWarehouse = warehouses.firstWhere(
-                            (warehouse) => warehouse.isDefault,
-                            orElse: () =>
-                                warehouses.first, // Varsayılan yoksa ilk depo
-                          );
-                          _selectedWarehouse = defaultWarehouse;
-                        });
-                      });
+                      // Önce varsayılan depoyu bul
+                      final defaultWarehouse = warehouses.firstWhere(
+                        (warehouse) => warehouse.isDefault,
+                        orElse: () =>
+                            warehouses.first, // Varsayılan yoksa ilk depo
+                      );
+                      _selectedWarehouse = defaultWarehouse;
+                    }
+                    
+                    // Düzenleme modunda mevcut depo seçimini yap
+                    if (widget.productId != null && _selectedWarehouse == null && _currentWarehouseId != null) {
+                      // Düzenleme modunda mevcut depo seçimi yapılacak
+                      // Mevcut depo seçimini yap
+                      final currentWarehouse = warehouses.firstWhere(
+                        (warehouse) => warehouse.id == _currentWarehouseId,
+                        orElse: () => warehouses.first,
+                      );
+                      _selectedWarehouse = currentWarehouse;
                     }
 
                     return DropdownButtonFormField<Warehouse>(
-                      initialValue: _selectedWarehouse,
+                      value: _selectedWarehouse,
                       decoration: const InputDecoration(
                         labelText: 'Depo Seçimi *',
                         border: OutlineInputBorder(),
@@ -1258,8 +1272,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         stockTracking: _selectedStockTracking,
         warehouseId: _selectedWarehouse?.id,
         warehouseName: _selectedWarehouse?.name,
-        stockQuantity: _stockQuantityController.text.trim().isEmpty 
-            ? 0 
+        stockQuantity: _stockQuantityController.text.trim().isEmpty
+            ? 0
             : int.parse(_stockQuantityController.text),
         criticalStockQuantity: _criticalStockController.text.trim().isEmpty
             ? null
