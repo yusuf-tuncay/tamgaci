@@ -681,7 +681,8 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
               },
             ),
             // Sadece düzenleme modunda ve varsayılan olmayan hesaplar için silme butonu
-            if (widget.existingAccount != null && !widget.existingAccount!.isDefault)
+            if (widget.existingAccount != null &&
+                !widget.existingAccount!.isDefault)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: Text(
@@ -756,7 +757,8 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
           .deleteAccount(widget.existingAccount!.id);
 
       if (mounted) {
-        Navigator.pop(context);
+        // Ana liste sayfasına dön (hesaplar ana sayfası)
+        Navigator.popUntil(context, (route) => route.isFirst);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
