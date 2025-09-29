@@ -131,9 +131,9 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: Colors.white,
-      elevation: 0,
+      elevation: 1,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text(
@@ -155,17 +155,16 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
             ),
           )
         else
-          TextButton(
+          IconButton(
+            icon: const Icon(Icons.save, color: Colors.black87, size: 24),
             onPressed: _saveAccount,
-            child: Text(
-              'Kaydet',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.blue[600],
-              ),
-            ),
+            tooltip: 'Kaydet',
           ),
+        IconButton(
+          icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
+          onPressed: _showMoreOptions,
+          tooltip: 'Daha fazla seçenek',
+        ),
       ],
     );
   }
@@ -659,5 +658,75 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
         });
       }
     }
+  }
+
+  void _showMoreOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.save_alt),
+              title: Text(
+                'Taslak Olarak Kaydet',
+                style: GoogleFonts.poppins(),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                // Taslak kaydetme işlemi
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.clear_all),
+              title: Text(
+                'Formu Temizle',
+                style: GoogleFonts.poppins(),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                _clearForm();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.help_outline),
+              title: Text(
+                'Yardım',
+                style: GoogleFonts.poppins(),
+              ),
+              onTap: () {
+                Navigator.pop(context);
+                // Yardım sayfasına git
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _clearForm() {
+    _nameController.clear();
+    _accountNumberController.clear();
+    _bankNameController.clear();
+    _branchNameController.clear();
+    _ibanController.clear();
+    _swiftCodeController.clear();
+    _balanceController.clear();
+    _availableBalanceController.clear();
+    _blockedAmountController.clear();
+    _descriptionController.clear();
+    _notesController.clear();
+    setState(() {
+      _selectedType = AccountType.checking;
+      _selectedStatus = AccountStatus.active;
+      _selectedCurrency = 'TRY';
+      _isActive = true;
+    });
   }
 }

@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
-import '../widgets/account_card.dart';
 import 'create_account_page.dart';
 
 /// Hesap Detay Sayfası
@@ -78,66 +77,27 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   Widget _buildAppBar() {
     return SliverAppBar(
-      expandedHeight: 120,
+      expandedHeight: 60,
       floating: false,
       pinned: true,
       backgroundColor: Colors.white,
-      elevation: 0,
+      elevation: 1,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.edit, color: Colors.black87),
+          icon: const Icon(Icons.edit, color: Colors.black87, size: 24),
           onPressed: _editAccount,
+          tooltip: 'Düzenle',
         ),
         IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.black87),
+          icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
           onPressed: _showMoreOptions,
+          tooltip: 'Daha fazla seçenek',
         ),
       ],
-      flexibleSpace: FlexibleSpaceBar(
-        background: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.blue[600]!,
-                Colors.blue[800]!,
-              ],
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    widget.account.name,
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.account.bankName,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.white70,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -152,9 +112,75 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               position: _slideAnimation,
               child: Container(
                 margin: const EdgeInsets.all(16),
-                child: AccountCard(
-                  account: widget.account,
-                  onTap: null, // Zaten detay sayfasındayız
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(0xFF6366F1), // Indigo-500
+                      Color(0xFF8B5CF6), // Violet-500
+                      Color(0xFF7C3AED), // Violet-600
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                      blurRadius: 18,
+                      spreadRadius: 1,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Icon container
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 1,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance_wallet_outlined,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Text content
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.account.name,
+                            style: GoogleFonts.poppins(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.account.bankName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
