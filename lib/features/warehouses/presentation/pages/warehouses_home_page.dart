@@ -481,15 +481,9 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
       children: WarehouseType.values.map((type) {
         return ListTile(
           title: Text(type.displayName),
-          leading: Radio<WarehouseType>(
-            value: type,
-            groupValue: _selectedType,
-            onChanged: (value) {
-              setState(() {
-                _selectedType = value!;
-              });
-              Navigator.pop(context);
-            },
+          leading: Icon(
+            _selectedType == type ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+            color: _selectedType == type ? const Color(0xFF6366F1) : Colors.grey,
           ),
           onTap: () {
             setState(() {
@@ -508,15 +502,9 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
       children: WarehouseStatus.values.map((status) {
         return ListTile(
           title: Text(status.displayName),
-          leading: Radio<WarehouseStatus>(
-            value: status,
-            groupValue: _selectedStatus,
-            onChanged: (value) {
-              setState(() {
-                _selectedStatus = value!;
-              });
-              Navigator.pop(context);
-            },
+          leading: Icon(
+            _selectedStatus == status ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+            color: _selectedStatus == status ? const Color(0xFF6366F1) : Colors.grey,
           ),
           onTap: () {
             setState(() {
