@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../domain/entities/warehouse.dart';
 import '../providers/warehouse_providers.dart';
 import '../widgets/warehouse_card.dart';
+import '../../data/services/warehouse_initialization_service.dart';
 import 'create_warehouse_page.dart';
 import 'warehouse_detail_page.dart';
 
@@ -50,6 +51,20 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
     ));
 
     _animationController.forward();
+    
+    // Varsayılan depo oluştur
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeDefaultWarehouse();
+    });
+  }
+
+  Future<void> _initializeDefaultWarehouse() async {
+    try {
+      final warehouseService = WarehouseInitializationService();
+      await warehouseService.createDefaultWarehouseForUser();
+    } catch (e) {
+      // Hata durumunda sessizce devam et
+    }
   }
 
   @override
@@ -482,8 +497,11 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
         return ListTile(
           title: Text(type.displayName),
           leading: Icon(
-            _selectedType == type ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: _selectedType == type ? const Color(0xFF6366F1) : Colors.grey,
+            _selectedType == type
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color:
+                _selectedType == type ? const Color(0xFF6366F1) : Colors.grey,
           ),
           onTap: () {
             setState(() {
@@ -503,8 +521,12 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
         return ListTile(
           title: Text(status.displayName),
           leading: Icon(
-            _selectedStatus == status ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-            color: _selectedStatus == status ? const Color(0xFF6366F1) : Colors.grey,
+            _selectedStatus == status
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+            color: _selectedStatus == status
+                ? const Color(0xFF6366F1)
+                : Colors.grey,
           ),
           onTap: () {
             setState(() {
