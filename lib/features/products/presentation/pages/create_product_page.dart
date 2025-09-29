@@ -1333,8 +1333,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
         if (mounted) {
           // Stream provider'ı refresh et - mounted kontrolü ile
-          // ignore: unused_result
-          ref.refresh(productsStreamProvider);
+          ref.invalidate(productsStreamProvider);
+          print('🔄 Stream provider invalidated');
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -1353,9 +1353,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
         if (mounted) {
           // Stream provider'ı refresh et - mounted kontrolü ile
-          // ignore: unused_result
-          ref.refresh(productsStreamProvider);
-          print('🔄 Stream provider refreshed');
+          ref.invalidate(productsStreamProvider);
+          print('🔄 Stream provider invalidated');
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

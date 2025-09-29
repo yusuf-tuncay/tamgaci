@@ -886,9 +886,8 @@ class ProductDetailPage extends ConsumerWidget {
 
       // Stream provider'ı refresh et - mounted kontrolü ile
       if (context.mounted) {
-        // ignore: unused_result
-        ref.refresh(productsStreamProvider);
-        print('🔄 Stream provider refreshed');
+        ref.invalidate(productsStreamProvider);
+        print('🔄 Stream provider invalidated');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
