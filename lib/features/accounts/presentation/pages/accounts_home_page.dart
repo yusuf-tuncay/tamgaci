@@ -71,7 +71,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
 
   @override
   Widget build(BuildContext context) {
-    final accountsAsync = ref.watch(accountsProvider);
+    final accountsAsync = ref.watch(accountNotifierProvider);
     final statisticsAsync = ref.watch(accountStatisticsProvider);
 
     return Scaffold(
@@ -926,7 +926,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _refreshAccounts() {
-    ref.invalidate(accountsProvider);
+    ref.read(accountNotifierProvider.notifier).refresh();
     ref.invalidate(accountStatisticsProvider);
   }
 
@@ -991,8 +991,10 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
 
   Future<void> _confirmDeleteAccount(Account account) async {
     try {
-      await ref.read(accountNotifierProvider.notifier).deleteAccount(account.id);
-      
+      await ref
+          .read(accountNotifierProvider.notifier)
+          .deleteAccount(account.id);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
