@@ -51,7 +51,7 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
     ));
 
     _animationController.forward();
-    
+
     // Varsayılan depo oluştur
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeDefaultWarehouse();
@@ -595,9 +595,11 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
       // Search filter
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        if (!warehouse.name.toLowerCase().contains(query) &&
-            !warehouse.address.toLowerCase().contains(query) &&
-            (warehouse.city?.toLowerCase().contains(query) ?? false)) {
+        final nameMatch = warehouse.name.toLowerCase().contains(query);
+        final addressMatch = warehouse.address.toLowerCase().contains(query);
+        final cityMatch = warehouse.city?.toLowerCase().contains(query) ?? false;
+        
+        if (!nameMatch && !addressMatch && !cityMatch) {
           return false;
         }
       }
