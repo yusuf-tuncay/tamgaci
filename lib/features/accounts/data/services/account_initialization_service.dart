@@ -79,6 +79,7 @@ class AccountInitializationService {
         type: AccountType.cash,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'Ana nakit kasa hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
@@ -104,6 +105,7 @@ class AccountInitializationService {
         type: AccountType.credit,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'Kredi kartı hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
@@ -129,6 +131,7 @@ class AccountInitializationService {
         type: AccountType.other,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'Çek işlemleri hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
@@ -154,6 +157,7 @@ class AccountInitializationService {
         type: AccountType.other,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'Senet işlemleri hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
@@ -179,6 +183,7 @@ class AccountInitializationService {
         type: AccountType.other,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'POS işlemleri hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
@@ -204,6 +209,7 @@ class AccountInitializationService {
         type: AccountType.cash,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'USD nakit kasa hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
@@ -229,6 +235,7 @@ class AccountInitializationService {
         type: AccountType.cash,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'EUR nakit kasa hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
@@ -254,6 +261,7 @@ class AccountInitializationService {
         type: AccountType.cash,
         status: AccountStatus.active,
         isActive: true,
+        isDefault: true, // Varsayılan hesap
         description: 'GBP nakit kasa hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,

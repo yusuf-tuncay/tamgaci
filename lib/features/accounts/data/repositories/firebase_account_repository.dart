@@ -141,6 +141,26 @@ class FirebaseAccountRepository implements AccountRepository {
   Future<void> deleteAccount(String id) async {
     try {
       final tenantId = await _tenantId();
+      
+      // Önce hesabı kontrol et
+      final accountDoc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('accounts')
+          .doc(id)
+          .get();
+      
+      if (!accountDoc.exists) {
+        throw Exception('Hesap bulunamadı');
+      }
+      
+      final accountData = accountDoc.data() as Map<String, dynamic>;
+      final isDefault = accountData['isDefault'] as bool? ?? false;
+      
+      if (isDefault) {
+        throw Exception('Varsayılan hesaplar silinemez');
+      }
+      
       await _firestore
           .collection('tenants')
           .doc(tenantId)

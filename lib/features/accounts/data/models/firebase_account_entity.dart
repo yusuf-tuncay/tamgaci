@@ -18,6 +18,7 @@ class FirebaseAccountEntity {
   final AccountType type;
   final AccountStatus status;
   final bool isActive;
+  final bool isDefault;
   final String? description;
   final String? notes;
   final DateTime createdAt;
@@ -41,6 +42,7 @@ class FirebaseAccountEntity {
     required this.type,
     required this.status,
     required this.isActive,
+    this.isDefault = false,
     this.description,
     this.notes,
     required this.createdAt,
@@ -74,6 +76,7 @@ class FirebaseAccountEntity {
         orElse: () => AccountStatus.active,
       ),
       isActive: data['isActive'] as bool? ?? true,
+      isDefault: data['isDefault'] as bool? ?? false,
       description: data['description'] as String?,
       notes: data['notes'] as String?,
       createdAt: (data['createdAt'] as Timestamp).toDate(),
@@ -101,6 +104,7 @@ class FirebaseAccountEntity {
       type: account.type,
       status: account.status,
       isActive: account.isActive,
+      isDefault: account.isDefault,
       description: account.description,
       notes: account.notes,
       createdAt: account.createdAt,
@@ -128,6 +132,7 @@ class FirebaseAccountEntity {
       type: type,
       status: status,
       isActive: isActive,
+      isDefault: isDefault,
       description: description,
       notes: notes,
       createdAt: createdAt,
@@ -154,6 +159,7 @@ class FirebaseAccountEntity {
       'type': type.name,
       'status': status.name,
       'isActive': isActive,
+      'isDefault': isDefault,
       'description': description,
       'notes': notes,
       'createdAt': Timestamp.fromDate(createdAt),
@@ -180,6 +186,7 @@ class FirebaseAccountEntity {
     AccountType? type,
     AccountStatus? status,
     bool? isActive,
+    bool? isDefault,
     String? description,
     String? notes,
     DateTime? createdAt,
@@ -203,6 +210,7 @@ class FirebaseAccountEntity {
       type: type ?? this.type,
       status: status ?? this.status,
       isActive: isActive ?? this.isActive,
+      isDefault: isDefault ?? this.isDefault,
       description: description ?? this.description,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,

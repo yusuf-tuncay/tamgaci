@@ -281,15 +281,18 @@ class AccountCard extends StatelessWidget {
             onEdit,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionButton(
-            'Sil',
-            Icons.delete,
-            onDelete,
-            isDestructive: true,
+        // Varsayılan hesaplar için silme butonunu gizle
+        if (!account.isDefault) ...[
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildActionButton(
+              'Sil',
+              Icons.delete,
+              onDelete,
+              isDestructive: true,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

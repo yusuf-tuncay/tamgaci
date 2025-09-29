@@ -17,6 +17,7 @@ class Account extends Equatable {
   final AccountType type;
   final AccountStatus status;
   final bool isActive;
+  final bool isDefault; // Varsayılan hesap kontrolü için
   final String? description;
   final String? notes;
   final DateTime createdAt;
@@ -40,6 +41,7 @@ class Account extends Equatable {
     required this.type,
     required this.status,
     required this.isActive,
+    this.isDefault = false, // Varsayılan olarak false
     this.description,
     this.notes,
     required this.createdAt,
@@ -64,6 +66,7 @@ class Account extends Equatable {
     AccountType? type,
     AccountStatus? status,
     bool? isActive,
+    bool? isDefault,
     String? description,
     String? notes,
     DateTime? createdAt,
@@ -87,6 +90,7 @@ class Account extends Equatable {
       type: type ?? this.type,
       status: status ?? this.status,
       isActive: isActive ?? this.isActive,
+      isDefault: isDefault ?? this.isDefault,
       description: description ?? this.description,
       notes: notes ?? this.notes,
       createdAt: createdAt ?? this.createdAt,
@@ -119,6 +123,7 @@ class Account extends Equatable {
         orElse: () => AccountStatus.active,
       ),
       isActive: json['isActive'] as bool? ?? true,
+      isDefault: json['isDefault'] as bool? ?? false,
       description: json['description'] as String?,
       notes: json['notes'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
@@ -145,6 +150,7 @@ class Account extends Equatable {
       'type': type.name,
       'status': status.name,
       'isActive': isActive,
+      'isDefault': isDefault,
       'description': description,
       'notes': notes,
       'createdAt': createdAt.toIso8601String(),
@@ -171,6 +177,7 @@ class Account extends Equatable {
         type,
         status,
         isActive,
+        isDefault,
         description,
         notes,
         createdAt,
