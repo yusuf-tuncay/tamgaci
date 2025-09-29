@@ -146,6 +146,9 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         throw AuthenticationFailure('Kayıt olunamadı');
       }
 
+      // Tenant ID oluştur (şirket adından veya default)
+      final tenantId = 'default_tenant_${credential.user!.uid.substring(0, 8)}';
+
       // Firestore'da kullanıcı bilgilerini oluştur (best-effort)
       final now = DateTime.now();
       final trialEnd = DateTime(now.year, now.month + 1, now.day);
@@ -160,7 +163,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         phoneDialCode: null,
         role: UserRole.user,
         status: UserStatus.active,
-        tenantId: null, // Will be set by FirebaseAuthService
+        tenantId: tenantId, // Otomatik oluşturulan tenantId
         createdAt: now,
         updatedAt: now,
         isEmailVerified: false,
@@ -177,10 +180,22 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       );
 
       try {
+        // Kullanıcı dokümanını oluştur
         await _firestore
             .collection('users')
             .doc(credential.user!.uid)
             .set(userModel.toFirestore());
+
+        // Tenant dokümanını oluştur
+        await _firestore.collection('tenants').doc(tenantId).set({
+          'id': tenantId,
+          'name': 'Default Company',
+          'ownerId': credential.user!.uid,
+          'memberIds': [credential.user!.uid],
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+          'isActive': true,
+        });
       } on FirebaseException catch (_) {
         // Firestore izni yoksa kayıt Auth tarafında tamamlanmıştır.
       }
@@ -277,6 +292,9 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
     final now = DateTime.now();
     final trialEnd = DateTime(now.year, now.month + 1, now.day);
 
+    // Tenant ID oluştur
+    final tenantId = 'default_tenant_${firebaseUser.uid.substring(0, 8)}';
+
     final userModel = UserModel(
       id: firebaseUser.uid,
       email: firebaseUser.email ?? '',
@@ -290,6 +308,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       phoneDialCode: null,
       role: UserRole.user,
       status: UserStatus.active,
+      tenantId: tenantId, // Otomatik oluşturulan tenantId
       createdAt: firebaseUser.metadata.creationTime ?? now,
       updatedAt: now,
       isEmailVerified: firebaseUser.emailVerified,
@@ -306,10 +325,22 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
     );
 
     try {
+      // Kullanıcı dokümanını oluştur
       await _firestore
           .collection('users')
           .doc(firebaseUser.uid)
           .set(userModel.toFirestore());
+
+      // Tenant dokümanını oluştur
+      await _firestore.collection('tenants').doc(tenantId).set({
+        'id': tenantId,
+        'name': 'Default Company',
+        'ownerId': firebaseUser.uid,
+        'memberIds': [firebaseUser.uid],
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'isActive': true,
+      });
     } catch (e) {
       debugPrint('⚠️ Failed to create missing user document: $e');
     }
