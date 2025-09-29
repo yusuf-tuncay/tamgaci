@@ -201,10 +201,16 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
       builder: (context, ref, child) {
         // Ürünleri al
         final productsAsync = ref.watch(productsStreamProvider);
+        final operationsState = ref.watch(productOperationsProvider);
 
         return productsAsync.when(
           data: (products) {
-            final filteredProducts = _getFilteredProducts(products);
+            // Operations state'den güncel listeyi al
+            final currentProducts = operationsState.products.isNotEmpty 
+                ? operationsState.products 
+                : products;
+            
+            final filteredProducts = _getFilteredProducts(currentProducts);
 
             if (filteredProducts.isEmpty) {
               return _buildEmptyState();

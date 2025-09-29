@@ -52,35 +52,40 @@ final outOfStockProductsStreamProvider = StreamProvider<List<Product>>((ref) {
 });
 
 /// Depoya göre ürünler stream provider'ı
-final productsByWarehouseStreamProvider = StreamProvider.family<List<Product>, String>((ref, warehouseId) {
+final productsByWarehouseStreamProvider =
+    StreamProvider.family<List<Product>, String>((ref, warehouseId) {
   final repository = ref.watch(productRepositoryProvider);
   return repository.getProductsByWarehouse(warehouseId);
 });
 
 /// Depo bazında düşük stoklu ürünler stream provider'ı
-final lowStockProductsByWarehouseStreamProvider = StreamProvider.family<List<Product>, String>((ref, warehouseId) {
+final lowStockProductsByWarehouseStreamProvider =
+    StreamProvider.family<List<Product>, String>((ref, warehouseId) {
   final repository = ref.watch(productRepositoryProvider);
   return repository.getLowStockProductsByWarehouse(warehouseId);
 });
 
 /// Depo bazında stokta olmayan ürünler stream provider'ı
-final outOfStockProductsByWarehouseStreamProvider = StreamProvider.family<List<Product>, String>((ref, warehouseId) {
+final outOfStockProductsByWarehouseStreamProvider =
+    StreamProvider.family<List<Product>, String>((ref, warehouseId) {
   final repository = ref.watch(productRepositoryProvider);
   return repository.getOutOfStockProductsByWarehouse(warehouseId);
 });
 
 /// Ürün detay provider'ı
-final productDetailProvider = FutureProvider.family<Product?, String>((ref, productId) async {
+final productDetailProvider =
+    FutureProvider.family<Product?, String>((ref, productId) async {
   final repository = ref.watch(productRepositoryProvider);
   return repository.getProductById(productId);
 });
 
 /// Ürün istatistikleri provider'ı
-final productStatisticsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+final productStatisticsProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   final repository = ref.watch(productRepositoryProvider);
   final totalProducts = await repository.getActiveProductCount();
   final totalStockValue = await repository.getTotalStockValue();
-  
+
   return {
     'totalProducts': totalProducts,
     'totalStockValue': totalStockValue,
@@ -138,11 +143,11 @@ class ProductNotifier extends StateNotifier<AsyncValue<List<Product>>> {
 }
 
 /// Ürün notifier provider'ı
-final productNotifierProvider = StateNotifierProvider<ProductNotifier, AsyncValue<List<Product>>>((ref) {
+final productNotifierProvider =
+    StateNotifierProvider<ProductNotifier, AsyncValue<List<Product>>>((ref) {
   final repository = ref.watch(productRepositoryProvider);
   return ProductNotifier(repository);
 });
-
 
 /// Kategoriler stream provider'ı
 final productCategoriesStreamProvider = StreamProvider<List<String>>((ref) {
@@ -166,7 +171,6 @@ final productsByCategoryProvider =
   final repository = ref.watch(productRepositoryProvider);
   return repository.getProductsByCategory(category);
 });
-
 
 /// Aktif ürün sayısı provider'ı
 final activeProductCountProvider = FutureProvider<int>((ref) {
@@ -279,9 +283,14 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
 
     try {
       await _repository.createProduct(product);
+      
+      // Listeye yeni ürünü ekle
+      final updatedProducts = [...state.products, product];
+      
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Ürün başarıyla oluşturuldu',
+        products: updatedProducts,
       );
     } catch (e) {
       state = state.copyWith(
@@ -297,9 +306,14 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
 
     try {
       await _repository.updateProduct(product);
+      
+      // Listede ürünü güncelle
+      final updatedProducts = state.products.map((p) => p.id == product.id ? product : p).toList();
+      
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Ürün başarıyla güncellendi',
+        products: updatedProducts,
       );
     } catch (e) {
       state = state.copyWith(
@@ -315,9 +329,14 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
 
     try {
       await _repository.deleteProduct(id);
+      
+      // Listeden silinen ürünü kaldır
+      final updatedProducts = state.products.where((product) => product.id != id).toList();
+      
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Ürün başarıyla silindi',
+        products: updatedProducts,
       );
     } catch (e) {
       state = state.copyWith(
