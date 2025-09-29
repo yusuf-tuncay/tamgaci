@@ -13,6 +13,7 @@ import '../../domain/utils/barcode_generator.dart';
 import '../providers/product_providers.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
 import '../../../warehouses/presentation/providers/warehouse_providers.dart';
+import '../../data/services/firebase_storage_service.dart';
 
 /// Ürün oluşturma sayfası
 class CreateProductPage extends ConsumerStatefulWidget {
@@ -143,7 +144,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     try {
       final ImagePicker picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage();
-      
+
       if (images.isNotEmpty) {
         setState(() {
           _selectedImages.addAll(images.map((image) => File(image.path)));
@@ -928,7 +929,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               ],
             ),
             const SizedBox(height: 16),
-            
+
             // Fotoğraf ekleme butonu
             SizedBox(
               width: double.infinity,
@@ -948,9 +949,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Seçilen fotoğraflar
             if (_selectedImages.isNotEmpty) ...[
               Text(
@@ -1116,9 +1117,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     });
 
     try {
+      final productId = widget.productId ?? DateTime.now().millisecondsSinceEpoch.toString();
+      
+      // Fotoğrafları Firebase Storage'a yükle
+      List<String> imageUrls = [];
+      if (_selectedImages.isNotEmpty) {
+        final storageService = FirebaseStorageService();
+        imageUrls = await storageService.uploadProductImages(productId, _selectedImages);
+      }
+      
       final product = Product(
-        id: widget.productId ??
-            DateTime.now().millisecondsSinceEpoch.toString(),
+        id: productId,
         tenantId: '', // Repository'de set edilecek
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -1172,7 +1181,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             ? null
             : _countryCodeController.text.trim(),
         tags: _tags,
-        images: _images,
+        images: imageUrls,
         linkedProducts: _linkedProducts.isEmpty ? null : _linkedProducts,
         notes: _notesController.text.trim().isEmpty
             ? null

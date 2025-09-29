@@ -10,6 +10,7 @@ import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart' as custom_error;
 import '../../domain/entities/product.dart';
 import '../providers/product_providers.dart';
+import '../../data/services/firebase_storage_service.dart';
 
 /// Ürün detay sayfası
 class ProductDetailPage extends ConsumerWidget {
@@ -174,12 +175,12 @@ class ProductDetailPage extends ConsumerWidget {
                   icon: const Icon(Icons.arrow_back, color: Colors.black87),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                actions: [
-                  IconButton(
-                    onPressed: () => _showProductActions(context, product),
-                    icon: const Icon(Icons.more_vert, color: Colors.black87),
-                  ),
-                ],
+                       actions: [
+                         IconButton(
+                           onPressed: () => _showProductActions(context, product, ref),
+                           icon: const Icon(Icons.more_vert, color: Colors.black87),
+                         ),
+                       ],
               ),
               body: Column(
                 children: [
@@ -197,6 +198,12 @@ class ProductDetailPage extends ConsumerWidget {
                           _buildProductHeader(context, product),
 
                           const SizedBox(height: 24),
+
+                          // Ürün fotoğrafları
+                          if (product.images.isNotEmpty) ...[
+                            _buildProductImagesSection(context, product),
+                            const SizedBox(height: 24),
+                          ],
 
                           // Fiyat bilgileri
                           _buildPricingSection(context, product),
@@ -222,7 +229,8 @@ class ProductDetailPage extends ConsumerWidget {
                     ),
                   ),
                 ],
-              );
+              ),
+            );  
           },
           loading: () => const Scaffold(
             appBar: CustomAppBar(
@@ -245,6 +253,115 @@ class ProductDetailPage extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildProductImagesSection(BuildContext context, Product product) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.photo_library, color: Colors.blue[600]),
+                const SizedBox(width: 8),
+                Text(
+                  'Ürün Fotoğrafları',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? TamgaciConstants.textPrimaryDark
+                        : TamgaciConstants.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 120,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: product.images.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => _showImageDialog(context, product.images, index),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          product.images[index],
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.broken_image,
+                                color: Colors.grey[600],
+                                size: 32,
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 100,
+                              height: 100,
+                              color: Colors.grey[200],
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showImageDialog(BuildContext context, List<String> images, int initialIndex) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          child: PageView.builder(
+            controller: PageController(initialPage: initialIndex),
+            itemCount: images.length,
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                child: Image.network(
+                  images[index],
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(
+                      child: Icon(Icons.broken_image, size: 64),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -677,7 +794,7 @@ class ProductDetailPage extends ConsumerWidget {
     }
   }
 
-  void _showProductActions(BuildContext context, Product product) {
+  void _showProductActions(BuildContext context, Product product, WidgetRef ref) {
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -710,7 +827,7 @@ class ProductDetailPage extends ConsumerWidget {
               title: const Text('Sil', style: TextStyle(color: Colors.red)),
               onTap: () {
                 Navigator.pop(context);
-                _showDeleteConfirmation(context, product);
+                _showDeleteConfirmation(context, product, ref);
               },
             ),
           ],
@@ -719,7 +836,7 @@ class ProductDetailPage extends ConsumerWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, Product product) {
+  void _showDeleteConfirmation(BuildContext context, Product product, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -734,7 +851,7 @@ class ProductDetailPage extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              await _deleteProduct(context, product);
+              await _deleteProduct(context, product, ref);
             },
             child: const Text('Sil', style: TextStyle(color: Colors.red)),
           ),
@@ -743,13 +860,17 @@ class ProductDetailPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _deleteProduct(BuildContext context, Product product) async {
+  Future<void> _deleteProduct(BuildContext context, Product product, WidgetRef ref) async {
     try {
-      final container = ProviderScope.containerOf(context);
-      await container
-          .read(productOperationsProvider.notifier)
-          .deleteProduct(product.id);
+      // Firebase Storage'dan fotoğrafları sil
+      if (product.images.isNotEmpty) {
+        final storageService = FirebaseStorageService();
+        await storageService.deleteProductImages(product.images);
+      }
 
+      // Ürünü sil
+      await ref.read(productOperationsProvider.notifier).deleteProduct(product.id);
+      
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -757,13 +878,14 @@ class ProductDetailPage extends ConsumerWidget {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.of(context).pop();
+        // Ürün listesine geri dön
+        Navigator.popUntil(context, (route) => route.isFirst);
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Hata: $e'),
+            content: Text('Ürün silinirken hata: $e'),
             backgroundColor: Colors.red,
           ),
         );

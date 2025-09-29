@@ -87,11 +87,36 @@ class ProductCard extends StatelessWidget {
         color: _getTypeColor().withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
-        _getTypeIcon(),
-        color: _getTypeColor(),
-        size: 20,
-      ),
+      child: product.images.isNotEmpty
+          ? ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                product.images.first,
+                width: 40,
+                height: 40,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    _getTypeIcon(),
+                    color: _getTypeColor(),
+                    size: 20,
+                  );
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Icon(
+                    _getTypeIcon(),
+                    color: _getTypeColor(),
+                    size: 20,
+                  );
+                },
+              ),
+            )
+          : Icon(
+              _getTypeIcon(),
+              color: _getTypeColor(),
+              size: 20,
+            ),
     );
   }
 
@@ -210,7 +235,8 @@ class ProductCard extends StatelessWidget {
             fontWeight: FontWeight.w600,
           ),
         ),
-        if (product.criticalStockQuantity != null && product.totalStockQuantity <= product.criticalStockQuantity!) ...[
+        if (product.criticalStockQuantity != null &&
+            product.totalStockQuantity <= product.criticalStockQuantity!) ...[
           const SizedBox(width: 4),
           Icon(Icons.warning, size: 10, color: Colors.orange[600]),
         ],
@@ -261,7 +287,6 @@ class ProductCard extends StatelessWidget {
       ],
     );
   }
-
 
   Color _getTypeColor() {
     switch (product.type) {
