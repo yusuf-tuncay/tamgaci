@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_widget.dart';
@@ -884,14 +885,14 @@ class ProductDetailPage extends ConsumerWidget {
       // Stream provider'ı refresh et - mounted kontrolü ile
       if (context.mounted) {
         ref.refresh(productsStreamProvider);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Ürün başarıyla silindi'),
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Ürün listesine geri dön - daha güvenli navigation
         if (Navigator.canPop(context)) {
           Navigator.pop(context);

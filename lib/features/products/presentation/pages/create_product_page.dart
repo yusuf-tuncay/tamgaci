@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../../../core/theme/constants.dart';
 import '../../domain/entities/product.dart';
@@ -1333,7 +1334,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         if (mounted) {
           // Stream provider'ı refresh et - mounted kontrolü ile
           ref.refresh(productsStreamProvider);
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ürün başarıyla güncellendi'),
@@ -1350,7 +1351,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         if (mounted) {
           // Stream provider'ı refresh et - mounted kontrolü ile
           ref.refresh(productsStreamProvider);
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Ürün başarıyla oluşturuldu'),
