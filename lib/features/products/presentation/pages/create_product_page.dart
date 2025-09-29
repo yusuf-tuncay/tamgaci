@@ -647,7 +647,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 final warehousesAsync = ref.watch(warehousesProvider);
                 return warehousesAsync.when(
                   data: (warehouses) => DropdownButtonFormField<Warehouse>(
-                    value: _selectedWarehouse,
+                    initialValue: _selectedWarehouse,
                     decoration: const InputDecoration(
                       labelText: 'Depo Seçimi *',
                       border: OutlineInputBorder(),
