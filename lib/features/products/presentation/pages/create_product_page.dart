@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/widgets/formatted_text_field.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/utils/barcode_generator.dart';
 import '../providers/product_providers.dart';
@@ -144,7 +143,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       _salesCurrency = product.salesCurrency;
       _purchaseCurrency = product.purchaseCurrency;
       _images = List<String>.from(product.images);
-      
+
       // Düzenleme modunda depo seçimini yap
       if (product.warehouseId != null) {
         // Mevcut depo bilgilerini sakla, dropdown'da eşleşecek
@@ -461,16 +460,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         child: Column(
           children: [
             // Ürün adı
-            FormattedNameField(
-              label: 'Ürün Adı *',
+            TextFormField(
               controller: _nameController,
-              hint: 'Örn: iPhone 15 Pro',
+              decoration: const InputDecoration(
+                labelText: 'Ürün Adı *',
+                hintText: 'Örn: iPhone 15 Pro',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.inventory_2),
+              ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'Ürün adı zorunludur';
                 }
                 return null;
               },
+              textCapitalization: TextCapitalization.words,
             ),
 
             const SizedBox(height: 16),
@@ -830,9 +834,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       );
                       _selectedWarehouse = defaultWarehouse;
                     }
-                    
+
                     // Düzenleme modunda mevcut depo seçimini yap
-                    if (widget.productId != null && _selectedWarehouse == null && _currentWarehouseId != null) {
+                    if (widget.productId != null &&
+                        _selectedWarehouse == null &&
+                        _currentWarehouseId != null) {
                       // Düzenleme modunda mevcut depo seçimi yapılacak
                       // Mevcut depo seçimini yap
                       final currentWarehouse = warehouses.firstWhere(
@@ -843,7 +849,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     }
 
                     return DropdownButtonFormField<Warehouse>(
-                      value: _selectedWarehouse,
+                      initialValue: _selectedWarehouse,
                       decoration: const InputDecoration(
                         labelText: 'Depo Seçimi *',
                         border: OutlineInputBorder(),
