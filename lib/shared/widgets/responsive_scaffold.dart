@@ -34,11 +34,7 @@ class ResponsiveScaffold extends StatelessWidget {
           children: [
             SizedBox(
               width: sidePanelWidth,
-              child: Material(
-                color: Theme.of(context).drawerTheme.backgroundColor ??
-                    Theme.of(context).colorScheme.surface,
-                child: drawerContent,
-              ),
+              child: drawerContent,
             ),
             const VerticalDivider(width: 1),
             Expanded(
