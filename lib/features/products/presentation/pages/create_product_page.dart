@@ -152,23 +152,30 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       final List<XFile> images = await picker.pickMultiImage();
       
       if (images.isNotEmpty && mounted) {
+        // Tüm işlemleri tek seferde yap
         if (kIsWeb) {
-          // Web için bytes kullan
+          final List<Uint8List> newBytes = [];
           for (final image in images) {
             final bytes = await image.readAsBytes();
-            if (mounted) {
-              setState(() {
-                _selectedImageBytes.add(bytes);
-              });
-            }
+            newBytes.add(bytes);
+          }
+          
+          if (mounted) {
+            setState(() {
+              _selectedImageBytes.addAll(newBytes);
+            });
           }
         } else {
-          // Mobil için File kullan
-          setState(() {
-            for (final image in images) {
-              _selectedImages.add(File(image.path));
-            }
-          });
+          final List<File> newFiles = [];
+          for (final image in images) {
+            newFiles.add(File(image.path));
+          }
+          
+          if (mounted) {
+            setState(() {
+              _selectedImages.addAll(newFiles);
+            });
+          }
         }
       }
     } catch (e) {
@@ -1014,12 +1021,28 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 100,
+                                        height: 100,
+                                        color: Colors.grey[300],
+                                        child: Icon(Icons.broken_image, color: Colors.grey[600]),
+                                      );
+                                    },
                                   )
                                 : Image.file(
                                     _selectedImages[index],
                                     width: 100,
                                     height: 100,
                                     fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: 100,
+                                        height: 100,
+                                        color: Colors.grey[300],
+                                        child: Icon(Icons.broken_image, color: Colors.grey[600]),
+                                      );
+                                    },
                                   ),
                           ),
                           Positioned(
@@ -1165,13 +1188,25 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       if (kIsWeb
           ? _selectedImageBytes.isNotEmpty
           : _selectedImages.isNotEmpty) {
-        final storageService = FirebaseStorageService();
-        if (kIsWeb) {
-          imageUrls = await storageService.uploadProductImageBytesList(
-              productId, _selectedImageBytes);
-        } else {
-          imageUrls = await storageService.uploadProductImages(
-              productId, _selectedImages);
+        try {
+          final storageService = FirebaseStorageService();
+          if (kIsWeb) {
+            imageUrls = await storageService.uploadProductImageBytesList(
+                productId, _selectedImageBytes);
+          } else {
+            imageUrls = await storageService.uploadProductImages(
+                productId, _selectedImages);
+          }
+        } catch (storageError) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Fotoğraf yükleme hatası: $storageError'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          // Fotoğraf yükleme hatası olsa bile ürünü kaydet
         }
       }
 
