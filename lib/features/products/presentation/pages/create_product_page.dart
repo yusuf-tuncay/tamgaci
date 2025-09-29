@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/utils/barcode_generator.dart';
