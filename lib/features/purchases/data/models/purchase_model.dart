@@ -5,6 +5,7 @@ import 'package:tamgaci/features/purchases/domain/entities/purchase.dart';
 class PurchaseModel extends Purchase {
   const PurchaseModel({
     required super.id,
+    required super.tenantId,
     required super.purchaseNumber,
     required super.type,
     required super.status,
@@ -39,6 +40,7 @@ class PurchaseModel extends Purchase {
     final data = doc.data() as Map<String, dynamic>;
     return PurchaseModel(
       id: doc.id,
+      tenantId: data['tenantId'] as String? ?? '',
       purchaseNumber: data['purchaseNumber'] as String,
       type: PurchaseType.values.firstWhere(
         (e) => e.name == data['type'],
@@ -115,6 +117,7 @@ class PurchaseModel extends Purchase {
   }) {
     return PurchaseModel(
       id: id ?? this.id,
+      tenantId: tenantId,
       purchaseNumber: purchaseNumber ?? this.purchaseNumber,
       type: type ?? this.type,
       status: status ?? this.status,
@@ -185,6 +188,7 @@ class PurchaseModel extends Purchase {
   Purchase toEntity() {
     return Purchase(
       id: id,
+      tenantId: tenantId,
       purchaseNumber: purchaseNumber,
       type: type,
       status: status,
@@ -219,6 +223,7 @@ class PurchaseModel extends Purchase {
   factory PurchaseModel.fromEntity(Purchase purchase) {
     return PurchaseModel(
       id: purchase.id,
+      tenantId: purchase.tenantId,
       purchaseNumber: purchase.purchaseNumber,
       type: purchase.type,
       status: purchase.status,

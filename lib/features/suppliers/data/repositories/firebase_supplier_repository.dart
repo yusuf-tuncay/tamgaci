@@ -643,6 +643,7 @@ class FirebaseSupplierRepository implements SupplierRepository {
     final data = doc.data() as Map<String, dynamic>;
     return Supplier(
       id: doc.id,
+      tenantId: data['tenantId'] ?? '',
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       phone: data['phone'] ?? '',

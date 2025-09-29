@@ -28,6 +28,7 @@ import '../../domain/entities/dashboard_summary.dart';
 import '../../../inventory/presentation/providers/warehouse_providers.dart';
 import '../../../inventory/presentation/providers/stock_providers.dart';
 import '../../../user_profile/presentation/providers/user_profile_providers.dart';
+import '../../../payments/presentation/providers/payment_providers.dart';
 // imports removed: invoice backfill kaldırıldı
 
 /// Dashboard Sayfası
@@ -180,6 +181,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ref.invalidate(dashboardSummaryProvider);
         ref.invalidate(recentTransactionsProvider);
         ref.invalidate(monthlyChartDataProvider);
+        ref.invalidate(paymentsProvider);
+        ref.invalidate(paymentStatsProvider);
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -192,6 +195,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const QuickActionsWidget(),
             const SizedBox(height: 16),
             _buildStatsGrid(dashboardSummaryAsync, isDark),
+            const SizedBox(height: 16),
+            _buildPaymentsSection(isDark),
             const SizedBox(height: 16),
             _buildChartSection(monthlyChartAsync, isDark),
             const SizedBox(height: 16),
@@ -673,6 +678,194 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
+  /// Tahsilat bölümü
+  Widget _buildPaymentsSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.black12,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.payments_outlined,
+                color: Colors.green,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Tahsilat İstatistikleri',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+              ),
+              const Spacer(),
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, TamgaciRoutes.paymentsHome);
+                },
+                child: Text(
+                  'Tümünü Gör',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.green,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Consumer(
+            builder: (context, ref, child) {
+              final paymentsAsync = ref.watch(paymentsProvider);
+              final paymentStatsAsync = ref.watch(paymentStatsProvider);
+
+              return paymentsAsync.when(
+                data: (payments) {
+                  return paymentStatsAsync.when(
+                    data: (stats) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: _buildPaymentStatCard(
+                              'Toplam Tahsilat',
+                              '${payments.length}',
+                              'işlem',
+                              Icons.payments,
+                              Colors.green,
+                              isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildPaymentStatCard(
+                              'Toplam Tutar',
+                              '₺${stats['totalAmount']?.toStringAsFixed(0) ?? '0'}',
+                              'TRY',
+                              Icons.attach_money,
+                              Colors.blue,
+                              isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildPaymentStatCard(
+                              'Tamamlanan',
+                              '${stats['completed'] ?? 0}',
+                              'işlem',
+                              Icons.check_circle,
+                              Colors.teal,
+                              isDark,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildPaymentStatCard(
+                              'Bekleyen',
+                              '${stats['pending'] ?? 0}',
+                              'işlem',
+                              Icons.schedule,
+                              Colors.orange,
+                              isDark,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) => Text('Hata: $error'),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Text('Hata: $error'),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentStatCard(
+    String title,
+    String value,
+    String subtitle,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 16),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.grey[900],
+            ),
+          ),
+          Text(
+            subtitle,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: isDark ? Colors.grey[400] : Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// İstatistik kartları grid'i
   Widget _buildStatsGrid(
       AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
@@ -877,6 +1070,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         return Icons.money_off;
       case TransactionType.invoice:
         return Icons.receipt;
+      case TransactionType.payment:
+        return Icons.payments;
     }
   }
 
@@ -889,6 +1084,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         return Colors.red;
       case TransactionType.invoice:
         return Colors.blue;
+      case TransactionType.payment:
+        return Colors.teal;
     }
   }
 }

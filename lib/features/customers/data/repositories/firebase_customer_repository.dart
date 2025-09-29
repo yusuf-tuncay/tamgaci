@@ -432,12 +432,16 @@ class FirebaseCustomerRepository implements CustomerRepository {
       );
 
       // Debug: Firestore'a kayıt öncesi
-      debugPrint('DEBUG: Firestore\'a kayıt öncesi - maturityDays: ${customerEntity.maturityDays}');
-      debugPrint('DEBUG: Firestore\'a kayıt öncesi - fixedDiscountRate: ${customerEntity.fixedDiscountRate}');
-      
+      debugPrint(
+          'DEBUG: Firestore\'a kayıt öncesi - maturityDays: ${customerEntity.maturityDays}');
+      debugPrint(
+          'DEBUG: Firestore\'a kayıt öncesi - fixedDiscountRate: ${customerEntity.fixedDiscountRate}');
+
       final firestoreData = customerEntity.toFirestore();
-      debugPrint('DEBUG: Firestore data - maturityDays: ${firestoreData['maturityDays']}');
-      debugPrint('DEBUG: Firestore data - fixedDiscountRate: ${firestoreData['fixedDiscountRate']}');
+      debugPrint(
+          'DEBUG: Firestore data - maturityDays: ${firestoreData['maturityDays']}');
+      debugPrint(
+          'DEBUG: Firestore data - fixedDiscountRate: ${firestoreData['fixedDiscountRate']}');
 
       await _firestore
           .collection('tenants')
@@ -445,7 +449,7 @@ class FirebaseCustomerRepository implements CustomerRepository {
           .collection('customers')
           .doc(customer.id)
           .update(firestoreData);
-          
+
       // Debug: Firestore'a kayıt sonrası
       debugPrint('DEBUG: Firestore\'a kayıt başarılı!');
     } catch (e) {

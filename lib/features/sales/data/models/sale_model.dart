@@ -6,6 +6,7 @@ import 'package:tamgaci/features/sales/domain/entities/sale.dart';
 class SaleModel extends Sale {
   const SaleModel({
     required super.id,
+    required super.tenantId,
     required super.saleNumber,
     required super.type,
     required super.status,
@@ -40,6 +41,7 @@ class SaleModel extends Sale {
     final data = doc.data() as Map<String, dynamic>;
     return SaleModel(
       id: doc.id,
+      tenantId: data['tenantId'] ?? '',
       saleNumber: data['saleNumber'] ?? '',
       type: SaleType.values.firstWhere(
         (e) => e.name == data['type'],
@@ -126,6 +128,7 @@ class SaleModel extends Sale {
   Sale toEntity() {
     return Sale(
       id: id,
+      tenantId: tenantId,
       saleNumber: saleNumber,
       type: type,
       status: status,
@@ -160,6 +163,7 @@ class SaleModel extends Sale {
   factory SaleModel.fromEntity(Sale sale) {
     return SaleModel(
       id: sale.id,
+      tenantId: sale.tenantId,
       saleNumber: sale.saleNumber,
       type: sale.type,
       status: sale.status,
@@ -224,6 +228,7 @@ class SaleModel extends Sale {
   }) {
     return SaleModel(
       id: id ?? this.id,
+      tenantId: tenantId,
       saleNumber: saleNumber ?? this.saleNumber,
       type: type ?? this.type,
       status: status ?? this.status,

@@ -68,20 +68,33 @@ class PaymentsHomePage extends StatelessWidget {
                             children: [
                               Text(
                                 'Tahsilat Modülü',
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[800],
+                                    ),
                               ),
                               const SizedBox(height: 4),
                               Text(
                                 'Muhasebe işlemlerinizi kolayca yönetin',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.grey[600],
-                                ),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.grey[600],
+                                    ),
                               ),
                             ],
                           ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.assessment),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/payments/reports');
+                          },
+                          tooltip: 'Tahsilat Raporları',
                         ),
                       ],
                     ),
@@ -103,7 +116,8 @@ class PaymentsHomePage extends StatelessWidget {
                       subtitle: 'Nakit ve banka işlemleri',
                       icon: Icons.monetization_on,
                       color: Colors.green,
-                      onTap: () => Navigator.pushNamed(context, '/payments/cash'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/payments/cash'),
                     ),
                     _buildPaymentCategoryCard(
                       context: context,
@@ -111,7 +125,8 @@ class PaymentsHomePage extends StatelessWidget {
                       subtitle: 'Çek işlemleri',
                       icon: Icons.receipt_long,
                       color: Colors.orange,
-                      onTap: () => Navigator.pushNamed(context, '/payments/check'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/payments/check'),
                     ),
                     _buildPaymentCategoryCard(
                       context: context,
@@ -119,7 +134,8 @@ class PaymentsHomePage extends StatelessWidget {
                       subtitle: 'Senet işlemleri',
                       icon: Icons.description,
                       color: Colors.purple,
-                      onTap: () => Navigator.pushNamed(context, '/payments/promissory'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/payments/promissory'),
                     ),
                     _buildPaymentCategoryCard(
                       context: context,
@@ -127,7 +143,8 @@ class PaymentsHomePage extends StatelessWidget {
                       subtitle: 'Hesap transferleri',
                       icon: Icons.swap_horiz,
                       color: Colors.blue,
-                      onTap: () => Navigator.pushNamed(context, '/payments/transfer'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/payments/transfer'),
                     ),
                     _buildPaymentCategoryCard(
                       context: context,
@@ -135,7 +152,8 @@ class PaymentsHomePage extends StatelessWidget {
                       subtitle: 'Fiş işlemleri',
                       icon: Icons.receipt,
                       color: Colors.red,
-                      onTap: () => Navigator.pushNamed(context, '/payments/voucher'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/payments/voucher'),
                     ),
                     _buildPaymentCategoryCard(
                       context: context,
@@ -143,7 +161,8 @@ class PaymentsHomePage extends StatelessWidget {
                       subtitle: 'Bakiye düzeltme işlemleri',
                       icon: Icons.balance,
                       color: Colors.teal,
-                      onTap: () => Navigator.pushNamed(context, '/payments/balance'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/payments/balance'),
                     ),
                   ],
                 ),
@@ -203,17 +222,17 @@ class PaymentsHomePage extends StatelessWidget {
               Text(
                 title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[800],
+                    ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
+                      color: Colors.grey[600],
+                    ),
                 textAlign: TextAlign.center,
               ),
             ],

@@ -521,6 +521,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
     try {
       Stock(
         id: widget.stockId ?? '',
+        tenantId: '', // Repository'de set edilecek
         productId: _productIdController.text,
         warehouseId: _selectedWarehouseId!,
         quantity: double.parse(_quantityController.text),

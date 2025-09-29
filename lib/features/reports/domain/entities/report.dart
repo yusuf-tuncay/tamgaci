@@ -11,6 +11,10 @@ enum ReportType {
   customer('Müşteri Raporu'),
   supplier('Tedarikçi Raporu'),
   product('Ürün Raporu'),
+  payments('Tahsilat Raporu'),
+  paymentSummary('Tahsilat Özet Raporu'),
+  paymentByType('Tahsilat Türü Raporu'),
+  paymentByCustomer('Müşteri Tahsilat Raporu'),
   custom('Özel Rapor');
 
   const ReportType(this.displayName);

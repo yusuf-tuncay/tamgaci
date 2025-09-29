@@ -79,6 +79,9 @@ import 'package:tamgaci/features/payments/presentation/pages/promissory_payments
 import 'package:tamgaci/features/payments/presentation/pages/transfer_payments_page.dart';
 import 'package:tamgaci/features/payments/presentation/pages/voucher_payments_page.dart';
 import 'package:tamgaci/features/payments/presentation/pages/balance_payments_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/payment_history_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/payment_reports_page.dart';
+import 'package:tamgaci/features/payments/presentation/pages/payment_detailed_report_page.dart';
 
 /// Tamgaci Uygulaması Route Yönetim Sınıfı
 /// Tüm sayfa route'larını merkezi olarak yönetir
@@ -351,6 +354,11 @@ class TamgaciRoutes {
 
   /// Bakiye Düzelt işlemleri
   static const String balancePayments = '/payments/balance';
+  static const String paymentHistory = '/payments/history';
+  
+  /// Tahsilat Raporları
+  static const String paymentReports = '/payments/reports';
+  static const String paymentDetailedReport = '/payments/reports/detailed';
 
   // ========== ROUTE GENERATOR ==========
 
@@ -800,6 +808,22 @@ class TamgaciRoutes {
 
       case balancePayments:
         return _createRoute(const BalancePaymentsPage(), settings: settings);
+      case paymentHistory:
+        return _createRoute(const PaymentHistoryPage(), settings: settings);
+      case paymentReports:
+        return _createRoute(const PaymentReportsPage(), settings: settings);
+      case paymentDetailedReport:
+        final args = arguments as Map<String, dynamic>?;
+        return _createRoute(
+          PaymentDetailedReportPage(
+            startDate: args?['startDate'] ?? DateTime.now().subtract(const Duration(days: 30)),
+            endDate: args?['endDate'] ?? DateTime.now(),
+            paymentType: args?['paymentType'] ?? 'all',
+            status: args?['status'] ?? 'all',
+            customerId: args?['customerId'] ?? 'all',
+          ),
+          settings: settings,
+        );
 
       // ========== SHARED ROUTE'LAR ==========
 
@@ -1028,6 +1052,12 @@ class TamgaciRoutes {
         return 'Borç-Alacak Fişleri';
       case balancePayments:
         return 'Bakiye Düzelt';
+      case paymentHistory:
+        return 'Tahsilat Geçmişi';
+      case paymentReports:
+        return 'Tahsilat Raporları';
+      case paymentDetailedReport:
+        return 'Detaylı Tahsilat Raporu';
 
       // Eski cash route'ları kaldırıldı
       case reportsOverview:

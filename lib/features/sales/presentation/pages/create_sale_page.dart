@@ -1415,98 +1415,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     );
   }
 
-  Widget _buildTryPaymentSummary() {
-    // TRY seçilmişse, tüm ürünleri TRY'ye çevir (zaten TRY olanlar aynı kalır)
-    double totalSubtotal = 0.0;
-    double totalDiscount = 0.0;
-    double totalTax = 0.0;
-    double totalAmount = 0.0;
-
-    for (final item in _items) {
-      // Her ürünün tutarlarını TRY'ye çevir
-      final itemSubtotal = ExchangeRateService().convertCurrency(
-          item.unitPrice * item.quantity, item.currency, 'TRY');
-      final itemDiscount = ExchangeRateService()
-          .convertCurrency(item.discountAmount, item.currency, 'TRY');
-      final itemTax = ExchangeRateService()
-          .convertCurrency(item.taxAmount, item.currency, 'TRY');
-      final itemTotal = ExchangeRateService()
-          .convertCurrency(item.totalAmount, item.currency, 'TRY');
-
-      totalSubtotal += itemSubtotal;
-      totalDiscount += itemDiscount;
-      totalTax += itemTax;
-      totalAmount += itemTotal;
-    }
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Özet (TRY)',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16.0),
-
-            // Ara Toplam
-            _buildSummaryRow(
-                'Ara Toplam:', _formatMoney(totalSubtotal, currency: 'TRY')),
-
-            // İskonto
-            if (totalDiscount > 0)
-              _buildSummaryRow(
-                  'İskonto:', _formatMoney(totalDiscount, currency: 'TRY'),
-                  isNegative: true),
-
-            // KDV
-            if (totalTax > 0)
-              _buildSummaryRow('KDV:', _formatMoney(totalTax, currency: 'TRY'),
-                  isPositive: true),
-
-            const SizedBox(height: 8.0),
-
-            // Toplam
-            Container(
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(color: Colors.blue.shade200),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'GENEL TOPLAM:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  Text(
-                    _formatMoney(totalAmount, currency: 'TRY'),
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.green.shade700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildCurrencySummaryCardWithPaymentCurrency({
     required String currency,
     required double subtotal,
@@ -2115,6 +2023,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
     final sale = Sale(
       id: widget.saleId ?? '',
+      tenantId: '', // Repository'de set edilecek
       saleNumber: _saleNumberController.text,
       customerId: _customerIdController.text,
       customerName: _customerNameController.text.isNotEmpty
@@ -2458,6 +2367,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
     final sale = Sale(
       id: widget.saleId ?? '',
+      tenantId: '', // Repository'de set edilecek
       saleNumber: _saleNumberController.text,
       customerId: _customerIdController.text,
       customerName: _customerNameController.text.isNotEmpty
@@ -3092,7 +3002,8 @@ class _AddItemDialogState extends State<_AddItemDialog> {
     // Müşteri iskonto oranı güncellendiğinde güncelle
     if (oldWidget.customerDiscountRate != widget.customerDiscountRate) {
       _customerDiscountRate = widget.customerDiscountRate;
-      debugPrint('DEBUG: Müşteri iskonto oranı güncellendi: $_customerDiscountRate');
+      debugPrint(
+          'DEBUG: Müşteri iskonto oranı güncellendi: $_customerDiscountRate');
     }
   }
 

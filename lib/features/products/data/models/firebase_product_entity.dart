@@ -8,6 +8,7 @@ import 'package:tamgaci/features/products/domain/entities/product_attribute.dart
 
 class ProductEntity {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String name;
   final String? description;
   final String? productCode;
@@ -47,6 +48,7 @@ class ProductEntity {
 
   ProductEntity({
     required this.id,
+    required this.tenantId,
     required this.name,
     this.description,
     this.productCode,
@@ -89,6 +91,7 @@ class ProductEntity {
     final data = doc.data() as Map<String, dynamic>;
     return ProductEntity(
       id: doc.id,
+      tenantId: data['tenantId'] ?? '',
       name: data['name'] ?? '',
       description: data['description'],
       productCode: data['productCode'],
@@ -153,6 +156,7 @@ class ProductEntity {
   factory ProductEntity.fromDomain(Product product) {
     return ProductEntity(
       id: product.id,
+      tenantId: product.tenantId,
       name: product.name,
       description: product.description,
       productCode: product.productCode,
@@ -237,6 +241,7 @@ class ProductEntity {
   Product toDomain() {
     return Product(
       id: id,
+      tenantId: tenantId,
       name: name,
       description: description,
       productCode: productCode,
@@ -318,6 +323,7 @@ class ProductEntity {
   }) {
     return ProductEntity(
       id: id ?? this.id,
+      tenantId: tenantId,
       name: name ?? this.name,
       description: description ?? this.description,
       productCode: productCode ?? this.productCode,

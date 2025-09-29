@@ -773,6 +773,7 @@ class _EnhancedSaleDetailPageState extends ConsumerState<EnhancedSaleDetailPage>
     final sales = [
       Sale(
         id: '1',
+        tenantId: 'mock-tenant',
         saleNumber: 'SAT-2024-001',
         type: SaleType.invoice,
         status: SaleStatus.delivered,

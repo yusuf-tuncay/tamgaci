@@ -663,6 +663,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     try {
       final product = Product(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        tenantId: '', // Repository'de set edilecek
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
             ? null

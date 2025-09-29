@@ -385,7 +385,8 @@ class FirebaseCustomerEntity {
       specialPriceListId: specialPriceListId ?? this.specialPriceListId,
       openAccountRiskLimit: openAccountRiskLimit ?? this.openAccountRiskLimit,
       authorizedPersonName: authorizedPersonName ?? this.authorizedPersonName,
-      authorizedPersonPhone: authorizedPersonPhone ?? this.authorizedPersonPhone,
+      authorizedPersonPhone:
+          authorizedPersonPhone ?? this.authorizedPersonPhone,
       branches: branches ?? this.branches,
       notes: notes ?? this.notes,
       isActive: isActive ?? this.isActive,

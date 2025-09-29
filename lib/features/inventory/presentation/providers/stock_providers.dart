@@ -10,6 +10,7 @@ class MockStockRepository implements StockRepository {
   static final List<Stock> _mockStocks = [
     Stock(
       id: '1',
+      tenantId: 'mock-tenant',
       productId: '1',
       warehouseId: '1',
       quantity: 150.0,
@@ -26,6 +27,7 @@ class MockStockRepository implements StockRepository {
     ),
     Stock(
       id: '2',
+      tenantId: 'mock-tenant',
       productId: '2',
       warehouseId: '1',
       quantity: 25.0,
@@ -42,6 +44,7 @@ class MockStockRepository implements StockRepository {
     ),
     Stock(
       id: '3',
+      tenantId: 'mock-tenant',
       productId: '3',
       warehouseId: '2',
       quantity: 75.0,
@@ -58,6 +61,7 @@ class MockStockRepository implements StockRepository {
     ),
     Stock(
       id: '4',
+      tenantId: 'mock-tenant',
       productId: '1',
       warehouseId: '2',
       quantity: 80.0,
@@ -74,6 +78,7 @@ class MockStockRepository implements StockRepository {
     ),
     Stock(
       id: '5',
+      tenantId: 'mock-tenant',
       productId: '4',
       warehouseId: '3',
       quantity: 200.0,

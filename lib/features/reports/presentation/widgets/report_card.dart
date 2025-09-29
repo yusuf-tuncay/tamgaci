@@ -222,6 +222,14 @@ class ReportCard extends StatelessWidget {
         return Colors.pink.shade300;
       case ReportType.custom:
         return Colors.grey.shade300;
+      case ReportType.payments:
+        return Colors.cyan.shade300;
+      case ReportType.paymentSummary:
+        return Colors.deepPurple.shade300;
+      case ReportType.paymentByType:
+        return Colors.amber.shade300;
+      case ReportType.paymentByCustomer:
+        return Colors.lightBlue.shade300;
     }
   }
 

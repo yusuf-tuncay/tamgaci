@@ -26,6 +26,7 @@ enum InventoryItemStatus {
 /// Envanter öğesi entity'si
 class InventoryItem extends Equatable {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String name;
   final String? description;
   final String? sku;
@@ -60,6 +61,7 @@ class InventoryItem extends Equatable {
 
   const InventoryItem({
     required this.id,
+    required this.tenantId,
     required this.name,
     this.description,
     this.sku,
@@ -129,6 +131,7 @@ class InventoryItem extends Equatable {
   }) {
     return InventoryItem(
       id: id ?? this.id,
+      tenantId: tenantId,
       name: name ?? this.name,
       description: description ?? this.description,
       sku: sku ?? this.sku,
@@ -203,6 +206,7 @@ class InventoryItem extends Equatable {
   factory InventoryItem.fromJson(Map<String, dynamic> json) {
     return InventoryItem(
       id: json['id'] as String,
+      tenantId: json['tenantId'] as String? ?? '',
       name: json['name'] as String,
       description: json['description'] as String?,
       sku: json['sku'] as String?,

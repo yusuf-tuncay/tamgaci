@@ -391,7 +391,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                                   value = 'no_stock';
                                 }
                                 return DropdownButtonFormField<String>(
-                                  value: value,
+                                  initialValue: value,
                                   decoration:
                                       const InputDecoration(labelText: 'Depo'),
                                   isExpanded: true,
@@ -417,7 +417,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                               },
                               loading: () => const LinearProgressIndicator(),
                               error: (e, _) => DropdownButtonFormField<String>(
-                                value: 'no_stock',
+                                initialValue: 'no_stock',
                                 decoration:
                                     const InputDecoration(labelText: 'Depo'),
                                 items: const [
@@ -718,6 +718,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
       final purchase = Purchase(
         id: '',
+        tenantId: '', // Repository'de set edilecek
         purchaseNumber: _purchaseNumberController.text,
         type: _purchaseType,
         status: _isDraft ? PurchaseStatus.draft : PurchaseStatus.pending,
@@ -1496,15 +1497,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         } else {
           // Kur bilgisi yoksa real-time kur kullan
           try {
-            final rate = ExchangeRateService().getExchangeRate(currency);
-            if (rate != null) {
-              convertedTotal = ExchangeRateService()
-                  .convertCurrency(total, currency, targetCurrency);
-              debugPrint(
-                  'DEBUG: Real-time kur kullanıldı - $total $currency = $convertedTotal $targetCurrency');
-            } else {
-              convertedTotal = total; // Fallback
-            }
+            convertedTotal = ExchangeRateService()
+                .convertCurrency(total, currency, targetCurrency);
+            debugPrint(
+                'DEBUG: Real-time kur kullanıldı - $total $currency = $convertedTotal $targetCurrency');
           } catch (e) {
             debugPrint('DEBUG: Para birimi dönüşüm hatası: $e');
             convertedTotal = total; // Fallback

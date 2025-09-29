@@ -515,6 +515,14 @@ class _EnhancedReportsListPageState
         return Icons.inventory_2;
       case ReportType.custom:
         return Icons.assessment;
+      case ReportType.payments:
+        return Icons.payment;
+      case ReportType.paymentSummary:
+        return Icons.summarize;
+      case ReportType.paymentByType:
+        return Icons.category;
+      case ReportType.paymentByCustomer:
+        return Icons.person;
     }
   }
 

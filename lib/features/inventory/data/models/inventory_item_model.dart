@@ -5,6 +5,7 @@ import 'package:tamgaci/features/inventory/domain/entities/inventory_item.dart';
 class InventoryItemModel extends InventoryItem {
   const InventoryItemModel({
     required super.id,
+    required super.tenantId,
     required super.name,
     super.description,
     super.sku,
@@ -75,6 +76,7 @@ class InventoryItemModel extends InventoryItem {
   }) {
     return InventoryItemModel(
       id: id ?? this.id,
+      tenantId: tenantId,
       name: name ?? this.name,
       description: description ?? this.description,
       sku: sku ?? this.sku,
@@ -114,6 +116,7 @@ class InventoryItemModel extends InventoryItem {
     final data = doc.data() as Map<String, dynamic>;
     return InventoryItemModel(
       id: doc.id,
+      tenantId: data['tenantId'] as String? ?? '',
       name: data['name'] as String,
       description: data['description'] as String?,
       sku: data['sku'] as String?,
@@ -196,6 +199,7 @@ class InventoryItemModel extends InventoryItem {
   InventoryItem toEntity() {
     return InventoryItem(
       id: id,
+      tenantId: tenantId,
       name: name,
       description: description,
       sku: sku,
@@ -234,6 +238,7 @@ class InventoryItemModel extends InventoryItem {
   factory InventoryItemModel.fromEntity(InventoryItem inventoryItem) {
     return InventoryItemModel(
       id: inventoryItem.id,
+      tenantId: inventoryItem.tenantId,
       name: inventoryItem.name,
       description: inventoryItem.description,
       sku: inventoryItem.sku,

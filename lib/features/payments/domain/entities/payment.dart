@@ -6,6 +6,7 @@ import 'payment_status.dart';
 
 class Payment {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String customerId;
   final String customerName;
   final PaymentType type;
@@ -26,6 +27,7 @@ class Payment {
 
   const Payment({
     required this.id,
+    required this.tenantId,
     required this.customerId,
     required this.customerName,
     required this.type,
@@ -47,6 +49,7 @@ class Payment {
 
   Payment copyWith({
     String? id,
+    String? tenantId,
     String? customerId,
     String? customerName,
     PaymentType? type,
@@ -67,6 +70,7 @@ class Payment {
   }) {
     return Payment(
       id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
       customerId: customerId ?? this.customerId,
       customerName: customerName ?? this.customerName,
       type: type ?? this.type,

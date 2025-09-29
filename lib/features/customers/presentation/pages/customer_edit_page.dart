@@ -669,7 +669,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                       const SizedBox(height: 16),
                       _buildReadOnlyField(
                         label: 'Müşteri Kodu',
-                        value: _customerCodeController.text.isNotEmpty 
+                        value: _customerCodeController.text.isNotEmpty
                             ? _customerCodeController.text
                             : 'Otomatik oluşturulacak',
                         icon: Icons.badge_outlined,

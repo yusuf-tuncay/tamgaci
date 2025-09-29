@@ -87,6 +87,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
     try {
       final supplier = Supplier(
         id: widget.supplierId ?? '',
+        tenantId: '', // Repository'de set edilecek
         name: _nameController.text.trim(),
         contactPerson: _contactPersonController.text.trim(),
         email: _emailController.text.trim(),

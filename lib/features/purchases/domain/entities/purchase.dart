@@ -44,6 +44,7 @@ enum PurchasePaymentStatus {
 /// Satın alma domain entity'si
 class Purchase {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String purchaseNumber; // Satın alma numarası
   final PurchaseType type;
   final PurchaseStatus status;
@@ -74,6 +75,7 @@ class Purchase {
 
   const Purchase({
     required this.id,
+    required this.tenantId,
     required this.purchaseNumber,
     required this.type,
     required this.status,
@@ -149,6 +151,7 @@ class Purchase {
   }) {
     return Purchase(
       id: id ?? this.id,
+      tenantId: tenantId,
       purchaseNumber: purchaseNumber ?? this.purchaseNumber,
       type: type ?? this.type,
       status: status ?? this.status,
@@ -183,6 +186,7 @@ class Purchase {
   factory Purchase.fromJson(Map<String, dynamic> json) {
     return Purchase(
       id: json['id'] as String,
+      tenantId: json['tenantId'] as String? ?? '',
       purchaseNumber: json['purchaseNumber'] as String,
       type: PurchaseType.values.firstWhere(
         (e) => e.name == json['type'],

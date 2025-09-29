@@ -511,6 +511,7 @@ class _SaleFormWidgetState extends State<SaleFormWidget> {
 
     final sale = Sale(
       id: widget.initialSale?.id ?? '',
+      tenantId: widget.initialSale?.tenantId ?? '',
       saleNumber: _saleNumberController.text,
       customerId: _customerIdController.text,
       customerName: _customerNameController.text.isNotEmpty

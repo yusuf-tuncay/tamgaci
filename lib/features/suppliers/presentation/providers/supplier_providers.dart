@@ -150,6 +150,7 @@ class SupplierOperations extends StateNotifier<SupplierOperationsState> {
       final id = await _repository.createSupplier(
         Supplier(
           id: '',
+          tenantId: '', // Repository'de set edilecek
           name: name,
           supplierType: SupplierType.company,
           status: SupplierStatus.active,
@@ -329,6 +330,7 @@ class _EmptySupplierRepository implements SupplierRepository {
   static final List<Supplier> _mockSuppliers = [
     Supplier(
       id: '1',
+      tenantId: 'mock-tenant',
       name: 'ABC Tedarik Ltd.',
       contactPerson: 'Ahmet Yılmaz',
       email: 'ahmet@abctedarik.com',
@@ -349,6 +351,7 @@ class _EmptySupplierRepository implements SupplierRepository {
     ),
     Supplier(
       id: '2',
+      tenantId: 'mock-tenant',
       name: 'XYZ Malzeme A.Ş.',
       contactPerson: 'Fatma Demir',
       email: 'fatma@xyzmalzeme.com',

@@ -29,6 +29,7 @@ enum InventoryMovementStatus {
 /// Envanter hareket entity'si
 class InventoryMovement extends Equatable {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String movementNumber;
   final InventoryMovementType type;
   final InventoryMovementStatus status;
@@ -57,6 +58,7 @@ class InventoryMovement extends Equatable {
 
   const InventoryMovement({
     required this.id,
+    required this.tenantId,
     required this.movementNumber,
     required this.type,
     required this.status,
@@ -114,6 +116,7 @@ class InventoryMovement extends Equatable {
   }) {
     return InventoryMovement(
       id: id ?? this.id,
+      tenantId: tenantId,
       movementNumber: movementNumber ?? this.movementNumber,
       type: type ?? this.type,
       status: status ?? this.status,
@@ -176,6 +179,7 @@ class InventoryMovement extends Equatable {
   factory InventoryMovement.fromJson(Map<String, dynamic> json) {
     return InventoryMovement(
       id: json['id'] as String,
+      tenantId: json['tenantId'] as String? ?? '',
       movementNumber: json['movementNumber'] as String,
       type: InventoryMovementType.values.firstWhere(
         (e) => e.name == json['type'],

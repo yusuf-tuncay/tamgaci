@@ -767,6 +767,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     return [
       Sale(
         id: '1',
+        tenantId: 'mock-tenant',
         saleNumber: 'SAT-2024-001',
         type: SaleType.invoice,
         status: SaleStatus.delivered,
@@ -787,6 +788,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
       ),
       Sale(
         id: '2',
+        tenantId: 'mock-tenant',
         saleNumber: 'SAT-2024-002',
         type: SaleType.proforma,
         status: SaleStatus.pending,
@@ -807,6 +809,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
       ),
       Sale(
         id: '3',
+        tenantId: 'mock-tenant',
         saleNumber: 'SAT-2024-003',
         type: SaleType.waybill,
         status: SaleStatus.shipped,

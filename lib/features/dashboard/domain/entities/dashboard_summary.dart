@@ -60,6 +60,12 @@ class DashboardSummary {
   /// Bu ay yeni tedarikçi sayısı
   final int newSuppliersThisMonth;
 
+  /// Toplam tahsilat tutarı
+  final double totalPayments;
+
+  /// Tahsilat büyüme oranı (%)
+  final double paymentGrowthRate;
+
   const DashboardSummary({
     required this.totalSales,
     required this.totalPurchases,
@@ -80,6 +86,8 @@ class DashboardSummary {
     required this.totalProducts,
     required this.newCustomersThisMonth,
     required this.newSuppliersThisMonth,
+    required this.totalPayments,
+    required this.paymentGrowthRate,
   });
 
   /// DashboardSummary kopyalama metodu
@@ -103,6 +111,8 @@ class DashboardSummary {
     int? totalProducts,
     int? newCustomersThisMonth,
     int? newSuppliersThisMonth,
+    double? totalPayments,
+    double? paymentGrowthRate,
   }) {
     return DashboardSummary(
       totalSales: totalSales ?? this.totalSales,
@@ -126,6 +136,8 @@ class DashboardSummary {
           newCustomersThisMonth ?? this.newCustomersThisMonth,
       newSuppliersThisMonth:
           newSuppliersThisMonth ?? this.newSuppliersThisMonth,
+      totalPayments: totalPayments ?? this.totalPayments,
+      paymentGrowthRate: paymentGrowthRate ?? this.paymentGrowthRate,
     );
   }
 
@@ -151,6 +163,8 @@ class DashboardSummary {
       totalProducts: 0,
       newCustomersThisMonth: 0,
       newSuppliersThisMonth: 0,
+      totalPayments: 0.0,
+      paymentGrowthRate: 0.0,
     );
   }
 
@@ -187,12 +201,14 @@ class DashboardSummary {
         other.totalSuppliers == totalSuppliers &&
         other.totalProducts == totalProducts &&
         other.newCustomersThisMonth == newCustomersThisMonth &&
-        other.newSuppliersThisMonth == newSuppliersThisMonth;
+        other.newSuppliersThisMonth == newSuppliersThisMonth &&
+        other.totalPayments == totalPayments &&
+        other.paymentGrowthRate == paymentGrowthRate;
   }
 
   @override
   int get hashCode {
-    return Object.hash(
+    return Object.hashAll([
       totalSales,
       totalPurchases,
       totalIncome,
@@ -212,6 +228,8 @@ class DashboardSummary {
       totalProducts,
       newCustomersThisMonth,
       newSuppliersThisMonth,
-    );
+      totalPayments,
+      paymentGrowthRate,
+    ]);
   }
 }

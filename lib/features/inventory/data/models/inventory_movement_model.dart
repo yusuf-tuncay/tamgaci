@@ -5,6 +5,7 @@ import 'package:tamgaci/features/inventory/domain/entities/inventory_movement.da
 class InventoryMovementModel extends InventoryMovement {
   const InventoryMovementModel({
     required super.id,
+    required super.tenantId,
     required super.movementNumber,
     required super.type,
     required super.status,
@@ -63,6 +64,7 @@ class InventoryMovementModel extends InventoryMovement {
   }) {
     return InventoryMovementModel(
       id: id ?? this.id,
+      tenantId: tenantId,
       movementNumber: movementNumber ?? this.movementNumber,
       type: type ?? this.type,
       status: status ?? this.status,
@@ -96,6 +98,7 @@ class InventoryMovementModel extends InventoryMovement {
     final data = doc.data() as Map<String, dynamic>;
     return InventoryMovementModel(
       id: doc.id,
+      tenantId: data['tenantId'] as String? ?? '',
       movementNumber: data['movementNumber'] as String,
       type: InventoryMovementType.values.firstWhere(
         (e) => e.name == data['type'],
@@ -166,6 +169,7 @@ class InventoryMovementModel extends InventoryMovement {
   InventoryMovement toEntity() {
     return InventoryMovement(
       id: id,
+      tenantId: tenantId,
       movementNumber: movementNumber,
       type: type,
       status: status,
@@ -199,6 +203,7 @@ class InventoryMovementModel extends InventoryMovement {
       InventoryMovement inventoryMovement) {
     return InventoryMovementModel(
       id: inventoryMovement.id,
+      tenantId: inventoryMovement.tenantId,
       movementNumber: inventoryMovement.movementNumber,
       type: inventoryMovement.type,
       status: inventoryMovement.status,

@@ -104,6 +104,13 @@ class QuickActionsWidget extends StatelessWidget {
               ),
               _buildQuickAction(
                 context,
+                'Tahsilat',
+                Icons.payments_outlined,
+                Colors.green,
+                () => Navigator.pushNamed(context, TamgaciRoutes.paymentsHome),
+              ),
+              _buildQuickAction(
+                context,
                 'Raporlar',
                 Icons.assessment_outlined,
                 Colors.indigo,

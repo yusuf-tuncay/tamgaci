@@ -781,6 +781,7 @@ class _EnhancedPurchaseDetailPageState
     final purchases = [
       Purchase(
         id: '1',
+        tenantId: 'mock-tenant',
         purchaseNumber: 'ALI-2024-001',
         type: PurchaseType.invoice,
         status: PurchaseStatus.received,

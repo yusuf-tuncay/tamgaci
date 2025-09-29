@@ -443,6 +443,7 @@ class ProductFirebaseService {
   Product _mapToProduct(String id, Map<String, dynamic> data) {
     return Product(
       id: id,
+      tenantId: data['tenantId'] ?? '',
       name: data[FirebaseFields.productName] ?? '',
       sku: data[FirebaseFields.productCode],
       barcode: data[FirebaseFields.productBarcode],

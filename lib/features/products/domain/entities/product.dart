@@ -33,6 +33,7 @@ enum TaxInclusiveOption {
 /// Ürün domain entity'si
 class Product {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String name;
   final String? description;
   final String? productCode; // Otomatik + manuel ürün kodu
@@ -73,6 +74,7 @@ class Product {
 
   Product({
     required this.id,
+    required this.tenantId,
     required this.name,
     this.description,
     this.productCode,
@@ -153,6 +155,7 @@ class Product {
   /// Kopyalama metodu
   Product copyWith({
     String? id,
+    String? tenantId,
     String? name,
     String? description,
     String? productCode,
@@ -192,6 +195,7 @@ class Product {
   }) {
     return Product(
       id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
       name: name ?? this.name,
       description: description ?? this.description,
       productCode: productCode ?? this.productCode,
@@ -236,6 +240,7 @@ class Product {
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
       id: json['id'] as String,
+      tenantId: json['tenantId'] as String? ?? '',
       name: json['name'] as String,
       description: json['description'] as String?,
       productCode: json['productCode'] as String?,

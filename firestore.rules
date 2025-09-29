@@ -115,6 +115,15 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
 
+    match /tenants/{tenantId}/payments/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
     match /tenants/{tenantId}/cash_accounts/{id} {
       allow get, list: if isSignedIn() && isTenantMember(tenantId);
       allow create: if isSignedIn() && isTenantMember(tenantId) && 

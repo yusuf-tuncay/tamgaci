@@ -194,7 +194,9 @@ class FirebaseProductRepository implements ProductRepository {
           .doc(tenantId)
           .collection('products')
           .doc();
-      final productEntity = ProductEntity.fromDomain(product).copyWith(
+      final productWithTenant = product.copyWith(tenantId: tenantId);
+      final productEntity =
+          ProductEntity.fromDomain(productWithTenant).copyWith(
         id: docRef.id,
       );
       final data = productEntity.toFirestore();

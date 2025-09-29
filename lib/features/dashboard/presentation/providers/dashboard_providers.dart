@@ -9,6 +9,7 @@ import '../../../../features/invoices/presentation/providers/invoice_providers.d
 import '../../../../features/customers/presentation/providers/customer_providers.dart';
 import '../../../../features/suppliers/presentation/providers/supplier_providers.dart';
 import '../../../../features/products/presentation/providers/product_providers.dart';
+import '../../../../features/payments/presentation/providers/payment_providers.dart';
 
 import '../../data/services/date_time_service.dart';
 import '../../data/services/stock_market_service.dart';
@@ -48,6 +49,7 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
     final customersAsync = await ref.read(customersProvider.future);
     final suppliersAsync = await ref.read(suppliersProvider.future);
     final productsAsync = await ref.read(productsStreamProvider.future);
+    final paymentsAsync = await ref.read(paymentsProvider.future);
 
     final now = DateTime.now();
     final currentMonth = DateTime(now.year, now.month);
@@ -69,6 +71,24 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
         expense.expenseDate.month,
       );
       return expenseDate.isAtSameMomentAs(currentMonth);
+    }).toList();
+
+    // Bu ay tahsilatlar
+    final currentMonthPayments = paymentsAsync.where((payment) {
+      final paymentDate = DateTime(
+        payment.paymentDate.year,
+        payment.paymentDate.month,
+      );
+      return paymentDate.isAtSameMomentAs(currentMonth);
+    }).toList();
+
+    // Geçen ay tahsilatlar
+    final lastMonthPayments = paymentsAsync.where((payment) {
+      final paymentDate = DateTime(
+        payment.paymentDate.year,
+        payment.paymentDate.month,
+      );
+      return paymentDate.isAtSameMomentAs(lastMonth);
     }).toList();
 
     // Geçen ay gelirleri
@@ -103,6 +123,16 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
       (sum, income) => sum + income.amount,
     );
 
+    // Tahsilat toplamları
+    final currentMonthPaymentTotal = currentMonthPayments.fold<double>(
+      0,
+      (sum, payment) => sum + payment.amount,
+    );
+    final lastMonthPaymentTotal = lastMonthPayments.fold<double>(
+      0,
+      (sum, payment) => sum + payment.amount,
+    );
+
     // Yüzde değişim hesaplamaları
     final incomeChangePercent = lastMonthIncomeTotal > 0
         ? ((currentMonthIncomeTotal - lastMonthIncomeTotal) /
@@ -116,6 +146,13 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
     //     : 0.0;
 
     final netProfit = currentMonthIncomeTotal - currentMonthExpenseTotal;
+
+    // Tahsilat büyüme oranı
+    final paymentGrowthRate = lastMonthPaymentTotal > 0
+        ? ((currentMonthPaymentTotal - lastMonthPaymentTotal) /
+            lastMonthPaymentTotal *
+            100)
+        : 0.0;
 
     return DashboardSummary(
       totalSales: currentMonthIncomeTotal,
@@ -137,6 +174,9 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
       totalProducts: productsAsync.length,
       newCustomersThisMonth: 3, // Mock data
       newSuppliersThisMonth: 2, // Mock data
+      // Tahsilat verileri
+      totalPayments: currentMonthPaymentTotal,
+      paymentGrowthRate: paymentGrowthRate,
     );
   } catch (e) {
     // Hata durumunda test verileri döndür
@@ -160,6 +200,8 @@ final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
       totalProducts: 45,
       newCustomersThisMonth: 3,
       newSuppliersThisMonth: 2,
+      totalPayments: 0.0,
+      paymentGrowthRate: 0.0,
     );
   }
 });
@@ -172,6 +214,7 @@ final recentTransactionsProvider = FutureProvider<List<TransactionItem>>((
     final incomesAsync = await ref.read(incomesProvider.future);
     final expensesAsync = await ref.read(expensesProvider.future);
     final invoicesAsync = await ref.read(invoicesProvider.future);
+    final paymentsAsync = await ref.read(paymentsProvider.future);
 
     final allTransactions = <TransactionItem>[];
 
@@ -214,6 +257,20 @@ final recentTransactionsProvider = FutureProvider<List<TransactionItem>>((
           date: invoice.invoiceDate,
           description:
               '${invoice.customer?.name ?? 'Müşteri'} - ${invoice.status.displayName}',
+        ),
+      );
+    }
+
+    // Tahsilatları ekle
+    for (final payment in paymentsAsync.take(10)) {
+      allTransactions.add(
+        TransactionItem(
+          id: payment.id,
+          title: 'Tahsilat: ${payment.type.displayName}',
+          amount: payment.amount,
+          type: TransactionType.payment,
+          date: payment.paymentDate,
+          description: '${payment.customerName} - ${payment.status.name}',
         ),
       );
     }
@@ -384,7 +441,7 @@ final monthlyChartDataProvider = FutureProvider<List<MonthlyChartData>>((
 });
 
 /// İşlem türü enum'u
-enum TransactionType { income, expense, invoice }
+enum TransactionType { income, expense, invoice, payment }
 
 /// İşlem öğesi modeli
 class TransactionItem {

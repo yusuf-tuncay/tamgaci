@@ -34,6 +34,7 @@ extension SupplierStatusExtension on SupplierStatus {
 /// Tedarikçi entity'si
 class Supplier extends Equatable {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String name;
   final String? supplierCode;
 
@@ -90,6 +91,7 @@ class Supplier extends Equatable {
 
   const Supplier({
     required this.id,
+    required this.tenantId,
     required this.name,
     this.supplierCode,
     this.category1,
@@ -132,6 +134,7 @@ class Supplier extends Equatable {
   /// Tedarikçi kopyalama
   Supplier copyWith({
     String? id,
+    String? tenantId,
     String? name,
     String? supplierCode,
     String? category1,
@@ -172,6 +175,7 @@ class Supplier extends Equatable {
   }) {
     return Supplier(
       id: id ?? this.id,
+      tenantId: tenantId ?? this.tenantId,
       name: name ?? this.name,
       supplierCode: supplierCode ?? this.supplierCode,
       category1: category1 ?? this.category1,

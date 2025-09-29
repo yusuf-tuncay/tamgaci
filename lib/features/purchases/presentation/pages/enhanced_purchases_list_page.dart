@@ -772,6 +772,7 @@ class _EnhancedPurchasesListPageState
     return [
       Purchase(
         id: '1',
+        tenantId: 'mock-tenant',
         purchaseNumber: 'ALI-2024-001',
         type: PurchaseType.invoice,
         status: PurchaseStatus.received,
@@ -793,6 +794,7 @@ class _EnhancedPurchasesListPageState
       ),
       Purchase(
         id: '2',
+        tenantId: 'mock-tenant',
         purchaseNumber: 'ALI-2024-002',
         type: PurchaseType.purchase,
         status: PurchaseStatus.confirmed,
@@ -813,6 +815,7 @@ class _EnhancedPurchasesListPageState
       ),
       Purchase(
         id: '3',
+        tenantId: 'mock-tenant',
         purchaseNumber: 'ALI-2024-003',
         type: PurchaseType.waybill,
         status: PurchaseStatus.confirmed,

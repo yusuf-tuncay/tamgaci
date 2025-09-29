@@ -158,6 +158,7 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
     try {
       final product = Product(
         id: '',
+        tenantId: '', // Repository'de set edilecek
         name: name,
         productCode: null,
         sku: null,

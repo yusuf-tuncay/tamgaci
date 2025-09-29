@@ -44,6 +44,7 @@ enum PaymentStatus {
 /// Satış domain entity'si
 class Sale {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String saleNumber; // Satış numarası
   final SaleType type;
   final SaleStatus status;
@@ -74,6 +75,7 @@ class Sale {
 
   const Sale({
     required this.id,
+    required this.tenantId,
     required this.saleNumber,
     required this.type,
     required this.status,
@@ -157,6 +159,7 @@ class Sale {
   }) {
     return Sale(
       id: id ?? this.id,
+      tenantId: tenantId,
       saleNumber: saleNumber ?? this.saleNumber,
       type: type ?? this.type,
       status: status ?? this.status,
@@ -191,6 +194,7 @@ class Sale {
   factory Sale.fromJson(Map<String, dynamic> json) {
     return Sale(
       id: json['id'] as String,
+      tenantId: json['tenantId'] as String? ?? '',
       saleNumber: json['saleNumber'] as String,
       type: SaleType.values.firstWhere(
         (e) => e.name == json['type'],
@@ -389,7 +393,9 @@ class SaleItem {
       description: json['description'] as String?,
       notes: json['notes'] as String?,
       currency: json['currency'] as String? ?? 'TRY',
-      fxRateToBase: json['fxRateToBase'] != null ? (json['fxRateToBase'] as num).toDouble() : null,
+      fxRateToBase: json['fxRateToBase'] != null
+          ? (json['fxRateToBase'] as num).toDouble()
+          : null,
     );
   }
 

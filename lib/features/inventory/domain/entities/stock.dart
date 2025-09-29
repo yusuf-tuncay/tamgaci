@@ -7,6 +7,7 @@ import 'warehouse.dart';
 /// Stok entity'si - Warehouse'larda bulunan ürünlerin stok bilgilerini tutar
 class Stock {
   final String id;
+  final String tenantId; // Multi-tenant güvenlik için zorunlu
   final String productId;
   final String warehouseId;
   final double quantity;
@@ -27,6 +28,7 @@ class Stock {
 
   const Stock({
     required this.id,
+    required this.tenantId,
     required this.productId,
     required this.warehouseId,
     required this.quantity,
@@ -94,6 +96,7 @@ class Stock {
   }) {
     return Stock(
       id: id ?? this.id,
+      tenantId: tenantId,
       productId: productId ?? this.productId,
       warehouseId: warehouseId ?? this.warehouseId,
       quantity: quantity ?? this.quantity,
@@ -116,6 +119,7 @@ class Stock {
   factory Stock.fromMap(Map<String, dynamic> map) {
     return Stock(
       id: map['id']?.toString() ?? '',
+      tenantId: map['tenantId']?.toString() ?? '',
       productId: map['productId']?.toString() ?? '',
       warehouseId: map['warehouseId']?.toString() ?? '',
       quantity: map['quantity']?.toDouble() ?? 0.0,

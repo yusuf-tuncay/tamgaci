@@ -126,6 +126,7 @@ class FirebaseSupplierEntity {
   Supplier toDomain() {
     return Supplier(
       id: id,
+      tenantId: '', // Firebase'de tenantId field'ı yok, boş bırakıyoruz
       name: name,
       supplierCode: supplierCode,
       category1: category,
