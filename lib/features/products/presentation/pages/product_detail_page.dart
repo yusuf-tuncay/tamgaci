@@ -20,6 +20,117 @@ class ProductDetailPage extends ConsumerWidget {
     required this.productId,
   });
 
+  Widget _buildPremiumHeader(Product product) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF6366F1), // Indigo-500
+            Color(0xFF8B5CF6), // Violet-500
+            Color(0xFF7C3AED), // Violet-600
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon container
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              _getProductTypeIcon(product.type),
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Text content
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${product.type.displayName} • ${product.warehouseName ?? "Depo yok"}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.inventory, size: 16, color: Colors.white.withValues(alpha: 0.8)),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Stok: ${product.totalStockQuantity}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Icon(Icons.attach_money, size: 16, color: Colors.white.withValues(alpha: 0.8)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '₺${product.salesPrice.toStringAsFixed(2)}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getProductTypeIcon(ProductType type) {
+    switch (type) {
+      case ProductType.stocked:
+        return Icons.inventory;
+      case ProductType.nonStocked:
+        return Icons.shopping_cart;
+      case ProductType.service:
+        return Icons.build;
+      case ProductType.digital:
+        return Icons.download;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -48,50 +159,70 @@ class ProductDetailPage extends ConsumerWidget {
               backgroundColor: isDark
                   ? TamgaciConstants.backgroundColorDark
                   : TamgaciConstants.backgroundColor,
-              appBar: CustomAppBar(
-                title: product.name,
-                showBackButton: true,
-                showDrawer: false,
+              appBar: AppBar(
+                title: Text(
+                  product.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+                backgroundColor: Colors.white,
+                elevation: 1,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
                 actions: [
                   IconButton(
                     onPressed: () => _showProductActions(context, product),
-                    icon: const Icon(Icons.more_vert),
+                    icon: const Icon(Icons.more_vert, color: Colors.black87),
                   ),
                 ],
               ),
-              body: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Ürün resmi ve temel bilgiler
-                    _buildProductHeader(context, product),
+              body: Column(
+                children: [
+                  // Premium Header
+                  _buildPremiumHeader(product),
+                  
+                  // Content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Ürün resmi ve temel bilgiler
+                          _buildProductHeader(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                    // Fiyat bilgileri
-                    _buildPricingSection(context, product),
+                          // Fiyat bilgileri
+                          _buildPricingSection(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                    // Stok bilgileri
-                    _buildStockSection(context, product),
+                          // Stok bilgileri
+                          _buildStockSection(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                    // Ek bilgiler
-                    _buildAdditionalInfoSection(context, product),
+                          // Ek bilgiler
+                          _buildAdditionalInfoSection(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                    // Bağlı ürünler
-                    if (product.linkedProducts != null &&
-                        product.linkedProducts!.isNotEmpty)
-                      _buildLinkedProductsSection(context, product),
-                  ],
-                ),
-              ),
-            );
+                          // Bağlı ürünler
+                          if (product.linkedProducts != null &&
+                              product.linkedProducts!.isNotEmpty)
+                            _buildLinkedProductsSection(context, product),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
           },
           loading: () => const Scaffold(
             appBar: CustomAppBar(
@@ -294,7 +425,7 @@ class ProductDetailPage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Stok Bilgileri',
+              'Stok ve Depo Bilgileri',
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -304,33 +435,78 @@ class ProductDetailPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
+            
+            // Warehouse bilgileri
+            if (product.warehouseName != null) ...[
+              _buildInfoRow(
+                'Depo',
+                product.warehouseName!,
+                isDark,
+                icon: Icons.warehouse,
+                iconColor: Colors.blue,
+              ),
+              const SizedBox(height: 8),
+            ] else ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.orange[600], size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Bu ürün henüz bir depoya atanmamış',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.orange[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            
+            // Stok bilgileri
             _buildInfoRow(
               'Stok Durumu',
               product.stockStatus,
               isDark,
               valueColor: _getStockStatusColor(product.stockStatus),
+              icon: Icons.inventory,
             ),
             _buildInfoRow(
               'Toplam Stok',
               product.totalStockQuantity.toString(),
               isDark,
+              icon: Icons.numbers,
             ),
             _buildInfoRow(
               'Stok Takibi',
               product.stockTracking.displayName,
               isDark,
+              icon: Icons.track_changes,
             ),
             if (product.criticalStockQuantity != null)
               _buildInfoRow(
                 'Kritik Stok',
                 product.criticalStockQuantity.toString(),
                 isDark,
+                icon: Icons.warning,
+                iconColor: Colors.orange,
               ),
             if (product.shelfLocation != null)
               _buildInfoRow(
                 'Raf Yeri',
                 product.shelfLocation!,
                 isDark,
+                icon: Icons.location_on,
+                iconColor: Colors.green,
               ),
           ],
         ),
@@ -420,12 +596,22 @@ class ProductDetailPage extends ConsumerWidget {
     String value,
     bool isDark, {
     Color? valueColor,
+    IconData? icon,
+    Color? iconColor,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (icon != null) ...[
+            Icon(
+              icon,
+              size: 16,
+              color: iconColor ?? Colors.grey[600],
+            ),
+            const SizedBox(width: 8),
+          ],
           SizedBox(
             width: 120,
             child: Text(
