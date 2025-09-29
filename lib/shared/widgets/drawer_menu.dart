@@ -251,7 +251,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'accounts',
           title: 'Hesaplarım',
           icon: Icons.account_balance_outlined,
-          route: TamgaciRoutes.accountsList,
+          route: TamgaciRoutes.accountsHome,
         ),
         DrawerMenuItem(
           id: 'employees',
@@ -328,9 +328,16 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
-      color: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.surfaceColor,
+      width: 280, // Drawer genişliğini sınırla
+      decoration: BoxDecoration(
+        color: isDark
+            ? TamgaciConstants.backgroundColorDark
+            : TamgaciConstants.surfaceColor,
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(16),
+          bottomRight: Radius.circular(16),
+        ),
+      ),
       child: Column(
         children: [
           _buildHeader(userProfile),

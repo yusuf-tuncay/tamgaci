@@ -83,10 +83,10 @@ class QuickActionsWidget extends StatelessWidget {
               ),
               _buildQuickAction(
                 context,
-                'Kasa İşlemi',
+                'Hesaplarım',
                 Icons.account_balance_wallet_outlined,
                 Colors.purple,
-                () => Navigator.pushNamed(context, TamgaciRoutes.accountsList),
+                () => Navigator.pushNamed(context, TamgaciRoutes.accountsHome),
               ),
               _buildQuickAction(
                 context,

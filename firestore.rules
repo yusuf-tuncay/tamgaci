@@ -26,14 +26,18 @@ service cloud.firestore {
     function isSameTenantOrAdmin(resourceData) {
       return isAdmin() || isSameTenant(resourceData);
     }
+    function isAuthenticatedUser() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(userId()));
+    }
     function isTenantOwner(tenantId) {
       return get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == userId();
     }
     function isTenantMember(tenantId) {
       // Kullanıcının kendi tenantId'sine erişimi
       return exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
-             (userId() in get(/databases/$(database)/documents/tenants/$(tenantId)).data.memberIds ||
-              get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == userId());
+             (get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == userId() ||
+              (get(/databases/$(database)/documents/tenants/$(tenantId)).data.memberIds != null &&
+               userId() in get(/databases/$(database)/documents/tenants/$(tenantId)).data.memberIds));
     }
 
     // Generic helpers - Multi-tenant aware
@@ -140,6 +144,25 @@ service cloud.firestore {
                        request.resource.data.createdBy == userId();
       allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
       allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    // Yeni Accounts modülü için güvenlik kuralları
+    match /tenants/{tenantId}/accounts/{id} {
+      allow get, list: if isAuthenticatedUser() && resource.data.tenantId == getUserTenantId();
+      allow create: if isAuthenticatedUser() && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isAuthenticatedUser() && resource.data.tenantId == getUserTenantId() && isOwner(resource.data);
+      allow delete: if isAuthenticatedUser() && resource.data.tenantId == getUserTenantId() && isOwner(resource.data);
+    }
+
+    match /tenants/{tenantId}/accountTransactions/{id} {
+      allow get, list: if isAuthenticatedUser() && resource.data.tenantId == getUserTenantId();
+      allow create: if isAuthenticatedUser() && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isAuthenticatedUser() && resource.data.tenantId == getUserTenantId() && isOwner(resource.data);
+      allow delete: if isAuthenticatedUser() && resource.data.tenantId == getUserTenantId() && isOwner(resource.data);
     }
 
     match /tenants/{tenantId}/invoices/{id} {

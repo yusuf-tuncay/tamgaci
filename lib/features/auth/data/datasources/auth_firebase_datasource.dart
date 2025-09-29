@@ -160,6 +160,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         phoneDialCode: null,
         role: UserRole.user,
         status: UserStatus.active,
+        tenantId: null, // Will be set by FirebaseAuthService
         createdAt: now,
         updatedAt: now,
         isEmailVerified: false,

@@ -9,6 +9,7 @@ import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart' as custom_error;
 import '../../../../shared/widgets/search_bar.dart';
+import '../../../../shared/widgets/drawer_menu.dart';
 import '../providers/product_providers.dart';
 import '../../domain/entities/product.dart';
 import 'create_product_page.dart';
@@ -46,8 +47,8 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
           : TamgaciConstants.backgroundColor,
       appBar: CustomAppBar(
         title: 'Ürünler',
-        showBackButton: true,
-        showDrawer: false,
+        showBackButton: false,
+        showDrawer: true,
         actions: [
           IconButton(
             onPressed: _showFilterDialog,
@@ -61,6 +62,7 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
           ),
         ],
       ),
+      drawer: const TamgaciDrawerMenu(),
       body: Column(
         children: [
           // Arama ve filtre çubuğu

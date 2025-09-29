@@ -43,6 +43,9 @@ class User extends Equatable {
   /// Kullanıcı durumu (active, inactive, suspended)
   final UserStatus status;
 
+  /// Multi-tenant için tenant ID
+  final String? tenantId;
+
   /// Kullanıcı oluşturulma tarihi
   final DateTime createdAt;
 
@@ -114,6 +117,7 @@ class User extends Equatable {
     this.profileImageMetadata,
     required this.role,
     required this.status,
+    this.tenantId,
     required this.createdAt,
     required this.updatedAt,
     this.lastLoginAt,
@@ -150,6 +154,7 @@ class User extends Equatable {
       profileImageUrl: data['profileImageUrl'],
       role: UserRole.fromString(data['role'] ?? 'user'),
       status: UserStatus.fromString(data['status'] ?? 'active'),
+      tenantId: data['tenantId'],
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
       lastLoginAt: data['lastLoginAt'] != null
@@ -194,6 +199,7 @@ class User extends Equatable {
       'profileImageUrl': profileImageUrl,
       'role': role.value,
       'status': status.value,
+      'tenantId': tenantId,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'lastLoginAt':
@@ -237,6 +243,7 @@ class User extends Equatable {
     Map<String, dynamic>? profileImageMetadata,
     UserRole? role,
     UserStatus? status,
+    String? tenantId,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? lastLoginAt,
@@ -271,6 +278,7 @@ class User extends Equatable {
       profileImageMetadata: profileImageMetadata ?? this.profileImageMetadata,
       role: role ?? this.role,
       status: status ?? this.status,
+      tenantId: tenantId ?? this.tenantId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,

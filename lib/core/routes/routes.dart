@@ -22,6 +22,12 @@ import 'package:tamgaci/features/cash_management/presentation/pages/create_accou
 import 'package:tamgaci/features/cash_management/presentation/pages/enhanced_account_detail_page.dart';
 import 'package:tamgaci/features/cash_management/presentation/pages/create_cash_transaction_page.dart';
 import 'package:tamgaci/features/cash_management/presentation/pages/enhanced_cash_transaction_detail_page.dart';
+// Yeni Accounts modülü
+import 'package:tamgaci/features/accounts/domain/entities/account.dart';
+import 'package:tamgaci/features/accounts/presentation/pages/accounts_home_page.dart';
+import 'package:tamgaci/features/accounts/presentation/pages/create_account_page.dart'
+    as accounts;
+import 'package:tamgaci/features/accounts/presentation/pages/account_detail_page.dart';
 import 'package:tamgaci/features/reports/presentation/pages/enhanced_reports_list_page.dart';
 import 'package:tamgaci/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:tamgaci/features/expenses/presentation/pages/create_expense_page.dart';
@@ -195,7 +201,7 @@ class TamgaciRoutes {
   /// Alış düzenleme sayfası
   static const String editPurchase = '/purchase/edit';
 
-  // Cash Management (Nakit Yönetimi) Route'ları
+  // Cash Management (Nakit Yönetimi) Route'ları - ESKİ
   /// Hesaplar listesi sayfası
   static const String accountsList = '/accounts';
 
@@ -207,6 +213,16 @@ class TamgaciRoutes {
 
   /// Hesap düzenleme sayfası
   static const String editAccount = '/account/edit';
+
+  // Accounts (Hesaplar) Route'ları - YENİ
+  /// Hesaplar ana sayfası
+  static const String accountsHome = '/accounts/home';
+
+  /// Yeni hesap oluşturma sayfası (Yeni)
+  static const String createNewAccount = '/accounts/new';
+
+  /// Hesap detay sayfası (Yeni)
+  static const String newAccountDetail = '/accounts/detail-new';
 
   /// Nakit işlemleri listesi sayfası
   static const String cashTransactionsList = '/cash-transactions';
@@ -355,7 +371,7 @@ class TamgaciRoutes {
   /// Bakiye Düzelt işlemleri
   static const String balancePayments = '/payments/balance';
   static const String paymentHistory = '/payments/history';
-  
+
   /// Tahsilat Raporları
   static const String paymentReports = '/payments/reports';
   static const String paymentDetailedReport = '/payments/reports/detailed';
@@ -592,7 +608,7 @@ class TamgaciRoutes {
           settings: settings,
         );
 
-      // ========== NAKİT YÖNETİMİ ROUTE'LARI ==========
+      // ========== NAKİT YÖNETİMİ ROUTE'LARI (ESKİ) ==========
 
       case accountsList:
         return _createRoute(const EnhancedAccountsListPage(),
@@ -616,6 +632,26 @@ class TamgaciRoutes {
           CreateAccountPage(accountId: accountId),
           settings: settings,
         );
+
+      // ========== HESAPLAR ROUTE'LARI (YENİ) ==========
+
+      case accountsHome:
+        return _createRoute(const AccountsHomePage(), settings: settings);
+
+      case createNewAccount:
+        return _createRoute(const accounts.CreateAccountPage(),
+            settings: settings);
+
+      case newAccountDetail:
+        // Account objesi parametresi bekleniyor
+        final account = arguments as Account?;
+        if (account != null) {
+          return _createRoute(
+            AccountDetailPage(account: account),
+            settings: settings,
+          );
+        }
+        return _createRoute(const AccountsHomePage(), settings: settings);
 
       case cashTransactionsList:
         return _createRoute(const EnhancedCashTransactionsListPage(),
@@ -816,7 +852,8 @@ class TamgaciRoutes {
         final args = arguments as Map<String, dynamic>?;
         return _createRoute(
           PaymentDetailedReportPage(
-            startDate: args?['startDate'] ?? DateTime.now().subtract(const Duration(days: 30)),
+            startDate: args?['startDate'] ??
+                DateTime.now().subtract(const Duration(days: 30)),
             endDate: args?['endDate'] ?? DateTime.now(),
             paymentType: args?['paymentType'] ?? 'all',
             status: args?['status'] ?? 'all',
