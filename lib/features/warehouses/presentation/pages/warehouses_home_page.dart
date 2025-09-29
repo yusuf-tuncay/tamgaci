@@ -305,9 +305,9 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
   }
 
   Widget _buildLoadingStatistics() {
-    return Container(
+    return const SizedBox(
       height: 80,
-      child: const Center(child: CircularProgressIndicator()),
+      child: Center(child: CircularProgressIndicator()),
     );
   }
 
@@ -485,7 +485,7 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
           groupValue: _selectedType,
           onChanged: (value) {
             setState(() {
-              _selectedType = value;
+              _selectedType = value!;
             });
             Navigator.pop(context);
           },
@@ -504,7 +504,7 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
           groupValue: _selectedStatus,
           onChanged: (value) {
             setState(() {
-              _selectedStatus = value;
+              _selectedStatus = value!;
             });
             Navigator.pop(context);
           },

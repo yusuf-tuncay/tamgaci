@@ -11,7 +11,7 @@ import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../providers/warehouse_providers.dart';
 import '../providers/stock_providers.dart';
-import 'warehouse_list_page.dart';
+import '../../../warehouses/presentation/pages/warehouses_home_page.dart';
 import 'stock_list_page.dart';
 
 /// Inventory Sayfası
@@ -152,7 +152,7 @@ class InventoryPage extends ConsumerWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const WarehouseListPage(),
+                    builder: (context) => const WarehousesHomePage(),
                   ),
                 );
               }, isDark),
