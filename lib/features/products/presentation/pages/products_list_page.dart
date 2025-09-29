@@ -199,18 +199,12 @@ class _ProductsListPageState extends ConsumerState<ProductsListPage> {
   Widget _buildProductsList() {
     return Consumer(
       builder: (context, ref, child) {
-        // Ürünleri al
+        // Ürünleri al - sadece stream provider kullan
         final productsAsync = ref.watch(productsStreamProvider);
-        final operationsState = ref.watch(productOperationsProvider);
 
         return productsAsync.when(
           data: (products) {
-            // Operations state'den güncel listeyi al
-            final currentProducts = operationsState.products.isNotEmpty 
-                ? operationsState.products 
-                : products;
-            
-            final filteredProducts = _getFilteredProducts(currentProducts);
+            final filteredProducts = _getFilteredProducts(products);
 
             if (filteredProducts.isEmpty) {
               return _buildEmptyState();

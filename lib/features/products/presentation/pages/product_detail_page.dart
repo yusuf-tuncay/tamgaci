@@ -881,18 +881,23 @@ class ProductDetailPage extends ConsumerWidget {
           .read(productOperationsProvider.notifier)
           .deleteProduct(product.id);
 
-      // Stream provider'ı refresh et
-      ref.invalidate(productsStreamProvider);
-
+      // Stream provider'ı refresh et - mounted kontrolü ile
       if (context.mounted) {
+        ref.invalidate(productsStreamProvider);
+        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Ürün başarıyla silindi'),
             backgroundColor: Colors.green,
           ),
         );
-        // Ürün listesine geri dön
-        Navigator.popUntil(context, (route) => route.isFirst);
+        
+        // Ürün listesine geri dön - daha güvenli navigation
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
       }
     } catch (e) {
       if (context.mounted) {

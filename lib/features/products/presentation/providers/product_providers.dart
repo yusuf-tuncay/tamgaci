@@ -284,13 +284,9 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
     try {
       await _repository.createProduct(product);
       
-      // Listeye yeni ürünü ekle
-      final updatedProducts = [...state.products, product];
-      
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Ürün başarıyla oluşturuldu',
-        products: updatedProducts,
       );
     } catch (e) {
       state = state.copyWith(
@@ -306,14 +302,10 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
 
     try {
       await _repository.updateProduct(product);
-      
-      // Listede ürünü güncelle
-      final updatedProducts = state.products.map((p) => p.id == product.id ? product : p).toList();
-      
+
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Ürün başarıyla güncellendi',
-        products: updatedProducts,
       );
     } catch (e) {
       state = state.copyWith(
@@ -329,14 +321,10 @@ class ProductOperations extends StateNotifier<ProductOperationsState> {
 
     try {
       await _repository.deleteProduct(id);
-      
-      // Listeden silinen ürünü kaldır
-      final updatedProducts = state.products.where((product) => product.id != id).toList();
-      
+
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Ürün başarıyla silindi',
-        products: updatedProducts,
       );
     } catch (e) {
       state = state.copyWith(
