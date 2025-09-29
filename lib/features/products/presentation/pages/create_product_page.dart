@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import '../../domain/entities/product.dart';
@@ -60,6 +62,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   List<String> _images = [];
   final List<String> _linkedProducts = [];
   final List<File> _selectedImages = [];
+  final List<Uint8List> _selectedImageBytes = [];
 
   bool _isLoading = false;
   bool _autoGenerateBarcode = false;
@@ -144,10 +147,22 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     try {
       final ImagePicker picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage();
-
+      
       if (images.isNotEmpty) {
         setState(() {
-          _selectedImages.addAll(images.map((image) => File(image.path)));
+          for (final image in images) {
+            if (kIsWeb) {
+              // Web için bytes kullan
+              image.readAsBytes().then((bytes) {
+                setState(() {
+                  _selectedImageBytes.add(bytes);
+                });
+              });
+            } else {
+              // Mobil için File kullan
+              _selectedImages.add(File(image.path));
+            }
+          }
         });
       }
     } catch (e) {
@@ -162,7 +177,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   void _removeImage(int index) {
     setState(() {
-      _selectedImages.removeAt(index);
+      if (kIsWeb) {
+        _selectedImageBytes.removeAt(index);
+      } else {
+        _selectedImages.removeAt(index);
+      }
     });
   }
 
@@ -953,9 +972,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             const SizedBox(height: 16),
 
             // Seçilen fotoğraflar
-            if (_selectedImages.isNotEmpty) ...[
+            if ((kIsWeb ? _selectedImageBytes.isNotEmpty : _selectedImages.isNotEmpty)) ...[
               Text(
-                'Seçilen Fotoğraflar (${_selectedImages.length})',
+                'Seçilen Fotoğraflar (${kIsWeb ? _selectedImageBytes.length : _selectedImages.length})',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
@@ -967,7 +986,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 height: 120,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  itemCount: _selectedImages.length,
+                  itemCount: kIsWeb ? _selectedImageBytes.length : _selectedImages.length,
                   itemBuilder: (context, index) {
                     return Container(
                       margin: const EdgeInsets.only(right: 8),
@@ -975,12 +994,19 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              _selectedImages[index],
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                            ),
+                            child: kIsWeb
+                                ? Image.memory(
+                                    _selectedImageBytes[index],
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Image.file(
+                                    _selectedImages[index],
+                                    width: 100,
+                                    height: 100,
+                                    fit: BoxFit.cover,
+                                  ),
                           ),
                           Positioned(
                             top: 4,
@@ -1117,15 +1143,20 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     });
 
     try {
-      final productId = widget.productId ?? DateTime.now().millisecondsSinceEpoch.toString();
-      
+      final productId =
+          widget.productId ?? DateTime.now().millisecondsSinceEpoch.toString();
+
       // Fotoğrafları Firebase Storage'a yükle
       List<String> imageUrls = [];
-      if (_selectedImages.isNotEmpty) {
+      if (kIsWeb ? _selectedImageBytes.isNotEmpty : _selectedImages.isNotEmpty) {
         final storageService = FirebaseStorageService();
-        imageUrls = await storageService.uploadProductImages(productId, _selectedImages);
+        if (kIsWeb) {
+          imageUrls = await storageService.uploadProductImageBytesList(productId, _selectedImageBytes);
+        } else {
+          imageUrls = await storageService.uploadProductImages(productId, _selectedImages);
+        }
       }
-      
+
       final product = Product(
         id: productId,
         tenantId: '', // Repository'de set edilecek
