@@ -697,7 +697,8 @@ class TamgaciRoutes {
         return _createRoute(const ProductsHomePage(), settings: settings);
 
       case createProduct:
-        return _createRoute(const CreateProductPage(), settings: settings);
+        final productId = arguments as String?;
+        return _createRoute(CreateProductPage(productId: productId), settings: settings);
 
       case productDetail:
         final productId = arguments as String?;

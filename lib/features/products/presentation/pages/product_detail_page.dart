@@ -504,7 +504,11 @@ class ProductDetailPage extends ConsumerWidget {
               title: const Text('Düzenle'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to edit page
+                Navigator.pushNamed(
+                  context,
+                  '/products/create',
+                  arguments: product.id,
+                );
               },
             ),
             ListTile(

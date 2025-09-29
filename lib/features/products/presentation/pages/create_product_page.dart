@@ -67,6 +67,70 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _autoGenerateProductCode = true;
     _autoGenerateBarcode = true;
     _stockQuantityController.text = '0'; // Varsayılan stok miktarı
+    
+    // Düzenleme modu için ürün bilgilerini yükle
+    if (widget.productId != null) {
+      _loadProductForEdit();
+    }
+  }
+
+  Future<void> _loadProductForEdit() async {
+    try {
+      final productAsync = ref.read(productDetailProvider(widget.productId!));
+      await productAsync.when(
+        data: (product) {
+          if (product != null) {
+            _populateFormWithProduct(product);
+          }
+        },
+        loading: () {},
+        error: (error, stack) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ürün bilgileri yüklenemedi: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Hata: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _populateFormWithProduct(Product product) {
+    _nameController.text = product.name;
+    _descriptionController.text = product.description ?? '';
+    _productCodeController.text = product.productCode ?? '';
+    _barcodeController.text = product.barcode ?? '';
+    _categoryController.text = product.category ?? '';
+    _brandController.text = product.brand ?? '';
+    _salesPriceController.text = product.salesPrice.toString();
+    _purchasePriceController.text = product.purchasePrice?.toString() ?? '';
+    _salesTaxRateController.text = product.salesTaxRate.toString();
+    _purchaseTaxRateController.text = product.purchaseTaxRate?.toString() ?? '';
+    _purchaseDiscountController.text = product.purchaseDiscount?.toString() ?? '';
+    _sctController.text = product.sct?.toString() ?? '';
+    _shelfLocationController.text = product.shelfLocation ?? '';
+    _criticalStockController.text = product.criticalStockQuantity?.toString() ?? '';
+    _gtipCodeController.text = product.gtipCode ?? '';
+    _countryCodeController.text = product.countryCode ?? '';
+    _notesController.text = product.notes ?? '';
+    _stockQuantityController.text = product.stockQuantity.toString();
+    
+    setState(() {
+      _selectedType = product.type;
+      _selectedStockTracking = product.stockTracking;
+      _salesTaxInclusive = product.salesTaxInclusive;
+      _purchaseTaxInclusive = product.purchaseTaxInclusive;
+      _salesCurrency = product.salesCurrency;
+      _purchaseCurrency = product.purchaseCurrency;
+    });
   }
 
   @override
@@ -103,7 +167,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           : TamgaciConstants.backgroundColor,
       appBar: AppBar(
         title: Text(
-          'Yeni Ürün',
+          widget.productId != null ? 'Ürün Düzenle' : 'Yeni Ürün',
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -216,7 +280,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Yeni Ürün Oluştur',
+                  widget.productId != null ? 'Ürün Düzenle' : 'Yeni Ürün Oluştur',
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -225,7 +289,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Ürün bilgilerini doldurun ve depo seçin',
+                  widget.productId != null 
+                    ? 'Ürün bilgilerini güncelleyin'
+                    : 'Ürün bilgilerini doldurun ve depo seçin',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -274,7 +340,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   ),
                 )
               : Text(
-                  'Ürünü Kaydet',
+                  widget.productId != null ? 'Ürünü Güncelle' : 'Ürünü Kaydet',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -878,7 +944,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
     try {
       final product = Product(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: widget.productId ?? DateTime.now().millisecondsSinceEpoch.toString(),
         tenantId: '', // Repository'de set edilecek
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim().isEmpty
@@ -943,17 +1009,29 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         createdBy: 'current_user_id', // TODO: Get from auth provider
       );
 
-      // Save product using repository
-      await ref.read(productOperationsProvider.notifier).createProduct(product);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ürün başarıyla oluşturuldu'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.of(context).pop();
+      // Save or update product using repository
+      if (widget.productId != null) {
+        await ref.read(productOperationsProvider.notifier).updateProduct(product);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ürün başarıyla güncellendi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop();
+        }
+      } else {
+        await ref.read(productOperationsProvider.notifier).createProduct(product);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ürün başarıyla oluşturuldu'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.of(context).pop();
+        }
       }
     } catch (e) {
       if (mounted) {
