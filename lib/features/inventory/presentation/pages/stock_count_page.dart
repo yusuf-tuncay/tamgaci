@@ -37,7 +37,9 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     if (widget.existingStockCount != null) {
       _stockCount = widget.existingStockCount!;
     } else {
-      _initializeNewStockCount();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _initializeNewStockCount();
+      });
     }
   }
 
@@ -49,7 +51,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
 
   Future<void> _initializeNewStockCount() async {
     if (_isInitializing) return;
-    
+
     setState(() {
       _isInitializing = true;
     });
@@ -236,7 +238,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
             children: [
               Expanded(
                 child: FilterChip(
-                  label: Text('Sayılmayanlar'),
+                  label: const Text('Sayılmayanlar'),
                   selected: _showOnlyUncounted,
                   onSelected: (value) {
                     setState(() {
@@ -248,7 +250,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: FilterChip(
-                  label: Text('Farklı Olanlar'),
+                  label: const Text('Farklı Olanlar'),
                   selected: _showOnlyWithVariance,
                   onSelected: (value) {
                     setState(() {
@@ -266,7 +268,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
 
   Widget _buildStatistics() {
     final totalItems = _stockCount!.totalItemsCount;
-    final countedItems = _stockCount!.items.where((item) => item.isCounted).length;
+    final countedItems =
+        _stockCount!.items.where((item) => item.isCounted).length;
     final progress = totalItems > 0 ? countedItems / totalItems : 0.0;
 
     return Container(
@@ -376,9 +379,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     if (_showOnlyWithVariance) {
       items = items
           .where((item) =>
-              item.isCounted &&
-              item.variance != null &&
-              item.variance != 0)
+              item.isCounted && item.variance != null && item.variance != 0)
           .toList();
     }
 
@@ -405,8 +406,9 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Widget _buildProductCard(StockCountItem item, int index) {
-    final hasVariance = item.isCounted && item.variance != null && item.variance != 0;
-    
+    final hasVariance =
+        item.isCounted && item.variance != null && item.variance != 0;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
@@ -463,7 +465,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                     ),
                   ),
                   if (item.isCounted)
-                    Icon(
+                    const Icon(
                       Icons.check_circle,
                       color: Colors.green,
                       size: 24,
@@ -685,7 +687,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('İptal'),
+            child: const Text('İptal'),
           ),
           ElevatedButton(
             onPressed: () {
@@ -711,7 +713,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                 countedAt: DateTime.now(),
               );
 
-              final updatedItems = List<StockCountItem>.from(_stockCount!.items);
+              final updatedItems =
+                  List<StockCountItem>.from(_stockCount!.items);
               final originalIndex = _stockCount!.items.indexOf(item);
               updatedItems[originalIndex] = updatedItem;
 
@@ -722,18 +725,21 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                 _stockCount = _stockCount!.copyWith(
                   items: updatedItems,
                   countedItemsCount: countedCount,
-                  status: countedCount > 0 && countedCount < _stockCount!.totalItemsCount
+                  status: countedCount > 0 &&
+                          countedCount < _stockCount!.totalItemsCount
                       ? StockCountStatus.inProgress
                       : _stockCount!.status,
                 );
               });
 
               // Kaydet
-              ref.read(stockCountOperationsProvider.notifier).updateStockCount(_stockCount!);
+              ref
+                  .read(stockCountOperationsProvider.notifier)
+                  .updateStockCount(_stockCount!);
 
               Navigator.of(context).pop();
             },
-            child: Text('Kaydet'),
+            child: const Text('Kaydet'),
           ),
         ],
       ),
@@ -744,7 +750,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     // Tüm kalemlerin sayılıp sayılmadığını kontrol et
     final uncountedItems =
         _stockCount!.items.where((item) => !item.isCounted).toList();
-    
+
     if (uncountedItems.isNotEmpty) {
       showDialog(
         context: context,
@@ -760,7 +766,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('İptal'),
+              child: const Text('İptal'),
             ),
             ElevatedButton(
               onPressed: () {
@@ -770,7 +776,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
               ),
-              child: Text('Tamamla'),
+              child: const Text('Tamamla'),
             ),
           ],
         ),
@@ -809,7 +815,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                   final success = await ref
                       .read(stockCountOperationsProvider.notifier)
                       .cancelStockCount(_stockCount!.id);
-                  
+
                   if (mounted && success) {
                     Navigator.of(context).pop();
                   }
@@ -823,17 +829,19 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    title: Text('Stok Sayımını Sil'),
-                    content: Text('Bu işlem geri alınamaz. Emin misiniz?'),
+                    title: const Text('Stok Sayımını Sil'),
+                    content:
+                        const Text('Bu işlem geri alınamaz. Emin misiniz?'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: Text('İptal'),
+                        child: const Text('İptal'),
                       ),
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(true),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: Text('Sil'),
+                        style:
+                            TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('Sil'),
                       ),
                     ],
                   ),
@@ -843,7 +851,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                   final success = await ref
                       .read(stockCountOperationsProvider.notifier)
                       .deleteStockCount(_stockCount!.id);
-                  
+
                   if (mounted && success) {
                     Navigator.of(context).pop();
                   }
