@@ -272,7 +272,7 @@ class ProductCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'KDV Dahil (KDV: ${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)})',
+                'KDV Dahil (KDV: ${product.salesTaxAmount.toStringAsFixed(2)})',
                 style: GoogleFonts.poppins(
                   fontSize: 9,
                   color: Colors.grey[600],
@@ -289,7 +289,7 @@ class ProductCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '+KDV(${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)})',
+                '+KDV(${product.salesTaxAmount.toStringAsFixed(2)})',
                 style: GoogleFonts.poppins(
                   fontSize: 9,
                   color: Colors.grey[600],

@@ -74,7 +74,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   // Dinamik kategori ve marka listeleri
   final List<String> _customCategories = [];
   final List<String> _customBrands = [];
-  
+
   // Özel özellikler (Custom Attributes)
   final Map<String, String> _customAttributes = {};
 
@@ -146,11 +146,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _countryCodeController.text = product.countryCode ?? '';
     _notesController.text = product.notes ?? '';
     _stockQuantityController.text = product.stockQuantity.toString();
-    
+
     // Özel özellikleri yükle
     if (product.attributeValues != null) {
       _customAttributes.addAll(
-        product.attributeValues!.map((key, value) => MapEntry(key, value.toString())),
+        product.attributeValues!
+            .map((key, value) => MapEntry(key, value.toString())),
       );
     }
 

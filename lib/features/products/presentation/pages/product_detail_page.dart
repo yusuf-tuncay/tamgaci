@@ -507,13 +507,13 @@ class ProductDetailPage extends ConsumerWidget {
               ),
               _buildInfoRow(
                 'KDV Tutarı',
-                '${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)} ${product.salesCurrency}',
+                '${product.salesTaxAmount.toStringAsFixed(2)} ${product.salesCurrency}',
                 isDark,
               ),
             ] else ...[
               _buildInfoRow(
                 'KDV Hariç Satış Fiyatı',
-                '${product.salesPrice.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${product.salesPriceWithoutTax.toStringAsFixed(2)} ${product.salesCurrency}',
                 isDark,
               ),
               _buildInfoRow(
@@ -523,7 +523,7 @@ class ProductDetailPage extends ConsumerWidget {
               ),
               _buildInfoRow(
                 'KDV Tutarı',
-                '${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)} ${product.salesCurrency}',
+                '${product.salesTaxAmount.toStringAsFixed(2)} ${product.salesCurrency}',
                 isDark,
               ),
             ],
@@ -705,9 +705,10 @@ class ProductDetailPage extends ConsumerWidget {
               _buildInfoRow('Etiketler', product.tags.join(', '), isDark),
             if (product.notes != null)
               _buildInfoRow('Notlar', product.notes!, isDark),
-            
+
             // Özel Özellikler
-            if (product.attributeValues != null && product.attributeValues!.isNotEmpty) ...[
+            if (product.attributeValues != null &&
+                product.attributeValues!.isNotEmpty) ...[
               const SizedBox(height: 16),
               Container(
                 padding: const EdgeInsets.all(12),

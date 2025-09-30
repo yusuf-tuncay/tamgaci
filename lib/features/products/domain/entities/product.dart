@@ -119,21 +119,53 @@ class Product {
     this.updatedBy,
   });
 
+  /// Vergi hariç satış fiyatı
+  double get salesPriceWithoutTax {
+    if (salesTaxInclusive == TaxInclusiveOption.exclusive) {
+      return salesPrice; // Zaten KDV hariç
+    }
+    // KDV dahil ise, KDV hariç fiyatı hesapla
+    return salesPrice / (1 + salesTaxRate / 100);
+  }
+
   /// Vergi dahil satış fiyatı
   double get salesPriceWithTax {
     if (salesTaxInclusive == TaxInclusiveOption.inclusive) {
-      return salesPrice;
+      return salesPrice; // Zaten KDV dahil
     }
+    // KDV hariç ise, KDV dahil fiyatı hesapla
     return salesPrice * (1 + salesTaxRate / 100);
+  }
+
+  /// Satış KDV tutarı
+  double get salesTaxAmount {
+    return salesPriceWithTax - salesPriceWithoutTax;
+  }
+
+  /// Vergi hariç alış fiyatı
+  double? get purchasePriceWithoutTax {
+    if (purchasePrice == null || purchaseTaxRate == null) return null;
+    if (purchaseTaxInclusive == TaxInclusiveOption.exclusive) {
+      return purchasePrice; // Zaten KDV hariç
+    }
+    // KDV dahil ise, KDV hariç fiyatı hesapla
+    return purchasePrice! / (1 + purchaseTaxRate! / 100);
   }
 
   /// Vergi dahil alış fiyatı
   double? get purchasePriceWithTax {
     if (purchasePrice == null || purchaseTaxRate == null) return null;
     if (purchaseTaxInclusive == TaxInclusiveOption.inclusive) {
-      return purchasePrice;
+      return purchasePrice; // Zaten KDV dahil
     }
+    // KDV hariç ise, KDV dahil fiyatı hesapla
     return purchasePrice! * (1 + purchaseTaxRate! / 100);
+  }
+
+  /// Alış KDV tutarı
+  double? get purchaseTaxAmount {
+    if (purchasePriceWithTax == null || purchasePriceWithoutTax == null) return null;
+    return purchasePriceWithTax! - purchasePriceWithoutTax!;
   }
 
   /// Toplam stok miktarı (varyantlar dahil)
