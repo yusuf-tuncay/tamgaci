@@ -1286,9 +1286,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha:0.05),
+        color: Colors.blue.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withValues(alpha:0.2)),
+        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1702,8 +1702,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   void _onSalesPriceFocusChange() {
     if (!_salesPriceFocusNode.hasFocus &&
         _salesPriceController.text.isNotEmpty) {
-      final formatted = _formatPrice(_salesPriceController.text);
-      if (formatted != _salesPriceController.text) {
+      final currentText = _salesPriceController.text;
+      final formatted = _formatPrice(currentText);
+      
+      debugPrint('💰 Fiyat Formatlama (Satış):');
+      debugPrint('   Input: "$currentText"');
+      debugPrint('   Output: "$formatted"');
+      
+      if (formatted != currentText) {
         _salesPriceController.text = formatted;
       }
     }
@@ -1712,8 +1718,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   void _onPurchasePriceFocusChange() {
     if (!_purchasePriceFocusNode.hasFocus &&
         _purchasePriceController.text.isNotEmpty) {
-      final formatted = _formatPrice(_purchasePriceController.text);
-      if (formatted != _purchasePriceController.text) {
+      final currentText = _purchasePriceController.text;
+      final formatted = _formatPrice(currentText);
+      
+      debugPrint('💰 Fiyat Formatlama (Alış):');
+      debugPrint('   Input: "$currentText"');
+      debugPrint('   Output: "$formatted"');
+      
+      if (formatted != currentText) {
         _purchasePriceController.text = formatted;
       }
     }
