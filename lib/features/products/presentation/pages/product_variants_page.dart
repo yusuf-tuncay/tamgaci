@@ -79,7 +79,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.1),
+              color: Colors.purple.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -101,7 +101,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.purple.withOpacity(0.1),
+              color: Colors.purple.withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -249,7 +249,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                    color: Colors.blue.withValues(alpha:0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -530,7 +530,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                       trailing: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withOpacity(0.1),
+                          color: const Color(0xFF6366F1).withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(

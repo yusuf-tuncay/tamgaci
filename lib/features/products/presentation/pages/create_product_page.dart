@@ -2508,7 +2508,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       : Colors.grey[400],
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.dashboard_customize,
                   color: Colors.white,
                   size: 20,

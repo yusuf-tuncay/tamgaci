@@ -12,6 +12,8 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../providers/warehouse_providers.dart';
 import '../../domain/entities/warehouse.dart';
+import '../../../products/presentation/providers/product_providers.dart';
+import '../../../products/domain/entities/product.dart';
 
 class WarehouseDetailPage extends ConsumerWidget {
   final String warehouseId;
@@ -85,6 +87,8 @@ class WarehouseDetailPage extends ConsumerWidget {
           _buildCapacityInfoCard(warehouse, isDark, selectedCurrency),
           const SizedBox(height: 16),
           _buildSettingsCard(warehouse, isDark),
+          const SizedBox(height: 16),
+          _buildProductsCard(warehouse, isDark, ref),
           const SizedBox(height: 16),
           _buildTimelineCard(warehouse, isDark),
           const SizedBox(height: 32),
@@ -362,6 +366,240 @@ class WarehouseDetailPage extends ConsumerWidget {
                 isDark),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildProductsCard(Warehouse warehouse, bool isDark, WidgetRef ref) {
+    final productsAsync = ref.watch(productsStreamProvider);
+
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.inventory_2,
+                  color: TamgaciConstants.primaryColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Depodaki Ürünler',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pushNamed(
+                      TamgaciRoutes.products,
+                      arguments: {'warehouseId': warehouse.id},
+                    );
+                  },
+                  icon: const Icon(Icons.visibility, size: 16),
+                  label: const Text('Tümünü Gör'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildProductsList(productsAsync, warehouse.id, isDark),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductsList(AsyncValue<List<Product>> productsAsync, String warehouseId, bool isDark) {
+    return productsAsync.when(
+      data: (products) {
+        // Bu depodaki ürünleri filtrele
+        final warehouseProducts = products.where((product) => 
+          product.warehouseId == warehouseId
+        ).toList();
+
+        if (warehouseProducts.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.inventory_2_outlined,
+                  size: 48,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Bu depoda ürün bulunmuyor',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white : Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Bu depoya ürün eklemek için ürün oluştururken depo seçin.',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        // İlk 5 ürünü göster
+        final displayProducts = warehouseProducts.take(5).toList();
+
+        return Column(
+          children: [
+            ...displayProducts.map((product) => _buildProductItem(product, isDark)),
+            if (warehouseProducts.length > 5) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '+${warehouseProducts.length - 5} ürün daha',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: TamgaciConstants.primaryColor,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 32,
+              color: Colors.red[400],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Ürünler yüklenemedi',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.red[600],
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              error.toString(),
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductItem(Product product, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[800] : Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: product.stockQuantity > 0 
+            ? Colors.green.withValues(alpha: 0.3)
+            : Colors.red.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: product.stockQuantity > 0 
+                ? Colors.green.withValues(alpha: 0.1)
+                : Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Icon(
+                product.stockQuantity > 0 ? Icons.check_circle : Icons.cancel,
+                color: product.stockQuantity > 0 ? Colors.green : Colors.red,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Kategori: ${product.category ?? 'Belirtilmemiş'}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${CurrencyHelper.formatNumber(product.salesPriceWithoutTax)} ${product.salesCurrency}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: product.stockQuantity > 0 ? Colors.green : Colors.red,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              '${CurrencyHelper.formatNumber(product.stockQuantity.toDouble()).replaceAll(',00', '')} adet',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

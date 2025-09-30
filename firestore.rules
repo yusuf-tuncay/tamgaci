@@ -231,6 +231,11 @@ service cloud.firestore {
       // Yazma: sadece kendi ayarını yazsın
       allow write: if isSignedIn() && uid == userId();
     }
+
+    // Product Movements - Ürün hareketleri
+    match /productMovements/{movementId} {
+      allow read, write: if isSignedIn();
+    }
     match /system_settings/{docId} {
       // Sistem ayarlarını tüm kullanıcılar okuyabilir (veya isSignedIn())
       allow read: if true;

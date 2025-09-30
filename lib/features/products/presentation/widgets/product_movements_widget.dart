@@ -92,7 +92,7 @@ class ProductMovementsWidget extends ConsumerWidget {
         color: isDark ? Colors.grey[800] : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: _getMovementColor(movement.type).withOpacity(0.3),
+          color: _getMovementColor(movement.type).withValues(alpha:0.3),
         ),
       ),
       child: Row(
@@ -101,7 +101,7 @@ class ProductMovementsWidget extends ConsumerWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: _getMovementColor(movement.type).withOpacity(0.1),
+              color: _getMovementColor(movement.type).withValues(alpha:0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(

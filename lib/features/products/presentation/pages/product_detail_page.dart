@@ -196,14 +196,14 @@ class ProductDetailPage extends ConsumerWidget {
                   // Content
                   Expanded(
                     child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Ürün resmi ve temel bilgiler
-                    _buildProductHeader(context, product),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Ürün resmi ve temel bilgiler
+                          _buildProductHeader(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
                           // Ürün fotoğrafları
                           if (product.images.isNotEmpty) ...[
@@ -211,18 +211,18 @@ class ProductDetailPage extends ConsumerWidget {
                             const SizedBox(height: 24),
                           ],
 
-                    // Fiyat bilgileri
-                    _buildPricingSection(context, product),
+                          // Fiyat bilgileri
+                          _buildPricingSection(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                    // Stok bilgileri
-                    _buildStockSection(context, product),
+                          // Stok bilgileri
+                          _buildStockSection(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                    // Ek bilgiler
-                    _buildAdditionalInfoSection(context, product),
+                          // Ek bilgiler
+                          _buildAdditionalInfoSection(context, product),
 
                           const SizedBox(height: 24),
 
@@ -231,19 +231,19 @@ class ProductDetailPage extends ConsumerWidget {
                               product.variants!.isNotEmpty)
                             _buildVariantsSection(context, product),
 
-                    const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                    // Bağlı ürünler
-                    if (product.linkedProducts != null &&
-                        product.linkedProducts!.isNotEmpty)
-                      _buildLinkedProductsSection(context, product),
+                          // Bağlı ürünler
+                          if (product.linkedProducts != null &&
+                              product.linkedProducts!.isNotEmpty)
+                            _buildLinkedProductsSection(context, product),
 
                           const SizedBox(height: 24),
 
                           // Ürün hareketleri
                           ProductMovementsWidget(product: product),
-                  ],
-                ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -1136,5 +1136,4 @@ class ProductDetailPage extends ConsumerWidget {
       }
     }
   }
-
 }
