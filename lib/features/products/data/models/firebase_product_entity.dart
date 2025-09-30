@@ -30,6 +30,9 @@ class ProductEntity {
   final double? sct;
   final String? shelfLocation;
   final StockTrackingType stockTracking;
+  final String? warehouseId;
+  final String? warehouseName;
+  final int stockQuantity;
   final int? criticalStockQuantity;
   final String? gtipCode;
   final String? countryCode;
@@ -70,6 +73,9 @@ class ProductEntity {
     this.sct,
     this.shelfLocation,
     this.stockTracking = StockTrackingType.normal,
+    this.warehouseId,
+    this.warehouseName,
+    this.stockQuantity = 0,
     this.criticalStockQuantity,
     this.gtipCode,
     this.countryCode,
@@ -127,6 +133,9 @@ class ProductEntity {
         (e) => e.name == data['stockTracking'],
         orElse: () => StockTrackingType.normal,
       ),
+      warehouseId: data['warehouseId'],
+      warehouseName: data['warehouseName'],
+      stockQuantity: data['stockQuantity'] ?? 0,
       criticalStockQuantity: data['criticalStockQuantity'],
       gtipCode: data['gtipCode'],
       countryCode: data['countryCode'],
@@ -178,6 +187,9 @@ class ProductEntity {
       sct: product.sct,
       shelfLocation: product.shelfLocation,
       stockTracking: product.stockTracking,
+      warehouseId: product.warehouseId,
+      warehouseName: product.warehouseName,
+      stockQuantity: product.stockQuantity,
       criticalStockQuantity: product.criticalStockQuantity,
       gtipCode: product.gtipCode,
       countryCode: product.countryCode,
@@ -220,6 +232,9 @@ class ProductEntity {
       'sct': sct,
       'shelfLocation': shelfLocation,
       'stockTracking': stockTracking.name,
+      'warehouseId': warehouseId,
+      'warehouseName': warehouseName,
+      'stockQuantity': stockQuantity,
       'criticalStockQuantity': criticalStockQuantity,
       'gtipCode': gtipCode,
       'countryCode': countryCode,
@@ -263,6 +278,9 @@ class ProductEntity {
       sct: sct,
       shelfLocation: shelfLocation,
       stockTracking: stockTracking,
+      warehouseId: warehouseId,
+      warehouseName: warehouseName,
+      stockQuantity: stockQuantity,
       criticalStockQuantity: criticalStockQuantity,
       gtipCode: gtipCode,
       countryCode: countryCode,
@@ -305,6 +323,9 @@ class ProductEntity {
     double? sct,
     String? shelfLocation,
     StockTrackingType? stockTracking,
+    String? warehouseId,
+    String? warehouseName,
+    int? stockQuantity,
     int? criticalStockQuantity,
     String? gtipCode,
     String? countryCode,
@@ -345,6 +366,9 @@ class ProductEntity {
       sct: sct ?? this.sct,
       shelfLocation: shelfLocation ?? this.shelfLocation,
       stockTracking: stockTracking ?? this.stockTracking,
+      warehouseId: warehouseId ?? this.warehouseId,
+      warehouseName: warehouseName ?? this.warehouseName,
+      stockQuantity: stockQuantity ?? this.stockQuantity,
       criticalStockQuantity:
           criticalStockQuantity ?? this.criticalStockQuantity,
       gtipCode: gtipCode ?? this.gtipCode,
