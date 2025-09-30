@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../domain/entities/product.dart';
+import '../../../../core/utils/currency_helper.dart';
 
 /// Ürün Kartı Widget'ı
 class ProductCard extends StatelessWidget {
@@ -263,7 +264,7 @@ class ProductCard extends StatelessWidget {
             // KDV dahil satış fiyatı
             if (product.salesTaxInclusive == TaxInclusiveOption.inclusive) ...[
               Text(
-                '${product.salesPriceWithTax.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.salesPriceWithTax)} ${product.salesCurrency}',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -272,7 +273,7 @@ class ProductCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'KDV Dahil (KDV: ${product.salesTaxAmount.toStringAsFixed(2)})',
+                'KDV Dahil (KDV: ${CurrencyHelper.formatNumber(product.salesTaxAmount)})',
                 style: GoogleFonts.poppins(
                   fontSize: 9,
                   color: Colors.grey[600],
@@ -280,7 +281,7 @@ class ProductCard extends StatelessWidget {
               ),
             ] else ...[
               Text(
-                '${product.salesPrice.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.salesPrice)} ${product.salesCurrency}',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -289,7 +290,7 @@ class ProductCard extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '+KDV(${product.salesTaxAmount.toStringAsFixed(2)})',
+                '+KDV(${CurrencyHelper.formatNumber(product.salesTaxAmount)})',
                 style: GoogleFonts.poppins(
                   fontSize: 9,
                   color: Colors.grey[600],
@@ -299,7 +300,7 @@ class ProductCard extends StatelessWidget {
             if (product.purchasePrice != null) ...[
               const SizedBox(height: 2),
               Text(
-                'Alış: ${product.purchasePrice!.toStringAsFixed(2)} ${product.purchaseCurrency ?? product.salesCurrency}',
+                'Alış: ${CurrencyHelper.formatNumber(product.purchasePrice!)} ${product.purchaseCurrency ?? product.salesCurrency}',
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   color: Colors.blue[600],

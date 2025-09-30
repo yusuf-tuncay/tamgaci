@@ -13,6 +13,7 @@ import '../../../../core/widgets/error_widget.dart' as custom_error;
 import '../../domain/entities/product.dart';
 import '../providers/product_providers.dart';
 import '../../data/services/firebase_storage_service.dart';
+import '../../../../core/utils/currency_helper.dart';
 
 /// Ürün detay sayfası
 class ProductDetailPage extends ConsumerWidget {
@@ -487,7 +488,7 @@ class ProductDetailPage extends ConsumerWidget {
             // Satış fiyatı
             _buildInfoRow(
               'Satış Fiyatı',
-              '${product.salesPrice.toStringAsFixed(2)} ${product.salesCurrency}',
+              '${CurrencyHelper.formatNumber(product.salesPrice)} ${product.salesCurrency}',
               isDark,
             ),
 
@@ -502,28 +503,28 @@ class ProductDetailPage extends ConsumerWidget {
             if (product.salesTaxInclusive == TaxInclusiveOption.inclusive) ...[
               _buildInfoRow(
                 'KDV Dahil Satış Fiyatı',
-                '${product.salesPriceWithTax.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.salesPriceWithTax)} ${product.salesCurrency}',
                 isDark,
               ),
               _buildInfoRow(
                 'KDV Tutarı',
-                '${product.salesTaxAmount.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.salesTaxAmount)} ${product.salesCurrency}',
                 isDark,
               ),
             ] else ...[
               _buildInfoRow(
                 'KDV Hariç Satış Fiyatı',
-                '${product.salesPriceWithoutTax.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.salesPriceWithoutTax)} ${product.salesCurrency}',
                 isDark,
               ),
               _buildInfoRow(
                 'KDV Dahil Satış Fiyatı',
-                '${product.salesPriceWithTax.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.salesPriceWithTax)} ${product.salesCurrency}',
                 isDark,
               ),
               _buildInfoRow(
                 'KDV Tutarı',
-                '${product.salesTaxAmount.toStringAsFixed(2)} ${product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.salesTaxAmount)} ${product.salesCurrency}',
                 isDark,
               ),
             ],
@@ -531,13 +532,13 @@ class ProductDetailPage extends ConsumerWidget {
             if (product.purchasePrice != null) ...[
               _buildInfoRow(
                 'Alış Fiyatı',
-                '${product.purchasePrice!.toStringAsFixed(2)} ${product.purchaseCurrency ?? product.salesCurrency}',
+                '${CurrencyHelper.formatNumber(product.purchasePrice!)} ${product.purchaseCurrency ?? product.salesCurrency}',
                 isDark,
               ),
-              if (product.purchaseTaxInclusive == TaxInclusiveOption.inclusive)
+              if (product.purchaseTaxInclusive == TaxInclusiveOption.inclusive && product.purchasePriceWithTax != null)
                 _buildInfoRow(
                   'KDV Dahil Alış Fiyatı',
-                  '${product.purchasePriceWithTax?.toStringAsFixed(2)} ${product.purchaseCurrency ?? product.salesCurrency}',
+                  '${CurrencyHelper.formatNumber(product.purchasePriceWithTax!)} ${product.purchaseCurrency ?? product.salesCurrency}',
                   isDark,
                 ),
             ],
