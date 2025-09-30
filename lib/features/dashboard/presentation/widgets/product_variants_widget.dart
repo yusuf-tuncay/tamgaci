@@ -61,7 +61,7 @@ class ProductVariantsWidget extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.purple.withOpacity(0.1),
+            color: Colors.purple.withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -83,7 +83,7 @@ class ProductVariantsWidget extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.purple.withOpacity(0.1),
+            color: Colors.purple.withValues(alpha:0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -131,7 +131,7 @@ class ProductVariantsWidget extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withValues(alpha:0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -153,13 +153,13 @@ class ProductVariantsWidget extends ConsumerWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: variant.stockQuantity > 0
-                        ? Colors.green.withOpacity(0.05)
-                        : Colors.red.withOpacity(0.05),
+                        ? Colors.green.withValues(alpha:0.05)
+                        : Colors.red.withValues(alpha:0.05),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: variant.stockQuantity > 0
-                          ? Colors.green.withOpacity(0.3)
-                          : Colors.red.withOpacity(0.3),
+                          ? Colors.green.withValues(alpha:0.3)
+                          : Colors.red.withValues(alpha:0.3),
                       width: 1,
                     ),
                   ),
@@ -220,7 +220,7 @@ class ProductVariantsWidget extends ConsumerWidget {
                     ),
                   ),
                 );
-              }).toList(),
+              }),
               // Daha fazla varyant varsa göster
               if (product.variants!.length > 3) ...[
                 const SizedBox(height: 4),
