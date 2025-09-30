@@ -88,7 +88,7 @@ class WarehouseDetailPage extends ConsumerWidget {
           const SizedBox(height: 16),
           _buildSettingsCard(warehouse, isDark),
           const SizedBox(height: 16),
-          _buildProductsCard(warehouse, isDark, ref),
+          _buildProductsCard(warehouse, isDark, ref, context),
           const SizedBox(height: 16),
           _buildTimelineCard(warehouse, isDark),
           const SizedBox(height: 32),
@@ -370,7 +370,7 @@ class WarehouseDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProductsCard(Warehouse warehouse, bool isDark, WidgetRef ref) {
+  Widget _buildProductsCard(Warehouse warehouse, bool isDark, WidgetRef ref, BuildContext context) {
     final productsAsync = ref.watch(productsStreamProvider);
 
     return Card(
@@ -401,7 +401,7 @@ class WarehouseDetailPage extends ConsumerWidget {
                 TextButton.icon(
                   onPressed: () {
                     Navigator.of(context).pushNamed(
-                      TamgaciRoutes.products,
+                      TamgaciRoutes.productsList,
                       arguments: {'warehouseId': warehouse.id},
                     );
                   },
