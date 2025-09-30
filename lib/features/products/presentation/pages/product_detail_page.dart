@@ -225,6 +225,13 @@ class ProductDetailPage extends ConsumerWidget {
 
                           const SizedBox(height: 24),
 
+                          // Varyantlar
+                          if (product.variants != null &&
+                              product.variants!.isNotEmpty)
+                            _buildVariantsSection(context, product),
+
+                          const SizedBox(height: 24),
+
                           // Bağlı ürünler
                           if (product.linkedProducts != null &&
                               product.linkedProducts!.isNotEmpty)
@@ -773,6 +780,109 @@ class ProductDetailPage extends ConsumerWidget {
                 ),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVariantsSection(BuildContext context, Product product) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.dashboard_customize, color: Colors.purple[600]),
+                const SizedBox(width: 8),
+                Text(
+                  'Varyantlar (${product.variants!.length})',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark
+                        ? TamgaciConstants.textPrimaryDark
+                        : TamgaciConstants.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...product.variants!.map((variant) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: variant.stockQuantity > 0
+                      ? Colors.green.withOpacity(0.05)
+                      : Colors.red.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: variant.stockQuantity > 0
+                        ? Colors.green.withOpacity(0.3)
+                        : Colors.red.withOpacity(0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            variant.name,
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: variant.stockQuantity > 0
+                                ? Colors.green
+                                : Colors.red,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${CurrencyHelper.formatNumber(variant.stockQuantity.toDouble()).replaceAll(',00', '')} adet',
+                            style: GoogleFonts.poppins(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (variant.shelfLocation != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on, size: 14, color: Colors.blue[600]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Raf: ${variant.shelfLocation}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.blue[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            }).toList(),
           ],
         ),
       ),

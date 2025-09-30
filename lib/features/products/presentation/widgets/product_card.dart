@@ -41,6 +41,11 @@ class ProductCard extends StatelessWidget {
                 _buildHeader(),
                 const SizedBox(height: 12),
                 _buildProductInfo(),
+                // Varyantlar (varsa)
+                if (product.variants != null && product.variants!.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildVariantsInfo(),
+                ],
                 const SizedBox(height: 12),
                 _buildBottomInfo(),
               ],
@@ -387,5 +392,73 @@ class ProductCard extends StatelessWidget {
     } else {
       return Colors.green;
     }
+  }
+
+  Widget _buildVariantsInfo() {
+    final variantCount = product.variants!.length;
+    final inStockVariants = product.variants!.where((v) => v.stockQuantity > 0).length;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.purple.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.purple.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.dashboard_customize, size: 12, color: Colors.purple[700]),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              '$variantCount varyant ($inStockVariants stokta)',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: Colors.purple[700],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          // İlk 3 varyantın kısa gösterimi
+          ...product.variants!.take(3).map((variant) {
+            final firstAttribute = variant.attributes.values.isNotEmpty
+                ? variant.attributes.values.first
+                : variant.name.split(' - ').first;
+            return Container(
+              margin: const EdgeInsets.only(left: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              decoration: BoxDecoration(
+                color: variant.stockQuantity > 0
+                    ? Colors.green.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                firstAttribute.length > 8
+                    ? '${firstAttribute.substring(0, 8)}...'
+                    : firstAttribute,
+                style: GoogleFonts.poppins(
+                  fontSize: 8,
+                  color: variant.stockQuantity > 0 ? Colors.green[700] : Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }).toList(),
+          if (variantCount > 3)
+            Container(
+              margin: const EdgeInsets.only(left: 4),
+              child: Text(
+                '+${variantCount - 3}',
+                style: GoogleFonts.poppins(
+                  fontSize: 9,
+                  color: Colors.purple[700],
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

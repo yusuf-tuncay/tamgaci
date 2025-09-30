@@ -27,6 +27,9 @@ class ProductVariant {
   /// Kritik stok miktarı
   final int? criticalStockQuantity;
 
+  /// Raf yeri
+  final String? shelfLocation;
+
   /// Varyant özellikleri (renk, boyut, model vb.)
   final Map<String, String> attributes;
 
@@ -51,6 +54,7 @@ class ProductVariant {
     this.costPrice,
     required this.stockQuantity,
     this.criticalStockQuantity,
+    this.shelfLocation,
     this.attributes = const {},
     this.images = const [],
     this.isActive = true,
@@ -68,6 +72,7 @@ class ProductVariant {
     double? costPrice,
     int? stockQuantity,
     int? criticalStockQuantity,
+    String? shelfLocation,
     Map<String, String>? attributes,
     List<String>? images,
     bool? isActive,
@@ -84,6 +89,7 @@ class ProductVariant {
       stockQuantity: stockQuantity ?? this.stockQuantity,
       criticalStockQuantity:
           criticalStockQuantity ?? this.criticalStockQuantity,
+      shelfLocation: shelfLocation ?? this.shelfLocation,
       attributes: attributes ?? this.attributes,
       images: images ?? this.images,
       isActive: isActive ?? this.isActive,
@@ -103,6 +109,7 @@ class ProductVariant {
       costPrice: (json['costPrice'] as num?)?.toDouble(),
       stockQuantity: json['stockQuantity'] as int,
       criticalStockQuantity: json['criticalStockQuantity'] as int?,
+      shelfLocation: json['shelfLocation'] as String?,
       attributes: Map<String, String>.from(json['attributes'] ?? {}),
       images: List<String>.from(json['images'] ?? []),
       isActive: json['isActive'] ?? true,
@@ -122,6 +129,7 @@ class ProductVariant {
       'costPrice': costPrice,
       'stockQuantity': stockQuantity,
       'criticalStockQuantity': criticalStockQuantity,
+      'shelfLocation': shelfLocation,
       'attributes': attributes,
       'images': images,
       'isActive': isActive,

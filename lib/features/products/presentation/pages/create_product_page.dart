@@ -11,6 +11,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/constants.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/product_variant.dart';
 import '../../domain/utils/barcode_generator.dart';
 import '../providers/product_providers.dart';
 import '../../../../core/routes/routes.dart';
@@ -77,6 +78,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   // Özel özellikler (Custom Attributes)
   final Map<String, String> _customAttributes = {};
+
+  // Varyant özellikleri
+  final List<ProductVariant> _variants = [];
+  final List<String> _variantTypes = []; // Renk, Beden, Boyut vb.
+  final Map<String, List<String>> _variantOptions =
+      {}; // {Renk: [Kırmızı, Mavi], Beden: [36, 38, 40]}
+  bool _hasVariants = false;
 
   bool _isLoading = false;
   bool _autoGenerateBarcode = true;
@@ -159,6 +167,25 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         product.attributeValues!
             .map((key, value) => MapEntry(key, value.toString())),
       );
+    }
+
+    // Varyantları yükle
+    if (product.variants != null && product.variants!.isNotEmpty) {
+      _hasVariants = true;
+      _variants.addAll(product.variants!);
+
+      // Varyant tiplerini ve seçeneklerini çıkar
+      for (final variant in product.variants!) {
+        for (final entry in variant.attributes.entries) {
+          if (!_variantOptions.containsKey(entry.key)) {
+            _variantOptions[entry.key] = [];
+            _variantTypes.add(entry.key);
+          }
+          if (!_variantOptions[entry.key]!.contains(entry.value)) {
+            _variantOptions[entry.key]!.add(entry.value);
+          }
+        }
+      }
     }
 
     if (mounted) {
@@ -305,6 +332,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     // Fiyat ve Vergi Bilgileri
                     _buildSectionTitle('Fiyat ve Vergi Bilgileri'),
                     _buildPricingSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Varyant Bilgileri
+                    _buildSectionTitle('Varyant Bilgileri'),
+                    _buildVariantSection(),
 
                     const SizedBox(height: 24),
 
@@ -1015,15 +1048,22 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 Expanded(
                   child: TextFormField(
                     controller: _stockQuantityController,
-                    decoration: const InputDecoration(
-                      labelText: 'Başlangıç Stok Miktarı',
-                      border: OutlineInputBorder(),
-                      hintText: 'Stok miktarını girin',
-                      prefixIcon: Icon(Icons.inventory),
+                    decoration: InputDecoration(
+                      labelText: _hasVariants
+                          ? 'Toplam Stok (Otomatik)'
+                          : 'Başlangıç Stok Miktarı',
+                      border: const OutlineInputBorder(),
+                      hintText: _hasVariants
+                          ? 'Varyantlardan hesaplanıyor'
+                          : 'Stok miktarını girin',
+                      prefixIcon: const Icon(Icons.inventory),
+                      filled: _hasVariants,
+                      fillColor: _hasVariants ? Colors.grey[200] : null,
                     ),
                     keyboardType: TextInputType.number,
+                    readOnly: _hasVariants, // Varyantlı ürünlerde sadece okunur
                     validator: (value) {
-                      if (value != null && value.isNotEmpty) {
+                      if (!_hasVariants && value != null && value.isNotEmpty) {
                         if (int.tryParse(value) == null) {
                           return 'Geçerli bir sayı giriniz';
                         }
@@ -1452,6 +1492,187 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     });
   }
 
+  Widget _buildVariantSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Varyant aktif/pasif switch
+            SwitchListTile(
+              title: Text(
+                'Bu Ürün Varyantlara Sahip',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              subtitle: Text(
+                'Renk, beden, boyut gibi farklı varyantlar ekleyebilirsiniz',
+                style: GoogleFonts.poppins(fontSize: 12),
+              ),
+              value: _hasVariants,
+              onChanged: (value) {
+                setState(() {
+                  _hasVariants = value;
+                  if (!value) {
+                    _variants.clear();
+                    _variantTypes.clear();
+                    _variantOptions.clear();
+                  }
+                });
+              },
+            ),
+
+            if (_hasVariants) ...[
+              const Divider(height: 32),
+
+              // Varyant tipleri ekleme
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Varyant Tipleri',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: _showAddVariantTypeDialog,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Tip Ekle'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF6366F1),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              // Eklenen varyant tipleri ve seçenekleri
+              if (_variantOptions.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    'Henüz varyant tipi eklenmedi. "Tip Ekle" butonuna tıklayarak varyant tiplerini ekleyin (örn: Renk, Beden)',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                )
+              else
+                ..._variantOptions.entries.map((entry) {
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                entry.key,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blue[700],
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              color: Colors.red[400],
+                              onPressed: () => _removeVariantType(entry.key),
+                              tooltip: 'Tipi Sil',
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            ...entry.value.map((option) {
+                              return Chip(
+                                label: Text(
+                                  option,
+                                  style: GoogleFonts.poppins(fontSize: 12),
+                                ),
+                                deleteIcon: const Icon(Icons.close, size: 16),
+                                onDeleted: () =>
+                                    _removeVariantOption(entry.key, option),
+                              );
+                            }),
+                            ActionChip(
+                              label: const Icon(Icons.add, size: 16),
+                              onPressed: () =>
+                                  _showAddVariantOptionDialog(entry.key),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+
+              if (_variantOptions.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _generateVariantCombinations,
+                  icon: const Icon(Icons.auto_awesome),
+                  label: const Text('Varyant Kombinasyonlarını Oluştur'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[600],
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+
+              // Oluşturulan varyantlar
+              if (_variants.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 16),
+                Text(
+                  'Varyantlar (${_variants.length})',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ..._variants.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final variant = entry.value;
+                  return _buildVariantCard(index, variant);
+                }).toList(),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
   void _generateProductCode() {
     // Basit ürün kodu üretimi
     final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
@@ -1858,6 +2079,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             ? null
             : _notesController.text.trim(),
         attributeValues: _customAttributes.isEmpty ? null : _customAttributes,
+        variants: _variants.isEmpty ? null : _variants,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -1916,6 +2138,271 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  // Varyant metodları
+  void _showAddVariantTypeDialog() {
+    final typeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Varyant Tipi Ekle',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: TextField(
+          controller: typeController,
+          decoration: const InputDecoration(
+            labelText: 'Varyant Tipi',
+            hintText: 'Örn: Renk, Beden, Boyut',
+            border: OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (typeController.text.trim().isNotEmpty) {
+                setState(() {
+                  final type = typeController.text.trim();
+                  if (!_variantOptions.containsKey(type)) {
+                    _variantOptions[type] = [];
+                    _variantTypes.add(type);
+                  }
+                });
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ekle'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddVariantOptionDialog(String type) {
+    final optionController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          '$type Seçeneği Ekle',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: TextField(
+          controller: optionController,
+          decoration: InputDecoration(
+            labelText: '$type Değeri',
+            hintText: type == 'Renk'
+                ? 'Örn: Kırmızı, Mavi'
+                : type == 'Beden'
+                    ? 'Örn: 36, 38, 40'
+                    : 'Değer girin',
+            border: const OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (optionController.text.trim().isNotEmpty) {
+                setState(() {
+                  final option = optionController.text.trim();
+                  if (!_variantOptions[type]!.contains(option)) {
+                    _variantOptions[type]!.add(option);
+                  }
+                });
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ekle'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _removeVariantType(String type) {
+    setState(() {
+      _variantOptions.remove(type);
+      _variantTypes.remove(type);
+      _variants.clear(); // Kombinasyonları temizle
+    });
+  }
+
+  void _removeVariantOption(String type, String option) {
+    setState(() {
+      _variantOptions[type]!.remove(option);
+      _variants.clear(); // Kombinasyonları yeniden oluştur
+    });
+  }
+
+  void _generateVariantCombinations() {
+    if (_variantOptions.isEmpty) return;
+
+    final combinations = <Map<String, String>>[];
+    _generateCombinationsRecursive(
+      _variantOptions.entries.toList(),
+      0,
+      {},
+      combinations,
+    );
+
+    setState(() {
+      _variants.clear();
+      for (final combo in combinations) {
+        final variantName = combo.values.join(' - ');
+        _variants.add(
+          ProductVariant(
+            id: DateTime.now().millisecondsSinceEpoch.toString() +
+                _variants.length.toString(),
+            name: variantName,
+            attributes: combo,
+            stockQuantity: 0,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          ),
+        );
+      }
+    });
+  }
+
+  void _generateCombinationsRecursive(
+    List<MapEntry<String, List<String>>> entries,
+    int index,
+    Map<String, String> current,
+    List<Map<String, String>> result,
+  ) {
+    if (index == entries.length) {
+      result.add(Map.from(current));
+      return;
+    }
+
+    final entry = entries[index];
+    for (final option in entry.value) {
+      current[entry.key] = option;
+      _generateCombinationsRecursive(entries, index + 1, current, result);
+    }
+    current.remove(entry.key);
+  }
+
+  Widget _buildVariantCard(int index, ProductVariant variant) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  variant.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: variant.stockQuantity > 0
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${variant.stockQuantity} adet',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: variant.stockQuantity > 0
+                        ? Colors.green[700]
+                        : Colors.red[700],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  initialValue: variant.stockQuantity.toString(),
+                  decoration: const InputDecoration(
+                    labelText: 'Stok Miktarı',
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final stock = int.tryParse(value) ?? 0;
+                    setState(() {
+                      _variants[index] = variant.copyWith(stockQuantity: stock);
+                      _updateTotalStock();
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextFormField(
+                  initialValue: variant.shelfLocation ?? '',
+                  decoration: const InputDecoration(
+                    labelText: 'Raf Yeri',
+                    border: OutlineInputBorder(),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  onChanged: (value) {
+                    setState(() {
+                      _variants[index] = variant.copyWith(
+                          shelfLocation: value.trim().isEmpty ? null : value);
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateTotalStock() {
+    if (_hasVariants && _variants.isNotEmpty) {
+      final total = _variants.fold<int>(
+        0,
+        (sum, variant) => sum + variant.stockQuantity,
+      );
+      _stockQuantityController.text = total.toString();
     }
   }
 }
