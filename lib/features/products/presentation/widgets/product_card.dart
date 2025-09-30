@@ -450,7 +450,7 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
           if (variantCount > 3)
             Container(
               margin: const EdgeInsets.only(left: 4),

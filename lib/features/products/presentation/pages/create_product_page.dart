@@ -1422,7 +1422,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ],
       ),
@@ -1780,7 +1780,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       ],
                     ),
                   );
-                }).toList(),
+                }),
 
               if (_variantOptions.isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -1812,7 +1812,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   final index = entry.key;
                   final variant = entry.value;
                   return _buildVariantCard(index, variant);
-                }).toList(),
+                }),
               ],
             ],
           ],

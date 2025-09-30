@@ -497,7 +497,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                               );
                             },
                           );
-                        }).toList(),
+                        }),
                         // FAB için alan bırak
                         const SizedBox(height: 80),
                       ],
@@ -769,7 +769,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                         Navigator.pop(context);
                       },
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             );

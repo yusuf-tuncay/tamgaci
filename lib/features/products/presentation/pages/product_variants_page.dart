@@ -343,7 +343,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                   ),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -549,7 +549,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                         Navigator.pop(context);
                       },
                     );
-                  }).toList(),
+                  }),
                 ],
               ),
             );

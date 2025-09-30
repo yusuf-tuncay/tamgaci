@@ -210,7 +210,7 @@ class FirebaseProductRepository implements ProductRepository {
         transaction.set(docRef, data);
       });
 
-      print('🔥 Firebase: Product created with ID: ${docRef.id}');
+      debugPrint('🔥 Firebase: Product created with ID: ${docRef.id}');
       AppLogger.info('Product created successfully', {'productId': docRef.id});
     } catch (e) {
       AppLogger.error('Error creating product', e);
@@ -258,7 +258,7 @@ class FirebaseProductRepository implements ProductRepository {
           .doc(id)
           .delete();
 
-      print('🔥 Firebase: Product deleted with ID: $id');
+      debugPrint('🔥 Firebase: Product deleted with ID: $id');
       AppLogger.info('Product deleted successfully', {'productId': id});
     } catch (e) {
       AppLogger.error('Error deleting product', e);
@@ -350,12 +350,13 @@ class FirebaseProductRepository implements ProductRepository {
           .orderBy('name')
           .snapshots()
           .map((snapshot) {
-            final products = snapshot.docs
-                .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
-                .toList();
-            print('🔥 Firebase Stream: ${products.length} active products found');
-            return products;
-          });
+        final products = snapshot.docs
+            .map((doc) => ProductEntity.fromFirestore(doc).toDomain())
+            .toList();
+        debugPrint(
+            '🔥 Firebase Stream: ${products.length} active products found');
+        return products;
+      });
     });
   }
 
@@ -445,11 +446,13 @@ class FirebaseProductRepository implements ProductRepository {
         final roundedPrice = double.parse(priceWithoutTax.toStringAsFixed(2));
         final itemValue = stockQuantity * roundedPrice;
         totalValue += itemValue;
-        
+
         // Debug
         debugPrint('📦 Stok Değeri Hesaplama: ${product.name}');
-        debugPrint('   Stok: $stockQuantity × KDV Hariç Fiyat: $roundedPrice = $itemValue');
-        debugPrint('   (KDV Dahil: ${product.salesPrice}, KDV: %${product.salesTaxRate})');
+        debugPrint(
+            '   Stok: $stockQuantity × KDV Hariç Fiyat: $roundedPrice = $itemValue');
+        debugPrint(
+            '   (KDV Dahil: ${product.salesPrice}, KDV: %${product.salesTaxRate})');
       }
       debugPrint('💰 Toplam Stok Değeri: $totalValue');
       return totalValue;
