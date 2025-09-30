@@ -261,7 +261,7 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             // KDV dahil satış fiyatı
-            if (product.salesTaxInclusive == TaxInclusiveOption.inclusive)
+            if (product.salesTaxInclusive == TaxInclusiveOption.inclusive) ...[
               Text(
                 '${product.salesPriceWithTax.toStringAsFixed(2)} ${product.salesCurrency}',
                 style: GoogleFonts.poppins(
@@ -269,8 +269,16 @@ class ProductCard extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: Colors.green[600],
                 ),
-              )
-            else ...[
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'KDV Dahil (KDV: ${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)})',
+                style: GoogleFonts.poppins(
+                  fontSize: 9,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ] else ...[
               Text(
                 '${product.salesPrice.toStringAsFixed(2)} ${product.salesCurrency}',
                 style: GoogleFonts.poppins(
