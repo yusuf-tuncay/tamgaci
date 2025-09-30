@@ -24,19 +24,21 @@ class StockCountPage extends ConsumerStatefulWidget {
 }
 
 class _StockCountPageState extends ConsumerState<StockCountPage> {
-  late StockCount _stockCount;
+  StockCount? _stockCount;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _showOnlyUncounted = false;
   bool _showOnlyWithVariance = false;
+  bool _isInitializing = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.existingStockCount != null) {
       _stockCount = widget.existingStockCount!;
+    } else {
+      _initializeNewStockCount();
     }
-    // Yeni stok sayımı için initState'te başlatma yerine build'de kontrol edeceğiz
   }
 
   @override
@@ -46,46 +48,51 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Future<void> _initializeNewStockCount() async {
-    final productsAsync =
-        ref.read(productsByWarehouseStreamProvider(widget.warehouse.id));
+    if (_isInitializing) return;
     
-    await productsAsync.when(
-      data: (products) async {
-        final repository = ref.read(stockCountRepositoryProvider);
-        final newStockCount = await repository.createStockCountFromProducts(
-          warehouseId: widget.warehouse.id,
-          warehouseName: widget.warehouse.name,
-          products: products,
-          type: StockCountType.full,
-          description: 'Depo sayımı - ${widget.warehouse.name}',
+    setState(() {
+      _isInitializing = true;
+    });
+
+    try {
+      final productsSnapshot = await ref
+          .read(productsByWarehouseStreamProvider(widget.warehouse.id).future);
+
+      final repository = ref.read(stockCountRepositoryProvider);
+      final newStockCount = await repository.createStockCountFromProducts(
+        warehouseId: widget.warehouse.id,
+        warehouseName: widget.warehouse.name,
+        products: productsSnapshot,
+        type: StockCountType.full,
+        description: 'Depo sayımı - ${widget.warehouse.name}',
+      );
+
+      if (mounted) {
+        setState(() {
+          _stockCount = newStockCount;
+          _isInitializing = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _isInitializing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Stok sayımı oluşturulamadı: $error'),
+            backgroundColor: Colors.red[600],
+          ),
         );
-        
-        if (mounted) {
-          setState(() {
-            _stockCount = newStockCount;
-          });
-        }
-      },
-      loading: () {},
-      error: (error, stack) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Stok sayımı oluşturulamadı: $error'),
-              backgroundColor: Colors.red[600],
-            ),
-          );
-          Navigator.of(context).pop();
-        }
-      },
-    );
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Yeni stok sayımı oluşturma
-    if (widget.existingStockCount == null) {
-      _initializeNewStockCount();
+    // Yeni stok sayımı oluşturulurken veya henüz yüklenmediyse loading göster
+    if (_stockCount == null || _isInitializing) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Stok Sayımı'),
@@ -101,8 +108,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
         title: 'Stok Sayımı - ${widget.warehouse.name}',
         showBackButton: true,
         actions: [
-          if (_stockCount.status == StockCountStatus.draft ||
-              _stockCount.status == StockCountStatus.inProgress)
+          if (_stockCount!.status == StockCountStatus.draft ||
+              _stockCount!.status == StockCountStatus.inProgress)
             IconButton(
               icon: const Icon(Icons.check_circle),
               onPressed: _completeStockCount,
@@ -148,14 +155,14 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _stockCount.countNumber,
+                  _stockCount!.countNumber,
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 Text(
-                  _stockCount.status.displayName,
+                  _stockCount!.status.displayName,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: _getStatusColor(),
@@ -172,7 +179,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              _stockCount.type.displayName,
+              _stockCount!.type.displayName,
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: Colors.white,
@@ -258,8 +265,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Widget _buildStatistics() {
-    final totalItems = _stockCount.totalItemsCount;
-    final countedItems = _stockCount.items.where((item) => item.isCounted).length;
+    final totalItems = _stockCount!.totalItemsCount;
+    final countedItems = _stockCount!.items.where((item) => item.isCounted).length;
     final progress = totalItems > 0 ? countedItems / totalItems : 0.0;
 
     return Container(
@@ -348,7 +355,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Widget _buildProductList() {
-    var items = _stockCount.items;
+    var items = _stockCount!.items;
 
     // Arama filtresi
     if (_searchQuery.isNotEmpty) {
@@ -584,8 +591,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   void _showCountDialog(StockCountItem item, int index) {
-    if (_stockCount.status != StockCountStatus.draft &&
-        _stockCount.status != StockCountStatus.inProgress) {
+    if (_stockCount!.status != StockCountStatus.draft &&
+        _stockCount!.status != StockCountStatus.inProgress) {
       return;
     }
 
@@ -704,25 +711,25 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                 countedAt: DateTime.now(),
               );
 
-              final updatedItems = List<StockCountItem>.from(_stockCount.items);
-              final originalIndex = _stockCount.items.indexOf(item);
+              final updatedItems = List<StockCountItem>.from(_stockCount!.items);
+              final originalIndex = _stockCount!.items.indexOf(item);
               updatedItems[originalIndex] = updatedItem;
 
               final countedCount =
                   updatedItems.where((i) => i.isCounted).length;
 
               setState(() {
-                _stockCount = _stockCount.copyWith(
+                _stockCount = _stockCount!.copyWith(
                   items: updatedItems,
                   countedItemsCount: countedCount,
-                  status: countedCount > 0 && countedCount < _stockCount.totalItemsCount
+                  status: countedCount > 0 && countedCount < _stockCount!.totalItemsCount
                       ? StockCountStatus.inProgress
-                      : _stockCount.status,
+                      : _stockCount!.status,
                 );
               });
 
               // Kaydet
-              ref.read(stockCountOperationsProvider.notifier).updateStockCount(_stockCount);
+              ref.read(stockCountOperationsProvider.notifier).updateStockCount(_stockCount!);
 
               Navigator.of(context).pop();
             },
@@ -736,7 +743,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   void _completeStockCount() async {
     // Tüm kalemlerin sayılıp sayılmadığını kontrol et
     final uncountedItems =
-        _stockCount.items.where((item) => !item.isCounted).toList();
+        _stockCount!.items.where((item) => !item.isCounted).toList();
     
     if (uncountedItems.isNotEmpty) {
       showDialog(
@@ -776,7 +783,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   Future<void> _doCompleteStockCount() async {
     final success = await ref
         .read(stockCountOperationsProvider.notifier)
-        .completeStockCount(_stockCount.id);
+        .completeStockCount(_stockCount!.id);
 
     if (mounted) {
       if (success) {
@@ -793,7 +800,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (_stockCount.status != StockCountStatus.completed)
+            if (_stockCount!.status != StockCountStatus.completed)
               ListTile(
                 leading: const Icon(Icons.cancel, color: Colors.orange),
                 title: Text('İptal Et', style: GoogleFonts.poppins()),
@@ -801,7 +808,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                   Navigator.of(context).pop();
                   final success = await ref
                       .read(stockCountOperationsProvider.notifier)
-                      .cancelStockCount(_stockCount.id);
+                      .cancelStockCount(_stockCount!.id);
                   
                   if (mounted && success) {
                     Navigator.of(context).pop();
@@ -835,7 +842,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                 if (confirmed == true && mounted) {
                   final success = await ref
                       .read(stockCountOperationsProvider.notifier)
-                      .deleteStockCount(_stockCount.id);
+                      .deleteStockCount(_stockCount!.id);
                   
                   if (mounted && success) {
                     Navigator.of(context).pop();
@@ -850,7 +857,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Color _getStatusColor() {
-    switch (_stockCount.status) {
+    switch (_stockCount!.status) {
       case StockCountStatus.draft:
         return Colors.grey;
       case StockCountStatus.inProgress:
@@ -863,7 +870,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   IconData _getStatusIcon() {
-    switch (_stockCount.status) {
+    switch (_stockCount!.status) {
       case StockCountStatus.draft:
         return Icons.edit_note;
       case StockCountStatus.inProgress:

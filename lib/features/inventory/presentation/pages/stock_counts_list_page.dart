@@ -121,7 +121,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
                     ref.invalidate(allStockCountsStreamProvider);
                   }
                 },
-                child: Text('Tekrar Dene'),
+                child: const Text('Tekrar Dene'),
               ),
             ],
           ),
