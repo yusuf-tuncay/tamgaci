@@ -1858,7 +1858,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             .read(productOperationsProvider.notifier)
             .updateProduct(product);
 
-        // Liste sayfası canlı dinliyor; manuel refresh gereksiz
+        // İstatistikleri güncelle
+        ref.invalidate(productStatisticsProvider);
 
         if (mounted) {
           Future.microtask(() {
@@ -1875,6 +1876,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             .createProduct(product);
 
         debugPrint('✅ Product created successfully');
+
+        // İstatistikleri güncelle
+        ref.invalidate(productStatisticsProvider);
 
         if (mounted) {
           Future.microtask(() {

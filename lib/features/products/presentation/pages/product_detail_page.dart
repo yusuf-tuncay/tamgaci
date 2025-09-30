@@ -716,9 +716,9 @@ class ProductDetailPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha:0.05),
+                  color: Colors.blue.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.withValues(alpha:0.2)),
+                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -989,6 +989,9 @@ class ProductDetailPage extends ConsumerWidget {
           .deleteProduct(product.id);
 
       debugPrint('✅ Ürün başarıyla silindi');
+
+      // İstatistikleri güncelle
+      ref.invalidate(productStatisticsProvider);
 
       // Stream'in güncellenmesi için bekleme
       await Future.delayed(const Duration(milliseconds: 300));
