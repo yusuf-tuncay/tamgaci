@@ -673,108 +673,111 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   }
 
   Widget _buildCategoryFilter() {
-    // Ürünlerden tüm kategorileri çıkar
-    final productsAsync = ref.watch(productsStreamProvider);
-    
-    return productsAsync.when(
-      data: (products) {
-        // Kategorileri topla ve sırala
-        final categories = products
-            .where((p) => p.category != null && p.category!.isNotEmpty)
-            .map((p) => p.category!)
-            .toSet()
-            .toList()
-          ..sort();
+    return StatefulBuilder(
+      builder: (context, setDialogState) {
+        final productsAsync = ref.watch(productsStreamProvider);
+        
+        return productsAsync.when(
+          data: (products) {
+            // Kategorileri topla ve sırala
+            final categories = products
+                .where((p) => p.category != null && p.category!.isNotEmpty)
+                .map((p) => p.category!)
+                .toSet()
+                .toList()
+              ..sort();
 
-        return SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Arama alanı
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Kategori ara...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 8),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _categorySearchQuery = value.toLowerCase();
-                    });
-                  },
-                ),
-              ),
-              // Tümü seçeneği
-              ListTile(
-                title: Text('Tümü', style: GoogleFonts.poppins()),
-                leading: Icon(
-                  _selectedCategory == 'Tümü'
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  color: _selectedCategory == 'Tümü'
-                      ? const Color(0xFF6366F1)
-                      : Colors.grey,
-                ),
-                onTap: () {
-                  setState(() {
-                    _selectedCategory = 'Tümü';
-                  });
-                  Navigator.pop(context);
-                },
-              ),
-              const Divider(height: 1),
-              // Kategoriler (filtrelenmiş)
-              ...categories
-                  .where((category) =>
-                      _categorySearchQuery.isEmpty ||
-                      category.toLowerCase().contains(_categorySearchQuery))
-                  .map((category) {
-                return ListTile(
-                  title: Text(category, style: GoogleFonts.poppins()),
-                  leading: Icon(
-                    _selectedCategory == category
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    color: _selectedCategory == category
-                        ? const Color(0xFF6366F1)
-                        : Colors.grey,
-                  ),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF6366F1).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${products.where((p) => p.category == category).length}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF6366F1),
+            return SizedBox(
+              width: double.maxFinite,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Arama alanı
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Kategori ara...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
                       ),
+                      onChanged: (value) {
+                        setDialogState(() {
+                          _categorySearchQuery = value.toLowerCase();
+                        });
+                      },
                     ),
                   ),
-                  onTap: () {
-                    setState(() {
-                      _selectedCategory = category;
-                    });
-                    Navigator.pop(context);
-                  },
-                );
-              }).toList(),
-            ],
-          ),
+                  // Tümü seçeneği
+                  ListTile(
+                    title: Text('Tümü', style: GoogleFonts.poppins()),
+                    leading: Icon(
+                      _selectedCategory == 'Tümü'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: _selectedCategory == 'Tümü'
+                          ? const Color(0xFF6366F1)
+                          : Colors.grey,
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedCategory = 'Tümü';
+                      });
+                      Navigator.pop(context);
+                    },
+                  ),
+                  const Divider(height: 1),
+                  // Kategoriler (filtrelenmiş)
+                  ...categories
+                      .where((category) =>
+                          _categorySearchQuery.isEmpty ||
+                          category.toLowerCase().contains(_categorySearchQuery))
+                      .map((category) {
+                    return ListTile(
+                      title: Text(category, style: GoogleFonts.poppins()),
+                      leading: Icon(
+                        _selectedCategory == category
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: _selectedCategory == category
+                            ? const Color(0xFF6366F1)
+                            : Colors.grey,
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${products.where((p) => p.category == category).length}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF6366F1),
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        setState(() {
+                          _selectedCategory = category;
+                        });
+                        Navigator.pop(context);
+                      },
+                    );
+                  }).toList(),
+                ],
+              ),
+            );
+          },
+          loading: () => const CircularProgressIndicator(),
+          error: (_, __) => const Text('Kategoriler yüklenemedi'),
         );
       },
-      loading: () => const CircularProgressIndicator(),
-      error: (_, __) => const Text('Kategoriler yüklenemedi'),
     );
   }
 
