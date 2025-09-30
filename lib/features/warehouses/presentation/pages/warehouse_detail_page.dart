@@ -6,6 +6,10 @@ import '../providers/warehouse_providers.dart';
 import 'create_warehouse_page.dart';
 import 'transfer_product_to_warehouse_page.dart';
 import 'transfer_product_from_warehouse_page.dart';
+import '../../../products/presentation/providers/product_providers.dart';
+import '../../../products/domain/entities/product.dart';
+import '../../../products/presentation/pages/product_detail_page.dart';
+import '../../../../core/routes/routes.dart';
 
 /// Depo Detay Sayfası
 class WarehouseDetailPage extends ConsumerStatefulWidget {
@@ -720,50 +724,56 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
                           ),
                         ),
                         const Spacer(),
-                        Text(
-                          '0 ürün',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final productsAsync = ref.watch(
+                                productsByWarehouseStreamProvider(
+                                    widget.warehouse.id));
+                            return productsAsync.when(
+                              data: (products) => Text(
+                                '${products.length} ürün',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              loading: () => const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              error: (_, __) => Text(
+                                '0 ürün',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[200]!),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.inventory_outlined,
-                            size: 48,
-                            color: Colors.grey[400],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Henüz ürün yok',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Bu depoya ürün eklemek için aşağıdaki butonları kullanın',
-                            style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: Colors.grey[500],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final productsAsync = ref.watch(
+                            productsByWarehouseStreamProvider(
+                                widget.warehouse.id));
+
+                        return productsAsync.when(
+                          data: (products) {
+                            if (products.isEmpty) {
+                              return _buildEmptyProductsState();
+                            }
+                            return _buildProductsList(products);
+                          },
+                          loading: () => _buildLoadingState(),
+                          error: (error, stackTrace) =>
+                              _buildErrorState(error.toString()),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -932,7 +942,6 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
     _showStockCountDialog();
   }
 
-
   void _showStockCountDialog() {
     showDialog(
       context: context,
@@ -999,6 +1008,223 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyProductsState() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.inventory_outlined,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Henüz ürün yok',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bu depoya ürün eklemek için aşağıdaki butonları kullanın',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red[200]!),
+      ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 48,
+            color: Colors.red[400],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Ürünler yüklenemedi',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.red[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            error,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.red[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductsList(List<Product> products) {
+    return Column(
+      children: [
+        // İlk 3 ürünü göster
+        ...products.take(3).map((product) => _buildProductCard(product)),
+        if (products.length > 3) ...[
+          const SizedBox(height: 12),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.of(context).pushNamed(
+                TamgaciRoutes.productsList,
+                arguments: {'warehouseId': widget.warehouse.id},
+              );
+            },
+            icon: const Icon(Icons.visibility, size: 18),
+            label: Text(
+              'Tümünü Gör (${products.length - 3} daha)',
+              style: GoogleFonts.poppins(fontSize: 12),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue[600],
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildProductCard(Product product) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ProductDetailPage(productId: product.id),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Row(
+          children: [
+            // Ürün resmi
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: product.images.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.network(
+                        product.images.first,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.inventory_2,
+                            color: Colors.grey[400],
+                            size: 20,
+                          );
+                        },
+                      ),
+                    )
+                  : Icon(
+                      Icons.inventory_2,
+                      color: Colors.grey[400],
+                      size: 20,
+                    ),
+            ),
+            const SizedBox(width: 12),
+            // Ürün bilgileri
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        'Stok: ${product.totalStockQuantity}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (product.salesPrice > 0)
+                        Text(
+                          '${product.salesPrice.toStringAsFixed(2)} ${product.salesCurrency}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.green[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            // Ok işareti
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey[400],
+              size: 16,
+            ),
+          ],
+        ),
       ),
     );
   }
