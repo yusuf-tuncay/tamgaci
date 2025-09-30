@@ -260,18 +260,38 @@ class ProductCard extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              '₺${product.salesPrice.toStringAsFixed(2)}',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Colors.green[600],
+            // KDV dahil satış fiyatı
+            if (product.salesTaxInclusive == TaxInclusiveOption.inclusive)
+              Text(
+                '${product.salesPriceWithTax.toStringAsFixed(2)} ${product.salesCurrency}',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[600],
+                ),
+              )
+            else ...[
+              Text(
+                '${product.salesPrice.toStringAsFixed(2)} ${product.salesCurrency}',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[600],
+                ),
               ),
-            ),
+              const SizedBox(height: 2),
+              Text(
+                '+KDV(${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)})',
+                style: GoogleFonts.poppins(
+                  fontSize: 9,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
             if (product.purchasePrice != null) ...[
               const SizedBox(height: 2),
               Text(
-                '₺${product.purchasePrice!.toStringAsFixed(2)}',
+                'Alış: ${product.purchasePrice!.toStringAsFixed(2)} ${product.purchaseCurrency ?? product.salesCurrency}',
                 style: GoogleFonts.poppins(
                   fontSize: 11,
                   color: Colors.blue[600],

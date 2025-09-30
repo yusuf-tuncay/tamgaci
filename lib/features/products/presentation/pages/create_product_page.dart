@@ -60,7 +60,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   ProductType _selectedType = ProductType.stocked;
   StockTrackingType _selectedStockTracking = StockTrackingType.normal;
   TaxInclusiveOption _salesTaxInclusive = TaxInclusiveOption.exclusive;
-  TaxInclusiveOption? _purchaseTaxInclusive;
+  TaxInclusiveOption? _purchaseTaxInclusive = TaxInclusiveOption.exclusive;
   String _salesCurrency = 'TRY';
   String? _purchaseCurrency;
   Warehouse? _selectedWarehouse;
