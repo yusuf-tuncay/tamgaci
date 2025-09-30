@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import '../../../../core/theme/constants.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/utils/barcode_generator.dart';
@@ -16,6 +17,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
 import '../../../warehouses/presentation/providers/warehouse_providers.dart';
 import '../../data/services/firebase_storage_service.dart';
+import '../../../../core/utils/currency_helper.dart';
 
 /// Ürün oluşturma sayfası
 class CreateProductPage extends ConsumerStatefulWidget {
@@ -51,6 +53,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   final _notesController = TextEditingController();
   final _stockQuantityController = TextEditingController();
 
+  // Focus node'lar fiyat formatlaması için
+  final _salesPriceFocusNode = FocusNode();
+  final _purchasePriceFocusNode = FocusNode();
+
   ProductType _selectedType = ProductType.stocked;
   StockTrackingType _selectedStockTracking = StockTrackingType.normal;
   TaxInclusiveOption _salesTaxInclusive = TaxInclusiveOption.exclusive;
@@ -65,16 +71,31 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   final List<File> _selectedImages = [];
   final List<Uint8List> _selectedImageBytes = [];
 
+  // Dinamik kategori ve marka listeleri
+  final List<String> _customCategories = [];
+  final List<String> _customBrands = [];
+
   bool _isLoading = false;
-  bool _autoGenerateBarcode = false;
-  bool _autoGenerateProductCode = false;
+  bool _autoGenerateBarcode = true;
+  bool _autoGenerateProductCode = true;
 
   @override
   void initState() {
     super.initState();
     _autoGenerateProductCode = true;
     _autoGenerateBarcode = true;
-    _stockQuantityController.text = ''; // Varsayılan stok miktarı
+    _stockQuantityController.text = '0'; // Varsayılan stok miktarı
+
+    // Otomatik kod üretimi
+    _generateProductCode();
+    _generateBarcode();
+
+    // Varsayılan para birimi seçimi
+    _purchaseCurrency = 'TRY';
+
+    // Focus listener'ları ekle
+    _salesPriceFocusNode.addListener(_onSalesPriceFocusChange);
+    _purchasePriceFocusNode.addListener(_onPurchasePriceFocusChange);
 
     // Düzenleme modu için ürün bilgilerini yükle
     if (widget.productId != null) {
@@ -211,6 +232,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _countryCodeController.dispose();
     _notesController.dispose();
     _stockQuantityController.dispose();
+
+    // Focus node'ları dispose et
+    _salesPriceFocusNode.dispose();
+    _purchasePriceFocusNode.dispose();
+
     super.dispose();
   }
 
@@ -503,25 +529,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             Row(
               children: [
                 Expanded(
-                  child: TextFormField(
-                    controller: _categoryController,
-                    decoration: const InputDecoration(
-                      labelText: 'Kategori',
-                      border: OutlineInputBorder(),
-                      hintText: 'Örn: Elektronik',
-                    ),
-                  ),
+                  child: _buildCategoryDropdown(),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: TextFormField(
-                    controller: _brandController,
-                    decoration: const InputDecoration(
-                      labelText: 'Marka',
-                      border: OutlineInputBorder(),
-                      hintText: 'Örn: Apple',
-                    ),
-                  ),
+                  child: _buildBrandDropdown(),
                 ),
               ],
             ),
@@ -538,10 +550,32 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       labelText: 'Ürün Kodu',
                       border: const OutlineInputBorder(),
                       hintText: 'Otomatik üretilir',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.refresh),
-                        onPressed: _generateProductCode,
-                        tooltip: 'Otomatik üret',
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(_autoGenerateProductCode
+                                ? Icons.lock
+                                : Icons.lock_open),
+                            onPressed: () {
+                              setState(() {
+                                _autoGenerateProductCode =
+                                    !_autoGenerateProductCode;
+                                if (_autoGenerateProductCode) {
+                                  _generateProductCode();
+                                }
+                              });
+                            },
+                            tooltip: _autoGenerateProductCode
+                                ? 'Manuel girişe geç'
+                                : 'Otomatik üretime geç',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.refresh),
+                            onPressed: _generateProductCode,
+                            tooltip: 'Yeni kod üret',
+                          ),
+                        ],
                       ),
                     ),
                     readOnly: _autoGenerateProductCode,
@@ -555,10 +589,31 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       labelText: 'Barkod',
                       border: const OutlineInputBorder(),
                       hintText: 'GS1 barkod',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.qr_code),
-                        onPressed: _generateBarcode,
-                        tooltip: 'GS1 barkod üret',
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(_autoGenerateBarcode
+                                ? Icons.lock
+                                : Icons.lock_open),
+                            onPressed: () {
+                              setState(() {
+                                _autoGenerateBarcode = !_autoGenerateBarcode;
+                                if (_autoGenerateBarcode) {
+                                  _generateBarcode();
+                                }
+                              });
+                            },
+                            tooltip: _autoGenerateBarcode
+                                ? 'Manuel girişe geç'
+                                : 'Otomatik üretime geç',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.qr_code),
+                            onPressed: _generateBarcode,
+                            tooltip: 'Yeni barkod üret',
+                          ),
+                        ],
                       ),
                     ),
                     readOnly: _autoGenerateBarcode,
@@ -585,17 +640,29 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   flex: 2,
                   child: TextFormField(
                     controller: _salesPriceController,
+                    focusNode: _salesPriceFocusNode,
                     decoration: const InputDecoration(
                       labelText: 'Satış Fiyatı *',
                       border: OutlineInputBorder(),
-                      hintText: '0.00',
+                      hintText: '0,00',
                     ),
-                    keyboardType: TextInputType.number,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')),
+                      _PriceInputFormatter(),
+                    ],
+                    onChanged: (value) {
+                      // Sadece input formatter ile kontrol et, formatlamayı onFocusChange'de yap
+                    },
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return 'Satış fiyatı zorunludur';
                       }
-                      if (double.tryParse(value) == null) {
+                      // Binlik ayracı noktaları kaldır, virgülü nokta ile değiştir
+                      final cleanValue =
+                          value.replaceAll('.', '').replaceAll(',', '.');
+                      if (double.tryParse(cleanValue) == null) {
                         return 'Geçerli bir fiyat girin';
                       }
                       return null;
@@ -637,12 +704,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   flex: 2,
                   child: TextFormField(
                     controller: _purchasePriceController,
+                    focusNode: _purchasePriceFocusNode,
                     decoration: const InputDecoration(
                       labelText: 'Alış Fiyatı',
                       border: OutlineInputBorder(),
-                      hintText: '0.00',
+                      hintText: '0,00',
                     ),
-                    keyboardType: TextInputType.number,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9,]')),
+                      _PriceInputFormatter(),
+                    ],
+                    onChanged: (value) {
+                      // Sadece input formatter ile kontrol et, formatlamayı onFocusChange'de yap
+                    },
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -825,7 +901,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                         orElse: () =>
                             warehouses.first, // Varsayılan yoksa ilk depo
                       );
-                      _selectedWarehouse = defaultWarehouse;
+                      // setState'i build dışında çağır
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() {
+                            _selectedWarehouse = defaultWarehouse;
+                          });
+                        }
+                      });
                     }
 
                     // Düzenleme modunda mevcut depo seçimini yap
@@ -838,7 +921,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                         (warehouse) => warehouse.id == _currentWarehouseId,
                         orElse: () => warehouses.first,
                       );
-                      _selectedWarehouse = currentWarehouse;
+                      // setState'i build dışında çağır
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          setState(() {
+                            _selectedWarehouse = currentWarehouse;
+                          });
+                        }
+                      });
                     }
 
                     return DropdownButtonFormField<Warehouse>(
@@ -1197,6 +1287,278 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     }
   }
 
+  Widget _buildCategoryDropdown() {
+    // Varsayılan kategoriler
+    final defaultCategories = [
+      'Elektronik',
+      'Giyim',
+      'Ev & Yaşam',
+      'Spor & Outdoor',
+      'Kitap & Dergi',
+      'Oyuncak',
+      'Kozmetik',
+      'Gıda & İçecek',
+      'Otomotiv',
+      'Diğer'
+    ];
+
+    // Tüm kategorileri birleştir (varsayılan + özel)
+    final allCategories = [...defaultCategories, ..._customCategories];
+
+    return DropdownButtonFormField<String>(
+      initialValue:
+          _categoryController.text.isNotEmpty ? _categoryController.text : null,
+      decoration: const InputDecoration(
+        labelText: 'Kategori *',
+        border: OutlineInputBorder(),
+        hintText: 'Kategori seçin veya yeni oluşturun',
+        prefixIcon: Icon(Icons.category),
+      ),
+      isExpanded: true,
+      items: [
+        ...allCategories.map((category) => DropdownMenuItem(
+              value: category,
+              child: Text(
+                category,
+                overflow: TextOverflow.ellipsis,
+              ),
+            )),
+        const DropdownMenuItem(
+          value: 'NEW_CATEGORY',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 16),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Yeni Kategori Oluştur',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+      onChanged: (value) {
+        if (value == 'NEW_CATEGORY') {
+          _showCreateCategoryDialog();
+        } else if (value != null) {
+          _categoryController.text = value;
+        }
+      },
+      validator: (value) {
+        if (_categoryController.text.trim().isEmpty) {
+          return 'Kategori seçimi zorunludur';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildBrandDropdown() {
+    // Varsayılan markalar
+    final defaultBrands = [
+      'Apple',
+      'Samsung',
+      'Nike',
+      'Adidas',
+      'Sony',
+      'LG',
+      'Xiaomi',
+      'Huawei',
+      'Diğer'
+    ];
+
+    // Tüm markaları birleştir (varsayılan + özel)
+    final allBrands = [...defaultBrands, ..._customBrands];
+
+    return DropdownButtonFormField<String>(
+      initialValue:
+          _brandController.text.isNotEmpty ? _brandController.text : null,
+      decoration: const InputDecoration(
+        labelText: 'Marka *',
+        border: OutlineInputBorder(),
+        hintText: 'Marka seçin veya yeni oluşturun',
+        prefixIcon: Icon(Icons.branding_watermark),
+      ),
+      isExpanded: true,
+      items: [
+        ...allBrands.map((brand) => DropdownMenuItem(
+              value: brand,
+              child: Text(
+                brand,
+                overflow: TextOverflow.ellipsis,
+              ),
+            )),
+        const DropdownMenuItem(
+          value: 'NEW_BRAND',
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 16),
+              SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  'Yeni Marka Oluştur',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+      onChanged: (value) {
+        if (value == 'NEW_BRAND') {
+          _showCreateBrandDialog();
+        } else if (value != null) {
+          _brandController.text = value;
+        }
+      },
+      validator: (value) {
+        if (_brandController.text.trim().isEmpty) {
+          return 'Marka seçimi zorunludur';
+        }
+        return null;
+      },
+    );
+  }
+
+  void _showCreateCategoryDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yeni Kategori Oluştur'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Kategori Adı',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                final newCategory = controller.text.trim();
+                _categoryController.text = newCategory;
+
+                // Yeni kategoriyi listeye ekle
+                if (!_customCategories.contains(newCategory)) {
+                  setState(() {
+                    _customCategories.add(newCategory);
+                  });
+                }
+
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Oluştur'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateBrandDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Yeni Marka Oluştur'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Marka Adı',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                final newBrand = controller.text.trim();
+                _brandController.text = newBrand;
+
+                // Yeni markayı listeye ekle
+                if (!_customBrands.contains(newBrand)) {
+                  setState(() {
+                    _customBrands.add(newBrand);
+                  });
+                }
+
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Oluştur'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatPrice(String value) {
+    if (value.isEmpty) return '';
+
+    // Virgülü nokta ile değiştir
+    final cleanValue = value.replaceAll(',', '.');
+    final doubleValue = double.tryParse(cleanValue);
+
+    if (doubleValue == null) return value;
+
+    // Türkçe format: 1.234,56
+    return CurrencyHelper.formatNumber(doubleValue);
+  }
+
+  void _onSalesPriceFocusChange() {
+    if (!_salesPriceFocusNode.hasFocus &&
+        _salesPriceController.text.isNotEmpty) {
+      final formatted = _formatPrice(_salesPriceController.text);
+      if (formatted != _salesPriceController.text) {
+        _salesPriceController.text = formatted;
+      }
+    }
+  }
+
+  void _onPurchasePriceFocusChange() {
+    if (!_purchasePriceFocusNode.hasFocus &&
+        _purchasePriceController.text.isNotEmpty) {
+      final formatted = _formatPrice(_purchasePriceController.text);
+      if (formatted != _purchasePriceController.text) {
+        _purchasePriceController.text = formatted;
+      }
+    }
+  }
+
+  double _parsePrice(String priceText) {
+    if (priceText.isEmpty) return 0.0;
+
+    // Binlik ayracı noktaları kaldır, virgülü nokta ile değiştir
+    final cleanValue = priceText.replaceAll('.', '').replaceAll(',', '.');
+    return double.tryParse(cleanValue) ?? 0.0;
+  }
+
+  int _parseStockQuantity(String stockText) {
+    if (stockText.trim().isEmpty) return 0;
+
+    // Sadece rakamları al ve parse et
+    final cleanValue = stockText.trim();
+    final parsed = int.tryParse(cleanValue);
+
+    debugPrint('📦 Stok Parse: "$stockText" -> $parsed');
+
+    return parsed ?? 0;
+  }
+
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -1209,6 +1571,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     try {
       final productId =
           widget.productId ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+      // Debug bilgileri
+      debugPrint(
+          '🏪 Seçilen Depo: ${_selectedWarehouse?.name} (ID: ${_selectedWarehouse?.id})');
+      debugPrint('📦 Stok Miktarı: ${_stockQuantityController.text}');
+      debugPrint(
+          '🔍 Stok Parse Sonucu: ${int.tryParse(_stockQuantityController.text)}');
 
       // Fotoğrafları Firebase Storage'a yükle
       List<String> imageUrls = [];
@@ -1250,10 +1619,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             ? null
             : _brandController.text.trim(),
         type: _selectedType,
-        salesPrice: double.parse(_salesPriceController.text),
+        salesPrice: _parsePrice(_salesPriceController.text),
         purchasePrice: _purchasePriceController.text.trim().isEmpty
             ? null
-            : double.parse(_purchasePriceController.text),
+            : _parsePrice(_purchasePriceController.text),
         salesCurrency: _salesCurrency,
         purchaseCurrency: _purchaseCurrency,
         salesTaxRate: double.parse(_salesTaxRateController.text),
@@ -1274,9 +1643,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         stockTracking: _selectedStockTracking,
         warehouseId: _selectedWarehouse?.id,
         warehouseName: _selectedWarehouse?.name,
-        stockQuantity: _stockQuantityController.text.trim().isEmpty
-            ? 0
-            : int.parse(_stockQuantityController.text),
+        stockQuantity: _parseStockQuantity(_stockQuantityController.text),
         criticalStockQuantity: _criticalStockController.text.trim().isEmpty
             ? null
             : int.parse(_criticalStockController.text),
@@ -1297,6 +1664,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         updatedAt: DateTime.now(),
         createdBy: 'current_user_id', // TODO: Get from auth provider
       );
+
+      // Debug: Oluşturulan product entity'sini kontrol et
+      debugPrint('📦 Oluşturulan Product Entity:');
+      debugPrint('   - Depo ID: ${product.warehouseId}');
+      debugPrint('   - Depo Adı: ${product.warehouseName}');
+      debugPrint('   - Stok Miktarı: ${product.stockQuantity}');
 
       // Save or update product using repository
       if (widget.productId != null) {
@@ -1341,5 +1714,34 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         });
       }
     }
+  }
+}
+
+/// Fiyat input formatter'ı
+class _PriceInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    // Sadece rakam ve virgül izin ver
+    final filtered = newValue.text.replaceAll(RegExp(r'[^0-9,]'), '');
+
+    // Birden fazla virgül varsa sadece ilkini al
+    final commaCount = filtered.split(',').length - 1;
+    if (commaCount > 1) {
+      final firstCommaIndex = filtered.indexOf(',');
+      final result = filtered.substring(0, firstCommaIndex + 1) +
+          filtered.substring(firstCommaIndex + 1).replaceAll(',', '');
+      return TextEditingValue(
+        text: result,
+        selection: TextSelection.collapsed(offset: result.length),
+      );
+    }
+
+    return TextEditingValue(
+      text: filtered,
+      selection: TextSelection.collapsed(offset: filtered.length),
+    );
   }
 }

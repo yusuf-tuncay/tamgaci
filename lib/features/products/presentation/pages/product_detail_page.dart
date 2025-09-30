@@ -491,12 +491,42 @@ class ProductDetailPage extends ConsumerWidget {
               isDark,
             ),
 
-            if (product.salesTaxInclusive == TaxInclusiveOption.inclusive)
+            // KDV bilgisi
+            _buildInfoRow(
+              'KDV Oranı',
+              '%${product.salesTaxRate.toStringAsFixed(0)}',
+              isDark,
+            ),
+
+            // KDV dahil/hariç fiyat gösterimi
+            if (product.salesTaxInclusive == TaxInclusiveOption.inclusive) ...[
               _buildInfoRow(
                 'KDV Dahil Satış Fiyatı',
                 '${product.salesPriceWithTax.toStringAsFixed(2)} ${product.salesCurrency}',
                 isDark,
               ),
+              _buildInfoRow(
+                'KDV Tutarı',
+                '${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)} ${product.salesCurrency}',
+                isDark,
+              ),
+            ] else ...[
+              _buildInfoRow(
+                'KDV Hariç Satış Fiyatı',
+                '${product.salesPrice.toStringAsFixed(2)} ${product.salesCurrency}',
+                isDark,
+              ),
+              _buildInfoRow(
+                'KDV Dahil Satış Fiyatı',
+                '${product.salesPriceWithTax.toStringAsFixed(2)} ${product.salesCurrency}',
+                isDark,
+              ),
+              _buildInfoRow(
+                'KDV Tutarı',
+                '${(product.salesPriceWithTax - product.salesPrice).toStringAsFixed(2)} ${product.salesCurrency}',
+                isDark,
+              ),
+            ],
 
             if (product.purchasePrice != null) ...[
               _buildInfoRow(
