@@ -7,6 +7,7 @@ import '../widgets/product_card.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
+import '../../../../core/utils/currency_helper.dart';
 import 'create_product_page.dart';
 import 'product_detail_page.dart';
 
@@ -219,7 +220,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
         Expanded(
           child: _buildStatCard(
             'Stok Değeri',
-            '₺${(stats['totalStockValue'] ?? 0).toStringAsFixed(0)}',
+            '₺${CurrencyHelper.formatNumber((stats['totalStockValue'] ?? 0).toDouble()).replaceAll(',00', '')}',
             Icons.attach_money,
             Colors.green,
           ),

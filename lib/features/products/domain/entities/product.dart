@@ -173,7 +173,8 @@ class Product {
     if (variants == null || variants!.isEmpty) {
       return stockQuantity; // Ana ürün stok miktarı
     }
-    return variants!
+    // Ana ürün + varyantların toplam stok miktarı
+    return stockQuantity + variants!
         .fold<int>(0, (sum, variant) => sum + variant.stockQuantity);
   }
 

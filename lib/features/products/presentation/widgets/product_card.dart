@@ -242,7 +242,7 @@ class ProductCard extends StatelessWidget {
             Icon(Icons.inventory, size: 14, color: _getStockColor()),
             const SizedBox(width: 4),
             Text(
-              '${product.totalStockQuantity}',
+              CurrencyHelper.formatNumber(product.totalStockQuantity.toDouble()).replaceAll(',00', ''),
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: _getStockColor(),

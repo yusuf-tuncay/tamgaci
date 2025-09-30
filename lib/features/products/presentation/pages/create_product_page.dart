@@ -1286,9 +1286,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.05),
+        color: Colors.blue.withValues(alpha:0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+        border: Border.all(color: Colors.blue.withValues(alpha:0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -535,7 +535,9 @@ class ProductDetailPage extends ConsumerWidget {
                 '${CurrencyHelper.formatNumber(product.purchasePrice!)} ${product.purchaseCurrency ?? product.salesCurrency}',
                 isDark,
               ),
-              if (product.purchaseTaxInclusive == TaxInclusiveOption.inclusive && product.purchasePriceWithTax != null)
+              if (product.purchaseTaxInclusive ==
+                      TaxInclusiveOption.inclusive &&
+                  product.purchasePriceWithTax != null)
                 _buildInfoRow(
                   'KDV Dahil Alış Fiyatı',
                   '${CurrencyHelper.formatNumber(product.purchasePriceWithTax!)} ${product.purchaseCurrency ?? product.salesCurrency}',
@@ -714,9 +716,9 @@ class ProductDetailPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.05),
+                  color: Colors.blue.withValues(alpha:0.05),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                  border: Border.all(color: Colors.blue.withValues(alpha:0.2)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
