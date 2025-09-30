@@ -3,6 +3,7 @@
 
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../models/firebase_product_entity.dart';
@@ -437,10 +438,15 @@ class FirebaseProductRepository implements ProductRepository {
       double totalValue = 0.0;
       for (final doc in querySnapshot.docs) {
         final product = ProductEntity.fromFirestore(doc).toDomain();
-        final stockQuantity = product.criticalStockQuantity ?? 0;
+        final stockQuantity = product.totalStockQuantity;
         final price = product.salesPrice;
         totalValue += stockQuantity * price;
+        
+        // Debug
+        debugPrint('📦 Stok Değeri Hesaplama: ${product.name}');
+        debugPrint('   Stok: $stockQuantity × Fiyat: $price = ${stockQuantity * price}');
       }
+      debugPrint('💰 Toplam Stok Değeri: $totalValue');
       return totalValue;
     } catch (e) {
       AppLogger.error('Error getting total stock value', e);
