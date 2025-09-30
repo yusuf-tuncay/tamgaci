@@ -399,7 +399,7 @@ class ProductFirebaseService {
       final totalStockValue = products.fold<double>(
           0,
           (total, p) =>
-              total + (p.totalStockQuantity * (p.purchasePrice ?? 0)));
+              total + (p.totalStockQuantity * p.salesPrice));
 
       return {
         'totalProducts': totalProducts,
