@@ -132,8 +132,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _barcodeController.text = product.barcode ?? '';
     _categoryController.text = product.category ?? '';
     _brandController.text = product.brand ?? '';
-    _salesPriceController.text = product.salesPrice.toString();
-    _purchasePriceController.text = product.purchasePrice?.toString() ?? '';
+    
+    // Fiyatları formatlanmış şekilde yükle (virgülle)
+    _salesPriceController.text = product.salesPrice.toStringAsFixed(2).replaceAll('.', ',');
+    _purchasePriceController.text = product.purchasePrice != null 
+        ? product.purchasePrice!.toStringAsFixed(2).replaceAll('.', ',')
+        : '';
+    
     _salesTaxRateController.text = product.salesTaxRate.toString();
     _purchaseTaxRateController.text = product.purchaseTaxRate?.toString() ?? '';
     _purchaseDiscountController.text =
@@ -1704,11 +1709,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         _salesPriceController.text.isNotEmpty) {
       final currentText = _salesPriceController.text;
       final formatted = _formatPrice(currentText);
-      
+
       debugPrint('💰 Fiyat Formatlama (Satış):');
       debugPrint('   Input: "$currentText"');
       debugPrint('   Output: "$formatted"');
-      
+
       if (formatted != currentText) {
         _salesPriceController.text = formatted;
       }
@@ -1720,11 +1725,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         _purchasePriceController.text.isNotEmpty) {
       final currentText = _purchasePriceController.text;
       final formatted = _formatPrice(currentText);
-      
+
       debugPrint('💰 Fiyat Formatlama (Alış):');
       debugPrint('   Input: "$currentText"');
       debugPrint('   Output: "$formatted"');
-      
+
       if (formatted != currentText) {
         _purchasePriceController.text = formatted;
       }
