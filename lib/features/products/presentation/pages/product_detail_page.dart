@@ -819,13 +819,13 @@ class ProductDetailPage extends ConsumerWidget {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: variant.stockQuantity > 0
-                      ? Colors.green.withOpacity(0.05)
-                      : Colors.red.withOpacity(0.05),
+                      ? Colors.green.withValues(alpha: 0.05)
+                      : Colors.red.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: variant.stockQuantity > 0
-                        ? Colors.green.withOpacity(0.3)
-                        : Colors.red.withOpacity(0.3),
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.red.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Column(
@@ -867,7 +867,8 @@ class ProductDetailPage extends ConsumerWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.location_on, size: 14, color: Colors.blue[600]),
+                          Icon(Icons.location_on,
+                              size: 14, color: Colors.blue[600]),
                           const SizedBox(width: 4),
                           Text(
                             'Raf: ${variant.shelfLocation}',

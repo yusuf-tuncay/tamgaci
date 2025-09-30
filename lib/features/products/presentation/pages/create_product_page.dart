@@ -1093,16 +1093,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
             const SizedBox(height: 16),
 
-            // Raf yeri
-            TextFormField(
-              controller: _shelfLocationController,
-              decoration: const InputDecoration(
-                labelText: 'Raf Yeri',
-                border: OutlineInputBorder(),
-                hintText: 'A-1-2',
-                prefixIcon: Icon(Icons.location_on),
+            // Raf yeri (sadece varyantlı ürünlerde gizli)
+            if (!_hasVariants)
+              TextFormField(
+                controller: _shelfLocationController,
+                decoration: const InputDecoration(
+                  labelText: 'Raf Yeri',
+                  border: OutlineInputBorder(),
+                  hintText: 'A-1-2',
+                  prefixIcon: Icon(Icons.location_on),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -1579,9 +1580,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.05),
+                      color: Colors.blue.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                      border:
+                          Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1968,14 +1970,22 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   int _parseStockQuantity(String stockText) {
     if (stockText.trim().isEmpty) return 0;
-
+    
     // Sadece rakamları al ve parse et
     final cleanValue = stockText.trim();
     final parsed = int.tryParse(cleanValue);
-
+    
     debugPrint('📦 Stok Parse: "$stockText" -> $parsed');
-
+    
     return parsed ?? 0;
+  }
+
+  String _toTitleCase(String text) {
+    if (text.isEmpty) return text;
+    return text.split(' ').map((word) {
+      if (word.isEmpty) return word;
+      return word[0].toUpperCase() + word.substring(1).toLowerCase();
+    }).join(' ');
   }
 
   Future<void> _saveProduct() async {
@@ -2170,7 +2180,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             onPressed: () {
               if (typeController.text.trim().isNotEmpty) {
                 setState(() {
-                  final type = typeController.text.trim();
+                  final type = _toTitleCase(typeController.text.trim());
                   if (!_variantOptions.containsKey(type)) {
                     _variantOptions[type] = [];
                     _variantTypes.add(type);
@@ -2222,7 +2232,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             onPressed: () {
               if (optionController.text.trim().isNotEmpty) {
                 setState(() {
-                  final option = optionController.text.trim();
+                  final option = _toTitleCase(optionController.text.trim());
                   if (!_variantOptions[type]!.contains(option)) {
                     _variantOptions[type]!.add(option);
                   }
@@ -2308,58 +2318,146 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   Widget _buildVariantCard(int index, ProductVariant variant) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
+        gradient: LinearGradient(
+          colors: variant.stockQuantity > 0
+              ? [Colors.green.withOpacity(0.03), Colors.green.withOpacity(0.08)]
+              : [Colors.grey.withOpacity(0.03), Colors.grey.withOpacity(0.08)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: variant.stockQuantity > 0
+              ? Colors.green.withOpacity(0.3)
+              : Colors.grey.withOpacity(0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(
-                child: Text(
-                  variant.name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              // İkon
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: variant.stockQuantity > 0
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
+                      ? Colors.green
+                      : Colors.grey[400],
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(
-                  '${variant.stockQuantity} adet',
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    color: variant.stockQuantity > 0
-                        ? Colors.green[700]
-                        : Colors.red[700],
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Icon(
+                  Icons.dashboard_customize,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Varyant adı
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      variant.name,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    // Özellikler chip'leri
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: variant.attributes.entries.map((attr) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            '${attr.key}: ${attr.value}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: Colors.purple[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              // Stok badge
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: variant.stockQuantity > 0 ? Colors.green : Colors.red,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (variant.stockQuantity > 0
+                              ? Colors.green
+                              : Colors.red)
+                          .withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      variant.stockQuantity > 0
+                          ? Icons.check_circle
+                          : Icons.warning,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${variant.stockQuantity}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: TextFormField(
                   initialValue: variant.stockQuantity.toString(),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Stok Miktarı',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    prefixIcon: Icon(Icons.inventory_2, color: Colors.blue[600]),
+                    filled: true,
+                    fillColor: Colors.white,
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
@@ -2375,11 +2473,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               Expanded(
                 child: TextFormField(
                   initialValue: variant.shelfLocation ?? '',
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Raf Yeri',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                     contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    prefixIcon:
+                        Icon(Icons.location_on, color: Colors.orange[600]),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'A-1-2',
                   ),
                   onChanged: (value) {
                     setState(() {

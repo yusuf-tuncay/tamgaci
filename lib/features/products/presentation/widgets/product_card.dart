@@ -42,7 +42,8 @@ class ProductCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 _buildProductInfo(),
                 // Varyantlar (varsa)
-                if (product.variants != null && product.variants!.isNotEmpty) ...[
+                if (product.variants != null &&
+                    product.variants!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _buildVariantsInfo(),
                 ],
@@ -175,7 +176,8 @@ class ProductCard extends StatelessWidget {
           _getTypeColor(),
         ),
         // Özel özellikler
-        if (product.attributeValues != null && product.attributeValues!.isNotEmpty)
+        if (product.attributeValues != null &&
+            product.attributeValues!.isNotEmpty)
           ...product.attributeValues!.entries.take(2).map((entry) {
             return _buildInfoChip(
               Icons.label_outline,
@@ -256,7 +258,8 @@ class ProductCard extends StatelessWidget {
             Icon(Icons.inventory, size: 14, color: _getStockColor()),
             const SizedBox(width: 4),
             Text(
-              CurrencyHelper.formatNumber(product.totalStockQuantity.toDouble()).replaceAll(',00', ''),
+              CurrencyHelper.formatNumber(product.totalStockQuantity.toDouble())
+                  .replaceAll(',00', ''),
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: _getStockColor(),
@@ -264,7 +267,8 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             if (product.criticalStockQuantity != null &&
-                product.totalStockQuantity <= product.criticalStockQuantity!) ...[
+                product.totalStockQuantity <=
+                    product.criticalStockQuantity!) ...[
               const SizedBox(width: 4),
               Icon(Icons.warning, size: 12, color: Colors.orange[600]),
             ],
@@ -326,7 +330,6 @@ class ProductCard extends StatelessWidget {
       ],
     );
   }
-
 
   Color _getTypeColor() {
     switch (product.type) {
@@ -396,14 +399,15 @@ class ProductCard extends StatelessWidget {
 
   Widget _buildVariantsInfo() {
     final variantCount = product.variants!.length;
-    final inStockVariants = product.variants!.where((v) => v.stockQuantity > 0).length;
-    
+    final inStockVariants =
+        product.variants!.where((v) => v.stockQuantity > 0).length;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.purple.withOpacity(0.05),
+        color: Colors.purple.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: Colors.purple.withOpacity(0.2)),
+        border: Border.all(color: Colors.purple.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
@@ -429,8 +433,8 @@ class ProductCard extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               decoration: BoxDecoration(
                 color: variant.stockQuantity > 0
-                    ? Colors.green.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -439,7 +443,9 @@ class ProductCard extends StatelessWidget {
                     : firstAttribute,
                 style: GoogleFonts.poppins(
                   fontSize: 8,
-                  color: variant.stockQuantity > 0 ? Colors.green[700] : Colors.grey[600],
+                  color: variant.stockQuantity > 0
+                      ? Colors.green[700]
+                      : Colors.grey[600],
                   fontWeight: FontWeight.w500,
                 ),
               ),
