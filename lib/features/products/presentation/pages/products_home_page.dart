@@ -220,7 +220,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
         Expanded(
           child: _buildStatCard(
             'Stok Değeri',
-            '₺${CurrencyHelper.formatNumber((stats['totalStockValue'] ?? 0).toDouble()).replaceAll(',00', '')}',
+            '₺${CurrencyHelper.formatNumber((stats['totalStockValue'] ?? 0).toDouble())}',
             Icons.attach_money,
             Colors.green,
           ),
