@@ -8,6 +8,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/utils/currency_helper.dart';
+import '../../../../core/routes/routes.dart';
 import 'create_product_page.dart';
 import 'product_detail_page.dart';
 
@@ -624,11 +625,30 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   }
 
   Widget _buildFloatingActionButton() {
-    return FloatingActionButton(
-      onPressed: _navigateToCreateProduct,
-      backgroundColor: const Color(0xFF6366F1),
-      child: const Icon(Icons.add, color: Colors.white),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FloatingActionButton(
+          heroTag: 'bulk_update',
+          onPressed: _navigateToBulkStockUpdate,
+          backgroundColor: Colors.orange[600],
+          child: const Icon(Icons.edit_note, color: Colors.white),
+          tooltip: 'Toplu Stok Güncelleme',
+        ),
+        const SizedBox(height: 12),
+        FloatingActionButton(
+          heroTag: 'add_product',
+          onPressed: _navigateToCreateProduct,
+          backgroundColor: const Color(0xFF6366F1),
+          child: const Icon(Icons.add, color: Colors.white),
+          tooltip: 'Yeni Ürün',
+        ),
+      ],
     );
+  }
+
+  void _navigateToBulkStockUpdate() {
+    Navigator.of(context).pushNamed(TamgaciRoutes.bulkStockUpdate);
   }
 
   void _showFilterDialog(String filterType) {

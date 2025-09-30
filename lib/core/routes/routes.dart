@@ -40,6 +40,7 @@ import 'package:tamgaci/features/invoices/presentation/pages/create_invoice_page
 import 'package:tamgaci/features/invoices/presentation/pages/invoices_list_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/create_product_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/product_variants_page.dart';
+import 'package:tamgaci/features/products/presentation/pages/bulk_stock_update_page.dart';
 // product_detail_page.dart kaldırıldı - enhanced_product_detail_page.dart kullanılıyor
 // import 'package:tamgaci/features/products/presentation/pages/products_list_page.dart'; // Unused
 import 'package:tamgaci/features/reports/presentation/pages/customer_report_page.dart';
@@ -265,6 +266,9 @@ class TamgaciRoutes {
 
   /// Ürün varyantları sayfası
   static const String productVariants = '/products/variants';
+
+  /// Toplu stok güncelleme
+  static const String bulkStockUpdate = '/products/bulk-stock-update';
 
   // Cash (Kasa) Route'ları - Eski route'lar kaldırıldı, cash_management kullanılıyor
 
@@ -714,6 +718,13 @@ class TamgaciRoutes {
 
       case productVariants:
         return _createRoute(const ProductVariantsPage(), settings: settings);
+
+      case bulkStockUpdate:
+        final warehouseId = arguments as String?;
+        return _createRoute(
+          BulkStockUpdatePage(warehouseId: warehouseId),
+          settings: settings,
+        );
 
       case productDetail:
         final productId = arguments as String?;

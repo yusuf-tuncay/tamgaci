@@ -108,7 +108,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Stok Sayımı - ${widget.warehouse.name}',
-        showBackButton: true,
+        showBackButton: false,
+        showDrawer: true,
         actions: [
           if (_stockCount!.status == StockCountStatus.draft ||
               _stockCount!.status == StockCountStatus.inProgress)

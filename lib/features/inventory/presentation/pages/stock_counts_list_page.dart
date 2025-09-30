@@ -37,7 +37,8 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
         title: widget.warehouse != null
             ? 'Stok Sayımları - ${widget.warehouse!.name}'
             : 'Tüm Stok Sayımları',
-        showBackButton: true,
+        showBackButton: false,
+        showDrawer: true,
         actions: [
           PopupMenuButton<StockCountStatus?>(
             icon: const Icon(Icons.filter_list),
