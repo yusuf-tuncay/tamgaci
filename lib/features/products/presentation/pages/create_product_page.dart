@@ -74,6 +74,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   // Dinamik kategori ve marka listeleri
   final List<String> _customCategories = [];
   final List<String> _customBrands = [];
+  
+  // Özel özellikler (Custom Attributes)
+  final Map<String, String> _customAttributes = {};
 
   bool _isLoading = false;
   bool _autoGenerateBarcode = true;
@@ -143,6 +146,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _countryCodeController.text = product.countryCode ?? '';
     _notesController.text = product.notes ?? '';
     _stockQuantityController.text = product.stockQuantity.toString();
+    
+    // Özel özellikleri yükle
+    if (product.attributeValues != null) {
+      _customAttributes.addAll(
+        product.attributeValues!.map((key, value) => MapEntry(key, value.toString())),
+      );
+    }
 
     if (mounted) {
       setState(() {
@@ -1259,6 +1269,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               ),
               maxLines: 3,
             ),
+
+            const SizedBox(height: 24),
+
+            // Özel Özellikler Bölümü
+            _buildCustomAttributesSection(),
           ],
         ),
       ),
@@ -1266,6 +1281,170 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   // Helper methods
+  Widget _buildCustomAttributesSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.tune, color: Colors.blue[700], size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'Özel Özellikler',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.blue[700],
+                ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _showAddAttributeDialog,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Özellik Ekle'),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.blue[700],
+                ),
+              ),
+            ],
+          ),
+          if (_customAttributes.isEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Henüz özel özellik eklenmedi. "Özellik Ekle" butonuna tıklayarak özellikler ekleyebilirsiniz.',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 16),
+            ..._customAttributes.entries.map((entry) {
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            entry.key,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            entry.value,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 20),
+                      color: Colors.red[400],
+                      onPressed: () => _removeAttribute(entry.key),
+                      tooltip: 'Sil',
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _showAddAttributeDialog() {
+    final keyController = TextEditingController();
+    final valueController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Yeni Özellik Ekle',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: keyController,
+              decoration: const InputDecoration(
+                labelText: 'Özellik Adı',
+                hintText: 'Örn: Renk, Boyut, Malzeme',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.words,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: valueController,
+              decoration: const InputDecoration(
+                labelText: 'Özellik Değeri',
+                hintText: 'Örn: Kırmızı, XL, Pamuk',
+                border: OutlineInputBorder(),
+              ),
+              textCapitalization: TextCapitalization.sentences,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (keyController.text.trim().isNotEmpty &&
+                  valueController.text.trim().isNotEmpty) {
+                setState(() {
+                  _customAttributes[keyController.text.trim()] =
+                      valueController.text.trim();
+                });
+                Navigator.pop(context);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Ekle'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _removeAttribute(String key) {
+    setState(() {
+      _customAttributes.remove(key);
+    });
+  }
+
   void _generateProductCode() {
     // Basit ürün kodu üretimi
     final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
@@ -1659,6 +1838,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         notes: _notesController.text.trim().isEmpty
             ? null
             : _notesController.text.trim(),
+        attributeValues: _customAttributes.isEmpty ? null : _customAttributes,
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
