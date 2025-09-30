@@ -1568,19 +1568,20 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue.withOpacity(0.05),
-                        Colors.purple.withOpacity(0.05)
+                        Colors.blue.withValues(alpha:0.05),
+                        Colors.purple.withValues(alpha:0.05)
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: Colors.blue.withOpacity(0.2), width: 2),
+                        color: Colors.blue.withValues(alpha:0.2), width: 2),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.info_outline, color: Colors.blue[600], size: 24),
+                      Icon(Icons.info_outline,
+                          color: Colors.blue[600], size: 24),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -1602,18 +1603,18 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.indigo.withOpacity(0.05),
-                          Colors.purple.withOpacity(0.05)
+                          Colors.indigo.withValues(alpha:0.05),
+                          Colors.purple.withValues(alpha:0.05)
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: Colors.indigo.withOpacity(0.3), width: 2),
+                          color: Colors.indigo.withValues(alpha:0.3), width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha:0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -1628,7 +1629,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.indigo,
+                                color: Colors.blue,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(
@@ -1644,38 +1645,50 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.indigo[800],
+                                  color: Colors.grey[800],
                                 ),
                               ),
                             ),
                             // Seçenek sayısı badge
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                                  horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.indigo,
-                                borderRadius: BorderRadius.circular(12),
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withValues(alpha: 0.3),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                '${entry.value.length}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.tag, color: Colors.white, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${entry.value.length}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 8),
                             IconButton(
-                              icon: const Icon(Icons.delete_outline, size: 22),
+                              icon: const Icon(Icons.delete_outline, size: 20),
                               color: Colors.red[400],
                               onPressed: () => _removeVariantType(entry.key),
                               tooltip: 'Tipi Sil',
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        const Divider(height: 1),
                         const SizedBox(height: 12),
                         Wrap(
                           spacing: 8,
@@ -1684,20 +1697,15 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                             ...entry.value.map((option) {
                               return Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
+                                    horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.white,
-                                      Colors.indigo.withOpacity(0.05)
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                      color: Colors.indigo.withOpacity(0.3)),
+                                      color: Colors.blue.withValues(alpha: 0.3)),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.indigo.withOpacity(0.1),
+                                      color: Colors.blue.withValues(alpha: 0.1),
                                       blurRadius: 2,
                                       offset: const Offset(0, 1),
                                     ),
@@ -1711,16 +1719,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.indigo[700],
+                                        color: Colors.grey[800],
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(width: 8),
                                     InkWell(
-                                      onTap: () =>
-                                          _removeVariantOption(entry.key, option),
+                                      onTap: () => _removeVariantOption(
+                                          entry.key, option),
                                       child: Icon(
                                         Icons.close,
-                                        size: 16,
+                                        size: 18,
                                         color: Colors.red[400],
                                       ),
                                     ),
@@ -1730,16 +1738,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                             }),
                             // Ekle butonu
                             InkWell(
-                              onTap: () => _showAddVariantOptionDialog(entry.key),
+                              onTap: () =>
+                                  _showAddVariantOptionDialog(entry.key),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
+                                    horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.indigo,
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.indigo.withOpacity(0.3),
+                                      color: Colors.blue.withValues(alpha: 0.3),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1748,7 +1757,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.add, size: 16, color: Colors.white),
+                                    const Icon(Icons.add,
+                                        size: 16, color: Colors.white),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Ekle',
@@ -2455,21 +2465,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: variant.stockQuantity > 0
-              ? [Colors.green.withOpacity(0.03), Colors.green.withOpacity(0.08)]
-              : [Colors.grey.withOpacity(0.03), Colors.grey.withOpacity(0.08)],
+              ? [Colors.green.withValues(alpha:0.03), Colors.green.withValues(alpha:0.08)]
+              : [Colors.grey.withValues(alpha:0.03), Colors.grey.withValues(alpha:0.08)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: variant.stockQuantity > 0
-              ? Colors.green.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.3),
+              ? Colors.green.withValues(alpha:0.3)
+              : Colors.grey.withValues(alpha:0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha:0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -2519,7 +2529,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.purple.withOpacity(0.1),
+                            color: Colors.purple.withValues(alpha:0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -2548,7 +2558,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       color: (variant.stockQuantity > 0
                               ? Colors.green
                               : Colors.red)
-                          .withOpacity(0.3),
+                          .withValues(alpha:0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -2581,6 +2591,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           const SizedBox(height: 16),
           // Barkod
           TextFormField(
+            key: ValueKey('variant_barcode_$index'),
             initialValue: variant.barcode ?? '',
             decoration: InputDecoration(
               labelText: 'Barkod',
@@ -2596,6 +2607,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   setState(() {
                     _variants[index] = variant.copyWith(barcode: barcode);
                   });
+                  // Force rebuild ile yeni değeri göster
+                  Future.microtask(() {
+                    if (mounted) setState(() {});
+                  });
                 },
                 tooltip: 'Otomatik barkod üret',
               ),
@@ -2604,10 +2619,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               hintText: 'Otomatik üret veya manuel girin',
             ),
             onChanged: (value) {
-              setState(() {
-                _variants[index] = variant.copyWith(
-                    barcode: value.trim().isEmpty ? null : value);
-              });
+              _variants[index] = variant.copyWith(
+                  barcode: value.trim().isEmpty ? null : value);
             },
           ),
           const SizedBox(height: 12),
