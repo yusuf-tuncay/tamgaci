@@ -1568,15 +1568,15 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue.withValues(alpha:0.05),
-                        Colors.purple.withValues(alpha:0.05)
+                        Colors.blue.withValues(alpha: 0.05),
+                        Colors.purple.withValues(alpha: 0.05)
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: Colors.blue.withValues(alpha:0.2), width: 2),
+                        color: Colors.blue.withValues(alpha: 0.2), width: 2),
                   ),
                   child: Row(
                     children: [
@@ -1603,18 +1603,19 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.indigo.withValues(alpha:0.05),
-                          Colors.purple.withValues(alpha:0.05)
+                          Colors.indigo.withValues(alpha: 0.05),
+                          Colors.purple.withValues(alpha: 0.05)
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: Colors.indigo.withValues(alpha:0.3), width: 2),
+                          color: Colors.indigo.withValues(alpha: 0.3),
+                          width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha:0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -1667,7 +1668,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.tag, color: Colors.white, size: 14),
+                                  const Icon(Icons.tag,
+                                      color: Colors.white, size: 14),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${entry.value.length}',
@@ -1702,7 +1704,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                   color: Colors.white,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                      color: Colors.blue.withValues(alpha: 0.3)),
+                                      color:
+                                          Colors.blue.withValues(alpha: 0.3)),
                                   boxShadow: [
                                     BoxShadow(
                                       color: Colors.blue.withValues(alpha: 0.1),
@@ -2465,21 +2468,27 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: variant.stockQuantity > 0
-              ? [Colors.green.withValues(alpha:0.03), Colors.green.withValues(alpha:0.08)]
-              : [Colors.grey.withValues(alpha:0.03), Colors.grey.withValues(alpha:0.08)],
+              ? [
+                  Colors.green.withValues(alpha: 0.03),
+                  Colors.green.withValues(alpha: 0.08)
+                ]
+              : [
+                  Colors.grey.withValues(alpha: 0.03),
+                  Colors.grey.withValues(alpha: 0.08)
+                ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: variant.stockQuantity > 0
-              ? Colors.green.withValues(alpha:0.3)
-              : Colors.grey.withValues(alpha:0.3),
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.grey.withValues(alpha: 0.3),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha:0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -2529,7 +2538,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha:0.1),
+                            color: Colors.purple.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
@@ -2558,7 +2567,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       color: (variant.stockQuantity > 0
                               ? Colors.green
                               : Colors.red)
-                          .withValues(alpha:0.3),
+                          .withValues(alpha: 0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -2590,38 +2599,48 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           ),
           const SizedBox(height: 16),
           // Barkod
-          TextFormField(
-            key: ValueKey('variant_barcode_$index'),
-            initialValue: variant.barcode ?? '',
-            decoration: InputDecoration(
-              labelText: 'Barkod',
-              border: const OutlineInputBorder(),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              prefixIcon: Icon(Icons.qr_code_2, color: Colors.purple[600]),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.auto_awesome, size: 20),
-                color: Colors.purple[600],
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  key: ValueKey(
+                      'variant_barcode_${variant.id}_${variant.barcode ?? "empty"}'),
+                  initialValue: variant.barcode ?? '',
+                  decoration: InputDecoration(
+                    labelText: 'Barkod',
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                    prefixIcon:
+                        Icon(Icons.qr_code_2, color: Colors.purple[600]),
+                    filled: true,
+                    fillColor: Colors.white,
+                    hintText: 'Manuel girin veya üretin',
+                  ),
+                  onChanged: (value) {
+                    _variants[index] = variant.copyWith(
+                        barcode: value.trim().isEmpty ? null : value);
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton.icon(
                 onPressed: () {
                   final barcode = BarcodeGenerator.generateRandomGS1Barcode();
                   setState(() {
                     _variants[index] = variant.copyWith(barcode: barcode);
                   });
-                  // Force rebuild ile yeni değeri göster
-                  Future.microtask(() {
-                    if (mounted) setState(() {});
-                  });
                 },
-                tooltip: 'Otomatik barkod üret',
+                icon: const Icon(Icons.auto_awesome, size: 18),
+                label: const Text('Üret'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple,
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
               ),
-              filled: true,
-              fillColor: Colors.white,
-              hintText: 'Otomatik üret veya manuel girin',
-            ),
-            onChanged: (value) {
-              _variants[index] = variant.copyWith(
-                  barcode: value.trim().isEmpty ? null : value);
-            },
+            ],
           ),
           const SizedBox(height: 12),
           Row(
