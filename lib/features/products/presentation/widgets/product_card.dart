@@ -169,6 +169,15 @@ class ProductCard extends StatelessWidget {
           product.type.displayName,
           _getTypeColor(),
         ),
+        // Özel özellikler
+        if (product.attributeValues != null && product.attributeValues!.isNotEmpty)
+          ...product.attributeValues!.entries.take(2).map((entry) {
+            return _buildInfoChip(
+              Icons.label_outline,
+              '${entry.key}: ${entry.value}',
+              Colors.teal,
+            );
+          }),
       ],
     );
   }
