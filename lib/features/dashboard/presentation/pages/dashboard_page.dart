@@ -24,6 +24,7 @@ import '../widgets/dashboard_stats_card.dart';
 import '../widgets/dashboard_chart_widget.dart';
 import '../widgets/quick_actions_widget.dart';
 import '../widgets/recent_activities_widget.dart';
+import '../widgets/product_variants_widget.dart';
 import '../../domain/entities/dashboard_summary.dart';
 import '../../../inventory/presentation/providers/warehouse_providers.dart';
 import '../../../inventory/presentation/providers/stock_providers.dart';
@@ -201,6 +202,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             _buildChartSection(monthlyChartAsync, isDark),
             const SizedBox(height: 16),
             const ExchangeRatesWidget(),
+            const SizedBox(height: 16),
+            const ProductVariantsWidget(),
             const SizedBox(height: 16),
             _buildRecentActivitiesSection(recentActivitiesAsync, isDark),
           ],

@@ -636,7 +636,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     setState(() {
       _categorySearchQuery = '';
     });
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -676,7 +676,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     return StatefulBuilder(
       builder: (context, setDialogState) {
         final productsAsync = ref.watch(productsStreamProvider);
-        
+
         return productsAsync.when(
           data: (products) {
             // Kategorileri topla ve sırala
@@ -694,7 +694,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                 children: [
                   // Arama alanı
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: TextField(
                       decoration: InputDecoration(
                         hintText: 'Kategori ara...',
@@ -748,7 +749,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                             : Colors.grey,
                       ),
                       trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: const Color(0xFF6366F1).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
