@@ -89,25 +89,25 @@ class ProductCard extends StatelessWidget {
 
   Widget _buildProductIcon() {
     return Container(
-      width: 40,
-      height: 40,
+      width: 64,
+      height: 64,
       decoration: BoxDecoration(
         color: _getTypeColor().withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: product.images.isNotEmpty
           ? ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(12),
               child: Image.network(
                 product.images.first,
-                width: 40,
-                height: 40,
+                width: 64,
+                height: 64,
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return Icon(
                     _getTypeIcon(),
                     color: _getTypeColor(),
-                    size: 20,
+                    size: 28,
                   );
                 },
                 loadingBuilder: (context, child, loadingProgress) {
@@ -115,7 +115,7 @@ class ProductCard extends StatelessWidget {
                   return Icon(
                     _getTypeIcon(),
                     color: _getTypeColor(),
-                    size: 20,
+                    size: 28,
                   );
                 },
               ),
@@ -123,7 +123,7 @@ class ProductCard extends StatelessWidget {
           : Icon(
               _getTypeIcon(),
               color: _getTypeColor(),
-              size: 20,
+              size: 28,
             ),
     );
   }
