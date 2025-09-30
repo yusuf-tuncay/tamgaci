@@ -116,8 +116,8 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
               ElevatedButton(
                 onPressed: () {
                   if (widget.warehouse != null) {
-                    ref.invalidate(
-                        stockCountsByWarehouseStreamProvider(widget.warehouse!.id));
+                    ref.invalidate(stockCountsByWarehouseStreamProvider(
+                        widget.warehouse!.id));
                   } else {
                     ref.invalidate(allStockCountsStreamProvider);
                   }
@@ -275,7 +275,8 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
                   Expanded(
                     child: _buildStatBox(
                       'Kalan',
-                      (stockCount.totalItemsCount - stockCount.countedItemsCount)
+                      (stockCount.totalItemsCount -
+                              stockCount.countedItemsCount)
                           .toString(),
                       Colors.orange,
                     ),

@@ -47,8 +47,8 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
     return Scaffold(
       appBar: CustomAppBar(
         title: 'Toplu Stok Güncelleme',
-        showBackButton: false,
-        showDrawer: true,
+        showBackButton: true,
+        showDrawer: false,
         actions: [
           if (_selectedProducts.values.any((selected) => selected))
             IconButton(
