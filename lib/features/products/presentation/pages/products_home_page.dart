@@ -477,24 +477,28 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                     }
 
                     return Column(
-                      children: filteredProducts.map((product) {
-                        return AnimatedBuilder(
-                          animation: _fadeAnimation,
-                          builder: (context, child) {
-                            return FadeTransition(
-                              opacity: _fadeAnimation,
-                              child: SlideTransition(
-                                position: _slideAnimation,
-                                child: ProductCard(
-                                  product: product,
-                                  onTap: () =>
-                                      _navigateToProductDetail(product),
+                      children: [
+                        ...filteredProducts.map((product) {
+                          return AnimatedBuilder(
+                            animation: _fadeAnimation,
+                            builder: (context, child) {
+                              return FadeTransition(
+                                opacity: _fadeAnimation,
+                                child: SlideTransition(
+                                  position: _slideAnimation,
+                                  child: ProductCard(
+                                    product: product,
+                                    onTap: () =>
+                                        _navigateToProductDetail(product),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        );
-                      }).toList(),
+                              );
+                            },
+                          );
+                        }).toList(),
+                        // FAB için alan bırak
+                        const SizedBox(height: 80),
+                      ],
                     );
                   },
                   loading: () => _buildLoadingState(),
