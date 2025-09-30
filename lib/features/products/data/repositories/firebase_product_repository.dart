@@ -440,13 +440,15 @@ class FirebaseProductRepository implements ProductRepository {
         final product = ProductEntity.fromFirestore(doc).toDomain();
         final stockQuantity = product.totalStockQuantity;
         // KDV hariç fiyat kullan (gerçek maliyet/değer)
-        final price = product.salesPriceWithoutTax;
-        final itemValue = stockQuantity * price;
+        // Her bir ürünün fiyatını 2 basamağa yuvarla
+        final priceWithoutTax = product.salesPriceWithoutTax;
+        final roundedPrice = double.parse(priceWithoutTax.toStringAsFixed(2));
+        final itemValue = stockQuantity * roundedPrice;
         totalValue += itemValue;
         
         // Debug
         debugPrint('📦 Stok Değeri Hesaplama: ${product.name}');
-        debugPrint('   Stok: $stockQuantity × KDV Hariç Fiyat: $price = $itemValue');
+        debugPrint('   Stok: $stockQuantity × KDV Hariç Fiyat: $roundedPrice = $itemValue');
         debugPrint('   (KDV Dahil: ${product.salesPrice}, KDV: %${product.salesTaxRate})');
       }
       debugPrint('💰 Toplam Stok Değeri: $totalValue');
