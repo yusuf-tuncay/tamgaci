@@ -132,13 +132,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
     _barcodeController.text = product.barcode ?? '';
     _categoryController.text = product.category ?? '';
     _brandController.text = product.brand ?? '';
-    
+
     // Fiyatları formatlanmış şekilde yükle (virgülle)
-    _salesPriceController.text = product.salesPrice.toStringAsFixed(2).replaceAll('.', ',');
-    _purchasePriceController.text = product.purchasePrice != null 
+    _salesPriceController.text =
+        product.salesPrice.toStringAsFixed(2).replaceAll('.', ',');
+    _purchasePriceController.text = product.purchasePrice != null
         ? product.purchasePrice!.toStringAsFixed(2).replaceAll('.', ',')
         : '';
-    
+
     _salesTaxRateController.text = product.salesTaxRate.toString();
     _purchaseTaxRateController.text = product.purchaseTaxRate?.toString() ?? '';
     _purchaseDiscountController.text =
@@ -1694,8 +1695,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   String _formatPrice(String value) {
     if (value.isEmpty) return '';
 
-    // Virgülü nokta ile değiştir
-    final cleanValue = value.replaceAll(',', '.');
+    // Binlik ayracı noktaları kaldır, virgülü nokta ile değiştir
+    final cleanValue = value.replaceAll('.', '').replaceAll(',', '.');
     final doubleValue = double.tryParse(cleanValue);
 
     if (doubleValue == null) return value;
