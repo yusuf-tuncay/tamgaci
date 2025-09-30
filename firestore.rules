@@ -270,6 +270,16 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && isTenantMember(tenantId);
     }
     
+    // Stock Counts - Stok sayımları
+    match /tenants/{tenantId}/stockCounts/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+    
     // Expense collection rules
     match /tenants/{tenantId}/expenses/{id} {
       allow read, write: if isSignedIn() && isTenantMember(tenantId);

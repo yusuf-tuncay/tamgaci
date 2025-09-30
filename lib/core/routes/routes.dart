@@ -66,6 +66,8 @@ import 'package:tamgaci/features/inventory/presentation/pages/inventory_page.dar
 // import 'package:tamgaci/features/inventory/presentation/pages/warehouse_list_page.dart'; // Unused
 import 'package:tamgaci/features/warehouses/presentation/pages/create_warehouse_page.dart';
 import 'package:tamgaci/features/warehouses/presentation/pages/warehouse_detail_page.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/stock_count_page.dart';
+import 'package:tamgaci/features/inventory/presentation/pages/stock_counts_list_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/stock_list_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/create_stock_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/stock_detail_page.dart';
@@ -325,6 +327,12 @@ class TamgaciRoutes {
 
   /// Depo düzenleme sayfası
   static const String editWarehouse = '/warehouse/edit';
+
+  /// Stok sayımları listesi
+  static const String stockCountsList = '/stock-counts';
+
+  /// Yeni stok sayımı
+  static const String createStockCount = '/stock-count/create';
 
   /// Depo detay sayfası
   static const String warehouseDetail = '/warehouse/detail';
@@ -758,6 +766,20 @@ class TamgaciRoutes {
         final warehouse = arguments as Warehouse?;
         return _createRoute(
           CreateWarehousePage(existingWarehouse: warehouse),
+          settings: settings,
+        );
+
+      case stockCountsList:
+        final warehouse = arguments as Warehouse?;
+        return _createRoute(
+          StockCountsListPage(warehouse: warehouse),
+          settings: settings,
+        );
+
+      case createStockCount:
+        final warehouse = arguments as Warehouse;
+        return _createRoute(
+          StockCountPage(warehouse: warehouse),
           settings: settings,
         );
 

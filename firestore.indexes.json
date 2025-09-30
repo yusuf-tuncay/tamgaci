@@ -643,6 +643,34 @@
                     "order": "DESCENDING"
                 }
             ]
+        },
+        {
+            "collectionGroup": "stockCounts",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "warehouseId",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "countDate",
+                    "order": "DESCENDING"
+                }
+            ]
+        },
+        {
+            "collectionGroup": "stockCounts",
+            "queryScope": "COLLECTION",
+            "fields": [
+                {
+                    "fieldPath": "status",
+                    "order": "ASCENDING"
+                },
+                {
+                    "fieldPath": "countDate",
+                    "order": "DESCENDING"
+                }
+            ]
         }
     ],
     "fieldOverrides": []

@@ -201,6 +201,13 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           route: TamgaciRoutes.warehouseList,
         ),
         DrawerMenuItem(
+          id: 'stock-counts',
+          title: 'Stok Sayımları',
+          icon: Icons.fact_check_outlined,
+          route: TamgaciRoutes.stockCountsList,
+          isActive: true,
+        ),
+        DrawerMenuItem(
           id: 'production',
           title: 'Üretim',
           icon: Icons.precision_manufacturing_outlined,

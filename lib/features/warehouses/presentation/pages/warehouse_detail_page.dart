@@ -10,6 +10,7 @@ import '../../../products/presentation/providers/product_providers.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../products/presentation/pages/product_detail_page.dart';
 import '../../../../core/routes/routes.dart';
+import '../../../inventory/presentation/pages/stock_count_page.dart';
 
 /// Depo Detay Sayfası
 class WarehouseDetailPage extends ConsumerStatefulWidget {
@@ -939,75 +940,9 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
   }
 
   void _performStockCount() {
-    _showStockCountDialog();
-  }
-
-  void _showStockCountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.purple.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child:
-                  const Icon(Icons.inventory, color: Colors.purple, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Stok Sayımı',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Depo stok sayımı yaparak mevcut ürün miktarlarını kontrol edin',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Bu özellik yakında eklenecek',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.grey[500],
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Tamam',
-              style: GoogleFonts.poppins(
-                color: Colors.purple,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StockCountPage(warehouse: widget.warehouse),
       ),
     );
   }

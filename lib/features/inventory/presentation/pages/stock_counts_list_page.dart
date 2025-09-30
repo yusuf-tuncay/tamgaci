@@ -1,0 +1,388 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
+import '../../domain/entities/stock_count.dart';
+import '../providers/stock_count_providers.dart';
+import '../../../warehouses/domain/entities/warehouse.dart';
+import 'stock_count_page.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/loading_widget.dart';
+
+/// Stok Sayımları Listesi Sayfası
+class StockCountsListPage extends ConsumerStatefulWidget {
+  final Warehouse? warehouse;
+
+  const StockCountsListPage({
+    super.key,
+    this.warehouse,
+  });
+
+  @override
+  ConsumerState<StockCountsListPage> createState() =>
+      _StockCountsListPageState();
+}
+
+class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
+  StockCountStatus? _filterStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final stockCountsAsync = widget.warehouse != null
+        ? ref.watch(stockCountsByWarehouseStreamProvider(widget.warehouse!.id))
+        : ref.watch(allStockCountsStreamProvider);
+
+    return Scaffold(
+      appBar: CustomAppBar(
+        title: widget.warehouse != null
+            ? 'Stok Sayımları - ${widget.warehouse!.name}'
+            : 'Tüm Stok Sayımları',
+        showBackButton: true,
+        actions: [
+          PopupMenuButton<StockCountStatus?>(
+            icon: const Icon(Icons.filter_list),
+            tooltip: 'Filtrele',
+            onSelected: (status) {
+              setState(() {
+                _filterStatus = status;
+              });
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: null,
+                child: Text('Tümü', style: GoogleFonts.poppins()),
+              ),
+              ...StockCountStatus.values.map((status) {
+                return PopupMenuItem(
+                  value: status,
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getStatusIcon(status),
+                        size: 18,
+                        color: _getStatusColor(status),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        status.displayName,
+                        style: GoogleFonts.poppins(),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ),
+        ],
+      ),
+      body: stockCountsAsync.when(
+        data: (stockCounts) {
+          var filteredCounts = stockCounts;
+          if (_filterStatus != null) {
+            filteredCounts = stockCounts
+                .where((count) => count.status == _filterStatus)
+                .toList();
+          }
+
+          if (filteredCounts.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: filteredCounts.length,
+            itemBuilder: (context, index) {
+              return _buildStockCountCard(filteredCounts[index]);
+            },
+          );
+        },
+        loading: () => const LoadingWidget(),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+              const SizedBox(height: 16),
+              Text(
+                'Hata: ${error.toString()}',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.red[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  if (widget.warehouse != null) {
+                    ref.invalidate(
+                        stockCountsByWarehouseStreamProvider(widget.warehouse!.id));
+                  } else {
+                    ref.invalidate(allStockCountsStreamProvider);
+                  }
+                },
+                child: Text('Tekrar Dene'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.inventory_outlined,
+            size: 80,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Henüz stok sayımı yok',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Depo detayından yeni sayım başlatın',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStockCountCard(StockCount stockCount) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: _getStatusColor(stockCount.status).withValues(alpha: 0.3),
+          width: 2,
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          // Depo bilgisini bul ve sayfa aç
+          _openStockCount(stockCount);
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _getStatusColor(stockCount.status),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          _getStatusIcon(stockCount.status),
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          stockCount.status.displayName,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    stockCount.type.displayName,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                stockCount.countNumber,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                stockCount.warehouseName,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 4),
+                  Text(
+                    DateFormat('dd.MM.yyyy HH:mm').format(stockCount.countDate),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildStatBox(
+                      'Toplam',
+                      stockCount.totalItemsCount.toString(),
+                      Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildStatBox(
+                      'Sayılan',
+                      stockCount.countedItemsCount.toString(),
+                      Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildStatBox(
+                      'Kalan',
+                      (stockCount.totalItemsCount - stockCount.countedItemsCount)
+                          .toString(),
+                      Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+              if (stockCount.status == StockCountStatus.inProgress ||
+                  stockCount.status == StockCountStatus.draft) ...[
+                const SizedBox(height: 12),
+                LinearProgressIndicator(
+                  value: stockCount.totalItemsCount > 0
+                      ? stockCount.countedItemsCount /
+                          stockCount.totalItemsCount
+                      : 0,
+                  backgroundColor: Colors.grey[200],
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    _getStatusColor(stockCount.status),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatBox(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openStockCount(StockCount stockCount) {
+    // Warehouse objesi oluştur
+    final warehouse = Warehouse(
+      id: stockCount.warehouseId,
+      name: stockCount.warehouseName,
+      address: '',
+      type: WarehouseType.main,
+      status: WarehouseStatus.active,
+      isActive: true,
+      isDefault: false,
+      createdBy: '',
+      createdAt: DateTime.now(),
+      updatedBy: '',
+      updatedAt: DateTime.now(),
+      tenantId: stockCount.tenantId,
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StockCountPage(
+          warehouse: warehouse,
+          existingStockCount: stockCount,
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(StockCountStatus status) {
+    switch (status) {
+      case StockCountStatus.draft:
+        return Colors.grey;
+      case StockCountStatus.inProgress:
+        return Colors.blue;
+      case StockCountStatus.completed:
+        return Colors.green;
+      case StockCountStatus.cancelled:
+        return Colors.red;
+    }
+  }
+
+  IconData _getStatusIcon(StockCountStatus status) {
+    switch (status) {
+      case StockCountStatus.draft:
+        return Icons.edit_note;
+      case StockCountStatus.inProgress:
+        return Icons.pending;
+      case StockCountStatus.completed:
+        return Icons.check_circle;
+      case StockCountStatus.cancelled:
+        return Icons.cancel;
+    }
+  }
+}
