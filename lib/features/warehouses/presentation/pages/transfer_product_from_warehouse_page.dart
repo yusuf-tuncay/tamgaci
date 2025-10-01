@@ -29,7 +29,7 @@ class _TransferProductFromWarehousePageState
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
   final _notesController = TextEditingController();
-  
+
   Warehouse? _selectedToWarehouse;
   Product? _selectedProduct;
   CashAccount? _selectedCashAccount;
@@ -86,7 +86,8 @@ class _TransferProductFromWarehousePageState
       body: warehousesAsync.when(
         data: (warehouses) => productsAsync.when(
           data: (products) => cashAccountsAsync.when(
-            data: (cashAccounts) => _buildBody(warehouses, products, cashAccounts),
+            data: (cashAccounts) =>
+                _buildBody(warehouses, products, cashAccounts),
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => _buildErrorState(error),
           ),
@@ -99,7 +100,8 @@ class _TransferProductFromWarehousePageState
     );
   }
 
-  Widget _buildBody(List<Warehouse> warehouses, List<Product> products, List<CashAccount> cashAccounts) {
+  Widget _buildBody(List<Warehouse> warehouses, List<Product> products,
+      List<CashAccount> cashAccounts) {
     // Kaynak depo hariç diğer depoları filtrele
     final availableWarehouses =
         warehouses.where((w) => w.id != widget.sourceWarehouse.id).toList();
@@ -246,7 +248,8 @@ class _TransferProductFromWarehousePageState
     );
   }
 
-  Widget _buildFormCard(List<Warehouse> availableWarehouses, List<Product> products, List<CashAccount> cashAccounts) {
+  Widget _buildFormCard(List<Warehouse> availableWarehouses,
+      List<Product> products, List<CashAccount> cashAccounts) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -374,7 +377,8 @@ class _TransferProductFromWarehousePageState
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Color(0xFFF59E0B)),
             ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: Text(
             'Ürün seçin',
@@ -440,7 +444,7 @@ class _TransferProductFromWarehousePageState
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<CashAccount>(
-          value: _selectedCashAccount,
+          initialValue: _selectedCashAccount,
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -614,7 +618,11 @@ class _TransferProductFromWarehousePageState
 
   Future<void> _saveTransfer() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedToWarehouse == null || _selectedProduct == null || _selectedCashAccount == null) return;
+    if (_selectedToWarehouse == null ||
+        _selectedProduct == null ||
+        _selectedCashAccount == null) {
+      return;
+    }
 
     setState(() {
       _isLoading = true;
