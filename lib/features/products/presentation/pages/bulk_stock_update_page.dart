@@ -106,8 +106,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline,
-                        size: 64, color: Colors.red[400]),
+                    Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
                     const SizedBox(height: 16),
                     Text(
                       'Hata: ${error.toString()}',
@@ -242,9 +241,8 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: _selectedProducts[product.id]!
-              ? Colors.blue
-              : Colors.grey[200]!,
+          color:
+              _selectedProducts[product.id]! ? Colors.blue : Colors.grey[200]!,
           width: _selectedProducts[product.id]! ? 2 : 1,
         ),
       ),
@@ -504,9 +502,8 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
 
     try {
       final productsAsync = widget.warehouseId != null
-          ? await ref
-              .read(productsByWarehouseStreamProvider(widget.warehouseId!)
-                  .future)
+          ? await ref.read(
+              productsByWarehouseStreamProvider(widget.warehouseId!).future)
           : await ref.read(productsStreamProvider.future);
 
       int updatedCount = 0;
@@ -519,7 +516,8 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
 
         if (product.variants != null && product.variants!.isNotEmpty) {
           // Varyantlı ürün - her varyantı güncelle
-          final updatedVariants = product.variants!.asMap().entries.map((entry) {
+          final updatedVariants =
+              product.variants!.asMap().entries.map((entry) {
             final variantIndex = entry.key;
             final variant = entry.value;
             final variantKey = '${product.id}_variant_$variantIndex';

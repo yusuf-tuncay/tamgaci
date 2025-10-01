@@ -21,6 +21,7 @@ import 'package:tamgaci/features/cash_management/domain/usecases/get_cash_transa
 import 'package:tamgaci/features/cash_management/domain/usecases/duplicate_cash_transaction_usecase.dart';
 import 'package:tamgaci/features/cash_management/presentation/notifiers/cash_management_notifier.dart';
 import 'package:tamgaci/features/cash_management/presentation/states/cash_management_state.dart';
+import 'package:tamgaci/features/cash_management/domain/entities/cash_account.dart';
 
 /// Firebase Firestore instance provider
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
@@ -156,6 +157,12 @@ final duplicateCashTransactionUseCaseProvider =
     Provider<DuplicateCashTransactionUseCase>((ref) {
   final repository = ref.watch(cashTransactionRepositoryProvider);
   return DuplicateCashTransactionUseCase(repository);
+});
+
+/// Cash Accounts Stream Provider
+final cashAccountsStreamProvider = StreamProvider<List<CashAccount>>((ref) {
+  final notifier = ref.read(cashManagementNotifierProvider.notifier);
+  return notifier.watchCashAccounts();
 });
 
 /// Cash Management Notifier provider

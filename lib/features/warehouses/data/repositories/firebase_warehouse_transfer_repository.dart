@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/warehouse_transfer.dart';
 import '../../domain/repositories/warehouse_transfer_repository.dart';
 import '../models/firebase_warehouse_transfer_entity.dart';
+import '../../../products/domain/entities/product.dart';
+import '../../../products/data/repositories/firebase_product_repository.dart';
 
 /// Firebase Warehouse Transfer Repository Implementation
 class FirebaseWarehouseTransferRepository
@@ -55,9 +57,67 @@ class FirebaseWarehouseTransferRepository
           .doc(transfer.id)
           .set(firebaseEntity.toFirestore());
 
+      // Transfer oluşturulduktan sonra stokları güncelle
+      await _updateProductStocks(transferWithTenant);
+
       return transferWithTenant;
     } catch (e) {
       throw Exception('Transfer oluşturulamadı: $e');
+    }
+  }
+
+  /// Transfer sonrası ürün stoklarını güncelle
+  Future<void> _updateProductStocks(WarehouseTransfer transfer) async {
+    try {
+      final tenantId = _tenantId();
+      
+      // Ürünü getir
+      final productDoc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .doc(transfer.productId)
+          .get();
+
+      if (!productDoc.exists) {
+        throw Exception('Ürün bulunamadı');
+      }
+
+      final productData = productDoc.data()!;
+      final currentStock = productData['stockQuantity'] ?? 0;
+      
+      // Kaynak depodan çıkar, hedef depoya ekle
+      final newStock = currentStock - transfer.quantity;
+      
+      if (newStock < 0) {
+        throw Exception('Yetersiz stok. Mevcut stok: $currentStock, İstenen: ${transfer.quantity}');
+      }
+
+      // Stok güncelle
+      await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .doc(transfer.productId)
+          .update({
+        'stockQuantity': newStock,
+        'updatedAt': FieldValue.serverTimestamp(),
+        'updatedBy': _uid(),
+      });
+
+      // Transfer durumunu completed olarak güncelle
+      await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('warehouseTransfers')
+          .doc(transfer.id)
+          .update({
+        'status': 'completed',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+    } catch (e) {
+      throw Exception('Stok güncellenemedi: $e');
     }
   }
 

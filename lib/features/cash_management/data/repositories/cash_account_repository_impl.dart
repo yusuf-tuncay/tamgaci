@@ -238,4 +238,10 @@ class CashAccountRepositoryImpl implements CashAccountRepository {
   Future<CashAccount> activateCashAccount(String id) async {
     return await updateCashAccountStatus(id, CashAccountStatus.active);
   }
+
+  @override
+  Stream<List<CashAccount>> watchAllCashAccounts() {
+    return _dataSource.watchAllCashAccounts().map((models) =>
+        models.map((model) => model.toEntity()).toList());
+  }
 }

@@ -394,4 +394,20 @@ class CashAccountFirebaseDataSource {
       rethrow;
     }
   }
+
+  /// Tüm nakit hesapları stream olarak getirir
+  Stream<List<CashAccountModel>> watchAllCashAccounts() {
+    try {
+      return _firestore
+          .collection('cash_accounts')
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => CashAccountModel.fromFirestore(doc))
+              .toList());
+    } catch (e) {
+      AppLogger.error('Error watching all cash accounts', e);
+      rethrow;
+    }
+  }
 }

@@ -7,6 +7,8 @@ import '../providers/warehouse_providers.dart';
 import '../providers/warehouse_transfer_providers.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../products/presentation/providers/product_providers.dart';
+import '../../../cash_management/domain/entities/cash_account.dart';
+import '../../../cash_management/presentation/providers/cash_management_providers.dart';
 
 /// Ürün Gönderme Sayfası (Bu depodan başka depoya)
 class TransferProductFromWarehousePage extends ConsumerStatefulWidget {
@@ -30,6 +32,7 @@ class _TransferProductFromWarehousePageState
   
   Warehouse? _selectedToWarehouse;
   Product? _selectedProduct;
+  CashAccount? _selectedCashAccount;
   bool _isLoading = false;
 
   @override
@@ -43,6 +46,7 @@ class _TransferProductFromWarehousePageState
   Widget build(BuildContext context) {
     final warehousesAsync = ref.watch(warehousesProvider);
     final productsAsync = ref.watch(productsStreamProvider);
+    final cashAccountsAsync = ref.watch(cashAccountsStreamProvider);
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -81,7 +85,11 @@ class _TransferProductFromWarehousePageState
       ),
       body: warehousesAsync.when(
         data: (warehouses) => productsAsync.when(
-          data: (products) => _buildBody(warehouses, products),
+          data: (products) => cashAccountsAsync.when(
+            data: (cashAccounts) => _buildBody(warehouses, products, cashAccounts),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => _buildErrorState(error),
+          ),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => _buildErrorState(error),
         ),
@@ -91,7 +99,7 @@ class _TransferProductFromWarehousePageState
     );
   }
 
-  Widget _buildBody(List<Warehouse> warehouses, List<Product> products) {
+  Widget _buildBody(List<Warehouse> warehouses, List<Product> products, List<CashAccount> cashAccounts) {
     // Kaynak depo hariç diğer depoları filtrele
     final availableWarehouses =
         warehouses.where((w) => w.id != widget.sourceWarehouse.id).toList();
@@ -107,7 +115,7 @@ class _TransferProductFromWarehousePageState
             const SizedBox(height: 20),
             _buildTransferInfoCard(),
             const SizedBox(height: 20),
-            _buildFormCard(availableWarehouses, products),
+            _buildFormCard(availableWarehouses, products, cashAccounts),
             const SizedBox(height: 20),
             _buildSaveButton(),
           ],
@@ -238,7 +246,7 @@ class _TransferProductFromWarehousePageState
     );
   }
 
-  Widget _buildFormCard(List<Warehouse> availableWarehouses, List<Product> products) {
+  Widget _buildFormCard(List<Warehouse> availableWarehouses, List<Product> products, List<CashAccount> cashAccounts) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -267,6 +275,8 @@ class _TransferProductFromWarehousePageState
           _buildWarehouseDropdown(availableWarehouses),
           const SizedBox(height: 16),
           _buildProductDropdown(products),
+          const SizedBox(height: 16),
+          _buildCashAccountDropdown(cashAccounts),
           const SizedBox(height: 16),
           _buildQuantityField(),
           const SizedBox(height: 16),
@@ -373,24 +383,30 @@ class _TransferProductFromWarehousePageState
           items: products.map((product) {
             return DropdownMenuItem<Product>(
               value: product,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  if (product.productCode != null)
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 300),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                     Text(
-                      'Kod: ${product.productCode}',
+                      product.name,
                       style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                ],
+                    if (product.productCode != null)
+                      Text(
+                        'Kod: ${product.productCode}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                  ],
+                ),
               ),
             );
           }).toList(),
@@ -402,6 +418,66 @@ class _TransferProductFromWarehousePageState
           validator: (value) {
             if (value == null) {
               return 'Ürün seçiniz';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCashAccountDropdown(List<CashAccount> cashAccounts) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Kasa *',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.grey[700],
+          ),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<CashAccount>(
+          value: _selectedCashAccount,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+          hint: Text(
+            'Kasa seçin',
+            style: GoogleFonts.poppins(color: Colors.grey[500]),
+          ),
+          items: cashAccounts.map((cashAccount) {
+            return DropdownMenuItem<CashAccount>(
+              value: cashAccount,
+              child: Text(
+                cashAccount.name,
+                style: GoogleFonts.poppins(),
+              ),
+            );
+          }).toList(),
+          onChanged: (CashAccount? value) {
+            setState(() {
+              _selectedCashAccount = value;
+            });
+          },
+          validator: (value) {
+            if (value == null) {
+              return 'Kasa seçiniz';
             }
             return null;
           },
@@ -538,7 +614,7 @@ class _TransferProductFromWarehousePageState
 
   Future<void> _saveTransfer() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedToWarehouse == null || _selectedProduct == null) return;
+    if (_selectedToWarehouse == null || _selectedProduct == null || _selectedCashAccount == null) return;
 
     setState(() {
       _isLoading = true;

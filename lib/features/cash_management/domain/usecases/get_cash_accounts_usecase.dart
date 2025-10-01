@@ -77,4 +77,10 @@ class GetCashAccountsUseCase {
       offset: offset,
     );
   }
+
+  /// Tüm nakit hesapları stream olarak getirir
+  /// Returns: Nakit hesap stream'i
+  Stream<List<CashAccount>> watchAll() {
+    return _repository.watchAllCashAccounts();
+  }
 }

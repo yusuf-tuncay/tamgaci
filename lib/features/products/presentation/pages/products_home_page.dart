@@ -632,16 +632,16 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           heroTag: 'bulk_update',
           onPressed: _navigateToBulkStockUpdate,
           backgroundColor: Colors.orange[600],
-          child: const Icon(Icons.edit_note, color: Colors.white),
           tooltip: 'Toplu Stok Güncelleme',
+          child: const Icon(Icons.edit_note, color: Colors.white),
         ),
         const SizedBox(height: 12),
         FloatingActionButton(
           heroTag: 'add_product',
           onPressed: _navigateToCreateProduct,
           backgroundColor: const Color(0xFF6366F1),
-          child: const Icon(Icons.add, color: Colors.white),
           tooltip: 'Yeni Ürün',
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       ],
     );

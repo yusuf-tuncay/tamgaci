@@ -1068,4 +1068,9 @@ class CashManagementNotifier extends StateNotifier<CashManagementState> {
   void clearError() {
     state = state.copyWith(error: null);
   }
+
+  /// Cash accounts stream'i döndürür
+  Stream<List<CashAccount>> watchCashAccounts() {
+    return _getCashAccountsUseCase.watchAll();
+  }
 }

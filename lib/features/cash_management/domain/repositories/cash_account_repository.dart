@@ -136,4 +136,8 @@ abstract class CashAccountRepository {
   /// [id]: Nakit hesap ID'si
   /// Returns: Güncellenmiş nakit hesap
   Future<CashAccount> activateCashAccount(String id);
+
+  /// Tüm nakit hesapları stream olarak getirir
+  /// Returns: Nakit hesap stream'i
+  Stream<List<CashAccount>> watchAllCashAccounts();
 }
