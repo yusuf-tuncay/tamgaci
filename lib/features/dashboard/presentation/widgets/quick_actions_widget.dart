@@ -88,27 +88,9 @@ class QuickActionsWidget extends StatelessWidget {
                 Colors.purple,
                 () => Navigator.pushNamed(context, TamgaciRoutes.accountsHome),
               ),
-              _buildQuickAction(
-                context,
-                'Gider Ekle',
-                Icons.money_off_outlined,
-                Colors.red,
-                () => Navigator.pushNamed(context, TamgaciRoutes.createExpense),
-              ),
-              _buildQuickAction(
-                context,
-                'Gelir Ekle',
-                Icons.attach_money_outlined,
-                Colors.teal,
-                () => Navigator.pushNamed(context, TamgaciRoutes.createIncome),
-              ),
-              _buildQuickAction(
-                context,
-                'Tahsilat',
-                Icons.payments_outlined,
-                Colors.green,
-                () => Navigator.pushNamed(context, TamgaciRoutes.paymentsHome),
-              ),
+              // Silinen modül: expenses
+              // Silinen modül: income
+              // Silinen modül: payments
               _buildQuickAction(
                 context,
                 'Raporlar',

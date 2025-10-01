@@ -3,13 +3,13 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import '../../../../features/income/presentation/providers/income_providers.dart';
-import '../../../../features/expenses/presentation/providers/expense_providers.dart';
+// Silinen modül: income
+// Silinen modül: expenses
 import '../../../../features/invoices/presentation/providers/invoice_providers.dart';
 import '../../../../features/customers/presentation/providers/customer_providers.dart';
 import '../../../../features/suppliers/presentation/providers/supplier_providers.dart';
 import '../../../../features/products/presentation/providers/product_providers.dart';
-import '../../../../features/payments/presentation/providers/payment_providers.dart';
+// Silinen modül: payments
 
 import '../../data/services/date_time_service.dart';
 import '../../data/services/stock_market_service.dart';
@@ -43,62 +43,30 @@ final currencyChartDataProvider =
 /// Dashboard özet verileri için provider
 final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
   try {
-    final incomesAsync = await ref.read(incomesProvider.future);
-    final expensesAsync = await ref.read(expensesProvider.future);
+    // Silinen modül: income
+    // Silinen modül: expenses
     // final invoicesAsync = await ref.read(invoicesProvider.future);
     final customersAsync = await ref.read(customersProvider.future);
     final suppliersAsync = await ref.read(suppliersProvider.future);
     final productsAsync = await ref.read(productsStreamProvider.future);
-    final paymentsAsync = await ref.read(paymentsProvider.future);
+    // Silinen modül: payments
 
-    final now = DateTime.now();
-    final currentMonth = DateTime(now.year, now.month);
-    final lastMonth = DateTime(now.year, now.month - 1);
+    // Silinen modüller nedeniyle tarih hesaplamaları kullanılmıyor
 
-    // Bu ay gelirleri
-    final currentMonthIncomes = incomesAsync.where((income) {
-      final incomeDate = DateTime(
-        income.incomeDate.year,
-        income.incomeDate.month,
-      );
-      return incomeDate.isAtSameMomentAs(currentMonth);
-    }).toList();
+    // Silinen modül: income
+    final currentMonthIncomes = <dynamic>[];
 
-    // Bu ay giderleri
-    final currentMonthExpenses = expensesAsync.where((expense) {
-      final expenseDate = DateTime(
-        expense.expenseDate.year,
-        expense.expenseDate.month,
-      );
-      return expenseDate.isAtSameMomentAs(currentMonth);
-    }).toList();
+    // Silinen modül: expenses
+    final currentMonthExpenses = <dynamic>[];
 
-    // Bu ay tahsilatlar
-    final currentMonthPayments = paymentsAsync.where((payment) {
-      final paymentDate = DateTime(
-        payment.paymentDate.year,
-        payment.paymentDate.month,
-      );
-      return paymentDate.isAtSameMomentAs(currentMonth);
-    }).toList();
+    // Silinen modül: payments
+    final currentMonthPayments = <dynamic>[];
 
-    // Geçen ay tahsilatlar
-    final lastMonthPayments = paymentsAsync.where((payment) {
-      final paymentDate = DateTime(
-        payment.paymentDate.year,
-        payment.paymentDate.month,
-      );
-      return paymentDate.isAtSameMomentAs(lastMonth);
-    }).toList();
+    // Silinen modül: payments
+    final lastMonthPayments = <dynamic>[];
 
-    // Geçen ay gelirleri
-    final lastMonthIncomes = incomesAsync.where((income) {
-      final incomeDate = DateTime(
-        income.incomeDate.year,
-        income.incomeDate.month,
-      );
-      return incomeDate.isAtSameMomentAs(lastMonth);
-    }).toList();
+    // Silinen modül: income
+    final lastMonthIncomes = <dynamic>[];
 
     // Bekleyen faturalar
     // final pendingInvoices = invoicesAsync
@@ -211,40 +179,16 @@ final recentTransactionsProvider = FutureProvider<List<TransactionItem>>((
   ref,
 ) async {
   try {
-    final incomesAsync = await ref.read(incomesProvider.future);
-    final expensesAsync = await ref.read(expensesProvider.future);
+    // Silinen modül: income
+    // Silinen modül: expenses
     final invoicesAsync = await ref.read(invoicesProvider.future);
-    final paymentsAsync = await ref.read(paymentsProvider.future);
+    // Silinen modül: payments
 
     final allTransactions = <TransactionItem>[];
 
-    // Gelirleri ekle
-    for (final income in incomesAsync.take(10)) {
-      allTransactions.add(
-        TransactionItem(
-          id: income.id,
-          title: income.title,
-          amount: income.amount,
-          type: TransactionType.income,
-          date: income.incomeDate,
-          description: income.description ?? '',
-        ),
-      );
-    }
+    // Silinen modül: income
 
-    // Giderleri ekle
-    for (final expense in expensesAsync.take(10)) {
-      allTransactions.add(
-        TransactionItem(
-          id: expense.id,
-          title: expense.title,
-          amount: expense.amount,
-          type: TransactionType.expense,
-          date: expense.expenseDate,
-          description: expense.description ?? '',
-        ),
-      );
-    }
+    // Silinen modül: expenses
 
     // Faturaları ekle
     for (final invoice in invoicesAsync.take(10)) {
@@ -261,19 +205,7 @@ final recentTransactionsProvider = FutureProvider<List<TransactionItem>>((
       );
     }
 
-    // Tahsilatları ekle
-    for (final payment in paymentsAsync.take(10)) {
-      allTransactions.add(
-        TransactionItem(
-          id: payment.id,
-          title: 'Tahsilat: ${payment.type.displayName}',
-          amount: payment.amount,
-          type: TransactionType.payment,
-          date: payment.paymentDate,
-          description: '${payment.customerName} - ${payment.status.name}',
-        ),
-      );
-    }
+    // Silinen modül: payments
 
     // Tarihe göre sırala (en yeni önce)
     allTransactions.sort((a, b) => b.date.compareTo(a.date));
@@ -332,8 +264,8 @@ final monthlyChartDataProvider = FutureProvider<List<MonthlyChartData>>((
   ref,
 ) async {
   try {
-    final incomesAsync = await ref.read(incomesProvider.future);
-    final expensesAsync = await ref.read(expensesProvider.future);
+    // Silinen modül: income
+    // Silinen modül: expenses
 
     final now = DateTime.now();
     final months = <MonthlyChartData>[];
@@ -343,23 +275,12 @@ final monthlyChartDataProvider = FutureProvider<List<MonthlyChartData>>((
       final month = DateTime(now.year, now.month - i);
       final monthName = DateFormat('MMM', 'tr_TR').format(month);
 
-      // Bu ay için gelirleri topla
-      final monthIncomes = incomesAsync.where((income) {
-        final incomeDate = DateTime(
-          income.incomeDate.year,
-          income.incomeDate.month,
-        );
-        return incomeDate.isAtSameMomentAs(month);
-      }).toList();
+      // Silinen modül: income
+      final monthIncomes = <dynamic>[];
 
       // Bu ay için giderleri topla
-      final monthExpenses = expensesAsync.where((expense) {
-        final expenseDate = DateTime(
-          expense.expenseDate.year,
-          expense.expenseDate.month,
-        );
-        return expenseDate.isAtSameMomentAs(month);
-      }).toList();
+      // Silinen modül: expenses
+      final monthExpenses = <dynamic>[];
 
       final totalIncome = monthIncomes.fold<double>(
         0,

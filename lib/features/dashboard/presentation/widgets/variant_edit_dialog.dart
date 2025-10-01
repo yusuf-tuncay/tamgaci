@@ -1,3 +1,7 @@
+// GEREKSİZ DIALOG - Bu dialog kullanılmıyor
+// Dashboard'dan kaldırıldı - gereksiz
+// Bu dosya sadece referans amaçlı tutulmuştur
+
 // ========== VARIANT EDIT DIALOG ==========
 // lib/features/dashboard/presentation/widgets/variant_edit_dialog.dart
 
@@ -36,9 +40,12 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
   @override
   void initState() {
     super.initState();
-    _stockController = TextEditingController(text: widget.variant.stockQuantity.toString());
-    _shelfLocationController = TextEditingController(text: widget.variant.shelfLocation ?? '');
-    _barcodeController = TextEditingController(text: widget.variant.barcode ?? '');
+    _stockController =
+        TextEditingController(text: widget.variant.stockQuantity.toString());
+    _shelfLocationController =
+        TextEditingController(text: widget.variant.shelfLocation ?? '');
+    _barcodeController =
+        TextEditingController(text: widget.variant.barcode ?? '');
   }
 
   @override
@@ -84,7 +91,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.purple.withValues(alpha:0.1),
+            color: Colors.purple.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -103,7 +110,9 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                  color: isDark
+                      ? TamgaciConstants.textPrimaryDark
+                      : TamgaciConstants.textPrimary,
                 ),
               ),
               Text(
@@ -299,11 +308,11 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
 
     try {
       final stockQuantity = int.parse(_stockController.text.trim());
-      final shelfLocation = _shelfLocationController.text.trim().isEmpty 
-          ? null 
+      final shelfLocation = _shelfLocationController.text.trim().isEmpty
+          ? null
           : _shelfLocationController.text.trim();
-      final barcode = _barcodeController.text.trim().isEmpty 
-          ? null 
+      final barcode = _barcodeController.text.trim().isEmpty
+          ? null
           : _barcodeController.text.trim();
 
       // Varyantı güncelle
@@ -314,7 +323,8 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
       );
 
       // Ürünün varyantlarını güncelle
-      final updatedVariants = List<ProductVariant>.from(widget.product.variants!);
+      final updatedVariants =
+          List<ProductVariant>.from(widget.product.variants!);
       updatedVariants[widget.variantIndex] = updatedVariant;
 
       final updatedProduct = widget.product.copyWith(

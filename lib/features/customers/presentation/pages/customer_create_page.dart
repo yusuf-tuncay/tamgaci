@@ -15,7 +15,7 @@ import '../../domain/entities/customer.dart';
 import '../../domain/entities/customer_enums.dart';
 import '../../domain/entities/customer_branch.dart';
 import '../providers/customer_providers.dart';
-import '../../../user_profile/presentation/providers/user_profile_providers.dart';
+// Silinen modül: user_profile
 import '../../../../core/services/firebase/firebase_auth_service.dart';
 import '../../../customers/data/services/customer_transaction_service.dart';
 import '../../../../core/services/business/transaction_service.dart';
@@ -155,7 +155,8 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
 
     try {
       final uid = FirebaseAuthService.currentUserId ?? 'system';
-      final companyName = ref.read(userCompanyProvider);
+      // Silinen modül: user_profile - company name kaldırıldı
+      const companyName = 'Şirket'; // Varsayılan değer
 
       // Mevcut kullanıcı için tenantId oluştur (eğer yoksa)
       await FirebaseAuthService.createTenantIdForCurrentUser();
@@ -1020,7 +1021,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                     name: name,
                     level: level,
                     parentId: null,
-                    companyId: ref.read(userCompanyProvider),
+                    companyId: 'default_company', // Silinen modül: user_profile
                     userId: FirebaseAuthService.currentUserId ?? 'system',
                   )).future);
 

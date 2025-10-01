@@ -19,7 +19,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
 import '../providers/auth_providers.dart';
 import '../../../../shared/widgets/privacy_policy_dialog.dart';
-import '../../../../features/user_profile/presentation/providers/user_profile_providers.dart';
+// Silinen modül: user_profile
 import '../../domain/entities/user.dart';
 
 /// Kayıt olma sayfası
@@ -691,19 +691,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       await ref.read(authProvider.notifier).updateUserProfile(updated);
       debugPrint('✅ User profile updated successfully');
 
-      // 5. Force refresh user profile provider to sync data
-      try {
-        await ref.read(userProfileProvider.notifier).refreshProfile();
-        debugPrint('🔄 User profile provider refreshed');
-
-        // Verify data was loaded
-        final refreshedProfile = ref.read(userProfileProvider).value;
-        debugPrint('🔍 Verification - Company: ${refreshedProfile?.company}');
-        debugPrint(
-            '🔍 Verification - Photo: ${refreshedProfile?.profilePhotoUrl}');
-      } catch (e) {
-        debugPrint('⚠️ UserProfile refresh failed, but continuing: $e');
-      }
+      // Silinen modül: user_profile - profile refresh kaldırıldı
+      debugPrint('⚠️ UserProfile refresh kaldırıldı');
 
       // 6. Show success message and navigate immediately
       if (mounted) {

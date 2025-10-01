@@ -7,8 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../core/theme/constants.dart';
 import '../../core/routes/routes.dart';
-import '../../features/user_profile/presentation/providers/user_profile_providers.dart';
-import '../../features/user_profile/domain/entities/user_profile.dart';
+// Silinen modül: user_profile
 import '../../core/providers/currency_providers.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/domain/entities/user.dart' as auth_domain;
@@ -331,7 +330,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     final menuItems = ref.watch(drawerMenuItemsProvider);
     final drawerState = ref.watch(drawerMenuProvider);
     final activeRoute = drawerState['activeRoute'] as String;
-    final userProfile = ref.watch(userProfileProvider);
+    // Silinen modül: user_profile
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -347,7 +346,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       ),
       child: Column(
         children: [
-          _buildHeader(userProfile),
+          _buildHeader(null), // Silinen modül: user_profile
           Expanded(
             child: Container(
               color: isDark
@@ -369,7 +368,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     );
   }
 
-  Widget _buildHeader(AsyncValue<UserProfile?> userProfile) {
+  Widget _buildHeader(dynamic userProfile) {
+    // Silinen modül: user_profile
     final currentUser = ref.watch(currentUserProvider);
     return Container(
       height: 200,
@@ -652,7 +652,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     }
 
     // Priority 2: Check UserProfile entity
-    final userProfile = ref.read(userProfileProvider).value;
+    // Silinen modül: user_profile
+    const userProfile = null;
     final profilePhotoUrl = userProfile?.profilePhotoUrl;
     if (profilePhotoUrl != null && profilePhotoUrl.isNotEmpty) {
       // Validate URL has token before using
@@ -751,7 +752,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       }
 
       // Also refresh UserProfile provider in background
-      ref.read(userProfileProvider.notifier).refreshProfile().catchError((e) {
+      // Silinen modül: user_profile
+      Future.value().catchError((e) {
         debugPrint('⚠️ Background profile refresh failed: $e');
       });
     } catch (e) {
@@ -775,7 +777,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     }
 
     // Fallback to UserProfile if User entity is incomplete
-    final userProfile = ref.read(userProfileProvider).value;
+    // Silinen modül: user_profile
+    const userProfile = null;
     if (userProfile != null) {
       return userProfile.fullName;
     }
@@ -794,7 +797,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
     // Fallback to UserProfile
     if (company == null || company.isEmpty) {
-      final userProfile = ref.read(userProfileProvider).value;
+      // Silinen modül: user_profile
+      const userProfile = null;
       company = userProfile?.company;
     }
 
@@ -807,7 +811,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
     // If both name and surname are empty, try to get from UserProfile
     if (n.isEmpty && s.isEmpty) {
-      final userProfile = ref.read(userProfileProvider).value;
+      // Silinen modül: user_profile
+      const userProfile = null;
       if (userProfile != null) {
         final profileName = userProfile.name.trim();
         final profileSurname = userProfile.surname.trim();

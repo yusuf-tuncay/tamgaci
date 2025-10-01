@@ -1,3 +1,7 @@
+// GEREKSİZ WIDGET - Bu widget kullanılmıyor
+// Dashboard'dan kaldırıldı - gereksiz
+// Bu dosya sadece referans amaçlı tutulmuştur
+
 // ========== PRODUCT VARIANTS WIDGET ==========
 // lib/features/dashboard/presentation/widgets/product_variants_widget.dart
 
@@ -25,7 +29,8 @@ class ProductVariantsWidget extends ConsumerWidget {
       data: (products) {
         // Varyantlı ürünleri filtrele
         final productsWithVariants = products
-            .where((product) => product.variants != null && product.variants!.isNotEmpty)
+            .where((product) =>
+                product.variants != null && product.variants!.isNotEmpty)
             .toList();
 
         if (productsWithVariants.isEmpty) {
@@ -61,7 +66,7 @@ class ProductVariantsWidget extends ConsumerWidget {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.purple.withValues(alpha:0.1),
+            color: Colors.purple.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -76,14 +81,16 @@ class ProductVariantsWidget extends ConsumerWidget {
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+            color: isDark
+                ? TamgaciConstants.textPrimaryDark
+                : TamgaciConstants.textPrimary,
           ),
         ),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.purple.withValues(alpha:0.1),
+            color: Colors.purple.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -99,7 +106,8 @@ class ProductVariantsWidget extends ConsumerWidget {
     );
   }
 
-  Widget _buildVariantsList(List<Product> products, bool isDark, BuildContext context) {
+  Widget _buildVariantsList(
+      List<Product> products, bool isDark, BuildContext context) {
     return Column(
       children: products.take(5).map((product) {
         return Container(
@@ -129,9 +137,10 @@ class ProductVariantsWidget extends ConsumerWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.blue.withValues(alpha:0.1),
+                      color: Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -153,18 +162,19 @@ class ProductVariantsWidget extends ConsumerWidget {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: variant.stockQuantity > 0
-                        ? Colors.green.withValues(alpha:0.05)
-                        : Colors.red.withValues(alpha:0.05),
+                        ? Colors.green.withValues(alpha: 0.05)
+                        : Colors.red.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: variant.stockQuantity > 0
-                          ? Colors.green.withValues(alpha:0.3)
-                          : Colors.red.withValues(alpha:0.3),
+                          ? Colors.green.withValues(alpha: 0.3)
+                          : Colors.red.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),
                   child: InkWell(
-                    onTap: () => _showVariantEditDialog(context, product, variant, product.variants!.indexOf(variant)),
+                    onTap: () => _showVariantEditDialog(context, product,
+                        variant, product.variants!.indexOf(variant)),
                     borderRadius: BorderRadius.circular(6),
                     child: Row(
                       children: [
@@ -177,7 +187,8 @@ class ProductVariantsWidget extends ConsumerWidget {
                                 style: GoogleFonts.poppins(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: isDark ? Colors.white : Colors.grey[800],
+                                  color:
+                                      isDark ? Colors.white : Colors.grey[800],
                                 ),
                               ),
                               if (variant.shelfLocation != null) ...[
@@ -194,7 +205,8 @@ class ProductVariantsWidget extends ConsumerWidget {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
                             color: variant.stockQuantity > 0
                                 ? Colors.green
@@ -333,7 +345,8 @@ class ProductVariantsWidget extends ConsumerWidget {
     );
   }
 
-  void _showVariantEditDialog(BuildContext context, Product product, ProductVariant variant, int variantIndex) {
+  void _showVariantEditDialog(BuildContext context, Product product,
+      ProductVariant variant, int variantIndex) {
     showDialog(
       context: context,
       builder: (context) => VariantEditDialog(

@@ -31,11 +31,8 @@ import 'package:tamgaci/features/accounts/presentation/pages/create_account_page
 import 'package:tamgaci/features/accounts/presentation/pages/account_detail_page.dart';
 import 'package:tamgaci/features/reports/presentation/pages/enhanced_reports_list_page.dart';
 import 'package:tamgaci/features/dashboard/presentation/pages/dashboard_page.dart';
-import 'package:tamgaci/features/expenses/presentation/pages/create_expense_page.dart';
-import 'package:tamgaci/features/expenses/presentation/pages/expense_detail_page.dart';
-import 'package:tamgaci/features/expenses/presentation/pages/expenses_list_page.dart';
-import 'package:tamgaci/features/income/presentation/pages/create_income_page.dart';
-import 'package:tamgaci/features/income/presentation/pages/income_list_page.dart';
+// Silinen modül: expenses
+// Silinen modül: income
 import 'package:tamgaci/features/invoices/presentation/pages/create_invoice_page.dart';
 import 'package:tamgaci/features/invoices/presentation/pages/invoices_list_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/create_product_page.dart';
@@ -61,8 +58,8 @@ import 'package:tamgaci/features/suppliers/presentation/pages/create_supplier_pa
 import 'package:tamgaci/shared/pages/not_found_page.dart';
 import 'package:tamgaci/shared/pages/under_construction_page.dart';
 // import 'package:tamgaci/features/invoices/presentation/pages/invoice_detail_page.dart'; // Unused
-import 'package:tamgaci/features/income/presentation/pages/income_detail_page.dart';
-import 'package:tamgaci/features/notifications/presentation/pages/notifications_page.dart';
+// Silinen modül: income
+// Silinen modül: notifications
 import 'package:tamgaci/features/inventory/presentation/pages/inventory_page.dart';
 // import 'package:tamgaci/features/inventory/presentation/pages/warehouse_list_page.dart'; // Unused
 import 'package:tamgaci/features/warehouses/presentation/pages/create_warehouse_page.dart';
@@ -73,26 +70,12 @@ import 'package:tamgaci/features/inventory/presentation/pages/stock_list_page.da
 import 'package:tamgaci/features/inventory/presentation/pages/create_stock_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/stock_detail_page.dart';
 
-import 'package:tamgaci/features/directory/presentation/pages/contacts_list_page.dart';
-import 'package:tamgaci/features/directory/presentation/pages/create_contact_page.dart';
-import 'package:tamgaci/features/directory/presentation/pages/contact_detail_page.dart';
-import 'package:tamgaci/features/directory/presentation/pages/edit_contact_page.dart';
-import 'package:tamgaci/features/directory/domain/entities/contact.dart';
+// Silinen modül: directory
 
 import 'package:tamgaci/features/products/presentation/pages/products_home_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/product_detail_page.dart';
 
-// Payments (Tahsilat) imports
-import 'package:tamgaci/features/payments/presentation/pages/payments_home_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/cash_payments_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/check_payments_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/promissory_payments_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/transfer_payments_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/voucher_payments_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/balance_payments_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/payment_history_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/payment_reports_page.dart';
-import 'package:tamgaci/features/payments/presentation/pages/payment_detailed_report_page.dart';
+// Silinen modül: payments
 
 /// Tamgaci Uygulaması Route Yönetim Sınıfı
 /// Tüm sayfa route'larını merkezi olarak yönetir
@@ -141,31 +124,9 @@ class TamgaciRoutes {
   /// Fatura düzenleme sayfası
   static const String editInvoice = '/invoice/edit';
 
-  // Expense (Gider) Route'ları
-  /// Gider listesi sayfası
-  static const String expensesList = '/expenses';
+  // Silinen modül: expenses
 
-  /// Yeni gider oluşturma sayfası
-  static const String createExpense = '/expenses/create';
-
-  /// Gider detay sayfası
-  static const String expenseDetail = '/expenses/detail';
-
-  /// Gider düzenleme sayfası
-  static const String editExpense = '/expense/edit';
-
-  // Income (Gelir) Route'ları
-  /// Gelir listesi sayfası
-  static const String incomeList = '/income';
-
-  /// Yeni gelir oluşturma sayfası
-  static const String createIncome = '/income/create';
-
-  /// Gelir detay sayfası
-  static const String incomeDetail = '/income/detail';
-
-  /// Gelir düzenleme sayfası
-  static const String editIncome = '/income/edit';
+  // Silinen modül: income
 
   // Customer (Müşteri) Route'ları
   /// Müşteri listesi sayfası
@@ -238,18 +199,7 @@ class TamgaciRoutes {
   /// Nakit işlemi detay sayfası
   static const String cashTransactionDetail = '/cash-transactions/detail';
 
-  // Directory (Fihrist) Route'ları
-  /// Fihrist listesi sayfası
-  static const String contactsList = '/directory';
-
-  /// Yeni kişi/kurum oluşturma sayfası
-  static const String createContact = '/directory/create';
-
-  /// Kişi/kurum detay sayfası
-  static const String contactDetail = '/directory/detail';
-
-  /// Kişi/kurum düzenleme sayfası
-  static const String editContact = '/directory/edit';
+  // Silinen modül: directory
 
   // Product (Ürün) Route'ları
   /// Ürün listesi sayfası
@@ -354,9 +304,7 @@ class TamgaciRoutes {
   /// Stok detay sayfası
   static const String stockDetail = '/stock/detail';
 
-  // Notifications (Bildirimler) Route'ları
-  /// Bildirimler sayfası
-  static const String notifications = '/notifications';
+  // Silinen modül: notifications
 
   // Shared Route'lar
   /// 404 sayfa bulunamadı
@@ -367,31 +315,7 @@ class TamgaciRoutes {
 
   // ========== PAYMENTS (TAHSİLAT) ROUTE'LARI ==========
 
-  /// Tahsilat ana sayfası
-  static const String paymentsHome = '/payments';
-
-  /// Nakit, Kredi Kartı, Banka işlemleri
-  static const String cashPayments = '/payments/cash';
-
-  /// Çek işlemleri
-  static const String checkPayments = '/payments/check';
-
-  /// Senet Al/Ver işlemleri
-  static const String promissoryPayments = '/payments/promissory';
-
-  /// Cari Virman işlemleri
-  static const String transferPayments = '/payments/transfer';
-
-  /// Borç-Alacak Fişleri
-  static const String voucherPayments = '/payments/voucher';
-
-  /// Bakiye Düzelt işlemleri
-  static const String balancePayments = '/payments/balance';
-  static const String paymentHistory = '/payments/history';
-
-  /// Tahsilat Raporları
-  static const String paymentReports = '/payments/reports';
-  static const String paymentDetailedReport = '/payments/reports/detailed';
+  // Silinen modül: payments
 
   // ========== ROUTE GENERATOR ==========
 
@@ -496,51 +420,11 @@ class TamgaciRoutes {
 
       // ========== GİDER ROUTE'LARI ==========
 
-      case expensesList:
-        return _createRoute(const ExpensesListPage(), settings: settings);
-
-      case createExpense:
-        return _createRoute(const CreateExpensePage(), settings: settings);
-
-      case expenseDetail:
-        // Expense ID parametresi bekleniyor
-        final expenseId = arguments as String?;
-        return _createRoute(
-          ExpenseDetailPage(expenseId: expenseId ?? ''),
-          settings: settings,
-        );
-
-      case editExpense:
-        // Expense ID parametresi bekleniyor
-        final expenseId = arguments as String?;
-        return _createRoute(
-          CreateExpensePage(expenseId: expenseId),
-          settings: settings,
-        );
+      // Silinen modül: expenses
 
       // ========== GELİR ROUTE'LARI ==========
 
-      case incomeList:
-        return _createRoute(const IncomeListPage(), settings: settings);
-
-      case createIncome:
-        return _createRoute(const CreateIncomePage(), settings: settings);
-
-      case incomeDetail:
-        // Income ID parametresi bekleniyor
-        final incomeId = arguments as String?;
-        return _createRoute(
-          IncomeDetailPage(incomeId: incomeId ?? ''),
-          settings: settings,
-        );
-
-      case editIncome:
-        // Income ID parametresi bekleniyor
-        final incomeId = arguments as String?;
-        return _createRoute(
-          CreateIncomePage(incomeId: incomeId),
-          settings: settings,
-        );
+      // Silinen modül: income
 
       // ========== MÜŞTERİ ROUTE'LARI ==========
 
@@ -714,7 +598,8 @@ class TamgaciRoutes {
 
       case createProduct:
         final productId = arguments as String?;
-        return _createRoute(CreateProductPage(productId: productId), settings: settings);
+        return _createRoute(CreateProductPage(productId: productId),
+            settings: settings);
 
       case productVariants:
         return _createRoute(const ProductVariantsPage(), settings: settings);
@@ -823,25 +708,7 @@ class TamgaciRoutes {
 
       // ========== FİHRİST ROUTE'LARI ==========
 
-      case contactsList:
-        return _createRoute(const ContactsListPage(), settings: settings);
-
-      case createContact:
-        return _createRoute(const CreateContactPage(), settings: settings);
-
-      case contactDetail:
-        final contact = settings.arguments as Contact;
-        return _createRoute(
-          ContactDetailPage(contact: contact),
-          settings: settings,
-        );
-
-      case editContact:
-        final contact = settings.arguments as Contact;
-        return _createRoute(
-          EditContactPage(contact: contact),
-          settings: settings,
-        );
+      // Silinen modül: directory
 
       // ========== AYARLAR ROUTE'LARI ==========
 
@@ -859,50 +726,11 @@ class TamgaciRoutes {
 
       // ========== BİLDİRİMLER ROUTE'LARI ==========
 
-      case notifications:
-        return _createRoute(const NotificationsPage(), settings: settings);
+      // Silinen modül: notifications
 
       // ========== ENVANTER ROUTE'LARI ==========
 
-      // ========== PAYMENTS (TAHSİLAT) ROUTE'LARI ==========
-
-      case paymentsHome:
-        return _createRoute(const PaymentsHomePage(), settings: settings);
-
-      case cashPayments:
-        return _createRoute(const CashPaymentsPage(), settings: settings);
-
-      case checkPayments:
-        return _createRoute(const CheckPaymentsPage(), settings: settings);
-
-      case promissoryPayments:
-        return _createRoute(const PromissoryPaymentsPage(), settings: settings);
-
-      case transferPayments:
-        return _createRoute(const TransferPaymentsPage(), settings: settings);
-
-      case voucherPayments:
-        return _createRoute(const VoucherPaymentsPage(), settings: settings);
-
-      case balancePayments:
-        return _createRoute(const BalancePaymentsPage(), settings: settings);
-      case paymentHistory:
-        return _createRoute(const PaymentHistoryPage(), settings: settings);
-      case paymentReports:
-        return _createRoute(const PaymentReportsPage(), settings: settings);
-      case paymentDetailedReport:
-        final args = arguments as Map<String, dynamic>?;
-        return _createRoute(
-          PaymentDetailedReportPage(
-            startDate: args?['startDate'] ??
-                DateTime.now().subtract(const Duration(days: 30)),
-            endDate: args?['endDate'] ?? DateTime.now(),
-            paymentType: args?['paymentType'] ?? 'all',
-            status: args?['status'] ?? 'all',
-            customerId: args?['customerId'] ?? 'all',
-          ),
-          settings: settings,
-        );
+      // Silinen modül: payments
 
       // ========== SHARED ROUTE'LAR ==========
 
@@ -1067,12 +895,8 @@ class TamgaciRoutes {
       invoicesList,
       createInvoice,
       invoiceDetail,
-      expensesList,
-      createExpense,
-      expenseDetail,
-      incomeList,
-      createIncome,
-      incomeDetail,
+      // Silinen modül: expenses
+      // Silinen modül: income
       customersList,
       createCustomer,
       customerDetail,
@@ -1105,10 +929,8 @@ class TamgaciRoutes {
         return 'Ana Sayfa';
       case invoicesList:
         return 'Faturalar';
-      case expensesList:
-        return 'Giderler';
-      case incomeList:
-        return 'Gelirler';
+      // Silinen modül: expenses
+      // Silinen modül: income
       case customersList:
         return 'Müşteriler';
       case suppliersList:
@@ -1116,27 +938,7 @@ class TamgaciRoutes {
       case productsList:
         return 'Ürünler';
 
-      // Tahsilat modülü başlıkları
-      case paymentsHome:
-        return 'Tahsilat Modülü';
-      case cashPayments:
-        return 'Nakit, Kredi Kartı, Banka';
-      case checkPayments:
-        return 'Çek İşlemleri';
-      case promissoryPayments:
-        return 'Senet Al/Ver';
-      case transferPayments:
-        return 'Cari Virman';
-      case voucherPayments:
-        return 'Borç-Alacak Fişleri';
-      case balancePayments:
-        return 'Bakiye Düzelt';
-      case paymentHistory:
-        return 'Tahsilat Geçmişi';
-      case paymentReports:
-        return 'Tahsilat Raporları';
-      case paymentDetailedReport:
-        return 'Detaylı Tahsilat Raporu';
+      // Silinen modül: payments
 
       // Eski cash route'ları kaldırıldı
       case reportsOverview:

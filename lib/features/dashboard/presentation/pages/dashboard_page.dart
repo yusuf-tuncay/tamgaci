@@ -24,12 +24,12 @@ import '../widgets/dashboard_stats_card.dart';
 import '../widgets/dashboard_chart_widget.dart';
 import '../widgets/quick_actions_widget.dart';
 import '../widgets/recent_activities_widget.dart';
-import '../widgets/product_variants_widget.dart';
+// Silinen widget: product_variants_widget - gereksiz
 import '../../domain/entities/dashboard_summary.dart';
 import '../../../inventory/presentation/providers/warehouse_providers.dart';
 import '../../../inventory/presentation/providers/stock_providers.dart';
-import '../../../user_profile/presentation/providers/user_profile_providers.dart';
-import '../../../payments/presentation/providers/payment_providers.dart';
+// Silinen modül: user_profile
+// Silinen modül: payments
 // imports removed: invoice backfill kaldırıldı
 
 /// Dashboard Sayfası
@@ -182,8 +182,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ref.invalidate(dashboardSummaryProvider);
         ref.invalidate(recentTransactionsProvider);
         ref.invalidate(monthlyChartDataProvider);
-        ref.invalidate(paymentsProvider);
-        ref.invalidate(paymentStatsProvider);
+        // Silinen modül: payments
       },
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -203,8 +202,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const SizedBox(height: 16),
             const ExchangeRatesWidget(),
             const SizedBox(height: 16),
-            const ProductVariantsWidget(),
-            const SizedBox(height: 16),
+            // Silinen widget: ProductVariantsWidget - gereksiz
             _buildRecentActivitiesSection(recentActivitiesAsync, isDark),
           ],
         ),
@@ -340,9 +338,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Consumer(builder: (context, ref, _) {
-                  final profileAsync = ref.watch(userProfileProvider);
+                  // Silinen modül: user_profile
                   return Text(
-                    profileAsync.value?.company ?? 'Şirket Adı',
+                    'Şirket Adı', // Varsayılan değer
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
@@ -543,14 +541,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   TamgaciConstants.primaryColor, () {
                 Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList);
               }, isDark),
-              _buildActionCard('Gider Ekle', Icons.remove_circle, Colors.red,
-                  () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.createExpense);
-              }, isDark),
-              _buildActionCard('Gelir Ekle', Icons.add_circle, Colors.green,
-                  () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.createIncome);
-              }, isDark),
+              // Silinen modül: expenses
+              // Silinen modül: income
               _buildActionCard('Ürün Ekle', Icons.inventory_2, Colors.orange,
                   () {
                 Navigator.of(context).pushNamed(TamgaciRoutes.createProduct);
@@ -633,15 +625,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   color: isDark ? Colors.white : TamgaciConstants.textPrimary,
                 ),
               ),
+              // Silinen modül: expenses
               TextButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(TamgaciRoutes.expensesList);
-                },
+                onPressed: null, // Devre dışı
                 child: Text(
                   'Tümünü Gör',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: TamgaciConstants.primaryColor,
+                    color: Colors.grey,
                   ),
                 ),
               ),
@@ -721,10 +712,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ),
               ),
               const Spacer(),
+              // Silinen modül: payments
               TextButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, TamgaciRoutes.paymentsHome);
-                },
+                onPressed: null, // Devre dışı
                 child: Text(
                   'Tümünü Gör',
                   style: GoogleFonts.poppins(
@@ -737,137 +727,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ],
           ),
           const SizedBox(height: 16),
-          Consumer(
-            builder: (context, ref, child) {
-              final paymentsAsync = ref.watch(paymentsProvider);
-              final paymentStatsAsync = ref.watch(paymentStatsProvider);
-
-              return paymentsAsync.when(
-                data: (payments) {
-                  return paymentStatsAsync.when(
-                    data: (stats) {
-                      return Row(
-                        children: [
-                          Expanded(
-                            child: _buildPaymentStatCard(
-                              'Toplam Tahsilat',
-                              '${payments.length}',
-                              'işlem',
-                              Icons.payments,
-                              Colors.green,
-                              isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildPaymentStatCard(
-                              'Toplam Tutar',
-                              '₺${stats['totalAmount']?.toStringAsFixed(0) ?? '0'}',
-                              'TRY',
-                              Icons.attach_money,
-                              Colors.blue,
-                              isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildPaymentStatCard(
-                              'Tamamlanan',
-                              '${stats['completed'] ?? 0}',
-                              'işlem',
-                              Icons.check_circle,
-                              Colors.teal,
-                              isDark,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildPaymentStatCard(
-                              'Bekleyen',
-                              '${stats['pending'] ?? 0}',
-                              'işlem',
-                              Icons.schedule,
-                              Colors.orange,
-                              isDark,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, stack) => Text('Hata: $error'),
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Text('Hata: $error'),
-              );
-            },
-          ),
+          // Silinen modül: payments - payment stats widget'ı kaldırıldı
         ],
       ),
     );
   }
 
-  Widget _buildPaymentStatCard(
-    String title,
-    String value,
-    String subtitle,
-    IconData icon,
-    Color color,
-    bool isDark,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.grey[300] : Colors.grey[700],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.grey[900],
-            ),
-          ),
-          Text(
-            subtitle,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: isDark ? Colors.grey[400] : Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Silinen modül: payments - _buildPaymentStatCard metodu kaldırıldı
 
   /// İstatistik kartları grid'i
   Widget _buildStatsGrid(

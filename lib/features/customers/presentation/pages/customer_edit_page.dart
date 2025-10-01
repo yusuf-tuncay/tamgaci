@@ -12,7 +12,7 @@ import '../../../../shared/widgets/custom_button.dart';
 import '../../domain/entities/customer_enums.dart';
 import '../../domain/entities/customer_branch.dart';
 import '../providers/customer_providers.dart';
-import '../../../user_profile/presentation/providers/user_profile_providers.dart';
+// Silinen modül: user_profile
 import '../../../../core/services/firebase/firebase_auth_service.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
@@ -1369,7 +1369,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                     name: name,
                     level: level,
                     parentId: null,
-                    companyId: ref.read(userCompanyProvider),
+                    companyId: 'default_company', // Silinen modül: user_profile
                     userId: FirebaseAuthService.currentUserId ?? 'system',
                   )).future);
 
