@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/constants.dart';
-import 'dart:math' as math;
 
 /// Özel AppBar widget'ı
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -57,20 +56,31 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _CustomAppBarState extends State<CustomAppBar>
     with TickerProviderStateMixin {
-  late AnimationController _glowController;
   late AnimationController _pulseController;
-  late AnimationController _gradientController;
-  late Animation<double> _glowAnimation;
+  late AnimationController _glowController;
   late Animation<double> _pulseAnimation;
-  late Animation<double> _gradientAnimation;
+  late Animation<double> _glowAnimation;
 
   @override
   void initState() {
     super.initState();
     
-    // Glow animation
+    // Pulse animation - subtle and professional
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+    _pulseAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.02,
+    ).animate(CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Glow animation - 60 saniyede bir parlama
     _glowController = AnimationController(
-      duration: const Duration(seconds: 2),
+      duration: const Duration(seconds: 60),
       vsync: this,
     );
     _glowAnimation = Tween<double>(
@@ -81,43 +91,17 @@ class _CustomAppBarState extends State<CustomAppBar>
       curve: Curves.easeInOut,
     ));
 
-    // Pulse animation
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _pulseAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.05,
-    ).animate(CurvedAnimation(
-      parent: _pulseController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Gradient animation
-    _gradientController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
-    _gradientAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _gradientController,
-      curve: Curves.easeInOut,
-    ));
-
-    // Start animations
-    _glowController.repeat(reverse: true);
+    // Start subtle pulse animation
     _pulseController.repeat(reverse: true);
-    _gradientController.repeat();
+    
+    // Start glow animation - 60 saniyede bir tekrar
+    _glowController.repeat();
   }
 
   @override
   void dispose() {
-    _glowController.dispose();
     _pulseController.dispose();
-    _gradientController.dispose();
+    _glowController.dispose();
     super.dispose();
   }
 
@@ -159,139 +143,53 @@ class _CustomAppBarState extends State<CustomAppBar>
     );
   }
 
-  /// Ultra premium TAMGACI title widget'ı
+  /// Kurumsal TAMGACI title widget'ı
   Widget _buildUltraPremiumTamgaciTitle(bool isDark) {
     return AnimatedBuilder(
-      animation: Listenable.merge([
-        _glowAnimation,
-        _pulseAnimation,
-        _gradientAnimation,
-      ]),
+      animation: Listenable.merge([_pulseAnimation, _glowAnimation]),
       builder: (context, child) {
+        // Parlama efekti için glow değeri
+        final glowIntensity = _glowAnimation.value;
+        final isGlowing = glowIntensity > 0.8; // Son %20'de parlama
+        
         return Transform.scale(
           scale: _pulseAnimation.value,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(
-                    const Color(0xFF6366F1),
-                    const Color(0xFF8B5CF6),
-                    _gradientAnimation.value,
-                  )!,
-                  Color.lerp(
-                    const Color(0xFF8B5CF6),
-                    const Color(0xFFEC4899),
-                    _gradientAnimation.value,
-                  )!,
-                  Color.lerp(
-                    const Color(0xFFEC4899),
-                    const Color(0xFFF59E0B),
-                    _gradientAnimation.value,
-                  )!,
-                ],
-                stops: const [0.0, 0.5, 1.0],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Color.lerp(
-                    const Color(0xFF6366F1).withValues(alpha: 0.3),
-                    const Color(0xFFEC4899).withValues(alpha: 0.3),
-                    _gradientAnimation.value,
-                  )!,
-                  blurRadius: 20 * _glowAnimation.value,
-                  spreadRadius: 2 * _glowAnimation.value,
-                  offset: const Offset(0, 4),
+          child: Text(
+            'TAMGACI',
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: isDark 
+                  ? const Color(0xFF4F46E5) // Indigo-600 for dark mode
+                  : const Color(0xFF3B82F6), // Blue-500 for light mode
+              letterSpacing: 1.5,
+              shadows: [
+                // Normal gölge
+                Shadow(
+                  color: (isDark 
+                      ? const Color(0xFF4F46E5) 
+                      : const Color(0xFF3B82F6)).withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-                BoxShadow(
-                  color: Color.lerp(
-                    const Color(0xFF8B5CF6).withValues(alpha: 0.2),
-                    const Color(0xFFF59E0B).withValues(alpha: 0.2),
-                    _gradientAnimation.value,
-                  )!,
-                  blurRadius: 30 * _glowAnimation.value,
-                  spreadRadius: 1 * _glowAnimation.value,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // Background glow effect
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      gradient: RadialGradient(
-                        center: Alignment.center,
-                        radius: 1.0,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.1 * _glowAnimation.value),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
+                // Parlama efekti gölgesi
+                if (isGlowing)
+                  Shadow(
+                    color: (isDark 
+                        ? const Color(0xFF4F46E5) 
+                        : const Color(0xFF3B82F6)).withValues(alpha: 0.8),
+                    blurRadius: 20 + (glowIntensity * 15),
+                    offset: const Offset(0, 0),
                   ),
-                ),
-                // Main text
-                Center(
-                  child: Text(
-                    'TAMGACI',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 2.0,
-                      shadows: [
-                        Shadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                        Shadow(
-                          color: Colors.white.withValues(alpha: 0.5),
-                          blurRadius: 8,
-                          offset: const Offset(0, 0),
-                        ),
-                      ],
-                    ),
+                // Parlama efekti - dış glow
+                if (isGlowing)
+                  Shadow(
+                    color: (isDark 
+                        ? const Color(0xFF4F46E5) 
+                        : const Color(0xFF3B82F6)).withValues(alpha: 0.4),
+                    blurRadius: 30 + (glowIntensity * 20),
+                    offset: const Offset(0, 0),
                   ),
-                ),
-                // Animated particles
-                ...List.generate(6, (index) {
-                  final angle = (index * 60.0) * (math.pi / 180.0);
-                  final radius = 30.0 + (10.0 * _glowAnimation.value);
-                  final x = math.cos(angle + _gradientAnimation.value * 2 * math.pi) * radius;
-                  final y = math.sin(angle + _gradientAnimation.value * 2 * math.pi) * radius;
-                  
-                  return Positioned(
-                    left: 50 + x,
-                    top: 20 + y,
-                    child: AnimatedOpacity(
-                      opacity: _glowAnimation.value,
-                      duration: const Duration(milliseconds: 500),
-                      child: Container(
-                        width: 3,
-                        height: 3,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(1.5),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.white.withValues(alpha: 0.8),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }),
               ],
             ),
           ),
