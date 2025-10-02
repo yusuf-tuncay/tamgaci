@@ -3,6 +3,7 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/supplier.dart';
+import '../../domain/entities/supplier_enums.dart';
 
 /// Firebase için optimize edilmiş tedarikçi entity'si
 class FirebaseSupplierEntity {

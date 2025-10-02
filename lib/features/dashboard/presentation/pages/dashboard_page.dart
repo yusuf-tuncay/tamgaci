@@ -16,6 +16,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
+import '../../../../core/providers/company_provider.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/domain/entities/user.dart' as auth_domain;
 import '../providers/dashboard_providers.dart';
@@ -338,9 +339,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Consumer(builder: (context, ref, _) {
-                  // Silinen modül: user_profile
+                  final companyName = ref.watch(companyNameProvider);
                   return Text(
-                    'Şirket Adı', // Varsayılan değer
+                    companyName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(

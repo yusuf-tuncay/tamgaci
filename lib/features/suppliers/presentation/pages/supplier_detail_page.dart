@@ -9,6 +9,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
+import '../../domain/entities/supplier_enums.dart';
 
 /// Tedarikçi detay sayfası
 class SupplierDetailPage extends ConsumerStatefulWidget {
@@ -387,6 +388,8 @@ class _SupplierDetailPageState extends ConsumerState<SupplierDetailPage> {
         return Colors.grey;
       case SupplierStatus.suspended:
         return Colors.orange;
+      case SupplierStatus.blocked:
+        return Colors.red;
     }
   }
 }

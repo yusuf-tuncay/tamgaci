@@ -11,6 +11,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
+import '../../domain/entities/supplier_enums.dart';
 import '../../domain/entities/supplier_transaction.dart';
 
 /// Gelişmiş tedarikçi detay sayfası
@@ -580,32 +581,41 @@ class _EnhancedSupplierDetailPageState
 
   List<SupplierTransaction> _getMockTransactions(SupplierTransactionType type) {
     // Mock data - gerçek veriler provider'dan gelecek
+    final now = DateTime.now();
     return [
       SupplierTransaction(
         id: '1',
         supplierId: widget.supplierId,
         type: type,
+        status: SupplierTransactionStatus.pending,
         documentNumber: '${type.shortName}-2024-001',
         amount: 1500.0,
         currency: 'TRY',
-        transactionDate: DateTime.now().subtract(const Duration(days: 5)),
-        dueDate: DateTime.now().add(const Duration(days: 15)),
-        status: SupplierTransactionStatus.pending,
+        transactionDate: now.subtract(const Duration(days: 5)),
+        dueDate: now.add(const Duration(days: 15)),
         description: 'Test ${type.displayName.toLowerCase()} açıklaması',
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
+        companyId: 'company1',
+        tenantId: 'tenant1',
+        createdAt: now.subtract(const Duration(days: 5)),
+        updatedAt: now.subtract(const Duration(days: 5)),
+        createdBy: 'user1',
       ),
       SupplierTransaction(
         id: '2',
         supplierId: widget.supplierId,
         type: type,
+        status: SupplierTransactionStatus.completed,
         documentNumber: '${type.shortName}-2024-002',
         amount: 2500.0,
         currency: 'TRY',
-        transactionDate: DateTime.now().subtract(const Duration(days: 10)),
-        dueDate: DateTime.now().add(const Duration(days: 20)),
-        status: SupplierTransactionStatus.paid,
+        transactionDate: now.subtract(const Duration(days: 10)),
+        dueDate: now.add(const Duration(days: 20)),
         description: 'Test ${type.displayName.toLowerCase()} açıklaması 2',
-        createdAt: DateTime.now().subtract(const Duration(days: 10)),
+        companyId: 'company1',
+        tenantId: 'tenant1',
+        createdAt: now.subtract(const Duration(days: 10)),
+        updatedAt: now.subtract(const Duration(days: 10)),
+        createdBy: 'user1',
       ),
     ];
   }
@@ -624,6 +634,12 @@ class _EnhancedSupplierDetailPageState
         return AppColors.error;
       case SupplierTransactionType.return_:
         return AppColors.textSecondary;
+      case SupplierTransactionType.refund:
+        return AppColors.textSecondary;
+      case SupplierTransactionType.discount:
+        return AppColors.info;
+      case SupplierTransactionType.other:
+        return AppColors.textSecondary;
     }
   }
 
@@ -631,13 +647,11 @@ class _EnhancedSupplierDetailPageState
     switch (status) {
       case SupplierTransactionStatus.pending:
         return Colors.orange;
-      case SupplierTransactionStatus.paid:
+      case SupplierTransactionStatus.completed:
         return Colors.green;
-      case SupplierTransactionStatus.overdue:
-        return Colors.red;
       case SupplierTransactionStatus.cancelled:
         return Colors.grey;
-      case SupplierTransactionStatus.partial:
+      case SupplierTransactionStatus.reversed:
         return Colors.blue;
     }
   }

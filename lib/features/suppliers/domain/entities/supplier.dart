@@ -2,34 +2,10 @@
 // lib/features/suppliers/domain/entities/supplier.dart
 
 import 'package:equatable/equatable.dart';
-
-/// Tedarikçi tipi enum'u
-enum SupplierType {
-  individual, // Bireysel
-  company, // Kurumsal
-}
-
-/// Tedarikçi durumu enum'u
-enum SupplierStatus {
-  active, // Aktif
-  inactive, // Pasif
-  suspended, // Askıya alınmış
-}
-
-/// SupplierStatus extension
-extension SupplierStatusExtension on SupplierStatus {
-  /// Durumun görüntüleme adını al
-  String get displayName {
-    switch (this) {
-      case SupplierStatus.active:
-        return 'Aktif';
-      case SupplierStatus.inactive:
-        return 'Pasif';
-      case SupplierStatus.suspended:
-        return 'Askıya Alınmış';
-    }
-  }
-}
+import 'supplier_enums.dart';
+import 'supplier_branch.dart';
+import 'supplier_category.dart';
+import 'supplier_transaction.dart';
 
 /// Tedarikçi entity'si
 class Supplier extends Equatable {
@@ -89,6 +65,40 @@ class Supplier extends Equatable {
   final bool isCustomer;
   final String? customerId; // Eğer müşteri ise, müşteri ID'si
 
+  // Customer modülü ile uyumlu ek alanlar
+  /// Sevk adresi
+  final String? shippingAddress;
+
+  /// Açık hesap risk limiti
+  final double? openAccountRiskLimit;
+
+  /// Sabit iskonto oranı (%)
+  final double? fixedDiscountRate;
+
+  /// Banka bilgileri
+  final String? bankDetails;
+
+  /// Özel fiyat listesi ID'si
+  final String? specialPriceListId;
+
+  /// Yetkili kişi adı (kurumsal tedarikçi için)
+  final String? authorizedPersonName;
+
+  /// Yetkili kişi telefonu (kurumsal tedarikçi için)
+  final String? authorizedPersonPhone;
+
+  /// Şube bilgileri (kurumsal tedarikçi için)
+  final List<SupplierBranch>? branches;
+
+  /// Kategori bilgileri
+  final List<SupplierCategory>? categories;
+
+  /// İşlem geçmişi
+  final List<SupplierTransaction>? transactions;
+
+  /// Bakiye para birimi
+  final String balanceCurrency;
+
   const Supplier({
     required this.id,
     required this.tenantId,
@@ -129,6 +139,18 @@ class Supplier extends Equatable {
     this.discountRate = 0.0,
     this.isCustomer = false,
     this.customerId,
+    // Customer modülü ile uyumlu ek alanlar
+    this.shippingAddress,
+    this.openAccountRiskLimit,
+    this.fixedDiscountRate,
+    this.bankDetails,
+    this.specialPriceListId,
+    this.authorizedPersonName,
+    this.authorizedPersonPhone,
+    this.branches,
+    this.categories,
+    this.transactions,
+    this.balanceCurrency = 'TRY',
   });
 
   /// Tedarikçi kopyalama
@@ -172,6 +194,18 @@ class Supplier extends Equatable {
     double? discountRate,
     bool? isCustomer,
     String? customerId,
+    // Customer modülü ile uyumlu ek alanlar
+    String? shippingAddress,
+    double? openAccountRiskLimit,
+    double? fixedDiscountRate,
+    String? bankDetails,
+    String? specialPriceListId,
+    String? authorizedPersonName,
+    String? authorizedPersonPhone,
+    List<SupplierBranch>? branches,
+    List<SupplierCategory>? categories,
+    List<SupplierTransaction>? transactions,
+    String? balanceCurrency,
   }) {
     return Supplier(
       id: id ?? this.id,
@@ -213,6 +247,19 @@ class Supplier extends Equatable {
       discountRate: discountRate ?? this.discountRate,
       isCustomer: isCustomer ?? this.isCustomer,
       customerId: customerId ?? this.customerId,
+      // Customer modülü ile uyumlu ek alanlar
+      shippingAddress: shippingAddress ?? this.shippingAddress,
+      openAccountRiskLimit: openAccountRiskLimit ?? this.openAccountRiskLimit,
+      fixedDiscountRate: fixedDiscountRate ?? this.fixedDiscountRate,
+      bankDetails: bankDetails ?? this.bankDetails,
+      specialPriceListId: specialPriceListId ?? this.specialPriceListId,
+      authorizedPersonName: authorizedPersonName ?? this.authorizedPersonName,
+      authorizedPersonPhone:
+          authorizedPersonPhone ?? this.authorizedPersonPhone,
+      branches: branches ?? this.branches,
+      categories: categories ?? this.categories,
+      transactions: transactions ?? this.transactions,
+      balanceCurrency: balanceCurrency ?? this.balanceCurrency,
     );
   }
 
@@ -256,6 +303,18 @@ class Supplier extends Equatable {
         discountRate,
         isCustomer,
         customerId,
+        // Customer modülü ile uyumlu ek alanlar
+        shippingAddress,
+        openAccountRiskLimit,
+        fixedDiscountRate,
+        bankDetails,
+        specialPriceListId,
+        authorizedPersonName,
+        authorizedPersonPhone,
+        branches,
+        categories,
+        transactions,
+        balanceCurrency,
       ];
 
   /// Tedarikçi tipi görünen adı
@@ -277,6 +336,8 @@ class Supplier extends Equatable {
         return 'Pasif';
       case SupplierStatus.suspended:
         return 'Askıya Alınmış';
+      case SupplierStatus.blocked:
+        return 'Engellenmiş';
     }
   }
 

@@ -4,6 +4,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/supplier.dart';
+import '../../domain/entities/supplier_enums.dart';
 import '../../domain/repositories/supplier_repository.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;

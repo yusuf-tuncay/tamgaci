@@ -12,6 +12,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
+import '../../domain/entities/supplier_enums.dart';
 
 /// Gelişmiş tedarikçi listesi sayfası
 class EnhancedSuppliersListPage extends ConsumerStatefulWidget {

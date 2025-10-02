@@ -9,6 +9,7 @@ import '../../core/theme/constants.dart';
 import '../../core/routes/routes.dart';
 // Silinen modül: user_profile
 import '../../core/providers/currency_providers.dart';
+import '../../core/providers/company_provider.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/domain/entities/user.dart' as auth_domain;
 import '../overlays/calculator_overlay.dart';
@@ -787,8 +788,14 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   }
 
   /// Get company name with fallback
-  String _getCompanyName(auth_domain.User? user) {
-    // Try from User entity settings first
+  String _getCompanyName(auth_domain.User? user, WidgetRef ref) {
+    // Try to get from company provider first
+    final companyName = ref.watch(companyNameProvider);
+    if (companyName != 'Tamgaci') {
+      return companyName;
+    }
+
+    // Try from User entity settings
     String? company = user?.settings?['companyName'] as String?;
 
     if (company == null || company.isEmpty) {
@@ -879,7 +886,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                     children: [
                       Expanded(
                         child: Text(
-                          _getCompanyName(user),
+                          _getCompanyName(user, ref),
                           style: GoogleFonts.poppins(
                             fontSize: 9,
                             color: TamgaciConstants.textOnPrimary

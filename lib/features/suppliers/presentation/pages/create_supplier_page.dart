@@ -8,6 +8,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
+import '../../domain/entities/supplier_enums.dart';
 
 /// Tedarikçi oluşturma/düzenleme sayfası
 class CreateSupplierPage extends ConsumerStatefulWidget {

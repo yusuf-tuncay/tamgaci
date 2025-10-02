@@ -3,6 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/supplier.dart';
+import '../../domain/entities/supplier_enums.dart';
 import '../../domain/repositories/supplier_repository.dart';
 import '../../data/repositories/firebase_supplier_repository.dart';
 
