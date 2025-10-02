@@ -88,7 +88,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final w = _weather;
     final temp = w != null ? (w['temperature']?.toString() ?? '') : '';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4), // Smaller padding
+      padding: const EdgeInsets.symmetric(
+          horizontal: 6, vertical: 4), // Smaller padding
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16), // Smaller border radius
@@ -98,9 +99,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center, // Center content
         children: [
-          const Icon(Icons.wb_sunny, color: Colors.white, size: 14), // Smaller icon
+          const Icon(Icons.wb_sunny,
+              color: Colors.white, size: 14), // Smaller icon
           const SizedBox(width: 4), // Smaller spacing
-          Flexible( // Added Flexible
+          Flexible(
+            // Added Flexible
             child: Text(
               w == null ? 'Hava' : '$temp°C', // Shorter text
               style: GoogleFonts.poppins(
