@@ -31,14 +31,63 @@ class UserCompanyService {
   /// Kullanıcının şirket bilgilerini al
   Future<Map<String, dynamic>?> getUserCompany() async {
     try {
-      final companyId = await getUserCompanyId();
-      if (companyId == null) return null;
+      final user = _auth.currentUser;
+      if (user == null) return null;
 
-      final companyDoc =
-          await _firestore.collection('companies').doc(companyId).get();
-      if (companyDoc.exists) {
-        return companyDoc.data();
+      // Önce kullanıcı dokümanından companyName'i al
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (userDoc.exists) {
+        final userData = userDoc.data() as Map<String, dynamic>;
+        final companyName = userData['companyName'] as String?;
+
+        if (companyName != null && companyName.isNotEmpty) {
+          // Timestamp'leri DateTime'a çevir
+          DateTime createdAt;
+          DateTime updatedAt;
+
+          if (userData['createdAt'] != null) {
+            if (userData['createdAt'] is Timestamp) {
+              createdAt = (userData['createdAt'] as Timestamp).toDate();
+            } else {
+              createdAt = DateTime.now();
+            }
+          } else {
+            createdAt = DateTime.now();
+          }
+
+          if (userData['updatedAt'] != null) {
+            if (userData['updatedAt'] is Timestamp) {
+              updatedAt = (userData['updatedAt'] as Timestamp).toDate();
+            } else {
+              updatedAt = DateTime.now();
+            }
+          } else {
+            updatedAt = DateTime.now();
+          }
+
+          // Kullanıcının kendi şirket bilgilerini döndür
+          return {
+            'id': userData['tenantId'] ?? 'default',
+            'name': companyName,
+            'description': 'User Company',
+            'ownerId': user.uid,
+            'createdAt': createdAt.toIso8601String(),
+            'updatedAt': updatedAt.toIso8601String(),
+            'isActive': true,
+          };
+        }
       }
+
+      // Fallback: companies koleksiyonundan al
+      final companyId = await getUserCompanyId();
+      if (companyId != null) {
+        final companyDoc =
+            await _firestore.collection('companies').doc(companyId).get();
+        if (companyDoc.exists) {
+          return companyDoc.data();
+        }
+      }
+
       return null;
     } catch (e) {
       AppLogger.error('Error getting user company', e);
