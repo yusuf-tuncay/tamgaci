@@ -350,15 +350,32 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
           _buildHeader(null), // Silinen modül: user_profile
           Expanded(
             child: Container(
-              color: isDark
-                  ? TamgaciConstants.backgroundColorDark
-                  : TamgaciConstants.surfaceColor,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? TamgaciConstants.backgroundColorDark
+                    : TamgaciConstants.surfaceColor,
+                borderRadius: const BorderRadius.only(
+                  topRight: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: ListView.builder(
-                padding: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: menuItems.length,
                 itemBuilder: (context, index) {
                   final item = menuItems[index];
-                  return _buildMenuItem(item, activeRoute);
+                  return Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    child: _buildMenuItem(item, activeRoute),
+                  );
                 },
               ),
             ),
@@ -920,106 +937,152 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     final isExpanded =
         ref.watch(drawerMenuProvider)['expandedItems']?.contains(item.id) ??
             false;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Column(
       children: [
-        ListTile(
-          leading: Icon(
-            item.icon,
-            color: item.isActive
-                ? (isActive
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          decoration: BoxDecoration(
+            color: isActive
+                ? (isDark
+                    ? TamgaciConstants.primaryColor.withValues(alpha: 0.15)
+                    : TamgaciConstants.primaryColor.withValues(alpha: 0.1))
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: isActive
+                ? Border.all(
+                    color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
+                    width: 1,
+                  )
+                : null,
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color:
+                          TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? TamgaciConstants.primaryColor.withValues(alpha: 0.2)
+                    : (isDark
+                        ? TamgaciConstants.textSecondaryDark
+                            .withValues(alpha: 0.1)
+                        : TamgaciConstants.textSecondary
+                            .withValues(alpha: 0.1)),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                item.icon,
+                color: isActive
                     ? TamgaciConstants.primaryColor
-                    : (Theme.of(context).brightness == Brightness.dark
-                        ? TamgaciConstants.textPrimaryDark
-                        : TamgaciConstants.textSecondary))
-                : (Theme.of(context).brightness == Brightness.dark
-                    ? TamgaciConstants.textSecondaryDark
-                    : TamgaciConstants.textSecondary),
-            size: 24,
-          ),
-          title: Text(
-            item.title,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: item.isActive
-                  ? (isActive ? FontWeight.w600 : FontWeight.w500)
-                  : FontWeight.w400,
-              color: item.isActive
-                  ? (isActive
-                      ? TamgaciConstants.primaryColor
-                      : (Theme.of(context).brightness == Brightness.dark
-                          ? TamgaciConstants.textPrimaryDark
-                          : TamgaciConstants.textSecondary))
-                  : (Theme.of(context).brightness == Brightness.dark
-                      ? TamgaciConstants.textSecondaryDark
-                      : TamgaciConstants.textSecondary),
+                    : (isDark
+                        ? TamgaciConstants.textSecondaryDark
+                        : TamgaciConstants.textSecondary),
+                size: 20,
+              ),
             ),
-          ),
-          trailing: hasSubItems
-              ? Icon(
-                  isExpanded ? Icons.expand_less : Icons.expand_more,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? TamgaciConstants.textSecondaryDark
-                      : TamgaciConstants.textSecondary,
-                )
-              : item.badgeCount != null && item.badgeCount! > 0
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: TamgaciConstants.primaryColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        item.badgeCount.toString(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: TamgaciConstants.textOnPrimary,
+            title: Text(
+              item.title,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                color: isActive
+                    ? TamgaciConstants.primaryColor
+                    : (isDark
+                        ? TamgaciConstants.textPrimaryDark
+                        : TamgaciConstants.textPrimary),
+              ),
+            ),
+            trailing: hasSubItems
+                ? Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                              .withValues(alpha: 0.1)
+                          : TamgaciConstants.textSecondary
+                              .withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
+                      size: 16,
+                    ),
+                  )
+                : item.badgeCount != null && item.badgeCount! > 0
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: TamgaciConstants.primaryColor,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: TamgaciConstants.primaryColor
+                                  .withValues(alpha: 0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                      ),
-                    )
-                  : null,
-          selected: isActive,
-          selectedTileColor: Theme.of(context).brightness == Brightness.dark
-              ? TamgaciConstants.primaryColor.withValues(alpha: 0.15)
-              : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
-          hoverColor: Theme.of(context).brightness == Brightness.dark
-              ? TamgaciConstants.primaryColor.withValues(alpha: 0.08)
-              : TamgaciConstants.primaryColor.withValues(alpha: 0.05),
-          onTap: () {
-            if (!item.isActive) return;
-            if (hasSubItems) {
-              ref.read(drawerMenuProvider.notifier).toggleExpanded(item.id);
-            } else if (item.route.isNotEmpty) {
-              // Subscription guard: if expired, redirect to subscription page
-              final container =
-                  ProviderScope.containerOf(context, listen: false);
-              final user = container.read(currentUserProvider);
-              if (_isSubscriptionExpired(user)) {
+                        child: Text(
+                          item.badgeCount.toString(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: TamgaciConstants.textOnPrimary,
+                          ),
+                        ),
+                      )
+                    : null,
+            onTap: () {
+              if (!item.isActive) return;
+              if (hasSubItems) {
+                ref.read(drawerMenuProvider.notifier).toggleExpanded(item.id);
+              } else if (item.route.isNotEmpty) {
+                // Subscription guard: if expired, redirect to subscription page
+                final container =
+                    ProviderScope.containerOf(context, listen: false);
+                final user = container.read(currentUserProvider);
+                if (_isSubscriptionExpired(user)) {
+                  ref
+                      .read(drawerMenuProvider.notifier)
+                      .setActiveRoute(TamgaciRoutes.subscription);
+                  if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                    Navigator.of(context).pop();
+                  }
+                  final current = ModalRoute.of(context)?.settings.name;
+                  if (current != TamgaciRoutes.subscription) {
+                    Navigator.of(context)
+                        .pushReplacementNamed(TamgaciRoutes.subscription);
+                  }
+                  return;
+                }
                 ref
                     .read(drawerMenuProvider.notifier)
-                    .setActiveRoute(TamgaciRoutes.subscription);
+                    .setActiveRoute(item.route);
                 if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
                   Navigator.of(context).pop();
                 }
                 final current = ModalRoute.of(context)?.settings.name;
-                if (current != TamgaciRoutes.subscription) {
-                  Navigator.of(context)
-                      .pushReplacementNamed(TamgaciRoutes.subscription);
+                if (current != item.route) {
+                  Navigator.of(context).pushReplacementNamed(item.route);
                 }
-                return;
               }
-              ref.read(drawerMenuProvider.notifier).setActiveRoute(item.route);
-              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
-                Navigator.of(context).pop();
-              }
-              final current = ModalRoute.of(context)?.settings.name;
-              if (current != item.route) {
-                Navigator.of(context).pushReplacementNamed(item.route);
-              }
-            }
-          },
+            },
+          ),
         ),
         // Alt menü öğeleri
         if (hasSubItems && isExpanded)
@@ -1108,66 +1171,125 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   }
 
   Widget _buildFooter() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? TamgaciConstants.backgroundColorDark
-            : TamgaciConstants.surfaceColor,
-        border: Border(
-          top: BorderSide(
-              color: TamgaciConstants.borderColor.withValues(alpha: 0.2)),
+        color: isDark ? TamgaciConstants.backgroundColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? TamgaciConstants.borderColor.withValues(alpha: 0.1)
+              : Colors.grey[200]!,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // Ayarlar kısayolu
-          ListTile(
-            leading: Icon(
-              Icons.settings_outlined,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? TamgaciConstants.textPrimaryDark
-                  : TamgaciConstants.textSecondary,
+          // Ayarlar kısayolu - Premium tasarım
+          Container(
+            margin: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: isDark
+                  ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
+                  : TamgaciConstants.primaryColor.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark
+                    ? TamgaciConstants.primaryColor.withValues(alpha: 0.2)
+                    : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+              ),
             ),
-            title: Text(
-              'Ayarlar',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? TamgaciConstants.textPrimaryDark
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.settings_outlined,
+                  color: TamgaciConstants.primaryColor,
+                  size: 20,
+                ),
+              ),
+              title: Text(
+                'Ayarlar',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isDark
+                      ? TamgaciConstants.textPrimaryDark
+                      : TamgaciConstants.textPrimary,
+                ),
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: isDark
+                    ? TamgaciConstants.textSecondaryDark
                     : TamgaciConstants.textSecondary,
               ),
+              onTap: () {
+                if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
+                  Navigator.of(context).pop();
+                }
+                final current = ModalRoute.of(context)?.settings.name;
+                if (current != TamgaciRoutes.settings) {
+                  Navigator.of(context).pushReplacementNamed(
+                    TamgaciRoutes.settings,
+                  );
+                }
+              },
             ),
-            hoverColor: Theme.of(context).brightness == Brightness.dark
-                ? TamgaciConstants.primaryColor.withValues(alpha: 0.08)
-                : TamgaciConstants.primaryColor.withValues(alpha: 0.05),
-            onTap: () {
-              if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
-                Navigator.of(context).pop();
-              }
-              final current = ModalRoute.of(context)?.settings.name;
-              if (current != TamgaciRoutes.settings) {
-                Navigator.of(context).pushReplacementNamed(
-                  TamgaciRoutes.settings,
-                );
-              }
-            },
           ),
-          // Çıkış yap
-          ListTile(
-            leading: const Icon(Icons.logout_outlined, color: Colors.red),
-            title: Text(
-              'Çıkış Yap',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.red,
-                fontWeight: FontWeight.w500,
+          // Çıkış yap - Premium tasarım
+          Container(
+            margin: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.red.withValues(alpha: 0.1),
               ),
             ),
-            hoverColor: Colors.red.withValues(alpha: 0.1),
-            onTap: () {
-              _showLogoutDialog();
-            },
+            child: ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.logout_outlined,
+                  color: Colors.red,
+                  size: 20,
+                ),
+              ),
+              title: Text(
+                'Çıkış Yap',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.red,
+                ),
+              ),
+              trailing: Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Colors.red.withValues(alpha: 0.6),
+              ),
+              onTap: () {
+                _showLogoutDialog();
+              },
+            ),
           ),
         ],
       ),

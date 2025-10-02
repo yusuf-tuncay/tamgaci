@@ -344,7 +344,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
               // Header Section
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
@@ -409,12 +409,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Genel Bilgiler
               _buildPremiumSectionHeader(
                   'Genel Bilgiler', Icons.person_outline),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -429,7 +429,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: TextFormField(
                     controller: _nameController,
                     decoration: InputDecoration(
@@ -458,7 +458,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -473,7 +473,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -526,7 +526,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -541,7 +541,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -609,11 +609,11 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Vergi Bilgileri
               _buildPremiumSectionHeader('Vergi Bilgileri', Icons.receipt),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -628,7 +628,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -691,11 +691,11 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Adres Bilgileri
               _buildPremiumSectionHeader('Adres Bilgileri', Icons.location_on),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -710,7 +710,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: TextFormField(
                     controller: _addressController,
                     decoration: InputDecoration(
@@ -738,7 +738,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -753,7 +753,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -841,12 +841,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Kategori / Sınıflandırma
               _buildPremiumSectionHeader(
                   'Kategori / Sınıflandırma', Icons.category),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               // Kategori 1
               Container(
                 decoration: BoxDecoration(
@@ -861,7 +861,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedCategory1Id,
                     decoration: InputDecoration(
@@ -915,7 +915,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Kategori 2
               Container(
@@ -931,7 +931,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: DropdownButtonFormField<String>(
                     initialValue: _selectedCategory2Id,
                     decoration: InputDecoration(
@@ -985,7 +985,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Müşteri/Tedarikçi Seçimi
               Container(
@@ -1001,7 +1001,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1027,7 +1027,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
@@ -1111,7 +1111,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Müşteri Tipi ve Durum
               Container(
@@ -1127,7 +1127,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -1207,12 +1207,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Finansal Bilgiler
               _buildPremiumSectionHeader(
                   'Finansal Bilgiler', Icons.account_balance_wallet),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -1227,7 +1227,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -1327,7 +1327,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -1342,7 +1342,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -1412,7 +1412,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -1427,7 +1427,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: TextFormField(
                     controller: _fixedDiscountRateController,
                     decoration: InputDecoration(
@@ -1459,7 +1459,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Vergiden Muaf Checkbox
               Container(
@@ -1475,7 +1475,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Container(
@@ -1512,11 +1512,11 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               // Ek Bilgiler
               _buildPremiumSectionHeader('Ek Bilgiler', Icons.note),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -1531,7 +1531,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: TextFormField(
                     controller: _bankDetailsController,
                     decoration: InputDecoration(
@@ -1559,7 +1559,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -1574,7 +1574,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: Row(
                     children: [
                       Expanded(
@@ -1635,7 +1635,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
 
               Container(
                 decoration: BoxDecoration(
@@ -1650,7 +1650,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   child: TextFormField(
                     controller: _notesController,
                     decoration: InputDecoration(
@@ -1678,7 +1678,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildBranchesCard(),
               const SizedBox(height: 32),
 
@@ -1757,7 +1757,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             Container(
@@ -1797,7 +1797,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1856,7 +1856,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             if (_branches.isEmpty)
               Container(
                 width: double.infinity,
@@ -1873,7 +1873,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                       size: 48,
                       color: Colors.grey[400],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     Text(
                       'Henüz şube eklenmemiş',
                       style: GoogleFonts.poppins(
@@ -1896,7 +1896,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
             if (_branches.isNotEmpty) ...[
               for (int i = 0; i < _branches.length; i++) ...[
                 _buildBranchItem(i),
-                if (i < _branches.length - 1) const SizedBox(height: 12),
+                if (i < _branches.length - 1) const SizedBox(height: 8),
               ],
             ],
           ],
@@ -1926,7 +1926,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1967,7 +1967,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Şube Adı
             TextFormField(
@@ -1997,7 +1997,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 _branches[index] = _branches[index].copyWith(name: val);
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Adres
             TextFormField(
@@ -2027,7 +2027,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 _branches[index] = _branches[index].copyWith(address: val);
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
 
             // Telefon ve E-posta
             Row(
