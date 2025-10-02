@@ -6,10 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/validators.dart';
-import '../../../../core/widgets/formatted_text_field.dart';
 import 'package:flutter/services.dart';
-import '../../../../shared/widgets/custom_text_field.dart';
-import '../../../../shared/widgets/custom_dropdown.dart';
 import '../../../../shared/widgets/custom_button.dart';
 import '../../domain/entities/customer.dart';
 import '../../domain/entities/customer_enums.dart';
@@ -21,6 +18,8 @@ import '../../../customers/data/services/customer_transaction_service.dart';
 import '../../../../core/services/business/transaction_service.dart';
 import '../../../../core/utils/currency_helper.dart';
 import 'package:tamgaci/core/routes/routes.dart';
+import '../../../../core/theme/constants.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CustomerCreatePage extends ConsumerStatefulWidget {
   const CustomerCreatePage({super.key});
@@ -59,6 +58,8 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
   String _currency = 'TRY';
   String? _selectedCategory1Id;
   String? _selectedCategory2Id;
+  final List<String> _categories1 = [];
+  final List<String> _categories2 = [];
   bool _isCustomer = true;
   bool _isSupplier = false;
   bool _isTaxExempt = false;
@@ -71,29 +72,6 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
   void initState() {
     super.initState();
     _generateCustomerCode();
-  }
-
-  String _formatMoneyTyping(String raw, {required bool allowNegative}) {
-    if (raw.isEmpty) return '';
-    var value = raw.replaceAll('.', '').replaceAll(',', '.');
-    final reg = RegExp(allowNegative ? r'[^0-9\.-]' : r'[^0-9\.]');
-    value = value.replaceAll(reg, '');
-    if (allowNegative) {
-      final isNegative = value.startsWith('-');
-      value = value.replaceAll('-', '');
-      if (isNegative) value = '-$value';
-    } else {
-      value = value.replaceAll('-', '');
-    }
-    final parts = value.split('.');
-    if (parts.length > 2) {
-      value = '${parts[0]}.${parts.sublist(1).join('')}';
-    }
-    if (parts.length == 2 && parts[1].length > 2) {
-      value = '${parts[0]}.${parts[1].substring(0, 2)}';
-    }
-    value = value.replaceAll('.', ',');
-    return value;
   }
 
   @override
@@ -359,179 +337,772 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Genel Bilgiler
-              _buildSectionHeader('Genel Bilgiler'),
-              const SizedBox(height: 16),
-
-              CustomTextField(
-                controller: _nameController,
-                label: 'Müşteri Adı / Ünvan *',
-                hint: 'Müşteri adını girin',
-                validator: (value) => Validators.required(value, 'Müşteri adı'),
-              ),
-              const SizedBox(height: 16),
-
-              CustomTextField(
-                controller: _customerCodeController,
-                label: 'Müşteri Kodu',
-                hint: 'Otomatik oluşturulur',
-                readOnly: true,
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: _generateCustomerCode,
-                  tooltip: 'Yeni kod oluştur',
+              // Header Section
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.person_add,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Yeni Müşteri',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Yeni müşteri bilgilerini girin',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _phoneController,
-                      label: 'Telefon Numarası',
-                      hint: '0555 123 45 67',
-                      keyboardType: TextInputType.phone,
-                      validator: (value) => value?.isNotEmpty == true
-                          ? Validators.phone(value)
-                          : null,
+              // Genel Bilgiler
+              _buildPremiumSectionHeader(
+                  'Genel Bilgiler', Icons.person_outline),
+              const SizedBox(height: 12),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _emailController,
-                      label: 'E-posta Adresi',
-                      hint: 'ornek@email.com',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (value) => value?.isNotEmpty == true
-                          ? Validators.email(value)
-                          : null,
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextFormField(
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: 'Müşteri Adı / Ünvan *',
+                      hintText: 'Müşteri adını girin',
+                      prefixIcon:
+                          const Icon(Icons.person, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
                     ),
+                    validator: (value) =>
+                        Validators.required(value, 'Müşteri adı'),
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _customerCodeController,
+                          decoration: InputDecoration(
+                            labelText: 'Müşteri Kodu',
+                            hintText: 'Otomatik oluşturulur',
+                            prefixIcon: const Icon(Icons.qr_code,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                          readOnly: true,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          onPressed: _generateCustomerCode,
+                          icon: const Icon(Icons.refresh, color: Colors.white),
+                          tooltip: 'Yeni kod oluştur',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _phoneController,
+                          decoration: InputDecoration(
+                            labelText: 'Telefon Numarası',
+                            hintText: '0555 123 45 67',
+                            prefixIcon: const Icon(Icons.phone,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (value) => value?.isNotEmpty == true
+                              ? Validators.phone(value)
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: 'E-posta Adresi',
+                            hintText: 'ornek@email.com',
+                            prefixIcon: const Icon(Icons.email,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: (value) => value?.isNotEmpty == true
+                              ? Validators.email(value)
+                              : null,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
 
               // Vergi Bilgileri
-              _buildSectionHeader('Vergi Bilgileri'),
-              const SizedBox(height: 16),
+              _buildPremiumSectionHeader('Vergi Bilgileri', Icons.receipt),
+              const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _taxNumberController,
-                      label: 'Vergi Numarası / T.C. Kimlik No',
-                      hint: '1234567890',
-                      validator: (value) => value?.isNotEmpty == true
-                          ? Validators.taxNumber(value)
-                          : null,
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _taxNumberController,
+                          decoration: InputDecoration(
+                            labelText: 'Vergi Numarası / T.C. Kimlik No',
+                            hintText: '1234567890',
+                            prefixIcon: const Icon(Icons.badge,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          validator: (value) => value?.isNotEmpty == true
+                              ? Validators.taxNumber(value)
+                              : null,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _taxOfficeController,
+                          decoration: InputDecoration(
+                            labelText: 'Vergi Dairesi',
+                            hintText: 'Kadıköy Vergi Dairesi',
+                            prefixIcon: const Icon(Icons.account_balance,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _taxOfficeController,
-                      label: 'Vergi Dairesi',
-                      hint: 'Kadıköy Vergi Dairesi',
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Adres Bilgileri
-              _buildSectionHeader('Adres Bilgileri'),
-              const SizedBox(height: 16),
+              _buildPremiumSectionHeader('Adres Bilgileri', Icons.location_on),
+              const SizedBox(height: 12),
 
-              CustomTextField(
-                controller: _addressController,
-                label: 'Açık Adres',
-                hint: 'Mahalle, sokak, bina no, daire no',
-                maxLines: 3,
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextFormField(
+                    controller: _addressController,
+                    decoration: InputDecoration(
+                      labelText: 'Açık Adres',
+                      hintText: 'Mahalle, sokak, bina no, daire no',
+                      prefixIcon: const Icon(Icons.location_on,
+                          color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    maxLines: 3,
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _cityController,
-                      label: 'Şehir',
-                      hint: 'İstanbul',
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _cityController,
+                          decoration: InputDecoration(
+                            labelText: 'Şehir',
+                            hintText: 'İstanbul',
+                            prefixIcon: const Icon(Icons.location_city,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _countryController,
+                          decoration: InputDecoration(
+                            labelText: 'Ülke',
+                            hintText: 'Türkiye',
+                            prefixIcon: const Icon(Icons.public,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _postalCodeController,
+                          decoration: InputDecoration(
+                            labelText: 'Posta Kodu',
+                            hintText: '34000',
+                            prefixIcon: const Icon(Icons.markunread_mailbox,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _countryController,
-                      label: 'Ülke',
-                      hint: 'Türkiye',
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _postalCodeController,
-                      label: 'Posta Kodu',
-                      hint: '34000',
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Kategori / Sınıflandırma
-              _buildSectionHeader('Kategori / Sınıflandırma'),
-              const SizedBox(height: 16),
-              _buildCategoriesRow(),
-              const SizedBox(height: 16),
+              _buildPremiumSectionHeader(
+                  'Kategori / Sınıflandırma', Icons.category),
+              const SizedBox(height: 12),
+              // Kategori 1
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedCategory1Id,
+                    decoration: InputDecoration(
+                      labelText: 'Kategori 1',
+                      hintText: 'Kategori seçin',
+                      prefixIcon:
+                          const Icon(Icons.category, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    items: [
+                      ..._categories1.map((category) {
+                        return DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        );
+                      }),
+                      const DropdownMenuItem(
+                        value: 'ADD_NEW_CATEGORY_1',
+                        child: Row(
+                          children: [
+                            Icon(Icons.add, size: 16),
+                            SizedBox(width: 8),
+                            Text('Yeni Kategori Ekle'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value == 'ADD_NEW_CATEGORY_1') {
+                        _addCategory1();
+                      } else {
+                        setState(() {
+                          _selectedCategory1Id = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Kategori 2
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedCategory2Id,
+                    decoration: InputDecoration(
+                      labelText: 'Kategori 2',
+                      hintText: 'Kategori seçin',
+                      prefixIcon:
+                          const Icon(Icons.category, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    items: [
+                      ..._categories2.map((category) {
+                        return DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        );
+                      }),
+                      const DropdownMenuItem(
+                        value: 'ADD_NEW_CATEGORY_2',
+                        child: Row(
+                          children: [
+                            Icon(Icons.add, size: 16),
+                            SizedBox(width: 8),
+                            Text('Yeni Kategori Ekle'),
+                          ],
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value == 'ADD_NEW_CATEGORY_2') {
+                        _addCategory2();
+                      } else {
+                        setState(() {
+                          _selectedCategory2Id = value;
+                        });
+                      }
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
 
               // Müşteri/Tedarikçi Seçimi
-              Card(
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Müşteri / Tedarikçi Seçimi',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.swap_horiz,
+                                color: AppColors.primary, size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Müşteri / Tedarikçi Seçimi',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 12),
                       Row(
                         children: [
                           Expanded(
-                            child: CheckboxListTile(
-                              title: const Text('Müşteri'),
-                              value: _isCustomer,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isCustomer = value ?? false;
-                                });
-                              },
-                              contentPadding: EdgeInsets.zero,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: _isCustomer
+                                    ? AppColors.primary.withValues(alpha: 0.1)
+                                    : Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _isCustomer
+                                      ? AppColors.primary
+                                      : Colors.grey[300]!,
+                                  width: 2,
+                                ),
+                              ),
+                              child: CheckboxListTile(
+                                title: Text(
+                                  'Müşteri',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color: _isCustomer
+                                        ? AppColors.primary
+                                        : Colors.grey[700],
+                                  ),
+                                ),
+                                value: _isCustomer,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _isCustomer = value ?? false;
+                                  });
+                                },
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                activeColor: AppColors.primary,
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: CheckboxListTile(
-                              title: const Text('Tedarikçi'),
-                              value: _isSupplier,
-                              onChanged: (value) {
-                                setState(() {
-                                  _isSupplier = value ?? false;
-                                });
-                              },
-                              contentPadding: EdgeInsets.zero,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: _isSupplier
+                                    ? AppColors.primary.withValues(alpha: 0.1)
+                                    : Colors.grey[50],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: _isSupplier
+                                      ? AppColors.primary
+                                      : Colors.grey[300]!,
+                                  width: 2,
+                                ),
+                              ),
+                              child: CheckboxListTile(
+                                title: Text(
+                                  'Tedarikçi',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                    color: _isSupplier
+                                        ? AppColors.primary
+                                        : Colors.grey[700],
+                                  ),
+                                ),
+                                value: _isSupplier,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _isSupplier = value ?? false;
+                                  });
+                                },
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 4),
+                                activeColor: AppColors.primary,
+                              ),
                             ),
                           ),
                         ],
@@ -540,207 +1111,574 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Müşteri Tipi ve Durum
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomDropdown<CustomerType>(
-                      value: _customerType,
-                      label: 'Müşteri Tipi',
-                      items: CustomerType.values,
-                      itemBuilder: (type) => Text(type.displayName),
-                      onChanged: (value) {
-                        setState(() {
-                          _customerType = value!;
-                        });
-                      },
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<CustomerType>(
+                          initialValue: _customerType,
+                          decoration: InputDecoration(
+                            labelText: 'Müşteri Tipi',
+                            prefixIcon: const Icon(Icons.person,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          items: CustomerType.values.map((type) {
+                            return DropdownMenuItem(
+                              value: type,
+                              child: Text(type.displayName),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _customerType = value!;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<CustomerStatus>(
+                          initialValue: _status,
+                          decoration: InputDecoration(
+                            labelText: 'Durum',
+                            prefixIcon: const Icon(Icons.flag,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          items: CustomerStatus.values.map((status) {
+                            return DropdownMenuItem(
+                              value: status,
+                              child: Text(status.displayName),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _status = value!;
+                            });
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomDropdown<CustomerStatus>(
-                      value: _status,
-                      label: 'Durum',
-                      items: CustomerStatus.values,
-                      itemBuilder: (status) => Text(status.displayName),
-                      onChanged: (value) {
-                        setState(() {
-                          _status = value!;
-                        });
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Finansal Bilgiler
-              _buildSectionHeader('Finansal Bilgiler'),
-              const SizedBox(height: 16),
+              _buildPremiumSectionHeader(
+                  'Finansal Bilgiler', Icons.account_balance_wallet),
+              const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomDropdown<String>(
-                      value: _currency,
-                      label: 'Para Birimi',
-                      items: const [
-                        'TRY',
-                        'USD',
-                        'EUR',
-                        'GBP',
-                        'CHF',
-                        'JPY',
-                        'CAD',
-                        'AUD',
-                        'DKK',
-                        'SEK',
-                        'NOK',
-                        'SAR',
-                        'KWD',
-                        'BGN',
-                        'RON',
-                        'RUB',
-                        'IRR',
-                        'CNY',
-                        'PKR',
-                        'QAR',
-                        'XDR',
-                        'XAU',
-                        'AED'
-                      ],
-                      itemBuilder: (currency) => Text(currency),
-                      onChanged: (value) {
-                        setState(() {
-                          _currency = value!;
-                        });
-                      },
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _currency,
+                          decoration: InputDecoration(
+                            labelText: 'Para Birimi',
+                            prefixIcon: const Icon(Icons.attach_money,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          items: const [
+                            'TRY',
+                            'USD',
+                            'EUR',
+                            'GBP',
+                            'CHF',
+                            'JPY',
+                            'CAD',
+                            'AUD',
+                            'DKK',
+                            'SEK',
+                            'NOK',
+                            'SAR',
+                            'KWD',
+                            'BGN',
+                            'RON',
+                            'RUB',
+                            'IRR',
+                            'CNY',
+                            'PKR',
+                            'QAR',
+                            'XDR',
+                            'XAU',
+                            'AED'
+                          ].map((currency) {
+                            return DropdownMenuItem(
+                              value: currency,
+                              child: Text(currency),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _currency = value!;
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _creditLimitController,
+                          decoration: InputDecoration(
+                            labelText: 'Kredi Limiti',
+                            hintText: '0,00',
+                            prefixIcon: const Icon(Icons.monetization_on,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true, signed: false),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9.,]')),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: AutoFormattedTextField(
-                      label: 'Kredi Limiti',
-                      hint: '0,00',
-                      controller: _creditLimitController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true, signed: false),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                      ],
-                      formatter: (raw) {
-                        return _formatMoneyTyping(raw, allowNegative: false);
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              Row(
-                children: [
-                  Expanded(
-                    child: AutoFormattedTextField(
-                      label: 'Açılış Bakiyesi',
-                      hint: '0,00 (eksi değer girilebilir)',
-                      controller: _openingBalanceController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true, signed: true),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[-0-9.,]')),
-                      ],
-                      formatter: (raw) {
-                        return _formatMoneyTyping(raw, allowNegative: true);
-                      },
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _openingBalanceController,
+                          decoration: InputDecoration(
+                            labelText: 'Açılış Bakiyesi',
+                            hintText: '0,00 (eksi değer girilebilir)',
+                            prefixIcon: const Icon(Icons.account_balance_wallet,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true, signed: true),
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                                RegExp(r'[-0-9.,]')),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _maturityDaysController,
+                          decoration: InputDecoration(
+                            labelText: 'Ödeme Vadesi (Gün)',
+                            hintText: '30',
+                            prefixIcon: const Icon(Icons.schedule,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          keyboardType: TextInputType.number,
+                          validator: (value) => value?.isNotEmpty == true
+                              ? Validators.integer(value)
+                              : null,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _maturityDaysController,
-                      label: 'Ödeme Vadesi (Gün)',
-                      hint: '30',
-                      keyboardType: TextInputType.number,
-                      validator: (value) => value?.isNotEmpty == true
-                          ? Validators.integer(value)
-                          : null,
-                    ),
-                  ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              AutoFormattedTextField(
-                label: 'Sabit İskonto Oranı (%)',
-                hint: '0,00',
-                controller: _fixedDiscountRateController,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                ],
-                formatter: (raw) {
-                  return _formatMoneyTyping(raw, allowNegative: false);
-                },
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextFormField(
+                    controller: _fixedDiscountRateController,
+                    decoration: InputDecoration(
+                      labelText: 'Sabit İskonto Oranı (%)',
+                      hintText: '0,00',
+                      prefixIcon:
+                          const Icon(Icons.percent, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Vergiden Muaf Checkbox
-              CheckboxListTile(
-                title: const Text('Vergiden Muaf'),
-                value: _isTaxExempt,
-                onChanged: (value) {
-                  setState(() {
-                    _isTaxExempt = value ?? false;
-                  });
-                },
-                contentPadding: EdgeInsets.zero,
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.receipt_long,
+                            color: AppColors.primary, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: CheckboxListTile(
+                          title: Text(
+                            'Vergiden Muaf',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[800],
+                            ),
+                          ),
+                          value: _isTaxExempt,
+                          onChanged: (value) {
+                            setState(() {
+                              _isTaxExempt = value ?? false;
+                            });
+                          },
+                          contentPadding: EdgeInsets.zero,
+                          activeColor: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Ek Bilgiler
-              _buildSectionHeader('Ek Bilgiler'),
-              const SizedBox(height: 16),
+              _buildPremiumSectionHeader('Ek Bilgiler', Icons.note),
+              const SizedBox(height: 12),
 
-              CustomTextField(
-                controller: _bankDetailsController,
-                label: 'Banka Bilgileri',
-                hint: 'Banka adı, IBAN, hesap numarası',
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _authorizedPersonNameController,
-                      label: 'Yetkili Kişi Adı',
-                      hint: 'Ad Soyad',
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: CustomTextField(
-                      controller: _authorizedPersonPhoneController,
-                      label: 'Yetkili Kişi Telefonu',
-                      hint: '0555 123 45 67',
-                      keyboardType: TextInputType.phone,
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextFormField(
+                    controller: _bankDetailsController,
+                    decoration: InputDecoration(
+                      labelText: 'Banka Bilgileri',
+                      hintText: 'Banka adı, IBAN, hesap numarası',
+                      prefixIcon: const Icon(Icons.account_balance,
+                          color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
                     ),
+                    maxLines: 3,
                   ),
-                ],
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
-              CustomTextField(
-                controller: _notesController,
-                label: 'Notlar',
-                hint: 'Müşteriyle ilgili önemli bilgiler',
-                maxLines: 4,
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _authorizedPersonNameController,
+                          decoration: InputDecoration(
+                            labelText: 'Yetkili Kişi Adı',
+                            hintText: 'Ad Soyad',
+                            prefixIcon: const Icon(Icons.person_pin,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _authorizedPersonPhoneController,
+                          decoration: InputDecoration(
+                            labelText: 'Yetkili Kişi Telefonu',
+                            hintText: '0555 123 45 67',
+                            prefixIcon: const Icon(Icons.phone,
+                                color: AppColors.primary),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                  color: AppColors.primary, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.grey[50],
+                          ),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
+
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextFormField(
+                    controller: _notesController,
+                    decoration: InputDecoration(
+                      labelText: 'Notlar',
+                      hintText: 'Müşteriyle ilgili önemli bilgiler',
+                      prefixIcon:
+                          const Icon(Icons.note_add, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    maxLines: 4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
               _buildBranchesCard(),
               const SizedBox(height: 32),
 
@@ -748,27 +1686,51 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
               Row(
                 children: [
                   Expanded(
-                    child: CustomButton(
-                      text: 'Temizle',
-                      onPressed: _clearForm,
-                      variant: ButtonVariant.outlined,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: CustomButton(
+                        text: 'Temizle',
+                        onPressed: _clearForm,
+                        variant: ButtonVariant.outlined,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: CustomButton(
-                      text: 'İptal',
-                      onPressed: () => Navigator.of(context).pop(),
-                      variant: ButtonVariant.outlined,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: CustomButton(
+                        text: 'İptal',
+                        onPressed: () => Navigator.of(context).pop(),
+                        variant: ButtonVariant.outlined,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     flex: 2,
-                    child: CustomButton(
-                      text: 'Kaydet',
-                      onPressed: _isLoading ? null : _saveCustomer,
-                      isLoading: _isLoading,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: CustomButton(
+                        text: 'Müşteriyi Kaydet',
+                        onPressed: _isLoading ? null : _saveCustomer,
+                        isLoading: _isLoading,
+                      ),
                     ),
                   ),
                 ],
@@ -781,307 +1743,161 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildPremiumSectionHeader(String title, IconData icon) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).primaryColor,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoriesRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: Consumer(
-            builder: (context, ref, _) {
-              final cats = ref.watch(customerCategoriesProvider(1));
-              return cats.when(
-                loading: () => const LinearProgressIndicator(minHeight: 2),
-                error: (e, st) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text('Kategori 1 yüklenemedi: $e',
-                        style: const TextStyle(color: Colors.red)),
-                  ],
-                ),
-                data: (list) {
-                  if (list.isEmpty) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'Kategori bulunamadı',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            await _showCreateCategoryDialog(level: 1);
-                            if (mounted) setState(() {});
-                          },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Ekle'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return Row(
-                    children: [
-                      Expanded(
-                        flex: 4,
-                        child: CustomDropdown<String>(
-                          value: _selectedCategory1Id,
-                          label: 'Kategori 1',
-                          items: list.map((c) => c.id).toList(),
-                          itemBuilder: (id) => Text(
-                            list.firstWhere((c) => c.id == id).name,
-                          ),
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedCategory1Id = val;
-                            });
-                          },
-                          hint: 'Seçiniz',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 1,
-                        child: IconButton(
-                          tooltip: 'Yeni kategori',
-                          onPressed: () async {
-                            await _showCreateCategoryDialog(level: 1);
-                            if (mounted) setState(() {});
-                          },
-                          icon: const Icon(Icons.add),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Consumer(
-            builder: (context, ref, _) {
-              final cats = ref.watch(customerCategoriesProvider(2));
-              return cats.when(
-                loading: () => const LinearProgressIndicator(minHeight: 2),
-                error: (e, st) => Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text('Kategori 2 yüklenemedi: $e',
-                        style: const TextStyle(color: Colors.red)),
-                  ],
-                ),
-                data: (list) {
-                  if (list.isEmpty) {
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text(
-                              'Kategori bulunamadı',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            await _showCreateCategoryDialog(level: 2);
-                            if (mounted) setState(() {});
-                          },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Ekle'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-
-                  return Row(
-                    children: [
-                      Expanded(
-                        flex: 4,
-                        child: CustomDropdown<String>(
-                          value: _selectedCategory2Id,
-                          label: 'Kategori 2',
-                          items: list.map((c) => c.id).toList(),
-                          itemBuilder: (id) => Text(
-                            list.firstWhere((c) => c.id == id).name,
-                          ),
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedCategory2Id = val;
-                            });
-                          },
-                          hint: 'Seçiniz',
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        flex: 1,
-                        child: IconButton(
-                          tooltip: 'Yeni kategori',
-                          onPressed: () async {
-                            await _showCreateCategoryDialog(level: 2);
-                            if (mounted) setState(() {});
-                          },
-                          icon: const Icon(Icons.add),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showCreateCategoryDialog({required int level}) async {
-    final nameController = TextEditingController();
-    await showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Text(
-              'Yeni Kategori (${level == 1 ? 'Kategori 1' : 'Kategori 2'})'),
-          content: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(
-              labelText: 'Kategori Adı',
-              border: OutlineInputBorder(),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 20),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final name = nameController.text.trim();
-                if (name.isEmpty) return;
-
-                try {
-                  await ref.read(createCustomerCategoryProvider((
-                    name: name,
-                    level: level,
-                    parentId: null,
-                    companyId: 'default_company', // Silinen modül: user_profile
-                    userId: FirebaseAuthService.currentUserId ?? 'system',
-                  )).future);
-
-                  // Provider'ı yenile
-                  ref.invalidate(customerCategoriesProvider(level));
-
-                  if (mounted) {
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('$name kategorisi başarıyla oluşturuldu'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Kategori oluşturulamadı: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Oluştur'),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[800],
+              ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
   Widget _buildBranchesCard() {
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Şubeler',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.business,
+                      color: AppColors.primary, size: 20),
                 ),
-                OutlinedButton.icon(
-                  onPressed: _addBranch,
-                  icon: const Icon(Icons.add),
-                  label: const Text('Şube Ekle'),
+                const SizedBox(width: 12),
+                Text(
+                  'Şubeler',
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: _addBranch,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: Text(
+                      'Şube Ekle',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            if (_branches.isEmpty) const Text('Şube eklenmemiş'),
-            for (int i = 0; i < _branches.length; i++) ...[
-              _buildBranchItem(i),
-              const SizedBox(height: 8),
+            const SizedBox(height: 16),
+            if (_branches.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.business_outlined,
+                      size: 48,
+                      color: Colors.grey[400],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Henüz şube eklenmemiş',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Yeni şube eklemek için yukarıdaki butona tıklayın',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (_branches.isNotEmpty) ...[
+              for (int i = 0; i < _branches.length; i++) ...[
+                _buildBranchItem(i),
+                if (i < _branches.length - 1) const SizedBox(height: 12),
+              ],
             ],
           ],
         ),
@@ -1095,77 +1911,265 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
     final addressController = TextEditingController(text: branch.address);
     final phoneController = TextEditingController(text: branch.phone ?? '');
     final emailController = TextEditingController(text: branch.email ?? '');
+
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Theme.of(context).dividerColor),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  controller: nameController,
-                  label: 'Şube Adı',
-                  hint: 'Örn: Merkez',
-                  onChanged: (val) {
-                    _branches[index] = _branches[index].copyWith(name: val);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                tooltip: 'Şubeyi kaldır',
-                onPressed: () => _removeBranch(index),
-                icon: const Icon(Icons.delete_outline),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  controller: addressController,
-                  label: 'Adres',
-                  hint: 'Adres',
-                  onChanged: (val) {
-                    _branches[index] = _branches[index].copyWith(address: val);
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  controller: phoneController,
-                  label: 'Telefon',
-                  hint: '0555 123 45 67',
-                  onChanged: (val) {
-                    _branches[index] = _branches[index].copyWith(phone: val);
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: CustomTextField(
-                  controller: emailController,
-                  label: 'E-posta',
-                  hint: 'mail@ornek.com',
-                  onChanged: (val) {
-                    _branches[index] = _branches[index].copyWith(email: val);
-                  },
-                ),
-              ),
-            ],
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with branch number and delete button
+            Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Şube ${index + 1}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: IconButton(
+                    tooltip: 'Şubeyi kaldır',
+                    onPressed: () => _removeBranch(index),
+                    icon: const Icon(Icons.delete_outline,
+                        color: Colors.red, size: 20),
+                    style: IconButton.styleFrom(
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Şube Adı
+            TextFormField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Şube Adı',
+                hintText: 'Örn: Merkez',
+                prefixIcon:
+                    const Icon(Icons.business, color: AppColors.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: AppColors.primary, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+              ),
+              onChanged: (val) {
+                _branches[index] = _branches[index].copyWith(name: val);
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Adres
+            TextFormField(
+              controller: addressController,
+              decoration: InputDecoration(
+                labelText: 'Adres',
+                hintText: 'Şube adresi',
+                prefixIcon:
+                    const Icon(Icons.location_on, color: AppColors.primary),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide:
+                      const BorderSide(color: AppColors.primary, width: 2),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+              ),
+              onChanged: (val) {
+                _branches[index] = _branches[index].copyWith(address: val);
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Telefon ve E-posta
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: phoneController,
+                    decoration: InputDecoration(
+                      labelText: 'Telefon',
+                      hintText: '0555 123 45 67',
+                      prefixIcon:
+                          const Icon(Icons.phone, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    onChanged: (val) {
+                      _branches[index] = _branches[index].copyWith(phone: val);
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: TextFormField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'E-posta',
+                      hintText: 'mail@ornek.com',
+                      prefixIcon:
+                          const Icon(Icons.email, color: AppColors.primary),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: AppColors.primary, width: 2),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                    ),
+                    onChanged: (val) {
+                      _branches[index] = _branches[index].copyWith(email: val);
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addCategory1() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Kategori 1 - Yeni Kategori Ekle'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Kategori Adı',
+              hintText: 'Örn: Teknoloji',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (controller.text.isNotEmpty) {
+                  setState(() {
+                    _categories1.add(controller.text);
+                    _selectedCategory1Id = controller.text;
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Ekle'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _addCategory2() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Kategori 2 - Yeni Kategori Ekle'),
+          content: TextField(
+            controller: controller,
+            decoration: const InputDecoration(
+              labelText: 'Kategori Adı',
+              hintText: 'Örn: Teknoloji',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (controller.text.isNotEmpty) {
+                  setState(() {
+                    _categories2.add(controller.text);
+                    _selectedCategory2Id = controller.text;
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Ekle'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
