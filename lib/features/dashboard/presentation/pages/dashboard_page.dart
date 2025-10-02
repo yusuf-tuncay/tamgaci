@@ -73,9 +73,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       final res = await http.get(uri).timeout(const Duration(seconds: 6));
       if (res.statusCode == 200) {
         final data = json.decode(res.body) as Map<String, dynamic>;
-        setState(() {
-          _weather = data['current_weather'] as Map<String, dynamic>?;
-        });
+        if (mounted) {
+          setState(() {
+            _weather = data['current_weather'] as Map<String, dynamic>?;
+          });
+        }
       }
     } catch (_) {
       // ignore silently
@@ -85,22 +87,30 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildWeatherPill() {
     final w = _weather;
     final temp = w != null ? (w['temperature']?.toString() ?? '') : '';
-    final wind = w != null ? (w['windspeed']?.toString() ?? '') : '';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4), // Smaller padding
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(16), // Smaller border radius
         border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center, // Center content
         children: [
-          const Icon(Icons.wb_sunny, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
-          Text(
-            w == null ? 'Hava durumu' : '$temp°C, rüzgar $wind km/s',
-            style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+          const Icon(Icons.wb_sunny, color: Colors.white, size: 14), // Smaller icon
+          const SizedBox(width: 4), // Smaller spacing
+          Flexible( // Added Flexible
+            child: Text(
+              w == null ? 'Hava' : '$temp°C', // Shorter text
+              style: GoogleFonts.poppins(
+                color: Colors.white,
+                fontSize: 10, // Smaller font size
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis, // Added overflow handling
+              maxLines: 1, // Added maxLines
+            ),
           ),
         ],
       ),
