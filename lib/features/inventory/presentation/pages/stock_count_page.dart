@@ -168,16 +168,17 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Yeni stok sayımı oluşturulurken veya henüz yüklenmediyse loading göster
     if (_stockCount == null || _isInitializing) {
-      return ResponsiveScaffold(
-        appBar: const CustomAppBar(
+      return const ResponsiveScaffold(
+        appBar: CustomAppBar(
           title: 'Stok Sayımı',
-          showDrawer: true,
+          showBackButton: true,
+          showDrawer: false,
         ),
-        drawerContent: const TamgaciDrawerMenu(),
-        body: const Center(
+        drawerContent: TamgaciDrawerMenu(),
+        body: Center(
           child: CircularProgressIndicator(),
         ),
       );
@@ -186,8 +187,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Stok Sayımı - ${widget.warehouse.name}',
-        showBackButton: false,
-        showDrawer: true,
+        showBackButton: true,
+        showDrawer: false,
         actions: [
           if (_stockCount!.status == StockCountStatus.draft ||
               _stockCount!.status == StockCountStatus.inProgress)
