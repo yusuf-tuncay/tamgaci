@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tamgaci/features/sales/data/datasources/sale_firebase_datasource.dart';
 import 'package:tamgaci/features/sales/data/repositories/sale_repository_impl.dart';
 import 'package:tamgaci/features/sales/presentation/states/sale_state.dart';
@@ -99,4 +100,53 @@ final saleNotifierProvider =
     getSalesStatisticsUseCase: getSalesStatisticsUseCase,
     duplicateSaleUseCase: duplicateSaleUseCase,
   );
+});
+
+/// Customer invoices stream provider
+final customerInvoicesStreamProvider = StreamProvider.family<List<dynamic>, String>((ref, customerId) async* {
+  try {
+    final firestore = ref.watch(firestoreProvider);
+    final auth = ref.watch(firebaseAuthProvider);
+    final user = auth.currentUser;
+    
+    if (user == null) {
+      yield [];
+      return;
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await firestore.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      yield [];
+      return;
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      yield [];
+      return;
+    }
+
+    // Müşteriye ait faturaları getir
+    final snap = await firestore
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('sales')
+        .where('customerId', isEqualTo: customerId)
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    final invoices = snap.docs.map((doc) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      return data;
+    }).toList();
+
+    yield invoices;
+  } catch (e) {
+    debugPrint('Error loading customer invoices: $e');
+    yield [];
+  }
 });
