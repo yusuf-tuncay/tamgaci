@@ -71,7 +71,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget build(BuildContext context) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final customersAsync = ref.watch(customersProvider);
 
@@ -687,7 +687,7 @@ class _EnhancedCustomerDetailPageV2State
       builder: (context, snapshot) {
         // Widget dispose edildiyse boş widget döndür
         if (!mounted) return const SizedBox.shrink();
-        
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: Column(
@@ -784,10 +784,10 @@ class _EnhancedCustomerDetailPageV2State
       final transactionService = TransactionService();
       final transactions =
           await transactionService.getCustomerTransactions(customerId);
-      
+
       // Widget dispose edildiyse işlemi durdur
       if (!mounted) return [];
-      
+
       return transactions;
     } catch (e) {
       debugPrint('Error loading customer transactions: $e');
@@ -1299,7 +1299,8 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildInvoiceTile(dynamic invoice, bool isDark) {
     // invoice entity with known fields
-    final color = invoice['isPaid'] ? Colors.green : Colors.blue;
+    final isPaid = invoice['isPaid'] as bool? ?? false;
+    final color = isPaid ? Colors.green : Colors.blue;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -1312,7 +1313,7 @@ class _EnhancedCustomerDetailPageV2State
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          DateFormat('dd.MM.yyyy').format(invoice['invoiceDate']),
+          DateFormat('dd.MM.yyyy').format(invoice['invoiceDate'] ?? DateTime.now()),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1320,17 +1321,17 @@ class _EnhancedCustomerDetailPageV2State
           children: [
             Text(
               CurrencyHelper.formatCurrency(
-                  invoice['totalAmount'], invoice['currencyCode']),
+                  invoice['totalAmount'] ?? 0.0, invoice['currencyCode'] ?? 'TRY'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: Colors.blue,
               ),
             ),
             Text(
-              invoice['isPaid'] ? 'Ödendi' : 'Beklemede',
+              isPaid ? 'Ödendi' : 'Beklemede',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: invoice['isPaid'] ? Colors.green : Colors.orange,
+                color: isPaid ? Colors.green : Colors.orange,
               ),
             ),
           ],
