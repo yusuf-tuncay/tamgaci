@@ -681,6 +681,9 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildTransactionsTab(Customer customer, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
     // Tüm işlemler: Faturalar + Ödemeler + İşlemler
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
@@ -748,6 +751,9 @@ class _EnhancedCustomerDetailPageV2State
         // Tüm işlemleri birleştir: Faturalar + Ödemeler + İşlemler
         return invoicesAsync.when(
           data: (invoices) {
+            // Widget dispose edildiyse boş widget döndür
+            if (!mounted) return const SizedBox.shrink();
+            
             final transactions = transactionSnapshot.data ?? [];
             final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
             final payments = cashState.cashTransactions
@@ -817,7 +823,8 @@ class _EnhancedCustomerDetailPageV2State
                 if (item['type'] == 'invoice') {
                   return _buildInvoiceTile(item['data'], isDark);
                 } else if (item['type'] == 'payment') {
-                  return _buildPaymentTile(item['data'] as CashTransaction, isDark);
+                  return _buildPaymentTile(
+                      item['data'] as CashTransaction, isDark);
                 } else {
                   return _buildTransactionTile(item['data'], isDark);
                 }
@@ -853,6 +860,9 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildInvoicesTab(Customer customer, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
 
@@ -1115,11 +1125,17 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildPaymentsTab(Customer customer, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
     return invoicesAsync.when(
       data: (invoices) {
+        // Widget dispose edildiyse boş widget döndür
+        if (!mounted) return const SizedBox.shrink();
+        
         final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
@@ -1185,6 +1201,9 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildAccountStatementTab(Customer customer, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1544,6 +1563,9 @@ class _EnhancedCustomerDetailPageV2State
     final cashState = ref.watch(cashManagementNotifierProvider);
     return invoicesAsync.when(
       data: (invoices) {
+        // Widget dispose edildiyse boş widget döndür
+        if (!mounted) return const SizedBox.shrink();
+        
         final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
@@ -1603,7 +1625,8 @@ class _EnhancedCustomerDetailPageV2State
                     if (entry['type'] == 'invoice') {
                       return _buildInvoiceTile(entry['data'], isDark);
                     } else {
-                      return _buildPaymentTile(entry['data'] as CashTransaction, isDark);
+                      return _buildPaymentTile(
+                          entry['data'] as CashTransaction, isDark);
                     }
                   },
                 ),
