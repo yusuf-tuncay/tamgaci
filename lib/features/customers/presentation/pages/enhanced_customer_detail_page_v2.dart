@@ -102,7 +102,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildCustomerDetail(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     return Column(
       children: [
         // Müşteri bilgi kartı
@@ -130,7 +130,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildCustomerInfoCard(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     final balanceColor = customer.balance > 0
         ? Colors.green
         : customer.balance < 0
@@ -855,7 +855,7 @@ class _EnhancedCustomerDetailPageV2State
     try {
       // Widget dispose edildiyse işlemi durdur
       if (!mounted) return [];
-      
+
       final transactionService = TransactionService();
       final transactions =
           await transactionService.getCustomerTransactions(customerId);
@@ -1346,6 +1346,196 @@ class _EnhancedCustomerDetailPageV2State
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
+  // Hesap ekstresi tablosu
+  Widget _buildAccountStatementTable(List<Map<String, dynamic>> entries, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
+    double runningBalance = 0.0;
+    
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        headingRowColor: MaterialStateProperty.all(
+          isDark ? Colors.grey[800] : Colors.grey[100],
+        ),
+        dataRowColor: MaterialStateProperty.resolveWith<Color?>(
+          (Set<MaterialState> states) {
+            if (states.contains(MaterialState.selected)) {
+              return isDark ? Colors.grey[700] : Colors.grey[200];
+            }
+            return null;
+          },
+        ),
+        columns: [
+          DataColumn(
+            label: Text(
+              'Tarih/Saat',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'İşlem Adı',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Açıklama',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Borç',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.red,
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Alacak',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.green,
+              ),
+            ),
+          ),
+          DataColumn(
+            label: Text(
+              'Bakiye',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                color: Colors.blue,
+              ),
+            ),
+          ),
+        ],
+        rows: entries.map((entry) {
+          final transaction = entry['data'];
+          final date = entry['date'] as DateTime? ?? DateTime.now();
+          final isInvoice = entry['type'] == 'invoice';
+          final isPayment = entry['type'] == 'payment';
+          
+          // İşlem adı ve açıklama
+          String transactionName = '';
+          String description = '';
+          double debit = 0.0;
+          double credit = 0.0;
+          String currency = 'TRY';
+          
+          if (isInvoice) {
+            // Fatura işlemi
+            transactionName = 'Fatura';
+            description = transaction['saleNumber'] ?? transaction['invoiceNumber'] ?? 'N/A';
+            final totalAmount = (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            currency = transaction['currencyCode'] ?? 'TRY';
+            
+            // Fatura borç (müşteri borçlu)
+            debit = totalAmount;
+          } else if (isPayment) {
+            // Ödeme işlemi
+            transactionName = 'Ödeme';
+            description = transaction.description ?? 'Ödeme';
+            final amount = transaction.amount ?? 0.0;
+            currency = transaction.currency ?? 'TRY';
+            
+            // Ödeme alacak (müşteri alacaklı)
+            credit = amount;
+          } else {
+            // Diğer işlemler
+            transactionName = _getTransactionTypeText(transaction.type);
+            description = transaction.description ?? '';
+            final amount = transaction.amount ?? 0.0;
+            currency = transaction.currency ?? 'TRY';
+            
+            // İşlem tipine göre borç/alacak
+            if (transaction.type.toString().contains('sale') || 
+                transaction.type.toString().contains('purchase')) {
+              debit = amount;
+            } else {
+              credit = amount;
+            }
+          }
+          
+          // Bakiye hesaplama
+          runningBalance += credit - debit;
+          
+          return DataRow(
+            cells: [
+              DataCell(
+                Text(
+                  DateFormat('dd.MM.yyyy HH:mm').format(date),
+                  style: GoogleFonts.poppins(fontSize: 11),
+                ),
+              ),
+              DataCell(
+                Text(
+                  transactionName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  description,
+                  style: GoogleFonts.poppins(fontSize: 11),
+                ),
+              ),
+              DataCell(
+                Text(
+                  debit > 0 ? CurrencyHelper.formatCurrency(debit, currency) : '-',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: debit > 0 ? Colors.red : Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  credit > 0 ? CurrencyHelper.formatCurrency(credit, currency) : '-',
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: credit > 0 ? Colors.green : Colors.grey,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  CurrencyHelper.formatCurrency(runningBalance, currency),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: runningBalance >= 0 ? Colors.green : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   // Timestamp'i DateTime'a çevirme
   DateTime? _parseDateTime(dynamic dateValue) {
     if (dateValue == null) return null;
@@ -1629,20 +1819,7 @@ class _EnhancedCustomerDetailPageV2State
                   ),
                 )
               else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: entries.length,
-                  itemBuilder: (context, index) {
-                    final entry = entries[index];
-                    if (entry['type'] == 'invoice') {
-                      return _buildInvoiceTile(entry['data'], isDark);
-                    } else {
-                      return _buildPaymentTile(
-                          entry['data'] as CashTransaction, isDark);
-                    }
-                  },
-                ),
+                _buildAccountStatementTable(entries, isDark),
             ],
           ),
         );
