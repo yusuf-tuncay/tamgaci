@@ -84,7 +84,7 @@ class _EnhancedCustomerDetailPageV2State
         data: (customers) {
           // Widget dispose edildiyse boş widget döndür
           if (!mounted) return const SizedBox.shrink();
-          
+
           final customer = customers.firstWhere(
             (c) => c.id == widget.customerId,
             orElse: () => throw Exception('Müşteri bulunamadı'),
@@ -346,7 +346,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildQuickActionButtons(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
@@ -470,7 +470,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildTabBar(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
@@ -1561,6 +1561,51 @@ class _EnhancedCustomerDetailPageV2State
           );
   }
 
+  // Invoice type'a göre başlık oluştur
+  String _getInvoiceTypeTitle(dynamic invoice) {
+    final type = invoice['type']?.toString() ?? '';
+    final saleType = invoice['saleType']?.toString() ?? '';
+    
+    // Debug için type'ları logla
+    debugPrint('Invoice type for title: $type, saleType: $saleType');
+    
+    // SaleType enum kontrolü
+    if (type == 'SaleType.invoice' || saleType == 'SaleType.invoice') {
+      return 'Fatura';
+    }
+    if (type == 'SaleType.waybill' || saleType == 'SaleType.waybill') {
+      return 'İrsaliye';
+    }
+    if (type == 'SaleType.proforma' || saleType == 'SaleType.proforma') {
+      return 'Proforma';
+    }
+    
+    // String kontrolü
+    if (type == 'invoice' || saleType == 'invoice') {
+      return 'Fatura';
+    }
+    if (type == 'waybill' || saleType == 'waybill') {
+      return 'İrsaliye';
+    }
+    if (type == 'proforma' || saleType == 'proforma') {
+      return 'Proforma';
+    }
+    
+    // Capitalize kontrolü
+    if (type == 'Invoice' || saleType == 'Invoice') {
+      return 'Fatura';
+    }
+    if (type == 'Waybill' || saleType == 'Waybill') {
+      return 'İrsaliye';
+    }
+    if (type == 'Proforma' || saleType == 'Proforma') {
+      return 'Proforma';
+    }
+    
+    // Default fallback
+    return 'Fatura';
+  }
+
   // Timestamp'i DateTime'a çevirme
   DateTime? _parseDateTime(dynamic dateValue) {
     if (dateValue == null) return null;
@@ -1679,7 +1724,7 @@ class _EnhancedCustomerDetailPageV2State
           child: const Icon(Icons.receipt, color: Colors.blue),
         ),
         title: Text(
-          'Fatura: ${invoice['saleNumber'] ?? invoice['invoiceNumber'] ?? 'N/A'}',
+          '${_getInvoiceTypeTitle(invoice)}: ${invoice['saleNumber'] ?? invoice['invoiceNumber'] ?? 'N/A'}',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
