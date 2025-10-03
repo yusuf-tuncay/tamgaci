@@ -773,11 +773,11 @@ class _EnhancedCustomerDetailPageV2State
                   cashState.error != null
                       ? 'İşlemler yüklenirken hata oluştu'
                       : 'Henüz işlem bulunmuyor',
-                  style: GoogleFonts.poppins(
+              style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
                 ),
                 if (cashState.error != null) ...[
                   const SizedBox(height: 16),
@@ -890,32 +890,32 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-                                if (invoices.isEmpty) {
-                                  return Center(
-                                    child: Text(
-                                      'Fatura bulunamadı',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 14,
+        if (invoices.isEmpty) {
+          return Center(
+            child: Text(
+              'Fatura bulunamadı',
+              style: GoogleFonts.poppins(
+                fontSize: 14,
                                         color: isDark
                                             ? Colors.grey[400]
                                             : Colors.grey[600],
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return ListView.builder(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: invoices.length,
-                                  itemBuilder: (context, index) {
-                                    final invoice = invoices[index];
-                                    return _buildInvoiceTile(invoice, isDark);
-                                  },
-                                );
-                              },
+              ),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: invoices.length,
+          itemBuilder: (context, index) {
+            final invoice = invoices[index];
+            return _buildInvoiceTile(invoice, isDark);
+          },
+        );
+      },
                             ),
                             // İrsaliye (Satış) - henüz ayrıştırma alanı yok
                             Center(
-                              child: Text(
+        child: Text(
                                 'İrsaliye listesi için alan henüz entegre değil',
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,

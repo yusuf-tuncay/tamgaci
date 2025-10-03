@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import '../../../../core/theme/constants.dart';
 import '../../domain/entities/stock_count.dart';
 import '../providers/stock_count_providers.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
 import 'stock_count_page.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 
 /// Stok Sayımları Listesi Sayfası
 class StockCountsListPage extends ConsumerStatefulWidget {
@@ -26,109 +29,188 @@ class StockCountsListPage extends ConsumerStatefulWidget {
 class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
   StockCountStatus? _filterStatus;
 
+  Widget _buildWelcomeCard(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tüm Stok Sayımları',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Stok sayımlarını yönetin ve takip edin',
+            maxLines: 1,
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.9),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final stockCountsAsync = widget.warehouse != null
         ? ref.watch(stockCountsByWarehouseStreamProvider(widget.warehouse!.id))
         : ref.watch(allStockCountsStreamProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: widget.warehouse != null
-            ? 'Stok Sayımları - ${widget.warehouse!.name}'
-            : 'Tüm Stok Sayımları',
-        showBackButton: false,
-        showDrawer: true,
-        actions: [
-          PopupMenuButton<StockCountStatus?>(
-            icon: const Icon(Icons.filter_list),
-            tooltip: 'Filtrele',
-            onSelected: (status) {
-              setState(() {
-                _filterStatus = status;
-              });
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: null,
-                child: Text('Tümü', style: GoogleFonts.poppins()),
-              ),
-              ...StockCountStatus.values.map((status) {
-                return PopupMenuItem(
-                  value: status,
-                  child: Row(
-                    children: [
-                      Icon(
-                        _getStatusIcon(status),
-                        size: 18,
-                        color: _getStatusColor(status),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        status.displayName,
-                        style: GoogleFonts.poppins(),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ],
-          ),
-        ],
-      ),
-      body: stockCountsAsync.when(
-        data: (stockCounts) {
-          var filteredCounts = stockCounts;
-          if (_filterStatus != null) {
-            filteredCounts = stockCounts
-                .where((count) => count.status == _filterStatus)
-                .toList();
-          }
-
-          if (filteredCounts.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: filteredCounts.length,
-            itemBuilder: (context, index) {
-              return _buildStockCountCard(filteredCounts[index]);
-            },
-          );
-        },
-        loading: () => const LoadingWidget(),
-        error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-              const SizedBox(height: 16),
-              Text(
-                'Hata: ${error.toString()}',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.red[600],
+    return ResponsiveScaffold(
+        appBar: CustomAppBar(
+          title: widget.warehouse != null
+              ? 'Stok Sayımları - ${widget.warehouse!.name}'
+              : 'Tüm Stok Sayımları',
+          showBackButton: false,
+          showDrawer: true,
+          actions: [
+            PopupMenuButton<StockCountStatus?>(
+              icon: const Icon(Icons.filter_list),
+              tooltip: 'Filtrele',
+              onSelected: (status) {
+                setState(() {
+                  _filterStatus = status;
+                });
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: null,
+                  child: Text('Tümü', style: GoogleFonts.poppins()),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  if (widget.warehouse != null) {
-                    ref.invalidate(stockCountsByWarehouseStreamProvider(
-                        widget.warehouse!.id));
-                  } else {
-                    ref.invalidate(allStockCountsStreamProvider);
-                  }
-                },
-                child: const Text('Tekrar Dene'),
-              ),
-            ],
-          ),
+                ...StockCountStatus.values.map((status) {
+                  return PopupMenuItem(
+                    value: status,
+                    child: Row(
+                      children: [
+                        Icon(
+                          _getStatusIcon(status),
+                          size: 18,
+                          color: _getStatusColor(status),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          status.displayName,
+                          style: GoogleFonts.poppins(),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ],
         ),
-      ),
-    );
+        drawerContent: const TamgaciDrawerMenu(),
+        body: SingleChildScrollView(
+            child: Column(children: [
+          _buildWelcomeCard(isDark),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: MediaQuery.of(context).size.height - 300,
+            child: stockCountsAsync.when(
+              data: (stockCounts) {
+                var filteredCounts = stockCounts;
+                if (_filterStatus != null) {
+                  filteredCounts = stockCounts
+                      .where((count) => count.status == _filterStatus)
+                      .toList();
+                }
+
+                if (filteredCounts.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredCounts.length,
+                  itemBuilder: (context, index) {
+                    return _buildStockCountCard(filteredCounts[index]);
+                  },
+                );
+              },
+              loading: () => const LoadingWidget(),
+              error: (error, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Hata: ${error.toString()}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.red[600],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (widget.warehouse != null) {
+                          ref.invalidate(stockCountsByWarehouseStreamProvider(
+                              widget.warehouse!.id));
+                        } else {
+                          ref.invalidate(allStockCountsStreamProvider);
+                        }
+                      },
+                      child: const Text('Tekrar Dene'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          )
+        ])));
   }
 
   Widget _buildEmptyState() {

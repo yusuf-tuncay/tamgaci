@@ -7,8 +7,6 @@ import '../providers/stock_count_providers.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
 import '../../../products/presentation/providers/product_providers.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/drawer_menu.dart';
-import '../../../../shared/widgets/responsive_scaffold.dart';
 
 /// Stok Sayımı Sayfası
 class StockCountPage extends ConsumerStatefulWidget {
@@ -95,27 +93,23 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
 
   @override
   Widget build(BuildContext context) {
-
     // Yeni stok sayımı oluşturulurken veya henüz yüklenmediyse loading göster
     if (_stockCount == null || _isInitializing) {
-      return const ResponsiveScaffold(
-        appBar: CustomAppBar(
-          title: 'Stok Sayımı',
-          showBackButton: true,
-          showDrawer: false,
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Stok Sayımı'),
         ),
-        drawerContent: TamgaciDrawerMenu(),
-        body: Center(
+        body: const Center(
           child: CircularProgressIndicator(),
         ),
       );
     }
 
-    return ResponsiveScaffold(
+    return Scaffold(
       appBar: CustomAppBar(
         title: 'Stok Sayımı - ${widget.warehouse.name}',
-        showBackButton: true,
-        showDrawer: false,
+        showBackButton: false,
+        showDrawer: true,
         actions: [
           if (_stockCount!.status == StockCountStatus.draft ||
               _stockCount!.status == StockCountStatus.inProgress)
@@ -131,7 +125,6 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
           ),
         ],
       ),
-      drawerContent: const TamgaciDrawerMenu(),
       body: Column(
         children: [
           _buildStockCountHeader(),

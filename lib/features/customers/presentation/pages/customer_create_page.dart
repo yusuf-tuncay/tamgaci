@@ -431,7 +431,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: TextFormField(
-                    controller: _nameController,
+                controller: _nameController,
                     decoration: InputDecoration(
                       labelText: 'Müşteri Adı / Ünvan *',
                       hintText: 'Müşteri adını girin',
@@ -478,7 +478,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                     children: [
                       Expanded(
                         child: TextFormField(
-                          controller: _customerCodeController,
+                controller: _customerCodeController,
                           decoration: InputDecoration(
                             labelText: 'Müşteri Kodu',
                             hintText: 'Otomatik oluşturulur',
@@ -500,7 +500,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
-                          readOnly: true,
+                readOnly: true,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -517,11 +517,11 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                           ],
                         ),
                         child: IconButton(
-                          onPressed: _generateCustomerCode,
+                  onPressed: _generateCustomerCode,
                           icon: const Icon(Icons.refresh, color: Colors.white),
-                          tooltip: 'Yeni kod oluştur',
-                        ),
-                      ),
+                  tooltip: 'Yeni kod oluştur',
+                ),
+              ),
                     ],
                   ),
                 ),
@@ -543,10 +543,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
-                    children: [
-                      Expanded(
+                children: [
+                  Expanded(
                         child: TextFormField(
-                          controller: _phoneController,
+                      controller: _phoneController,
                           decoration: InputDecoration(
                             labelText: 'Telefon Numarası',
                             hintText: '0555 123 45 67',
@@ -568,16 +568,16 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          keyboardType: TextInputType.phone,
-                          validator: (value) => value?.isNotEmpty == true
-                              ? Validators.phone(value)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      keyboardType: TextInputType.phone,
+                      validator: (value) => value?.isNotEmpty == true
+                          ? Validators.phone(value)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: TextFormField(
-                          controller: _emailController,
+                      controller: _emailController,
                           decoration: InputDecoration(
                             labelText: 'E-posta Adresi',
                             hintText: 'ornek@email.com',
@@ -599,14 +599,14 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (value) => value?.isNotEmpty == true
-                              ? Validators.email(value)
-                              : null,
-                        ),
-                      ),
-                    ],
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) => value?.isNotEmpty == true
+                          ? Validators.email(value)
+                          : null,
+                    ),
                   ),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -630,10 +630,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
-                    children: [
-                      Expanded(
+                children: [
+                  Expanded(
                         child: TextFormField(
-                          controller: _taxNumberController,
+                      controller: _taxNumberController,
                           decoration: InputDecoration(
                             labelText: 'Vergi Numarası / T.C. Kimlik No',
                             hintText: '1234567890',
@@ -655,15 +655,15 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          validator: (value) => value?.isNotEmpty == true
-                              ? Validators.taxNumber(value)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      validator: (value) => value?.isNotEmpty == true
+                          ? Validators.taxNumber(value)
+                          : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: TextFormField(
-                          controller: _taxOfficeController,
+                      controller: _taxOfficeController,
                           decoration: InputDecoration(
                             labelText: 'Vergi Dairesi',
                             hintText: 'Kadıköy Vergi Dairesi',
@@ -685,10 +685,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -712,7 +712,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: TextFormField(
-                    controller: _addressController,
+                controller: _addressController,
                     decoration: InputDecoration(
                       labelText: 'Açık Adres',
                       hintText: 'Mahalle, sokak, bina no, daire no',
@@ -734,8 +734,8 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    maxLines: 3,
-                  ),
+                maxLines: 3,
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -755,10 +755,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
-                    children: [
-                      Expanded(
+                children: [
+                  Expanded(
                         child: TextFormField(
-                          controller: _cityController,
+                      controller: _cityController,
                           decoration: InputDecoration(
                             labelText: 'Şehir',
                             hintText: 'İstanbul',
@@ -780,12 +780,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: TextFormField(
-                          controller: _countryController,
+                      controller: _countryController,
                           decoration: InputDecoration(
                             labelText: 'Ülke',
                             hintText: 'Türkiye',
@@ -807,12 +807,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: TextFormField(
-                          controller: _postalCodeController,
+                      controller: _postalCodeController,
                           decoration: InputDecoration(
                             labelText: 'Posta Kodu',
                             hintText: '34000',
@@ -834,11 +834,11 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
+                      keyboardType: TextInputType.number,
+                    ),
                   ),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1018,7 +1018,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Müşteri / Tedarikçi Seçimi',
+                        'Müşteri / Tedarikçi Seçimi',
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -1044,7 +1044,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                                   width: 2,
                                 ),
                               ),
-                              child: CheckboxListTile(
+                            child: CheckboxListTile(
                                 title: Text(
                                   'Müşteri',
                                   style: GoogleFonts.poppins(
@@ -1055,17 +1055,17 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                                         : Colors.grey[700],
                                   ),
                                 ),
-                                value: _isCustomer,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isCustomer = value ?? false;
-                                  });
-                                },
+                              value: _isCustomer,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isCustomer = value ?? false;
+                                });
+                              },
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 4),
                                 activeColor: AppColors.primary,
-                              ),
                             ),
+                          ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -1082,7 +1082,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                                   width: 2,
                                 ),
                               ),
-                              child: CheckboxListTile(
+                            child: CheckboxListTile(
                                 title: Text(
                                   'Tedarikçi',
                                   style: GoogleFonts.poppins(
@@ -1093,12 +1093,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                                         : Colors.grey[700],
                                   ),
                                 ),
-                                value: _isSupplier,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isSupplier = value ?? false;
-                                  });
-                                },
+                              value: _isSupplier,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isSupplier = value ?? false;
+                                });
+                              },
                                 contentPadding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 4),
                                 activeColor: AppColors.primary,
@@ -1129,8 +1129,8 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
-                    children: [
-                      Expanded(
+                children: [
+                  Expanded(
                         child: DropdownButtonFormField<CustomerType>(
                           initialValue: _customerType,
                           decoration: InputDecoration(
@@ -1159,15 +1159,15 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                               child: Text(type.displayName),
                             );
                           }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _customerType = value!;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      onChanged: (value) {
+                        setState(() {
+                          _customerType = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: DropdownButtonFormField<CustomerStatus>(
                           initialValue: _status,
                           decoration: InputDecoration(
@@ -1196,15 +1196,15 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                               child: Text(status.displayName),
                             );
                           }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _status = value!;
-                            });
-                          },
-                        ),
-                      ),
-                    ],
+                      onChanged: (value) {
+                        setState(() {
+                          _status = value!;
+                        });
+                      },
+                    ),
                   ),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1229,8 +1229,8 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
-                    children: [
-                      Expanded(
+                children: [
+                  Expanded(
                         child: DropdownButtonFormField<String>(
                           initialValue: _currency,
                           decoration: InputDecoration(
@@ -1253,47 +1253,47 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          items: const [
-                            'TRY',
-                            'USD',
-                            'EUR',
-                            'GBP',
-                            'CHF',
-                            'JPY',
-                            'CAD',
-                            'AUD',
-                            'DKK',
-                            'SEK',
-                            'NOK',
-                            'SAR',
-                            'KWD',
-                            'BGN',
-                            'RON',
-                            'RUB',
-                            'IRR',
-                            'CNY',
-                            'PKR',
-                            'QAR',
-                            'XDR',
-                            'XAU',
-                            'AED'
+                      items: const [
+                        'TRY',
+                        'USD',
+                        'EUR',
+                        'GBP',
+                        'CHF',
+                        'JPY',
+                        'CAD',
+                        'AUD',
+                        'DKK',
+                        'SEK',
+                        'NOK',
+                        'SAR',
+                        'KWD',
+                        'BGN',
+                        'RON',
+                        'RUB',
+                        'IRR',
+                        'CNY',
+                        'PKR',
+                        'QAR',
+                        'XDR',
+                        'XAU',
+                        'AED'
                           ].map((currency) {
                             return DropdownMenuItem(
                               value: currency,
                               child: Text(currency),
                             );
                           }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _currency = value!;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      onChanged: (value) {
+                        setState(() {
+                          _currency = value!;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: TextFormField(
-                          controller: _creditLimitController,
+                      controller: _creditLimitController,
                           decoration: InputDecoration(
                             labelText: 'Kredi Limiti',
                             hintText: '0,00',
@@ -1315,16 +1315,16 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true, signed: false),
-                          inputFormatters: [
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true, signed: false),
+                      inputFormatters: [
                             FilteringTextInputFormatter.allow(
                                 RegExp(r'[0-9.,]')),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1344,10 +1344,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
-                    children: [
-                      Expanded(
+                children: [
+                  Expanded(
                         child: TextFormField(
-                          controller: _openingBalanceController,
+                      controller: _openingBalanceController,
                           decoration: InputDecoration(
                             labelText: 'Açılış Bakiyesi',
                             hintText: '0,00 (eksi değer girilebilir)',
@@ -1369,18 +1369,18 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true, signed: true),
-                          inputFormatters: [
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true, signed: true),
+                      inputFormatters: [
                             FilteringTextInputFormatter.allow(
                                 RegExp(r'[-0-9.,]')),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: TextFormField(
-                          controller: _maturityDaysController,
+                      controller: _maturityDaysController,
                           decoration: InputDecoration(
                             labelText: 'Ödeme Vadesi (Gün)',
                             hintText: '30',
@@ -1402,14 +1402,14 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) => value?.isNotEmpty == true
-                              ? Validators.integer(value)
-                              : null,
-                        ),
-                      ),
-                    ],
+                      keyboardType: TextInputType.number,
+                      validator: (value) => value?.isNotEmpty == true
+                          ? Validators.integer(value)
+                          : null,
+                    ),
                   ),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1429,7 +1429,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: TextFormField(
-                    controller: _fixedDiscountRateController,
+                controller: _fixedDiscountRateController,
                     decoration: InputDecoration(
                       labelText: 'Sabit İskonto Oranı (%)',
                       hintText: '0,00',
@@ -1451,12 +1451,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                    ],
-                  ),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1498,13 +1498,13 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                               color: Colors.grey[800],
                             ),
                           ),
-                          value: _isTaxExempt,
-                          onChanged: (value) {
-                            setState(() {
-                              _isTaxExempt = value ?? false;
-                            });
-                          },
-                          contentPadding: EdgeInsets.zero,
+                value: _isTaxExempt,
+                onChanged: (value) {
+                  setState(() {
+                    _isTaxExempt = value ?? false;
+                  });
+                },
+                contentPadding: EdgeInsets.zero,
                           activeColor: AppColors.primary,
                         ),
                       ),
@@ -1533,7 +1533,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: TextFormField(
-                    controller: _bankDetailsController,
+                controller: _bankDetailsController,
                     decoration: InputDecoration(
                       labelText: 'Banka Bilgileri',
                       hintText: 'Banka adı, IBAN, hesap numarası',
@@ -1555,8 +1555,8 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    maxLines: 3,
-                  ),
+                maxLines: 3,
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1576,10 +1576,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(
-                    children: [
-                      Expanded(
+                children: [
+                  Expanded(
                         child: TextFormField(
-                          controller: _authorizedPersonNameController,
+                      controller: _authorizedPersonNameController,
                           decoration: InputDecoration(
                             labelText: 'Yetkili Kişi Adı',
                             hintText: 'Ad Soyad',
@@ -1601,12 +1601,12 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
                         child: TextFormField(
-                          controller: _authorizedPersonPhoneController,
+                      controller: _authorizedPersonPhoneController,
                           decoration: InputDecoration(
                             labelText: 'Yetkili Kişi Telefonu',
                             hintText: '0555 123 45 67',
@@ -1628,11 +1628,11 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                             filled: true,
                             fillColor: Colors.grey[50],
                           ),
-                          keyboardType: TextInputType.phone,
-                        ),
-                      ),
-                    ],
+                      keyboardType: TextInputType.phone,
+                    ),
                   ),
+                ],
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1652,7 +1652,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(12),
                   child: TextFormField(
-                    controller: _notesController,
+                controller: _notesController,
                     decoration: InputDecoration(
                       labelText: 'Notlar',
                       hintText: 'Müşteriyle ilgili önemli bilgiler',
@@ -1674,8 +1674,8 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    maxLines: 4,
-                  ),
+                maxLines: 4,
+              ),
                 ),
               ),
               const SizedBox(height: 8),
@@ -1691,10 +1691,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.grey[300]!),
                       ),
-                      child: CustomButton(
-                        text: 'Temizle',
-                        onPressed: _clearForm,
-                        variant: ButtonVariant.outlined,
+                    child: CustomButton(
+                      text: 'Temizle',
+                      onPressed: _clearForm,
+                      variant: ButtonVariant.outlined,
                       ),
                     ),
                   ),
@@ -1705,10 +1705,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: Colors.grey[300]!),
                       ),
-                      child: CustomButton(
-                        text: 'İptal',
-                        onPressed: () => Navigator.of(context).pop(),
-                        variant: ButtonVariant.outlined,
+                    child: CustomButton(
+                      text: 'İptal',
+                      onPressed: () => Navigator.of(context).pop(),
+                      variant: ButtonVariant.outlined,
                       ),
                     ),
                   ),
@@ -1726,10 +1726,10 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                           ),
                         ],
                       ),
-                      child: CustomButton(
+                    child: CustomButton(
                         text: 'Müşteriyi Kaydet',
-                        onPressed: _isLoading ? null : _saveCustomer,
-                        isLoading: _isLoading,
+                      onPressed: _isLoading ? null : _saveCustomer,
+                      isLoading: _isLoading,
                       ),
                     ),
                   ),
@@ -1759,13 +1759,13 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Row(
-          children: [
+                      children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
+                            decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
               child: Icon(icon, color: AppColors.primary, size: 20),
             ),
             const SizedBox(width: 12),
@@ -1799,16 +1799,16 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
             Row(
-              children: [
+                      children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
+                            decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                   child: const Icon(Icons.business,
                       color: AppColors.primary, size: 20),
                 ),
@@ -1845,16 +1845,16 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
+                            foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                  ),
-                ),
-              ],
+          ),
+        ),
+      ],
             ),
             const SizedBox(height: 12),
             if (_branches.isEmpty)
@@ -1889,13 +1889,13 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                         fontSize: 14,
                         color: Colors.grey[500],
                       ),
-                    ),
-                  ],
                 ),
+              ],
+            ),
               ),
             if (_branches.isNotEmpty) ...[
-              for (int i = 0; i < _branches.length; i++) ...[
-                _buildBranchItem(i),
+            for (int i = 0; i < _branches.length; i++) ...[
+              _buildBranchItem(i),
                 if (i < _branches.length - 1) const SizedBox(height: 8),
               ],
             ],
@@ -1926,13 +1926,13 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
+      padding: const EdgeInsets.all(12),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        children: [
             // Header with branch number and delete button
-            Row(
-              children: [
+          Row(
+            children: [
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1956,17 +1956,17 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
-                    tooltip: 'Şubeyi kaldır',
-                    onPressed: () => _removeBranch(index),
+                tooltip: 'Şubeyi kaldır',
+                onPressed: () => _removeBranch(index),
                     icon: const Icon(Icons.delete_outline,
                         color: Colors.red, size: 20),
                     style: IconButton.styleFrom(
                       padding: const EdgeInsets.all(8),
                     ),
                   ),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
             const SizedBox(height: 12),
 
             // Şube Adı
@@ -1993,7 +1993,7 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                 filled: true,
                 fillColor: Colors.grey[50],
               ),
-              onChanged: (val) {
+                  onChanged: (val) {
                 _branches[index] = _branches[index].copyWith(name: val);
               },
             ),
@@ -2030,11 +2030,11 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
             const SizedBox(height: 12),
 
             // Telefon ve E-posta
-            Row(
-              children: [
-                Expanded(
+          Row(
+            children: [
+              Expanded(
                   child: TextFormField(
-                    controller: phoneController,
+                  controller: phoneController,
                     decoration: InputDecoration(
                       labelText: 'Telefon',
                       hintText: '0555 123 45 67',
@@ -2056,15 +2056,15 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    onChanged: (val) {
-                      _branches[index] = _branches[index].copyWith(phone: val);
-                    },
-                  ),
+                  onChanged: (val) {
+                    _branches[index] = _branches[index].copyWith(phone: val);
+                  },
                 ),
+              ),
                 const SizedBox(width: 12),
-                Expanded(
+              Expanded(
                   child: TextFormField(
-                    controller: emailController,
+                  controller: emailController,
                     decoration: InputDecoration(
                       labelText: 'E-posta',
                       hintText: 'mail@ornek.com',
@@ -2086,14 +2086,14 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                       filled: true,
                       fillColor: Colors.grey[50],
                     ),
-                    onChanged: (val) {
-                      _branches[index] = _branches[index].copyWith(email: val);
-                    },
-                  ),
+                  onChanged: (val) {
+                    _branches[index] = _branches[index].copyWith(email: val);
+                  },
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
+        ],
         ),
       ),
     );
