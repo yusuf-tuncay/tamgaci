@@ -842,15 +842,12 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-                                
+
                                 // Invoice type'a göre filtrele
                                 final filteredInvoices = invoices.where((invoice) {
-                                  final type = invoice['type']?.toString() ?? '';
-                                  return type == 'SaleType.invoice' || 
-                                         type == 'invoice' ||
-                                         type == 'Invoice';
+                                  return _isInvoiceType(invoice, 'invoice');
                                 }).toList();
-                                
+
                                 if (filteredInvoices.isEmpty) {
                                   return Center(
                                     child: Text(
@@ -891,15 +888,12 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-                                
+
                                 // Waybill type'a göre filtrele
                                 final filteredInvoices = invoices.where((invoice) {
-                                  final type = invoice['type']?.toString() ?? '';
-                                  return type == 'SaleType.waybill' || 
-                                         type == 'waybill' ||
-                                         type == 'Waybill';
+                                  return _isInvoiceType(invoice, 'waybill');
                                 }).toList();
-                                
+
                                 if (filteredInvoices.isEmpty) {
                                   return Center(
                                     child: Text(
@@ -940,15 +934,12 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-                                
+
                                 // Proforma type'a göre filtrele
                                 final filteredInvoices = invoices.where((invoice) {
-                                  final type = invoice['type']?.toString() ?? '';
-                                  return type == 'SaleType.proforma' || 
-                                         type == 'proforma' ||
-                                         type == 'Proforma';
+                                  return _isInvoiceType(invoice, 'proforma');
                                 }).toList();
-                                
+
                                 if (filteredInvoices.isEmpty) {
                                   return Center(
                                     child: Text(
@@ -1000,7 +991,7 @@ class _EnhancedCustomerDetailPageV2State
                             Builder(
                               builder: (_) {
                                 // Purchase modülünden purchases al
-                                // Şimdilik placeholder
+                                // Şimdilik placeholder - gelecekte _isPurchaseType(purchase, 'purchase') kullanılacak
                                 return Center(
                                   child: Text(
                                     'Normal alış belgeleri müşteri yerine tedarikçi bazlıdır',
@@ -1019,7 +1010,7 @@ class _EnhancedCustomerDetailPageV2State
                             Builder(
                               builder: (_) {
                                 // Purchase modülünden return purchases al
-                                // Şimdilik placeholder
+                                // Şimdilik placeholder - gelecekte _isPurchaseType(purchase, 'returnPurchase') kullanılacak
                                 return Center(
                                   child: Text(
                                     'Satıştan iade alışı listesi için alan henüz entegre değil',
@@ -1210,16 +1201,16 @@ class _EnhancedCustomerDetailPageV2State
   // Invoice type filtreleme helper metodları
   bool _isInvoiceType(dynamic invoice, String targetType) {
     final type = invoice['type']?.toString() ?? '';
-    return type == 'SaleType.$targetType' || 
-           type == targetType ||
-           type == _capitalize(targetType);
+    return type == 'SaleType.$targetType' ||
+        type == targetType ||
+        type == _capitalize(targetType);
   }
 
   bool _isPurchaseType(dynamic purchase, String targetType) {
     final type = purchase['type']?.toString() ?? '';
-    return type == 'PurchaseType.$targetType' || 
-           type == targetType ||
-           type == _capitalize(targetType);
+    return type == 'PurchaseType.$targetType' ||
+        type == targetType ||
+        type == _capitalize(targetType);
   }
 
   String _capitalize(String text) {
