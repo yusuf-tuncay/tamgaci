@@ -29,7 +29,7 @@ import 'package:tamgaci/features/accounts/presentation/pages/accounts_home_page.
 import 'package:tamgaci/features/accounts/presentation/pages/create_account_page.dart'
     as accounts;
 import 'package:tamgaci/features/accounts/presentation/pages/account_detail_page.dart';
-import 'package:tamgaci/features/reports/presentation/pages/enhanced_reports_list_page.dart';
+// Silinen modül: enhanced_reports_list_page - ReportsOverviewPage kullanılıyor
 import 'package:tamgaci/features/dashboard/presentation/pages/dashboard_page.dart';
 // Silinen modül: expenses
 // Silinen modül: income
@@ -577,18 +577,18 @@ class TamgaciRoutes {
             settings: settings);
 
       case createReport:
-        // Geçici olarak reports listesine yönlendir
-        return _createRoute(const EnhancedReportsListPage(),
+        // Geçici olarak reports overview'a yönlendir
+        return _createRoute(const ReportsOverviewPage(),
             settings: settings);
 
       case reportDetail:
-        // Geçici olarak reports listesine yönlendir
-        return _createRoute(const EnhancedReportsListPage(),
+        // Geçici olarak reports overview'a yönlendir
+        return _createRoute(const ReportsOverviewPage(),
             settings: settings);
 
       case editReport:
-        // Geçici olarak reports listesine yönlendir
-        return _createRoute(const EnhancedReportsListPage(),
+        // Geçici olarak reports overview'a yönlendir
+        return _createRoute(const ReportsOverviewPage(),
             settings: settings);
 
       // ========== ÜRÜN ROUTE'LARI ==========
