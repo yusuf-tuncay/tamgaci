@@ -825,7 +825,7 @@ class _EnhancedCustomerDetailPageV2State
                       Expanded(
                         child: TabBarView(
                           children: [
-                            // Fatura (Satış) - eldeki invoices ile
+                            // Fatura (Satış) - invoice type ile filtrele
                             Builder(
                               builder: (_) {
                                 if (isLoading) {
@@ -842,7 +842,16 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-                                if (invoices.isEmpty) {
+                                
+                                // Invoice type'a göre filtrele
+                                final filteredInvoices = invoices.where((invoice) {
+                                  final type = invoice['type']?.toString() ?? '';
+                                  return type == 'SaleType.invoice' || 
+                                         type == 'invoice' ||
+                                         type == 'Invoice';
+                                }).toList();
+                                
+                                if (filteredInvoices.isEmpty) {
                                   return Center(
                                     child: Text(
                                       'Fatura bulunamadı',
@@ -857,15 +866,15 @@ class _EnhancedCustomerDetailPageV2State
                                 }
                                 return ListView.builder(
                                   padding: const EdgeInsets.all(16),
-                                  itemCount: invoices.length,
+                                  itemCount: filteredInvoices.length,
                                   itemBuilder: (context, index) {
-                                    final invoice = invoices[index];
+                                    final invoice = filteredInvoices[index];
                                     return _buildInvoiceTile(invoice, isDark);
                                   },
                                 );
                               },
                             ),
-                            // İrsaliye (Satış) - invoices ile
+                            // İrsaliye (Satış) - waybill type ile filtrele
                             Builder(
                               builder: (_) {
                                 if (isLoading) {
@@ -882,7 +891,16 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-                                if (invoices.isEmpty) {
+                                
+                                // Waybill type'a göre filtrele
+                                final filteredInvoices = invoices.where((invoice) {
+                                  final type = invoice['type']?.toString() ?? '';
+                                  return type == 'SaleType.waybill' || 
+                                         type == 'waybill' ||
+                                         type == 'Waybill';
+                                }).toList();
+                                
+                                if (filteredInvoices.isEmpty) {
                                   return Center(
                                     child: Text(
                                       'İrsaliye bulunamadı',
@@ -897,15 +915,15 @@ class _EnhancedCustomerDetailPageV2State
                                 }
                                 return ListView.builder(
                                   padding: const EdgeInsets.all(16),
-                                  itemCount: invoices.length,
+                                  itemCount: filteredInvoices.length,
                                   itemBuilder: (context, index) {
-                                    final invoice = invoices[index];
+                                    final invoice = filteredInvoices[index];
                                     return _buildInvoiceTile(invoice, isDark);
                                   },
                                 );
                               },
                             ),
-                            // Proforma (Satış) - invoices ile
+                            // Proforma (Satış) - proforma type ile filtrele
                             Builder(
                               builder: (_) {
                                 if (isLoading) {
@@ -922,7 +940,16 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-                                if (invoices.isEmpty) {
+                                
+                                // Proforma type'a göre filtrele
+                                final filteredInvoices = invoices.where((invoice) {
+                                  final type = invoice['type']?.toString() ?? '';
+                                  return type == 'SaleType.proforma' || 
+                                         type == 'proforma' ||
+                                         type == 'Proforma';
+                                }).toList();
+                                
+                                if (filteredInvoices.isEmpty) {
                                   return Center(
                                     child: Text(
                                       'Proforma bulunamadı',
@@ -937,9 +964,9 @@ class _EnhancedCustomerDetailPageV2State
                                 }
                                 return ListView.builder(
                                   padding: const EdgeInsets.all(16),
-                                  itemCount: invoices.length,
+                                  itemCount: filteredInvoices.length,
                                   itemBuilder: (context, index) {
-                                    final invoice = invoices[index];
+                                    final invoice = filteredInvoices[index];
                                     return _buildInvoiceTile(invoice, isDark);
                                   },
                                 );
@@ -966,20 +993,46 @@ class _EnhancedCustomerDetailPageV2State
                           Tab(text: 'Satıştan İade Alışı'),
                         ],
                       ),
-                      const Expanded(
+                      Expanded(
                         child: TabBarView(
                           children: [
-                            Center(
-                              child: Text(
-                                'Normal alış belgeleri müşteri yerine tedarikçi bazlıdır',
-                                textAlign: TextAlign.center,
-                              ),
+                            // Normal Alış - purchase type ile filtrele
+                            Builder(
+                              builder: (_) {
+                                // Purchase modülünden purchases al
+                                // Şimdilik placeholder
+                                return Center(
+                                  child: Text(
+                                    'Normal alış belgeleri müşteri yerine tedarikçi bazlıdır',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                            Center(
-                              child: Text(
-                                'Satıştan iade alışı listesi için alan henüz entegre değil',
-                                textAlign: TextAlign.center,
-                              ),
+                            // Satıştan İade Alışı - returnPurchase type ile filtrele
+                            Builder(
+                              builder: (_) {
+                                // Purchase modülünden return purchases al
+                                // Şimdilik placeholder
+                                return Center(
+                                  child: Text(
+                                    'Satıştan iade alışı listesi için alan henüz entegre değil',
+                                    textAlign: TextAlign.center,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -1152,6 +1205,26 @@ class _EnhancedCustomerDetailPageV2State
       default:
         return 'İşlem';
     }
+  }
+
+  // Invoice type filtreleme helper metodları
+  bool _isInvoiceType(dynamic invoice, String targetType) {
+    final type = invoice['type']?.toString() ?? '';
+    return type == 'SaleType.$targetType' || 
+           type == targetType ||
+           type == _capitalize(targetType);
+  }
+
+  bool _isPurchaseType(dynamic purchase, String targetType) {
+    final type = purchase['type']?.toString() ?? '';
+    return type == 'PurchaseType.$targetType' || 
+           type == targetType ||
+           type == _capitalize(targetType);
+  }
+
+  String _capitalize(String text) {
+    if (text.isEmpty) return text;
+    return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
   Widget _buildTransactionTile(dynamic t, bool isDark) {
