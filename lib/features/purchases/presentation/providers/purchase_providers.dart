@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tamgaci/features/purchases/data/datasources/purchase_firebase_datasource.dart';
 import 'package:tamgaci/features/purchases/data/repositories/purchase_repository_impl.dart';
 import 'package:tamgaci/features/purchases/domain/usecases/create_purchase_usecase.dart';
@@ -102,4 +103,53 @@ final purchaseNotifierProvider =
     getPurchasesStatisticsUseCase: getPurchasesStatisticsUseCase,
     duplicatePurchaseUseCase: duplicatePurchaseUseCase,
   );
+});
+
+/// Customer purchases stream provider
+final customerPurchasesStreamProvider = StreamProvider.family<List<dynamic>, String>((ref, customerId) async* {
+  try {
+    final firestore = ref.watch(firestoreProvider);
+    final auth = ref.watch(firebaseAuthProvider);
+    final user = auth.currentUser;
+
+    if (user == null) {
+      yield [];
+      return;
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await firestore.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      yield [];
+      return;
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      yield [];
+      return;
+    }
+
+    // Müşteriye ait alışları getir
+    final snap = await firestore
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('purchases')
+        .where('customerId', isEqualTo: customerId)
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    final purchases = snap.docs.map((doc) {
+      final data = doc.data();
+      data['id'] = doc.id;
+      return data;
+    }).toList();
+
+    yield purchases;
+  } catch (e) {
+    debugPrint('Error loading customer purchases: $e');
+    yield [];
+  }
 });

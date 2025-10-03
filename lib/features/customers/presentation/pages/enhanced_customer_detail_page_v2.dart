@@ -18,6 +18,7 @@ import '../../../cash_management/presentation/providers/cash_management_provider
 import '../../../cash_management/domain/entities/cash_transaction.dart';
 import '../../../../core/services/business/transaction_service.dart';
 import '../../../sales/presentation/providers/sale_providers.dart' as sales;
+import '../../../purchases/presentation/providers/purchase_providers.dart' as purchases;
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -1076,66 +1077,7 @@ class _EnhancedCustomerDetailPageV2State
                 ),
 
                 // Alış Faturaları
-                DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 8),
-                      TabBar(
-                        isScrollable: true,
-                        labelColor: Theme.of(context).colorScheme.onSurface,
-                        tabs: const [
-                          Tab(text: 'Normal Alış'),
-                          Tab(text: 'Satıştan İade Alışı'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
-                          children: [
-                            // Normal Alış - purchase type ile filtrele
-                            Builder(
-                              builder: (_) {
-                                // Purchase modülünden purchases al
-                                // Şimdilik placeholder - gelecekte purchase entegrasyonu yapılacak
-                                return Center(
-                                  child: Text(
-                                    'Normal alış belgeleri müşteri yerine tedarikçi bazlıdır',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                            // Satıştan İade Alışı - returnPurchase type ile filtrele
-                            Builder(
-                              builder: (_) {
-                                // Purchase modülünden return purchases al
-                                // Şimdilik placeholder - gelecekte purchase entegrasyonu yapılacak
-                                return Center(
-                                  child: Text(
-                                    'Satıştan iade alışı listesi için alan henüz entegre değil',
-                                    textAlign: TextAlign.center,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: isDark
-                                          ? Colors.grey[400]
-                                          : Colors.grey[600],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildPurchasesTab(customer, isDark),
               ],
             ),
           ),
@@ -1216,6 +1158,136 @@ class _EnhancedCustomerDetailPageV2State
           'Ödemeler yüklenemedi',
           style: GoogleFonts.poppins(color: Colors.red),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPurchasesTab(Customer customer, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
+    final purchasesAsync =
+        ref.watch(purchases.customerPurchasesStreamProvider(customer.id));
+
+    final purchasesList = purchasesAsync.maybeWhen(
+      data: (value) => !mounted ? const [] : value,
+      orElse: () => const [],
+    );
+    final isLoading = purchasesAsync.isLoading;
+    final hasError = purchasesAsync.hasError;
+
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          TabBar(
+            isScrollable: true,
+            labelColor: Theme.of(context).colorScheme.onSurface,
+            tabs: const [
+              Tab(text: 'Normal Alış'),
+              Tab(text: 'Satıştan İade Alışı'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                // Normal Alış - normal purchase type ile filtrele
+                Builder(
+                  builder: (_) {
+                    if (isLoading) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    }
+                    if (hasError) {
+                      return Center(
+                        child: Text(
+                          'Normal alışlar yüklenemedi',
+                          style: GoogleFonts.poppins(
+                            color: Colors.red,
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    // Normal purchase type'a göre filtrele
+                    final filteredPurchases = purchasesList.where((purchase) {
+                      return _isPurchaseType(purchase, 'normal');
+                    }).toList();
+                    
+                    if (filteredPurchases.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Normal alış bulunamadı',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: isDark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredPurchases.length,
+                      itemBuilder: (context, index) {
+                        final purchase = filteredPurchases[index];
+                        return _buildPurchaseTile(purchase, isDark);
+                      },
+                    );
+                  },
+                ),
+                // Satıştan İade Alışı - returnFromSale purchase type ile filtrele
+                Builder(
+                  builder: (_) {
+                    if (isLoading) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    }
+                    if (hasError) {
+                      return Center(
+                        child: Text(
+                          'Satıştan iade alışları yüklenemedi',
+                          style: GoogleFonts.poppins(
+                            color: Colors.red,
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    // ReturnFromSale purchase type'a göre filtrele
+                    final filteredPurchases = purchasesList.where((purchase) {
+                      return _isPurchaseType(purchase, 'returnFromSale');
+                    }).toList();
+                    
+                    if (filteredPurchases.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'Satıştan iade alışı bulunamadı',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: isDark
+                                ? Colors.grey[400]
+                                : Colors.grey[600],
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: filteredPurchases.length,
+                      itemBuilder: (context, index) {
+                        final purchase = filteredPurchases[index];
+                        return _buildPurchaseTile(purchase, isDark);
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1312,6 +1384,32 @@ class _EnhancedCustomerDetailPageV2State
       default:
         return 'İşlem';
     }
+  }
+
+  // Purchase type filtreleme helper metodları
+  bool _isPurchaseType(dynamic purchase, String targetType) {
+    final type = purchase['type']?.toString() ?? '';
+    final purchaseType = purchase['purchaseType']?.toString() ?? '';
+    
+    // Debug için type'ları logla
+    debugPrint('Purchase type: $type, purchaseType: $purchaseType, targetType: $targetType');
+    
+    // PurchaseType enum kontrolü
+    if (type == 'PurchaseType.$targetType' || purchaseType == 'PurchaseType.$targetType') {
+      return true;
+    }
+    
+    // String kontrolü
+    if (type == targetType || purchaseType == targetType) {
+      return true;
+    }
+    
+    // Capitalize kontrolü
+    if (type == _capitalize(targetType) || purchaseType == _capitalize(targetType)) {
+      return true;
+    }
+    
+    return false;
   }
 
   // Invoice type filtreleme helper metodları
@@ -1561,14 +1659,110 @@ class _EnhancedCustomerDetailPageV2State
           );
   }
 
+  // Purchase tile widget
+  Widget _buildPurchaseTile(dynamic purchase, bool isDark) {
+    // purchase entity with known fields
+    final isPaid = purchase['isPaid'] as bool? ?? false;
+    final paymentStatus = purchase['paymentStatus']?.toString() ?? '';
+    final status = purchase['status']?.toString() ?? '';
+
+    // Debug için payment bilgilerini logla
+    debugPrint(
+        'Purchase payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status');
+
+    // Payment status'a göre isPaid hesapla
+    // isPaid field'ı primary, diğerleri sadece fallback
+    final actuallyPaid = isPaid ||
+        (paymentStatus == 'PaymentStatus.paid' && status != 'draft') ||
+        (status == 'PurchaseStatus.paid');
+
+    debugPrint('Final result - actuallyPaid: $actuallyPaid');
+    final color = actuallyPaid ? Colors.green : Colors.orange;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: const Icon(Icons.shopping_bag, color: Colors.orange),
+        ),
+        title: Text(
+          '${_getPurchaseTypeTitle(purchase)}: ${purchase['purchaseNumber'] ?? purchase['invoiceNumber'] ?? 'N/A'}',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Text(
+          DateFormat('dd.MM.yyyy').format(_parseDateTime(purchase['purchaseDate']) ??
+              _parseDateTime(purchase['invoiceDate']) ??
+              DateTime.now()),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              CurrencyHelper.formatCurrency(
+                  purchase['totalAmount'] ?? 0.0, purchase['currencyCode'] ?? 'TRY'),
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: Colors.orange,
+              ),
+            ),
+            Text(
+              actuallyPaid ? 'Ödendi' : 'Beklemede',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: actuallyPaid ? Colors.green : Colors.orange,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Purchase type'a göre başlık oluştur
+  String _getPurchaseTypeTitle(dynamic purchase) {
+    final type = purchase['type']?.toString() ?? '';
+    final purchaseType = purchase['purchaseType']?.toString() ?? '';
+    
+    // Debug için type'ları logla
+    debugPrint('Purchase type for title: $type, purchaseType: $purchaseType');
+    
+    // PurchaseType enum kontrolü
+    if (type == 'PurchaseType.normal' || purchaseType == 'PurchaseType.normal') {
+      return 'Normal Alış';
+    }
+    if (type == 'PurchaseType.returnFromSale' || purchaseType == 'PurchaseType.returnFromSale') {
+      return 'Satıştan İade Alışı';
+    }
+    
+    // String kontrolü
+    if (type == 'normal' || purchaseType == 'normal') {
+      return 'Normal Alış';
+    }
+    if (type == 'returnFromSale' || purchaseType == 'returnFromSale') {
+      return 'Satıştan İade Alışı';
+    }
+    
+    // Capitalize kontrolü
+    if (type == 'Normal' || purchaseType == 'Normal') {
+      return 'Normal Alış';
+    }
+    if (type == 'ReturnFromSale' || purchaseType == 'ReturnFromSale') {
+      return 'Satıştan İade Alışı';
+    }
+    
+    // Default fallback
+    return 'Normal Alış';
+  }
+
   // Invoice type'a göre başlık oluştur
   String _getInvoiceTypeTitle(dynamic invoice) {
     final type = invoice['type']?.toString() ?? '';
     final saleType = invoice['saleType']?.toString() ?? '';
-    
+
     // Debug için type'ları logla
     debugPrint('Invoice type for title: $type, saleType: $saleType');
-    
+
     // SaleType enum kontrolü
     if (type == 'SaleType.invoice' || saleType == 'SaleType.invoice') {
       return 'Fatura';
@@ -1579,7 +1773,7 @@ class _EnhancedCustomerDetailPageV2State
     if (type == 'SaleType.proforma' || saleType == 'SaleType.proforma') {
       return 'Proforma';
     }
-    
+
     // String kontrolü
     if (type == 'invoice' || saleType == 'invoice') {
       return 'Fatura';
@@ -1590,7 +1784,7 @@ class _EnhancedCustomerDetailPageV2State
     if (type == 'proforma' || saleType == 'proforma') {
       return 'Proforma';
     }
-    
+
     // Capitalize kontrolü
     if (type == 'Invoice' || saleType == 'Invoice') {
       return 'Fatura';
@@ -1601,7 +1795,7 @@ class _EnhancedCustomerDetailPageV2State
     if (type == 'Proforma' || saleType == 'Proforma') {
       return 'Proforma';
     }
-    
+
     // Default fallback
     return 'Fatura';
   }
