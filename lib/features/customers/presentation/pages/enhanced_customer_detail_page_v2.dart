@@ -41,28 +41,30 @@ class _EnhancedCustomerDetailPageV2State
   int _selectedTabIndex = 0;
   final bool _hasLoadedTransactions = false;
 
+  void _tabListener() {
+    if (mounted) {
+      setState(() {
+        _selectedTabIndex = _tabController.index;
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _tabController.addListener(() {
-      setState(() {
-        _selectedTabIndex = _tabController.index;
-      });
-    });
+    _tabController.addListener(_tabListener);
     // Load cash transactions to enable payment counts and lists
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
+      if (mounted) {
+        ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
+      }
     });
   }
 
   @override
   void dispose() {
-    _tabController.removeListener(() {
-      setState(() {
-        _selectedTabIndex = _tabController.index;
-      });
-    });
+    _tabController.removeListener(_tabListener);
     _tabController.dispose();
     super.dispose();
   }
@@ -98,6 +100,9 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildCustomerDetail(Customer customer, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
     return Column(
       children: [
         // Müşteri bilgi kartı
@@ -123,6 +128,9 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildCustomerInfoCard(Customer customer, bool isDark) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
     final balanceColor = customer.balance > 0
         ? Colors.green
         : customer.balance < 0
@@ -845,6 +853,9 @@ class _EnhancedCustomerDetailPageV2State
 
   Future<List<dynamic>> _loadCustomerTransactions(String customerId) async {
     try {
+      // Widget dispose edildiyse işlemi durdur
+      if (!mounted) return [];
+      
       final transactionService = TransactionService();
       final transactions =
           await transactionService.getCustomerTransactions(customerId);
@@ -1434,11 +1445,12 @@ class _EnhancedCustomerDetailPageV2State
     // Debug için payment bilgilerini logla
     debugPrint(
         'Invoice payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status');
-    debugPrint('Payment logic - isPaid: $isPaid, paymentStatus==PaymentStatus.paid: ${paymentStatus == 'PaymentStatus.paid'}, status!=draft: ${status != 'draft'}, status==SaleStatus.paid: ${status == 'SaleStatus.paid'}');
+    debugPrint(
+        'Payment logic - isPaid: $isPaid, paymentStatus==PaymentStatus.paid: ${paymentStatus == 'PaymentStatus.paid'}, status!=draft: ${status != 'draft'}, status==SaleStatus.paid: ${status == 'SaleStatus.paid'}');
 
     // Payment status'a göre isPaid hesapla
     // isPaid field'ı primary, diğerleri sadece fallback
-    final actuallyPaid = isPaid || 
+    final actuallyPaid = isPaid ||
         (paymentStatus == 'PaymentStatus.paid' && status != 'draft') ||
         (status == 'SaleStatus.paid');
 
