@@ -573,7 +573,7 @@ class TamgaciRoutes {
       // ========== RAPORLAR ROUTE'LARI ==========
 
       case reportsList:
-        return _createRoute(const EnhancedReportsListPage(),
+        return _createRoute(const ReportsOverviewPage(),
             settings: settings);
 
       case createReport:
