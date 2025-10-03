@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../domain/entities/stock_count.dart';
 import '../providers/stock_count_providers.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
 import '../../../products/presentation/providers/product_providers.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
+import '../../../../core/theme/constants.dart';
 
 /// Stok Sayımı Sayfası
 class StockCountPage extends ConsumerStatefulWidget {
@@ -91,21 +95,95 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     }
   }
 
+  Widget _buildWelcomeCard(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Stok Sayımı',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${widget.warehouse.name} deposu için stok sayımı yapın',
+            maxLines: 1,
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.9),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     // Yeni stok sayımı oluşturulurken veya henüz yüklenmediyse loading göster
     if (_stockCount == null || _isInitializing) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Stok Sayımı'),
+      return ResponsiveScaffold(
+        appBar: const CustomAppBar(
+          title: 'Stok Sayımı',
+          showDrawer: true,
         ),
+        drawerContent: const TamgaciDrawerMenu(),
         body: const Center(
           child: CircularProgressIndicator(),
         ),
       );
     }
 
-    return Scaffold(
+    return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Stok Sayımı - ${widget.warehouse.name}',
         showBackButton: false,
@@ -125,13 +203,21 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildStockCountHeader(),
-          _buildSearchAndFilters(),
-          _buildStatistics(),
-          Expanded(child: _buildProductList()),
-        ],
+      drawerContent: const TamgaciDrawerMenu(),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildWelcomeCard(isDark),
+            const SizedBox(height: 16),
+            _buildStockCountHeader(),
+            _buildSearchAndFilters(),
+            _buildStatistics(),
+            SizedBox(
+              height: MediaQuery.of(context).size.height - 400,
+              child: _buildProductList(),
+            ),
+          ],
+        ),
       ),
     );
   }

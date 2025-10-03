@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -83,12 +84,81 @@ class _EnhancedSuppliersListPageState
     Navigator.of(context).pushNamed('/suppliers/detail', arguments: supplierId);
   }
 
+  Widget _buildWelcomeCard(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Tedarikçiler',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Tedarikçi bilgilerini yönetin ve takip edin',
+            maxLines: 1,
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.9),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final operationsState = ref.watch(supplierOperationsProvider);
     final searchQuery = _searchController.text;
-
-    Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ResponsiveScaffold(
       appBar: const CustomAppBar(
@@ -99,18 +169,24 @@ class _EnhancedSuppliersListPageState
       persistentOnLarge: false,
       body: Stack(
         children: [
-          Column(
-            children: [
-              // Arama ve filtre çubuğu
-              _buildSearchAndFilterBar(),
-
-              // İstatistik kartları
-              _buildStatsCards(operationsState.suppliers),
-
-              // Tedarikçi listesi
-              Expanded(
-                  child: _buildSuppliersList(operationsState, searchQuery)),
-            ],
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildWelcomeCard(isDark),
+                const SizedBox(height: 16),
+                // Arama ve filtre çubuğu
+                _buildSearchAndFilterBar(),
+                const SizedBox(height: 16),
+                // İstatistik kartları
+                _buildStatsCards(operationsState.suppliers),
+                const SizedBox(height: 16),
+                // Tedarikçi listesi
+                SizedBox(
+                  height: MediaQuery.of(context).size.height - 400,
+                  child: _buildSuppliersList(operationsState, searchQuery),
+                ),
+              ],
+            ),
           ),
           // Floating Action Button
           Align(

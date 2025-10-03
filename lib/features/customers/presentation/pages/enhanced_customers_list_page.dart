@@ -206,7 +206,8 @@ class _EnhancedCustomersListPageState
                   height: MediaQuery.of(context).size.height - 300,
                   child: customersAsync.when(
                     data: (customers) => _buildCustomersList(customers, isDark),
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (error, stack) => Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
