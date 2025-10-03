@@ -17,6 +17,7 @@ import '../providers/customer_providers.dart';
 import '../../../invoices/presentation/providers/invoice_providers.dart';
 import '../../../cash_management/presentation/providers/cash_management_providers.dart';
 import '../../../cash_management/domain/entities/cash_transaction.dart';
+import '../../../../core/services/business/transaction_service.dart';
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -675,6 +676,7 @@ class _EnhancedCustomerDetailPageV2State
     final invoicesAsync =
         ref.watch(customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
+    final customerTransactionsAsync = ref.watch(customerTransactionsStreamProvider(customer.id));
 
     // Cash transactions'ı yükle (sadece bir kez, hata durumunda retry yapma)
     // Sadece ilk yüklemede çağır, tekrar yükleme yapma
@@ -727,12 +729,18 @@ class _EnhancedCustomerDetailPageV2State
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
 
-        // Müşteriye özel işlemler (satış, alış, tahsilat)
-        final customerTransactions = cashState.cashTransactions
+        // Müşteriye özel işlemler (satış, alış, tahsilat) - Cash transactions
+        final customerCashTransactions = cashState.cashTransactions
             .where((t) =>
                 t.relatedDocumentId == customer.id ||
                 t.metadata['customerId'] == customer.id)
             .toList();
+
+        // Müşteri işlemleri - TransactionService'den
+        final customerTransactions = customerTransactionsAsync.maybeWhen(
+          data: (transactions) => transactions,
+          orElse: () => <Transaction>[],
+        );
 
         final entries = <Map<String, dynamic>>[
           // Faturalar
@@ -747,7 +755,13 @@ class _EnhancedCustomerDetailPageV2State
                 'date': t.transactionDate,
                 'data': t,
               }),
-          // Müşteri işlemleri
+          // Müşteri cash işlemleri
+          ...customerCashTransactions.map((t) => {
+                'type': 'cash_transaction',
+                'date': t.transactionDate,
+                'data': t,
+              }),
+          // Müşteri işlemleri (TransactionService'den)
           ...customerTransactions.map((t) => {
                 'type': 'transaction',
                 'date': t.transactionDate,
@@ -820,7 +834,7 @@ class _EnhancedCustomerDetailPageV2State
             } else if (entry['type'] == 'payment') {
               return _buildPaymentTile(entry['data'], isDark);
             } else {
-              return _buildTransactionTile(entry['data'], isDark);
+              return _buildCashTransactionTile(entry['data'], isDark);
             }
           },
         );
@@ -1074,7 +1088,7 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
-  Widget _buildTransactionTile(CashTransaction t, bool isDark) {
+  Widget _buildCashTransactionTile(CashTransaction t, bool isDark) {
     final color =
         t.type == CashTransactionType.income ? Colors.green : Colors.red;
     final icon = t.type == CashTransactionType.income
@@ -1133,6 +1147,70 @@ class _EnhancedCustomerDetailPageV2State
         ),
       ),
     );
+  }
+
+  Widget _buildTransactionTile(Transaction t, bool isDark) {
+    final color = _getTransactionTypeColor(t.type);
+    final icon = _getTransactionTypeIcon(t.type);
+    
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(
+          t.documentNumber ?? t.id,
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+        ),
+        subtitle: Text(
+          '${t.description} • ${DateFormat('dd.MM.yyyy').format(t.transactionDate)}',
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
+        trailing: Text(
+          CurrencyHelper.formatCurrency(t.amount, t.currency),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getTransactionTypeColor(TransactionType type) {
+    switch (type) {
+      case TransactionType.sale:
+      case TransactionType.invoice:
+        return Colors.green;
+      case TransactionType.payment:
+        return Colors.blue;
+      case TransactionType.refund:
+      case TransactionType.credit:
+        return Colors.orange;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getTransactionTypeIcon(TransactionType type) {
+    switch (type) {
+      case TransactionType.sale:
+      case TransactionType.invoice:
+        return Icons.shopping_cart;
+      case TransactionType.payment:
+        return Icons.payment;
+      case TransactionType.refund:
+        return Icons.undo;
+      case TransactionType.credit:
+        return Icons.credit_card;
+      default:
+        return Icons.swap_horiz;
+    }
   }
 
   Widget _buildInvoiceTile(dynamic invoice, bool isDark) {
@@ -1254,12 +1332,21 @@ class _EnhancedCustomerDetailPageV2State
     final invoicesAsync =
         ref.watch(customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
+    final customerTransactionsAsync = ref.watch(customerTransactionsStreamProvider(customer.id));
+    
     return invoicesAsync.when(
       data: (invoices) {
         final invoiceIds = invoices.map((e) => e.id).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
+            
+        // Müşteri işlemleri - TransactionService'den
+        final customerTransactions = customerTransactionsAsync.maybeWhen(
+          data: (transactions) => transactions,
+          orElse: () => <Transaction>[],
+        );
+        
         final entries = <Map<String, dynamic>>[
           ...invoices.map((i) => {
                 'type': 'invoice',
@@ -1268,6 +1355,12 @@ class _EnhancedCustomerDetailPageV2State
               }),
           ...payments.map((t) => {
                 'type': 'payment',
+                'date': t.transactionDate,
+                'data': t,
+              }),
+          // Müşteri işlemleri (TransactionService'den)
+          ...customerTransactions.map((t) => {
+                'type': 'transaction',
                 'date': t.transactionDate,
                 'data': t,
               }),
@@ -1308,6 +1401,8 @@ class _EnhancedCustomerDetailPageV2State
                     final entry = entries[index];
                     if (entry['type'] == 'invoice') {
                       return _buildInvoiceTile(entry['data'], isDark);
+                    } else if (entry['type'] == 'transaction') {
+                      return _buildTransactionTile(entry['data'], isDark);
                     } else {
                       return _buildPaymentTile(entry['data'], isDark);
                     }
