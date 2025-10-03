@@ -753,8 +753,8 @@ class PurchaseFirebaseDataSource {
         'startDate': startDate,
         'endDate': endDate,
         'totalCount': purchases.length,
-        'totalAmount': purchases.fold<double>(0, (sum, purchase) {
-          return sum + (purchase['totalAmount'] as num? ?? 0).toDouble();
+        'totalAmount': purchases.fold<double>(0, (total, purchase) {
+          return total + (purchase['totalAmount'] as num? ?? 0).toDouble();
         }),
         'purchases': purchases,
       };
