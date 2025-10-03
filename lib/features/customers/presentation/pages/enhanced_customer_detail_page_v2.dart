@@ -1026,14 +1026,11 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
-  Widget _buildTransactionTile(CashTransaction t, bool isDark) {
-    final color =
-        t.type == CashTransactionType.income ? Colors.green : Colors.red;
-    final icon = t.type == CashTransactionType.income
-        ? Icons.trending_up
-        : Icons.trending_down;
-    final typeText =
-        t.type == CashTransactionType.income ? 'Tahsilat' : 'Ödeme';
+  Widget _buildTransactionTile(dynamic t, bool isDark) {
+    // Transaction object from TransactionService
+    final color = Colors.blue; // Default color for transactions
+    final icon = Icons.receipt;
+    final typeText = 'İşlem';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1043,14 +1040,14 @@ class _EnhancedCustomerDetailPageV2State
           child: Icon(icon, color: color),
         ),
         title: Text(
-          '$typeText - ${t.transactionNumber}',
+          '$typeText - ${t.transactionNumber ?? 'N/A'}',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              DateFormat('dd.MM.yyyy HH:mm').format(t.transactionDate),
+              DateFormat('dd.MM.yyyy HH:mm').format(t.transactionDate ?? DateTime.now()),
             ),
             if (t.description != null && t.description!.isNotEmpty)
               Text(
@@ -1067,7 +1064,7 @@ class _EnhancedCustomerDetailPageV2State
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              CurrencyHelper.formatCurrency(t.amount, t.currency),
+              CurrencyHelper.formatCurrency(t.amount ?? 0.0, t.currency ?? 'TRY'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: color,
@@ -1223,8 +1220,14 @@ class _EnhancedCustomerDetailPageV2State
                 'date': t.transactionDate,
                 'data': t,
               }),
-        ]..sort(
-            (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+        ]..sort((a, b) {
+            final dateA = a['date'] as DateTime?;
+            final dateB = b['date'] as DateTime?;
+            if (dateA == null && dateB == null) return 0;
+            if (dateA == null) return 1;
+            if (dateB == null) return -1;
+            return dateB.compareTo(dateA);
+          });
 
         return Card(
           child: Column(
