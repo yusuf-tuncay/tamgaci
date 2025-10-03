@@ -193,52 +193,54 @@ class _EnhancedCustomersListPageState
       appBar: const CustomAppBar(title: 'Müşteriler', showDrawer: true),
       drawerContent: const TamgaciDrawerMenu(),
       persistentOnLarge: false,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildWelcomeCard(isDark),
-            const SizedBox(height: 16),
-            _buildSearchAndFilters(isDark),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: MediaQuery.of(context).size.height - 300,
-              child: customersAsync.when(
-                data: (customers) => _buildCustomersList(customers, isDark),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 64,
-                        color: Colors.red,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                _buildWelcomeCard(isDark),
+                const SizedBox(height: 16),
+                _buildSearchAndFilters(isDark),
+                const SizedBox(height: 16),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height - 300,
+                  child: customersAsync.when(
+                    data: (customers) => _buildCustomersList(customers, isDark),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) => Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Müşteriler yüklenirken hata oluştu',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              color: Colors.red,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            error.toString(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Müşteriler yüklenirken hata oluştu',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color: Colors.red,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        error.toString(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: Colors.grey,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
