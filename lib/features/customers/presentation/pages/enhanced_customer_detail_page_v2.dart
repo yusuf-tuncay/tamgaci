@@ -681,14 +681,18 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildTransactionsTab(Customer customer, bool isDark) {
-    // Customer transactions için TransactionService kullan
+    // Tüm işlemler: Faturalar + Ödemeler + İşlemler
+    final invoicesAsync =
+        ref.watch(sales.customerInvoicesStreamProvider(customer.id));
+    final cashState = ref.watch(cashManagementNotifierProvider);
+
     return FutureBuilder<List<dynamic>>(
       future: _loadCustomerTransactions(customer.id),
-      builder: (context, snapshot) {
+      builder: (context, transactionSnapshot) {
         // Widget dispose edildiyse boş widget döndür
         if (!mounted) return const SizedBox.shrink();
 
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (transactionSnapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -708,7 +712,7 @@ class _EnhancedCustomerDetailPageV2State
           );
         }
 
-        if (snapshot.hasError) {
+        if (transactionSnapshot.hasError) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -729,7 +733,7 @@ class _EnhancedCustomerDetailPageV2State
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Hata: ${snapshot.error}',
+                  'Hata: ${transactionSnapshot.error}',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
                     color: Colors.red,
@@ -741,39 +745,92 @@ class _EnhancedCustomerDetailPageV2State
           );
         }
 
-        final transactions = snapshot.data ?? [];
+        // Tüm işlemleri birleştir: Faturalar + Ödemeler + İşlemler
+        return invoicesAsync.when(
+          data: (invoices) {
+            final transactions = transactionSnapshot.data ?? [];
+            final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
+            final payments = cashState.cashTransactions
+                .where((t) => invoiceIds.contains(t.relatedDocumentId))
+                .toList();
 
-        if (transactions.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.receipt_long,
-                  size: 64,
-                  color: isDark ? Colors.grey[600] : Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Henüz işlem bulunmuyor',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
+            // Tüm işlemleri birleştir ve tarihe göre sırala (en yeni en üstte)
+            final allItems = <Map<String, dynamic>>[
+              // Faturalar
+              ...invoices.map((i) => {
+                    'type': 'invoice',
+                    'date': _parseDateTime(i['saleDate']) ?? 
+                            _parseDateTime(i['invoiceDate']) ?? 
+                            DateTime.now(),
+                    'data': i,
+                  }),
+              // Ödemeler
+              ...payments.map((t) => {
+                    'type': 'payment',
+                    'date': t.transactionDate,
+                    'data': t,
+                  }),
+              // İşlemler
+              ...transactions.map((t) => {
+                    'type': 'transaction',
+                    'date': _parseDateTime(t.transactionDate) ?? DateTime.now(),
+                    'data': t,
+                  }),
+            ]..sort((a, b) {
+                final dateA = a['date'] as DateTime?;
+                final dateB = b['date'] as DateTime?;
+                if (dateA == null && dateB == null) return 0;
+                if (dateA == null) return 1;
+                if (dateB == null) return -1;
+                return dateB.compareTo(dateA); // En yeni en üstte
+              });
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: transactions.length,
-          itemBuilder: (context, index) {
-            final transaction = transactions[index];
-            return _buildTransactionTile(transaction, isDark);
+            if (allItems.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.receipt_long,
+                      size: 64,
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Henüz işlem bulunmuyor',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: allItems.length,
+              itemBuilder: (context, index) {
+                final item = allItems[index];
+                if (item['type'] == 'invoice') {
+                  return _buildInvoiceTile(item['data'], isDark);
+                } else if (item['type'] == 'payment') {
+                  return _buildPaymentTile(item['data'], isDark);
+                } else {
+                  return _buildTransactionTile(item['data'], isDark);
+                }
+              },
+            );
           },
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(
+            child: Text(
+              'İşlemler yüklenemedi',
+              style: GoogleFonts.poppins(color: Colors.red),
+            ),
+          ),
         );
       },
     );
@@ -1067,51 +1124,51 @@ class _EnhancedCustomerDetailPageV2State
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
-        // Invoices ve payments'ı birleştir
-        final allItems = <Map<String, dynamic>>[
-          // Faturalar
-          ...invoices.map((i) => {
-                'type': 'invoice',
-                'date': i['invoiceDate'],
-                'data': i,
-              }),
-          // Ödemeler
-          ...payments.map((t) => {
-                'type': 'payment',
-                'date': t.transactionDate,
-                'data': t,
-              }),
-        ]..sort((a, b) {
+        // Sadece ödemeleri göster (faturalar değil)
+        final paymentItems = payments.map((t) => {
+              'type': 'payment',
+              'date': t.transactionDate,
+              'data': t,
+            }).toList()
+          ..sort((a, b) {
             final dateA = a['date'] as DateTime?;
             final dateB = b['date'] as DateTime?;
             if (dateA == null && dateB == null) return 0;
             if (dateA == null) return 1;
             if (dateB == null) return -1;
-            return dateB.compareTo(dateA);
+            return dateB.compareTo(dateA); // En yeni en üstte
           });
 
-        if (allItems.isEmpty) {
+        if (paymentItems.isEmpty) {
           return Center(
-            child: Text(
-              'Fatura veya ödeme bulunamadı',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.payment,
+                  size: 64,
+                  color: isDark ? Colors.grey[600] : Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Henüz ödeme bulunmuyor',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
+              ],
             ),
           );
         }
 
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: allItems.length,
+          itemCount: paymentItems.length,
           itemBuilder: (context, index) {
-            final item = allItems[index];
-            if (item['type'] == 'invoice') {
-              return _buildInvoiceTile(item['data'], isDark);
-            } else {
-              return _buildPaymentTile(item['data'], isDark);
-            }
+            final item = paymentItems[index];
+            return _buildPaymentTile(item['data'], isDark);
           },
         );
       },
@@ -1220,25 +1277,27 @@ class _EnhancedCustomerDetailPageV2State
   bool _isInvoiceType(dynamic invoice, String targetType) {
     final type = invoice['type']?.toString() ?? '';
     final saleType = invoice['saleType']?.toString() ?? '';
-    
+
     // Debug için type'ları logla
-    debugPrint('Invoice type: $type, saleType: $saleType, targetType: $targetType');
-    
+    debugPrint(
+        'Invoice type: $type, saleType: $saleType, targetType: $targetType');
+
     // SaleType enum kontrolü
     if (type == 'SaleType.$targetType' || saleType == 'SaleType.$targetType') {
       return true;
     }
-    
+
     // String kontrolü
     if (type == targetType || saleType == targetType) {
       return true;
     }
-    
+
     // Capitalize kontrolü
-    if (type == _capitalize(targetType) || saleType == _capitalize(targetType)) {
+    if (type == _capitalize(targetType) ||
+        saleType == _capitalize(targetType)) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -1350,17 +1409,18 @@ class _EnhancedCustomerDetailPageV2State
     final isPaid = invoice['isPaid'] as bool? ?? false;
     final paymentStatus = invoice['paymentStatus']?.toString() ?? '';
     final status = invoice['status']?.toString() ?? '';
-    
+
     // Debug için payment bilgilerini logla
-    debugPrint('Invoice payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status');
-    
+    debugPrint(
+        'Invoice payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status');
+
     // Payment status'a göre isPaid hesapla
-    final actuallyPaid = isPaid || 
-        paymentStatus == 'paid' || 
+    final actuallyPaid = isPaid ||
+        paymentStatus == 'paid' ||
         paymentStatus == 'PaymentStatus.paid' ||
         status == 'paid' ||
         status == 'SaleStatus.paid';
-    
+
     final color = actuallyPaid ? Colors.green : Colors.blue;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1503,7 +1563,7 @@ class _EnhancedCustomerDetailPageV2State
             if (dateA == null && dateB == null) return 0;
             if (dateA == null) return 1;
             if (dateB == null) return -1;
-            return dateB.compareTo(dateA);
+            return dateA.compareTo(dateB); // En son en altta (kronolojik sıra)
           });
 
         return Card(
