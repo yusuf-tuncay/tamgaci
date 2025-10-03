@@ -27,6 +27,9 @@ class ProductVariantsWidget extends ConsumerWidget {
 
     return productsAsync.when(
       data: (products) {
+        // Widget dispose edildiyse boş widget döndür
+        if (!context.mounted) return const SizedBox.shrink();
+        
         // Varyantlı ürünleri filtrele
         final productsWithVariants = products
             .where((product) =>
