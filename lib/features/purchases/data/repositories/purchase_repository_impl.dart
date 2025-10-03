@@ -14,13 +14,9 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
 
   @override
   Future<List<Purchase>> getAllPurchases({
-    int? limit,
-    int? offset,
+    bool includeItems = true,
   }) async {
-    final purchaseModels = await _dataSource.getAllPurchases(
-      limit: limit,
-      offset: offset,
-    );
+    final purchaseModels = await _dataSource.getAllPurchases();
     return purchaseModels.map((model) => model.toEntity()).toList();
   }
 
@@ -107,11 +103,11 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
   }
 
   @override
-  Future<Purchase> createPurchase(Purchase purchase) async {
+  Future<String> createPurchase(Purchase purchase) async {
     final purchaseModel = PurchaseModel.fromEntity(purchase);
     final createdPurchaseModel =
         await _dataSource.createPurchase(purchaseModel);
-    return createdPurchaseModel.toEntity();
+    return createdPurchaseModel.id;
   }
 
   @override
@@ -327,8 +323,8 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
   }
 
   @override
-  Future<String> generatePurchaseNumber(PurchaseType type) async {
-    return await _dataSource.generatePurchaseNumber(type);
+  Future<String> generatePurchaseNumber() async {
+    return await _dataSource.generatePurchaseNumber(PurchaseType.purchase);
   }
 
   @override
@@ -338,8 +334,7 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
       throw Exception('Satın alma bulunamadı');
     }
 
-    final newPurchaseNumber =
-        await generatePurchaseNumber(originalPurchase.type);
+    final newPurchaseNumber = await generatePurchaseNumber();
 
     final duplicatedPurchase = originalPurchase.copyWith(
       id: '', // Yeni ID oluşturulacak
@@ -351,7 +346,8 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
       updatedAt: DateTime.now(),
     );
 
-    return await createPurchase(duplicatedPurchase);
+    final purchaseId = await createPurchase(duplicatedPurchase);
+    return duplicatedPurchase.copyWith(id: purchaseId);
   }
 
   @override
@@ -394,5 +390,29 @@ class PurchaseRepositoryImpl implements PurchaseRepository {
   @override
   Future<Purchase> receivePurchase(String id) async {
     return await updatePurchaseStatus(id, PurchaseStatus.received);
+  }
+
+  @override
+  Future<List<Purchase>> getPurchasesBySupplierId(String supplierId) async {
+    final purchaseModels = await _dataSource.getPurchasesBySupplier(supplierId);
+    return purchaseModels.map((model) => model.toEntity()).toList();
+  }
+
+  @override
+  Stream<List<Purchase>> watchAllPurchases() async* {
+    // Stream implementation - şimdilik boş
+    yield [];
+  }
+
+  @override
+  Stream<Purchase?> watchPurchaseById(String id) async* {
+    // Stream implementation - şimdilik boş
+    yield null;
+  }
+
+  @override
+  Stream<List<Purchase>> watchPurchasesBySupplierId(String supplierId) async* {
+    // Stream implementation - şimdilik boş
+    yield [];
   }
 }

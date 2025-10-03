@@ -38,15 +38,13 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
 
   /// Tüm satın almaları getirir
   Future<void> getPurchases({
-    int? limit,
-    int? offset,
+    bool includeItems = true,
   }) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final purchases = await _getPurchasesUseCase.call(
-        limit: limit,
-        offset: offset,
+        includeItems: includeItems,
       );
 
       state = state.copyWith(
@@ -62,19 +60,11 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
   }
 
   /// Tedarikçiye göre satın almaları getirir
-  Future<void> getPurchasesBySupplier(
-    String supplierId, {
-    int? limit,
-    int? offset,
-  }) async {
+  Future<void> getPurchasesBySupplier(String supplierId) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final purchases = await _getPurchasesUseCase.getBySupplier(
-        supplierId,
-        limit: limit,
-        offset: offset,
-      );
+      final purchases = await _getPurchasesUseCase.getBySupplier(supplierId);
 
       state = state.copyWith(
         isLoading: false,

@@ -12,8 +12,7 @@ class CreatePurchaseUseCase {
   /// Returns: Oluşturulan satın alma
   Future<Purchase> call(Purchase purchase) async {
     // Satın alma numarası otomatik oluşturulacak
-    final purchaseNumber =
-        await _repository.generatePurchaseNumber(purchase.type);
+    final purchaseNumber = await _repository.generatePurchaseNumber();
 
     final newPurchase = purchase.copyWith(
       purchaseNumber: purchaseNumber,
@@ -21,6 +20,7 @@ class CreatePurchaseUseCase {
       updatedAt: DateTime.now(),
     );
 
-    return await _repository.createPurchase(newPurchase);
+    final purchaseId = await _repository.createPurchase(newPurchase);
+    return newPurchase.copyWith(id: purchaseId);
   }
 }

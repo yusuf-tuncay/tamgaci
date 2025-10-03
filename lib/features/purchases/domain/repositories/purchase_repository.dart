@@ -4,12 +4,10 @@ import 'package:tamgaci/features/purchases/domain/entities/purchase.dart';
 /// Bu interface, satın alma ile ilgili tüm veri işlemlerini tanımlar.
 abstract class PurchaseRepository {
   /// Tüm satın almaları getirir
-  /// [limit]: Maksimum satın alma sayısı
-  /// [offset]: Atlanacak satın alma sayısı
+  /// [includeItems]: Ürün detaylarını dahil et
   /// Returns: Satın alma listesi
   Future<List<Purchase>> getAllPurchases({
-    int? limit,
-    int? offset,
+    bool includeItems = true,
   });
 
   /// ID'ye göre satın alma getirir
@@ -79,8 +77,8 @@ abstract class PurchaseRepository {
 
   /// Yeni satın alma oluşturur
   /// [purchase]: Oluşturulacak satın alma
-  /// Returns: Oluşturulan satın alma
-  Future<Purchase> createPurchase(Purchase purchase);
+  /// Returns: Oluşturulan satın alma ID'si
+  Future<String> createPurchase(Purchase purchase);
 
   /// Satın alma günceller
   /// [purchase]: Güncellenecek satın alma
@@ -194,9 +192,8 @@ abstract class PurchaseRepository {
   });
 
   /// Satın alma numarası oluşturur
-  /// [type]: Satın alma türü
   /// Returns: Satın alma numarası
-  Future<String> generatePurchaseNumber(PurchaseType type);
+  Future<String> generatePurchaseNumber();
 
   /// Satın alma kopyalar
   /// [id]: Kopyalanacak satın alma ID'si
@@ -224,4 +221,23 @@ abstract class PurchaseRepository {
   /// [id]: Satın alma ID'si
   /// Returns: Güncellenmiş satın alma
   Future<Purchase> receivePurchase(String id);
+
+  /// Tedarikçiye göre satın almaları getirir (ID ile)
+  /// [supplierId]: Tedarikçi ID'si
+  /// Returns: Satın alma listesi
+  Future<List<Purchase>> getPurchasesBySupplierId(String supplierId);
+
+  /// Tüm satın almaları izler
+  /// Returns: Satın alma stream'i
+  Stream<List<Purchase>> watchAllPurchases();
+
+  /// ID'ye göre satın alma izler
+  /// [id]: Satın alma ID'si
+  /// Returns: Satın alma stream'i
+  Stream<Purchase?> watchPurchaseById(String id);
+
+  /// Tedarikçiye göre satın almaları izler
+  /// [supplierId]: Tedarikçi ID'si
+  /// Returns: Satın alma stream'i
+  Stream<List<Purchase>> watchPurchasesBySupplierId(String supplierId);
 }

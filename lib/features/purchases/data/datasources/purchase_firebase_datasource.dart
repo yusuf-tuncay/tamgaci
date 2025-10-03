@@ -614,4 +614,155 @@ class PurchaseFirebaseDataSource {
       return '$prefix-$datePrefix-$fallbackNumber';
     }
   }
+
+  /// Satın alma onaylar
+  Future<PurchaseModel> approvePurchase(String id) async {
+    try {
+      final col = await _tenantPurchases();
+      final doc = await col.doc(id).get();
+
+      if (!doc.exists) {
+        throw Exception('Satın alma bulunamadı');
+      }
+
+      final data = doc.data()!;
+      data['status'] = 'PurchaseStatus.confirmed';
+      data['updatedAt'] = FieldValue.serverTimestamp();
+
+      await col.doc(id).update(data);
+      return PurchaseModel.fromFirestore(doc);
+    } catch (e) {
+      AppLogger.error('Error approving purchase', e);
+      rethrow;
+    }
+  }
+
+  /// Satın alma teslim alır
+  Future<PurchaseModel> receivePurchase(String id) async {
+    try {
+      final col = await _tenantPurchases();
+      final doc = await col.doc(id).get();
+
+      if (!doc.exists) {
+        throw Exception('Satın alma bulunamadı');
+      }
+
+      final data = doc.data()!;
+      data['status'] = 'PurchaseStatus.received';
+      data['updatedAt'] = FieldValue.serverTimestamp();
+
+      await col.doc(id).update(data);
+      return PurchaseModel.fromFirestore(doc);
+    } catch (e) {
+      AppLogger.error('Error receiving purchase', e);
+      rethrow;
+    }
+  }
+
+  /// Satın alma iptal eder
+  Future<PurchaseModel> cancelPurchase(String id, String reason) async {
+    try {
+      final col = await _tenantPurchases();
+      final doc = await col.doc(id).get();
+
+      if (!doc.exists) {
+        throw Exception('Satın alma bulunamadı');
+      }
+
+      final data = doc.data()!;
+      data['status'] = 'PurchaseStatus.cancelled';
+      data['notes'] = '${data['notes'] ?? ''}\nİptal nedeni: $reason'.trim();
+      data['updatedAt'] = FieldValue.serverTimestamp();
+
+      await col.doc(id).update(data);
+      return PurchaseModel.fromFirestore(doc);
+    } catch (e) {
+      AppLogger.error('Error cancelling purchase', e);
+      rethrow;
+    }
+  }
+
+  /// Satın alma iade eder
+  Future<PurchaseModel> returnPurchase(String id, String reason) async {
+    try {
+      final col = await _tenantPurchases();
+      final doc = await col.doc(id).get();
+
+      if (!doc.exists) {
+        throw Exception('Satın alma bulunamadı');
+      }
+
+      final data = doc.data()!;
+      data['status'] = 'PurchaseStatus.returned';
+      data['notes'] = '${data['notes'] ?? ''}\nİade nedeni: $reason'.trim();
+      data['updatedAt'] = FieldValue.serverTimestamp();
+
+      await col.doc(id).update(data);
+      return PurchaseModel.fromFirestore(doc);
+    } catch (e) {
+      AppLogger.error('Error returning purchase', e);
+      rethrow;
+    }
+  }
+
+  /// Satın alma kopyalar
+  Future<PurchaseModel> duplicatePurchase(String id) async {
+    try {
+      final col = await _tenantPurchases();
+      final doc = await col.doc(id).get();
+
+      if (!doc.exists) {
+        throw Exception('Satın alma bulunamadı');
+      }
+
+      final data = doc.data()!;
+      data['id'] = null; // Yeni ID oluşturulacak
+      data['purchaseNumber'] =
+          await generatePurchaseNumber(PurchaseType.purchase);
+      data['status'] = 'PurchaseStatus.draft';
+      data['createdAt'] = FieldValue.serverTimestamp();
+      data['updatedAt'] = FieldValue.serverTimestamp();
+
+      final newDoc = await col.add(data);
+      final newDocData = await newDoc.get();
+      return PurchaseModel.fromFirestore(newDocData);
+    } catch (e) {
+      AppLogger.error('Error duplicating purchase', e);
+      rethrow;
+    }
+  }
+
+  /// Satın alma raporu oluşturur
+  Future<Map<String, dynamic>> getPurchasesReport(
+    DateTime startDate,
+    DateTime endDate, {
+    String? groupBy,
+  }) async {
+    try {
+      final col = await _tenantPurchases();
+      final snapshot = await col
+          .where('createdAt',
+              isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+          .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+          .get();
+
+      final purchases = snapshot.docs.map((doc) => doc.data()).toList();
+
+      // Rapor verilerini oluştur
+      final report = <String, dynamic>{
+        'startDate': startDate,
+        'endDate': endDate,
+        'totalCount': purchases.length,
+        'totalAmount': purchases.fold<double>(0, (sum, purchase) {
+          return sum + (purchase['totalAmount'] as num? ?? 0).toDouble();
+        }),
+        'purchases': purchases,
+      };
+
+      return report;
+    } catch (e) {
+      AppLogger.error('Error getting purchases report', e);
+      rethrow;
+    }
+  }
 }

@@ -8,34 +8,21 @@ class GetPurchasesUseCase {
   GetPurchasesUseCase(this._repository);
 
   /// Tüm satın almaları getirir
-  /// [limit]: Maksimum satın alma sayısı
-  /// [offset]: Atlanacak satın alma sayısı
+  /// [includeItems]: Ürün detaylarını dahil et
   /// Returns: Satın alma listesi
   Future<List<Purchase>> call({
-    int? limit,
-    int? offset,
+    bool includeItems = true,
   }) async {
     return await _repository.getAllPurchases(
-      limit: limit,
-      offset: offset,
+      includeItems: includeItems,
     );
   }
 
   /// Tedarikçiye göre satın almaları getirir
   /// [supplierId]: Tedarikçi ID'si
-  /// [limit]: Maksimum satın alma sayısı
-  /// [offset]: Atlanacak satın alma sayısı
   /// Returns: Satın alma listesi
-  Future<List<Purchase>> getBySupplier(
-    String supplierId, {
-    int? limit,
-    int? offset,
-  }) async {
-    return await _repository.getPurchasesBySupplier(
-      supplierId,
-      limit: limit,
-      offset: offset,
-    );
+  Future<List<Purchase>> getBySupplier(String supplierId) async {
+    return await _repository.getPurchasesBySupplierId(supplierId);
   }
 
   /// Tarih aralığına göre satın almaları getirir
