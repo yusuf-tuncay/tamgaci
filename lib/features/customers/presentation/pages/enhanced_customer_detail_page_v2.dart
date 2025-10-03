@@ -1347,21 +1347,22 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   // Hesap ekstresi tablosu
-  Widget _buildAccountStatementTable(List<Map<String, dynamic>> entries, bool isDark) {
+  Widget _buildAccountStatementTable(
+      List<Map<String, dynamic>> entries, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     double runningBalance = 0.0;
-    
-    return SingleChildScrollView(
+
+    return !mounted ? const SizedBox.shrink() : SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
-        headingRowColor: MaterialStateProperty.all(
+        headingRowColor: WidgetStateProperty.all(
           isDark ? Colors.grey[800] : Colors.grey[100],
         ),
-        dataRowColor: MaterialStateProperty.resolveWith<Color?>(
-          (Set<MaterialState> states) {
-            if (states.contains(MaterialState.selected)) {
+        dataRowColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
               return isDark ? Colors.grey[700] : Colors.grey[200];
             }
             return null;
@@ -1427,25 +1428,31 @@ class _EnhancedCustomerDetailPageV2State
           ),
         ],
         rows: entries.map((entry) {
+          // Widget dispose edildiyse boş row döndür
+          if (!mounted) return DataRow(cells: []);
+          
           final transaction = entry['data'];
           final date = entry['date'] as DateTime? ?? DateTime.now();
           final isInvoice = entry['type'] == 'invoice';
           final isPayment = entry['type'] == 'payment';
-          
+
           // İşlem adı ve açıklama
           String transactionName = '';
           String description = '';
           double debit = 0.0;
           double credit = 0.0;
           String currency = 'TRY';
-          
+
           if (isInvoice) {
             // Fatura işlemi
             transactionName = 'Fatura';
-            description = transaction['saleNumber'] ?? transaction['invoiceNumber'] ?? 'N/A';
-            final totalAmount = (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            description = transaction['saleNumber'] ??
+                transaction['invoiceNumber'] ??
+                'N/A';
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
             currency = transaction['currencyCode'] ?? 'TRY';
-            
+
             // Fatura borç (müşteri borçlu)
             debit = totalAmount;
           } else if (isPayment) {
@@ -1454,7 +1461,7 @@ class _EnhancedCustomerDetailPageV2State
             description = transaction.description ?? 'Ödeme';
             final amount = transaction.amount ?? 0.0;
             currency = transaction.currency ?? 'TRY';
-            
+
             // Ödeme alacak (müşteri alacaklı)
             credit = amount;
           } else {
@@ -1463,23 +1470,23 @@ class _EnhancedCustomerDetailPageV2State
             description = transaction.description ?? '';
             final amount = transaction.amount ?? 0.0;
             currency = transaction.currency ?? 'TRY';
-            
+
             // İşlem tipine göre borç/alacak
-            if (transaction.type.toString().contains('sale') || 
+            if (transaction.type.toString().contains('sale') ||
                 transaction.type.toString().contains('purchase')) {
               debit = amount;
             } else {
               credit = amount;
             }
           }
-          
+
           // Bakiye hesaplama
           runningBalance += credit - debit;
-          
+
           return DataRow(
             cells: [
               DataCell(
-                Text(
+                !mounted ? const SizedBox.shrink() : Text(
                   DateFormat('dd.MM.yyyy HH:mm').format(date),
                   style: GoogleFonts.poppins(fontSize: 11),
                 ),
@@ -1501,7 +1508,9 @@ class _EnhancedCustomerDetailPageV2State
               ),
               DataCell(
                 Text(
-                  debit > 0 ? CurrencyHelper.formatCurrency(debit, currency) : '-',
+                  debit > 0
+                      ? CurrencyHelper.formatCurrency(debit, currency)
+                      : '-',
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: debit > 0 ? Colors.red : Colors.grey,
@@ -1511,7 +1520,9 @@ class _EnhancedCustomerDetailPageV2State
               ),
               DataCell(
                 Text(
-                  credit > 0 ? CurrencyHelper.formatCurrency(credit, currency) : '-',
+                  credit > 0
+                      ? CurrencyHelper.formatCurrency(credit, currency)
+                      : '-',
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     color: credit > 0 ? Colors.green : Colors.grey,
