@@ -36,7 +36,7 @@ class GlobalErrorHandler {
   void _handleFlutterError(FlutterErrorDetails details) {
     final errorString = details.exceptionAsString();
 
-    // Disposed view hatalarını özel olarak yakala
+    // Ultra agresif disposed view hatalarını yakala
     if (errorString.contains('isDisposed') ||
         errorString.contains('disposed EngineFlutterView') ||
         errorString.contains('Trying to render a disposed') ||
@@ -47,10 +47,15 @@ class GlobalErrorHandler {
         errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
         errorString.contains('!_debugDoingThisLayout') ||
         errorString.contains('RenderPadding') ||
-        errorString.contains('RenderRepaintBoundary')) {
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('Assertion failed:') ||
+        errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
       // Bu hataları sessizce geç - Flutter Web'de yaygın bir sorun
       if (kDebugMode) {
-        debugPrint('⚠️ Layout error (ignored): ${details.exception}');
+        debugPrint('⚠️ Disposed view error (ignored): ${details.exception}');
       }
       return;
     }

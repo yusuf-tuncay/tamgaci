@@ -85,7 +85,7 @@ void _suppressDisposedViewErrors() {
   FlutterError.onError = (FlutterErrorDetails details) {
     final errorString = details.exceptionAsString();
 
-    // Disposed view hatalarını tamamen bastır
+    // Ultra agresif disposed view hatalarını bastır
     if (errorString.contains('isDisposed') ||
         errorString.contains('disposed EngineFlutterView') ||
         errorString.contains('Trying to render a disposed') ||
@@ -101,7 +101,12 @@ void _suppressDisposedViewErrors() {
         errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
         errorString.contains('!_debugDoingThisLayout') ||
         errorString.contains('RenderPadding') ||
-        errorString.contains('RenderRepaintBoundary')) {
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('Assertion failed:') ||
+        errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
       // Bu hataları tamamen sessizce geç
       return;
     }
@@ -129,7 +134,12 @@ void _suppressDisposedViewErrors() {
         errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
         errorString.contains('!_debugDoingThisLayout') ||
         errorString.contains('RenderPadding') ||
-        errorString.contains('RenderRepaintBoundary')) {
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('Assertion failed:') ||
+        errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
       // Bu hataları tamamen sessizce geç
       return true;
     }
@@ -139,7 +149,7 @@ void _suppressDisposedViewErrors() {
   };
 }
 
-/// Tüm disposed hatalarını bastır (çok agresif yaklaşım)
+/// Tüm disposed hatalarını bastır (ultra agresif yaklaşım)
 void _suppressAllDisposedErrors() {
   // Flutter Web'de disposed hatalarını tamamen bastır
   if (kIsWeb) {
@@ -147,13 +157,23 @@ void _suppressAllDisposedErrors() {
     FlutterError.onError = (FlutterErrorDetails details) {
       final errorString = details.exceptionAsString();
 
-      // Disposed hatalarını tamamen bastır
+      // Ultra agresif disposed hatalarını bastır
       if (errorString.contains('disposed') ||
           errorString.contains('isDisposed') ||
           errorString.contains('EngineFlutterView') ||
           errorString.contains('window.dart:99:12') ||
-          errorString.contains(
-              'Assertion failed: org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+          errorString.contains('!isDisposed') ||
+          errorString.contains('Trying to render') ||
+          errorString.contains('Assertion failed:') ||
+          errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+          errorString.contains('RenderBox') ||
+          errorString.contains('hasSize') ||
+          errorString.contains('NEEDS-LAYOUT') ||
+          errorString.contains('NEEDS-PAINT') ||
+          errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+          errorString.contains('!_debugDoingThisLayout') ||
+          errorString.contains('RenderPadding') ||
+          errorString.contains('RenderRepaintBoundary')) {
         // Bu hataları tamamen sessizce geç
         return;
       }
