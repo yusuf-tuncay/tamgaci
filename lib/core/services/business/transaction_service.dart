@@ -152,18 +152,25 @@ class TransactionService {
       // Kullanıcının tenant ID'sini al
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
+        AppLogger.error('No authenticated user found');
         throw Exception('No authenticated user found');
       }
 
+      AppLogger.info('Creating transaction for user: ${user.uid}');
+
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (!userDoc.exists) {
+        AppLogger.error('User document not found for user: ${user.uid}');
         throw Exception('User document not found');
       }
 
       final userData = userDoc.data() as Map<String, dynamic>;
       final tenantId = userData['tenantId'] as String?;
 
+      AppLogger.info('User tenant ID: $tenantId');
+
       if (tenantId == null || tenantId.isEmpty) {
+        AppLogger.error('No tenant ID found for user: ${user.uid}');
         throw Exception('No tenant ID found for user');
       }
 

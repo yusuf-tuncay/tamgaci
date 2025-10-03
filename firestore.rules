@@ -30,14 +30,12 @@ service cloud.firestore {
       return isSignedIn() && exists(/databases/$(database)/documents/users/$(userId()));
     }
     function isTenantOwner(tenantId) {
-      return get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == userId();
+      // Basit kontrol: kullanıcının tenantId'si ile eşleşiyor mu?
+      return getUserTenantId() == tenantId;
     }
     function isTenantMember(tenantId) {
-      // Kullanıcının kendi tenantId'sine erişimi
-      return exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
-             (get(/databases/$(database)/documents/tenants/$(tenantId)).data.ownerId == userId() ||
-              (get(/databases/$(database)/documents/tenants/$(tenantId)).data.memberIds != null &&
-               userId() in get(/databases/$(database)/documents/tenants/$(tenantId)).data.memberIds));
+      // Basit kontrol: kullanıcının tenantId'si ile eşleşiyor mu?
+      return getUserTenantId() == tenantId;
     }
 
     // Generic helpers - Multi-tenant aware
