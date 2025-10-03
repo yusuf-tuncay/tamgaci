@@ -18,7 +18,9 @@ import '../../../cash_management/presentation/providers/cash_management_provider
 import '../../../cash_management/domain/entities/cash_transaction.dart';
 import '../../../../core/services/business/transaction_service.dart';
 import '../../../sales/presentation/providers/sale_providers.dart' as sales;
-import '../../../purchases/presentation/providers/purchase_providers.dart' as purchases;
+import '../../../purchases/presentation/providers/purchase_providers.dart'
+    as purchases;
+import '../../../../core/widgets/lifecycle_mixin.dart';
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -36,7 +38,7 @@ class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
 
 class _EnhancedCustomerDetailPageV2State
     extends ConsumerState<EnhancedCustomerDetailPageV2>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, ConsumerLifecycleMixin {
   late TabController _tabController;
   // ignore: unused_field
   int _selectedTabIndex = 0;
@@ -1165,7 +1167,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildPurchasesTab(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     final purchasesAsync =
         ref.watch(purchases.customerPurchasesStreamProvider(customer.id));
 
@@ -1196,8 +1198,7 @@ class _EnhancedCustomerDetailPageV2State
                 Builder(
                   builder: (_) {
                     if (isLoading) {
-                      return const Center(
-                          child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (hasError) {
                       return Center(
@@ -1209,21 +1210,19 @@ class _EnhancedCustomerDetailPageV2State
                         ),
                       );
                     }
-                    
+
                     // Normal purchase type'a göre filtrele
                     final filteredPurchases = purchasesList.where((purchase) {
                       return _isPurchaseType(purchase, 'normal');
                     }).toList();
-                    
+
                     if (filteredPurchases.isEmpty) {
                       return Center(
                         child: Text(
                           'Normal alış bulunamadı',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: isDark
-                                ? Colors.grey[400]
-                                : Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
                       );
@@ -1242,8 +1241,7 @@ class _EnhancedCustomerDetailPageV2State
                 Builder(
                   builder: (_) {
                     if (isLoading) {
-                      return const Center(
-                          child: CircularProgressIndicator());
+                      return const Center(child: CircularProgressIndicator());
                     }
                     if (hasError) {
                       return Center(
@@ -1255,21 +1253,19 @@ class _EnhancedCustomerDetailPageV2State
                         ),
                       );
                     }
-                    
+
                     // ReturnFromSale purchase type'a göre filtrele
                     final filteredPurchases = purchasesList.where((purchase) {
                       return _isPurchaseType(purchase, 'returnFromSale');
                     }).toList();
-                    
+
                     if (filteredPurchases.isEmpty) {
                       return Center(
                         child: Text(
                           'Satıştan iade alışı bulunamadı',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: isDark
-                                ? Colors.grey[400]
-                                : Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                           ),
                         ),
                       );
@@ -1390,25 +1386,28 @@ class _EnhancedCustomerDetailPageV2State
   bool _isPurchaseType(dynamic purchase, String targetType) {
     final type = purchase['type']?.toString() ?? '';
     final purchaseType = purchase['purchaseType']?.toString() ?? '';
-    
+
     // Debug için type'ları logla
-    debugPrint('Purchase type: $type, purchaseType: $purchaseType, targetType: $targetType');
-    
+    debugPrint(
+        'Purchase type: $type, purchaseType: $purchaseType, targetType: $targetType');
+
     // PurchaseType enum kontrolü
-    if (type == 'PurchaseType.$targetType' || purchaseType == 'PurchaseType.$targetType') {
+    if (type == 'PurchaseType.$targetType' ||
+        purchaseType == 'PurchaseType.$targetType') {
       return true;
     }
-    
+
     // String kontrolü
     if (type == targetType || purchaseType == targetType) {
       return true;
     }
-    
+
     // Capitalize kontrolü
-    if (type == _capitalize(targetType) || purchaseType == _capitalize(targetType)) {
+    if (type == _capitalize(targetType) ||
+        purchaseType == _capitalize(targetType)) {
       return true;
     }
-    
+
     return false;
   }
 
@@ -1690,17 +1689,18 @@ class _EnhancedCustomerDetailPageV2State
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          DateFormat('dd.MM.yyyy').format(_parseDateTime(purchase['purchaseDate']) ??
-              _parseDateTime(purchase['invoiceDate']) ??
-              DateTime.now()),
+          DateFormat('dd.MM.yyyy').format(
+              _parseDateTime(purchase['purchaseDate']) ??
+                  _parseDateTime(purchase['invoiceDate']) ??
+                  DateTime.now()),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              CurrencyHelper.formatCurrency(
-                  purchase['totalAmount'] ?? 0.0, purchase['currencyCode'] ?? 'TRY'),
+              CurrencyHelper.formatCurrency(purchase['totalAmount'] ?? 0.0,
+                  purchase['currencyCode'] ?? 'TRY'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: Colors.orange,
@@ -1723,18 +1723,20 @@ class _EnhancedCustomerDetailPageV2State
   String _getPurchaseTypeTitle(dynamic purchase) {
     final type = purchase['type']?.toString() ?? '';
     final purchaseType = purchase['purchaseType']?.toString() ?? '';
-    
+
     // Debug için type'ları logla
     debugPrint('Purchase type for title: $type, purchaseType: $purchaseType');
-    
+
     // PurchaseType enum kontrolü
-    if (type == 'PurchaseType.normal' || purchaseType == 'PurchaseType.normal') {
+    if (type == 'PurchaseType.normal' ||
+        purchaseType == 'PurchaseType.normal') {
       return 'Normal Alış';
     }
-    if (type == 'PurchaseType.returnFromSale' || purchaseType == 'PurchaseType.returnFromSale') {
+    if (type == 'PurchaseType.returnFromSale' ||
+        purchaseType == 'PurchaseType.returnFromSale') {
       return 'Satıştan İade Alışı';
     }
-    
+
     // String kontrolü
     if (type == 'normal' || purchaseType == 'normal') {
       return 'Normal Alış';
@@ -1742,7 +1744,7 @@ class _EnhancedCustomerDetailPageV2State
     if (type == 'returnFromSale' || purchaseType == 'returnFromSale') {
       return 'Satıştan İade Alışı';
     }
-    
+
     // Capitalize kontrolü
     if (type == 'Normal' || purchaseType == 'Normal') {
       return 'Normal Alış';
@@ -1750,7 +1752,7 @@ class _EnhancedCustomerDetailPageV2State
     if (type == 'ReturnFromSale' || purchaseType == 'ReturnFromSale') {
       return 'Satıştan İade Alışı';
     }
-    
+
     // Default fallback
     return 'Normal Alış';
   }

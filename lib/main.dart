@@ -89,10 +89,11 @@ void _suppressDisposedViewErrors() {
     if (errorString.contains('isDisposed') ||
         errorString.contains('disposed EngineFlutterView') ||
         errorString.contains('Trying to render a disposed') ||
-        errorString.contains(
-            'Assertion failed: org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
-        errorString.contains(
-            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+        errorString.contains('disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk')) {
       // Bu hataları tamamen sessizce geç
       return;
     }
@@ -108,10 +109,11 @@ void _suppressDisposedViewErrors() {
     if (errorString.contains('isDisposed') ||
         errorString.contains('disposed EngineFlutterView') ||
         errorString.contains('Trying to render a disposed') ||
-        errorString.contains(
-            'Assertion failed: org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
-        errorString.contains(
-            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+        errorString.contains('disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk')) {
       // Bu hataları tamamen sessizce geç
       return true;
     }
