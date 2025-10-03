@@ -1219,9 +1219,27 @@ class _EnhancedCustomerDetailPageV2State
   // Invoice type filtreleme helper metodları
   bool _isInvoiceType(dynamic invoice, String targetType) {
     final type = invoice['type']?.toString() ?? '';
-    return type == 'SaleType.$targetType' ||
-        type == targetType ||
-        type == _capitalize(targetType);
+    final saleType = invoice['saleType']?.toString() ?? '';
+    
+    // Debug için type'ları logla
+    debugPrint('Invoice type: $type, saleType: $saleType, targetType: $targetType');
+    
+    // SaleType enum kontrolü
+    if (type == 'SaleType.$targetType' || saleType == 'SaleType.$targetType') {
+      return true;
+    }
+    
+    // String kontrolü
+    if (type == targetType || saleType == targetType) {
+      return true;
+    }
+    
+    // Capitalize kontrolü
+    if (type == _capitalize(targetType) || saleType == _capitalize(targetType)) {
+      return true;
+    }
+    
+    return false;
   }
 
   // TODO: Purchase modülü entegrasyonu yapıldığında kullanılacak
@@ -1240,26 +1258,26 @@ class _EnhancedCustomerDetailPageV2State
   // Timestamp'i DateTime'a çevirme
   DateTime? _parseDateTime(dynamic dateValue) {
     if (dateValue == null) return null;
-    
+
     // Widget dispose edildiyse null döndür
     if (!mounted) return null;
-    
+
     try {
       // Eğer zaten DateTime ise
       if (dateValue is DateTime) {
         return dateValue;
       }
-      
+
       // Eğer Timestamp ise
       if (dateValue.runtimeType.toString().contains('Timestamp')) {
         return (dateValue as dynamic).toDate();
       }
-      
+
       // String ise parse et
       if (dateValue is String) {
         return DateTime.parse(dateValue);
       }
-      
+
       return null;
     } catch (e) {
       debugPrint('Error parsing date: $e');
@@ -1330,7 +1348,20 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildInvoiceTile(dynamic invoice, bool isDark) {
     // invoice entity with known fields
     final isPaid = invoice['isPaid'] as bool? ?? false;
-    final color = isPaid ? Colors.green : Colors.blue;
+    final paymentStatus = invoice['paymentStatus']?.toString() ?? '';
+    final status = invoice['status']?.toString() ?? '';
+    
+    // Debug için payment bilgilerini logla
+    debugPrint('Invoice payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status');
+    
+    // Payment status'a göre isPaid hesapla
+    final actuallyPaid = isPaid || 
+        paymentStatus == 'paid' || 
+        paymentStatus == 'PaymentStatus.paid' ||
+        status == 'paid' ||
+        status == 'SaleStatus.paid';
+    
+    final color = actuallyPaid ? Colors.green : Colors.blue;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -1343,8 +1374,9 @@ class _EnhancedCustomerDetailPageV2State
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          DateFormat('dd.MM.yyyy').format(_parseDateTime(invoice['saleDate']) ?? 
-              _parseDateTime(invoice['invoiceDate']) ?? DateTime.now()),
+          DateFormat('dd.MM.yyyy').format(_parseDateTime(invoice['saleDate']) ??
+              _parseDateTime(invoice['invoiceDate']) ??
+              DateTime.now()),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1359,10 +1391,10 @@ class _EnhancedCustomerDetailPageV2State
               ),
             ),
             Text(
-              isPaid ? 'Ödendi' : 'Beklemede',
+              actuallyPaid ? 'Ödendi' : 'Beklemede',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: isPaid ? Colors.green : Colors.orange,
+                color: actuallyPaid ? Colors.green : Colors.orange,
               ),
             ),
           ],
