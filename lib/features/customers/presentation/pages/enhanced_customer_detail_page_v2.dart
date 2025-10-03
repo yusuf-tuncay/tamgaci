@@ -683,7 +683,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildTransactionsTab(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     // Tüm işlemler: Faturalar + Ödemeler + İşlemler
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
@@ -753,7 +753,7 @@ class _EnhancedCustomerDetailPageV2State
           data: (invoices) {
             // Widget dispose edildiyse boş widget döndür
             if (!mounted) return const SizedBox.shrink();
-            
+
             final transactions = transactionSnapshot.data ?? [];
             final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
             final payments = cashState.cashTransactions
@@ -862,7 +862,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildInvoicesTab(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
 
@@ -1127,7 +1127,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildPaymentsTab(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
@@ -1135,7 +1135,7 @@ class _EnhancedCustomerDetailPageV2State
       data: (invoices) {
         // Widget dispose edildiyse boş widget döndür
         if (!mounted) return const SizedBox.shrink();
-        
+
         final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
@@ -1203,7 +1203,7 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildAccountStatementTab(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -1434,14 +1434,15 @@ class _EnhancedCustomerDetailPageV2State
     // Debug için payment bilgilerini logla
     debugPrint(
         'Invoice payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status');
+    debugPrint('Payment logic - isPaid: $isPaid, paymentStatus==PaymentStatus.paid: ${paymentStatus == 'PaymentStatus.paid'}, status!=draft: ${status != 'draft'}, status==SaleStatus.paid: ${status == 'SaleStatus.paid'}');
 
     // Payment status'a göre isPaid hesapla
-    final actuallyPaid = isPaid ||
-        paymentStatus == 'paid' ||
-        paymentStatus == 'PaymentStatus.paid' ||
-        status == 'paid' ||
-        status == 'SaleStatus.paid';
+    // isPaid field'ı primary, diğerleri sadece fallback
+    final actuallyPaid = isPaid || 
+        (paymentStatus == 'PaymentStatus.paid' && status != 'draft') ||
+        (status == 'SaleStatus.paid');
 
+    debugPrint('Final result - actuallyPaid: $actuallyPaid');
     final color = actuallyPaid ? Colors.green : Colors.blue;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1565,7 +1566,7 @@ class _EnhancedCustomerDetailPageV2State
       data: (invoices) {
         // Widget dispose edildiyse boş widget döndür
         if (!mounted) return const SizedBox.shrink();
-        
+
         final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
