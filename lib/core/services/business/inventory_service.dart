@@ -138,11 +138,34 @@ class InventoryService {
     }
   }
 
-  /// Ürün stok güncelleme
+  /// Ürün stok güncelleme - Multi-tenant
   Future<void> _updateProductStock(
       String productId, int quantity, StockMovementType type) async {
     try {
-      final productRef = _firestore.collection('products').doc(productId);
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
+      // Multi-tenant collection path
+      final productRef = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .doc(productId);
 
       await _firestore.runTransaction((transaction) async {
         final productDoc = await transaction.get(productRef);
@@ -184,10 +207,35 @@ class InventoryService {
     }
   }
 
-  /// Ürün stok seviyesi getirme
+  /// Ürün stok seviyesi getirme - Multi-tenant
   Future<int> getProductStock(String productId) async {
     try {
-      final doc = await _firestore.collection('products').doc(productId).get();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return 0;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        return 0;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        return 0;
+      }
+
+      // Multi-tenant collection path
+      final doc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .doc(productId)
+          .get();
+      
       if (doc.exists) {
         return doc.data()?['stockQuantity'] ?? 0;
       }
@@ -198,7 +246,7 @@ class InventoryService {
     }
   }
 
-  /// Stok hareketleri getirme
+  /// Stok hareketleri getirme - Multi-tenant
   Future<List<StockMovement>> getStockMovements({
     String? productId,
     String? warehouseId,
@@ -208,7 +256,29 @@ class InventoryService {
     int limit = 50,
   }) async {
     try {
-      Query query = _firestore.collection('stock_movements');
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return [];
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        return [];
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        return [];
+      }
+
+      // Multi-tenant collection path
+      Query query = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('stock_movements');
 
       if (productId != null) {
         query = query.where('productId', isEqualTo: productId);
@@ -241,10 +311,51 @@ class InventoryService {
     }
   }
 
-  /// Stok raporu oluşturma
+  /// Stok raporu oluşturma - Multi-tenant
   Future<Map<String, dynamic>> generateStockReport() async {
     try {
-      final productsSnapshot = await _firestore.collection('products').get();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return {
+          'totalProducts': 0,
+          'totalStockQuantity': 0,
+          'totalStockValue': 0.0,
+          'lowStockProducts': 0,
+          'outOfStockProducts': 0,
+        };
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        return {
+          'totalProducts': 0,
+          'totalStockQuantity': 0,
+          'totalStockValue': 0.0,
+          'lowStockProducts': 0,
+          'outOfStockProducts': 0,
+        };
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        return {
+          'totalProducts': 0,
+          'totalStockQuantity': 0,
+          'totalStockValue': 0.0,
+          'lowStockProducts': 0,
+          'outOfStockProducts': 0,
+        };
+      }
+
+      // Multi-tenant collection path
+      final productsSnapshot = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('products')
+          .get();
 
       int totalProducts = productsSnapshot.docs.length;
       int lowStockProducts = 0;
