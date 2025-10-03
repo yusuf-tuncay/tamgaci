@@ -58,12 +58,20 @@ class _EnhancedCustomerDetailPageV2State
 
   @override
   void dispose() {
+    _tabController.removeListener(() {
+      setState(() {
+        _selectedTabIndex = _tabController.index;
+      });
+    });
     _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Widget dispose edildiyse boş widget döndür
+    if (!mounted) return const SizedBox.shrink();
+    
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final customersAsync = ref.watch(customersProvider);
 
@@ -677,6 +685,9 @@ class _EnhancedCustomerDetailPageV2State
     return FutureBuilder<List<dynamic>>(
       future: _loadCustomerTransactions(customer.id),
       builder: (context, snapshot) {
+        // Widget dispose edildiyse boş widget döndür
+        if (!mounted) return const SizedBox.shrink();
+        
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(
             child: Column(
@@ -773,6 +784,10 @@ class _EnhancedCustomerDetailPageV2State
       final transactionService = TransactionService();
       final transactions =
           await transactionService.getCustomerTransactions(customerId);
+      
+      // Widget dispose edildiyse işlemi durdur
+      if (!mounted) return [];
+      
       return transactions;
     } catch (e) {
       debugPrint('Error loading customer transactions: $e');
@@ -1212,7 +1227,7 @@ class _EnhancedCustomerDetailPageV2State
   // TODO: Purchase modülü entegrasyonu yapıldığında kullanılacak
   // bool _isPurchaseType(dynamic purchase, String targetType) {
   //   final type = purchase['type']?.toString() ?? '';
-  //   return type == 'PurchaseType.$targetType' || 
+  //   return type == 'PurchaseType.$targetType' ||
   //          type == targetType ||
   //          type == _capitalize(targetType);
   // }
