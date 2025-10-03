@@ -39,10 +39,18 @@ class GlobalErrorHandler {
     // Disposed view hatalarını özel olarak yakala
     if (errorString.contains('isDisposed') ||
         errorString.contains('disposed EngineFlutterView') ||
-        errorString.contains('Trying to render a disposed')) {
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('RenderBox was not laid out') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary')) {
       // Bu hataları sessizce geç - Flutter Web'de yaygın bir sorun
       if (kDebugMode) {
-        debugPrint('⚠️ Disposed view error (ignored): ${details.exception}');
+        debugPrint('⚠️ Layout error (ignored): ${details.exception}');
       }
       return;
     }

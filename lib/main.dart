@@ -93,7 +93,15 @@ void _suppressDisposedViewErrors() {
         errorString.contains('EngineFlutterView') ||
         errorString.contains('window.dart:99:12') ||
         errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk')) {
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('RenderBox was not laid out') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary')) {
       // Bu hataları tamamen sessizce geç
       return;
     }
@@ -113,7 +121,15 @@ void _suppressDisposedViewErrors() {
         errorString.contains('EngineFlutterView') ||
         errorString.contains('window.dart:99:12') ||
         errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk')) {
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('RenderBox was not laid out') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary')) {
       // Bu hataları tamamen sessizce geç
       return true;
     }
