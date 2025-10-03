@@ -15,24 +15,42 @@ class CashAccountFirebaseDataSource {
 
   CashAccountFirebaseDataSource(this._firestore, this._firebaseAuth);
 
-  /// Tüm nakit hesapları getirir
+  /// Tüm nakit hesapları getirir - Multi-tenant
   Future<List<CashAccountModel>> getAllCashAccounts({
     int? limit,
     int? offset,
   }) async {
     try {
-      final companyIds = await _firebaseService.getUserCompanyIds();
+      // Kullanıcının tenant ID'sini al
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
+      // Multi-tenant collection path
       Query query = _firestore
+          .collection('tenants')
+          .doc(tenantId)
           .collection('cash_accounts')
-          .where('companyId',
-              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
         final offsetDoc = await _firestore
+            .collection('tenants')
+            .doc(tenantId)
             .collection('cash_accounts')
-            .where('companyId',
-                isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
             .orderBy('createdAt', descending: true)
             .limit(offset)
             .get();
@@ -55,10 +73,35 @@ class CashAccountFirebaseDataSource {
     }
   }
 
-  /// ID'ye göre nakit hesap getirir
+  /// ID'ye göre nakit hesap getirir - Multi-tenant
   Future<CashAccountModel?> getCashAccountById(String id) async {
     try {
-      final doc = await _firestore.collection('cash_accounts').doc(id).get();
+      // Kullanıcının tenant ID'sini al
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        return null;
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        return null;
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        return null;
+      }
+
+      // Multi-tenant collection path
+      final doc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('cash_accounts')
+          .doc(id)
+          .get();
+      
       if (doc.exists) {
         return CashAccountModel.fromFirestore(doc);
       }
@@ -69,26 +112,44 @@ class CashAccountFirebaseDataSource {
     }
   }
 
-  /// Türüne göre nakit hesapları getirir
+  /// Türüne göre nakit hesapları getirir - Multi-tenant
   Future<List<CashAccountModel>> getCashAccountsByType(
     CashAccountType type, {
     int? limit,
     int? offset,
   }) async {
     try {
-      final companyIds = await _firebaseService.getUserCompanyIds();
+      // Kullanıcının tenant ID'sini al
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
+      // Multi-tenant collection path
       Query query = _firestore
+          .collection('tenants')
+          .doc(tenantId)
           .collection('cash_accounts')
-          .where('companyId',
-              isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
           .where('type', isEqualTo: type.name)
           .orderBy('createdAt', descending: true);
 
       if (offset != null && offset > 0) {
         final offsetDoc = await _firestore
+            .collection('tenants')
+            .doc(tenantId)
             .collection('cash_accounts')
-            .where('companyId',
-                isEqualTo: companyIds.isNotEmpty ? companyIds.first : null)
             .where('type', isEqualTo: type.name)
             .orderBy('createdAt', descending: true)
             .limit(offset)
