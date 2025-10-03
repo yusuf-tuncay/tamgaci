@@ -454,7 +454,7 @@ class _EnhancedCustomerDetailPageV2State
       data: (list) => list,
       orElse: () => <dynamic>[],
     );
-    final invoiceIds = invoices.map((e) => e.id as String).toSet();
+    final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
     final paymentsForCustomer = cashState.cashTransactions
         .where((t) => invoiceIds.contains(t.relatedDocumentId))
         .toList();
@@ -947,7 +947,7 @@ class _EnhancedCustomerDetailPageV2State
     final cashState = ref.watch(cashManagementNotifierProvider);
     return invoicesAsync.when(
       data: (invoices) {
-        final invoiceIds = invoices.map((e) => e.id).toSet();
+        final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
@@ -1208,7 +1208,7 @@ class _EnhancedCustomerDetailPageV2State
     final cashState = ref.watch(cashManagementNotifierProvider);
     return invoicesAsync.when(
       data: (invoices) {
-        final invoiceIds = invoices.map((e) => e.id).toSet();
+        final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();

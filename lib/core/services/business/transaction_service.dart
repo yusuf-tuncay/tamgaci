@@ -322,7 +322,6 @@ class TransactionService {
           .doc(tenantId)
           .collection('transactions')
           .where('customerId', isEqualTo: customerId)
-          .orderBy('transactionDate', descending: true)
           .get();
 
       return querySnapshot.docs
