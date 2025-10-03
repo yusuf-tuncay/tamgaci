@@ -114,6 +114,76 @@ class _EnhancedCustomersListPageState
     return filtered;
   }
 
+  Widget _buildWelcomeCard(bool isDark) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Müşteriler',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Müşteri bilgilerini yönetin ve takip edin',
+            maxLines: 1,
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.9),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -123,44 +193,52 @@ class _EnhancedCustomersListPageState
       appBar: const CustomAppBar(title: 'Müşteriler', showDrawer: true),
       drawerContent: const TamgaciDrawerMenu(),
       persistentOnLarge: false,
-      body: Column(
-        children: [
-          _buildSearchAndFilters(isDark),
-          Expanded(
-            child: customersAsync.when(
-              data: (customers) => _buildCustomersList(customers, isDark),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Müşteriler yüklenirken hata oluştu',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildWelcomeCard(isDark),
+            const SizedBox(height: 16),
+            _buildSearchAndFilters(isDark),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: MediaQuery.of(context).size.height - 300,
+              child: customersAsync.when(
+                data: (customers) => _buildCustomersList(customers, isDark),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        size: 64,
                         color: Colors.red,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey,
+                      const SizedBox(height: 16),
+                      Text(
+                        'Müşteriler yüklenirken hata oluştu',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          color: Colors.red,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: Colors.grey,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
+        ),
+      ),
           Align(
             alignment: Alignment.bottomRight,
             child: Padding(
