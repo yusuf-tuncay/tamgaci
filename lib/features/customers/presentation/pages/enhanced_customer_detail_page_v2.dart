@@ -1237,6 +1237,35 @@ class _EnhancedCustomerDetailPageV2State
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
+  // Timestamp'i DateTime'a çevirme
+  DateTime? _parseDateTime(dynamic dateValue) {
+    if (dateValue == null) return null;
+    
+    // Widget dispose edildiyse null döndür
+    if (!mounted) return null;
+    
+    try {
+      // Eğer zaten DateTime ise
+      if (dateValue is DateTime) {
+        return dateValue;
+      }
+      
+      // Eğer Timestamp ise
+      if (dateValue.runtimeType.toString().contains('Timestamp')) {
+        return (dateValue as dynamic).toDate();
+      }
+      
+      // String ise parse et
+      if (dateValue is String) {
+        return DateTime.parse(dateValue);
+      }
+      
+      return null;
+    } catch (e) {
+      debugPrint('Error parsing date: $e');
+      return null;
+    }
+  }
 
   Widget _buildTransactionTile(dynamic t, bool isDark) {
     // Transaction object from TransactionService
@@ -1260,7 +1289,7 @@ class _EnhancedCustomerDetailPageV2State
           children: [
             Text(
               DateFormat('dd.MM.yyyy HH:mm')
-                  .format(t.transactionDate ?? DateTime.now()),
+                  .format(_parseDateTime(t.transactionDate) ?? DateTime.now()),
             ),
             if (t.description != null && t.description!.isNotEmpty)
               Text(
@@ -1314,8 +1343,8 @@ class _EnhancedCustomerDetailPageV2State
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          DateFormat('dd.MM.yyyy')
-              .format(invoice['saleDate'] ?? invoice['invoiceDate'] ?? DateTime.now()),
+          DateFormat('dd.MM.yyyy').format(_parseDateTime(invoice['saleDate']) ?? 
+              _parseDateTime(invoice['invoiceDate']) ?? DateTime.now()),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
