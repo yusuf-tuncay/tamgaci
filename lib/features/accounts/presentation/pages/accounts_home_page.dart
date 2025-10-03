@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../domain/entities/account.dart';
 import '../providers/account_providers.dart';
 import '../widgets/account_card.dart';
@@ -8,6 +9,7 @@ import '../widgets/account_statistics_card.dart';
 import '../../data/services/account_initialization_service.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../core/services/firebase/firebase_auth_service.dart';
+import '../../../../core/theme/constants.dart';
 import 'create_account_page.dart';
 import 'account_detail_page.dart';
 
@@ -125,66 +127,60 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF6366F1), // Indigo-500
-              Color(0xFF8B5CF6), // Violet-500
-              Color(0xFF7C3AED), // Violet-600
+              TamgaciConstants.primaryColor,
+              Color(0xFF4C6EF5),
+              TamgaciConstants.primaryColorDark,
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+              color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
               blurRadius: 18,
               spreadRadius: 1,
               offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon container
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.25),
-                  width: 1,
-                ),
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_outlined,
+            Text(
+              'Hesaplarım',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
                 color: Colors.white,
-                size: 24,
+                letterSpacing: 0.2,
               ),
             ),
-            const SizedBox(width: 16),
-            // Text content
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Hesaplarım',
-                    style: GoogleFonts.poppins(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Tüm banka hesaplarınızı yönetin',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 6),
+            Text(
+              'Hesap bilgilerini yönetin ve takip edin',
+              maxLines: 1,
+              softWrap: true,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 1,
+              width: double.infinity,
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.9),
               ),
             ),
           ],
