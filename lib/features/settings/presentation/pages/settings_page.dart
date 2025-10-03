@@ -40,288 +40,77 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _buildWelcomeCard(isDark, l10n),
             const SizedBox(height: 24),
 
-            // Genel Ayarlar
-            _buildCategoryHeader("Genel Ayarlar", Icons.settings, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Abonelik",
-              icon: Icons.workspace_premium,
+            // Ana Kategoriler - Kart Şeklinde
+            _buildSettingsCategoryCard(
+              title: "Genel Ayarlar",
+              icon: Icons.settings,
+              description: "Firma bilgileri, dil, para birimi ayarları",
               isDark: isDark,
-              child: _buildSubscriptionSettings(isDark),
+              onTap: () => _showGeneralSettings(context, isDark, l10n),
             ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Firma Bilgileri",
-              icon: Icons.business,
-              isDark: isDark,
-              child: _buildCompanyInfoSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Logo ve Marka Renkleri",
-              icon: Icons.palette,
-              isDark: isDark,
-              child: _buildBrandingSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: l10n.language,
-              icon: Icons.language,
-              isDark: isDark,
-              child: _buildSimpleLanguageSelector(isDark, l10n),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: l10n.currencySettings,
-              icon: Icons.currency_exchange,
-              isDark: isDark,
-              child: _buildSimpleCurrencySelector(isDark, l10n),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Tarih ve Saat Formatı",
-              icon: Icons.calendar_today,
-              isDark: isDark,
-              child: _buildDateTimeFormatSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "KDV / Vergi Oranları",
-              icon: Icons.account_balance,
-              isDark: isDark,
-              child: _buildTaxSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Para Birimi & Kur Ayarları",
-              icon: Icons.calculate,
-              isDark: isDark,
-              child: _buildRoundingAndFxSettings(isDark),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Kullanıcı & Yetkilendirme
-            _buildCategoryHeader(
-                "Kullanıcı & Yetkilendirme", Icons.people, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Kullanıcı Yönetimi",
-              icon: Icons.person_add,
+            _buildSettingsCategoryCard(
+              title: "Görünüm & Tema",
+              icon: Icons.visibility,
+              description: "Tema, logo, görünüm ayarları",
               isDark: isDark,
-              child: _buildUserManagementSettings(isDark),
+              onTap: () => _showThemeSettings(context, isDark, l10n),
             ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Rol & Yetki Yönetimi",
-              icon: Icons.admin_panel_settings,
+            const SizedBox(height: 16),
+
+            _buildSettingsCategoryCard(
+              title: "Satış & Fatura",
+              icon: Icons.receipt_long,
+              description: "Fatura şablonları, belge ayarları, vergi oranları",
               isDark: isDark,
-              child: _buildRolePermissionSettings(isDark),
+              onTap: () => _showSalesSettings(context, isDark),
             ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Güvenlik Ayarları",
+            const SizedBox(height: 16),
+
+            _buildSettingsCategoryCard(
+              title: "Bildirimler & Raporlama",
+              icon: Icons.analytics,
+              description: "Bildirim tercihleri, otomatik raporlar, alarmlar",
+              isDark: isDark,
+              onTap: () => _showNotificationSettings(context, isDark),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSettingsCategoryCard(
+              title: "Güvenlik & Yedekleme",
               icon: Icons.security,
+              description:
+                  "Güvenlik ayarları, kullanıcı yönetimi, veri yedekleme",
               isDark: isDark,
-              child: _buildSecuritySettings(isDark),
+              onTap: () => _showSecuritySettings(context, isDark),
             ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "İki Faktörlü Kimlik Doğrulama",
-              icon: Icons.verified_user,
-              isDark: isDark,
-              child: _buildTwoFactorAuthSettings(isDark),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Satış & Fatura
-            _buildCategoryHeader("Satış & Fatura", Icons.receipt_long, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Fatura Şablonları",
-              icon: Icons.description,
-              isDark: isDark,
-              child: _buildInvoiceTemplateSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Belge Ayarları",
-              icon: Icons.assignment,
-              isDark: isDark,
-              child: _buildDocumentSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Vade ve Hatırlatma Kuralları",
-              icon: Icons.schedule,
-              isDark: isDark,
-              child: _buildPaymentReminderSettings(isDark),
-            ),
-            const SizedBox(height: 24),
-
-            // Raporlama & Bildirimler
-            _buildCategoryHeader(
-                "Raporlama & Bildirimler", Icons.analytics, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Otomatik Rapor Gönderimi",
-              icon: Icons.send,
-              isDark: isDark,
-              child: _buildAutoReportSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Bildirim Tercihleri",
-              icon: Icons.notifications,
-              isDark: isDark,
-              child: _buildNotificationPreferences(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Dashboard Özelleştirme",
-              icon: Icons.dashboard,
-              isDark: isDark,
-              child: _buildDashboardCustomization(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Alarm & Hatırlatmalar",
-              icon: Icons.alarm,
-              isDark: isDark,
-              child: _buildAlarmReminderSettings(isDark),
-            ),
-            const SizedBox(height: 24),
-
-            // Güvenlik & Yedekleme
-            _buildCategoryHeader("Güvenlik & Yedekleme", Icons.backup, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Veri Yedekleme",
-              icon: Icons.cloud_upload,
-              isDark: isDark,
-              child: _buildDataBackupSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Veri Dışa Aktarma",
-              icon: Icons.file_download,
-              isDark: isDark,
-              child: _buildDataExportSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Log Kayıtları",
-              icon: Icons.history,
-              isDark: isDark,
-              child: _buildLogSettings(isDark),
-            ),
-            const SizedBox(height: 24),
-
-            // Bildirim ve İletişim
-            _buildCategoryHeader("Bildirim ve İletişim", Icons.message, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "E-posta Şablonları",
-              icon: Icons.email,
-              isDark: isDark,
-              child: _buildEmailTemplateSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "SMS / Mobil Bildirim",
-              icon: Icons.sms,
-              isDark: isDark,
-              child: _buildSmsNotificationSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Bildirim Sıklığı",
-              icon: Icons.schedule_send,
-              isDark: isDark,
-              child: _buildNotificationFrequencySettings(isDark),
-            ),
-            const SizedBox(height: 24),
-
-            // Belge / Şablon / Yazdırma
-            _buildCategoryHeader(
-                "Belge / Şablon / Yazdırma", Icons.print, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Belge Şablon Tasarımı",
-              icon: Icons.design_services,
-              isDark: isDark,
-              child: _buildDocumentTemplateDesign(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Yazıcı Ayarları",
+            _buildSettingsCategoryCard(
+              title: "Yazdırma & Belge",
               icon: Icons.print,
+              description: "Yazıcı ayarları, belge formatları, şablonlar",
               isDark: isDark,
-              child: _buildPrinterSettings(isDark),
+              onTap: () => _showPrintSettings(context, isDark),
             ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Belge Formatları",
-              icon: Icons.picture_as_pdf,
-              isDark: isDark,
-              child: _buildDocumentFormatSettings(isDark),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Kategoriler/Sınıflandırmalar
-            _buildCategoryHeader(
-                "Kategoriler/Sınıflandırmalar", Icons.category, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Ürün Kategorileri",
-              icon: Icons.inventory_2,
+            _buildSettingsCategoryCard(
+              title: "Kategoriler & Sınıflandırma",
+              icon: Icons.category,
+              description: "Ürün, müşteri, tedarikçi kategorileri",
               isDark: isDark,
-              child: _buildProductCategorySettings(isDark),
+              onTap: () => _showCategorySettings(context, isDark),
             ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Müşteri Kategorileri",
-              icon: Icons.people_alt,
-              isDark: isDark,
-              child: _buildCustomerCategorySettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Tedarikçi Kategorileri",
-              icon: Icons.local_shipping,
-              isDark: isDark,
-              child: _buildSupplierCategorySettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Etiket Yönetimi",
-              icon: Icons.label,
-              isDark: isDark,
-              child: _buildTagManagementSettings(isDark),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // Görünüm & Tema
-            _buildCategoryHeader("Görünüm & Tema", Icons.visibility, isDark),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: l10n.theme,
-              icon: Icons.palette,
-              isDark: isDark,
-              child: _buildSimpleThemeSelector(isDark, l10n),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Görünüm Ayarları",
-              icon: Icons.tune,
-              isDark: isDark,
-              child: _buildViewSettings(isDark),
-            ),
-            const SizedBox(height: 12),
-            _buildSimpleSection(
-              title: "Performans Ayarları",
+            _buildSettingsCategoryCard(
+              title: "Performans & Sistem",
               icon: Icons.speed,
+              description: "Performans ayarları, log kayıtları, abonelik",
               isDark: isDark,
-              child: _buildPerformanceSettings(isDark),
+              onTap: () => _showSystemSettings(context, isDark),
             ),
             const SizedBox(height: 32),
           ],
@@ -355,31 +144,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             style: TextStyle(
               fontSize: 16,
               color: isDark ? Colors.grey[300] : Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCategoryHeader(String title, IconData icon, bool isDark) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[700] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: Colors.blue, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black,
             ),
           ),
         ],
@@ -832,19 +596,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildRolePermissionSettings(bool isDark) {
-    return Column(
-      children: [
-        _buildActionButton("Rolleri Yönet", isDark, () {}),
-        const SizedBox(height: 8),
-        _buildActionButton("Yetkileri Düzenle", isDark, () {}),
-        const SizedBox(height: 8),
-        _buildSwitchSetting(
-            "Hiyerarşik Yetki Sistemi", true, isDark, (value) {}),
-      ],
-    );
-  }
-
   Widget _buildSecuritySettings(bool isDark) {
     return Column(
       children: [
@@ -854,18 +605,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSwitchSetting("Oturum Süresi Sınırı", true, isDark, (value) {}),
         const SizedBox(height: 8),
         _buildSwitchSetting("IP Kısıtlaması", false, isDark, (value) {}),
-      ],
-    );
-  }
-
-  Widget _buildTwoFactorAuthSettings(bool isDark) {
-    return Column(
-      children: [
-        _buildSwitchSetting("2FA Zorunlu", false, isDark, (value) {}),
-        const SizedBox(height: 8),
-        _buildSwitchSetting("SMS Doğrulama", true, isDark, (value) {}),
-        const SizedBox(height: 8),
-        _buildSwitchSetting("E-posta Doğrulama", true, isDark, (value) {}),
       ],
     );
   }
@@ -892,23 +631,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         _buildSwitchSetting("Seri Numarası Takibi", true, isDark, (value) {}),
         const SizedBox(height: 8),
         _buildSwitchSetting("Belge Onay Sistemi", false, isDark, (value) {}),
-      ],
-    );
-  }
-
-  Widget _buildPaymentReminderSettings(bool isDark) {
-    return Column(
-      children: [
-        _buildSimpleDropdown(
-          value: "30 Gün",
-          items: ["15 Gün", "30 Gün", "45 Gün", "60 Gün"],
-          isDark: isDark,
-          onChanged: (value) {},
-        ),
-        const SizedBox(height: 8),
-        _buildSwitchSetting("Otomatik Hatırlatma", true, isDark, (value) {}),
-        const SizedBox(height: 8),
-        _buildSwitchSetting("E-posta Hatırlatması", true, isDark, (value) {}),
       ],
     );
   }
@@ -1030,33 +752,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
-  Widget _buildNotificationFrequencySettings(bool isDark) {
-    return Column(
-      children: [
-        _buildSimpleDropdown(
-          value: "Anlık",
-          items: ["Anlık", "Günlük Özet", "Haftalık Özet", "Aylık Özet"],
-          isDark: isDark,
-          onChanged: (value) {},
-        ),
-        const SizedBox(height: 8),
-        _buildSwitchSetting("Toplu Bildirim", false, isDark, (value) {}),
-      ],
-    );
-  }
-
   // Belge / Şablon / Yazdırma
-  Widget _buildDocumentTemplateDesign(bool isDark) {
-    return Column(
-      children: [
-        _buildActionButton("Fatura Tasarımı", isDark, () {}),
-        const SizedBox(height: 8),
-        _buildActionButton("İrsaliye Tasarımı", isDark, () {}),
-        const SizedBox(height: 8),
-        _buildActionButton("Makbuz Tasarımı", isDark, () {}),
-      ],
-    );
-  }
 
   Widget _buildPrinterSettings(bool isDark) {
     return Column(
@@ -1242,6 +938,698 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         child: Text(
           title,
           style: const TextStyle(fontSize: 14),
+        ),
+      ),
+    );
+  }
+
+  // Kart Widget'ı
+  Widget _buildSettingsCategoryCard({
+    required String title,
+    required IconData icon,
+    required String description,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.grey.withValues(alpha: 0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.blue,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.grey[300] : Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: isDark ? Colors.grey[400] : Colors.grey[500],
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Modal Fonksiyonları
+  void _showGeneralSettings(
+      BuildContext context, bool isDark, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.settings, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Genel Ayarlar",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: "Firma Bilgileri",
+                      icon: Icons.business,
+                      isDark: isDark,
+                      child: _buildCompanyInfoSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: l10n.language,
+                      icon: Icons.language,
+                      isDark: isDark,
+                      child: _buildSimpleLanguageSelector(isDark, l10n),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: l10n.currencySettings,
+                      icon: Icons.currency_exchange,
+                      isDark: isDark,
+                      child: _buildSimpleCurrencySelector(isDark, l10n),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Para Birimi & Kur Ayarları",
+                      icon: Icons.calculate,
+                      isDark: isDark,
+                      child: _buildRoundingAndFxSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showThemeSettings(
+      BuildContext context, bool isDark, AppLocalizations l10n) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.visibility, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Görünüm & Tema",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: l10n.theme,
+                      icon: Icons.palette,
+                      isDark: isDark,
+                      child: _buildSimpleThemeSelector(isDark, l10n),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Logo ve Marka Renkleri",
+                      icon: Icons.palette,
+                      isDark: isDark,
+                      child: _buildBrandingSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Görünüm Ayarları",
+                      icon: Icons.tune,
+                      isDark: isDark,
+                      child: _buildViewSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSalesSettings(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.receipt_long, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Satış & Fatura",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: "Fatura Şablonları",
+                      icon: Icons.description,
+                      isDark: isDark,
+                      child: _buildInvoiceTemplateSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Belge Ayarları",
+                      icon: Icons.assignment,
+                      isDark: isDark,
+                      child: _buildDocumentSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "KDV / Vergi Oranları",
+                      icon: Icons.account_balance,
+                      isDark: isDark,
+                      child: _buildTaxSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Tarih ve Saat Formatı",
+                      icon: Icons.calendar_today,
+                      isDark: isDark,
+                      child: _buildDateTimeFormatSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNotificationSettings(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.analytics, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Bildirimler & Raporlama",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: "Bildirim Tercihleri",
+                      icon: Icons.notifications,
+                      isDark: isDark,
+                      child: _buildNotificationPreferences(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Otomatik Rapor Gönderimi",
+                      icon: Icons.send,
+                      isDark: isDark,
+                      child: _buildAutoReportSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Alarm & Hatırlatmalar",
+                      icon: Icons.alarm,
+                      isDark: isDark,
+                      child: _buildAlarmReminderSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Dashboard Özelleştirme",
+                      icon: Icons.dashboard,
+                      isDark: isDark,
+                      child: _buildDashboardCustomization(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSecuritySettings(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.security, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Güvenlik & Yedekleme",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: "Güvenlik Ayarları",
+                      icon: Icons.security,
+                      isDark: isDark,
+                      child: _buildSecuritySettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Kullanıcı Yönetimi",
+                      icon: Icons.person_add,
+                      isDark: isDark,
+                      child: _buildUserManagementSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Veri Yedekleme",
+                      icon: Icons.cloud_upload,
+                      isDark: isDark,
+                      child: _buildDataBackupSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Veri Dışa Aktarma",
+                      icon: Icons.file_download,
+                      isDark: isDark,
+                      child: _buildDataExportSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPrintSettings(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.print, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Yazdırma & Belge",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: "Yazıcı Ayarları",
+                      icon: Icons.print,
+                      isDark: isDark,
+                      child: _buildPrinterSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Belge Formatları",
+                      icon: Icons.picture_as_pdf,
+                      isDark: isDark,
+                      child: _buildDocumentFormatSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "E-posta Şablonları",
+                      icon: Icons.email,
+                      isDark: isDark,
+                      child: _buildEmailTemplateSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "SMS / Mobil Bildirim",
+                      icon: Icons.sms,
+                      isDark: isDark,
+                      child: _buildSmsNotificationSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showCategorySettings(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.category, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Kategoriler & Sınıflandırma",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: "Ürün Kategorileri",
+                      icon: Icons.inventory_2,
+                      isDark: isDark,
+                      child: _buildProductCategorySettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Müşteri Kategorileri",
+                      icon: Icons.people_alt,
+                      isDark: isDark,
+                      child: _buildCustomerCategorySettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Tedarikçi Kategorileri",
+                      icon: Icons.local_shipping,
+                      isDark: isDark,
+                      child: _buildSupplierCategorySettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Etiket Yönetimi",
+                      icon: Icons.label,
+                      isDark: isDark,
+                      child: _buildTagManagementSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSystemSettings(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  const Icon(Icons.speed, color: Colors.blue, size: 24),
+                  const SizedBox(width: 12),
+                  Text(
+                    "Performans & Sistem",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: Icon(Icons.close,
+                        color: isDark ? Colors.white : Colors.black),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    _buildSimpleSection(
+                      title: "Performans Ayarları",
+                      icon: Icons.speed,
+                      isDark: isDark,
+                      child: _buildPerformanceSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Log Kayıtları",
+                      icon: Icons.history,
+                      isDark: isDark,
+                      child: _buildLogSettings(isDark),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildSimpleSection(
+                      title: "Abonelik",
+                      icon: Icons.workspace_premium,
+                      isDark: isDark,
+                      child: _buildSubscriptionSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
