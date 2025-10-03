@@ -865,31 +865,85 @@ class _EnhancedCustomerDetailPageV2State
                                 );
                               },
                             ),
-                            // İrsaliye (Satış) - henüz ayrıştırma alanı yok
-                            Center(
-                              child: Text(
-                                'İrsaliye listesi için alan henüz entegre değil',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
+                            // İrsaliye (Satış) - invoices ile
+                            Builder(
+                              builder: (_) {
+                                if (isLoading) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                                if (hasError) {
+                                  return Center(
+                                    child: Text(
+                                      'İrsaliyeler yüklenemedi',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                if (invoices.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'İrsaliye bulunamadı',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: invoices.length,
+                                  itemBuilder: (context, index) {
+                                    final invoice = invoices[index];
+                                    return _buildInvoiceTile(invoice, isDark);
+                                  },
+                                );
+                              },
                             ),
-                            // Proforma (Satış) - henüz ayrıştırma alanı yok
-                            Center(
-                              child: Text(
-                                'Proforma listesi için alan henüz entegre değil',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
+                            // Proforma (Satış) - invoices ile
+                            Builder(
+                              builder: (_) {
+                                if (isLoading) {
+                                  return const Center(
+                                      child: CircularProgressIndicator());
+                                }
+                                if (hasError) {
+                                  return Center(
+                                    child: Text(
+                                      'Proformalar yüklenemedi',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                if (invoices.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'Proforma bulunamadı',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: invoices.length,
+                                  itemBuilder: (context, index) {
+                                    final invoice = invoices[index];
+                                    return _buildInvoiceTile(invoice, isDark);
+                                  },
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -951,10 +1005,33 @@ class _EnhancedCustomerDetailPageV2State
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
-        if (payments.isEmpty) {
+        // Invoices ve payments'ı birleştir
+        final allItems = <Map<String, dynamic>>[
+          // Faturalar
+          ...invoices.map((i) => {
+                'type': 'invoice',
+                'date': i['invoiceDate'],
+                'data': i,
+              }),
+          // Ödemeler
+          ...payments.map((t) => {
+                'type': 'payment',
+                'date': t.transactionDate,
+                'data': t,
+              }),
+        ]..sort((a, b) {
+            final dateA = a['date'] as DateTime?;
+            final dateB = b['date'] as DateTime?;
+            if (dateA == null && dateB == null) return 0;
+            if (dateA == null) return 1;
+            if (dateB == null) return -1;
+            return dateB.compareTo(dateA);
+          });
+
+        if (allItems.isEmpty) {
           return Center(
             child: Text(
-              'Ödeme bulunamadı',
+              'Fatura veya ödeme bulunamadı',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -962,12 +1039,17 @@ class _EnhancedCustomerDetailPageV2State
             ),
           );
         }
+
         return ListView.builder(
           padding: const EdgeInsets.all(16),
-          itemCount: payments.length,
+          itemCount: allItems.length,
           itemBuilder: (context, index) {
-            final t = payments[index];
-            return _buildPaymentTile(t, isDark);
+            final item = allItems[index];
+            if (item['type'] == 'invoice') {
+              return _buildInvoiceTile(item['data'], isDark);
+            } else {
+              return _buildPaymentTile(item['data'], isDark);
+            }
           },
         );
       },
@@ -1260,7 +1342,7 @@ class _EnhancedCustomerDetailPageV2State
         final entries = <Map<String, dynamic>>[
           ...invoices.map((i) => {
                 'type': 'invoice',
-                'date': i['invoiceDate'],
+                'date': i['invoiceDate'] ?? DateTime.now(),
                 'data': i,
               }),
           ...payments.map((t) => {
