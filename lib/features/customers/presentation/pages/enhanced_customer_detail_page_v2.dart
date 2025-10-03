@@ -1026,11 +1026,57 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
+  // Transaction helper methods
+  Color _getTransactionColor(dynamic type) {
+    switch (type.toString()) {
+      case 'TransactionType.sale':
+        return Colors.green;
+      case 'TransactionType.purchase':
+        return Colors.orange;
+      case 'TransactionType.payment':
+        return Colors.blue;
+      case 'TransactionType.refund':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  IconData _getTransactionIcon(dynamic type) {
+    switch (type.toString()) {
+      case 'TransactionType.sale':
+        return Icons.shopping_cart;
+      case 'TransactionType.purchase':
+        return Icons.shopping_bag;
+      case 'TransactionType.payment':
+        return Icons.payment;
+      case 'TransactionType.refund':
+        return Icons.undo;
+      default:
+        return Icons.receipt;
+    }
+  }
+
+  String _getTransactionTypeText(dynamic type) {
+    switch (type.toString()) {
+      case 'TransactionType.sale':
+        return 'Satış';
+      case 'TransactionType.purchase':
+        return 'Alış';
+      case 'TransactionType.payment':
+        return 'Ödeme';
+      case 'TransactionType.refund':
+        return 'İade';
+      default:
+        return 'İşlem';
+    }
+  }
+
   Widget _buildTransactionTile(dynamic t, bool isDark) {
     // Transaction object from TransactionService
-    final color = Colors.blue; // Default color for transactions
-    final icon = Icons.receipt;
-    final typeText = 'İşlem';
+    final color = _getTransactionColor(t.type);
+    final icon = _getTransactionIcon(t.type);
+    final typeText = _getTransactionTypeText(t.type);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -1040,14 +1086,15 @@ class _EnhancedCustomerDetailPageV2State
           child: Icon(icon, color: color),
         ),
         title: Text(
-          '$typeText - ${t.transactionNumber ?? 'N/A'}',
+          '$typeText - ${t.documentNumber ?? t.id}',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              DateFormat('dd.MM.yyyy HH:mm').format(t.transactionDate ?? DateTime.now()),
+              DateFormat('dd.MM.yyyy HH:mm')
+                  .format(t.transactionDate ?? DateTime.now()),
             ),
             if (t.description != null && t.description!.isNotEmpty)
               Text(
@@ -1064,7 +1111,8 @@ class _EnhancedCustomerDetailPageV2State
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              CurrencyHelper.formatCurrency(t.amount ?? 0.0, t.currency ?? 'TRY'),
+              CurrencyHelper.formatCurrency(
+                  t.amount ?? 0.0, t.currency ?? 'TRY'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: color,
