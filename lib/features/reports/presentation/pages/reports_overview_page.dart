@@ -280,20 +280,29 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
   Widget _buildDialogOption(String title, bool isSelected) {
     return ListTile(
       title: Text(title, style: GoogleFonts.poppins()),
-      leading: Radio<String>(
-        value: title,
-        groupValue: isSelected ? title : null,
+      leading: Checkbox(
+        value: isSelected,
         onChanged: (value) {
           setState(() {
             if (title == 'Rapor Türü') {
-              _selectedReportType = value!;
+              _selectedReportType = title;
             } else {
-              _selectedPeriod = value!;
+              _selectedPeriod = title;
             }
           });
           Navigator.pop(context);
         },
       ),
+      onTap: () {
+        setState(() {
+          if (title == 'Rapor Türü') {
+            _selectedReportType = title;
+          } else {
+            _selectedPeriod = title;
+          }
+        });
+        Navigator.pop(context);
+      },
     );
   }
 
@@ -357,65 +366,65 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
       appBar: CustomAppBar(
         title: 'Raporlar',
         showDrawer: true,
-      actions: [
-        IconButton(
-          onPressed: _showExportDialog,
-          icon: const Icon(Icons.download),
-          tooltip: 'Dışa Aktar',
-        ),
-        IconButton(
-          onPressed: _showCreateReportDialog,
-          icon: const Icon(Icons.add),
-          tooltip: 'Yeni Rapor',
-        ),
-        PopupMenuButton<String>(
-          onSelected: (value) {
-            switch (value) {
-              case 'refresh':
-                // Refresh logic
-                break;
-              case 'settings':
-                // Settings logic
-                break;
-              case 'help':
-                // Help logic
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'refresh',
-              child: Row(
-                children: [
-                  Icon(Icons.refresh, size: 20),
-                  SizedBox(width: 8),
-                  Text('Yenile', style: GoogleFonts.poppins()),
-                ],
+        actions: [
+          IconButton(
+            onPressed: _showExportDialog,
+            icon: const Icon(Icons.download),
+            tooltip: 'Dışa Aktar',
+          ),
+          IconButton(
+            onPressed: _showCreateReportDialog,
+            icon: const Icon(Icons.add),
+            tooltip: 'Yeni Rapor',
+          ),
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              switch (value) {
+                case 'refresh':
+                  // Refresh logic
+                  break;
+                case 'settings':
+                  // Settings logic
+                  break;
+                case 'help':
+                  // Help logic
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    const Icon(Icons.refresh, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Yenile', style: GoogleFonts.poppins()),
+                  ],
+                ),
               ),
-            ),
-            PopupMenuItem(
-              value: 'settings',
-              child: Row(
-                children: [
-                  Icon(Icons.settings, size: 20),
-                  SizedBox(width: 8),
-                  Text('Ayarlar', style: GoogleFonts.poppins()),
-                ],
+              PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    const Icon(Icons.settings, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Ayarlar', style: GoogleFonts.poppins()),
+                  ],
+                ),
               ),
-            ),
-            PopupMenuItem(
-              value: 'help',
-              child: Row(
-                children: [
-                  Icon(Icons.help, size: 20),
-                  SizedBox(width: 8),
-                  Text('Yardım', style: GoogleFonts.poppins()),
-                ],
+              PopupMenuItem(
+                value: 'help',
+                child: Row(
+                  children: [
+                    const Icon(Icons.help, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Yardım', style: GoogleFonts.poppins()),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
       ),
       drawerContent: const TamgaciDrawerMenu(),
       persistentOnLarge: false,
@@ -430,7 +439,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
               SliverToBoxAdapter(
                 child: _buildWelcomeCard(isDark),
               ),
-              
+
               // Filtreleme ve arama bölümü
               SliverToBoxAdapter(
                 child: Padding(
@@ -438,7 +447,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                   child: _buildFiltersSection(isDark),
                 ),
               ),
-              
+
               // Dönem seçici
               SliverToBoxAdapter(
                 child: Padding(
@@ -455,7 +464,8 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: reportsSummaryAsync.when(
                     data: (summary) => _buildSummaryCards(summary, isDark),
-                    loading: () => const Center(child: CircularProgressIndicator()),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
                     error: (error, stack) => Center(
                       child: Text('Hata: $error'),
                     ),
@@ -874,8 +884,8 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading:
-                  const Icon(Icons.trending_up, color: TamgaciConstants.primaryColor),
+              leading: const Icon(Icons.trending_up,
+                  color: TamgaciConstants.primaryColor),
               title: Text('Gelir-Gider Raporu', style: GoogleFonts.poppins()),
               subtitle: Text('Aylık gelir ve gider analizi',
                   style: GoogleFonts.poppins(fontSize: 12)),
@@ -885,8 +895,8 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
               },
             ),
             ListTile(
-              leading:
-                  const Icon(Icons.bar_chart, color: TamgaciConstants.successColor),
+              leading: const Icon(Icons.bar_chart,
+                  color: TamgaciConstants.successColor),
               title:
                   Text('Satış Performans Raporu', style: GoogleFonts.poppins()),
               subtitle: Text('Satış ekibi ve ürün performansı',
@@ -1094,7 +1104,7 @@ class _DummyReportsSummary {
   final double netProfit;
   final int activeCustomers;
 
-  _DummyReportsSummary() 
+  _DummyReportsSummary()
       : totalIncome = 125000.0,
         totalExpense = 85000.0,
         netProfit = 40000.0,
