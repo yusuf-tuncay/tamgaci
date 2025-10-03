@@ -1237,6 +1237,29 @@ class _EnhancedCustomerDetailPageV2State
     return text[0].toUpperCase() + text.substring(1).toLowerCase();
   }
 
+  // Otomatik fatura numarası oluşturma
+  String _generateInvoiceNumber(dynamic invoice) {
+    try {
+      // Invoice ID'sinden kısa numara oluştur
+      final id = invoice['id'] as String? ?? '';
+      if (id.isNotEmpty) {
+        // Son 6 karakteri al ve büyük harfe çevir
+        final shortId = id.length > 6 ? id.substring(id.length - 6) : id;
+        return 'FAT-${shortId.toUpperCase()}';
+      }
+
+      // Tarih bazlı numara oluştur
+      final date = invoice['invoiceDate'] as DateTime? ?? DateTime.now();
+      final dateStr = DateFormat('yyMMdd').format(date);
+      final timeStr = DateFormat('HHmm').format(date);
+      return 'FAT-$dateStr-$timeStr';
+    } catch (e) {
+      // Hata durumunda timestamp bazlı numara
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      return 'FAT-${timestamp.substring(timestamp.length - 8)}';
+    }
+  }
+
   Widget _buildTransactionTile(dynamic t, bool isDark) {
     // Transaction object from TransactionService
     final color = _getTransactionColor(t.type);
@@ -1309,19 +1332,20 @@ class _EnhancedCustomerDetailPageV2State
           child: const Icon(Icons.receipt, color: Colors.blue),
         ),
         title: Text(
-          'Fatura: ${invoice['invoiceNumber']}',
+          'Fatura: ${invoice['invoiceNumber'] ?? _generateInvoiceNumber(invoice)}',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          DateFormat('dd.MM.yyyy').format(invoice['invoiceDate'] ?? DateTime.now()),
+          DateFormat('dd.MM.yyyy')
+              .format(invoice['invoiceDate'] ?? DateTime.now()),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              CurrencyHelper.formatCurrency(
-                  invoice['totalAmount'] ?? 0.0, invoice['currencyCode'] ?? 'TRY'),
+              CurrencyHelper.formatCurrency(invoice['totalAmount'] ?? 0.0,
+                  invoice['currencyCode'] ?? 'TRY'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: Colors.blue,
