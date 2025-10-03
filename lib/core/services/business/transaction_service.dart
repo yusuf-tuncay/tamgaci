@@ -145,12 +145,35 @@ class Transaction {
 /// İşlem yönetim servisi
 class TransactionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _collectionName = 'transactions';
 
-  /// Yeni işlem oluşturma
+  /// Yeni işlem oluşturma - Multi-tenant
   Future<String> createTransaction(Transaction transaction) async {
     try {
-      final docRef = _firestore.collection(_collectionName).doc();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
+      // Multi-tenant collection path
+      final docRef = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('transactions')
+          .doc();
+      
       final transactionWithId = Transaction(
         id: docRef.id,
         customerId: transaction.customerId,
@@ -174,7 +197,12 @@ class TransactionService {
         metadata: transaction.metadata,
       );
 
-      await docRef.set(transactionWithId.toFirestore());
+      // Multi-tenant data with tenantId and createdBy
+      final transactionData = transactionWithId.toFirestore();
+      transactionData['tenantId'] = tenantId;
+      transactionData['createdBy'] = user.uid;
+
+      await docRef.set(transactionData);
 
       // Müşteri bakiyesini güncelle
       await _updateCustomerBalance(transaction.customerId, transaction);
@@ -261,11 +289,31 @@ class TransactionService {
     }
   }
 
-  /// Müşteri işlemlerini getirme
+  /// Müşteri işlemlerini getirme - Multi-tenant
   Future<List<Transaction>> getCustomerTransactions(String customerId) async {
     try {
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
       final querySnapshot = await _firestore
-          .collection(_collectionName)
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('transactions')
           .where('customerId', isEqualTo: customerId)
           .orderBy('transactionDate', descending: true)
           .get();
@@ -279,23 +327,66 @@ class TransactionService {
     }
   }
 
-  /// Müşteri işlemlerini stream olarak getirme
+  /// Müşteri işlemlerini stream olarak getirme - Multi-tenant
   Stream<List<Transaction>> watchCustomerTransactions(String customerId) {
-    return _firestore
-        .collection(_collectionName)
-        .where('customerId', isEqualTo: customerId)
-        .orderBy('transactionDate', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => Transaction.fromFirestore(doc))
-            .toList());
+    return Stream.fromFuture(_getTenantId()).asyncExpand((tenantId) {
+      if (tenantId == null) return Stream.value(<Transaction>[]);
+      
+      return _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('transactions')
+          .where('customerId', isEqualTo: customerId)
+          .orderBy('transactionDate', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs
+              .map((doc) => Transaction.fromFirestore(doc))
+              .toList());
+    });
   }
 
-  /// Müşteri bakiyesini hesaplama
+  /// Tenant ID'yi getirme helper metodu
+  Future<String?> _getTenantId() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return null;
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) return null;
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      return userData['tenantId'] as String?;
+    } catch (e) {
+      AppLogger.error('Error getting tenant ID', e);
+      return null;
+    }
+  }
+
+  /// Müşteri bakiyesini hesaplama - Multi-tenant
   Future<double> calculateCustomerBalance(String customerId) async {
     try {
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
       final querySnapshot = await _firestore
-          .collection(_collectionName)
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('transactions')
           .where('customerId', isEqualTo: customerId)
           .get();
 
@@ -326,7 +417,7 @@ class TransactionService {
     }
   }
 
-  /// Tarih aralığına göre işlemleri getirme
+  /// Tarih aralığına göre işlemleri getirme - Multi-tenant
   Future<List<Transaction>> getTransactionsByDateRange(
     DateTime startDate,
     DateTime endDate, {
@@ -334,8 +425,28 @@ class TransactionService {
     TransactionType? type,
   }) async {
     try {
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
       Query query = _firestore
-          .collection(_collectionName)
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('transactions')
           .where('transactionDate', isGreaterThanOrEqualTo: startDate)
           .where('transactionDate', isLessThanOrEqualTo: endDate);
 
@@ -359,13 +470,37 @@ class TransactionService {
     }
   }
 
-  /// İşlem güncelleme
+  /// İşlem güncelleme - Multi-tenant
   Future<void> updateTransaction(Transaction transaction) async {
     try {
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
+      final transactionData = transaction.toFirestore();
+      transactionData['updatedAt'] = Timestamp.fromDate(DateTime.now());
+      transactionData['updatedBy'] = user.uid;
+
       await _firestore
-          .collection(_collectionName)
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('transactions')
           .doc(transaction.id)
-          .update(transaction.toFirestore());
+          .update(transactionData);
 
       AppLogger.info('Transaction updated: ${transaction.id}');
     } catch (e) {
@@ -374,18 +509,42 @@ class TransactionService {
     }
   }
 
-  /// İşlem silme
+  /// İşlem silme - Multi-tenant
   Future<void> deleteTransaction(String transactionId) async {
     try {
-      final transactionDoc =
-          await _firestore.collection(_collectionName).doc(transactionId).get();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
+      final transactionDoc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('transactions')
+          .doc(transactionId)
+          .get();
 
       if (transactionDoc.exists) {
         final transaction = Transaction.fromFirestore(transactionDoc);
 
         // İşlemi sil
         await _firestore
-            .collection(_collectionName)
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('transactions')
             .doc(transactionId)
             .delete();
 
