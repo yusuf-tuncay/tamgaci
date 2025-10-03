@@ -2,6 +2,7 @@
 // lib/core/services/inventory_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 
 /// Stok hareket türü enum'u
@@ -80,10 +81,34 @@ class StockMovement {
 class InventoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Stok hareketi kaydetme
+  /// Stok hareketi kaydetme - Multi-tenant
   Future<String> recordStockMovement(StockMovement movement) async {
     try {
-      final docRef = _firestore.collection('stock_movements').doc();
+      // Kullanıcının tenant ID'sini al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception('User document not found');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String?;
+
+      if (tenantId == null || tenantId.isEmpty) {
+        throw Exception('No tenant ID found for user');
+      }
+
+      // Multi-tenant collection path
+      final docRef = _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('stock_movements')
+          .doc();
+      
       final movementWithId = StockMovement(
         id: docRef.id,
         productId: movement.productId,
@@ -97,7 +122,11 @@ class InventoryService {
         createdAt: movement.createdAt,
       );
 
-      await docRef.set(movementWithId.toMap());
+      // Multi-tenant data with tenantId
+      final movementData = movementWithId.toMap();
+      movementData['tenantId'] = tenantId;
+
+      await docRef.set(movementData);
       await _updateProductStock(
           movement.productId, movement.quantity, movement.type);
 

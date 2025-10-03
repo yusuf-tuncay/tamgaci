@@ -297,5 +297,15 @@ service cloud.firestore {
       allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
       allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
+
+    // Stock movements collection rules
+    match /tenants/{tenantId}/stock_movements/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
   }
 }
