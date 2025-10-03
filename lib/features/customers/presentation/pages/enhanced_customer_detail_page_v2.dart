@@ -759,9 +759,9 @@ class _EnhancedCustomerDetailPageV2State
               // Faturalar
               ...invoices.map((i) => {
                     'type': 'invoice',
-                    'date': _parseDateTime(i['saleDate']) ?? 
-                            _parseDateTime(i['invoiceDate']) ?? 
-                            DateTime.now(),
+                    'date': _parseDateTime(i['saleDate']) ??
+                        _parseDateTime(i['invoiceDate']) ??
+                        DateTime.now(),
                     'data': i,
                   }),
               // Ödemeler
@@ -817,7 +817,7 @@ class _EnhancedCustomerDetailPageV2State
                 if (item['type'] == 'invoice') {
                   return _buildInvoiceTile(item['data'], isDark);
                 } else if (item['type'] == 'payment') {
-                  return _buildPaymentTile(item['data'], isDark);
+                  return _buildPaymentTile(item['data'] as CashTransaction, isDark);
                 } else {
                   return _buildTransactionTile(item['data'], isDark);
                 }
@@ -1125,11 +1125,13 @@ class _EnhancedCustomerDetailPageV2State
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
         // Sadece ödemeleri göster (faturalar değil)
-        final paymentItems = payments.map((t) => {
-              'type': 'payment',
-              'date': t.transactionDate,
-              'data': t,
-            }).toList()
+        final paymentItems = payments
+            .map((t) => {
+                  'type': 'payment',
+                  'date': t.transactionDate,
+                  'data': t,
+                })
+            .toList()
           ..sort((a, b) {
             final dateA = a['date'] as DateTime?;
             final dateB = b['date'] as DateTime?;
@@ -1168,7 +1170,7 @@ class _EnhancedCustomerDetailPageV2State
           itemCount: paymentItems.length,
           itemBuilder: (context, index) {
             final item = paymentItems[index];
-            return _buildPaymentTile(item['data'], isDark);
+            return _buildPaymentTile(item['data'] as CashTransaction, isDark);
           },
         );
       },
@@ -1601,7 +1603,7 @@ class _EnhancedCustomerDetailPageV2State
                     if (entry['type'] == 'invoice') {
                       return _buildInvoiceTile(entry['data'], isDark);
                     } else {
-                      return _buildPaymentTile(entry['data'], isDark);
+                      return _buildPaymentTile(entry['data'] as CashTransaction, isDark);
                     }
                   },
                 ),
