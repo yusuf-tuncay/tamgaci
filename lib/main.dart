@@ -106,7 +106,8 @@ void _suppressDisposedViewErrors() {
         errorString.contains('Trying to render') ||
         errorString.contains('EngineFlutterView') ||
         errorString.contains('Assertion failed:') ||
-        errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+        errorString.contains(
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
       // Bu hataları tamamen sessizce geç
       return;
     }
@@ -139,7 +140,8 @@ void _suppressDisposedViewErrors() {
         errorString.contains('Trying to render') ||
         errorString.contains('EngineFlutterView') ||
         errorString.contains('Assertion failed:') ||
-        errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+        errorString.contains(
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
       // Bu hataları tamamen sessizce geç
       return true;
     }
@@ -165,7 +167,8 @@ void _suppressAllDisposedErrors() {
           errorString.contains('!isDisposed') ||
           errorString.contains('Trying to render') ||
           errorString.contains('Assertion failed:') ||
-          errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+          errorString.contains(
+              'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
           errorString.contains('RenderBox') ||
           errorString.contains('hasSize') ||
           errorString.contains('NEEDS-LAYOUT') ||

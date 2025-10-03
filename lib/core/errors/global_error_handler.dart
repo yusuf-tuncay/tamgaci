@@ -52,7 +52,8 @@ class GlobalErrorHandler {
         errorString.contains('Trying to render') ||
         errorString.contains('EngineFlutterView') ||
         errorString.contains('Assertion failed:') ||
-        errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+        errorString.contains(
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
       // Bu hataları sessizce geç - Flutter Web'de yaygın bir sorun
       if (kDebugMode) {
         debugPrint('⚠️ Disposed view error (ignored): ${details.exception}');

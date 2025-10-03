@@ -1869,7 +1869,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
           // Ana Kaydet Butonu (Alış yap modülü ile tutarlı)
           SizedBox(
