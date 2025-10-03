@@ -5,24 +5,22 @@ import 'package:tamgaci/features/invoices/domain/entities/invoice.dart';
 import 'package:tamgaci/features/invoices/domain/entities/invoice_item.dart';
 import 'package:tamgaci/features/invoices/domain/entities/repositories/invoice_repository.dart';
 import 'package:tamgaci/features/invoices/data/models/invoice_status.dart';
+import 'package:tamgaci/core/services/tenant_service.dart';
 
 /// Firebase Invoice Repository Implementation
 class InvoiceFirebaseRepository implements InvoiceRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TenantService _tenantService = TenantService();
   static const String _invoicesCollection = 'invoices';
   static const String _invoiceItemsCollection = 'invoice_items';
 
   Future<String?> _currentTenantId() async {
     try {
-      final uid = _currentUid();
-      if (uid == null) return null;
-      final userDoc = await _firestore.collection('users').doc(uid).get();
-      if (!userDoc.exists) return null;
-      final data = userDoc.data() as Map<String, dynamic>;
-      final tenantId = data['tenantId'] as String?;
-      return (tenantId != null && tenantId.isNotEmpty) ? tenantId : null;
+      final tenantId = await _tenantService.getUserTenantId();
+      AppLogger.info('Invoice tenantId lookup via TenantService: $tenantId');
+      return tenantId;
     } catch (e) {
-      AppLogger.error('Error getting tenantId for invoices', e);
+      AppLogger.error('Error getting tenantId for invoices via TenantService', e);
       return null;
     }
   }
