@@ -103,12 +103,13 @@ final saleNotifierProvider =
 });
 
 /// Customer invoices stream provider
-final customerInvoicesStreamProvider = StreamProvider.family<List<dynamic>, String>((ref, customerId) async* {
+final customerInvoicesStreamProvider =
+    StreamProvider.family<List<dynamic>, String>((ref, customerId) async* {
   try {
     final firestore = ref.watch(firestoreProvider);
     final auth = ref.watch(firebaseAuthProvider);
     final user = auth.currentUser;
-    
+
     if (user == null) {
       yield [];
       return;

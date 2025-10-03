@@ -616,4 +616,3 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
     state = state.copyWith(error: null);
   }
 }
-

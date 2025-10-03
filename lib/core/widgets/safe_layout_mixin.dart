@@ -103,7 +103,8 @@ mixin SafeLayoutMixin<T extends StatefulWidget> on State<T> {
 }
 
 /// Consumer widget'lar için layout güvenli mixin
-mixin ConsumerSafeLayoutMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+mixin ConsumerSafeLayoutMixin<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
   bool _isLayoutSafe = true;
 
   @override

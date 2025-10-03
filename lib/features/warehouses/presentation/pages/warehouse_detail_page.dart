@@ -766,8 +766,10 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
                         return productsAsync.when(
                           data: (products) {
                             // Widget dispose edildiyse boş widget döndür
-                            if (!context.mounted) return const SizedBox.shrink();
-                            
+                            if (!context.mounted) {
+                              return const SizedBox.shrink();
+                            }
+
                             if (products.isEmpty) {
                               return _buildEmptyProductsState();
                             }

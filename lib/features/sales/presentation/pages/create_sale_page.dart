@@ -72,6 +72,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     // Default: Taslak
     return SaleStatus.draft;
   }
+
   PaymentStatus _selectedPaymentStatus = PaymentStatus.pending;
   // Payment UI state
   String _paymentMethod =
@@ -284,7 +285,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                           hintText: 'Boş bırakılabilir',
                         ),
                         keyboardType: TextInputType.number,
-                                inputFormatters: [
+                        inputFormatters: [
                           _PaymentAmountFormatter(),
                         ],
                         onChanged: (value) {
@@ -325,7 +326,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                             }
                           }
                         },
-                        ),
+                      ),
                     ],
                   );
                 },
@@ -565,24 +566,24 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-            SizedBox(
-              width: 220,
-              child: DropdownButtonFormField<SaleType>(
-                initialValue: _selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'İşlem Türü',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  SaleType.invoice,
-                  SaleType.waybill,
-                  SaleType.proforma
-                ]
-                    .map((type) => DropdownMenuItem(
-                          value: type,
-                          child: Text(type.displayName),
-                        ))
-                    .toList(),
+                  SizedBox(
+                    width: 220,
+                    child: DropdownButtonFormField<SaleType>(
+                      initialValue: _selectedType,
+                      decoration: const InputDecoration(
+                        labelText: 'İşlem Türü',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        SaleType.invoice,
+                        SaleType.waybill,
+                        SaleType.proforma
+                      ]
+                          .map((type) => DropdownMenuItem(
+                                value: type,
+                                child: Text(type.displayName),
+                              ))
+                          .toList(),
                       onChanged: (value) =>
                           setState(() => _selectedType = value!),
                     ),
@@ -967,18 +968,18 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           ),
 
           // Ürün listesi
-              ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: mergedItems.length,
             separatorBuilder: (context, index) => const Divider(height: 1.0),
-                itemBuilder: (context, index) {
+            itemBuilder: (context, index) {
               final item = mergedItems[index];
               return _buildProductRow(item, index);
-                },
-              ),
-          ],
-        ),
+            },
+          ),
+        ],
+      ),
     );
   }
 
@@ -1058,9 +1059,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       children: [
         // Ürün bilgileri
         Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
                 item.productName ?? item.productId,
                 style: const TextStyle(
@@ -1079,13 +1080,13 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     fontSize: 11,
                   ),
                   maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-            ],
+                  overflow: TextOverflow.ellipsis,
                 ),
+            ],
+          ),
         ),
 
-                const SizedBox(width: 8),
+        const SizedBox(width: 8),
 
         // Miktar
         Text(
@@ -1129,7 +1130,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
 
   Widget _buildLargeScreenRow(SaleItem item, int index) {
     return Row(
-              children: [
+      children: [
         // Ürün Adı
         Expanded(
           flex: 3,
@@ -1143,8 +1144,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                   fontSize: 14,
                 ),
                 maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                overflow: TextOverflow.ellipsis,
+              ),
               if (item.productDescription != null &&
                   item.productDescription!.isNotEmpty)
                 Text(
@@ -1154,16 +1155,16 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     fontSize: 12,
                   ),
                   maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
+            ],
+          ),
         ),
 
         // Miktar
         Expanded(
           flex: 2,
-                  child: Text(
+          child: Text(
             '${item.quantity.toStringAsFixed(0)} adet',
             style: const TextStyle(fontSize: 14),
           ),
@@ -1172,7 +1173,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         // Birim Fiyat
         Expanded(
           flex: 2,
-                  child: Text(
+          child: Text(
             _formatMoney(item.unitPrice, currency: item.currency),
             style: const TextStyle(fontSize: 14),
           ),
@@ -1193,10 +1194,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey.shade600,
-                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
+          ),
         ),
 
         // İskonto
@@ -1204,12 +1205,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           flex: 2,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                              Text(
+            children: [
+              Text(
                 _formatMoney(item.discountAmount, currency: item.currency),
                 style: const TextStyle(fontSize: 14),
-                          ),
-                          Text(
+              ),
+              Text(
                 '%${item.discountRate.toStringAsFixed(0)}',
                 style: TextStyle(
                   fontSize: 12,
@@ -1225,7 +1226,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           flex: 2,
           child: Text(
             _formatMoney(item.totalAmount, currency: item.currency),
-                            style: const TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: Colors.green,
@@ -1240,9 +1241,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           tooltip: 'Ürünü Sil',
           constraints: const BoxConstraints(),
           padding: const EdgeInsets.all(8.0),
-                          ),
-                        ],
-                      );
+        ),
+      ],
+    );
   }
 
   Widget _buildSummaryCard() {
@@ -1404,8 +1405,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       ));
     }
 
-                return Column(
-                  children: [
+    return Column(
+      children: [
         // Her para birimi için ayrı kart
         ...currencyCards,
         // GENEL TOPLAM kartı
@@ -1496,22 +1497,22 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     border: Border.all(color: Colors.green.shade200),
                   ),
                   child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Toplam:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Toplam:',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          ),
                         ),
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                        Text(
+                          Text(
                             _formatMoney(total, currency: currency),
                             style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                               fontSize: 16,
                               color: Colors.green.shade700,
                             ),
@@ -1612,7 +1613,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              children: [
                 // Para birimi başlığı
                 Text(
                   'Para Birimi: $currency',
@@ -1663,12 +1664,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     border: Border.all(color: Colors.green.shade200),
                   ),
                   child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       const Text(
                         'Toplam:',
                         style: TextStyle(
-                            fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
@@ -1714,7 +1715,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label),
-                    Text(
+          Text(
             value,
             style: TextStyle(
               fontWeight: FontWeight.w600,
@@ -1739,72 +1740,11 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-                      children: [
+          children: [
             // Toplam ürün miktarı
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                const Text(
-                  'Toplam ürün miktarı:',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-                            Text(
-                  totalQuantity.toStringAsFixed(0),
-                              style: const TextStyle(
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            // Genel toplam
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                  'GENEL TOPLAM ($paymentCurrency):',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                Text(
-                  _formatMoney(totalInPaymentCurrency,
-                      currency: paymentCurrency),
-                  style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: Colors.green.shade700,
-                              ),
-                            ),
-              ],
-                          ),
-                        ],
-                      ),
-      ),
-    );
-  }
-
-  Widget _buildGrandTotalCard(double totalInTRY) {
-    // Toplam ürün miktarını hesapla
-    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-                            children: [
-            // Toplam ürün miktarı
-                                Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
+              children: [
                 const Text(
                   'Toplam ürün miktarı:',
                   style: TextStyle(
@@ -1827,7 +1767,68 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             // Genel toplam
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
+              children: [
+                Text(
+                  'GENEL TOPLAM ($paymentCurrency):',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  _formatMoney(totalInPaymentCurrency,
+                      currency: paymentCurrency),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGrandTotalCard(double totalInTRY) {
+    // Toplam ürün miktarını hesapla
+    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Toplam ürün miktarı
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Toplam ürün miktarı:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+                Text(
+                  totalQuantity.toStringAsFixed(0),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // Genel toplam
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 const Text(
                   'GENEL TOPLAM (TRY):',
                   style: TextStyle(
@@ -1836,7 +1837,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                     color: Colors.black87,
                   ),
                 ),
-                              Text(
+                Text(
                   _formatMoney(totalInTRY, currency: 'TRY'),
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
@@ -1880,7 +1881,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+                  borderRadius:
+                      BorderRadius.circular(TamgaciConstants.radiusMD),
                 ),
               ),
               child: Text(
@@ -2074,22 +2076,25 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       // Stok hareketleri (taslak dışında)
       for (final item in _items) {
         try {
-        final movement = StockMovement(
-          id: '',
-          productId: item.productId,
-          warehouseId: _selectedWarehouseId!,
-          type: StockMovementType.stockOut,
-          quantity: item.quantity.round(),
-          reason: 'Satış',
-          reference: saleId,
-          notes: 'Satış hareketi',
-          createdBy: 'system',
-          createdAt: DateTime.now(),
-        );
-        await inventory.recordStockMovement(movement);
-          AppLogger.info('Stock movement recorded for product: ${item.productId}');
+          final movement = StockMovement(
+            id: '',
+            productId: item.productId,
+            warehouseId: _selectedWarehouseId!,
+            type: StockMovementType.stockOut,
+            quantity: item.quantity.round(),
+            reason: 'Satış',
+            reference: saleId,
+            notes: 'Satış hareketi',
+            createdBy: 'system',
+            createdAt: DateTime.now(),
+          );
+          await inventory.recordStockMovement(movement);
+          AppLogger.info(
+              'Stock movement recorded for product: ${item.productId}');
         } catch (e) {
-          AppLogger.error('Error recording stock movement for product: ${item.productId}', e);
+          AppLogger.error(
+              'Error recording stock movement for product: ${item.productId}',
+              e);
         }
       }
 
@@ -2183,9 +2188,11 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             },
           );
           await transactionService.createTransaction(payTxn);
-          AppLogger.info('Payment transaction created successfully for sale: $saleId');
+          AppLogger.info(
+              'Payment transaction created successfully for sale: $saleId');
         } catch (e) {
-          AppLogger.error('Error creating payment transaction for sale: $saleId', e);
+          AppLogger.error(
+              'Error creating payment transaction for sale: $saleId', e);
         }
 
         // 2) Nakit yönetimi: uygun kasayı bul ve gelir işlemi oluştur
@@ -2246,9 +2253,11 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             updatedBy: null,
           );
           await useCase.call(trx);
-          AppLogger.info('Cash transaction created successfully for sale: $saleId');
+          AppLogger.info(
+              'Cash transaction created successfully for sale: $saleId');
         } catch (e) {
-          AppLogger.error('Error creating cash transaction for sale: $saleId', e);
+          AppLogger.error(
+              'Error creating cash transaction for sale: $saleId', e);
         }
       }
 
@@ -2256,10 +2265,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       if (_isCashPayment) {
         double fxRate = 1.0;
         if (_paymentCurrencyCode != _baseCurrencyCode) {
-            await ExchangeRateService().getExchangeRate(_paymentCurrencyCode);
-            final amt = ExchangeRateService()
-                .convertCurrency(1.0, _paymentCurrencyCode, _baseCurrencyCode);
-            fxRate = amt > 0 ? amt : 1.0;
+          await ExchangeRateService().getExchangeRate(_paymentCurrencyCode);
+          final amt = ExchangeRateService()
+              .convertCurrency(1.0, _paymentCurrencyCode, _baseCurrencyCode);
+          fxRate = amt > 0 ? amt : 1.0;
         }
 
         final transactionService = TransactionService();
@@ -2664,35 +2673,35 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       }
     } else {
       // Customer seçiliyse customer adreslerini al
-    final asyncCustomer = ref.read(customerProvider(customerId));
-    String? baseAddress;
+      final asyncCustomer = ref.read(customerProvider(customerId));
+      String? baseAddress;
 
-    if (asyncCustomer.hasValue && asyncCustomer.value != null) {
-      baseAddress = isBilling
-          ? asyncCustomer.value!.address
-          : (asyncCustomer.value!.shippingAddress ??
-              asyncCustomer.value!.address);
-    } else {
-      baseAddress = isBilling ? _billingAddress : _shippingAddress;
-    }
+      if (asyncCustomer.hasValue && asyncCustomer.value != null) {
+        baseAddress = isBilling
+            ? asyncCustomer.value!.address
+            : (asyncCustomer.value!.shippingAddress ??
+                asyncCustomer.value!.address);
+      } else {
+        baseAddress = isBilling ? _billingAddress : _shippingAddress;
+      }
 
       // Ana adres
       if (baseAddress != null &&
           baseAddress.isNotEmpty &&
           !seen.contains(baseAddress)) {
         seen.add(baseAddress);
-      items.add(DropdownMenuItem(
-        value: baseAddress,
+        items.add(DropdownMenuItem(
+          value: baseAddress,
           child: Text(baseAddress, overflow: TextOverflow.ellipsis),
-      ));
-    }
+        ));
+      }
 
       // Branch adresleri
-    if (asyncCustomer.hasValue && asyncCustomer.value?.branches != null) {
-      for (final br in asyncCustomer.value!.branches!) {
+      if (asyncCustomer.hasValue && asyncCustomer.value?.branches != null) {
+        for (final br in asyncCustomer.value!.branches!) {
           if (br.address.isNotEmpty && !seen.contains(br.address)) {
             seen.add(br.address);
-          items.add(DropdownMenuItem(
+            items.add(DropdownMenuItem(
               value: br.address,
               child: Text('${br.name} • ${br.address}',
                   overflow: TextOverflow.ellipsis),
@@ -3163,7 +3172,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               },
             ),
             if (_productIdController.text.isNotEmpty) ...[
-            const SizedBox(height: 16.0),
+              const SizedBox(height: 16.0),
               Container(
                 padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
@@ -3205,24 +3214,24 @@ class _AddItemDialogState extends State<_AddItemDialog> {
             ],
             const SizedBox(height: 16.0),
             if (_showCurrencySelection) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _lineCurrencyCode,
-                    decoration: const InputDecoration(
-                      labelText: 'Satır Para Birimi',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const ['TRY', 'USD', 'EUR', 'GBP']
-                        .map((c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(c),
-                            ))
-                        .toList(),
-                    onChanged: (v) async {
-                      if (v == null) return;
-                      setState(() => _lineCurrencyCode = v);
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _lineCurrencyCode,
+                      decoration: const InputDecoration(
+                        labelText: 'Satır Para Birimi',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const ['TRY', 'USD', 'EUR', 'GBP']
+                          .map((c) => DropdownMenuItem(
+                                value: c,
+                                child: Text(c),
+                              ))
+                          .toList(),
+                      onChanged: (v) async {
+                        if (v == null) return;
+                        setState(() => _lineCurrencyCode = v);
 
                         // Aynı para birimindeki ürün var mı kontrol et
                         final existingItem = widget.existingItems.firstWhere(
@@ -3257,10 +3266,10 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                           // Aynı para birimindeki ürün yoksa, kur bilgisini göster
                           setState(() => _showExchangeRate = true);
 
-                      // Kur: 1 LINE = ? BASE
-                      if (v == widget.baseCurrencyCode) {
-                        setState(() => _fxRateToTry = 1.0);
-                      } else {
+                          // Kur: 1 LINE = ? BASE
+                          if (v == widget.baseCurrencyCode) {
+                            setState(() => _fxRateToTry = 1.0);
+                          } else {
                             // Otomatik kur getirme
                             try {
                               await ExchangeRateService().getExchangeRate(v);
@@ -3276,10 +3285,10 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                               setState(() => _fxRateToTry = null);
                             }
                           }
-                      }
-                    },
+                        }
+                      },
+                    ),
                   ),
-                ),
                 ],
               ),
               const SizedBox(height: 16.0),
@@ -3327,30 +3336,30 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                         }
                       }
                     },
-                  child: TextFormField(
-                    controller: _unitPriceController,
-                    decoration: InputDecoration(
-                      labelText: 'Birim Fiyat ($_lineCurrencyCode)',
-                      border: const OutlineInputBorder(),
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                    ],
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Birim fiyat gerekli';
-                      }
-                      final cleaned =
-                          value.replaceAll('.', '').replaceAll(',', '.');
-                      final parsed = double.tryParse(cleaned);
-                      if (parsed == null || parsed < 0) {
-                        return 'Geçerli fiyat giriniz';
-                      }
-                      return null;
-                    },
-                    onChanged: (_) => setState(() {}),
+                    child: TextFormField(
+                      controller: _unitPriceController,
+                      decoration: InputDecoration(
+                        labelText: 'Birim Fiyat ($_lineCurrencyCode)',
+                        border: const OutlineInputBorder(),
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      ],
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Birim fiyat gerekli';
+                        }
+                        final cleaned =
+                            value.replaceAll('.', '').replaceAll(',', '.');
+                        final parsed = double.tryParse(cleaned);
+                        if (parsed == null || parsed < 0) {
+                          return 'Geçerli fiyat giriniz';
+                        }
+                        return null;
+                      },
+                      onChanged: (_) => setState(() {}),
                     ),
                   ),
                 ),
@@ -3382,7 +3391,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                               value.replaceAll('.', '').replaceAll(',', '.');
                           final parsed = double.tryParse(cleaned);
                           if (parsed != null) {
-                          setState(() {
+                            setState(() {
                               _fxRateToTry = parsed;
                             });
                             debugPrint(
@@ -3397,7 +3406,7 @@ class _AddItemDialogState extends State<_AddItemDialog> {
                     ),
                   ),
                 ],
-            ),
+              ),
             const SizedBox(height: 16.0),
             Row(
               children: [

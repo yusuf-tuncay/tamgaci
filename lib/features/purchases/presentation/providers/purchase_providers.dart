@@ -106,7 +106,8 @@ final purchaseNotifierProvider =
 });
 
 /// Customer purchases stream provider
-final customerPurchasesStreamProvider = StreamProvider.family<List<dynamic>, String>((ref, customerId) async* {
+final customerPurchasesStreamProvider =
+    StreamProvider.family<List<dynamic>, String>((ref, customerId) async* {
   try {
     final firestore = ref.watch(firestoreProvider);
     final auth = ref.watch(firebaseAuthProvider);

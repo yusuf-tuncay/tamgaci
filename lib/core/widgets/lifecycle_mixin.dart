@@ -65,7 +65,8 @@ mixin LifecycleMixin<T extends StatefulWidget> on State<T> {
 }
 
 /// Consumer widget'lar için lifecycle mixin
-mixin ConsumerLifecycleMixin<T extends ConsumerStatefulWidget> on ConsumerState<T> {
+mixin ConsumerLifecycleMixin<T extends ConsumerStatefulWidget>
+    on ConsumerState<T> {
   bool _isDisposed = false;
 
   @override

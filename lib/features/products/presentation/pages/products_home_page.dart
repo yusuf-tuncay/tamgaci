@@ -71,7 +71,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   Widget build(BuildContext context) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
-    
+
     final productsAsync = ref.watch(productsStreamProvider);
     final statisticsAsync = ref.watch(productStatisticsProvider);
 

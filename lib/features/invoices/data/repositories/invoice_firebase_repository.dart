@@ -20,7 +20,8 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
       AppLogger.info('Invoice tenantId lookup via TenantService: $tenantId');
       return tenantId;
     } catch (e) {
-      AppLogger.error('Error getting tenantId for invoices via TenantService', e);
+      AppLogger.error(
+          'Error getting tenantId for invoices via TenantService', e);
       return null;
     }
   }

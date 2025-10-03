@@ -6,10 +6,8 @@ import '../../domain/entities/customer_enums.dart';
 import '../../domain/entities/customer_category.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../../data/repositories/firebase_customer_repository.dart';
-import '../../data/services/customer_transaction_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tamgaci/core/services/business/transaction_service.dart';
 
 // ========== BASE PROVIDERS ==========
 
@@ -154,25 +152,6 @@ final customerStreamProvider =
     StreamProvider.family<Customer?, String>((ref, id) {
   final repository = ref.watch(customerRepositoryProvider);
   return repository.watchCustomerById(id);
-});
-
-// ========== CUSTOMER TRANSACTION PROVIDERS ==========
-
-/// Customer Transaction Service provider
-final customerTransactionServiceProvider = Provider<CustomerTransactionService>((ref) {
-  return CustomerTransactionService();
-});
-
-/// Müşteri işlemleri provider'ı
-final customerTransactionsProvider = FutureProvider.family<List<Transaction>, String>((ref, customerId) async {
-  final service = ref.watch(customerTransactionServiceProvider);
-  return await service.getCustomerTransactions(customerId);
-});
-
-/// Müşteri işlemleri stream provider'ı
-final customerTransactionsStreamProvider = StreamProvider.family<List<Transaction>, String>((ref, customerId) {
-  final service = ref.watch(customerTransactionServiceProvider);
-  return service.watchCustomerTransactions(customerId);
 });
 
 // ========== STATE PROVIDERS ==========

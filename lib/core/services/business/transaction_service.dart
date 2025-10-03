@@ -180,7 +180,7 @@ class TransactionService {
           .doc(tenantId)
           .collection('transactions')
           .doc();
-      
+
       final transactionWithId = Transaction(
         id: docRef.id,
         customerId: transaction.customerId,
@@ -337,7 +337,7 @@ class TransactionService {
   Stream<List<Transaction>> watchCustomerTransactions(String customerId) {
     return Stream.fromFuture(_getTenantId()).asyncExpand((tenantId) {
       if (tenantId == null) return Stream.value(<Transaction>[]);
-      
+
       return _firestore
           .collection('tenants')
           .doc(tenantId)
