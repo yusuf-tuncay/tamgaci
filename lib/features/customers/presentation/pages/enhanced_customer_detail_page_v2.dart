@@ -14,11 +14,10 @@ import '../../../../core/routes/routes.dart';
 import '../../domain/entities/customer.dart';
 // import '../../domain/entities/customer_transaction.dart';
 import '../providers/customer_providers.dart';
-import '../../../invoices/presentation/providers/invoice_providers.dart';
 import '../../../cash_management/presentation/providers/cash_management_providers.dart';
 import '../../../cash_management/domain/entities/cash_transaction.dart';
 import '../../../../core/services/business/transaction_service.dart';
-import '../../../sales/presentation/providers/sale_providers.dart';
+import '../../../sales/presentation/providers/sale_providers.dart' as sales;
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -40,7 +39,7 @@ class _EnhancedCustomerDetailPageV2State
   late TabController _tabController;
   // ignore: unused_field
   int _selectedTabIndex = 0;
-  bool _hasLoadedTransactions = false;
+  final bool _hasLoadedTransactions = false;
 
   @override
   void initState() {
@@ -448,7 +447,7 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildTabBar(Customer customer, bool isDark) {
     final invoicesAsync =
-        ref.watch(customerInvoicesStreamProvider(customer.id));
+        ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
 
     final invoices = invoicesAsync.maybeWhen(
@@ -674,10 +673,6 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildTransactionsTab(Customer customer, bool isDark) {
-    final invoicesAsync =
-        ref.watch(customerInvoicesStreamProvider(customer.id));
-    final cashState = ref.watch(cashManagementNotifierProvider);
-    
     // Customer transactions için TransactionService kullan
     return FutureBuilder<List<dynamic>>(
       future: _loadCustomerTransactions(customer.id),
@@ -707,7 +702,7 @@ class _EnhancedCustomerDetailPageV2State
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
+                const Icon(
                   Icons.error_outline,
                   size: 64,
                   color: Colors.red,
@@ -736,7 +731,7 @@ class _EnhancedCustomerDetailPageV2State
         }
 
         final transactions = snapshot.data ?? [];
-        
+
         if (transactions.isEmpty) {
           return Center(
             child: Column(
@@ -776,7 +771,8 @@ class _EnhancedCustomerDetailPageV2State
   Future<List<dynamic>> _loadCustomerTransactions(String customerId) async {
     try {
       final transactionService = TransactionService();
-      final transactions = await transactionService.getCustomerTransactions(customerId);
+      final transactions =
+          await transactionService.getCustomerTransactions(customerId);
       return transactions;
     } catch (e) {
       debugPrint('Error loading customer transactions: $e');
@@ -786,7 +782,7 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildInvoicesTab(Customer customer, bool isDark) {
     final invoicesAsync =
-        ref.watch(customerInvoicesStreamProvider(customer.id));
+        ref.watch(sales.customerInvoicesStreamProvider(customer.id));
 
     final invoices = invoicesAsync.maybeWhen(
       data: (value) => value,
@@ -846,32 +842,32 @@ class _EnhancedCustomerDetailPageV2State
                                     ),
                                   );
                                 }
-        if (invoices.isEmpty) {
-          return Center(
-            child: Text(
-              'Fatura bulunamadı',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
+                                if (invoices.isEmpty) {
+                                  return Center(
+                                    child: Text(
+                                      'Fatura bulunamadı',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
                                         color: isDark
                                             ? Colors.grey[400]
                                             : Colors.grey[600],
-              ),
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: invoices.length,
-          itemBuilder: (context, index) {
-            final invoice = invoices[index];
-            return _buildInvoiceTile(invoice, isDark);
-          },
-        );
-      },
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return ListView.builder(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: invoices.length,
+                                  itemBuilder: (context, index) {
+                                    final invoice = invoices[index];
+                                    return _buildInvoiceTile(invoice, isDark);
+                                  },
+                                );
+                              },
                             ),
                             // İrsaliye (Satış) - henüz ayrıştırma alanı yok
                             Center(
-        child: Text(
+                              child: Text(
                                 'İrsaliye listesi için alan henüz entegre değil',
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
@@ -947,7 +943,7 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildPaymentsTab(Customer customer, bool isDark) {
     final invoicesAsync =
-        ref.watch(customerInvoicesStreamProvider(customer.id));
+        ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
     return invoicesAsync.when(
       data: (invoices) {
@@ -1208,7 +1204,7 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildDetailedTransactionList(Customer customer, bool isDark) {
     final invoicesAsync =
-        ref.watch(customerInvoicesStreamProvider(customer.id));
+        ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
     return invoicesAsync.when(
       data: (invoices) {
