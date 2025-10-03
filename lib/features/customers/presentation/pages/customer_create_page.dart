@@ -220,20 +220,27 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
 
       // Açılış bakiyesi işlemi oluştur (ekstreye yansısın ve bakiye hesaplansın)
       if ((parsedOpeningBalance).abs() > 0) {
-        final txService = CustomerTransactionService();
-        final txType = parsedOpeningBalance >= 0
-            ? TransactionType.credit
-            : TransactionType.debit;
-        await txService.addCustomerTransaction(
-          customerId: customer.id,
-          type: txType,
-          amount: parsedOpeningBalance.abs(),
-          currency: _currency,
-          description: 'Açılış bakiyesi',
-          reference: 'opening_balance',
-          companyId: companyName,
-          createdBy: uid,
-        );
+        try {
+          final txService = CustomerTransactionService();
+          final txType = parsedOpeningBalance >= 0
+              ? TransactionType.credit
+              : TransactionType.debit;
+          await txService.addCustomerTransaction(
+            customerId: customer.id,
+            type: txType,
+            amount: parsedOpeningBalance.abs(),
+            currency: _currency,
+            description: 'Açılış bakiyesi',
+            reference: 'opening_balance',
+            companyId: companyName,
+            createdBy: uid,
+          );
+          AppLogger.info('Opening balance transaction created successfully');
+        } catch (e) {
+          AppLogger.warning('Could not create opening balance transaction: $e');
+          // Müşteri oluşturuldu ama açılış bakiyesi işlemi oluşturulamadı
+          // Bu durumda müşteri yine de başarılı sayılmalı
+        }
       }
 
       // Provider'ı yenile
