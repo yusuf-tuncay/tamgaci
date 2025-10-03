@@ -1089,7 +1089,7 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildInvoiceTile(dynamic invoice, bool isDark) {
     // invoice entity with known fields
-    final color = invoice.isPaid ? Colors.green : Colors.blue;
+    final color = invoice['isPaid'] ? Colors.green : Colors.blue;
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -1098,11 +1098,11 @@ class _EnhancedCustomerDetailPageV2State
           child: const Icon(Icons.receipt, color: Colors.blue),
         ),
         title: Text(
-          'Fatura: ${invoice.invoiceNumber}',
+          'Fatura: ${invoice['invoiceNumber']}',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
-          DateFormat('dd.MM.yyyy').format(invoice.invoiceDate),
+          DateFormat('dd.MM.yyyy').format(invoice['invoiceDate']),
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1110,17 +1110,17 @@ class _EnhancedCustomerDetailPageV2State
           children: [
             Text(
               CurrencyHelper.formatCurrency(
-                  invoice.totalAmount, invoice.currencyCode),
+                  invoice['totalAmount'], invoice['currencyCode']),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: Colors.blue,
               ),
             ),
             Text(
-              invoice.isPaid ? 'Ödendi' : 'Beklemede',
+              invoice['isPaid'] ? 'Ödendi' : 'Beklemede',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: invoice.isPaid ? Colors.green : Colors.orange,
+                color: invoice['isPaid'] ? Colors.green : Colors.orange,
               ),
             ),
           ],
@@ -1215,7 +1215,7 @@ class _EnhancedCustomerDetailPageV2State
         final entries = <Map<String, dynamic>>[
           ...invoices.map((i) => {
                 'type': 'invoice',
-                'date': i.invoiceDate,
+                'date': i['invoiceDate'],
                 'data': i,
               }),
           ...payments.map((t) => {
