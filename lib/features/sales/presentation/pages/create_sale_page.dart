@@ -2061,20 +2061,24 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     Future<void> afterSave(String saleId) async {
       // Stok hareketleri (taslak dışında)
       for (final item in _items) {
-        final movement = StockMovement(
-          id: '',
-          productId: item.productId,
-          warehouseId: _selectedWarehouseId!,
-          type: StockMovementType.stockOut,
-          quantity: item.quantity.round(),
-          reason: 'Satış',
-          reference: saleId,
-          notes: 'Satış hareketi',
-          createdBy: 'system',
-          createdAt: DateTime.now(),
-        );
-        await inventory.recordStockMovement(movement);
-        AppLogger.info('Stock movement recorded for product: ${item.productId}');
+        try {
+          final movement = StockMovement(
+            id: '',
+            productId: item.productId,
+            warehouseId: _selectedWarehouseId!,
+            type: StockMovementType.stockOut,
+            quantity: item.quantity.round(),
+            reason: 'Satış',
+            reference: saleId,
+            notes: 'Satış hareketi',
+            createdBy: 'system',
+            createdAt: DateTime.now(),
+          );
+          await inventory.recordStockMovement(movement);
+          AppLogger.info('Stock movement recorded for product: ${item.productId}');
+        } catch (e) {
+          AppLogger.error('Error recording stock movement for product: ${item.productId}', e);
+        }
       }
 
       // Ekstre ve müşteri bakiyesi için fatura işlemi kaydı (şirket para biriminde)
