@@ -2073,6 +2073,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           createdAt: DateTime.now(),
         );
         await inventory.recordStockMovement(movement);
+        AppLogger.info('Stock movement recorded for product: ${item.productId}');
       }
 
       // Ekstre ve müşteri bakiyesi için fatura işlemi kaydı (şirket para biriminde)
@@ -2106,7 +2107,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           },
         );
         await transactionService.createTransaction(t);
-      } catch (_) {}
+        AppLogger.info('Transaction created successfully for sale: $saleId');
+      } catch (e) {
+        AppLogger.error('Error creating transaction for sale: $saleId', e);
+      }
 
       // Ödeme miktarı girilmişse tahsilat kaydı oluştur
       if (_paymentAmount != null && _paymentAmount! > 0) {
@@ -2162,7 +2166,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             },
           );
           await transactionService.createTransaction(payTxn);
-        } catch (_) {}
+          AppLogger.info('Payment transaction created successfully for sale: $saleId');
+        } catch (e) {
+          AppLogger.error('Error creating payment transaction for sale: $saleId', e);
+        }
 
         // 2) Nakit yönetimi: uygun kasayı bul ve gelir işlemi oluştur
         try {
@@ -2222,7 +2229,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
             updatedBy: null,
           );
           await useCase.call(trx);
-        } catch (_) {}
+          AppLogger.info('Cash transaction created successfully for sale: $saleId');
+        } catch (e) {
+          AppLogger.error('Error creating cash transaction for sale: $saleId', e);
+        }
       }
 
       // Peşin ödemeyse: müşteri ekstresine payment ve nakit yönetime kasa geliri
