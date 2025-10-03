@@ -16,6 +16,7 @@ import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
 import 'package:tamgaci/core/services/business/transaction_service.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 import 'package:tamgaci/features/cash_management/domain/entities/cash_transaction.dart'
     as cm;
 import 'package:tamgaci/features/cash_management/presentation/providers/cash_management_providers.dart';
