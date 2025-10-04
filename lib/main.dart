@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamgaci/app.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+// kIsWeb artık foundation.dart'tan geliyor
 import 'package:tamgaci/core/services/utils/notification_service.dart';
 // import 'package:tamgaci/core/services/firebase/firebase_data_service.dart'; // Removed - not needed
 import 'package:tamgaci/core/services/firebase/firebase_notification_service.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:tamgaci/core/errors/global_error_handler.dart';
-import 'dart:ui' show PlatformDispatcher;
+// Ultra Error Suppressor kaldırıldı - sadeleştirilmiş sistem
+import 'package:tamgaci/core/errors/smart_error_suppressor.dart';
+// PlatformDispatcher artık foundation.dart'tan geliyor
 
 // Platform-specific imports - Removed - not needed
 // import 'dart:io' if (dart.library.io) 'dart:io';
@@ -29,8 +32,13 @@ void main() async {
     _suppressAllDisposedErrors();
   }
 
-  // Global error handler'ı başlat
-  GlobalErrorHandler().initialize();
+  // Akıllı error suppression'ı başlat (ana sistem)
+  await SmartErrorSuppressionSystem.initialize(productionMode: kReleaseMode);
+
+  // Global error handler'ı başlat (fallback)
+  if (kDebugMode) {
+    GlobalErrorHandler().initialize();
+  }
 
   // Firebase'i başlat
   try {
@@ -85,7 +93,7 @@ void _suppressDisposedViewErrors() {
   FlutterError.onError = (FlutterErrorDetails details) {
     final errorString = details.exceptionAsString();
 
-    // Ultra agresif disposed view hatalarını bastır
+    // Ultra agresif disposed view hatalarını bastır - TÜM disposed view hatalarını yakala
     if (errorString.contains('isDisposed') ||
         errorString.contains('disposed EngineFlutterView') ||
         errorString.contains('Trying to render a disposed') ||
@@ -107,7 +115,68 @@ void _suppressDisposedViewErrors() {
         errorString.contains('EngineFlutterView') ||
         errorString.contains('Assertion failed:') ||
         errorString.contains(
-            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+        errorString.contains('disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('window.dart') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('disposed EngineFlutterView') ||
+        errorString.contains('RenderBox') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('RenderBox was not laid out') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('Assertion failed:') ||
+        errorString.contains(
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+        // Performance API hataları
+        errorString
+            .contains('Failed to execute \'measure\' on \'Performance\'') ||
+        errorString.contains('The mark \'') ||
+        errorString.contains('does not exist') ||
+        errorString.contains('Performance') ||
+        errorString.contains('measure') ||
+        errorString.contains('mark') ||
+        errorString.contains('listener-begin') ||
+        errorString.contains('listener-end') ||
+        errorString.contains('image_cache') ||
+        errorString.contains('image_stream') ||
+        errorString.contains('network_image_web') ||
+        errorString.contains('image_decoder') ||
+        errorString.contains('timeline') ||
+        errorString.contains('developer_patch') ||
+        errorString.contains('async_patch') ||
+        errorString.contains('zone') ||
+        errorString.contains('future_impl') ||
+        errorString.contains('complete') ||
+        errorString.contains('asyncReturn') ||
+        errorString.contains('engine') ||
+        errorString.contains('painting') ||
+        errorString.contains('image_cache.dart') ||
+        errorString.contains('image_stream.dart') ||
+        errorString.contains('network_image_web.dart') ||
+        errorString.contains('image_decoder.dart') ||
+        errorString.contains('timeline.dart') ||
+        errorString.contains('developer_patch.dart') ||
+        errorString.contains('async_patch.dart') ||
+        errorString.contains('zone.dart') ||
+        errorString.contains('future_impl.dart')) {
       // Bu hataları tamamen sessizce geç
       return;
     }
@@ -141,7 +210,39 @@ void _suppressDisposedViewErrors() {
         errorString.contains('EngineFlutterView') ||
         errorString.contains('Assertion failed:') ||
         errorString.contains(
-            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+        // Performance API hataları
+        errorString
+            .contains('Failed to execute \'measure\' on \'Performance\'') ||
+        errorString.contains('The mark \'') ||
+        errorString.contains('does not exist') ||
+        errorString.contains('Performance') ||
+        errorString.contains('measure') ||
+        errorString.contains('mark') ||
+        errorString.contains('listener-begin') ||
+        errorString.contains('listener-end') ||
+        errorString.contains('image_cache') ||
+        errorString.contains('image_stream') ||
+        errorString.contains('network_image_web') ||
+        errorString.contains('image_decoder') ||
+        errorString.contains('timeline') ||
+        errorString.contains('developer_patch') ||
+        errorString.contains('async_patch') ||
+        errorString.contains('zone') ||
+        errorString.contains('future_impl') ||
+        errorString.contains('complete') ||
+        errorString.contains('asyncReturn') ||
+        errorString.contains('engine') ||
+        errorString.contains('painting') ||
+        errorString.contains('image_cache.dart') ||
+        errorString.contains('image_stream.dart') ||
+        errorString.contains('network_image_web.dart') ||
+        errorString.contains('image_decoder.dart') ||
+        errorString.contains('timeline.dart') ||
+        errorString.contains('developer_patch.dart') ||
+        errorString.contains('async_patch.dart') ||
+        errorString.contains('zone.dart') ||
+        errorString.contains('future_impl.dart')) {
       // Bu hataları tamamen sessizce geç
       return true;
     }

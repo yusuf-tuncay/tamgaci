@@ -24,7 +24,18 @@ mixin LifecycleMixin<T extends StatefulWidget> on State<T> {
   /// Safe setState - sadece widget dispose edilmemişse çalışır
   void safeSetState(VoidCallback fn) {
     if (!_isDisposed && mounted) {
-      setState(fn);
+      try {
+        setState(fn);
+      } catch (e) {
+        // Disposed view hatalarını yakala ve sessizce geç
+        if (e.toString().contains('disposed') ||
+            e.toString().contains('EngineFlutterView') ||
+            e.toString().contains('isDisposed') ||
+            e.toString().contains('Trying to render')) {
+          return;
+        }
+        rethrow;
+      }
     }
   }
 
@@ -87,7 +98,18 @@ mixin ConsumerLifecycleMixin<T extends ConsumerStatefulWidget>
   /// Safe setState - sadece widget dispose edilmemişse çalışır
   void safeSetState(VoidCallback fn) {
     if (!_isDisposed && mounted) {
-      setState(fn);
+      try {
+        setState(fn);
+      } catch (e) {
+        // Disposed view hatalarını yakala ve sessizce geç
+        if (e.toString().contains('disposed') ||
+            e.toString().contains('EngineFlutterView') ||
+            e.toString().contains('isDisposed') ||
+            e.toString().contains('Trying to render')) {
+          return;
+        }
+        rethrow;
+      }
     }
   }
 

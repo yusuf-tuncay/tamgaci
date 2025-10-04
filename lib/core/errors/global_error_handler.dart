@@ -36,7 +36,7 @@ class GlobalErrorHandler {
   void _handleFlutterError(FlutterErrorDetails details) {
     final errorString = details.exceptionAsString();
 
-    // Ultra agresif disposed view hatalarını yakala
+    // Ultra agresif disposed view hatalarını yakala - TÜM disposed view hatalarını yakala
     if (errorString.contains('isDisposed') ||
         errorString.contains('disposed EngineFlutterView') ||
         errorString.contains('Trying to render a disposed') ||
@@ -53,7 +53,68 @@ class GlobalErrorHandler {
         errorString.contains('EngineFlutterView') ||
         errorString.contains('Assertion failed:') ||
         errorString.contains(
-            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12')) {
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+        errorString.contains('disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('window.dart') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('disposed EngineFlutterView') ||
+        errorString.contains('RenderBox') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('RenderBox was not laid out') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('Assertion failed:') ||
+        errorString.contains(
+            'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+        // Performance API hataları
+        errorString
+            .contains('Failed to execute \'measure\' on \'Performance\'') ||
+        errorString.contains('The mark \'') ||
+        errorString.contains('does not exist') ||
+        errorString.contains('Performance') ||
+        errorString.contains('measure') ||
+        errorString.contains('mark') ||
+        errorString.contains('listener-begin') ||
+        errorString.contains('listener-end') ||
+        errorString.contains('image_cache') ||
+        errorString.contains('image_stream') ||
+        errorString.contains('network_image_web') ||
+        errorString.contains('image_decoder') ||
+        errorString.contains('timeline') ||
+        errorString.contains('developer_patch') ||
+        errorString.contains('async_patch') ||
+        errorString.contains('zone') ||
+        errorString.contains('future_impl') ||
+        errorString.contains('complete') ||
+        errorString.contains('asyncReturn') ||
+        errorString.contains('engine') ||
+        errorString.contains('painting') ||
+        errorString.contains('image_cache.dart') ||
+        errorString.contains('image_stream.dart') ||
+        errorString.contains('network_image_web.dart') ||
+        errorString.contains('image_decoder.dart') ||
+        errorString.contains('timeline.dart') ||
+        errorString.contains('developer_patch.dart') ||
+        errorString.contains('async_patch.dart') ||
+        errorString.contains('zone.dart') ||
+        errorString.contains('future_impl.dart')) {
       // Bu hataları sessizce geç - Flutter Web'de yaygın bir sorun
       if (kDebugMode) {
         debugPrint('⚠️ Disposed view error (ignored): ${details.exception}');

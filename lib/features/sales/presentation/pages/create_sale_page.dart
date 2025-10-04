@@ -27,6 +27,12 @@ import 'package:tamgaci/core/widgets/error_widget.dart' as core_widgets;
 import 'package:tamgaci/features/sales/presentation/states/sale_state.dart';
 import 'package:tamgaci/core/theme/constants.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:tamgaci/features/invoices/presentation/pages/invoice_preview_page.dart';
+import 'package:tamgaci/features/invoices/domain/entities/invoice.dart';
+import 'package:tamgaci/features/invoices/domain/entities/invoice_item.dart';
+import 'package:tamgaci/features/invoices/data/models/invoice_status.dart';
+import 'package:tamgaci/core/widgets/disposed_view_suppressor.dart';
+import 'package:tamgaci/core/errors/ultra_error_suppressor.dart';
 
 /// Yeni satış oluşturma sayfası
 class CreateSalePage extends ConsumerStatefulWidget {
@@ -41,7 +47,10 @@ class CreateSalePage extends ConsumerStatefulWidget {
   ConsumerState<CreateSalePage> createState() => _CreateSalePageState();
 }
 
-class _CreateSalePageState extends ConsumerState<CreateSalePage> {
+class _CreateSalePageState extends ConsumerState<CreateSalePage>
+    with
+        ConsumerDisposedViewSuppressorMixin,
+        UltraConsumerDisposedViewSuppressorMixin {
   final _formKey = GlobalKey<FormState>();
   final _saleNumberController = TextEditingController();
   final _customerIdController = TextEditingController();
@@ -77,7 +86,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
   // Payment UI state
   String _paymentMethod =
       'Nakit'; // Ödeme Şekli: Nakit, Banka, Kredi Kartı, Çek, Senet
-  bool _isCashPayment = true; // Peşin/Vadeli toggle
+  bool _isCashPayment = false; // Peşin/Vadeli toggle - Varsayılan olarak vadeli
   int? _installmentCount;
   String _paymentCurrencyCode = '';
   double? _paymentAmount; // Ödenecek miktar
@@ -199,7 +208,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<String>(
-                    initialValue: _isCashPayment ? 'Peşin' : 'Vadeli',
+                    initialValue: 'Vadeli', // Varsayılan olarak vadeli
                     items: const [
                       DropdownMenuItem(value: 'Peşin', child: Text('Peşin')),
                       DropdownMenuItem(value: 'Vadeli', child: Text('Vadeli')),
@@ -334,6 +343,22 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
                 error: (_, __) => const SizedBox.shrink(),
               );
             }),
+            if (_isCashPayment) ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _paymentAmountController,
+                focusNode: _paymentAmountFocusNode,
+                decoration: const InputDecoration(
+                  labelText: 'Ödeme Miktarı',
+                  border: OutlineInputBorder(),
+                  prefixText: '₺',
+                ),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  _paymentAmount = double.tryParse(value);
+                },
+              ),
+            ],
             if (!_isCashPayment) ...[
               const SizedBox(height: 12),
               Row(
@@ -464,19 +489,21 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       _taxRate = sale.taxRate;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isEditing ? 'Satış Düzenle' : 'Yeni Satış'),
-        actions: [
-          if (isEditing)
-            IconButton(
-              icon: const Icon(Icons.delete),
-              onPressed: _showDeleteDialog,
-              tooltip: 'Sil',
-            ),
-        ],
+    return UltraDisposedViewSuppressor(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(isEditing ? 'Satış Düzenle' : 'Yeni Satış'),
+          actions: [
+            if (isEditing)
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: _showDeleteDialog,
+                tooltip: 'Sil',
+              ),
+          ],
+        ),
+        body: _buildBody(saleState),
       ),
-      body: _buildBody(saleState),
     );
   }
 
@@ -1988,6 +2015,50 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     );
   }
 
+  /// Sale'den Invoice'a dönüştürme metodu
+  Invoice _convertSaleToInvoice(Sale sale) {
+    final invoiceItems = sale.items.asMap().entries.map((entry) {
+      final index = entry.key;
+      final saleItem = entry.value;
+      return InvoiceItem(
+        id: '',
+        invoiceId: '',
+        itemOrder: index + 1,
+        productId: saleItem.productId,
+        productName: saleItem.productName ?? 'N/A',
+        quantity: saleItem.quantity,
+        unitPrice: saleItem.unitPrice,
+        taxRate: saleItem.taxRate,
+        taxAmount: saleItem.taxAmount,
+        lineTotal: saleItem.unitPrice * saleItem.quantity,
+        currencyCode: saleItem.currency,
+        createdAt: DateTime.now(),
+      );
+    }).toList();
+
+    return Invoice(
+      id: '',
+      invoiceNumber: sale.saleNumber,
+      customerId: sale.customerId,
+      customerName: sale.customerName,
+      customerAddress: null, // Müşteri adres bilgisi eklenebilir
+      invoiceDate: sale.saleDate,
+      dueDate: sale.dueDate,
+      status: sale.status == SaleStatus.draft
+          ? InvoiceStatus.draft
+          : InvoiceStatus.sent,
+      subtotal: sale.subtotal,
+      taxAmount: sale.taxAmount,
+      discountAmount: sale.discountAmount,
+      totalAmount: sale.totalAmount,
+      currencyCode: sale.currency,
+      isPaid: sale.isPaid, // Artık doğrudan isPaid alanını kullan
+      items: invoiceItems,
+      createdAt: sale.createdAt,
+      updatedAt: sale.updatedAt,
+    );
+  }
+
   void _saveSale() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -2033,8 +2104,24 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
           .convertCurrency(totalTry, 'TRY', _baseCurrencyCode);
     }
 
+    // Ödeme durumu kontrolü - Sadece gerçekten peşin ödeme yapıldıysa ödendi olarak işaretle
     final autoPaymentStatus =
         _isCashPayment ? PaymentStatus.paid : PaymentStatus.pending;
+
+    // isPaid kontrolü - Sadece peşin ödeme seçildi VE ödeme miktarı girildi VE ödeme miktarı toplam tutara eşit ise ödendi
+    final totalAmount = _baseCurrencyCode == 'TRY' ? totalTry : totalBase;
+    final isPaid = _isCashPayment &&
+        _paymentAmount != null &&
+        _paymentAmount! > 0 &&
+        _paymentAmount! >= totalAmount;
+
+    // Debug logging
+    AppLogger.info('Payment Status Debug:');
+    AppLogger.info('_isCashPayment: $_isCashPayment');
+    AppLogger.info('_paymentAmount: $_paymentAmount');
+    AppLogger.info('totalAmount: $totalAmount');
+    AppLogger.info('isPaid: $isPaid');
+    AppLogger.info('autoPaymentStatus: $autoPaymentStatus');
 
     final sale = Sale(
       id: widget.saleId ?? '',
@@ -2047,6 +2134,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       type: _selectedType,
       status: _determineStatus(),
       paymentStatus: autoPaymentStatus,
+      isPaid: isPaid,
       saleDate: _selectedDate,
       dueDate: _dueDate,
       items: _items,
@@ -2379,7 +2467,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       await afterSave(_saleNumberController.text);
     }
 
-    Navigator.pop(context);
+    // Fatura önizleme sayfasına yönlendir
+    final invoice = _convertSaleToInvoice(sale);
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InvoicePreviewPage(
+            invoice: invoice,
+            isEditable: true,
+            isFromSale: true,
+          ),
+        ),
+      );
+    }
   }
 
   void _saveSaleDraft() async {
@@ -2412,6 +2513,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
       type: _selectedType,
       status: SaleStatus.draft,
       paymentStatus: PaymentStatus.pending,
+      isPaid: false, // Taslak her zaman ödenmemiş
       saleDate: _selectedDate,
       dueDate: _dueDate,
       items: _items,
@@ -2441,7 +2543,21 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage> {
     } else {
       notifier.createSale(sale);
     }
-    Navigator.pop(context);
+
+    // Fatura önizleme sayfasına yönlendir
+    final invoice = _convertSaleToInvoice(sale);
+    if (mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => InvoicePreviewPage(
+            invoice: invoice,
+            isEditable: true,
+            isFromSale: true,
+          ),
+        ),
+      );
+    }
   }
 
   void _showDeleteDialog() {

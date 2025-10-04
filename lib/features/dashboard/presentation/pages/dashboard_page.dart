@@ -546,10 +546,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
+            crossAxisCount: 3,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.2,
+            childAspectRatio: 1.1,
             children: [
               _buildActionCard('Fatura Oluştur', Icons.receipt_long,
                   TamgaciConstants.primaryColor, () {
@@ -575,6 +575,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               _buildActionCard('Stok Listesi', Icons.inventory, Colors.teal,
                   () {
                 Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
+              }, isDark),
+              _buildActionCard('Logger Test', Icons.color_lens, Colors.pink,
+                  () {
+                Navigator.of(context)
+                    .pushNamed(TamgaciRoutes.colorizedLoggerTest);
               }, isDark),
             ],
           ),

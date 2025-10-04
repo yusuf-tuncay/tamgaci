@@ -520,6 +520,7 @@ class _SaleFormWidgetState extends State<SaleFormWidget> {
       type: _selectedType,
       status: _selectedStatus,
       paymentStatus: _selectedPaymentStatus,
+      isPaid: _selectedPaymentStatus == PaymentStatus.paid,
       saleDate: _selectedDate,
       dueDate: _dueDate,
       items: _items,

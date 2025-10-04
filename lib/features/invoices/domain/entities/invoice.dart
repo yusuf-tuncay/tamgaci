@@ -16,6 +16,12 @@ class Invoice {
   /// Müşteri ID'si
   final String customerId;
 
+  /// Müşteri adı (hızlı erişim için)
+  final String? customerName;
+
+  /// Müşteri adresi (hızlı erişim için)
+  final String? customerAddress;
+
   /// Müşteri bilgisi (lazy loading)
   final Customer? customer;
 
@@ -77,6 +83,8 @@ class Invoice {
     required this.id,
     required this.invoiceNumber,
     required this.customerId,
+    this.customerName,
+    this.customerAddress,
     this.customer,
     required this.invoiceDate,
     this.dueDate,
@@ -104,6 +112,8 @@ class Invoice {
       id: json['id'] as String,
       invoiceNumber: json['invoiceNumber'] as String,
       customerId: json['customerId'] as String,
+      customerName: json['customerName'] as String?,
+      customerAddress: json['customerAddress'] as String?,
       customer: json['customer'] != null
           ? Customer.fromJson(json['customer'] as Map<String, dynamic>)
           : null,
@@ -145,6 +155,8 @@ class Invoice {
       'id': id,
       'invoiceNumber': invoiceNumber,
       'customerId': customerId,
+      'customerName': customerName,
+      'customerAddress': customerAddress,
       'customer': customer?.toJson(),
       'invoiceDate': invoiceDate.toIso8601String(),
       'dueDate': dueDate?.toIso8601String(),
@@ -172,6 +184,8 @@ class Invoice {
     String? id,
     String? invoiceNumber,
     String? customerId,
+    String? customerName,
+    String? customerAddress,
     Customer? customer,
     DateTime? invoiceDate,
     DateTime? dueDate,
@@ -196,6 +210,8 @@ class Invoice {
       id: id ?? this.id,
       invoiceNumber: invoiceNumber ?? this.invoiceNumber,
       customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      customerAddress: customerAddress ?? this.customerAddress,
       customer: customer ?? this.customer,
       invoiceDate: invoiceDate ?? this.invoiceDate,
       dueDate: dueDate ?? this.dueDate,

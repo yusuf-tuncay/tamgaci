@@ -69,6 +69,7 @@ import 'package:tamgaci/features/inventory/presentation/pages/stock_counts_list_
 import 'package:tamgaci/features/inventory/presentation/pages/stock_list_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/create_stock_page.dart';
 import 'package:tamgaci/features/inventory/presentation/pages/stock_detail_page.dart';
+import 'package:tamgaci/core/services/colorized_logger_test_page.dart';
 
 // Silinen modül: directory
 
@@ -97,6 +98,9 @@ class TamgaciRoutes {
 
   /// Şifre sıfırlama sayfası route'u
   static const String forgotPassword = '/forgot-password';
+
+  /// Renkli logger test sayfası route'u
+  static const String colorizedLoggerTest = '/colorized-logger-test';
 
   // Sales (Satış) Route'ları
   /// Satış listesi sayfası
@@ -350,6 +354,10 @@ class TamgaciRoutes {
 
       case forgotPassword:
         return _createRoute(const ForgotPasswordPage(), settings: settings);
+
+      case colorizedLoggerTest:
+        return _createRoute(const ColorizedLoggerTestPage(),
+            settings: settings);
       // ========== AYARLAR/PROFIL ==========
       case TamgaciRoutes.profile:
         return _createRoute(const ProfilePage(), settings: settings);
@@ -573,23 +581,19 @@ class TamgaciRoutes {
       // ========== RAPORLAR ROUTE'LARI ==========
 
       case reportsList:
-        return _createRoute(const ReportsOverviewPage(),
-            settings: settings);
+        return _createRoute(const ReportsOverviewPage(), settings: settings);
 
       case createReport:
         // Geçici olarak reports overview'a yönlendir
-        return _createRoute(const ReportsOverviewPage(),
-            settings: settings);
+        return _createRoute(const ReportsOverviewPage(), settings: settings);
 
       case reportDetail:
         // Geçici olarak reports overview'a yönlendir
-        return _createRoute(const ReportsOverviewPage(),
-            settings: settings);
+        return _createRoute(const ReportsOverviewPage(), settings: settings);
 
       case editReport:
         // Geçici olarak reports overview'a yönlendir
-        return _createRoute(const ReportsOverviewPage(),
-            settings: settings);
+        return _createRoute(const ReportsOverviewPage(), settings: settings);
 
       // ========== ÜRÜN ROUTE'LARI ==========
 

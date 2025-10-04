@@ -49,6 +49,7 @@ class Sale {
   final SaleType type;
   final SaleStatus status;
   final PaymentStatus paymentStatus;
+  final bool isPaid; // Ödeme yapıldı mı?
   final String customerId;
   final String? customerName; // Müşteri adı (lazy loading için)
   final DateTime saleDate;
@@ -80,6 +81,7 @@ class Sale {
     required this.type,
     required this.status,
     required this.paymentStatus,
+    required this.isPaid,
     required this.customerId,
     this.customerName,
     required this.saleDate,
@@ -133,6 +135,7 @@ class Sale {
     SaleType? type,
     SaleStatus? status,
     PaymentStatus? paymentStatus,
+    bool? isPaid,
     String? customerId,
     String? customerName,
     DateTime? saleDate,
@@ -164,6 +167,7 @@ class Sale {
       type: type ?? this.type,
       status: status ?? this.status,
       paymentStatus: paymentStatus ?? this.paymentStatus,
+      isPaid: isPaid ?? this.isPaid,
       customerId: customerId ?? this.customerId,
       customerName: customerName ?? this.customerName,
       saleDate: saleDate ?? this.saleDate,
@@ -208,6 +212,7 @@ class Sale {
         (e) => e.name == json['paymentStatus'],
         orElse: () => PaymentStatus.pending,
       ),
+      isPaid: json['isPaid'] as bool? ?? false,
       customerId: json['customerId'] as String,
       customerName: json['customerName'] as String?,
       saleDate: DateTime.parse(json['saleDate'] as String),
@@ -249,6 +254,7 @@ class Sale {
       'type': type.name,
       'status': status.name,
       'paymentStatus': paymentStatus.name,
+      'isPaid': isPaid,
       'customerId': customerId,
       'customerName': customerName,
       'saleDate': saleDate.toIso8601String(),

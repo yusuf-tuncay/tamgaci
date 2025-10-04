@@ -96,8 +96,15 @@ class QuickActionsWidget extends StatelessWidget {
                 'Raporlar',
                 Icons.assessment_outlined,
                 Colors.indigo,
-                () =>
-                    Navigator.pushNamed(context, TamgaciRoutes.reportsList),
+                () => Navigator.pushNamed(context, TamgaciRoutes.reportsList),
+              ),
+              _buildQuickAction(
+                context,
+                'Logger Test',
+                Icons.color_lens,
+                Colors.pink,
+                () => Navigator.pushNamed(
+                    context, TamgaciRoutes.colorizedLoggerTest),
               ),
             ],
           ),

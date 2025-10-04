@@ -778,6 +778,7 @@ class _EnhancedSaleDetailPageState extends ConsumerState<EnhancedSaleDetailPage>
         type: SaleType.invoice,
         status: SaleStatus.delivered,
         paymentStatus: PaymentStatus.paid,
+        isPaid: true,
         customerId: '1',
         customerName: 'ABC Şirketi',
         saleDate: DateTime.now().subtract(const Duration(days: 5)),
