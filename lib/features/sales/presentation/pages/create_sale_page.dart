@@ -28,9 +28,7 @@ import 'package:tamgaci/features/sales/presentation/states/sale_state.dart';
 import 'package:tamgaci/core/theme/constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:tamgaci/features/invoices/presentation/pages/invoice_preview_page.dart';
-import 'package:tamgaci/features/invoices/domain/entities/invoice.dart';
-import 'package:tamgaci/features/invoices/domain/entities/invoice_item.dart';
-import 'package:tamgaci/features/invoices/data/models/invoice_status.dart';
+import 'package:tamgaci/core/services/unified_invoice_converter.dart';
 import 'package:tamgaci/core/widgets/disposed_view_suppressor.dart';
 import 'package:tamgaci/core/errors/ultra_error_suppressor.dart';
 
@@ -2015,50 +2013,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     );
   }
 
-  /// Sale'den Invoice'a dönüştürme metodu
-  Invoice _convertSaleToInvoice(Sale sale) {
-    final invoiceItems = sale.items.asMap().entries.map((entry) {
-      final index = entry.key;
-      final saleItem = entry.value;
-      return InvoiceItem(
-        id: '',
-        invoiceId: '',
-        itemOrder: index + 1,
-        productId: saleItem.productId,
-        productName: saleItem.productName ?? 'N/A',
-        quantity: saleItem.quantity,
-        unitPrice: saleItem.unitPrice,
-        taxRate: saleItem.taxRate,
-        taxAmount: saleItem.taxAmount,
-        lineTotal: saleItem.unitPrice * saleItem.quantity,
-        currencyCode: saleItem.currency,
-        createdAt: DateTime.now(),
-      );
-    }).toList();
-
-    return Invoice(
-      id: '',
-      invoiceNumber: sale.saleNumber,
-      customerId: sale.customerId,
-      customerName: sale.customerName,
-      customerAddress: null, // Müşteri adres bilgisi eklenebilir
-      invoiceDate: sale.saleDate,
-      dueDate: sale.dueDate,
-      status: sale.status == SaleStatus.draft
-          ? InvoiceStatus.draft
-          : InvoiceStatus.sent,
-      subtotal: sale.subtotal,
-      taxAmount: sale.taxAmount,
-      discountAmount: sale.discountAmount,
-      totalAmount: sale.totalAmount,
-      currencyCode: sale.currency,
-      isPaid: sale.isPaid, // Artık doğrudan isPaid alanını kullan
-      items: invoiceItems,
-      createdAt: sale.createdAt,
-      updatedAt: sale.updatedAt,
-    );
-  }
-
   void _saveSale() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -2070,6 +2024,27 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       );
       return;
     }
+
+    // Anında UI feedback - Loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Satış kaydediliyor...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
 
     // Depo otomatik seçimi (yoksa)
     if (_selectedWarehouseId == null) {
@@ -2095,13 +2070,17 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     final taxAmountTry = subtotalTry * (_taxRate / 100);
     final totalTry = subtotalTry + taxAmountTry - _discountAmount;
 
-    // Şirket para birimine çevir
+    // Exchange rate cache - Tek seferde çek
     double totalBase = totalTry;
     if (_baseCurrencyCode != 'TRY') {
-      // Rates'i hazırla ve dönüştür
-      await ExchangeRateService().getExchangeRate(_baseCurrencyCode);
-      totalBase = ExchangeRateService()
-          .convertCurrency(totalTry, 'TRY', _baseCurrencyCode);
+      try {
+        await ExchangeRateService().getExchangeRate(_baseCurrencyCode);
+        totalBase = ExchangeRateService()
+            .convertCurrency(totalTry, 'TRY', _baseCurrencyCode);
+      } catch (e) {
+        AppLogger.error('Exchange rate error, using TRY: $e');
+        totalBase = totalTry;
+      }
     }
 
     // Ödeme durumu kontrolü - Sadece gerçekten peşin ödeme yapıldıysa ödendi olarak işaretle
@@ -2161,8 +2140,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     final notifier = ref.read(saleNotifierProvider.notifier);
     final inventory = InventoryService();
     Future<void> afterSave(String saleId) async {
-      // Stok hareketleri (taslak dışında)
-      for (final item in _items) {
+      // Paralel stok hareketleri - Future.wait ile hızlandır
+      final stockMovements = _items.map((item) async {
         try {
           final movement = StockMovement(
             id: '',
@@ -2184,7 +2163,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
               'Error recording stock movement for product: ${item.productId}',
               e);
         }
-      }
+      }).toList();
+
+      // Tüm stok hareketlerini paralel olarak çalıştır
+      await Future.wait(stockMovements);
 
       // Ekstre ve müşteri bakiyesi için fatura işlemi kaydı (şirket para biriminde)
       try {
@@ -2459,27 +2441,51 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       }
     }
 
-    if (widget.saleId != null) {
-      notifier.updateSale(sale);
-      await afterSave(sale.id);
-    } else {
-      notifier.createSale(sale);
-      await afterSave(_saleNumberController.text);
-    }
+    try {
+      if (widget.saleId != null) {
+        notifier.updateSale(sale);
+        await afterSave(sale.id);
+      } else {
+        notifier.createSale(sale);
+        await afterSave(_saleNumberController.text);
+      }
 
-    // Fatura önizleme sayfasına yönlendir
-    final invoice = _convertSaleToInvoice(sale);
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => InvoicePreviewPage(
-            invoice: invoice,
-            isEditable: true,
-            isFromSale: true,
+      // Loading dialog'u kapat
+      if (mounted) {
+        Navigator.of(context).pop(); // Loading dialog'u kapat
+      }
+
+      // Fatura önizleme sayfasına yönlendir
+      final invoice = UnifiedInvoiceConverter.convertSaleToInvoice(sale);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InvoicePreviewPage(
+              invoice: invoice,
+              isEditable: true,
+              isFromSale: true,
+            ),
           ),
-        ),
-      );
+        );
+      }
+    } catch (e) {
+      // Loading dialog'u kapat
+      if (mounted) {
+        Navigator.of(context).pop(); // Loading dialog'u kapat
+      }
+
+      // Hata mesajı göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Satış kaydedilirken hata oluştu: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+      AppLogger.error('Error saving sale: $e');
     }
   }
 
@@ -2490,6 +2496,27 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       );
       return;
     }
+
+    // Anında UI feedback - Loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Taslak kaydediliyor...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
 
     final subtotalTry = _items.fold(0.0, (sum, item) => sum + item.totalAmount);
     final taxAmountTry = subtotalTry * (_taxRate / 100);
@@ -2537,26 +2564,50 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       updatedAt: DateTime.now(),
     );
 
-    final notifier = ref.read(saleNotifierProvider.notifier);
-    if (widget.saleId != null) {
-      notifier.updateSale(sale);
-    } else {
-      notifier.createSale(sale);
-    }
+    try {
+      final notifier = ref.read(saleNotifierProvider.notifier);
+      if (widget.saleId != null) {
+        notifier.updateSale(sale);
+      } else {
+        notifier.createSale(sale);
+      }
 
-    // Fatura önizleme sayfasına yönlendir
-    final invoice = _convertSaleToInvoice(sale);
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => InvoicePreviewPage(
-            invoice: invoice,
-            isEditable: true,
-            isFromSale: true,
+      // Loading dialog'u kapat
+      if (mounted) {
+        Navigator.of(context).pop(); // Loading dialog'u kapat
+      }
+
+      // Fatura önizleme sayfasına yönlendir
+      final invoice = UnifiedInvoiceConverter.convertSaleToInvoice(sale);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => InvoicePreviewPage(
+              invoice: invoice,
+              isEditable: true,
+              isFromSale: true,
+            ),
           ),
-        ),
-      );
+        );
+      }
+    } catch (e) {
+      // Loading dialog'u kapat
+      if (mounted) {
+        Navigator.of(context).pop(); // Loading dialog'u kapat
+      }
+
+      // Hata mesajı göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Taslak kaydedilirken hata oluştu: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+      AppLogger.error('Error saving sale draft: $e');
     }
   }
 

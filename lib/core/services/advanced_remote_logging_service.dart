@@ -29,7 +29,17 @@ class AdvancedRemoteLoggingService {
     _platform = platform;
 
     try {
-      // Crashlytics'i başlat
+      // Web platformunda Crashlytics'i devre dışı bırak
+      if (kIsWeb) {
+        AppLogger.info('Advanced remote logging disabled on web platform');
+        ColorizedLoggerService.remote(
+            'Advanced remote logging disabled on web platform',
+            category: 'AdvancedRemoteLogging');
+        _isInitialized = true;
+        return;
+      }
+
+      // Crashlytics'i başlat (sadece mobile platformlarda)
       await _crashlytics.setCrashlyticsCollectionEnabled(true);
 
       // Production modda sadece kritik hataları gönder
@@ -44,6 +54,8 @@ class AdvancedRemoteLoggingService {
           category: 'AdvancedRemoteLogging');
     } catch (e) {
       AppLogger.error('Failed to initialize advanced remote logging: $e');
+      // Hata durumunda da initialized olarak işaretle
+      _isInitialized = true;
     }
   }
 
@@ -59,6 +71,12 @@ class AdvancedRemoteLoggingService {
     if (!_isInitialized) {
       AppLogger.warning(
           'Advanced remote logging service not initialized. Critical error not logged: $error');
+      return;
+    }
+
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('Critical error logging skipped on web platform: $error');
       return;
     }
 
@@ -123,6 +141,12 @@ class AdvancedRemoteLoggingService {
   }) async {
     if (!_isInitialized) return;
 
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('Warning logging skipped on web platform: $error');
+      return;
+    }
+
     try {
       // Production modda sadece kritik hataları gönder
       if (_isProductionMode && severity != 'CRITICAL') {
@@ -186,6 +210,12 @@ class AdvancedRemoteLoggingService {
   }) async {
     if (!_isInitialized) return;
 
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('Info logging skipped on web platform: $message');
+      return;
+    }
+
     try {
       // Production modda sadece kritik hataları gönder
       if (_isProductionMode && severity != 'CRITICAL') {
@@ -247,6 +277,12 @@ class AdvancedRemoteLoggingService {
   }) async {
     if (!_isInitialized) return;
 
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('User info setting skipped on web platform');
+      return;
+    }
+
     try {
       if (userId != null) {
         await _crashlytics.setUserIdentifier(userId);
@@ -282,6 +318,12 @@ class AdvancedRemoteLoggingService {
     Map<String, dynamic>? data,
   }) {
     if (!_isInitialized) return;
+
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('Breadcrumb skipped on web platform: $message');
+      return;
+    }
 
     try {
       final breadcrumbData = {

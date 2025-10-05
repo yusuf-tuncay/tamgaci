@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 import '../services/remote_logging_service.dart';
 import '../services/colorized_logger_service.dart';
+import '../utils/logger.dart';
 import 'extension_pattern_mapper.dart';
 
 /// Akıllı error suppression sistemi
@@ -172,6 +173,55 @@ class SmartErrorSuppressionSystem {
       shouldLog: true,
       logLevel: 'WARNING',
     ),
+    'network_errors': const ErrorCategory(
+      name: 'Network Errors',
+      patterns: [
+        'DioException',
+        'connection error',
+        'XMLHttpRequest onError',
+        'network layer',
+        'connection errored',
+        'network error',
+        'connection timeout',
+        'request timeout',
+        'socket timeout',
+        'connection refused',
+        'connection reset',
+        'connection aborted',
+        'connection lost',
+        'network unreachable',
+        'host unreachable',
+        'timeout',
+        'CORS',
+        'cross-origin',
+        'fetch failed',
+        'request failed',
+        'API error',
+        'HTTP error',
+        'status code',
+        'EVDS fetch failed',
+        'Hasan API fallback',
+        'Exchange rate',
+        'FX API',
+        'TCMB API',
+        'API rate limit',
+        'API quota',
+        'API key',
+        'authentication',
+        'authorization',
+        'unauthorized',
+        'forbidden',
+        'not found',
+        'server error',
+        'internal server error',
+        'bad gateway',
+        'service unavailable',
+        'gateway timeout',
+      ],
+      shouldSuppress: true, // Network hatalarını suppress et
+      shouldLog: false, // Network hataları çok spam üretir
+      logLevel: 'DEBUG',
+    ),
   };
 
   /// Akıllı error suppression'ı başlat
@@ -182,8 +232,12 @@ class SmartErrorSuppressionSystem {
     // Extension pattern'ları yükle
     _loadExtensionPatterns();
 
-    // Remote logging'i başlat
-    await RemoteLoggingService.initialize();
+    // Remote logging'i başlat (web platformunda devre dışı)
+    if (!kIsWeb) {
+      await RemoteLoggingService.initialize();
+    } else {
+      AppLogger.info('Remote logging skipped on web platform');
+    }
 
     // Production/Debug ayrımı
     if (productionMode) {
@@ -201,7 +255,10 @@ class SmartErrorSuppressionSystem {
       // Sadece disposed view hatalarını bastır
       if (errorString.contains('isDisposed') ||
           errorString.contains('disposed EngineFlutterView') ||
-          errorString.contains('Trying to render a disposed')) {
+          errorString.contains('Trying to render a disposed') ||
+          errorString.contains('EngineFlutterView') ||
+          errorString
+              .contains('Trying to render a disposed EngineFlutterView')) {
         if (kDebugMode) {
           debugPrint('⚠️ Production: Suppressed disposed view error');
         }
@@ -217,7 +274,10 @@ class SmartErrorSuppressionSystem {
 
       if (errorString.contains('isDisposed') ||
           errorString.contains('disposed EngineFlutterView') ||
-          errorString.contains('Trying to render a disposed')) {
+          errorString.contains('Trying to render a disposed') ||
+          errorString.contains('EngineFlutterView') ||
+          errorString
+              .contains('Trying to render a disposed EngineFlutterView')) {
         if (kDebugMode) {
           debugPrint('⚠️ Production: Suppressed disposed view error');
         }

@@ -26,6 +26,8 @@ import 'package:tamgaci/features/invoices/domain/entities/invoice_item.dart'
 import 'package:tamgaci/features/invoices/presentation/providers/invoice_providers.dart';
 import 'package:tamgaci/features/invoices/data/models/invoice_status.dart'
     as inv_status;
+import 'package:tamgaci/features/invoices/presentation/pages/invoice_preview_page.dart';
+import 'package:tamgaci/core/services/unified_invoice_converter.dart';
 
 /// Yeni alış oluşturma sayfası
 class CreatePurchasePage extends ConsumerStatefulWidget {
@@ -774,7 +776,22 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             behavior: SnackBarBehavior.floating,
           ),
         );
-        Navigator.of(context).pop();
+
+        // Fatura önizleme sayfasına yönlendir
+        final invoice =
+            UnifiedInvoiceConverter.convertPurchaseToInvoice(purchase);
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => InvoicePreviewPage(
+                invoice: invoice,
+                isEditable: true,
+                isFromSale: false, // Alış yap modülünden geldi
+              ),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

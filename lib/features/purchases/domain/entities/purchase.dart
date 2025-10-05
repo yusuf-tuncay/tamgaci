@@ -298,6 +298,7 @@ class PurchaseItem {
   final double taxRate; // KDV oranı (%)
   final double taxAmount; // KDV tutarı
   final double totalAmount; // Toplam tutar
+  final String? currency; // Para birimi
   final String? description; // Açıklama
   final String? notes; // Notlar
 
@@ -315,6 +316,7 @@ class PurchaseItem {
     required this.taxRate,
     required this.taxAmount,
     required this.totalAmount,
+    this.currency,
     this.description,
     this.notes,
   });
@@ -340,6 +342,7 @@ class PurchaseItem {
     double? taxRate,
     double? taxAmount,
     double? totalAmount,
+    String? currency,
     String? description,
     String? notes,
   }) {
@@ -357,6 +360,7 @@ class PurchaseItem {
       taxRate: taxRate ?? this.taxRate,
       taxAmount: taxAmount ?? this.taxAmount,
       totalAmount: totalAmount ?? this.totalAmount,
+      currency: currency ?? this.currency,
       description: description ?? this.description,
       notes: notes ?? this.notes,
     );

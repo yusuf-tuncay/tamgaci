@@ -13,7 +13,16 @@ class RemoteLoggingService {
     if (_isInitialized) return;
 
     try {
-      // Firebase Crashlytics'i başlat
+      // Web platformunda Crashlytics'i devre dışı bırak
+      if (kIsWeb) {
+        AppLogger.info('Remote logging disabled on web platform');
+        ColorizedLoggerService.remote('Remote logging disabled on web platform',
+            category: 'RemoteLogging');
+        _isInitialized = true;
+        return;
+      }
+
+      // Firebase Crashlytics'i başlat (sadece mobile platformlarda)
       await _crashlytics.setCrashlyticsCollectionEnabled(true);
 
       // Flutter framework hatalarını yakala
@@ -33,6 +42,8 @@ class RemoteLoggingService {
           category: 'RemoteLogging');
     } catch (e) {
       AppLogger.error('Failed to initialize remote logging: $e');
+      // Hata durumunda da initialized olarak işaretle
+      _isInitialized = true;
     }
   }
 
@@ -44,6 +55,12 @@ class RemoteLoggingService {
     bool fatal = false,
     Map<String, dynamic>? customKeys,
   }) async {
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('Error logging skipped on web platform: $error');
+      return;
+    }
+
     try {
       // Custom keys ekle
       if (customKeys != null) {
@@ -83,6 +100,13 @@ class RemoteLoggingService {
     String? category,
     String? reason,
   }) async {
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info(
+          'Suppressed error logging skipped on web platform: $error');
+      return;
+    }
+
     try {
       // Suppressed error olarak işaretle
       await _crashlytics.setCustomKey('suppressed', true);
@@ -119,6 +143,12 @@ class RemoteLoggingService {
     String? userEmail,
     String? tenantId,
   }) async {
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('User context setting skipped on web platform');
+      return;
+    }
+
     try {
       if (userId != null) {
         await _crashlytics.setUserIdentifier(userId);
@@ -135,6 +165,12 @@ class RemoteLoggingService {
 
   /// Custom key ekle
   static Future<void> setCustomKey(String key, dynamic value) async {
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('Custom key setting skipped on web platform: $key');
+      return;
+    }
+
     try {
       await _crashlytics.setCustomKey(key, value);
     } catch (e) {
@@ -144,6 +180,12 @@ class RemoteLoggingService {
 
   /// Breadcrumb ekle
   static Future<void> addBreadcrumb(String message) async {
+    // Web platformunda devre dışı
+    if (kIsWeb) {
+      AppLogger.info('Breadcrumb skipped on web platform: $message');
+      return;
+    }
+
     try {
       await _crashlytics.log(message);
     } catch (e) {

@@ -16,6 +16,7 @@ import '../../presentation/providers/settings_providers.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../company/presentation/pages/company_settings_page.dart';
 
 /// Ayarlar Sayfası
 class SettingsPage extends ConsumerStatefulWidget {
@@ -45,9 +46,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
             // Ana Kategoriler - Kart Şeklinde
             _buildSettingsCategoryCard(
+              title: "Firma Bilgileri",
+              icon: Icons.business,
+              description: "Firma adı, vergi bilgileri, adres ve iletişim",
+              isDark: isDark,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CompanySettingsPage(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSettingsCategoryCard(
               title: "Genel Ayarlar",
               icon: Icons.settings,
-              description: "Firma bilgileri, dil, para birimi ayarları",
+              description: "Dil, para birimi, sistem ayarları",
               isDark: isDark,
               onTap: () => _showGeneralSettings(context, isDark, l10n),
             ),

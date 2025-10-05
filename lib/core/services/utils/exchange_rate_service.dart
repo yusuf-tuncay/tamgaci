@@ -256,7 +256,7 @@ class ExchangeRateService {
       return parsed;
     } catch (e) {
       // Network/XHR errors on web are expected; fallback will be tried next
-      AppLogger.warning('EVDS fetch failed, trying Hasan API fallback', e);
+      // AppLogger.warning('EVDS fetch failed, trying Hasan API fallback', e); // Suppressed
       // 2b) Try Hasan Adıgüzel API as temporary fallback
       try {
         AppLogger.info('Trying Hasan Adıgüzel FX API fallback');

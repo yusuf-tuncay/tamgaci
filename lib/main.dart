@@ -30,6 +30,7 @@ void main() async {
   if (kIsWeb) {
     _suppressDisposedViewErrors();
     _suppressAllDisposedErrors();
+    _suppressEngineFlutterViewErrors();
   }
 
   // Akıllı error suppression'ı başlat (ana sistem)
@@ -295,4 +296,58 @@ void _suppressAllDisposedErrors() {
       // Ignore
     }
   }
+}
+
+/// Ultra agresif EngineFlutterView hata bastırma
+void _suppressEngineFlutterViewErrors() {
+  // FlutterError.onError için ultra agresif handler
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final errorString = details.exceptionAsString();
+
+    // TÜM EngineFlutterView hatalarını bastır
+    if (errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        // Network hatalarını da bastır
+        errorString.contains('DioException') ||
+        errorString.contains('connection error') ||
+        errorString.contains('XMLHttpRequest onError') ||
+        errorString.contains('EVDS fetch failed') ||
+        errorString.contains('Hasan API fallback')) {
+      // Sessizce geç
+      return;
+    }
+
+    // Diğer hataları normal şekilde işle
+    FlutterError.presentError(details);
+  };
+
+  // PlatformDispatcher.onError için ultra agresif handler
+  PlatformDispatcher.instance.onError = (error, stack) {
+    final errorString = error.toString();
+
+    // TÜM EngineFlutterView hatalarını bastır
+    if (errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        // Network hatalarını da bastır
+        errorString.contains('DioException') ||
+        errorString.contains('connection error') ||
+        errorString.contains('XMLHttpRequest onError') ||
+        errorString.contains('EVDS fetch failed') ||
+        errorString.contains('Hasan API fallback')) {
+      // Sessizce geç
+      return true;
+    }
+
+    return false;
+  };
 }

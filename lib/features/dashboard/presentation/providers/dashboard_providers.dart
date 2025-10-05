@@ -15,29 +15,20 @@ import '../../data/services/date_time_service.dart';
 import '../../data/services/stock_market_service.dart';
 import '../../domain/entities/dashboard_summary.dart';
 
-/// Güncel tarih ve saat provider'ı (her 500ms'de güncellenir)
+/// Güncel tarih ve saat provider'ı (tek seferlik)
 final currentDateTimeProvider = StreamProvider<DateTime>((ref) {
-  return Stream.periodic(
-    const Duration(milliseconds: 500),
-    (_) => DateTimeService.getCurrentDateTime(),
-  ).asyncMap((_) => DateTimeService.getCurrentDateTime());
+  return Stream.fromFuture(DateTimeService.getCurrentDateTime());
 });
 
-/// Borsa verileri provider'ı (her 30 saniyede güncellenir)
+/// Borsa verileri provider'ı (tek seferlik)
 final stockMarketDataProvider = StreamProvider<StockMarketData>((ref) {
-  return Stream.periodic(
-    const Duration(seconds: 30),
-    (_) => StockMarketService.getStockMarketData(),
-  ).asyncMap((_) => StockMarketService.getStockMarketData());
+  return Stream.fromFuture(StockMarketService.getStockMarketData());
 });
 
-/// Döviz grafik verileri provider'ı (her 1 dakikada güncellenir)
+/// Döviz grafik verileri provider'ı (tek seferlik)
 final currencyChartDataProvider =
     StreamProvider<List<Map<String, dynamic>>>((ref) {
-  return Stream.periodic(
-    const Duration(minutes: 1),
-    (_) => StockMarketService.getCurrencyChartData(),
-  ).asyncMap((_) => StockMarketService.getCurrencyChartData());
+  return Stream.fromFuture(StockMarketService.getCurrencyChartData());
 });
 
 /// Dashboard özet verileri için provider

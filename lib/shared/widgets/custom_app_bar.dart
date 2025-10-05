@@ -64,7 +64,7 @@ class _CustomAppBarState extends State<CustomAppBar>
   @override
   void initState() {
     super.initState();
-    
+
     // Pulse animation - subtle and professional
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 2000),
@@ -91,11 +91,11 @@ class _CustomAppBarState extends State<CustomAppBar>
       curve: Curves.easeInOut,
     ));
 
-    // Start subtle pulse animation
-    _pulseController.repeat(reverse: true);
-    
-    // Start glow animation - 60 saniyede bir tekrar
-    _glowController.repeat();
+    // Start subtle pulse animation - sadece bir kez çalıştır
+    _pulseController.forward();
+
+    // Start glow animation - sadece bir kez çalıştır
+    _glowController.forward();
   }
 
   @override
@@ -111,7 +111,7 @@ class _CustomAppBarState extends State<CustomAppBar>
     final isDark = theme.brightness == Brightness.dark;
 
     return AppBar(
-      title: widget.title == 'Dashboard' 
+      title: widget.title == 'Dashboard'
           ? _buildUltraPremiumTamgaciTitle(isDark)
           : Text(
               widget.title,
@@ -123,16 +123,18 @@ class _CustomAppBarState extends State<CustomAppBar>
                     : TamgaciConstants.textPrimary,
               ),
             ),
-      backgroundColor: widget.backgroundColor ?? theme.appBarTheme.backgroundColor,
+      backgroundColor:
+          widget.backgroundColor ?? theme.appBarTheme.backgroundColor,
       foregroundColor: isDark
           ? TamgaciConstants.textPrimaryDark
           : TamgaciConstants.textPrimary,
       elevation: widget.showShadow ? 2 : 0,
-      shadowColor:
-          widget.showShadow ? Colors.black.withValues(alpha: 0.1) : Colors.transparent,
+      shadowColor: widget.showShadow
+          ? Colors.black.withValues(alpha: 0.1)
+          : Colors.transparent,
       leading: _buildLeadingWidget(context, isDark),
-      automaticallyImplyLeading:
-          widget.automaticallyImplyLeading && (widget.showBackButton || widget.showDrawer),
+      automaticallyImplyLeading: widget.automaticallyImplyLeading &&
+          (widget.showBackButton || widget.showDrawer),
       actions: widget.actions,
       centerTitle: true,
       shape: widget.showShadow
@@ -151,7 +153,7 @@ class _CustomAppBarState extends State<CustomAppBar>
         // Parlama efekti için glow değeri
         final glowIntensity = _glowAnimation.value;
         final isGlowing = glowIntensity > 0.8; // Son %20'de parlama
-        
+
         return Transform.scale(
           scale: _pulseAnimation.value,
           child: Text(
@@ -159,34 +161,37 @@ class _CustomAppBarState extends State<CustomAppBar>
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: isDark 
+              color: isDark
                   ? const Color(0xFF4F46E5) // Indigo-600 for dark mode
                   : const Color(0xFF3B82F6), // Blue-500 for light mode
               letterSpacing: 1.5,
               shadows: [
                 // Normal gölge
                 Shadow(
-                  color: (isDark 
-                      ? const Color(0xFF4F46E5) 
-                      : const Color(0xFF3B82F6)).withValues(alpha: 0.3),
+                  color: (isDark
+                          ? const Color(0xFF4F46E5)
+                          : const Color(0xFF3B82F6))
+                      .withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
                 // Parlama efekti gölgesi
                 if (isGlowing)
                   Shadow(
-                    color: (isDark 
-                        ? const Color(0xFF4F46E5) 
-                        : const Color(0xFF3B82F6)).withValues(alpha: 0.8),
+                    color: (isDark
+                            ? const Color(0xFF4F46E5)
+                            : const Color(0xFF3B82F6))
+                        .withValues(alpha: 0.8),
                     blurRadius: 20 + (glowIntensity * 15),
                     offset: const Offset(0, 0),
                   ),
                 // Parlama efekti - dış glow
                 if (isGlowing)
                   Shadow(
-                    color: (isDark 
-                        ? const Color(0xFF4F46E5) 
-                        : const Color(0xFF3B82F6)).withValues(alpha: 0.4),
+                    color: (isDark
+                            ? const Color(0xFF4F46E5)
+                            : const Color(0xFF3B82F6))
+                        .withValues(alpha: 0.4),
                     blurRadius: 30 + (glowIntensity * 20),
                     offset: const Offset(0, 0),
                   ),
@@ -232,5 +237,4 @@ class _CustomAppBarState extends State<CustomAppBar>
 
     return null;
   }
-
 }

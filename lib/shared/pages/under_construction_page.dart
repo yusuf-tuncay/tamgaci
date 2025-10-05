@@ -38,8 +38,8 @@ class _UnderConstructionPageState extends State<UnderConstructionPage>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Animasyonu başlat ve döngüde çalıştır
-    _pulseController.repeat(reverse: true);
+    // Animasyonu başlat - sadece bir kez çalıştır
+    _pulseController.forward();
   }
 
   @override
