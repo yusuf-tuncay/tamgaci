@@ -1030,14 +1030,15 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
-      
+
       // Önce iskonto hesapla
-      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final existingItem =
+          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
       final discountRate = existingItem?.discountRate ?? 0.0;
       final lineSubtotal = quantity * unitPrice;
       final discountAmount = lineSubtotal * (discountRate / 100);
       final subtotalAfterDiscount = lineSubtotal - discountAmount;
-      
+
       subtotal += subtotalAfterDiscount;
     }
     return subtotal;
@@ -1049,25 +1050,52 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
       final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
+
+      // Önce ürün iskonto hesapla
+      final existingItem =
+          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final discountRate = existingItem?.discountRate ?? 0.0;
+      final lineSubtotal = quantity * unitPrice;
+      final discountAmount = lineSubtotal * (discountRate / 100);
+      final subtotalAfterDiscount = lineSubtotal - discountAmount;
+
+      // Ürün iskonto sonrası tutar üzerinden KDV hesapla
+      taxAmount += subtotalAfterDiscount * (taxRate / 100);
+    }
+    return taxAmount;
+  }
+
+  // Müşteri iskontosu sonrası KDV hesapla
+  double _calculateTaxAmountAfterCustomerDiscount(double customerDiscountAmount) {
+    final subtotal = _calculateSubtotal();
+    
+    // Müşteri iskontosu sonrası tutar üzerinden KDV oranını hesapla
+    double totalTaxAmount = 0;
+    for (int i = 0; i < _quantityControllers.length; i++) {
+      final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
+      final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
+      final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
       
-      // Önce iskonto hesapla
+      // Ürün iskonto hesapla
       final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
       final discountRate = existingItem?.discountRate ?? 0.0;
       final lineSubtotal = quantity * unitPrice;
       final discountAmount = lineSubtotal * (discountRate / 100);
       final subtotalAfterDiscount = lineSubtotal - discountAmount;
       
-      // İskonto sonrası tutar üzerinden KDV hesapla
-      taxAmount += subtotalAfterDiscount * (taxRate / 100);
+      // Bu ürünün müşteri iskontosundaki payını hesapla
+      final productAfterCustomerDiscount = subtotalAfterDiscount * (1 - customerDiscountAmount / subtotal);
+      
+      // Müşteri iskontosu sonrası tutar üzerinden KDV hesapla
+      totalTaxAmount += productAfterCustomerDiscount * (taxRate / 100);
     }
-    return taxAmount;
+    return totalTaxAmount;
   }
-
 
   double _calculateTotal() {
     final subtotal = _calculateSubtotal();
     final taxAmount = _calculateTaxAmount();
-    
+
     // Müşteri iskontosunu hesapla (UI'da dinamik olarak hesaplanacak)
     // Şimdilik sadece ürün iskontoları ve KDV'yi topla
     return subtotal + taxAmount;
@@ -1346,16 +1374,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     isSubtotal: true,
                   ),
                   const SizedBox(height: 8),
-                  // KDV (iskonto sonrası ara toplam üzerinden)
-                  _buildTotalRow(
-                    label:
-                        'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
-                    amount: CurrencyHelper.formatCurrency(
-                        taxAmount, _currentInvoice.currencyCode),
-                    isSubtotal: true,
-                  ),
-                  const Divider(height: 24),
-                  // Genel toplam (müşteri iskontosu düşüldükten sonra)
+                  // KDV (müşteri iskontosu sonrası hesaplanan)
                   Consumer(
                     builder: (context, ref, child) {
                       final customersAsync = ref.watch(customersStreamProvider);
@@ -1368,8 +1387,51 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                           
                           final customerDiscountRate = customer.fixedDiscountRate ?? 0.0;
                           final customerDiscountAmount = subtotal * (customerDiscountRate / 100);
-                          final finalTotal = subtotal + taxAmount - customerDiscountAmount;
+                          final taxAmountAfterCustomerDiscount = _calculateTaxAmountAfterCustomerDiscount(customerDiscountAmount);
                           
+                          return _buildTotalRow(
+                            label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                            amount: CurrencyHelper.formatCurrency(
+                                taxAmountAfterCustomerDiscount, _currentInvoice.currencyCode),
+                            isSubtotal: true,
+                          );
+                        },
+                        loading: () => _buildTotalRow(
+                          label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                          amount: CurrencyHelper.formatCurrency(
+                              taxAmount, _currentInvoice.currencyCode),
+                          isSubtotal: true,
+                        ),
+                        error: (error, stack) => _buildTotalRow(
+                          label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                          amount: CurrencyHelper.formatCurrency(
+                              taxAmount, _currentInvoice.currencyCode),
+                          isSubtotal: true,
+                        ),
+                      );
+                    },
+                  ),
+                  const Divider(height: 24),
+                  // Genel toplam (müşteri iskontosu düşüldükten sonra)
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final customersAsync = ref.watch(customersStreamProvider);
+                      return customersAsync.when(
+                        data: (customers) {
+                          final customer = customers.firstWhere(
+                            (c) => c.id == _currentInvoice.customerId,
+                            orElse: () => customers.first,
+                          );
+
+                          final customerDiscountRate =
+                              customer.fixedDiscountRate ?? 0.0;
+                          final customerDiscountAmount =
+                              subtotal * (customerDiscountRate / 100);
+                          // Müşteri iskontosu sonrası KDV hesapla
+                          final taxAmountAfterCustomerDiscount = _calculateTaxAmountAfterCustomerDiscount(customerDiscountAmount);
+                          final subtotalAfterCustomerDiscount = subtotal - customerDiscountAmount;
+                          final finalTotal = subtotalAfterCustomerDiscount + taxAmountAfterCustomerDiscount;
+
                           return _buildTotalRow(
                             label: 'Genel Toplam',
                             amount: CurrencyHelper.formatCurrency(
