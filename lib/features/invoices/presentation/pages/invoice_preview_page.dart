@@ -1376,25 +1376,25 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   List<Widget> _buildProductDetails() {
     final customerCurrency = _getCustomerCurrency();
     final List<Widget> details = [];
-    
+
     // Para birimlerine göre grupla
     final Map<String, List<Map<String, dynamic>>> currencyGroups = {};
-    
+
     for (int i = 0; i < _currentInvoice.items.length; i++) {
       final item = _currentInvoice.items[i];
       final itemCurrency = item.currencyCode;
-      
+
       if (!currencyGroups.containsKey(itemCurrency)) {
         currencyGroups[itemCurrency] = [];
       }
-      
-      final quantity = _isEditing 
+
+      final quantity = _isEditing
           ? (double.tryParse(_quantityControllers[i].text) ?? item.quantity)
           : item.quantity;
       final unitPrice = _isEditing
           ? (double.tryParse(_unitPriceControllers[i].text) ?? item.unitPrice)
           : item.unitPrice;
-      
+
       currencyGroups[itemCurrency]!.add({
         'item': item,
         'quantity': quantity,
@@ -1402,7 +1402,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         'index': i,
       });
     }
-    
+
     // Her para birimi için özet oluştur
     currencyGroups.forEach((currency, items) {
       // Para birimi başlığı
@@ -1413,29 +1413,20 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           isSubtotal: true,
         ),
       );
-      
+
       double currencySubtotal = 0.0;
       int totalQuantity = 0;
-      
-      // Bu para birimindeki ürünler
+
+      // Bu para birimindeki ürünler (sadece toplam hesapla, detay gösterme)
       for (final itemData in items) {
-        final item = itemData['item'] as InvoiceItem;
         final quantity = itemData['quantity'] as double;
         final unitPrice = itemData['unitPrice'] as double;
-        
+
         final lineTotal = quantity * unitPrice;
         currencySubtotal += lineTotal;
         totalQuantity += quantity.toInt();
-        
-        details.add(
-          _buildTotalRow(
-            label: '  • ${item.productName} (${quantity.toStringAsFixed(0)} adet)',
-            amount: CurrencyHelper.formatCurrency(lineTotal, currency),
-            isSubtotal: false,
-          ),
-        );
       }
-      
+
       // Bu para biriminin toplamı
       details.add(
         _buildTotalRow(
@@ -1444,12 +1435,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           isSubtotal: true,
         ),
       );
-      
+
       // Kur dönüşümü (müşteri para biriminden farklıysa)
       if (currency != customerCurrency) {
         final exchangeRate = items.first['item'].exchangeRate ?? 1.0;
         final convertedTotal = currencySubtotal * exchangeRate;
-        
+
         details.add(
           _buildTotalRow(
             label: '  Kur: ${exchangeRate.toStringAsFixed(4)}',
@@ -1457,16 +1448,17 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             isSubtotal: false,
           ),
         );
-        
+
         details.add(
           _buildTotalRow(
             label: '  ${customerCurrency} Karşılığı',
-            amount: CurrencyHelper.formatCurrency(convertedTotal, customerCurrency),
+            amount:
+                CurrencyHelper.formatCurrency(convertedTotal, customerCurrency),
             isSubtotal: true,
           ),
         );
       }
-      
+
       details.add(const SizedBox(height: 8));
     });
 
