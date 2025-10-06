@@ -1372,90 +1372,108 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     );
   }
 
-  // Ürün detaylarını göster (kur dönüşümleri ile)
+  // Para birimine göre gruplandırılmış ürün özetleri
   List<Widget> _buildProductDetails() {
+    final customerCurrency = _getCustomerCurrency();
     final List<Widget> details = [];
-
+    
+    // Para birimlerine göre grupla
+    final Map<String, List<Map<String, dynamic>>> currencyGroups = {};
+    
     for (int i = 0; i < _currentInvoice.items.length; i++) {
       final item = _currentInvoice.items[i];
       final itemCurrency = item.currencyCode;
-      final customerCurrency = _getCustomerCurrency();
       
-      // Ürün adı
-      details.add(
-        _buildTotalRow(
-          label: '• ${item.productName}',
-          amount: '',
-          isSubtotal: false,
-        ),
-      );
-
-      // Miktar ve birim fiyat
+      if (!currencyGroups.containsKey(itemCurrency)) {
+        currencyGroups[itemCurrency] = [];
+      }
+      
       final quantity = _isEditing 
           ? (double.tryParse(_quantityControllers[i].text) ?? item.quantity)
           : item.quantity;
       final unitPrice = _isEditing
           ? (double.tryParse(_unitPriceControllers[i].text) ?? item.unitPrice)
           : item.unitPrice;
-
+      
+      currencyGroups[itemCurrency]!.add({
+        'item': item,
+        'quantity': quantity,
+        'unitPrice': unitPrice,
+        'index': i,
+      });
+    }
+    
+    // Her para birimi için özet oluştur
+    currencyGroups.forEach((currency, items) {
+      // Para birimi başlığı
       details.add(
         _buildTotalRow(
-          label: '  Miktar: ${quantity.toStringAsFixed(0)} × ${CurrencyHelper.formatCurrency(unitPrice, itemCurrency)}',
+          label: '${currency} Ürünleri',
           amount: '',
-          isSubtotal: false,
+          isSubtotal: true,
         ),
       );
-
-      // Kur dönüşümü (farklı para birimlerinde)
-      if (itemCurrency != customerCurrency && item.exchangeRate != null) {
-        final convertedPrice = unitPrice * item.exchangeRate!;
-        final lineTotal = quantity * convertedPrice;
+      
+      double currencySubtotal = 0.0;
+      int totalQuantity = 0;
+      
+      // Bu para birimindeki ürünler
+      for (final itemData in items) {
+        final item = itemData['item'] as InvoiceItem;
+        final quantity = itemData['quantity'] as double;
+        final unitPrice = itemData['unitPrice'] as double;
         
-        details.add(
-          _buildTotalRow(
-            label: '  Kur: ${item.exchangeRate!.toStringAsFixed(4)}',
-            amount: '',
-            isSubtotal: false,
-          ),
-        );
-        
-        details.add(
-          _buildTotalRow(
-            label: '  Dönüşüm: ${CurrencyHelper.formatCurrency(unitPrice, itemCurrency)} × ${item.exchangeRate!.toStringAsFixed(4)} = ${CurrencyHelper.formatCurrency(convertedPrice, customerCurrency)}',
-            amount: '',
-            isSubtotal: false,
-          ),
-        );
-        
-        details.add(
-          _buildTotalRow(
-            label: '  Toplam: ${quantity.toStringAsFixed(0)} × ${CurrencyHelper.formatCurrency(convertedPrice, customerCurrency)}',
-            amount: CurrencyHelper.formatCurrency(lineTotal, customerCurrency),
-            isSubtotal: false,
-          ),
-        );
-      } else {
-        // Aynı para birimi
         final lineTotal = quantity * unitPrice;
+        currencySubtotal += lineTotal;
+        totalQuantity += quantity.toInt();
+        
         details.add(
           _buildTotalRow(
-            label: '  Toplam: ${quantity.toStringAsFixed(0)} × ${CurrencyHelper.formatCurrency(unitPrice, itemCurrency)}',
-            amount: CurrencyHelper.formatCurrency(lineTotal, customerCurrency),
+            label: '  • ${item.productName} (${quantity.toStringAsFixed(0)} adet)',
+            amount: CurrencyHelper.formatCurrency(lineTotal, currency),
             isSubtotal: false,
           ),
         );
       }
-
-      details.add(const SizedBox(height: 4));
-    }
+      
+      // Bu para biriminin toplamı
+      details.add(
+        _buildTotalRow(
+          label: '  ${currency} Toplam (${totalQuantity} adet)',
+          amount: CurrencyHelper.formatCurrency(currencySubtotal, currency),
+          isSubtotal: true,
+        ),
+      );
+      
+      // Kur dönüşümü (müşteri para biriminden farklıysa)
+      if (currency != customerCurrency) {
+        final exchangeRate = items.first['item'].exchangeRate ?? 1.0;
+        final convertedTotal = currencySubtotal * exchangeRate;
+        
+        details.add(
+          _buildTotalRow(
+            label: '  Kur: ${exchangeRate.toStringAsFixed(4)}',
+            amount: '',
+            isSubtotal: false,
+          ),
+        );
+        
+        details.add(
+          _buildTotalRow(
+            label: '  ${customerCurrency} Karşılığı',
+            amount: CurrencyHelper.formatCurrency(convertedTotal, customerCurrency),
+            isSubtotal: true,
+          ),
+        );
+      }
+      
+      details.add(const SizedBox(height: 8));
+    });
 
     return details;
   }
 
   Widget _buildTotals() {
-    // Dinamik hesaplama - düzenleme modunda controller'lardan hesapla
-    final subtotal =
-        _isEditing ? _calculateSubtotal() : _currentInvoice.subtotal;
     final taxAmount =
         _isEditing ? _calculateTaxAmount() : _currentInvoice.taxAmount;
     final total = _isEditing ? _calculateTotal() : _currentInvoice.totalAmount;
