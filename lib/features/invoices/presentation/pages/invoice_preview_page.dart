@@ -1091,7 +1091,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
 
       // Bu ürünün ham ara toplamdaki payını hesapla
       final lineSubtotal = quantity * unitPrice;
-      final productAfterCustomerDiscount = lineSubtotal * (1 - customerDiscountAmount / rawSubtotal);
+      final productAfterCustomerDiscount =
+          lineSubtotal * (1 - customerDiscountAmount / rawSubtotal);
 
       // Müşteri iskontosu sonrası tutar üzerinden KDV hesapla
       totalTaxAmount += productAfterCustomerDiscount * (taxRate / 100);
@@ -1382,14 +1383,6 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                       );
                     },
                   ),
-                  // Ara toplam (ürün iskontoları düşüldükten sonra)
-                  _buildTotalRow(
-                    label: 'Ara Toplam',
-                    amount: CurrencyHelper.formatCurrency(
-                        subtotal, _currentInvoice.currencyCode),
-                    isSubtotal: true,
-                  ),
-                  const SizedBox(height: 8),
                   // KDV (müşteri iskontosu sonrası hesaplanan)
                   Consumer(
                     builder: (context, ref, child) {
