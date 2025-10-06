@@ -243,6 +243,7 @@ class FirebaseDataService {
           'country': 'Türkiye',
           'postalCode': '35220',
           'notes': 'Düzenli müşteri',
+          'fixedDiscountRate': 15.0, // %15 sabit iskonto
           'isActive': true,
           'createdAt': Timestamp.now(),
           'updatedAt': Timestamp.now(),

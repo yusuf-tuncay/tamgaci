@@ -1047,6 +1047,11 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     return taxAmount;
   }
 
+  double _calculateCustomerDiscount() {
+    // Müşteri iskontosunu hesapla (şimdilik 0 döndür, gerçek hesaplama UI'da yapılacak)
+    return 0.0;
+  }
+
   double _calculateTotal() {
     return _calculateSubtotal() + _calculateTaxAmount();
   }
@@ -1059,7 +1064,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       // Mevcut item varsa onu kullan, yoksa yeni oluştur
       final existingItem =
           i < widget.invoice.items.length ? widget.invoice.items[i] : null;
-      
+
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
       final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
@@ -1269,26 +1274,49 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   ),
                   const SizedBox(height: 8),
                   // Ürün iskontoları (varsa)
-                  if (_currentInvoice.items.any((item) => item.discountAmount > 0)) ...[
+                  if (_currentInvoice.items
+                      .any((item) => item.discountAmount > 0)) ...[
                     _buildTotalRow(
                       label: 'Ürün İskontoları',
-                      amount: '-${CurrencyHelper.formatCurrency(
-                          _currentInvoice.items.fold(0.0, (sum, item) => sum + item.discountAmount),
-                          _currentInvoice.currencyCode)}',
+                      amount:
+                          '-${CurrencyHelper.formatCurrency(_currentInvoice.items.fold(0.0, (sum, item) => sum + item.discountAmount), _currentInvoice.currencyCode)}',
                       isSubtotal: true,
                     ),
                     const SizedBox(height: 8),
                   ],
                   // Müşteri iskontosu (varsa)
-                  if (_currentInvoice.discountAmount > 0) ...[
-                    _buildTotalRow(
-                      label: 'Müşteri İskontosu',
-                      amount:
-                          '-${CurrencyHelper.formatCurrency(_currentInvoice.discountAmount, _currentInvoice.currencyCode)}',
-                      isSubtotal: true,
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final customersAsync = ref.watch(customersStreamProvider);
+                      return customersAsync.when(
+                        data: (customers) {
+                          final customer = customers.firstWhere(
+                            (c) => c.id == _currentInvoice.customerId,
+                            orElse: () => customers.first,
+                          );
+                          
+                          final customerDiscountRate = customer.fixedDiscountRate ?? 0.0;
+                          final customerDiscountAmount = subtotal * (customerDiscountRate / 100);
+                          
+                          if (customerDiscountAmount > 0) {
+                            return Column(
+                              children: [
+                                _buildTotalRow(
+                                  label: 'Müşteri İskontosu (%${customerDiscountRate.toStringAsFixed(1)})',
+                                  amount: '-${CurrencyHelper.formatCurrency(customerDiscountAmount, _currentInvoice.currencyCode)}',
+                                  isSubtotal: true,
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (error, stack) => const SizedBox.shrink(),
+                      );
+                    },
+                  ),
                   // Ara toplam
                   _buildTotalRow(
                     label: 'Ara Toplam',
