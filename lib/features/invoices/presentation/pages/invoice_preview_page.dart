@@ -739,7 +739,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${widget.invoice.items.length} ürün',
+                    '${_currentInvoice.items.length} ürün',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -750,7 +750,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               ],
             ),
             const SizedBox(height: 16),
-            if (widget.invoice.items.isEmpty)
+            if (_currentInvoice.items.isEmpty)
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
@@ -841,7 +841,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           ],
         ),
         // Ürün satırları
-        ...widget.invoice.items.asMap().entries.map((entry) {
+        ..._currentInvoice.items.asMap().entries.map((entry) {
           final index = entry.key;
           final item = entry.value;
           return TableRow(
@@ -1199,10 +1199,10 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   Widget _buildTotals() {
     // Dinamik hesaplama - düzenleme modunda controller'lardan hesapla
     final subtotal =
-        _isEditing ? _calculateSubtotal() : widget.invoice.subtotal;
+        _isEditing ? _calculateSubtotal() : _currentInvoice.subtotal;
     final taxAmount =
-        _isEditing ? _calculateTaxAmount() : widget.invoice.taxAmount;
-    final total = _isEditing ? _calculateTotal() : widget.invoice.totalAmount;
+        _isEditing ? _calculateTaxAmount() : _currentInvoice.taxAmount;
+    final total = _isEditing ? _calculateTotal() : _currentInvoice.totalAmount;
 
     return Card(
       elevation: 2,
@@ -1245,21 +1245,21 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   _buildTotalRow(
                     label: 'Ara Toplam',
                     amount: CurrencyHelper.formatCurrency(
-                        subtotal, widget.invoice.currencyCode),
+                        subtotal, _currentInvoice.currencyCode),
                     isSubtotal: true,
                   ),
                   const SizedBox(height: 12),
                   _buildTotalRow(
                     label: 'KDV',
                     amount: CurrencyHelper.formatCurrency(
-                        taxAmount, widget.invoice.currencyCode),
+                        taxAmount, _currentInvoice.currencyCode),
                     isSubtotal: true,
                   ),
                   const Divider(height: 24),
                   _buildTotalRow(
                     label: 'Toplam',
                     amount: CurrencyHelper.formatCurrency(
-                        total, widget.invoice.currencyCode),
+                        total, _currentInvoice.currencyCode),
                     isTotal: true,
                   ),
                 ],
