@@ -1271,15 +1271,15 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   _selectedProducts[index] = currentProduct;
                   _productNameControllers[index].text = currentProduct!.name;
                   _unitPriceControllers[index].text =
-                      currentProduct!.salesPrice.toString();
+                      currentProduct.salesPrice.toString();
                   _taxRateControllers[index].text =
-                      currentProduct!.salesTaxRate.toString();
+                      currentProduct.salesTaxRate.toString();
                 });
               });
             }
 
             return DropdownButtonFormField<Product>(
-              value: _selectedProducts[index],
+              initialValue: _selectedProducts[index],
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 contentPadding:
@@ -1376,25 +1376,25 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   List<Widget> _buildProductDetails() {
     final customerCurrency = _getCustomerCurrency();
     final List<Widget> details = [];
-
+    
     // Para birimlerine göre grupla
     final Map<String, List<Map<String, dynamic>>> currencyGroups = {};
-
+    
     for (int i = 0; i < _currentInvoice.items.length; i++) {
       final item = _currentInvoice.items[i];
       final itemCurrency = item.currencyCode;
-
+      
       if (!currencyGroups.containsKey(itemCurrency)) {
         currencyGroups[itemCurrency] = [];
       }
-
-      final quantity = _isEditing
+      
+      final quantity = _isEditing 
           ? (double.tryParse(_quantityControllers[i].text) ?? item.quantity)
           : item.quantity;
       final unitPrice = _isEditing
           ? (double.tryParse(_unitPriceControllers[i].text) ?? item.unitPrice)
           : item.unitPrice;
-
+      
       currencyGroups[itemCurrency]!.add({
         'item': item,
         'quantity': quantity,
@@ -1402,67 +1402,247 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         'index': i,
       });
     }
-
-    // Her para birimi için özet oluştur
+    
+    // Her para birimi için ayrı özet bölümü oluştur
     currencyGroups.forEach((currency, items) {
       // Para birimi başlığı
       details.add(
-        _buildTotalRow(
-          label: '${currency} Ürünleri',
-          amount: '',
-          isSubtotal: true,
+        Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[200]!),
+          ),
+          child: Column(
+            children: [
+              // Para birimi başlığı
+              Text(
+                'Para Birimi: $currency',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue[700],
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Bu para birimindeki hesaplamalar
+              ..._buildCurrencySummary(currency, items, customerCurrency),
+            ],
+          ),
         ),
       );
-
-      double currencySubtotal = 0.0;
-      int totalQuantity = 0;
-
-      // Bu para birimindeki ürünler (sadece toplam hesapla, detay gösterme)
-      for (final itemData in items) {
-        final quantity = itemData['quantity'] as double;
-        final unitPrice = itemData['unitPrice'] as double;
-
-        final lineTotal = quantity * unitPrice;
-        currencySubtotal += lineTotal;
-        totalQuantity += quantity.toInt();
-      }
-
-      // Bu para biriminin toplamı
-      details.add(
-        _buildTotalRow(
-          label: '  ${currency} Toplam (${totalQuantity} adet)',
-          amount: CurrencyHelper.formatCurrency(currencySubtotal, currency),
-          isSubtotal: true,
-        ),
-      );
-
-      // Kur dönüşümü (müşteri para biriminden farklıysa)
-      if (currency != customerCurrency) {
-        final exchangeRate = items.first['item'].exchangeRate ?? 1.0;
-        final convertedTotal = currencySubtotal * exchangeRate;
-
-        details.add(
-          _buildTotalRow(
-            label: '  Kur: ${exchangeRate.toStringAsFixed(4)}',
-            amount: '',
-            isSubtotal: false,
-          ),
-        );
-
-        details.add(
-          _buildTotalRow(
-            label: '  ${customerCurrency} Karşılığı',
-            amount:
-                CurrencyHelper.formatCurrency(convertedTotal, customerCurrency),
-            isSubtotal: true,
-          ),
-        );
-      }
-
-      details.add(const SizedBox(height: 8));
     });
 
     return details;
+  }
+
+  // Her para birimi için özet hesaplamaları
+  List<Widget> _buildCurrencySummary(String currency, List<Map<String, dynamic>> items, String customerCurrency) {
+    final List<Widget> summary = [];
+    
+    // Ara toplam hesapla
+    double currencySubtotal = 0.0;
+    
+    for (final itemData in items) {
+      final quantity = itemData['quantity'] as double;
+      final unitPrice = itemData['unitPrice'] as double;
+      final lineTotal = quantity * unitPrice;
+      currencySubtotal += lineTotal;
+    }
+    
+    // Ara toplam
+    summary.add(
+      _buildCurrencyRow(
+        label: 'Ara Toplam:',
+        amount: CurrencyHelper.formatCurrency(currencySubtotal, currency),
+        isSubtotal: true,
+      ),
+    );
+    
+    // İskonto hesapla (ürün iskontoları)
+    double totalDiscount = 0.0;
+    for (final itemData in items) {
+      final item = itemData['item'] as InvoiceItem;
+      
+      if (item.discountAmount > 0) {
+        totalDiscount += item.discountAmount;
+      }
+    }
+    
+    if (totalDiscount > 0) {
+      summary.add(
+        _buildCurrencyRow(
+          label: 'İskonto:',
+          amount: '-${CurrencyHelper.formatCurrency(totalDiscount, currency)}',
+          isDiscount: true,
+        ),
+      );
+    }
+    
+    // KDV hesapla
+    double taxAmount = 0.0;
+    for (final itemData in items) {
+      final item = itemData['item'] as InvoiceItem;
+      final quantity = itemData['quantity'] as double;
+      final unitPrice = itemData['unitPrice'] as double;
+      
+      final lineTotal = quantity * unitPrice;
+      final discountAmount = item.discountAmount;
+      final taxableAmount = lineTotal - discountAmount;
+      final itemTax = taxableAmount * (item.taxRate / 100);
+      taxAmount += itemTax;
+    }
+    
+    if (taxAmount > 0) {
+      summary.add(
+        _buildCurrencyRow(
+          label: 'KDV:',
+          amount: '+${CurrencyHelper.formatCurrency(taxAmount, currency)}',
+          isTax: true,
+        ),
+      );
+    }
+    
+    // Bu para biriminin toplamı
+    final currencyTotal = currencySubtotal - totalDiscount + taxAmount;
+    
+    // Kur bilgisi (farklı para birimlerinde)
+    if (currency != customerCurrency) {
+      final exchangeRate = items.first['item'].exchangeRate ?? 1.0;
+      final convertedTotal = currencyTotal * exchangeRate;
+      
+      summary.add(
+        _buildCurrencyRow(
+          label: 'Kur: 1 $currency = ${exchangeRate.toStringAsFixed(4)} TL',
+          amount: '',
+          isInfo: true,
+        ),
+      );
+      
+      summary.add(
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.green[200]!),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Toplam:',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[700],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    CurrencyHelper.formatCurrency(currencyTotal, currency),
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green[700],
+                    ),
+                  ),
+                  Text(
+                    '(${convertedTotal.toStringAsFixed(2)})',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.green[600],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      // Aynı para birimi - sadece toplam göster
+      summary.add(
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.green[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.green[200]!),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Toplam:',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[700],
+                ),
+              ),
+              Text(
+                CurrencyHelper.formatCurrency(currencyTotal, currency),
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    
+    return summary;
+  }
+
+  Widget _buildCurrencyRow({
+    required String label,
+    required String amount,
+    bool isSubtotal = false,
+    bool isDiscount = false,
+    bool isTax = false,
+    bool isInfo = false,
+  }) {
+    Color? textColor;
+    if (isDiscount) textColor = Colors.red[600];
+    if (isTax) textColor = Colors.green[600];
+    if (isInfo) textColor = Colors.blue[600];
+    
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              fontWeight: isSubtotal ? FontWeight.w600 : FontWeight.normal,
+              color: textColor,
+            ),
+          ),
+          if (amount.isNotEmpty)
+            Text(
+              amount,
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: isSubtotal ? FontWeight.w600 : FontWeight.normal,
+                color: textColor,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTotals() {
@@ -1623,52 +1803,73 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     },
                   ),
                   const Divider(height: 24),
-                  // Genel toplam (müşteri iskontosu düşüldükten sonra)
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final customersAsync = ref.watch(customersStreamProvider);
-                      return customersAsync.when(
-                        data: (customers) {
-                          final customer = customers.firstWhere(
-                            (c) => c.id == _currentInvoice.customerId,
-                            orElse: () => customers.first,
-                          );
-
-                          final customerDiscountRate =
-                              customer.fixedDiscountRate ?? 0.0;
-                          final rawSubtotal = _calculateRawSubtotal();
-                          final customerDiscountAmount =
-                              rawSubtotal * (customerDiscountRate / 100);
-                          // Müşteri iskontosu sonrası KDV hesapla
-                          final taxAmountAfterCustomerDiscount =
-                              _calculateTaxAmountAfterCustomerDiscount(
-                                  customerDiscountAmount);
-                          final subtotalAfterCustomerDiscount =
-                              rawSubtotal - customerDiscountAmount;
-                          final finalTotal = subtotalAfterCustomerDiscount +
-                              taxAmountAfterCustomerDiscount;
-
-                          return _buildTotalRow(
-                            label: 'Genel Toplam',
-                            amount: CurrencyHelper.formatCurrency(
-                                finalTotal, customerCurrency),
-                            isTotal: true,
-                          );
-                        },
-                        loading: () => _buildTotalRow(
-                          label: 'Genel Toplam',
-                          amount: CurrencyHelper.formatCurrency(
-                              total, customerCurrency),
-                          isTotal: true,
+                  
+                  // Genel toplam bölümü
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Column(
+                      children: [
+                        // Toplam ürün miktarı
+                        _buildTotalRow(
+                          label: 'Toplam ürün miktarı:',
+                          amount: '${_currentInvoice.items.length}',
+                          isSubtotal: true,
                         ),
-                        error: (error, stack) => _buildTotalRow(
-                          label: 'Genel Toplam',
-                          amount: CurrencyHelper.formatCurrency(
-                              total, customerCurrency),
-                          isTotal: true,
+                        const SizedBox(height: 8),
+                        
+                        // GENEL TOPLAM (TL)
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final customersAsync = ref.watch(customersStreamProvider);
+                            return customersAsync.when(
+                              data: (customers) {
+                                final customer = customers.firstWhere(
+                                  (c) => c.id == _currentInvoice.customerId,
+                                  orElse: () => customers.first,
+                                );
+
+                                final customerDiscountRate =
+                                    customer.fixedDiscountRate ?? 0.0;
+                                final rawSubtotal = _calculateRawSubtotal();
+                                final customerDiscountAmount =
+                                    rawSubtotal * (customerDiscountRate / 100);
+                                final taxAmountAfterCustomerDiscount =
+                                    _calculateTaxAmountAfterCustomerDiscount(
+                                        customerDiscountAmount);
+                                final subtotalAfterCustomerDiscount =
+                                    rawSubtotal - customerDiscountAmount;
+                                final finalTotal = subtotalAfterCustomerDiscount +
+                                    taxAmountAfterCustomerDiscount;
+
+                                return _buildTotalRow(
+                                  label: 'GENEL TOPLAM (TL):',
+                                  amount: CurrencyHelper.formatCurrency(
+                                      finalTotal, customerCurrency),
+                                  isTotal: true,
+                                );
+                              },
+                              loading: () => _buildTotalRow(
+                                label: 'GENEL TOPLAM (TL):',
+                                amount: CurrencyHelper.formatCurrency(
+                                    total, customerCurrency),
+                                isTotal: true,
+                              ),
+                              error: (error, stack) => _buildTotalRow(
+                                label: 'GENEL TOPLAM (TL):',
+                                amount: CurrencyHelper.formatCurrency(
+                                    total, customerCurrency),
+                                isTotal: true,
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   ),
                 ],
               ),
