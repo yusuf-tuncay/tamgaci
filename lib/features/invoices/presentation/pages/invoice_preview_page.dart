@@ -1064,24 +1064,28 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   // Müşteri para birimini al
   String _getCustomerCurrency() {
     // Müşteri para birimi varsa onu kullan, yoksa fatura para birimini kullan
-    return _currentInvoice.customer?.customerCurrency ?? _currentInvoice.currencyCode;
+    return _currentInvoice.customer?.customerCurrency ??
+        _currentInvoice.currencyCode;
   }
 
   // Ham ara toplam (iskonto öncesi) - müşteri para biriminde
   double _calculateRawSubtotal() {
     double subtotal = 0;
     final customerCurrency = _getCustomerCurrency();
-    
+
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
-      
+
       // Ürün para birimini al
-      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
-      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
-      
+      final existingItem =
+          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency =
+          existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+
       // Para birimi farklıysa kur hesapla
-      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+      if (itemCurrency != customerCurrency &&
+          existingItem?.exchangeRate != null) {
         final convertedPrice = unitPrice * existingItem!.exchangeRate!;
         subtotal += quantity * convertedPrice;
       } else {
@@ -1095,18 +1099,21 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   double _calculateSubtotal() {
     double subtotal = 0;
     final customerCurrency = _getCustomerCurrency();
-    
+
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
 
       // Ürün para birimini al
-      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
-      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
-      
+      final existingItem =
+          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency =
+          existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+
       // Para birimi farklıysa kur hesapla
       double convertedUnitPrice = unitPrice;
-      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+      if (itemCurrency != customerCurrency &&
+          existingItem?.exchangeRate != null) {
         convertedUnitPrice = unitPrice * existingItem!.exchangeRate!;
       }
 
@@ -1124,19 +1131,22 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   double _calculateTaxAmount() {
     double taxAmount = 0;
     final customerCurrency = _getCustomerCurrency();
-    
+
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
       final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
 
       // Ürün para birimini al
-      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
-      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
-      
+      final existingItem =
+          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency =
+          existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+
       // Para birimi farklıysa kur hesapla
       double convertedUnitPrice = unitPrice;
-      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+      if (itemCurrency != customerCurrency &&
+          existingItem?.exchangeRate != null) {
         convertedUnitPrice = unitPrice * existingItem!.exchangeRate!;
       }
 
@@ -1166,12 +1176,15 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
 
       // Ürün para birimini al
-      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
-      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
-      
+      final existingItem =
+          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency =
+          existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+
       // Para birimi farklıysa kur hesapla
       double convertedUnitPrice = unitPrice;
-      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+      if (itemCurrency != customerCurrency &&
+          existingItem?.exchangeRate != null) {
         convertedUnitPrice = unitPrice * existingItem!.exchangeRate!;
       }
 
@@ -1359,6 +1372,86 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     );
   }
 
+  // Ürün detaylarını göster (kur dönüşümleri ile)
+  List<Widget> _buildProductDetails() {
+    final List<Widget> details = [];
+
+    for (int i = 0; i < _currentInvoice.items.length; i++) {
+      final item = _currentInvoice.items[i];
+      final itemCurrency = item.currencyCode;
+      final customerCurrency = _getCustomerCurrency();
+      
+      // Ürün adı
+      details.add(
+        _buildTotalRow(
+          label: '• ${item.productName}',
+          amount: '',
+          isSubtotal: false,
+        ),
+      );
+
+      // Miktar ve birim fiyat
+      final quantity = _isEditing 
+          ? (double.tryParse(_quantityControllers[i].text) ?? item.quantity)
+          : item.quantity;
+      final unitPrice = _isEditing
+          ? (double.tryParse(_unitPriceControllers[i].text) ?? item.unitPrice)
+          : item.unitPrice;
+
+      details.add(
+        _buildTotalRow(
+          label: '  Miktar: ${quantity.toStringAsFixed(0)} × ${CurrencyHelper.formatCurrency(unitPrice, itemCurrency)}',
+          amount: '',
+          isSubtotal: false,
+        ),
+      );
+
+      // Kur dönüşümü (farklı para birimlerinde)
+      if (itemCurrency != customerCurrency && item.exchangeRate != null) {
+        final convertedPrice = unitPrice * item.exchangeRate!;
+        final lineTotal = quantity * convertedPrice;
+        
+        details.add(
+          _buildTotalRow(
+            label: '  Kur: ${item.exchangeRate!.toStringAsFixed(4)}',
+            amount: '',
+            isSubtotal: false,
+          ),
+        );
+        
+        details.add(
+          _buildTotalRow(
+            label: '  Dönüşüm: ${CurrencyHelper.formatCurrency(unitPrice, itemCurrency)} × ${item.exchangeRate!.toStringAsFixed(4)} = ${CurrencyHelper.formatCurrency(convertedPrice, customerCurrency)}',
+            amount: '',
+            isSubtotal: false,
+          ),
+        );
+        
+        details.add(
+          _buildTotalRow(
+            label: '  Toplam: ${quantity.toStringAsFixed(0)} × ${CurrencyHelper.formatCurrency(convertedPrice, customerCurrency)}',
+            amount: CurrencyHelper.formatCurrency(lineTotal, customerCurrency),
+            isSubtotal: false,
+          ),
+        );
+      } else {
+        // Aynı para birimi
+        final lineTotal = quantity * unitPrice;
+        details.add(
+          _buildTotalRow(
+            label: '  Toplam: ${quantity.toStringAsFixed(0)} × ${CurrencyHelper.formatCurrency(unitPrice, itemCurrency)}',
+            amount: CurrencyHelper.formatCurrency(lineTotal, customerCurrency),
+            isSubtotal: false,
+          ),
+        );
+      }
+
+      details.add(const SizedBox(height: 4));
+    }
+
+    return details;
+  }
+
   Widget _buildTotals() {
     // Dinamik hesaplama - düzenleme modunda controller'lardan hesapla
     final subtotal =
@@ -1412,6 +1505,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     amount: '${_currentInvoice.items.length} adet',
                     isSubtotal: true,
                   ),
+                  const SizedBox(height: 8),
+                  // Ürün detayları (kur dönüşümleri ile)
+                  ..._buildProductDetails(),
                   const SizedBox(height: 8),
                   // Ham ara toplam (iskonto öncesi)
                   _buildTotalRow(
