@@ -1063,9 +1063,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       final lineTotal = unitPrice * quantity;
 
       // Mevcut item varsa onu kullan, yoksa yeni oluştur
-      final existingItem = i < widget.invoice.items.length 
-          ? widget.invoice.items[i] 
-          : null;
+      final existingItem =
+          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
 
       updatedItems.add(InvoiceItem(
         id: existingItem?.id ?? '',
@@ -1450,17 +1449,20 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     }
 
     if (isValid) {
-      // Invoice'ı güncelle
-      _currentInvoice = _currentInvoice.copyWith(
-        customerName: _customerNameController.text,
-        customerAddress: _customerAddressController.text,
-        notes: _notesController.text,
-        // Ürün bilgilerini de güncelle
-        items: _buildUpdatedInvoiceItems(),
-        subtotal: _calculateSubtotal(),
-        taxAmount: _calculateTaxAmount(),
-        totalAmount: _calculateTotal(),
-      );
+      // Invoice'ı güncelle ve UI'ı yenile
+      setState(() {
+        _currentInvoice = _currentInvoice.copyWith(
+          customerName: _customerNameController.text,
+          customerAddress: _customerAddressController.text,
+          notes: _notesController.text,
+          // Ürün bilgilerini de güncelle
+          items: _buildUpdatedInvoiceItems(),
+          subtotal: _calculateSubtotal(),
+          taxAmount: _calculateTaxAmount(),
+          totalAmount: _calculateTotal(),
+        );
+        _isEditing = false;
+      });
 
       // TODO: Firebase'e kaydet
       // Bu kısım invoice repository'si ile yapılacak
@@ -1475,11 +1477,6 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           backgroundColor: Colors.green,
         ),
       );
-
-      // Düzenleme modundan çık
-      setState(() {
-        _isEditing = false;
-      });
     } else {
       // Form hatalı - detaylı hata mesajı
       String errorMessage = 'Lütfen şu alanları kontrol edin:\n';
