@@ -1062,19 +1062,24 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       final taxAmount = (unitPrice * quantity * taxRate) / 100;
       final lineTotal = unitPrice * quantity;
 
+      // Mevcut item varsa onu kullan, yoksa yeni oluştur
+      final existingItem = i < widget.invoice.items.length 
+          ? widget.invoice.items[i] 
+          : null;
+
       updatedItems.add(InvoiceItem(
-        id: widget.invoice.items[i].id,
-        invoiceId: widget.invoice.items[i].invoiceId,
+        id: existingItem?.id ?? '',
+        invoiceId: existingItem?.invoiceId ?? widget.invoice.id,
         itemOrder: i + 1,
-        productId: widget.invoice.items[i].productId,
+        productId: existingItem?.productId ?? '',
         productName: _productNameControllers[i].text,
         quantity: quantity,
         unitPrice: unitPrice,
         taxRate: taxRate,
         taxAmount: taxAmount,
         lineTotal: lineTotal,
-        currencyCode: widget.invoice.items[i].currencyCode,
-        createdAt: widget.invoice.items[i].createdAt,
+        currencyCode: existingItem?.currencyCode ?? widget.invoice.currencyCode,
+        createdAt: existingItem?.createdAt ?? DateTime.now(),
       ));
     }
 
