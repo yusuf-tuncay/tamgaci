@@ -852,10 +852,10 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               _buildTableCell(item.productName),
               _buildTableCell(item.quantity.toString()),
               _buildTableCell(CurrencyHelper.formatCurrency(
-                  item.unitPrice, item.currencyCode)),
+                  item.unitPrice, _currentInvoice.currencyCode)),
               _buildTableCell('${item.taxRate.toStringAsFixed(1)}%'),
               _buildTableCell(CurrencyHelper.formatCurrency(
-                  item.lineTotal, item.currencyCode)),
+                  item.lineTotal, _currentInvoice.currencyCode)),
             ],
           );
         }),
@@ -1102,8 +1102,20 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               );
             }
 
+            // İlk seçimde otomatik doldur
+            if (currentProduct != null && _selectedProducts[index] == null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                setState(() {
+                  _selectedProducts[index] = currentProduct;
+                  _productNameControllers[index].text = currentProduct!.name;
+                  _unitPriceControllers[index].text = currentProduct!.salesPrice.toString();
+                  _taxRateControllers[index].text = currentProduct!.salesTaxRate.toString();
+                });
+              });
+            }
+
             return DropdownButtonFormField<Product>(
-              initialValue: currentProduct,
+              value: _selectedProducts[index],
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 contentPadding:
@@ -1242,22 +1254,42 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               ),
               child: Column(
                 children: [
+                  // Toplam ürün sayısı
+                  _buildTotalRow(
+                    label: 'Toplam Ürün Sayısı',
+                    amount: '${_currentInvoice.items.length} adet',
+                    isSubtotal: true,
+                  ),
+                  const SizedBox(height: 8),
+                  // İskonto (varsa)
+                  if (_currentInvoice.discountAmount > 0) ...[
+                    _buildTotalRow(
+                      label: 'İskonto',
+                      amount: '-${CurrencyHelper.formatCurrency(
+                          _currentInvoice.discountAmount, _currentInvoice.currencyCode)}',
+                      isSubtotal: true,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  // Ara toplam
                   _buildTotalRow(
                     label: 'Ara Toplam',
                     amount: CurrencyHelper.formatCurrency(
                         subtotal, _currentInvoice.currencyCode),
                     isSubtotal: true,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
+                  // KDV
                   _buildTotalRow(
-                    label: 'KDV',
+                    label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                     amount: CurrencyHelper.formatCurrency(
                         taxAmount, _currentInvoice.currencyCode),
                     isSubtotal: true,
                   ),
                   const Divider(height: 24),
+                  // Genel toplam
                   _buildTotalRow(
-                    label: 'Toplam',
+                    label: 'Genel Toplam',
                     amount: CurrencyHelper.formatCurrency(
                         total, _currentInvoice.currencyCode),
                     isTotal: true,
