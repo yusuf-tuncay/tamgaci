@@ -16,6 +16,7 @@ import '../../../products/presentation/providers/product_providers.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../customers/presentation/providers/customer_providers.dart';
 import '../../../customers/domain/entities/customer.dart';
+import '../../../../core/services/utils/exchange_rate_service.dart';
 
 /// Fatura önizleme sayfası
 class InvoicePreviewPage extends ConsumerStatefulWidget {
@@ -214,7 +215,15 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               const SizedBox(height: 24),
 
               // Toplam bilgileri
-              _buildTotals(),
+              FutureBuilder(
+                future: _buildTotals(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  return snapshot.data ?? const SizedBox.shrink();
+                },
+              ),
               const SizedBox(height: 24),
 
               // Notlar
@@ -1373,28 +1382,28 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   // Para birimine göre gruplandırılmış ürün özetleri
-  List<Widget> _buildProductDetails() {
+  Future<List<Widget>> _buildProductDetails() async {
     final customerCurrency = _getCustomerCurrency();
     final List<Widget> details = [];
-    
+
     // Para birimlerine göre grupla
     final Map<String, List<Map<String, dynamic>>> currencyGroups = {};
-    
+
     for (int i = 0; i < _currentInvoice.items.length; i++) {
       final item = _currentInvoice.items[i];
       final itemCurrency = item.currencyCode;
-      
+
       if (!currencyGroups.containsKey(itemCurrency)) {
         currencyGroups[itemCurrency] = [];
       }
-      
-      final quantity = _isEditing 
+
+      final quantity = _isEditing
           ? (double.tryParse(_quantityControllers[i].text) ?? item.quantity)
           : item.quantity;
       final unitPrice = _isEditing
           ? (double.tryParse(_unitPriceControllers[i].text) ?? item.unitPrice)
           : item.unitPrice;
-      
+
       currencyGroups[itemCurrency]!.add({
         'item': item,
         'quantity': quantity,
@@ -1402,7 +1411,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         'index': i,
       });
     }
-    
+
     // Her para birimi için ayrı özet bölümü oluştur
     currencyGroups.forEach((currency, items) {
       // Para birimi başlığı
@@ -1427,9 +1436,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Bu para birimindeki hesaplamalar
-              ..._buildCurrencySummary(currency, items, customerCurrency),
+              ...await _buildCurrencySummary(currency, items, customerCurrency),
             ],
           ),
         ),
@@ -1440,19 +1449,20 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   // Her para birimi için özet hesaplamaları
-  List<Widget> _buildCurrencySummary(String currency, List<Map<String, dynamic>> items, String customerCurrency) {
+  Future<List<Widget>> _buildCurrencySummary(String currency,
+      List<Map<String, dynamic>> items, String customerCurrency) async {
     final List<Widget> summary = [];
-    
+
     // Ara toplam hesapla
     double currencySubtotal = 0.0;
-    
+
     for (final itemData in items) {
       final quantity = itemData['quantity'] as double;
       final unitPrice = itemData['unitPrice'] as double;
       final lineTotal = quantity * unitPrice;
       currencySubtotal += lineTotal;
     }
-    
+
     // Ara toplam
     summary.add(
       _buildCurrencyRow(
@@ -1461,17 +1471,17 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         isSubtotal: true,
       ),
     );
-    
+
     // İskonto hesapla (ürün iskontoları)
     double totalDiscount = 0.0;
     for (final itemData in items) {
       final item = itemData['item'] as InvoiceItem;
-      
+
       if (item.discountAmount > 0) {
         totalDiscount += item.discountAmount;
       }
     }
-    
+
     if (totalDiscount > 0) {
       summary.add(
         _buildCurrencyRow(
@@ -1481,21 +1491,21 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         ),
       );
     }
-    
+
     // KDV hesapla
     double taxAmount = 0.0;
     for (final itemData in items) {
       final item = itemData['item'] as InvoiceItem;
       final quantity = itemData['quantity'] as double;
       final unitPrice = itemData['unitPrice'] as double;
-      
+
       final lineTotal = quantity * unitPrice;
       final discountAmount = item.discountAmount;
       final taxableAmount = lineTotal - discountAmount;
       final itemTax = taxableAmount * (item.taxRate / 100);
       taxAmount += itemTax;
     }
-    
+
     if (taxAmount > 0) {
       summary.add(
         _buildCurrencyRow(
@@ -1505,15 +1515,32 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         ),
       );
     }
-    
+
     // Bu para biriminin toplamı
     final currencyTotal = currencySubtotal - totalDiscount + taxAmount;
-    
+
     // Kur bilgisi (farklı para birimlerinde)
     if (currency != customerCurrency) {
-      final exchangeRate = items.first['item'].exchangeRate ?? 1.0;
-      final convertedTotal = currencyTotal * exchangeRate;
+      // Önce ürünlerde kayıtlı kur bilgisini kontrol et
+      double exchangeRate = 1.0;
+      final item = items.first['item'] as InvoiceItem;
       
+      if (item.exchangeRate != null && item.exchangeRate! > 0) {
+        // Satış yap modülünde girilen kur bilgisini kullan
+        exchangeRate = item.exchangeRate!;
+      } else {
+        // Kur bilgisi yoksa gerçek kurları al
+        try {
+          await ExchangeRateService().getExchangeRate(currency);
+          exchangeRate = ExchangeRateService().convertCurrency(1.0, currency, customerCurrency);
+        } catch (e) {
+          // Hata durumunda varsayılan kur
+          exchangeRate = 1.0;
+        }
+      }
+      
+      final convertedTotal = currencyTotal * exchangeRate;
+
       summary.add(
         _buildCurrencyRow(
           label: 'Kur: 1 $currency = ${exchangeRate.toStringAsFixed(4)} TL',
@@ -1521,7 +1548,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           isInfo: true,
         ),
       );
-      
+
       summary.add(
         Container(
           margin: const EdgeInsets.only(top: 8),
@@ -1601,7 +1628,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         ),
       );
     }
-    
+
     return summary;
   }
 
@@ -1617,7 +1644,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     if (isDiscount) textColor = Colors.red[600];
     if (isTax) textColor = Colors.green[600];
     if (isInfo) textColor = Colors.blue[600];
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1645,7 +1672,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     );
   }
 
-  Widget _buildTotals() {
+  Future<Widget> _buildTotals() async {
     final taxAmount =
         _isEditing ? _calculateTaxAmount() : _currentInvoice.taxAmount;
     final total = _isEditing ? _calculateTotal() : _currentInvoice.totalAmount;
@@ -1697,7 +1724,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   ),
                   const SizedBox(height: 8),
                   // Ürün detayları (kur dönüşümleri ile)
-                  ..._buildProductDetails(),
+                  ...await _buildProductDetails(),
                   const SizedBox(height: 8),
                   // Ham ara toplam (iskonto öncesi)
                   _buildTotalRow(
@@ -1803,7 +1830,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     },
                   ),
                   const Divider(height: 24),
-                  
+
                   // Genel toplam bölümü
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -1821,11 +1848,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                           isSubtotal: true,
                         ),
                         const SizedBox(height: 8),
-                        
+
                         // GENEL TOPLAM (TL)
                         Consumer(
                           builder: (context, ref, child) {
-                            final customersAsync = ref.watch(customersStreamProvider);
+                            final customersAsync =
+                                ref.watch(customersStreamProvider);
                             return customersAsync.when(
                               data: (customers) {
                                 final customer = customers.firstWhere(
@@ -1843,8 +1871,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                                         customerDiscountAmount);
                                 final subtotalAfterCustomerDiscount =
                                     rawSubtotal - customerDiscountAmount;
-                                final finalTotal = subtotalAfterCustomerDiscount +
-                                    taxAmountAfterCustomerDiscount;
+                                final finalTotal =
+                                    subtotalAfterCustomerDiscount +
+                                        taxAmountAfterCustomerDiscount;
 
                                 return _buildTotalRow(
                                   label: 'GENEL TOPLAM (TL):',
