@@ -31,6 +31,12 @@ class InvoiceItem {
   /// Birim fiyat
   final double unitPrice;
 
+  /// İndirim oranı (örn: 10.0 = %10)
+  final double discountRate;
+
+  /// İndirim tutarı
+  final double discountAmount;
+
   /// KDV oranı (örn: 18.0 = %18)
   final double taxRate;
 
@@ -62,6 +68,8 @@ class InvoiceItem {
     required this.quantity,
     this.unit,
     required this.unitPrice,
+    this.discountRate = 0.0,
+    this.discountAmount = 0.0,
     required this.taxRate,
     required this.taxAmount,
     required this.lineTotal,
@@ -83,6 +91,8 @@ class InvoiceItem {
       quantity: (json['quantity'] as num).toDouble(),
       unit: json['unit'] as String?,
       unitPrice: (json['unitPrice'] as num).toDouble(),
+      discountRate: (json['discountRate'] as num?)?.toDouble() ?? 0.0,
+      discountAmount: (json['discountAmount'] as num?)?.toDouble() ?? 0.0,
       taxRate: (json['taxRate'] as num).toDouble(),
       taxAmount: (json['taxAmount'] as num).toDouble(),
       lineTotal: (json['lineTotal'] as num).toDouble(),
@@ -107,6 +117,8 @@ class InvoiceItem {
       'quantity': quantity,
       'unit': unit,
       'unitPrice': unitPrice,
+      'discountRate': discountRate,
+      'discountAmount': discountAmount,
       'taxRate': taxRate,
       'taxAmount': taxAmount,
       'lineTotal': lineTotal,
@@ -128,6 +140,8 @@ class InvoiceItem {
     double? quantity,
     String? unit,
     double? unitPrice,
+    double? discountRate,
+    double? discountAmount,
     double? taxRate,
     double? taxAmount,
     double? lineTotal,
@@ -146,6 +160,8 @@ class InvoiceItem {
       quantity: quantity ?? this.quantity,
       unit: unit ?? this.unit,
       unitPrice: unitPrice ?? this.unitPrice,
+      discountRate: discountRate ?? this.discountRate,
+      discountAmount: discountAmount ?? this.discountAmount,
       taxRate: taxRate ?? this.taxRate,
       taxAmount: taxAmount ?? this.taxAmount,
       lineTotal: lineTotal ?? this.lineTotal,

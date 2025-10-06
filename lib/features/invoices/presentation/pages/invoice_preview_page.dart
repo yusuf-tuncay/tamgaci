@@ -1056,15 +1056,18 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     List<InvoiceItem> updatedItems = [];
 
     for (int i = 0; i < _productNameControllers.length; i++) {
-      final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
-      final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
-      final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
-      final taxAmount = (unitPrice * quantity * taxRate) / 100;
-      final lineTotal = unitPrice * quantity;
-
       // Mevcut item varsa onu kullan, yoksa yeni oluştur
       final existingItem =
           i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      
+      final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
+      final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
+      final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
+      final discountRate = existingItem?.discountRate ?? 0.0;
+      final discountAmount = (unitPrice * quantity * discountRate) / 100;
+      final subtotalAfterDiscount = (unitPrice * quantity) - discountAmount;
+      final taxAmount = (subtotalAfterDiscount * taxRate) / 100;
+      final lineTotal = subtotalAfterDiscount + taxAmount;
 
       updatedItems.add(InvoiceItem(
         id: existingItem?.id ?? '',
@@ -1074,6 +1077,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         productName: _productNameControllers[i].text,
         quantity: quantity,
         unitPrice: unitPrice,
+        discountRate: discountRate,
+        discountAmount: discountAmount,
         taxRate: taxRate,
         taxAmount: taxAmount,
         lineTotal: lineTotal,
@@ -1108,8 +1113,10 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 setState(() {
                   _selectedProducts[index] = currentProduct;
                   _productNameControllers[index].text = currentProduct!.name;
-                  _unitPriceControllers[index].text = currentProduct!.salesPrice.toString();
-                  _taxRateControllers[index].text = currentProduct!.salesTaxRate.toString();
+                  _unitPriceControllers[index].text =
+                      currentProduct!.salesPrice.toString();
+                  _taxRateControllers[index].text =
+                      currentProduct!.salesTaxRate.toString();
                 });
               });
             }
@@ -1261,12 +1268,23 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     isSubtotal: true,
                   ),
                   const SizedBox(height: 8),
-                  // İskonto (varsa)
+                  // Ürün iskontoları (varsa)
+                  if (_currentInvoice.items.any((item) => item.discountAmount > 0)) ...[
+                    _buildTotalRow(
+                      label: 'Ürün İskontoları',
+                      amount: '-${CurrencyHelper.formatCurrency(
+                          _currentInvoice.items.fold(0.0, (sum, item) => sum + item.discountAmount),
+                          _currentInvoice.currencyCode)}',
+                      isSubtotal: true,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  // Müşteri iskontosu (varsa)
                   if (_currentInvoice.discountAmount > 0) ...[
                     _buildTotalRow(
-                      label: 'İskonto',
-                      amount: '-${CurrencyHelper.formatCurrency(
-                          _currentInvoice.discountAmount, _currentInvoice.currencyCode)}',
+                      label: 'Müşteri İskontosu',
+                      amount:
+                          '-${CurrencyHelper.formatCurrency(_currentInvoice.discountAmount, _currentInvoice.currencyCode)}',
                       isSubtotal: true,
                     ),
                     const SizedBox(height: 8),
@@ -1281,7 +1299,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   const SizedBox(height: 8),
                   // KDV
                   _buildTotalRow(
-                    label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                    label:
+                        'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                     amount: CurrencyHelper.formatCurrency(
                         taxAmount, _currentInvoice.currencyCode),
                     isSubtotal: true,
