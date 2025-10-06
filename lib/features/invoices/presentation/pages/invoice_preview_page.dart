@@ -248,26 +248,26 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             final left = Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                        Text(
-                          'FATURA',
-                          style: GoogleFonts.poppins(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Fatura No: ${_currentInvoice.invoiceNumber}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          'Tarih: ${DateFormat('dd.MM.yyyy').format(_currentInvoice.invoiceDate)}',
-                          style: GoogleFonts.poppins(fontSize: 14),
-                        ),
+                Text(
+                  'FATURA',
+                  style: GoogleFonts.poppins(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Fatura No: ${_currentInvoice.invoiceNumber}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  'Tarih: ${DateFormat('dd.MM.yyyy').format(_currentInvoice.invoiceDate)}',
+                  style: GoogleFonts.poppins(fontSize: 14),
+                ),
               ],
             );
 
@@ -275,98 +275,98 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               data: (companyInfo) => Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                            Text(
-                              companyInfo?.name ?? 'TAMGACI',
-                              style: GoogleFonts.poppins(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
-                            textAlign: TextAlign.right,
-                            ),
-                            const SizedBox(height: 8),
-                            if (companyInfo?.taxNumber != null)
-                              Text(
-                                'Vergi No: ${companyInfo!.taxNumber}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.right,
-                              ),
-                            if (companyInfo?.taxOffice != null)
-                              Text(
-                                'Vergi Dairesi: ${companyInfo!.taxOffice}',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.right,
-                              ),
-                            if (companyInfo?.fullAddress.isNotEmpty == true)
-                              Text(
-                                companyInfo!.fullAddress,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.right,
-                              ),
-                            if (companyInfo?.contactInfo.isNotEmpty == true)
-                              Text(
-                                companyInfo!.contactInfo,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.right,
-                              ),
+                  Text(
+                    companyInfo?.name ?? 'TAMGACI',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                    textAlign: TextAlign.right,
+                  ),
+                  const SizedBox(height: 8),
+                  if (companyInfo?.taxNumber != null)
+                    Text(
+                      'Vergi No: ${companyInfo!.taxNumber}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  if (companyInfo?.taxOffice != null)
+                    Text(
+                      'Vergi Dairesi: ${companyInfo!.taxOffice}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  if (companyInfo?.fullAddress.isNotEmpty == true)
+                    Text(
+                      companyInfo!.fullAddress,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
+                  if (companyInfo?.contactInfo.isNotEmpty == true)
+                    Text(
+                      companyInfo!.contactInfo,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                      textAlign: TextAlign.right,
+                    ),
                 ],
               ),
               loading: () => Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'TAMGACI',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Muhasebe Yazılımı',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'TAMGACI',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Muhasebe Yazılımı',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
               error: (error, stack) => Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'TAMGACI',
-                            style: GoogleFonts.poppins(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Muhasebe Yazılımı',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'TAMGACI',
+                    style: GoogleFonts.poppins(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Muhasebe Yazılımı',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
             );
 
             if (isMobile) {
@@ -378,7 +378,11 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [Expanded(child: left), const SizedBox(width: 16), right],
+              children: [
+                Expanded(child: left),
+                const SizedBox(width: 16),
+                right
+              ],
             );
           }),
         );
