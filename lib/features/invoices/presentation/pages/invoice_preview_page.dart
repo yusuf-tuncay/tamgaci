@@ -8,11 +8,14 @@ import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../domain/entities/invoice.dart';
+import '../../domain/entities/invoice_item.dart';
 import 'package:tamgaci/core/widgets/disposed_view_suppressor.dart';
 import 'package:tamgaci/core/errors/smart_error_suppressor.dart';
 import '../../../company/presentation/providers/company_providers.dart';
 import '../../../products/presentation/providers/product_providers.dart';
 import '../../../products/domain/entities/product.dart';
+import '../../../customers/presentation/providers/customer_providers.dart';
+import '../../../customers/domain/entities/customer.dart';
 
 /// Fatura önizleme sayfası
 class InvoicePreviewPage extends ConsumerStatefulWidget {
@@ -35,9 +38,17 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     with ConsumerDisposedViewSuppressorMixin, SmartErrorSuppressorMixin {
   bool _isEditing = false;
   final _formKey = GlobalKey<FormState>();
+
+  // Güncellenmiş invoice'ı tut
+  late Invoice _currentInvoice;
   late TextEditingController _notesController;
   late TextEditingController _customerNameController;
   late TextEditingController _customerAddressController;
+  late TextEditingController _customerTaxNumberController;
+  late TextEditingController _customerTaxOfficeController;
+  late TextEditingController _customerPhoneController;
+  late TextEditingController _customerEmailController;
+  late TextEditingController _customerWebsiteController;
 
   // Ürün düzenleme için controller'lar
   final List<TextEditingController> _productNameControllers = [];
@@ -48,17 +59,29 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   // Seçili ürünler
   final List<Product?> _selectedProducts = [];
 
+  // Seçili müşteri
+  Customer? _selectedCustomer;
+
   @override
   void initState() {
     super.initState();
+    _currentInvoice = widget.invoice;
     _notesController = TextEditingController(text: widget.invoice.notes ?? '');
     _customerNameController =
         TextEditingController(text: widget.invoice.customerName ?? '');
     _customerAddressController =
         TextEditingController(text: widget.invoice.customerAddress ?? '');
+    _customerTaxNumberController = TextEditingController();
+    _customerTaxOfficeController = TextEditingController();
+    _customerPhoneController = TextEditingController();
+    _customerEmailController = TextEditingController();
+    _customerWebsiteController = TextEditingController();
 
     // Ürün controller'larını initialize et
     _initializeProductControllers();
+
+    // Müşteri bilgilerini initialize et
+    _initializeCustomerInfo();
   }
 
   void _initializeProductControllers() {
@@ -82,11 +105,46 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     }
   }
 
+  void _initializeCustomerInfo() {
+    // Müşteri bilgilerini invoice'dan doldur
+    if (widget.invoice.customerName != null) {
+      _customerNameController.text = widget.invoice.customerName!;
+    }
+    if (widget.invoice.customerAddress != null) {
+      _customerAddressController.text = widget.invoice.customerAddress!;
+    }
+
+    // Diğer müşteri bilgileri için controller'ları temizle
+    // Bu bilgiler müşteri seçildiğinde doldurulacak
+    _customerTaxNumberController.clear();
+    _customerTaxOfficeController.clear();
+    _customerPhoneController.clear();
+    _customerEmailController.clear();
+    _customerWebsiteController.clear();
+  }
+
+  // Müşteri seçili geldiğinde bilgileri otomatik doldur
+  void _populateCustomerInfo(Customer customer) {
+    _customerNameController.text = customer.name;
+    _customerAddressController.text = customer.address ?? '';
+    _customerTaxNumberController.text = customer.taxNumber ?? '';
+    _customerTaxOfficeController.text = customer.taxOffice ?? '';
+    _customerPhoneController.text = customer.phone ?? '';
+    _customerEmailController.text = customer.email ?? '';
+    _customerWebsiteController.text =
+        ''; // Customer entity'sinde website field'ı yok
+  }
+
   @override
   void dispose() {
     _notesController.dispose();
     _customerNameController.dispose();
     _customerAddressController.dispose();
+    _customerTaxNumberController.dispose();
+    _customerTaxOfficeController.dispose();
+    _customerPhoneController.dispose();
+    _customerEmailController.dispose();
+    _customerWebsiteController.dispose();
 
     // Ürün controller'larını dispose et
     for (var controller in _productNameControllers) {
@@ -203,14 +261,14 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Fatura No: ${widget.invoice.invoiceNumber}',
+                          'Fatura No: ${_currentInvoice.invoiceNumber}',
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
-                          'Tarih: ${DateFormat('dd.MM.yyyy').format(widget.invoice.invoiceDate)}',
+                          'Tarih: ${DateFormat('dd.MM.yyyy').format(_currentInvoice.invoiceDate)}',
                           style: GoogleFonts.poppins(fontSize: 14),
                         ),
                       ],
@@ -319,6 +377,133 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     );
   }
 
+  Widget _buildCustomerInfoDisplay() {
+    return Consumer(
+      builder: (context, ref, child) {
+        // Müşteri bilgilerini otomatik çek
+        if (widget.invoice.customerId.isNotEmpty && _selectedCustomer == null) {
+          final customersAsync = ref.watch(customersStreamProvider);
+          customersAsync.whenData((customers) {
+            final customer = customers.firstWhere(
+              (c) => c.id == widget.invoice.customerId,
+              orElse: () => customers.first,
+            );
+            _selectedCustomer = customer;
+            _populateCustomerInfo(customer);
+          });
+        }
+
+        // Müşteri bilgilerini controller'lardan al
+        final customerName = _customerNameController.text.isNotEmpty
+            ? _customerNameController.text
+            : (_currentInvoice.customerName ?? '');
+        final customerAddress = _customerAddressController.text.isNotEmpty
+            ? _customerAddressController.text
+            : (_currentInvoice.customerAddress ?? '');
+        final taxNumber = _customerTaxNumberController.text;
+        final taxOffice = _customerTaxOfficeController.text;
+        final phone = _customerPhoneController.text;
+        final email = _customerEmailController.text;
+        final website = _customerWebsiteController.text;
+
+        // Müşteri adı yoksa hiçbir şey gösterme
+        if (customerName.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Müşteri Adı - Firma bilgileri gibi büyük ve mavi
+              Text(
+                customerName,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Müşteri Bilgileri - Firma bilgileri gibi düzenli format
+              if (taxNumber.isNotEmpty) ...[
+                Text(
+                  'Vergi No: $taxNumber',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+
+              if (taxOffice.isNotEmpty) ...[
+                Text(
+                  'Vergi Dairesi: $taxOffice',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+
+              if (customerAddress.isNotEmpty) ...[
+                Text(
+                  customerAddress,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
+              if (phone.isNotEmpty) ...[
+                Text(
+                  'Tel: $phone',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+
+              if (email.isNotEmpty) ...[
+                Text(
+                  'E-posta: $email',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+
+              if (website.isNotEmpty) ...[
+                Text(
+                  'Web: $website',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildCustomerInfo() {
     return Card(
       elevation: 2,
@@ -333,7 +518,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             Row(
               children: [
                 const Icon(
-                  Icons.person_outline,
+                  Icons.business,
                   color: AppColors.primary,
                   size: 20,
                 ),
@@ -349,116 +534,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               ],
             ),
             const SizedBox(height: 16),
-            if (_isEditing) ...[
-              TextFormField(
-                controller: _customerNameController,
-                decoration: InputDecoration(
-                  labelText: 'Müşteri Adı',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.business),
-                ),
-                style: GoogleFonts.poppins(fontSize: 14),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _customerAddressController,
-                decoration: InputDecoration(
-                  labelText: 'Adres',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  prefixIcon: const Icon(Icons.location_on),
-                ),
-                maxLines: 3,
-                style: GoogleFonts.poppins(fontSize: 14),
-              ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.business,
-                          color: AppColors.primary,
-                          size: 18,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            widget.invoice.customerName ?? 'N/A',
-                            style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (widget.invoice.customerAddress != null &&
-                        widget.invoice.customerAddress!.isNotEmpty) ...[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.location_on,
-                            color: Colors.grey[600],
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              widget.invoice.customerAddress!,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                color: Colors.grey[700],
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ] else
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.orange[200]!),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.info_outline,
-                                size: 16, color: Colors.orange[600]),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Müşteri adres bilgisi eklenmemiş',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.orange[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ],
+            // Müşteri bilgilerini göster (hem düzenleme hem önizleme modunda)
+            _buildCustomerInfoDisplay(),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -890,7 +968,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
 
   void _calculateLineTotal(int index) {
     setState(() {
-      // Bu metod sadece UI'ı günceller, gerçek hesaplama _calculateLineTotalText'te yapılır
+      // Bu metod UI'ı günceller ve tutar özetini yeniden hesaplar
     });
   }
 
@@ -934,6 +1012,62 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     });
   }
 
+  double _calculateSubtotal() {
+    double subtotal = 0;
+    for (int i = 0; i < _quantityControllers.length; i++) {
+      final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
+      final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
+      subtotal += quantity * unitPrice;
+    }
+    return subtotal;
+  }
+
+  double _calculateTaxAmount() {
+    double taxAmount = 0;
+    for (int i = 0; i < _quantityControllers.length; i++) {
+      final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
+      final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
+      final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
+      final lineSubtotal = quantity * unitPrice;
+      taxAmount += lineSubtotal * (taxRate / 100);
+    }
+    return taxAmount;
+  }
+
+  double _calculateTotal() {
+    return _calculateSubtotal() + _calculateTaxAmount();
+  }
+
+  // Güncellenmiş invoice items'ları oluştur
+  List<InvoiceItem> _buildUpdatedInvoiceItems() {
+    List<InvoiceItem> updatedItems = [];
+
+    for (int i = 0; i < _productNameControllers.length; i++) {
+      final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
+      final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
+      final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
+      final taxAmount = (unitPrice * quantity * taxRate) / 100;
+      final lineTotal = unitPrice * quantity;
+
+      updatedItems.add(InvoiceItem(
+        id: widget.invoice.items[i].id,
+        invoiceId: widget.invoice.items[i].invoiceId,
+        itemOrder: i + 1,
+        productId: widget.invoice.items[i].productId,
+        productName: _productNameControllers[i].text,
+        quantity: quantity,
+        unitPrice: unitPrice,
+        taxRate: taxRate,
+        taxAmount: taxAmount,
+        lineTotal: lineTotal,
+        currencyCode: widget.invoice.items[i].currencyCode,
+        createdAt: widget.invoice.items[i].createdAt,
+      ));
+    }
+
+    return updatedItems;
+  }
+
   Widget _buildProductSelector(int index) {
     return Consumer(
       builder: (context, ref, child) {
@@ -941,8 +1075,18 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
 
         return productsAsync.when(
           data: (products) {
+            // Mevcut ürünü bul ve seçili hale getir
+            Product? currentProduct;
+            if (index < _productNameControllers.length) {
+              final productName = _productNameControllers[index].text;
+              currentProduct = products.firstWhere(
+                (product) => product.name == productName,
+                orElse: () => products.first, // Bulunamazsa ilk ürünü seç
+              );
+            }
+
             return DropdownButtonFormField<Product>(
-              initialValue: _selectedProducts[index],
+              initialValue: currentProduct,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 contentPadding:
@@ -1036,9 +1180,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   Widget _buildTotals() {
-    final subtotal = widget.invoice.subtotal;
-    final taxAmount = widget.invoice.taxAmount;
-    final total = widget.invoice.totalAmount;
+    // Dinamik hesaplama - düzenleme modunda controller'lardan hesapla
+    final subtotal =
+        _isEditing ? _calculateSubtotal() : widget.invoice.subtotal;
+    final taxAmount =
+        _isEditing ? _calculateTaxAmount() : widget.invoice.taxAmount;
+    final total = _isEditing ? _calculateTotal() : widget.invoice.totalAmount;
 
     return Card(
       elevation: 2,
@@ -1249,9 +1396,107 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   void _toggleEdit() {
-    setState(() {
-      _isEditing = !_isEditing;
-    });
+    if (_isEditing) {
+      // Kaydet butonuna tıklandı - bilgileri kaydet
+      _saveInvoiceChanges();
+    } else {
+      // Düzenle butonuna tıklandı - düzenleme moduna geç
+      setState(() {
+        _isEditing = true;
+      });
+    }
+  }
+
+  void _saveInvoiceChanges() {
+    // Form validasyonu - basit kontrol
+    bool isValid = true;
+
+    // Müşteri adı kontrolü
+    if (_customerNameController.text.trim().isEmpty) {
+      isValid = false;
+    }
+
+    // Ürün kontrolü - en az bir ürün olmalı
+    if (_productNameControllers.isEmpty) {
+      isValid = false;
+    }
+
+    // Her ürün için miktar ve fiyat kontrolü
+    for (int i = 0; i < _productNameControllers.length; i++) {
+      if (_productNameControllers[i].text.trim().isEmpty ||
+          _quantityControllers[i].text.trim().isEmpty ||
+          _unitPriceControllers[i].text.trim().isEmpty) {
+        isValid = false;
+        break;
+      }
+    }
+
+    if (isValid) {
+      // Invoice'ı güncelle
+      _currentInvoice = _currentInvoice.copyWith(
+        customerName: _customerNameController.text,
+        customerAddress: _customerAddressController.text,
+        notes: _notesController.text,
+        // Ürün bilgilerini de güncelle
+        items: _buildUpdatedInvoiceItems(),
+        subtotal: _calculateSubtotal(),
+        taxAmount: _calculateTaxAmount(),
+        totalAmount: _calculateTotal(),
+      );
+
+      // TODO: Firebase'e kaydet
+      // Bu kısım invoice repository'si ile yapılacak
+
+      // Başarı mesajı göster
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Fatura bilgileri güncellendi!',
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Düzenleme modundan çık
+      setState(() {
+        _isEditing = false;
+      });
+    } else {
+      // Form hatalı - detaylı hata mesajı
+      String errorMessage = 'Lütfen şu alanları kontrol edin:\n';
+
+      if (_customerNameController.text.trim().isEmpty) {
+        errorMessage += '• Müşteri adı\n';
+      }
+
+      if (_productNameControllers.isEmpty) {
+        errorMessage += '• En az bir ürün ekleyin\n';
+      }
+
+      for (int i = 0; i < _productNameControllers.length; i++) {
+        if (_productNameControllers[i].text.trim().isEmpty) {
+          errorMessage += '• Ürün ${i + 1} adı\n';
+        }
+        if (_quantityControllers[i].text.trim().isEmpty) {
+          errorMessage += '• Ürün ${i + 1} miktarı\n';
+        }
+        if (_unitPriceControllers[i].text.trim().isEmpty) {
+          errorMessage += '• Ürün ${i + 1} fiyatı\n';
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            errorMessage,
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   void _printInvoice() {

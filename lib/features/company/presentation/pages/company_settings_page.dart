@@ -94,19 +94,11 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
         updatedAt: DateTime.now(),
       );
 
-      print('🔍 Website Controller Value: "${_websiteController.text}"');
-      print(
-          '🔍 Website Controller isEmpty: ${_websiteController.text.isEmpty}');
-      print('🔍 Company Info kaydediliyor: ${companyInfo.toJson()}');
-
       final useCase = ref.read(saveCompanyInfoUseCaseProvider);
       await useCase.call(companyInfo);
 
-      print('✅ Company Info kaydedildi');
-
       // Provider'ı refresh et
       ref.read(companyInfoRefreshProvider.notifier).state++;
-      print('🔄 Provider refresh edildi');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -144,10 +136,7 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
     // Company info varsa onu kullan, yoksa user settings'ten al
     companyInfoAsync.when(
       data: (companyInfo) {
-        print('🔍 Company Info Data: $companyInfo');
         if (companyInfo != null && mounted) {
-          print('✅ Company info bulundu, form dolduruluyor...');
-          print('🌐 Website: ${companyInfo.website}');
           // Company info varsa onu kullan
           _nameController.text = companyInfo.name;
           _taxNumberController.text = companyInfo.taxNumber ?? '';
@@ -162,11 +151,7 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
           if (_websiteController.text.isEmpty) {
             _websiteController.text = companyInfo.website ?? '';
           }
-          print('🌐 Website controller set to: ${_websiteController.text}');
-          print(
-              '🌐 Website controller set from companyInfo.website: ${companyInfo.website}');
         } else if (user != null && mounted) {
-          print('❌ Company info null, user settings kullanılıyor...');
           // Company info yoksa user settings'ten register bilgilerini kullan
           final settings = user.settings;
           if (settings != null) {
@@ -191,12 +176,8 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
           }
         }
       },
-      loading: () {
-        print('⏳ Company info loading...');
-      },
-      error: (error, stack) {
-        print('❌ Company info error: $error');
-      },
+      loading: () {},
+      error: (error, stack) {},
     );
 
     return ResponsiveScaffold(
@@ -365,13 +346,10 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
                           border: OutlineInputBorder(),
                         ),
                         onChanged: (value) {
-                          print('🌐 Website field changed: "$value"');
-                          print(
-                              '🌐 Controller text after change: "${_websiteController.text}"');
+                          // Website field changed
                         },
                         onTap: () {
-                          print(
-                              '🌐 Website field tapped, current value: "${_websiteController.text}"');
+                          // Website field tapped
                         },
                       ),
                     ],
