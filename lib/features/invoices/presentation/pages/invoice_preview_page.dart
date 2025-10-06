@@ -1025,13 +1025,25 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     });
   }
 
+  // Ham ara toplam (iskonto öncesi)
+  double _calculateRawSubtotal() {
+    double subtotal = 0;
+    for (int i = 0; i < _quantityControllers.length; i++) {
+      final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
+      final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
+      subtotal += quantity * unitPrice;
+    }
+    return subtotal;
+  }
+
+  // Ürün iskontoları sonrası ara toplam
   double _calculateSubtotal() {
     double subtotal = 0;
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
 
-      // Önce iskonto hesapla
+      // Ürün iskonto hesapla
       final existingItem =
           i < widget.invoice.items.length ? widget.invoice.items[i] : null;
       final discountRate = existingItem?.discountRate ?? 0.0;
@@ -1066,26 +1078,21 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   // Müşteri iskontosu sonrası KDV hesapla
-  double _calculateTaxAmountAfterCustomerDiscount(double customerDiscountAmount) {
-    final subtotal = _calculateSubtotal();
-    
-    // Müşteri iskontosu sonrası tutar üzerinden KDV oranını hesapla
+  double _calculateTaxAmountAfterCustomerDiscount(
+      double customerDiscountAmount) {
+    final rawSubtotal = _calculateRawSubtotal();
+
+    // Müşteri iskontosu sonrası tutar üzerinden KDV hesapla
     double totalTaxAmount = 0;
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
       final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
-      
-      // Ürün iskonto hesapla
-      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
-      final discountRate = existingItem?.discountRate ?? 0.0;
+
+      // Bu ürünün ham ara toplamdaki payını hesapla
       final lineSubtotal = quantity * unitPrice;
-      final discountAmount = lineSubtotal * (discountRate / 100);
-      final subtotalAfterDiscount = lineSubtotal - discountAmount;
-      
-      // Bu ürünün müşteri iskontosundaki payını hesapla
-      final productAfterCustomerDiscount = subtotalAfterDiscount * (1 - customerDiscountAmount / subtotal);
-      
+      final productAfterCustomerDiscount = lineSubtotal * (1 - customerDiscountAmount / rawSubtotal);
+
       // Müşteri iskontosu sonrası tutar üzerinden KDV hesapla
       totalTaxAmount += productAfterCustomerDiscount * (taxRate / 100);
     }
@@ -1318,6 +1325,14 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     isSubtotal: true,
                   ),
                   const SizedBox(height: 8),
+                  // Ham ara toplam (iskonto öncesi)
+                  _buildTotalRow(
+                    label: 'Ara Toplam',
+                    amount: CurrencyHelper.formatCurrency(
+                        _calculateRawSubtotal(), _currentInvoice.currencyCode),
+                    isSubtotal: true,
+                  ),
+                  const SizedBox(height: 8),
                   // Ürün iskontoları (varsa)
                   if (_currentInvoice.items
                       .any((item) => item.discountAmount > 0)) ...[
@@ -1342,8 +1357,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
 
                           final customerDiscountRate =
                               customer.fixedDiscountRate ?? 0.0;
+                          final rawSubtotal = _calculateRawSubtotal();
                           final customerDiscountAmount =
-                              subtotal * (customerDiscountRate / 100);
+                              rawSubtotal * (customerDiscountRate / 100);
 
                           if (customerDiscountAmount > 0) {
                             return Column(
@@ -1384,26 +1400,35 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                             (c) => c.id == _currentInvoice.customerId,
                             orElse: () => customers.first,
                           );
-                          
-                          final customerDiscountRate = customer.fixedDiscountRate ?? 0.0;
-                          final customerDiscountAmount = subtotal * (customerDiscountRate / 100);
-                          final taxAmountAfterCustomerDiscount = _calculateTaxAmountAfterCustomerDiscount(customerDiscountAmount);
-                          
+
+                          final customerDiscountRate =
+                              customer.fixedDiscountRate ?? 0.0;
+                          final rawSubtotal = _calculateRawSubtotal();
+                          final customerDiscountAmount =
+                              rawSubtotal * (customerDiscountRate / 100);
+                          final taxAmountAfterCustomerDiscount =
+                              _calculateTaxAmountAfterCustomerDiscount(
+                                  customerDiscountAmount);
+
                           return _buildTotalRow(
-                            label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                            label:
+                                'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                             amount: CurrencyHelper.formatCurrency(
-                                taxAmountAfterCustomerDiscount, _currentInvoice.currencyCode),
+                                taxAmountAfterCustomerDiscount,
+                                _currentInvoice.currencyCode),
                             isSubtotal: true,
                           );
                         },
                         loading: () => _buildTotalRow(
-                          label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                          label:
+                              'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                           amount: CurrencyHelper.formatCurrency(
                               taxAmount, _currentInvoice.currencyCode),
                           isSubtotal: true,
                         ),
                         error: (error, stack) => _buildTotalRow(
-                          label: 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                          label:
+                              'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                           amount: CurrencyHelper.formatCurrency(
                               taxAmount, _currentInvoice.currencyCode),
                           isSubtotal: true,
@@ -1425,12 +1450,17 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
 
                           final customerDiscountRate =
                               customer.fixedDiscountRate ?? 0.0;
+                          final rawSubtotal = _calculateRawSubtotal();
                           final customerDiscountAmount =
-                              subtotal * (customerDiscountRate / 100);
+                              rawSubtotal * (customerDiscountRate / 100);
                           // Müşteri iskontosu sonrası KDV hesapla
-                          final taxAmountAfterCustomerDiscount = _calculateTaxAmountAfterCustomerDiscount(customerDiscountAmount);
-                          final subtotalAfterCustomerDiscount = subtotal - customerDiscountAmount;
-                          final finalTotal = subtotalAfterCustomerDiscount + taxAmountAfterCustomerDiscount;
+                          final taxAmountAfterCustomerDiscount =
+                              _calculateTaxAmountAfterCustomerDiscount(
+                                  customerDiscountAmount);
+                          final subtotalAfterCustomerDiscount =
+                              rawSubtotal - customerDiscountAmount;
+                          final finalTotal = subtotalAfterCustomerDiscount +
+                              taxAmountAfterCustomerDiscount;
 
                           return _buildTotalRow(
                             label: 'Genel Toplam',
