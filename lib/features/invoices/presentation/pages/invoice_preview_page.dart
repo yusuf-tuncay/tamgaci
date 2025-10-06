@@ -240,17 +240,14 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           return const SizedBox.shrink();
         }
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: LayoutBuilder(builder: (context, constraints) {
+            final bool isMobile = constraints.maxWidth < 600;
+
+            final left = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
                         Text(
                           'FATURA',
                           style: GoogleFonts.poppins(
@@ -271,13 +268,13 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                           'Tarih: ${DateFormat('dd.MM.yyyy').format(_currentInvoice.invoiceDate)}',
                           style: GoogleFonts.poppins(fontSize: 14),
                         ),
-                      ],
-                    ),
-                    companyInfoAsync.when(
-                      data: (companyInfo) => Flexible(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
+              ],
+            );
+
+            final right = companyInfoAsync.when(
+              data: (companyInfo) => Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
                             Text(
                               companyInfo?.name ?? 'TAMGACI',
                               style: GoogleFonts.poppins(
@@ -287,6 +284,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                               ),
                               overflow: TextOverflow.ellipsis,
                               maxLines: 2,
+                            textAlign: TextAlign.right,
                             ),
                             const SizedBox(height: 8),
                             if (companyInfo?.taxNumber != null)
@@ -295,7 +293,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   color: Colors.grey[600],
-                                ),
+                              ),
+                              textAlign: TextAlign.right,
                               ),
                             if (companyInfo?.taxOffice != null)
                               Text(
@@ -303,7 +302,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   color: Colors.grey[600],
-                                ),
+                              ),
+                              textAlign: TextAlign.right,
                               ),
                             if (companyInfo?.fullAddress.isNotEmpty == true)
                               Text(
@@ -311,7 +311,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   color: Colors.grey[600],
-                                ),
+                              ),
+                              textAlign: TextAlign.right,
                               ),
                             if (companyInfo?.contactInfo.isNotEmpty == true)
                               Text(
@@ -319,12 +320,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   color: Colors.grey[600],
-                                ),
                               ),
-                          ],
-                        ),
-                      ),
-                      loading: () => Column(
+                              textAlign: TextAlign.right,
+                              ),
+                ],
+              ),
+              loading: () => Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
@@ -345,7 +346,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                           ),
                         ],
                       ),
-                      error: (error, stack) => Column(
+              error: (error, stack) => Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
@@ -366,12 +367,20 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+            );
+
+            if (isMobile) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [left, const SizedBox(height: 12), right],
+              );
+            }
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [Expanded(child: left), const SizedBox(width: 16), right],
+            );
+          }),
         );
       },
     );
