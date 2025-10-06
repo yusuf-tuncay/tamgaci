@@ -851,11 +851,24 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             children: [
               _buildTableCell(item.productName),
               _buildTableCell(item.quantity.toString()),
-              _buildTableCell(CurrencyHelper.formatCurrency(
-                  item.unitPrice, _currentInvoice.currencyCode)),
+              _buildTableCell(
+                CurrencyHelper.formatCurrency(
+                      item.unitPrice,
+                      item.currencyCode,
+                    ) +
+                    // Fatura para birimi farklıysa kuru göster
+                    (item.currencyCode != _currentInvoice.currencyCode &&
+                            item.exchangeRate != null
+                        ? ' (kur: ${item.exchangeRate!.toStringAsFixed(4)})'
+                        : ''),
+              ),
               _buildTableCell('${item.taxRate.toStringAsFixed(1)}%'),
-              _buildTableCell(CurrencyHelper.formatCurrency(
-                  item.lineTotal, _currentInvoice.currencyCode)),
+              _buildTableCell(
+                CurrencyHelper.formatCurrency(
+                  item.lineTotal,
+                  item.currencyCode,
+                ),
+              ),
             ],
           );
         }),
@@ -926,16 +939,33 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   flex: 1,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: TextFormField(
-                      controller: _unitPriceControllers[index],
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      ),
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.poppins(fontSize: 12),
-                      onChanged: (value) => _calculateLineTotal(index),
+                    child: Builder(
+                      builder: (context) {
+                        final existingItem = index < widget.invoice.items.length
+                            ? widget.invoice.items[index]
+                            : null;
+                        final itemCurrency = existingItem?.currencyCode ??
+                            _currentInvoice.currencyCode;
+                        final rateInfo = (existingItem != null &&
+                                existingItem.currencyCode !=
+                                    _currentInvoice.currencyCode &&
+                                existingItem.exchangeRate != null)
+                            ? 'kur: ${existingItem.exchangeRate!.toStringAsFixed(4)}'
+                            : null;
+                        return TextFormField(
+                          controller: _unitPriceControllers[index],
+                          decoration: InputDecoration(
+                            border: const OutlineInputBorder(),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 8),
+                            suffixText: itemCurrency,
+                            helperText: rateInfo,
+                          ),
+                          keyboardType: TextInputType.number,
+                          style: GoogleFonts.poppins(fontSize: 12),
+                          onChanged: (value) => _calculateLineTotal(index),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -995,7 +1025,13 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       final taxAmount = subtotal * (taxRate / 100);
       final total = subtotal + taxAmount;
 
-      return CurrencyHelper.formatCurrency(total, widget.invoice.currencyCode);
+      // Satırın para birimini belirle (varsa item.currencyCode, yoksa fatura para birimi)
+      final existingItem = index < widget.invoice.items.length
+          ? widget.invoice.items[index]
+          : null;
+      final itemCurrency =
+          existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+      return CurrencyHelper.formatCurrency(total, itemCurrency);
     } catch (e) {
       return '0,00 ₺';
     }
@@ -1025,29 +1061,58 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     });
   }
 
-  // Ham ara toplam (iskonto öncesi)
+  // Müşteri para birimini al
+  String _getCustomerCurrency() {
+    // Müşteri para birimi varsa onu kullan, yoksa fatura para birimini kullan
+    return _currentInvoice.customer?.customerCurrency ?? _currentInvoice.currencyCode;
+  }
+
+  // Ham ara toplam (iskonto öncesi) - müşteri para biriminde
   double _calculateRawSubtotal() {
     double subtotal = 0;
+    final customerCurrency = _getCustomerCurrency();
+    
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
-      subtotal += quantity * unitPrice;
+      
+      // Ürün para birimini al
+      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+      
+      // Para birimi farklıysa kur hesapla
+      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+        final convertedPrice = unitPrice * existingItem!.exchangeRate!;
+        subtotal += quantity * convertedPrice;
+      } else {
+        subtotal += quantity * unitPrice;
+      }
     }
     return subtotal;
   }
 
-  // Ürün iskontoları sonrası ara toplam
+  // Ürün iskontoları sonrası ara toplam - müşteri para biriminde
   double _calculateSubtotal() {
     double subtotal = 0;
+    final customerCurrency = _getCustomerCurrency();
+    
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
 
+      // Ürün para birimini al
+      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+      
+      // Para birimi farklıysa kur hesapla
+      double convertedUnitPrice = unitPrice;
+      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+        convertedUnitPrice = unitPrice * existingItem!.exchangeRate!;
+      }
+
       // Ürün iskonto hesapla
-      final existingItem =
-          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
       final discountRate = existingItem?.discountRate ?? 0.0;
-      final lineSubtotal = quantity * unitPrice;
+      final lineSubtotal = quantity * convertedUnitPrice;
       final discountAmount = lineSubtotal * (discountRate / 100);
       final subtotalAfterDiscount = lineSubtotal - discountAmount;
 
@@ -1058,16 +1123,26 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
 
   double _calculateTaxAmount() {
     double taxAmount = 0;
+    final customerCurrency = _getCustomerCurrency();
+    
     for (int i = 0; i < _quantityControllers.length; i++) {
       final quantity = double.tryParse(_quantityControllers[i].text) ?? 0;
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
       final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
 
+      // Ürün para birimini al
+      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+      
+      // Para birimi farklıysa kur hesapla
+      double convertedUnitPrice = unitPrice;
+      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+        convertedUnitPrice = unitPrice * existingItem!.exchangeRate!;
+      }
+
       // Önce ürün iskonto hesapla
-      final existingItem =
-          i < widget.invoice.items.length ? widget.invoice.items[i] : null;
       final discountRate = existingItem?.discountRate ?? 0.0;
-      final lineSubtotal = quantity * unitPrice;
+      final lineSubtotal = quantity * convertedUnitPrice;
       final discountAmount = lineSubtotal * (discountRate / 100);
       final subtotalAfterDiscount = lineSubtotal - discountAmount;
 
@@ -1081,6 +1156,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   double _calculateTaxAmountAfterCustomerDiscount(
       double customerDiscountAmount) {
     final rawSubtotal = _calculateRawSubtotal();
+    final customerCurrency = _getCustomerCurrency();
 
     // Müşteri iskontosu sonrası tutar üzerinden KDV hesapla
     double totalTaxAmount = 0;
@@ -1089,8 +1165,18 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       final unitPrice = double.tryParse(_unitPriceControllers[i].text) ?? 0;
       final taxRate = double.tryParse(_taxRateControllers[i].text) ?? 0;
 
+      // Ürün para birimini al
+      final existingItem = i < widget.invoice.items.length ? widget.invoice.items[i] : null;
+      final itemCurrency = existingItem?.currencyCode ?? _currentInvoice.currencyCode;
+      
+      // Para birimi farklıysa kur hesapla
+      double convertedUnitPrice = unitPrice;
+      if (itemCurrency != customerCurrency && existingItem?.exchangeRate != null) {
+        convertedUnitPrice = unitPrice * existingItem!.exchangeRate!;
+      }
+
       // Bu ürünün ham ara toplamdaki payını hesapla
-      final lineSubtotal = quantity * unitPrice;
+      final lineSubtotal = quantity * convertedUnitPrice;
       final productAfterCustomerDiscount =
           lineSubtotal * (1 - customerDiscountAmount / rawSubtotal);
 
@@ -1280,6 +1366,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     final taxAmount =
         _isEditing ? _calculateTaxAmount() : _currentInvoice.taxAmount;
     final total = _isEditing ? _calculateTotal() : _currentInvoice.totalAmount;
+    final customerCurrency = _getCustomerCurrency();
 
     return Card(
       elevation: 2,
@@ -1330,7 +1417,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   _buildTotalRow(
                     label: 'Ara Toplam',
                     amount: CurrencyHelper.formatCurrency(
-                        _calculateRawSubtotal(), _currentInvoice.currencyCode),
+                        _calculateRawSubtotal(), customerCurrency),
                     isSubtotal: true,
                   ),
                   const SizedBox(height: 8),
@@ -1340,7 +1427,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     _buildTotalRow(
                       label: 'Ürün İskontoları',
                       amount:
-                          '-${CurrencyHelper.formatCurrency(_currentInvoice.items.fold(0.0, (sum, item) => sum + item.discountAmount), _currentInvoice.currencyCode)}',
+                          '-${CurrencyHelper.formatCurrency(_currentInvoice.items.fold(0.0, (sum, item) => sum + item.discountAmount), customerCurrency)}',
                       isSubtotal: true,
                     ),
                     const SizedBox(height: 8),
@@ -1369,7 +1456,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                                   label:
                                       'Müşteri İskontosu (%${customerDiscountRate.toStringAsFixed(1)})',
                                   amount:
-                                      '-${CurrencyHelper.formatCurrency(customerDiscountAmount, _currentInvoice.currencyCode)}',
+                                      '-${CurrencyHelper.formatCurrency(customerDiscountAmount, customerCurrency)}',
                                   isSubtotal: true,
                                 ),
                                 const SizedBox(height: 8),
@@ -1408,7 +1495,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                                 'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                             amount: CurrencyHelper.formatCurrency(
                                 taxAmountAfterCustomerDiscount,
-                                _currentInvoice.currencyCode),
+                                customerCurrency),
                             isSubtotal: true,
                           );
                         },
@@ -1416,14 +1503,14 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                           label:
                               'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                           amount: CurrencyHelper.formatCurrency(
-                              taxAmount, _currentInvoice.currencyCode),
+                              taxAmount, customerCurrency),
                           isSubtotal: true,
                         ),
                         error: (error, stack) => _buildTotalRow(
                           label:
                               'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
                           amount: CurrencyHelper.formatCurrency(
-                              taxAmount, _currentInvoice.currencyCode),
+                              taxAmount, customerCurrency),
                           isSubtotal: true,
                         ),
                       );
@@ -1458,20 +1545,20 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                           return _buildTotalRow(
                             label: 'Genel Toplam',
                             amount: CurrencyHelper.formatCurrency(
-                                finalTotal, _currentInvoice.currencyCode),
+                                finalTotal, customerCurrency),
                             isTotal: true,
                           );
                         },
                         loading: () => _buildTotalRow(
                           label: 'Genel Toplam',
                           amount: CurrencyHelper.formatCurrency(
-                              total, _currentInvoice.currencyCode),
+                              total, customerCurrency),
                           isTotal: true,
                         ),
                         error: (error, stack) => _buildTotalRow(
                           label: 'Genel Toplam',
                           amount: CurrencyHelper.formatCurrency(
-                              total, _currentInvoice.currencyCode),
+                              total, customerCurrency),
                           isTotal: true,
                         ),
                       );
