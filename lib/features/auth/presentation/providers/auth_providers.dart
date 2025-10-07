@@ -312,9 +312,19 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier(repository);
 });
 
-/// Mevcut kullanıcı provider'ı
-final currentUserProvider = Provider<User?>((ref) {
-  return ref.watch(authProvider).user;
+/// Mevcut kullanıcı provider'ı (AsyncValue olarak)
+final currentUserProvider = Provider<AsyncValue<User?>>((ref) {
+  final authState = ref.watch(authProvider);
+  
+  if (authState.isLoading) {
+    return const AsyncValue.loading();
+  }
+  
+  if (authState.error != null) {
+    return AsyncValue.error(authState.error!, StackTrace.current);
+  }
+  
+  return AsyncValue.data(authState.user);
 });
 
 /// Kullanıcının oturum açıp açmadığını kontrol eden provider

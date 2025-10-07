@@ -1,6 +1,8 @@
 // ========== PAYTR CONFIG ==========
 // lib/core/services/payment/paytr_config.dart
 
+import '../../../features/subscription/domain/entities/subscription_plan.dart';
+
 /// PayTR konfigürasyon sınıfı
 class PaytrConfig {
   /// Merchant ID (Mağaza No)
@@ -21,9 +23,11 @@ class PaytrConfig {
   static const bool testMode = true; // Production'da false yapılacak
 
   /// Callback URL'leri (Firebase Hosting)
-  static const String successUrl = 'https://tamgaci.web.app/#/subscription/success';
+  static const String successUrl =
+      'https://tamgaci.web.app/#/subscription/success';
   static const String failUrl = 'https://tamgaci.web.app/#/subscription/fail';
-  static const String callbackUrl = 'https://tamgaci.web.app/api/paytr/callback';
+  static const String callbackUrl =
+      'https://tamgaci.web.app/api/paytr/callback';
 
   /// Para birimi
   static const String currency = 'TL';
@@ -71,7 +75,7 @@ class PaytrConfig {
     String? userAddress,
   }) {
     final credentials = activeCredentials;
-    
+
     return {
       'merchant_id': credentials['merchant_id'],
       'merchant_key': credentials['merchant_key'],
@@ -108,10 +112,7 @@ class PaytrConfig {
     required String userBasket,
     required String merchantSalt,
   }) {
-    // PayTR hash format
-    final hashStr = '$merchantId$userEmail$paymentAmount$merchantOid$userBasket$merchantSalt';
-    
-    // Bu hash'i backend'de oluşturmamız gerekiyor (güvenlik için)
+    // PayTR hash format - bu hash'i backend'de oluşturmamız gerekiyor (güvenlik için)
     // Şimdilik placeholder döndürüyoruz
     return 'HASH_WILL_BE_GENERATED_BY_BACKEND';
   }

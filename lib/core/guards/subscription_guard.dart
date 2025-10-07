@@ -46,7 +46,7 @@ class SubscriptionGuard extends ConsumerWidget {
 
         // Subscription durumunu kontrol et
         final subscriptionCheck = _checkSubscriptionStatus(user);
-        
+
         if (subscriptionCheck.hasAccess) {
           return child;
         } else {
@@ -131,7 +131,8 @@ class SubscriptionGuard extends ConsumerWidget {
   }
 
   /// Subscription sayfasına yönlendirme
-  Widget _buildRedirectToSubscription(BuildContext context, SubscriptionCheckResult result) {
+  Widget _buildRedirectToSubscription(
+      BuildContext context, SubscriptionCheckResult result) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -175,8 +176,8 @@ class SubscriptionGuard extends ConsumerWidget {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-              // Context kullanımını düzelt
-            },
+                // Ana sayfaya dön
+              },
               child: const Text('Ana Sayfaya Dön'),
             ),
           ],

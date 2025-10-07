@@ -40,7 +40,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
-    final user = userAsync.valueOrNull;
+    final user = userAsync.value;
     final plans = PricingConfig.getAllPlans();
 
     return ResponsiveScaffold(
@@ -137,7 +137,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   /// Deneme süresi bilgisi
   Widget _buildTrialInfo(User user) {
     final remainingDays = user.trialEndAt!.difference(DateTime.now()).inDays;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -241,7 +241,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                   activeColor: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
-                
+
                 // Plan adı
                 Expanded(
                   child: Text(
@@ -253,11 +253,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                     ),
                   ),
                 ),
-                
+
                 // Önerilen badge
                 if (plan.isRecommended) ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.orange[100],
                       borderRadius: BorderRadius.circular(12),
@@ -393,7 +394,6 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             ),
           ),
           const SizedBox(height: 16),
-          
           ...[
             'Sınırsız fatura oluşturma',
             'Müşteri ve ürün yönetimi',
@@ -406,7 +406,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green[600], size: 20),
+                    Icon(Icons.check_circle,
+                        color: Colors.green[600], size: 20),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
