@@ -214,7 +214,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withOpacity(0.1) : Colors.white,
+          color: isSelected ? AppColors.primary.withValues(alpha:0.1) : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.grey[300]!,
@@ -222,7 +222,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha:0.05),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -233,12 +233,22 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           children: [
             Row(
               children: [
-                // Radio button
-                Radio<sub.SubscriptionPlanType>(
-                  value: plan.type,
-                  groupValue: _selectedPlan,
-                  onChanged: (value) => setState(() => _selectedPlan = value),
-                  activeColor: AppColors.primary,
+                // Selection indicator
+                Container(
+                  width: 24,
+                  height: 24,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isSelected ? AppColors.primary : Colors.grey,
+                      width: 2,
+                    ),
+                    color: isSelected ? AppColors.primary : Colors.transparent,
+                  ),
+                  child: isSelected
+                      ? const Icon(Icons.check, size: 16, color: Colors.white)
+                      : null,
                 ),
                 const SizedBox(width: 8),
 

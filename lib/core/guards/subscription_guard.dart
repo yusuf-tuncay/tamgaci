@@ -65,7 +65,7 @@ class SubscriptionGuard extends ConsumerWidget {
 
     // Admin kullanıcılar her zaman erişebilir
     if (user.role == UserRole.admin) {
-      return SubscriptionCheckResult(
+      return const SubscriptionCheckResult(
         hasAccess: true,
         reason: 'Admin kullanıcı',
       );
@@ -73,7 +73,7 @@ class SubscriptionGuard extends ConsumerWidget {
 
     // Aktif abonelik var mı?
     if (user.subscriptionStatus == SubscriptionStatus.active) {
-      return SubscriptionCheckResult(
+      return const SubscriptionCheckResult(
         hasAccess: true,
         reason: 'Aktif abonelik',
       );
@@ -90,7 +90,7 @@ class SubscriptionGuard extends ConsumerWidget {
             remainingDays: user.trialEndAt!.difference(now).inDays,
           );
         } else {
-          return SubscriptionCheckResult(
+          return const SubscriptionCheckResult(
             hasAccess: false,
             reason: 'Deneme süresi kullanıcılarına izin verilmiyor',
           );
@@ -115,7 +115,7 @@ class SubscriptionGuard extends ConsumerWidget {
     }
 
     // Hiç abonelik yok
-    return SubscriptionCheckResult(
+    return const SubscriptionCheckResult(
       hasAccess: false,
       reason: 'Abonelik bulunamadı',
       needsSubscription: true,
