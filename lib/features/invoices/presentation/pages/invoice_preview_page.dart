@@ -1413,7 +1413,10 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     }
 
     // Her para birimi için ayrı özet bölümü oluştur
-    currencyGroups.forEach((currency, items) {
+    for (final entry in currencyGroups.entries) {
+      final currency = entry.key;
+      final items = entry.value;
+      
       // Para birimi başlığı
       details.add(
         Container(
@@ -1443,7 +1446,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           ),
         ),
       );
-    });
+    }
 
     return details;
   }
