@@ -50,7 +50,7 @@ import 'package:tamgaci/features/settings/presentation/pages/permissions_page.da
 import 'package:tamgaci/features/settings/presentation/pages/profile_page.dart';
 import 'package:tamgaci/features/settings/presentation/pages/settings_page.dart';
 import 'package:tamgaci/features/settings/presentation/pages/tax_settings_page.dart';
-// import 'package:tamgaci/features/settings/presentation/pages/subscription_page.dart'; // Removed - will be reimplemented
+import 'package:tamgaci/features/subscription/presentation/pages/subscription_page.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/create_supplier_page.dart';
 // import 'package:tamgaci/features/suppliers/presentation/pages/supplier_detail_page.dart'; // Unused
@@ -363,8 +363,7 @@ class TamgaciRoutes {
         return _createRoute(const ProfilePage(), settings: settings);
 
       case TamgaciRoutes.subscription:
-        // Temporarily return UnderConstructionPage until subscription is reimplemented
-        return _createRoute(const UnderConstructionPage(title: 'Abonelik'), settings: settings);
+        return _createRoute(const SubscriptionPage(), settings: settings);
 
       // ========== SATIŞ ROUTE'LARI ==========
 
