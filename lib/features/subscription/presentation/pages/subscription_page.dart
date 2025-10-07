@@ -11,6 +11,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../domain/entities/subscription_plan.dart' as sub;
+import '../widgets/paytr_iframe_widget.dart';
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -214,7 +215,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha:0.1) : Colors.white,
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.primary : Colors.grey[300]!,
@@ -222,7 +225,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha:0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -233,22 +236,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           children: [
             Row(
               children: [
-                // Selection indicator
-                Container(
-                  width: 24,
-                  height: 24,
-                  margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey,
-                      width: 2,
-                    ),
-                    color: isSelected ? AppColors.primary : Colors.transparent,
-                  ),
-                  child: isSelected
-                      ? const Icon(Icons.check, size: 16, color: Colors.white)
-                      : null,
+                // Radio button
+                Radio<sub.SubscriptionPlanType>(
+                  value: plan.type,
+                  groupValue: _selectedPlan,
+                  onChanged: (value) => setState(() => _selectedPlan = value),
+                  activeColor: AppColors.primary,
                 ),
                 const SizedBox(width: 8),
 
@@ -435,16 +428,154 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Devam et butonuna tıklandığında
   void _onContinuePressed() {
-    if (_selectedPlan == null) return;
+    final userAsync = ref.read(currentUserProvider);
+    final user = userAsync.value;
+    if (_selectedPlan == null || user == null) return;
 
-    // TODO: PayTR ödeme sayfasına yönlendir
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
+    final plan = PricingConfig.getAllPlans()
+        .firstWhere((p) => p.type == _selectedPlan);
+
+    // PayTR ödeme sayfasına yönlendir
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => PaytrIframeWidget(
+          user: user,
+          planType: _selectedPlan!,
+          amount: plan.price,
+          onPaymentSuccess: () {
+            Navigator.of(context).pop(); // PayTR sayfasını kapat
+            _showPaymentSuccessDialog();
+          },
+          onPaymentFailed: () {
+            Navigator.of(context).pop(); // PayTR sayfasını kapat
+            _showPaymentFailedDialog();
+          },
+          onPaymentCancelled: () {
+            Navigator.of(context).pop(); // PayTR sayfasını kapat
+            _showPaymentCancelledDialog();
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Başarılı ödeme dialog'u
+  void _showPaymentSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green[600], size: 28),
+            const SizedBox(width: 12),
+            Text(
+              'Ödeme Başarılı!',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: Colors.green[700],
+              ),
+            ),
+          ],
+        ),
+          content: Text(
+            'Aboneliğiniz başarıyla oluşturuldu. Artık tüm özellikleri kullanabilirsiniz.',
+            style: GoogleFonts.poppins(),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Dialog'u kapat
+                Navigator.of(context).pop(); // Subscription sayfasını kapat
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[600],
+                foregroundColor: Colors.white,
+              ),
+              child: Text(
+                'Tamam',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+  }
+
+  /// Başarısız ödeme dialog'u
+  void _showPaymentFailedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.error, color: Colors.red[600], size: 28),
+            const SizedBox(width: 12),
+            Text(
+              'Ödeme Başarısız',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: Colors.red[700],
+              ),
+            ),
+          ],
+        ),
         content: Text(
-          'Seçilen plan: ${_selectedPlan!.name} - PayTR entegrasyonu yakında eklenecek',
+          'Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.',
           style: GoogleFonts.poppins(),
         ),
-        backgroundColor: Colors.blue,
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              foregroundColor: Colors.white,
+            ),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// İptal edilen ödeme dialog'u
+  void _showPaymentCancelledDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.cancel, color: Colors.orange[600], size: 28),
+            const SizedBox(width: 12),
+            Text(
+              'Ödeme İptal Edildi',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: Colors.orange[700],
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'Ödeme işlemi iptal edildi. İstediğiniz zaman tekrar deneyebilirsiniz.',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange[600],
+              foregroundColor: Colors.white,
+            ),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
       ),
     );
   }
