@@ -229,57 +229,58 @@ class _SubscriptionTestPageState extends ConsumerState<SubscriptionTestPage> {
         ),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: RadioListTile<sub.SubscriptionPlanType>(
-        title: Text(
-          plan.name,
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              plan.description,
-              style: GoogleFonts.poppins(fontSize: 12),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '₺${plan.price.toStringAsFixed(0)}',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
-            ),
-            if (plan.isLaunchPrice) ...[
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'Lansman Fiyatı',
-                  style: GoogleFonts.poppins(
-                    fontSize: 10,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-        value: plan.type,
-        groupValue: _selectedPlan,
+      child: RadioGroup<sub.SubscriptionPlanType>(
         onChanged: (value) {
           setState(() {
             _selectedPlan = value;
           });
         },
+        child: RadioListTile<sub.SubscriptionPlanType>(
+          title: Text(
+            plan.name,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                plan.description,
+                style: GoogleFonts.poppins(fontSize: 12),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '₺${plan.price.toStringAsFixed(0)}',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+              if (plan.isLaunchPrice) ...[
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Lansman Fiyatı',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          value: plan.type,
+        ),
       ),
     );
   }
@@ -321,18 +322,19 @@ class _SubscriptionTestPageState extends ConsumerState<SubscriptionTestPage> {
         ),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: RadioListTile<sub_entity.PaymentProvider>(
-        title: Text(
-          provider.name,
-          style: GoogleFonts.poppins(fontSize: 14),
-        ),
-        value: provider,
-        groupValue: _selectedProvider,
+      child: RadioGroup<sub_entity.PaymentProvider>(
         onChanged: (value) {
           setState(() {
             _selectedProvider = value!;
           });
         },
+        child: RadioListTile<sub_entity.PaymentProvider>(
+          title: Text(
+            provider.name,
+            style: GoogleFonts.poppins(fontSize: 14),
+          ),
+          value: provider,
+        ),
       ),
     );
   }

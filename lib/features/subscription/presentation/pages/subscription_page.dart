@@ -237,11 +237,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             Row(
               children: [
                 // Radio button
-                Radio<sub.SubscriptionPlanType>(
-                  value: plan.type,
-                  groupValue: _selectedPlan,
+                RadioGroup<sub.SubscriptionPlanType>(
                   onChanged: (value) => setState(() => _selectedPlan = value),
-                  activeColor: AppColors.primary,
+                  child: Radio<sub.SubscriptionPlanType>(
+                    value: plan.type,
+                    activeColor: AppColors.primary,
+                  ),
                 ),
                 const SizedBox(width: 8),
 

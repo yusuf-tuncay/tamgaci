@@ -115,13 +115,14 @@ class AppStoreService {
     try {
       // restorePurchases() void döndürüyor, bu yüzden farklı yaklaşım kullanıyoruz
       await _inAppPurchase.restorePurchases();
-      
+
       // Şimdilik basit bir kontrol - gerçek implementasyonda App Store API'si kullanılacak
       // Bu placeholder implementation - production'da App Store receipt validation yapılacak
-      
+
       return const AppStorePurchaseResult(
         success: false,
-        error: 'Abonelik durumu kontrol edilemedi - App Store API entegrasyonu gerekli',
+        error:
+            'Abonelik durumu kontrol edilemedi - App Store API entegrasyonu gerekli',
       );
     } catch (e) {
       debugPrint('App Store Status Check Error: $e');
@@ -137,7 +138,7 @@ class AppStoreService {
     try {
       // App Store'da abonelik iptali kullanıcı tarafından yapılır
       // Bu sadece bilgilendirme amaçlı
-      return AppStorePurchaseResult(
+      return const AppStorePurchaseResult(
         success: true,
         message: 'Abonelik iptali için App Store ayarlarına gidin',
       );

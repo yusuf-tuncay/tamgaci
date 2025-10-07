@@ -137,7 +137,7 @@ class PlayStoreService {
     try {
       // Play Store'da abonelik iptali kullanıcı tarafından yapılır
       // Bu sadece bilgilendirme amaçlı
-      return PlayStorePurchaseResult(
+      return const PlayStorePurchaseResult(
         success: true,
         message: 'Abonelik iptali için Play Store ayarlarına gidin',
       );
