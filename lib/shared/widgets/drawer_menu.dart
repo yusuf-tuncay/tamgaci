@@ -511,7 +511,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               }),
               const SizedBox(height: 12),
               // Kullanıcı bilgileri
-              _buildCompactUserInfo(currentUser),
+              _buildCompactUserInfo(currentUser.value),
             ],
           ),
         ),
@@ -558,7 +558,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
   Widget _buildSubscriptionChip() {
     final container = ProviderScope.containerOf(context, listen: false);
-    final user = container.read(currentUserProvider);
+    final userAsync = container.read(currentUserProvider);
+    final user = userAsync.value;
     if (user == null) {
       return const SizedBox.shrink();
     }
@@ -754,7 +755,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       debugPrint('🔄 Refreshed URL from path: $freshUrl');
 
       // Update both User and UserProfile entities with fresh URL
-      final currentUser = ref.read(currentUserProvider);
+      final currentUserAsync = ref.read(currentUserProvider);
+      final currentUser = currentUserAsync.value;
       if (currentUser != null) {
         final updatedUser = currentUser.copyWith(
           profileImageUrl: freshUrl,
@@ -1055,7 +1057,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 // Subscription guard: if expired, redirect to subscription page
                 final container =
                     ProviderScope.containerOf(context, listen: false);
-                final user = container.read(currentUserProvider);
+                final userAsync = container.read(currentUserProvider);
+                final user = userAsync.value;
                 if (_isSubscriptionExpired(user)) {
                   ref
                       .read(drawerMenuProvider.notifier)

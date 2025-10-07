@@ -69,7 +69,7 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
       final companyInfo = CompanyInfo(
         id: '',
         tenantId: tenantId,
-        createdBy: user?.id,
+        createdBy: user.value?.id,
         name: _nameController.text,
         taxNumber: _taxNumberController.text.isNotEmpty
             ? _taxNumberController.text
@@ -151,9 +151,9 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
           if (_websiteController.text.isEmpty) {
             _websiteController.text = companyInfo.website ?? '';
           }
-        } else if (user != null && mounted) {
+        } else if (user.value != null && mounted) {
           // Company info yoksa user settings'ten register bilgilerini kullan
-          final settings = user.settings;
+          final settings = user.value!.settings;
           if (settings != null) {
             // Form alanlarını doldur
             _nameController.text =
@@ -170,8 +170,8 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
               _postalCodeController.text = address['postalCode'] ?? '';
             }
 
-            _phoneController.text = user.phone ?? '';
-            _emailController.text = user.email;
+            _phoneController.text = user.value!.phone ?? '';
+            _emailController.text = user.value!.email;
             _websiteController.text = '';
           }
         }

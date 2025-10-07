@@ -188,7 +188,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     bool isDark,
   ) {
     final user = ref.watch(currentUserProvider);
-    final banner = _buildSubscriptionBanner(user);
+    final banner = _buildSubscriptionBanner(user.value);
     return RefreshIndicator(
       onRefresh: () async {
         // Refresh dashboard data and exchange rates

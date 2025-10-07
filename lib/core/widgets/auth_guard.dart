@@ -96,7 +96,7 @@ class UserInfoWidget extends ConsumerWidget {
     final userEmail = ref.watch(userEmailProvider);
     final userDisplayName = ref.watch(userDisplayNameProvider);
 
-    if (user == null) {
+    if (user.value == null) {
       return const Text('Kullanıcı bilgisi bulunamadı');
     }
 
