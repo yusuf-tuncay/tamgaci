@@ -47,6 +47,7 @@ dependencies:
   web: ^1.1.0
   webview_flutter: ^4.4.2
   crypto: ^3.0.3
+  in_app_purchase: ^3.1.11
 
   # Utility
   intl: ^0.20.2

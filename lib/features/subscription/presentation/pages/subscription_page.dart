@@ -11,7 +11,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../domain/entities/subscription_plan.dart' as sub;
-import '../widgets/paytr_iframe_widget.dart';
+import '../widgets/platform_payment_widget.dart';
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -432,26 +432,26 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     final user = userAsync.value;
     if (_selectedPlan == null || user == null) return;
 
-    final plan = PricingConfig.getAllPlans()
-        .firstWhere((p) => p.type == _selectedPlan);
+    final plan =
+        PricingConfig.getAllPlans().firstWhere((p) => p.type == _selectedPlan);
 
-    // PayTR ödeme sayfasına yönlendir
+    // Platform-specific ödeme sayfasına yönlendir
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PaytrIframeWidget(
+        builder: (context) => PlatformPaymentWidget(
           user: user,
           planType: _selectedPlan!,
           amount: plan.price,
           onPaymentSuccess: () {
-            Navigator.of(context).pop(); // PayTR sayfasını kapat
+            Navigator.of(context).pop(); // Ödeme sayfasını kapat
             _showPaymentSuccessDialog();
           },
           onPaymentFailed: () {
-            Navigator.of(context).pop(); // PayTR sayfasını kapat
+            Navigator.of(context).pop(); // Ödeme sayfasını kapat
             _showPaymentFailedDialog();
           },
           onPaymentCancelled: () {
-            Navigator.of(context).pop(); // PayTR sayfasını kapat
+            Navigator.of(context).pop(); // Ödeme sayfasını kapat
             _showPaymentCancelledDialog();
           },
         ),
@@ -478,28 +478,28 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             ),
           ],
         ),
-          content: Text(
-            'Aboneliğiniz başarıyla oluşturuldu. Artık tüm özellikleri kullanabilirsiniz.',
-            style: GoogleFonts.poppins(),
-          ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Dialog'u kapat
-                Navigator.of(context).pop(); // Subscription sayfasını kapat
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green[600],
-                foregroundColor: Colors.white,
-              ),
-              child: Text(
-                'Tamam',
-                style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+        content: Text(
+          'Aboneliğiniz başarıyla oluşturuldu. Artık tüm özellikleri kullanabilirsiniz.',
+          style: GoogleFonts.poppins(),
         ),
-      );
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop(); // Dialog'u kapat
+              Navigator.of(context).pop(); // Subscription sayfasını kapat
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[600],
+              foregroundColor: Colors.white,
+            ),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Başarısız ödeme dialog'u
