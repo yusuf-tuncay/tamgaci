@@ -32,7 +32,7 @@ class AppStoreService {
     try {
       // iOS kontrolü
       if (!Platform.isIOS) {
-        return AppStorePurchaseResult(
+        return const AppStorePurchaseResult(
           success: false,
           error: 'App Store sadece iOS\'ta kullanılabilir',
         );
@@ -41,7 +41,7 @@ class AppStoreService {
       // Ürün ID'sini al
       final productId = _productIds[planType];
       if (productId == null) {
-        return AppStorePurchaseResult(
+        return const AppStorePurchaseResult(
           success: false,
           error: 'Geçersiz plan tipi',
         );
@@ -61,7 +61,7 @@ class AppStoreService {
 
       final products = productDetailsResponse.productDetails;
       if (products.isEmpty) {
-        return AppStorePurchaseResult(
+        return const AppStorePurchaseResult(
           success: false,
           error: 'Ürün bulunamadı',
         );
@@ -85,7 +85,7 @@ class AppStoreService {
           message: 'Satın alma işlemi başlatıldı',
         );
       } else {
-        return AppStorePurchaseResult(
+        return const AppStorePurchaseResult(
           success: false,
           error: 'Satın alma işlemi başlatılamadı',
         );
@@ -113,22 +113,15 @@ class AppStoreService {
   /// Satın alma durumunu kontrol et
   Future<AppStorePurchaseResult> checkPurchaseStatus(String productId) async {
     try {
-      final pastPurchases = await _inAppPurchase.restorePurchases();
+      // restorePurchases() void döndürüyor, bu yüzden farklı yaklaşım kullanıyoruz
+      await _inAppPurchase.restorePurchases();
       
-      // Aktif abonelikleri kontrol et
-      for (final purchase in pastPurchases) {
-        if (purchase.productID == productId && purchase.status == PurchaseStatus.purchased) {
-          return AppStorePurchaseResult(
-            success: true,
-            productId: productId,
-            message: 'Aktif abonelik bulundu',
-          );
-        }
-      }
-
-      return AppStorePurchaseResult(
+      // Şimdilik basit bir kontrol - gerçek implementasyonda App Store API'si kullanılacak
+      // Bu placeholder implementation - production'da App Store receipt validation yapılacak
+      
+      return const AppStorePurchaseResult(
         success: false,
-        error: 'Aktif abonelik bulunamadı',
+        error: 'Abonelik durumu kontrol edilemedi - App Store API entegrasyonu gerekli',
       );
     } catch (e) {
       debugPrint('App Store Status Check Error: $e');

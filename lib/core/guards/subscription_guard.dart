@@ -70,14 +70,6 @@ class SubscriptionGuard extends ConsumerWidget {
   SubscriptionCheckResult _checkSubscriptionStatus(User user) {
     final now = DateTime.now();
 
-    // Admin kullanıcılar her zaman erişebilir
-    if (user.role == UserRole.admin) {
-      return const SubscriptionCheckResult(
-        hasAccess: true,
-        reason: 'Admin kullanıcı',
-      );
-    }
-
     // Aktif abonelik var mı?
     if (user.subscriptionStatus == SubscriptionStatus.active) {
       return const SubscriptionCheckResult(

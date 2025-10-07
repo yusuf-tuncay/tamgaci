@@ -32,7 +32,7 @@ class PlayStoreService {
     try {
       // Android kontrolü
       if (!Platform.isAndroid) {
-        return PlayStorePurchaseResult(
+        return const PlayStorePurchaseResult(
           success: false,
           error: 'Play Store sadece Android\'de kullanılabilir',
         );
@@ -41,7 +41,7 @@ class PlayStoreService {
       // Ürün ID'sini al
       final productId = _productIds[planType];
       if (productId == null) {
-        return PlayStorePurchaseResult(
+        return const PlayStorePurchaseResult(
           success: false,
           error: 'Geçersiz plan tipi',
         );
@@ -61,7 +61,7 @@ class PlayStoreService {
 
       final products = productDetailsResponse.productDetails;
       if (products.isEmpty) {
-        return PlayStorePurchaseResult(
+        return const PlayStorePurchaseResult(
           success: false,
           error: 'Ürün bulunamadı',
         );
@@ -85,7 +85,7 @@ class PlayStoreService {
           message: 'Satın alma işlemi başlatıldı',
         );
       } else {
-        return PlayStorePurchaseResult(
+        return const PlayStorePurchaseResult(
           success: false,
           error: 'Satın alma işlemi başlatılamadı',
         );
@@ -113,22 +113,15 @@ class PlayStoreService {
   /// Satın alma durumunu kontrol et
   Future<PlayStorePurchaseResult> checkPurchaseStatus(String productId) async {
     try {
-      final pastPurchases = await _inAppPurchase.restorePurchases();
+      // restorePurchases() void döndürüyor, bu yüzden farklı yaklaşım kullanıyoruz
+      await _inAppPurchase.restorePurchases();
       
-      // Aktif abonelikleri kontrol et
-      for (final purchase in pastPurchases) {
-        if (purchase.productID == productId && purchase.status == PurchaseStatus.purchased) {
-          return PlayStorePurchaseResult(
-            success: true,
-            productId: productId,
-            message: 'Aktif abonelik bulundu',
-          );
-        }
-      }
-
-      return PlayStorePurchaseResult(
+      // Şimdilik basit bir kontrol - gerçek implementasyonda Play Store API'si kullanılacak
+      // Bu placeholder implementation - production'da Play Store receipt validation yapılacak
+      
+      return const PlayStorePurchaseResult(
         success: false,
-        error: 'Aktif abonelik bulunamadı',
+        error: 'Abonelik durumu kontrol edilemedi - Play Store API entegrasyonu gerekli',
       );
     } catch (e) {
       debugPrint('Play Store Status Check Error: $e');

@@ -187,7 +187,7 @@ class _PlatformPaymentWidgetState extends State<PlatformPaymentWidget> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -265,7 +265,7 @@ class _PlatformPaymentWidgetState extends State<PlatformPaymentWidget> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(
+          const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
           const SizedBox(height: 16),
