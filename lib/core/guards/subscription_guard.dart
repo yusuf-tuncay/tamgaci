@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/domain/entities/user.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
+import '../../features/subscription/presentation/providers/subscription_providers.dart'
+    as sub_providers;
 
 /// Abonelik durumu kontrol eden guard widget'ı
 class SubscriptionGuard extends ConsumerWidget {
@@ -43,6 +45,11 @@ class SubscriptionGuard extends ConsumerWidget {
           // Kullanıcı giriş yapmamış - login sayfasına yönlendir
           return _buildRedirectToLogin(context);
         }
+
+        // Abonelik durumunu senkronize et
+        ref
+            .read(sub_providers.subscriptionSyncStatusProvider.notifier)
+            .syncUserSubscriptions(user.id);
 
         // Subscription durumunu kontrol et
         final subscriptionCheck = _checkSubscriptionStatus(user);

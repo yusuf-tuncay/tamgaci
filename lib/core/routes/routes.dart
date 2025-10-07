@@ -51,6 +51,7 @@ import 'package:tamgaci/features/settings/presentation/pages/profile_page.dart';
 import 'package:tamgaci/features/settings/presentation/pages/settings_page.dart';
 import 'package:tamgaci/features/settings/presentation/pages/tax_settings_page.dart';
 import 'package:tamgaci/features/subscription/presentation/pages/subscription_page.dart';
+import 'package:tamgaci/features/subscription/presentation/pages/subscription_test_page.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/create_supplier_page.dart';
 // import 'package:tamgaci/features/suppliers/presentation/pages/supplier_detail_page.dart'; // Unused
@@ -263,6 +264,7 @@ class TamgaciRoutes {
 
   /// Abonelik sayfası
   static const String subscription = '/settings/subscription';
+  static const String subscriptionTest = '/subscription-test';
 
   /// İzinler sayfası
   static const String permissions = '/settings/permissions';
@@ -364,6 +366,9 @@ class TamgaciRoutes {
 
       case TamgaciRoutes.subscription:
         return _createRoute(const SubscriptionPage(), settings: settings);
+        
+      case TamgaciRoutes.subscriptionTest:
+        return _createRoute(const SubscriptionTestPage(), settings: settings);
 
       // ========== SATIŞ ROUTE'LARI ==========
 
