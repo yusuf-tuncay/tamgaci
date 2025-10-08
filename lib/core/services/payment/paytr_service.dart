@@ -26,7 +26,7 @@ class PaytrService {
       final orderId = _generateOrderId(user.id, planType);
       final userBasket = _generateUserBasket(amount, planType);
       final userIp = await _getUserIp();
-      
+
       // PayTR parametreleri
       final params = PaytrConfig.getBaseParameters(
         userEmail: user.email,
@@ -44,8 +44,15 @@ class PaytrService {
       // PayTR hash oluştur (dokümantasyona göre)
       final hash = _generatePaytrHash(params);
 
+      // Debug: Parametreleri yazdır
+      debugPrint('PayTR Request Params: $params');
+      debugPrint('PayTR Hash: $hash');
+
       // PayTR API'ye istek gönder
       final response = await _sendTokenRequest(params, hash);
+
+      // Debug: Response'u yazdır
+      debugPrint('PayTR Response: $response');
 
       if (response['status'] == 'success') {
         return PaytrTokenResponse(
@@ -108,7 +115,10 @@ class PaytrService {
   String _generateOrderId(String userId, SubscriptionPlanType planType) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final planId = planType.name;
-    return 'TAMGACI_${userId}_${planId}_$timestamp';
+    // PayTR merchant_oid alfanumerik olmalı, özel karakter içeremez
+    // userId'deki özel karakterleri temizle
+    final cleanUserId = userId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+    return 'TAMGACI$cleanUserId$planId$timestamp';
   }
 
   /// Kullanıcı sepeti oluştur (PayTR formatında)
@@ -116,33 +126,36 @@ class PaytrService {
     final productName = PaytrConfig.getProductName(planType);
     final priceInKurus = (amount * 100).toInt();
     // PayTR format: [["Ürün adı", "Fiyat", "Adet"]]
-    return '[["$productName", "$priceInKurus", "1"]]';
+    final basketJson = '[["$productName", "$priceInKurus", "1"]]';
+    // Base64 encode
+    return base64.encode(utf8.encode(basketJson));
   }
-
 
   /// Kullanıcı IP adresini al
   Future<String> _getUserIp() async {
     try {
-      // Web'de kullanıcı IP'si alınamaz, bu yüzden localhost kullanıyoruz
-      // Production'da backend'den alınmalı
-      return '127.0.0.1';
+      // PayTR test ortamında bile 127.0.0.1 kabul etmiyor
+      // Dummy bir public IP kullanıyoruz (test için)
+      // Production'da gerçek kullanıcı IP'si backend'den alınmalı
+      return '85.34.78.11'; // Örnek public IP
     } catch (e) {
       debugPrint('IP alınamadı: $e');
-      return '127.0.0.1';
+      return '85.34.78.11'; // Fallback public IP
     }
   }
 
   /// PayTR hash oluştur (dokümantasyona göre)
   String _generatePaytrHash(Map<String, dynamic> params) {
     // PayTR hash format: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
-    final hashString = '${params['merchant_id']}${params['user_ip']}${params['merchant_oid']}${params['email']}${params['payment_amount']}${params['user_basket']}${params['no_installment']}${params['max_installment']}${params['currency']}${params['test_mode']}';
-    
+    final hashString =
+        '${params['merchant_id']}${params['user_ip']}${params['merchant_oid']}${params['email']}${params['payment_amount']}${params['user_basket']}${params['no_installment']}${params['max_installment']}${params['currency']}${params['test_mode']}';
+
     // HMAC-SHA256 ile hash oluştur
     final key = utf8.encode(params['merchant_key'] as String);
     final data = utf8.encode(hashString + (params['merchant_salt'] as String));
     final hmac = Hmac(sha256, key);
     final digest = hmac.convert(data);
-    
+
     return base64.encode(digest.bytes);
   }
 
@@ -152,13 +165,35 @@ class PaytrService {
     String hash,
   ) async {
     final requestParams = Map<String, dynamic>.from(params);
-    requestParams['hash'] = hash;
+
+    // merchant_key ve merchant_salt'ı çıkar (sadece hash için kullanılır)
+    requestParams.remove('merchant_key');
+    requestParams.remove('merchant_salt');
+
+    // Hash'i ekle
+    requestParams['paytr_token'] = hash;
+
+    // Form data'ya çevir
+    final formData = requestParams.entries
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value.toString())}',
+        )
+        .join('&');
+
+    // Debug: Form data'yı yazdır
+    debugPrint('PayTR Form Data: $formData');
+    debugPrint('PayTR URL: ${PaytrConfig.iframeUrl}');
 
     final response = await http.post(
       Uri.parse(PaytrConfig.iframeUrl),
       headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: requestParams,
+      body: formData,
     );
+
+    // Debug: HTTP response'u yazdır
+    debugPrint('PayTR HTTP Status: ${response.statusCode}');
+    debugPrint('PayTR HTTP Body: ${response.body}');
 
     if (response.statusCode == 200) {
       return json.decode(response.body);
@@ -176,15 +211,16 @@ class PaytrService {
   }) {
     try {
       // PayTR callback hash format: merchant_oid + merchant_salt + status + total_amount
-      final hashString = '$merchantOid${PaytrConfig.merchantSalt}$status$totalAmount';
-      
+      final hashString =
+          '$merchantOid${PaytrConfig.merchantSalt}$status$totalAmount';
+
       // HMAC-SHA256 ile hash oluştur
       final key = utf8.encode(PaytrConfig.merchantKey);
       final data = utf8.encode(hashString);
       final hmac = Hmac(sha256, key);
       final digest = hmac.convert(data);
       final expectedHash = base64.encode(digest.bytes);
-      
+
       return hash == expectedHash;
     } catch (e) {
       debugPrint('PayTR Callback Verification Error: $e');

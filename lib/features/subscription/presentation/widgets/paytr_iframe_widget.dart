@@ -50,11 +50,25 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
   String? _error;
   String? _orderId;
   final PaytrCallbackService _callbackService = PaytrCallbackService();
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
     _initializeWebView();
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    // WebView controller'ı temizle
+    try {
+      _controller.clearCache();
+      _controller.clearLocalStorage();
+    } catch (e) {
+      debugPrint('WebView dispose error: $e');
+    }
+    super.dispose();
   }
 
   /// WebView'i başlat
@@ -69,10 +83,12 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
       );
 
       if (!tokenResponse.success) {
-        setState(() {
-          _error = tokenResponse.error ?? 'Token oluşturulamadı';
-          _isLoading = false;
-        });
+        if (!_isDisposed) {
+          setState(() {
+            _error = tokenResponse.error ?? 'Token oluşturulamadı';
+            _isLoading = false;
+          });
+        }
         return;
       }
 
@@ -86,38 +102,49 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
           NavigationDelegate(
             onPageStarted: (String url) {
               debugPrint('PayTR Page Started: $url');
-              _handleUrlNavigation(url);
+              if (!_isDisposed) {
+                _handleUrlNavigation(url);
+              }
             },
             onPageFinished: (String url) {
               debugPrint('PayTR Page Finished: $url');
-              setState(() => _isLoading = false);
+              if (!_isDisposed) {
+                setState(() => _isLoading = false);
+              }
             },
             onWebResourceError: (WebResourceError error) {
               debugPrint('PayTR WebView Error: ${error.description}');
-              setState(() {
-                _error = 'Sayfa yüklenemedi: ${error.description}';
-                _isLoading = false;
-              });
+              if (!_isDisposed) {
+                setState(() {
+                  _error = 'Sayfa yüklenemedi: ${error.description}';
+                  _isLoading = false;
+                });
+              }
             },
           ),
         );
 
       // PayTR IFrame URL'si oluştur
-      final iframeUrl = 'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
-      
+      final iframeUrl =
+          'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
+
       // Sayfayı yükle
       await _controller.loadRequest(Uri.parse(iframeUrl));
     } catch (e) {
       debugPrint('PayTR IFrame Error: $e');
-      setState(() {
-        _error = 'Ödeme sayfası yüklenemedi: $e';
-        _isLoading = false;
-      });
+      if (!_isDisposed) {
+        setState(() {
+          _error = 'Ödeme sayfası yüklenemedi: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
   /// URL navigasyonunu handle et
   void _handleUrlNavigation(String url) {
+    if (_isDisposed) return;
+
     debugPrint('PayTR Navigation: $url');
 
     // Başarılı ödeme URL'si
@@ -128,38 +155,48 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
 
     // Başarısız ödeme URL'si
     if (url.contains('fail') || url.contains('basarisiz')) {
-      widget.onPaymentFailed?.call();
+      if (!_isDisposed) {
+        widget.onPaymentFailed?.call();
+      }
       return;
     }
 
     // İptal URL'si
     if (url.contains('cancel') || url.contains('iptal')) {
-      widget.onPaymentCancelled?.call();
+      if (!_isDisposed) {
+        widget.onPaymentCancelled?.call();
+      }
       return;
     }
   }
 
   /// Başarılı ödeme işle
   void _handlePaymentSuccess() async {
-    if (_orderId == null) {
-      widget.onPaymentFailed?.call();
+    if (_orderId == null || _isDisposed) {
+      if (!_isDisposed) {
+        widget.onPaymentFailed?.call();
+      }
       return;
     }
 
     try {
       // PayTR'den ödeme durumunu kontrol et
       final result = await _callbackService.checkPaymentStatus(_orderId!);
-      
-      if (result.success) {
-        // Abonelik başarıyla oluşturuldu
-        widget.onPaymentSuccess?.call();
-      } else {
-        // Ödeme doğrulanamadı
-        widget.onPaymentFailed?.call();
+
+      if (!_isDisposed) {
+        if (result.success) {
+          // Abonelik başarıyla oluşturuldu
+          widget.onPaymentSuccess?.call();
+        } else {
+          // Ödeme doğrulanamadı
+          widget.onPaymentFailed?.call();
+        }
       }
     } catch (e) {
       debugPrint('Payment success handling error: $e');
-      widget.onPaymentFailed?.call();
+      if (!_isDisposed) {
+        widget.onPaymentFailed?.call();
+      }
     }
   }
 

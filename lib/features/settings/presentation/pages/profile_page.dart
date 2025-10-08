@@ -1063,8 +1063,9 @@ class _ProfilePageState extends State<ProfilePage> {
     if (subscriptionStatus == 'trial' && trialEndAt != null) {
       final trialEnd = (trialEndAt as Timestamp).toDate();
       final remaining = trialEnd.difference(now).inDays;
+      final remainingHours = trialEnd.difference(now).inHours % 24;
       text = remaining >= 0
-          ? 'Deneme: $remaining gün kaldı'
+          ? 'Deneme: $remaining gün, $remainingHours saat kaldı'
           : 'Deneme süresi doldu';
       color = remaining > 0 ? Colors.orange : Colors.red;
 
@@ -1073,13 +1074,16 @@ class _ProfilePageState extends State<ProfilePage> {
         final trialStart = (trialStartAt as Timestamp).toDate();
         final totalTrialDays = trialEnd.difference(trialStart).inDays;
         final usedDays = now.difference(trialStart).inDays;
-        usageInfo = 'Kullanım: $usedDays/$totalTrialDays gün';
+        final usedHours = now.difference(trialStart).inHours % 24;
+        usageInfo =
+            'Kullanım: $usedDays gün, $usedHours saat / $totalTrialDays gün';
       }
     } else if (subscriptionStatus == 'active' && subscriptionEndAt != null) {
       final subEnd = (subscriptionEndAt as Timestamp).toDate();
       final remaining = subEnd.difference(now).inDays;
+      final remainingHours = subEnd.difference(now).inHours % 24;
       text = remaining >= 0
-          ? 'Aktif: $remaining gün kaldı'
+          ? 'Aktif: $remaining gün, $remainingHours saat kaldı'
           : 'Abonelik süresi doldu';
       color = remaining > 0 ? Colors.green : Colors.red;
 
@@ -1088,7 +1092,8 @@ class _ProfilePageState extends State<ProfilePage> {
       if (subscriptionStartAt != null) {
         final subStart = (subscriptionStartAt as Timestamp).toDate();
         final usedDays = now.difference(subStart).inDays;
-        usageInfo = 'Kullanım: $usedDays gün';
+        final usedHours = now.difference(subStart).inHours % 24;
+        usageInfo = 'Kullanım: $usedDays gün, $usedHours saat';
       }
     } else if (subscriptionStatus == 'none' ||
         subscriptionStatus == 'expired') {

@@ -20,7 +20,7 @@ class PaytrConfig {
   static const String statusQueryUrl = '$apiBaseUrl/odeme/durum-sorgu';
 
   /// Test modu (development için)
-  static const bool testMode = true; // Production'da false yapılacak
+  static const bool testMode = false; // Production'da false yapılacak
 
   /// Callback URL'leri (Firebase Functions)
   static const String successUrl =
@@ -47,11 +47,11 @@ class PaytrConfig {
       merchantKey.isNotEmpty &&
       merchantSalt.isNotEmpty;
 
-  /// Test merchant bilgileri
+  /// Test merchant bilgileri (PayTR test ortamı için)
   static Map<String, String> get testCredentials => {
-        'merchant_id': testMode ? 'test_merchant' : merchantId,
-        'merchant_key': testMode ? 'test_key' : merchantKey,
-        'merchant_salt': testMode ? 'test_salt' : merchantSalt,
+        'merchant_id': '622887', // Test için aynı merchant ID
+        'merchant_key': 'uePB67AfxtAAyqZ', // Test için aynı key
+        'merchant_salt': 'ejdEC3ReZay7QxE8', // Test için aynı salt
       };
 
   /// Production merchant bilgileri
@@ -83,7 +83,8 @@ class PaytrConfig {
       'merchant_salt': credentials['merchant_salt'],
       'user_ip': userIp,
       'email': userEmail,
-      'payment_amount': (amount * 100).toInt(), // PayTR kuruş cinsinden bekler
+      'payment_amount':
+          (amount * 100).toInt().toString(), // PayTR kuruş cinsinden bekler
       'merchant_oid': orderId,
       'user_name': userName,
       'user_address': userAddress ?? 'Belirtilmemiş',
@@ -91,15 +92,14 @@ class PaytrConfig {
       'merchant_ok_url': successUrl,
       'merchant_fail_url': failUrl,
       'user_basket': '', // Service'de oluşturulacak
-      'debug_on': debugMode ? 1 : 0,
-      'test_mode': testMode ? 1 : 0,
+      'debug_on': (debugMode ? 1 : 0).toString(),
+      'test_mode': (testMode ? 1 : 0).toString(),
       'currency': currency,
-      'timeout_limit': timeout,
-      'no_installment': 0, // Taksit yapılmasını istemiyorsanız 1 yapın
-      'max_installment': 0, // Maksimum taksit sayısı (0 = sınırsız)
+      'timeout_limit': timeout.toString(),
+      'no_installment': '0', // Taksit yapılmasını istemiyorsanız 1 yapın
+      'max_installment': '0', // Maksimum taksit sayısı (0 = sınırsız)
     };
   }
-
 
   /// Hash oluştur (PayTR token için gerekli)
   static String generatePaytrToken({
@@ -111,7 +111,8 @@ class PaytrConfig {
     required String merchantSalt,
   }) {
     // PayTR hash format: merchant_id + user_email + payment_amount + merchant_oid + user_basket + merchant_salt
-    final hashString = '$merchantId$userEmail$paymentAmount$merchantOid$userBasket$merchantSalt';
+    final hashString =
+        '$merchantId$userEmail$paymentAmount$merchantOid$userBasket$merchantSalt';
     return hashString;
   }
 

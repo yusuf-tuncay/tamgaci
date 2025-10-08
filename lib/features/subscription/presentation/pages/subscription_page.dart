@@ -64,7 +64,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         final now = DateTime.now();
         final targetDate = DateTime(2026, 1, 1);
         _timeRemaining = targetDate.difference(now);
-        
+
         if (_timeRemaining.isNegative) {
           _timeRemaining = Duration.zero;
           timer.cancel();
@@ -124,9 +124,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 const SizedBox(height: 32),
               ],
 
-              // Deneme süresi bilgisi (aktifse)
-              if (user?.trialEndAt != null && !widget.isTrialExpired) ...[
-                _buildTrialInfo(user!),
+              // Kullanım süresi bilgisi (trial veya aktif abonelik)
+              if (user != null && _shouldShowUsageInfo(user)) ...[
+                _buildUsageInfo(user),
                 const SizedBox(height: 32),
               ],
 
@@ -235,9 +235,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         const SizedBox(width: 8),
         _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
         const SizedBox(width: 8),
-        _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
+        _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dakika'),
         const SizedBox(width: 8),
-        _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
+        _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Saniye'),
       ],
     );
   }
@@ -364,7 +364,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -405,7 +407,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                       'Tüm özellikler her planda dahil',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: isDark ? Colors.white70 : const Color(0xFF666666),
+                        color:
+                            isDark ? Colors.white70 : const Color(0xFF666666),
                       ),
                     ),
                   ],
@@ -440,7 +443,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                       features[index],
                       style: GoogleFonts.poppins(
                         fontSize: 13,
-                        color: isDark ? Colors.white70 : const Color(0xFF666666),
+                        color:
+                            isDark ? Colors.white70 : const Color(0xFF666666),
                       ),
                     ),
                   ),
@@ -469,7 +473,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       children: sortedPlans.map((plan) {
         final isSelected = _selectedPlan == plan.type;
         final isYearly = plan.type == sub.SubscriptionPlanType.annual;
-        
+
         return Expanded(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -496,7 +500,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               ? TamgaciConstants.primaryColor
               : isYearly
                   ? const Color(0xFF10B981)
-                  : (isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0)),
+                  : (isDark
+                      ? const Color(0xFF333333)
+                      : const Color(0xFFE0E0E0)),
           width: isSelected ? 2 : 1,
         ),
         boxShadow: [
@@ -505,8 +511,14 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 ? TamgaciConstants.primaryColor.withValues(alpha: 0.2)
                 : isYearly
                     ? const Color(0xFF10B981).withValues(alpha: 0.2)
-                    : (isDark ? Colors.black.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1)),
-            blurRadius: isSelected ? 15 : isYearly ? 12 : 8,
+                    : (isDark
+                        ? Colors.black.withValues(alpha: 0.2)
+                        : Colors.grey.withValues(alpha: 0.1)),
+            blurRadius: isSelected
+                ? 15
+                : isYearly
+                    ? 12
+                    : 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -523,7 +535,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               children: [
                 // Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: _getBadgeColor(plan.type),
                     borderRadius: BorderRadius.circular(8),
@@ -576,7 +589,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                         ? Colors.white.withValues(alpha: 0.8)
                         : isYearly
                             ? Colors.white.withValues(alpha: 0.8)
-                            : (isDark ? Colors.white70 : const Color(0xFF666666)),
+                            : (isDark
+                                ? Colors.white70
+                                : const Color(0xFF666666)),
                   ),
                 ),
 
@@ -592,7 +607,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                           ? Colors.white.withValues(alpha: 0.9)
                           : isYearly
                               ? Colors.white.withValues(alpha: 0.9)
-                              : (isDark ? Colors.white70 : const Color(0xFF666666)),
+                              : (isDark
+                                  ? Colors.white70
+                                  : const Color(0xFF666666)),
                     ),
                   ),
                 ],
@@ -607,7 +624,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                         ? Colors.white.withValues(alpha: 0.9)
                         : isYearly
                             ? Colors.white.withValues(alpha: 0.9)
-                            : (isDark ? Colors.white70 : const Color(0xFF666666)),
+                            : (isDark
+                                ? Colors.white70
+                                : const Color(0xFF666666)),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -796,51 +815,256 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
-  /// Deneme süresi bilgisi
-  Widget _buildTrialInfo(User user) {
+  /// Kullanım süresi bilgisini göstermeli mi?
+  bool _shouldShowUsageInfo(User user) {
+    // Trial kullanıcılar için
+    if (user.trialEndAt != null && !widget.isTrialExpired) {
+      return true;
+    }
+
+    // Aktif abonelik kullanıcıları için
+    if (user.subscriptionStatus == SubscriptionStatus.active &&
+        user.subscriptionEndAt != null) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /// Kullanım süresi bilgisi (trial veya aktif abonelik)
+  Widget _buildUsageInfo(User user) {
     final now = DateTime.now();
+
+    // Trial kullanıcı
+    if (user.trialEndAt != null && !widget.isTrialExpired) {
+      return _buildTrialUsageInfo(user, now);
+    }
+
+    // Aktif abonelik kullanıcı
+    if (user.subscriptionStatus == SubscriptionStatus.active &&
+        user.subscriptionEndAt != null) {
+      return _buildSubscriptionUsageInfo(user, now);
+    }
+
+    return const SizedBox.shrink();
+  }
+
+  /// Trial kullanım süresi bilgisi
+  Widget _buildTrialUsageInfo(User user, DateTime now) {
     final trialEnd = user.trialEndAt!;
     final remainingDays = trialEnd.difference(now).inDays;
+    final remainingHours = trialEnd.difference(now).inHours % 24;
+
+    // Trial başlangıç tarihi varsa kullanım bilgisi
+    String? usageInfo;
+    if (user.trialStartAt != null) {
+      final trialStart = user.trialStartAt!;
+      final totalTrialDays = trialEnd.difference(trialStart).inDays;
+      final usedDays = now.difference(trialStart).inDays;
+      usageInfo = 'Kullanım: $usedDays/$totalTrialDays gün';
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blue[50],
+        gradient: LinearGradient(
+          colors: [
+            Colors.blue[50]!,
+            Colors.blue[100]!,
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.access_time,
-            color: Colors.blue[700],
-            size: 24,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Deneme Süreniz',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue[600],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.access_time,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Deneme Süreniz',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                    Text(
+                      remainingDays > 0
+                          ? '$remainingDays gün, $remainingHours saat kaldı'
+                          : 'Deneme süreniz doldu',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.blue[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (usageInfo != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.blue[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.trending_up,
+                    size: 16,
                     color: Colors.blue[700],
                   ),
-                ),
-                Text(
-                  remainingDays > 0
-                      ? '$remainingDays gün kaldı'
-                      : 'Deneme süreniz doldu',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.blue[600],
+                  const SizedBox(width: 8),
+                  Text(
+                    usageInfo,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.blue[700],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Abonelik kullanım süresi bilgisi
+  Widget _buildSubscriptionUsageInfo(User user, DateTime now) {
+    final subEnd = user.subscriptionEndAt!;
+    final remainingDays = subEnd.difference(now).inDays;
+    final remainingHours = subEnd.difference(now).inHours % 24;
+
+    // Abonelik başlangıç tarihi varsa kullanım bilgisi
+    String? usageInfo;
+    if (user.subscriptionStartAt != null) {
+      final subStart = user.subscriptionStartAt!;
+      final usedDays = now.difference(subStart).inDays;
+      usageInfo = 'Kullanım: $usedDays gün';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.green[50]!,
+            Colors.green[100]!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.green[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.green[600],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.verified,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Aktif Aboneliğiniz',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.green[700],
+                      ),
+                    ),
+                    Text(
+                      remainingDays > 0
+                          ? '$remainingDays gün, $remainingHours saat kaldı'
+                          : 'Abonelik süreniz doldu',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.green[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (usageInfo != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.trending_up,
+                    size: 16,
+                    color: Colors.green[700],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    usageInfo,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.green[700],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -863,7 +1087,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             Navigator.of(context).pop();
             // Başarı mesajı göster
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text('Aboneliğiniz başarıyla aktif edildi!'),
                 backgroundColor: Colors.green,
               ),
@@ -872,8 +1096,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           onPaymentFailed: () {
             // Ödeme başarısız
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.'),
+              const SnackBar(
+                content:
+                    Text('Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -881,7 +1106,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           onPaymentCancelled: () {
             // Ödeme iptal edildi
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
+              const SnackBar(
                 content: Text('Ödeme işlemi iptal edildi.'),
                 backgroundColor: Colors.orange,
               ),
