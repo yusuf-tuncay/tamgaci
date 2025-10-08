@@ -1,6 +1,7 @@
 // ========== SUBSCRIPTION PAGE ==========
 // lib/features/subscription/presentation/pages/subscription_page.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -37,6 +38,40 @@ class SubscriptionPage extends ConsumerStatefulWidget {
 
 class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   sub.SubscriptionPlanType? _selectedPlan;
+  Timer? _countdownTimer;
+  Duration _timeRemaining = Duration.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdown();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdown() {
+    // 2026 yılbaşına kadar olan süreyi hesapla
+    final now = DateTime.now();
+    final targetDate = DateTime(2026, 1, 1);
+    _timeRemaining = targetDate.difference(now);
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() {
+        final now = DateTime.now();
+        final targetDate = DateTime(2026, 1, 1);
+        _timeRemaining = targetDate.difference(now);
+        
+        if (_timeRemaining.isNegative) {
+          _timeRemaining = Duration.zero;
+          timer.cancel();
+        }
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +196,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Yıl başına kadar geçerli özel fiyatlar',
+                  '2026 yılbaşına kadar geçerli özel fiyatlar',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -171,23 +206,83 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             ),
           ),
           // Countdown
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(8),
+          _buildCountdownDisplay(),
+        ],
+      ),
+    );
+  }
+
+  /// Geri sayım display
+  Widget _buildCountdownDisplay() {
+    final days = _timeRemaining.inDays;
+    final hours = _timeRemaining.inHours % 24;
+    final minutes = _timeRemaining.inMinutes % 60;
+    final seconds = _timeRemaining.inSeconds % 60;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Kalan Süre',
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.8),
             ),
-            child: Text(
-              '2024\'e kadar',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildTimeUnit(days.toString(), 'Gün'),
+              const SizedBox(width: 4),
+              _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
+              const SizedBox(width: 4),
+              _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
+              const SizedBox(width: 4),
+              _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  /// Zaman birimi widget'ı
+  Widget _buildTimeUnit(String value, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 8,
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+        ),
+      ],
     );
   }
 
