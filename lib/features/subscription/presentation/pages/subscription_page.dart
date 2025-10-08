@@ -228,24 +228,17 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     final minutes = _timeRemaining.inMinutes % 60;
     final seconds = _timeRemaining.inSeconds % 60;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildTimeUnit(days.toString(), 'Gün'),
-          const SizedBox(width: 8),
-          _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
-          const SizedBox(width: 8),
-          _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
-          const SizedBox(width: 8),
-          _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
-        ],
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildTimeUnit(days.toString(), 'Gün'),
+        const SizedBox(width: 8),
+        _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
+        const SizedBox(width: 8),
+        _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
+        const SizedBox(width: 8),
+        _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
+      ],
     );
   }
 
