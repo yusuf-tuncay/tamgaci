@@ -167,48 +167,55 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
         children: [
-          // Icon
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.local_fire_department,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Text
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Lansmana Özel Fiyatlar!',
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+          Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  PricingConfig.getPriceLabel(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
+                child: const Icon(
+                  Icons.local_fire_department,
+                  color: Colors.white,
+                  size: 24,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 16),
+              // Text
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Lansmana Özel Fiyatlar!',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      PricingConfig.getPriceLabel(),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          // Countdown (sadece lansman döneminde göster)
-          if (PricingConfig.isLaunchPeriod) _buildCountdownDisplay(),
+          // Countdown (sadece lansman döneminde göster, altta iki yana yaslı)
+          if (PricingConfig.isLaunchPeriod) ...[
+            const SizedBox(height: 16),
+            _buildCountdownDisplay(),
+          ],
         ],
       ),
     );
@@ -222,7 +229,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     final seconds = _timeRemaining.inSeconds % 60;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
@@ -233,21 +240,18 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           Text(
             'Kalan Süre',
             style: GoogleFonts.poppins(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildTimeUnit(days.toString(), 'Gün'),
-              const SizedBox(width: 4),
               _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
-              const SizedBox(width: 4),
               _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
-              const SizedBox(width: 4),
               _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
             ],
           ),
