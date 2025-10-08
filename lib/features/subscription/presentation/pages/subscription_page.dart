@@ -229,32 +229,18 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     final seconds = _timeRemaining.inSeconds % 60;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          Text(
-            'Kalan Süre',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildTimeUnit(days.toString(), 'Gün'),
-              _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
-              _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
-              _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
-            ],
-          ),
+          _buildTimeUnit(days.toString(), 'Gün'),
+          _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
+          _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
+          _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
         ],
       ),
     );
@@ -266,7 +252,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(6),
@@ -274,17 +260,17 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           child: Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 10,
+            fontSize: 11,
             fontWeight: FontWeight.w500,
             color: Colors.white.withValues(alpha: 0.8),
           ),
