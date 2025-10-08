@@ -470,9 +470,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       case sub.SubscriptionPlanType.monthly:
         return 'ESNEK';
       case sub.SubscriptionPlanType.semiAnnual:
-        return '%20 TASARRUF';
+        return '%16 TASARRUF';
       case sub.SubscriptionPlanType.annual:
-        return '%50 TASARRUF';
+        return '%33 TASARRUF';
       case sub.SubscriptionPlanType.none:
         return '';
     }
@@ -484,9 +484,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       case sub.SubscriptionPlanType.monthly:
         return 'Esnek ödeme';
       case sub.SubscriptionPlanType.semiAnnual:
-        return '%20 tasarruf';
+        return '%16 tasarruf';
       case sub.SubscriptionPlanType.annual:
-        return '%50 tasarruf';
+        return '%33 tasarruf';
       case sub.SubscriptionPlanType.none:
         return '';
     }
