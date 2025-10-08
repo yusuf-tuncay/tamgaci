@@ -109,11 +109,11 @@ class _PlatformPaymentWidgetState extends State<PlatformPaymentWidget> {
           const SizedBox(height: 32),
 
           // Platform-specific ödeme seçenekleri
-          if (Platform.isIOS) ...[
+          if (_isIOS()) ...[
             _buildAppStoreOption(),
             const SizedBox(height: 16),
             _buildPaytrOption(),
-          ] else if (Platform.isAndroid) ...[
+          ] else if (_isAndroid()) ...[
             _buildPlayStoreOption(),
             const SizedBox(height: 16),
             _buildPaytrOption(),
@@ -409,5 +409,23 @@ class _PlatformPaymentWidgetState extends State<PlatformPaymentWidget> {
         ),
       ),
     );
+  }
+
+  /// iOS platform kontrolü
+  bool _isIOS() {
+    try {
+      return Platform.isIOS;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Android platform kontrolü
+  bool _isAndroid() {
+    try {
+      return Platform.isAndroid;
+    } catch (e) {
+      return false;
+    }
   }
 }

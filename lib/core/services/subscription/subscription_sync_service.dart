@@ -73,38 +73,77 @@ class SubscriptionSyncService {
       String userId) async {
     final platformSubscriptions = <PlatformSubscription>[];
 
-    // PayTR abonelikleri (Web/Windows)
-    if (Platform.isWindows || kIsWeb) {
+    try {
+      // PayTR abonelikleri (Web/Windows)
+      if (_isWebOrWindows()) {
+        try {
+          final paytrSubscriptions = await _checkPaytrSubscriptions(userId);
+          platformSubscriptions.addAll(paytrSubscriptions);
+        } catch (e) {
+          debugPrint('PayTR subscription check error: $e');
+        }
+      }
+
+      // App Store abonelikleri (iOS)
+      if (_isIOS()) {
+        try {
+          final appStoreSubscriptions = await _checkAppStoreSubscriptions(userId);
+          platformSubscriptions.addAll(appStoreSubscriptions);
+        } catch (e) {
+          debugPrint('App Store subscription check error: $e');
+        }
+      }
+
+      // Play Store abonelikleri (Android)
+      if (_isAndroid()) {
+        try {
+          final playStoreSubscriptions =
+              await _checkPlayStoreSubscriptions(userId);
+          platformSubscriptions.addAll(playStoreSubscriptions);
+        } catch (e) {
+          debugPrint('Play Store subscription check error: $e');
+        }
+      }
+    } catch (e) {
+      debugPrint('Platform detection error: $e');
+      // Platform detection başarısız olursa sadece PayTR'yi dene
       try {
         final paytrSubscriptions = await _checkPaytrSubscriptions(userId);
         platformSubscriptions.addAll(paytrSubscriptions);
       } catch (e) {
-        debugPrint('PayTR subscription check error: $e');
-      }
-    }
-
-    // App Store abonelikleri (iOS)
-    if (Platform.isIOS) {
-      try {
-        final appStoreSubscriptions = await _checkAppStoreSubscriptions(userId);
-        platformSubscriptions.addAll(appStoreSubscriptions);
-      } catch (e) {
-        debugPrint('App Store subscription check error: $e');
-      }
-    }
-
-    // Play Store abonelikleri (Android)
-    if (Platform.isAndroid) {
-      try {
-        final playStoreSubscriptions =
-            await _checkPlayStoreSubscriptions(userId);
-        platformSubscriptions.addAll(playStoreSubscriptions);
-      } catch (e) {
-        debugPrint('Play Store subscription check error: $e');
+        debugPrint('Fallback PayTR subscription check error: $e');
       }
     }
 
     return platformSubscriptions;
+  }
+
+  /// Web veya Windows platform kontrolü
+  bool _isWebOrWindows() {
+    try {
+      return kIsWeb || Platform.isWindows;
+    } catch (e) {
+      // Platform detection başarısız olursa web olarak varsay
+      return kIsWeb;
+    }
+  }
+
+  /// iOS platform kontrolü
+  bool _isIOS() {
+    try {
+      return Platform.isIOS;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// Android platform kontrolü
+  bool _isAndroid() {
+    try {
+      return Platform.isAndroid;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// PayTR aboneliklerini kontrol et

@@ -4,13 +4,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'paytr_service.dart';
-import '../../../features/subscription/domain/entities/subscription_entity.dart' as sub;
-import '../../../features/subscription/domain/entities/subscription_plan.dart' as plan;
+import '../../../features/subscription/domain/entities/subscription_entity.dart'
+    as sub;
+import '../../../features/subscription/domain/entities/subscription_plan.dart'
+    as plan;
 import '../../../features/auth/domain/entities/user.dart';
 
 /// PayTR callback handling servisi
 class PaytrCallbackService {
-  static final PaytrCallbackService _instance = PaytrCallbackService._internal();
+  static final PaytrCallbackService _instance =
+      PaytrCallbackService._internal();
   factory PaytrCallbackService() => _instance;
   PaytrCallbackService._internal();
 
@@ -35,25 +38,25 @@ class PaytrCallbackService {
         totalAmount: totalAmount,
         hash: hash,
       )) {
-        return PaytrCallbackResult(
+        return const PaytrCallbackResult(
           success: false,
           error: 'Hash doğrulaması başarısız',
         );
       }
 
-      // Sipariş ID'sinden kullanıcı bilgilerini çıkar
+      // Sipariconst ş ID'sinden kullanıcı bilgilerini çıkar
       final orderInfo = _parseOrderId(merchantOid);
       if (orderInfo == null) {
-        return PaytrCallbackResult(
+        return const PaytrCallbackResult(
           success: false,
           error: 'Geçersiz sipariş ID',
         );
       }
 
-      // Kullanıcıyı bul
+      // Kullanconst ıcıyı bul
       final user = await _getUser(orderInfo['userId']);
       if (user == null) {
-        return PaytrCallbackResult(
+        return const PaytrCallbackResult(
           success: false,
           error: 'Kullanıcı bulunamadı',
         );
@@ -101,7 +104,7 @@ class PaytrCallbackService {
 
       final userId = parts[1];
       final planTypeName = parts[2];
-      
+
       // Plan tipini enum'a çevir
       plan.SubscriptionPlanType? planType;
       for (final type in plan.SubscriptionPlanType.values) {
@@ -131,7 +134,7 @@ class PaytrCallbackService {
     try {
       final doc = await _firestore.collection('users').doc(userId).get();
       if (!doc.exists) return null;
-      
+
       final data = doc.data()!;
       return User(
         id: data['id'] as String,
@@ -144,7 +147,8 @@ class PaytrCallbackService {
         phoneDialCode: data['phoneDialCode'] as String?,
         profileImageUrl: data['profileImageUrl'] as String?,
         profileImagePath: data['profileImagePath'] as String?,
-        profileImageMetadata: data['profileImageMetadata'] as Map<String, dynamic>?,
+        profileImageMetadata:
+            data['profileImageMetadata'] as Map<String, dynamic>?,
         role: UserRole.values.firstWhere(
           (e) => e.name == data['role'],
           orElse: () => UserRole.user,
@@ -156,13 +160,21 @@ class PaytrCallbackService {
         tenantId: data['tenantId'] as String?,
         createdAt: DateTime.parse(data['createdAt'] as String),
         updatedAt: DateTime.parse(data['updatedAt'] as String),
-        trialStartAt: data['trialStartAt'] != null ? DateTime.parse(data['trialStartAt'] as String) : null,
-        trialEndAt: data['trialEndAt'] != null ? DateTime.parse(data['trialEndAt'] as String) : null,
-        subscriptionStatus: SubscriptionStatus.fromString(data['subscriptionStatus'] ?? 'none'),
-        subscriptionPlan: SubscriptionPlan.none, // User entity'de SubscriptionPlan enum'u farklı
+        trialStartAt: data['trialStartAt'] != null
+            ? DateTime.parse(data['trialStartAt'] as String)
+            : null,
+        trialEndAt: data['trialEndAt'] != null
+            ? DateTime.parse(data['trialEndAt'] as String)
+            : null,
+        subscriptionStatus:
+            SubscriptionStatus.fromString(data['subscriptionStatus'] ?? 'none'),
+        subscriptionPlan: SubscriptionPlan
+            .none, // User entity'de SubscriptionPlan enum'u farklı
         isEmailVerified: data['isEmailVerified'] as bool? ?? false,
         isTwoFactorEnabled: data['isTwoFactorEnabled'] as bool? ?? false,
-        subscriptionEndAt: data['subscriptionEndAt'] != null ? DateTime.parse(data['subscriptionEndAt'] as String) : null,
+        subscriptionEndAt: data['subscriptionEndAt'] != null
+            ? DateTime.parse(data['subscriptionEndAt'] as String)
+            : null,
         settings: data['settings'] as Map<String, dynamic>? ?? {},
       );
     } catch (e) {
@@ -209,7 +221,8 @@ class PaytrCallbackService {
   }
 
   /// Plan tipine göre bitiş tarihini hesapla
-  DateTime _calculateEndDate(DateTime startDate, plan.SubscriptionPlanType planType) {
+  DateTime _calculateEndDate(
+      DateTime startDate, plan.SubscriptionPlanType planType) {
     switch (planType) {
       case plan.SubscriptionPlanType.monthly:
         return startDate.add(const Duration(days: 30));
@@ -223,14 +236,15 @@ class PaytrCallbackService {
   }
 
   /// Abonelik ID'si oluştur
-  String _generateSubscriptionId(String userId, plan.SubscriptionPlanType planType) {
+  String _generateSubscriptionId(
+      String userId, plan.SubscriptionPlanType planType) {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     return 'SUB_${userId}_${planType.name}_$timestamp';
   }
 
   /// Kullanıcının abonelik durumunu güncelle
   Future<void> _updateUserSubscriptionStatus(
-    String userId, 
+    String userId,
     sub.SubscriptionEntity subscription,
   ) async {
     try {
@@ -240,7 +254,7 @@ class PaytrCallbackService {
         'subscriptionEndAt': subscription.endDate.toIso8601String(),
         'updatedAt': DateTime.now().toIso8601String(),
       });
-      
+
       debugPrint('✅ User subscription status updated: $userId');
     } catch (e) {
       debugPrint('❌ Update user subscription status error: $e');
@@ -252,7 +266,7 @@ class PaytrCallbackService {
   Future<PaytrCallbackResult> checkPaymentStatus(String orderId) async {
     try {
       final statusResponse = await _paytrService.checkPaymentStatus(orderId);
-      
+
       if (!statusResponse.success) {
         return PaytrCallbackResult(
           success: false,
