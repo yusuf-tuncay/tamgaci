@@ -88,7 +88,7 @@ class PaytrConfig {
       'user_phone': userPhone,
       'merchant_ok_url': successUrl,
       'merchant_fail_url': failUrl,
-      'user_basket': _generateUserBasket(amount),
+      'user_basket': '', // Service'de oluşturulacak
       'debug_on': debugMode ? 1 : 0,
       'test_mode': testMode ? 1 : 0,
       'currency': currency,
@@ -97,11 +97,6 @@ class PaytrConfig {
     };
   }
 
-  /// Kullanıcı sepeti oluştur (PayTR formatında)
-  static String _generateUserBasket(double amount) {
-    // PayTR format: [["Ürün adı", "Fiyat", "Adet"]]
-    return '[["Tamgacı Abonelik", "${(amount * 100).toInt()}", "1"]]';
-  }
 
   /// Hash oluştur (PayTR token için gerekli)
   static String generatePaytrToken({
@@ -112,9 +107,9 @@ class PaytrConfig {
     required String userBasket,
     required String merchantSalt,
   }) {
-    // PayTR hash format - bu hash'i backend'de oluşturmamız gerekiyor (güvenlik için)
-    // Şimdilik placeholder döndürüyoruz
-    return 'HASH_WILL_BE_GENERATED_BY_BACKEND';
+    // PayTR hash format: merchant_id + user_email + payment_amount + merchant_oid + user_basket + merchant_salt
+    final hashString = '$merchantId$userEmail$paymentAmount$merchantOid$userBasket$merchantSalt';
+    return hashString;
   }
 
   /// Plan tipine göre ürün adı

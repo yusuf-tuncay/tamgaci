@@ -6,6 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/services/payment/paytr_service.dart';
+import '../../../../core/services/payment/paytr_callback_service.dart';
 import '../../domain/entities/subscription_plan.dart';
 import '../../../auth/domain/entities/user.dart';
 
@@ -47,6 +48,8 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
   late WebViewController _controller;
   bool _isLoading = true;
   String? _error;
+  String? _orderId;
+  final PaytrCallbackService _callbackService = PaytrCallbackService();
 
   @override
   void initState() {
@@ -72,6 +75,9 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
         });
         return;
       }
+
+      // Order ID'yi sakla
+      _orderId = tokenResponse.orderId;
 
       // WebView controller oluştur
       _controller = WebViewController()
@@ -116,7 +122,7 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
 
     // Başarılı ödeme URL'si
     if (url.contains('success') || url.contains('basarili')) {
-      widget.onPaymentSuccess?.call();
+      _handlePaymentSuccess();
       return;
     }
 
@@ -130,6 +136,30 @@ class _PaytrIframeWidgetState extends State<PaytrIframeWidget> {
     if (url.contains('cancel') || url.contains('iptal')) {
       widget.onPaymentCancelled?.call();
       return;
+    }
+  }
+
+  /// Başarılı ödeme işle
+  void _handlePaymentSuccess() async {
+    if (_orderId == null) {
+      widget.onPaymentFailed?.call();
+      return;
+    }
+
+    try {
+      // PayTR'den ödeme durumunu kontrol et
+      final result = await _callbackService.checkPaymentStatus(_orderId!);
+      
+      if (result.success) {
+        // Abonelik başarıyla oluşturuldu
+        widget.onPaymentSuccess?.call();
+      } else {
+        // Ödeme doğrulanamadı
+        widget.onPaymentFailed?.call();
+      }
+    } catch (e) {
+      debugPrint('Payment success handling error: $e');
+      widget.onPaymentFailed?.call();
     }
   }
 

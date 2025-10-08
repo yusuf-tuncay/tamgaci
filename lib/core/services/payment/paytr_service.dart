@@ -24,7 +24,7 @@ class PaytrService {
   }) async {
     try {
       final orderId = _generateOrderId(user.id, planType);
-      // final userBasket = _generateUserBasket(amount); // PayTR'de kullanılacak
+      final userBasket = _generateUserBasket(amount, planType);
       
       // PayTR parametreleri
       final params = PaytrConfig.getBaseParameters(
@@ -35,6 +35,9 @@ class PaytrService {
         orderId: orderId,
         userAddress: userAddress,
       );
+
+      // User basket'i ekle
+      params['user_basket'] = userBasket;
 
       // Hash oluştur
       final hashString = _createHashString(params);
@@ -107,6 +110,14 @@ class PaytrService {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final planId = planType.name;
     return 'TAMGACI_${userId}_${planId}_$timestamp';
+  }
+
+  /// Kullanıcı sepeti oluştur (PayTR formatında)
+  String _generateUserBasket(double amount, SubscriptionPlanType planType) {
+    final productName = PaytrConfig.getProductName(planType);
+    final priceInKurus = (amount * 100).toInt();
+    // PayTR format: [["Ürün adı", "Fiyat", "Adet"]]
+    return '[["$productName", "$priceInKurus", "1"]]';
   }
 
 
