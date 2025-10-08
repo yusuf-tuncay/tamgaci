@@ -89,16 +89,16 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 const SizedBox(height: 32),
               ],
 
-              // Plan kartları
-              _buildPlanCards(plans, isDark),
-              const SizedBox(height: 40),
-
-              // Devam et butonu
-              _buildContinueButton(),
+              // Features Card
+              _buildFeaturesCard(isDark),
               const SizedBox(height: 32),
 
-              // Özellikler karşılaştırması
-              _buildFeaturesComparison(isDark),
+              // Plan Cards (3 yan yana)
+              _buildPlanCardsRow(plans, isDark),
+              const SizedBox(height: 32),
+
+              // Dynamic Continue Button
+              _buildDynamicContinueButton(isDark),
             ],
           ),
         ),
@@ -106,13 +106,13 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
-  /// Hero Section - Temiz ve şık tasarım
+  /// Hero Section
   Widget _buildHeroSection(User? user, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         color: TamgaciConstants.primaryColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
@@ -125,22 +125,22 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         children: [
           // Icon
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: const Icon(
               Icons.diamond,
-              size: 32,
+              size: 48,
               color: Colors.white,
             ),
           ),
           const SizedBox(height: 24),
 
-          // Başlık
+          // Title
           Text(
-            'TAMGACI Premium',
+            'Premium\'a Geçin',
             style: GoogleFonts.poppins(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -150,24 +150,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           ),
           const SizedBox(height: 12),
 
-          // Alt başlık
+          // Subtitle
           Text(
-            'Profesyonel ön muhasebe çözümünüz',
+            'Tüm özelliklerin kilidini açın ve işinizi büyütün',
             style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
+              fontSize: 16,
               color: Colors.white.withValues(alpha: 0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-
-          // Açıklama
-          Text(
-            'Sınırsız fatura, gelişmiş raporlama ve 7/24 destek',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.8),
             ),
             textAlign: TextAlign.center,
           ),
@@ -176,58 +164,145 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
-  /// Plan kartları
-  Widget _buildPlanCards(List<sub.SubscriptionPlan> plans, bool isDark) {
-    // Planları sırala: Yıllık -> Aylık -> 6 Aylık
-    final sortedPlans = List<sub.SubscriptionPlan>.from(plans);
-    sortedPlans.sort((a, b) {
-      if (a.type == sub.SubscriptionPlanType.annual) return -1;
-      if (b.type == sub.SubscriptionPlanType.annual) return 1;
-      if (a.type == sub.SubscriptionPlanType.monthly) return -1;
-      if (b.type == sub.SubscriptionPlanType.monthly) return 1;
-      return 0;
-    });
+  /// Özellikler kartı
+  Widget _buildFeaturesCard(bool isDark) {
+    final features = [
+      'Sınırsız satış ve fatura oluşturma',
+      'Tüm raporlara erişim',
+      'Müşteri ve tedarikçi yönetimi',
+      'Stok takibi ve ürün yönetimi',
+      'Çoklu para birimi desteği',
+      'Mobil uygulama erişimi',
+      '7/24 teknik destek',
+      'Otomatik yedekleme',
+    ];
 
-    return Column(
-      children: [
-        // Başlık
-        Text(
-          'Planınızı Seçin',
-          style: GoogleFonts.poppins(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'İhtiyacınıza en uygun planı seçin',
-          style: GoogleFonts.poppins(
-            fontSize: 16,
-            color: isDark ? Colors.white70 : const Color(0xFF666666),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Başlık
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.star,
+                  color: TamgaciConstants.primaryColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Premium Özellikler',
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    Text(
+                      'Tüm özellikler dahil',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : const Color(0xFF666666),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
+          const SizedBox(height: 24),
 
-        // Plan kartları - Sıralı şekilde
-        ...sortedPlans.map((plan) {
-          final isYearly = plan.type == sub.SubscriptionPlanType.annual;
-          final isSelected = _selectedPlan == plan.type;
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            child: _buildPlanCard(plan, isYearly, isSelected, isDark),
-          );
-        }),
-      ],
+          // Özellikler grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 3,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: features.length,
+            itemBuilder: (context, index) {
+              return Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle,
+                    size: 18,
+                    color: TamgaciConstants.primaryColor,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      features[index],
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : const Color(0xFF666666),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 
-  /// Plan kartı
-  Widget _buildPlanCard(
-      sub.SubscriptionPlan plan, bool isYearly, bool isSelected, bool isDark) {
+  /// 3 yan yana plan kartları
+  Widget _buildPlanCardsRow(List<sub.SubscriptionPlan> plans, bool isDark) {
+    // Planları sırala: Aylık -> 6 Aylık -> Yıllık
+    final sortedPlans = List<sub.SubscriptionPlan>.from(plans);
+    sortedPlans.sort((a, b) {
+      if (a.type == sub.SubscriptionPlanType.monthly) return -1;
+      if (b.type == sub.SubscriptionPlanType.monthly) return 1;
+      if (a.type == sub.SubscriptionPlanType.semiAnnual) return -1;
+      if (b.type == sub.SubscriptionPlanType.semiAnnual) return 1;
+      return 0;
+    });
+
+    return Row(
+      children: sortedPlans.map((plan) {
+        final isSelected = _selectedPlan == plan.type;
+        final isYearly = plan.type == sub.SubscriptionPlanType.annual;
+        
+        return Expanded(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            child: _buildCompactPlanCard(plan, isSelected, isYearly, isDark),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// Kompakt plan kartı
+  Widget _buildCompactPlanCard(
+      sub.SubscriptionPlan plan, bool isSelected, bool isYearly, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         color: isSelected
@@ -241,25 +316,17 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               ? TamgaciConstants.primaryColor
               : isYearly
                   ? const Color(0xFF10B981)
-                  : (isDark
-                      ? const Color(0xFF333333)
-                      : const Color(0xFFE0E0E0)),
+                  : (isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0)),
           width: isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: isSelected
-                ? TamgaciConstants.primaryColor.withValues(alpha: 0.3)
+                ? TamgaciConstants.primaryColor.withValues(alpha: 0.2)
                 : isYearly
-                    ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                    : (isDark
-                        ? Colors.black.withValues(alpha: 0.3)
-                        : Colors.grey.withValues(alpha: 0.1)),
-            blurRadius: isSelected
-                ? 15
-                : isYearly
-                    ? 12
-                    : 8,
+                    ? const Color(0xFF10B981).withValues(alpha: 0.2)
+                    : (isDark ? Colors.black.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.1)),
+            blurRadius: isSelected ? 15 : isYearly ? 12 : 8,
             offset: const Offset(0, 4),
           ),
         ],
@@ -270,181 +337,97 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           onTap: () => setState(() => _selectedPlan = plan.type),
           borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Badge ve Plan adı
-                Row(
-                  children: [
-                    if (isYearly)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.star, size: 14, color: Colors.white),
-                            const SizedBox(width: 4),
-                            Text(
-                              'EN İYİ DEĞER',
-                              style: GoogleFonts.poppins(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (isYearly) const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        plan.name,
-                        style: GoogleFonts.poppins(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected
-                              ? Colors.white
-                              : isYearly
-                                  ? Colors.white
-                                  : (isDark ? Colors.white : const Color(0xFF1A1A1A)),
-                        ),
+                // Badge
+                if (isYearly)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'EN İYİ',
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-                  ],
+                  ),
+                if (isYearly) const SizedBox(height: 8),
+
+                // Plan adı
+                Text(
+                  plan.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected
+                        ? Colors.white
+                        : isYearly
+                            ? Colors.white
+                            : (isDark ? Colors.white : const Color(0xFF1A1A1A)),
+                  ),
+                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
 
-                // Plan açıklaması
+                // Fiyat
                 Text(
-                  plan.description,
+                  '₺${plan.price.toStringAsFixed(0)}',
                   style: GoogleFonts.poppins(
-                    fontSize: 14,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected
+                        ? Colors.white
+                        : isYearly
+                            ? Colors.white
+                            : TamgaciConstants.primaryColor,
+                  ),
+                ),
+                Text(
+                  '/${plan.durationMonths == 1 ? 'ay' : plan.durationMonths == 6 ? '6 ay' : 'yıl'}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.8)
+                        : isYearly
+                            ? Colors.white.withValues(alpha: 0.8)
+                            : (isDark ? Colors.white70 : const Color(0xFF666666)),
+                  ),
+                ),
+
+                // Yıllık plan için aylık fiyat
+                if (isYearly) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '₺${(plan.price / 12).toStringAsFixed(0)}/ay',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+
+                // Ana avantaj
+                Text(
+                  _getMainAdvantage(plan.type),
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
                     color: isSelected
                         ? Colors.white.withValues(alpha: 0.9)
                         : isYearly
                             ? Colors.white.withValues(alpha: 0.9)
-                            : (isDark
-                                ? Colors.white70
-                                : const Color(0xFF666666)),
+                            : (isDark ? Colors.white70 : const Color(0xFF666666)),
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 16),
-
-                // Fiyat bölümü
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : isYearly
-                            ? Colors.white.withValues(alpha: 0.1)
-                            : (isDark ? const Color(0xFF333333) : const Color(0xFFF8F9FA)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '₺${plan.price.toStringAsFixed(0)}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: isSelected
-                                  ? Colors.white
-                                  : isYearly
-                                      ? Colors.white
-                                      : TamgaciConstants.primaryColor,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '/${plan.durationMonths == 1 ? 'ay' : plan.durationMonths == 6 ? '6 ay' : 'yıl'}',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              color: isSelected
-                                  ? Colors.white.withValues(alpha: 0.8)
-                                  : isYearly
-                                      ? Colors.white.withValues(alpha: 0.8)
-                                      : (isDark
-                                          ? Colors.white70
-                                          : const Color(0xFF666666)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      // Yıllık plan için aylık fiyat
-                      if (isYearly) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          'Aylık ₺${(plan.price / 12).toStringAsFixed(0)} - %50 Tasarruf!',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Özellikler (sadece ilk 3 tanesini göster)
-                ...plan.features.take(3).map((feature) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            size: 16,
-                            color: isSelected
-                                ? Colors.white
-                                : isYearly
-                                    ? Colors.white
-                                    : TamgaciConstants.primaryColor,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              feature,
-                              style: GoogleFonts.poppins(
-                                fontSize: 13,
-                                color: isSelected
-                                    ? Colors.white.withValues(alpha: 0.9)
-                                    : isYearly
-                                        ? Colors.white.withValues(alpha: 0.9)
-                                        : (isDark
-                                            ? Colors.white70
-                                            : const Color(0xFF666666)),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )),
-                
-                // Daha fazla özellik varsa göster
-                if (plan.features.length > 3) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    '+${plan.features.length - 3} özellik daha',
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: isSelected
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : isYearly
-                              ? Colors.white.withValues(alpha: 0.7)
-                              : (isDark ? Colors.white60 : const Color(0xFF999999)),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -453,155 +436,137 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
-  /// Devam et butonu
-  Widget _buildContinueButton() {
-    final isYearlySelected = _selectedPlan == sub.SubscriptionPlanType.annual;
+  /// Plan tipine göre ana avantaj
+  String _getMainAdvantage(sub.SubscriptionPlanType type) {
+    switch (type) {
+      case sub.SubscriptionPlanType.monthly:
+        return 'Esnek ödeme';
+      case sub.SubscriptionPlanType.semiAnnual:
+        return '%20 tasarruf';
+      case sub.SubscriptionPlanType.annual:
+        return '%50 tasarruf';
+      case sub.SubscriptionPlanType.none:
+        return '';
+    }
+  }
 
-    return Container(
+  /// Dinamik devam et butonu
+  Widget _buildDynamicContinueButton(bool isDark) {
+    if (_selectedPlan == null) {
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.3),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Text(
+            'Plan Seçin',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+      );
+    }
+
+    final isYearly = _selectedPlan == sub.SubscriptionPlanType.annual;
+    final isSixMonth = _selectedPlan == sub.SubscriptionPlanType.semiAnnual;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
-        color: _selectedPlan != null
-            ? (isYearlySelected
-                ? const Color(0xFF10B981)
-                : TamgaciConstants.primaryColor)
-            : const Color(0xFF9CA3AF),
+        gradient: LinearGradient(
+          colors: isYearly
+              ? [const Color(0xFF10B981), const Color(0xFF059669)]
+              : isSixMonth
+                  ? [const Color(0xFF8B5CF6), const Color(0xFF7C3AED)]
+                  : [TamgaciConstants.primaryColor, const Color(0xFF2563EB)],
+        ),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: _selectedPlan != null
-            ? [
-                BoxShadow(
-                  color: (isYearlySelected
-                          ? const Color(0xFF10B981)
-                          : TamgaciConstants.primaryColor)
-                      .withValues(alpha: 0.3),
-                  blurRadius: 15,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
+        boxShadow: [
+          BoxShadow(
+            color: (isYearly
+                    ? const Color(0xFF10B981)
+                    : isSixMonth
+                        ? const Color(0xFF8B5CF6)
+                        : TamgaciConstants.primaryColor)
+                .withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _selectedPlan != null ? _onContinuePressed : null,
+          onTap: _onContinuePressed,
           borderRadius: BorderRadius.circular(16),
-          child: Center(
-            child: Text(
-              _selectedPlan != null
-                  ? (isYearlySelected
-                      ? 'Yıllık Planı Seç - En İyi Değer!'
-                      : 'Planı Seç ve Devam Et')
-                  : 'Plan Seçin',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon
+              Icon(
+                isYearly
+                    ? Icons.local_fire_department
+                    : isSixMonth
+                        ? Icons.rocket_launch
+                        : Icons.arrow_forward,
                 color: Colors.white,
+                size: 20,
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// Özellikler karşılaştırması
-  Widget _buildFeaturesComparison(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Tüm Premium Özellikler',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Özellik listesi
-          ..._getAllFeatures().map((feature) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: TamgaciConstants.primaryColor
-                            .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.check_circle,
-                        size: 20,
-                        color: TamgaciConstants.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        feature,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          color:
-                              isDark ? Colors.white70 : const Color(0xFF666666),
-                        ),
-                      ),
-                    ),
-                  ],
+              const SizedBox(width: 8),
+              // Text
+              Text(
+                _getButtonText(),
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
-              )),
-        ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
-  /// Tüm özellikleri getir
-  List<String> _getAllFeatures() {
-    return [
-      'Sınırsız fatura oluşturma',
-      'Gelişmiş raporlama sistemi',
-      'Multi-currency desteği',
-      'Otomatik yedekleme',
-      '7/24 teknik destek',
-      'Mobil uygulama erişimi',
-      'API entegrasyonu',
-      'Özel fatura şablonları',
-      'Gelişmiş stok yönetimi',
-      'Müşteri portalı',
-    ];
+  /// Buton metni
+  String _getButtonText() {
+    switch (_selectedPlan) {
+      case sub.SubscriptionPlanType.monthly:
+        return 'Aylık Planı Başlat';
+      case sub.SubscriptionPlanType.semiAnnual:
+        return '6 Aylık Planı Başlat';
+      case sub.SubscriptionPlanType.annual:
+        return 'Yıllık Planı Başlat - En İyi Değer!';
+      default:
+        return 'Plan Seçin';
+    }
   }
 
   /// Durum mesajı
   Widget _buildStatusMessage() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.red[50],
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.red[200]!),
       ),
       child: Row(
         children: [
-          Icon(Icons.warning, color: Colors.red[600], size: 24),
+          Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.red[700],
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -623,27 +588,46 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   /// Deneme süresi bilgisi
   Widget _buildTrialInfo(User user) {
     final now = DateTime.now();
-    final remaining = user.trialEndAt!.difference(now).inDays;
+    final trialEnd = user.trialEndAt!;
+    final remainingDays = trialEnd.difference(now).inDays;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.orange[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange[200]!),
+        color: Colors.blue[50],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blue[200]!),
       ),
       child: Row(
         children: [
-          Icon(Icons.timer, color: Colors.orange[600], size: 24),
+          Icon(
+            Icons.access_time,
+            color: Colors.blue[700],
+            size: 24,
+          ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              'Deneme süreniz: $remaining gün kaldı',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.orange[700],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Deneme Süreniz',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue[700],
+                  ),
+                ),
+                Text(
+                  remainingDays > 0
+                      ? '$remainingDays gün kaldı'
+                      : 'Deneme süreniz doldu',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.blue[600],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -651,18 +635,16 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
-  /// Devam et butonuna tıklandığında
+  /// Devam et butonuna basıldığında
   void _onContinuePressed() {
-    final userAsync = ref.read(currentUserProvider);
-    final user = userAsync.value;
-    if (_selectedPlan == null || user == null) return;
+    if (_selectedPlan == null) return;
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => PlatformPaymentWidget(
           planType: _selectedPlan!,
-          user: user,
           amount: PricingConfig.getPriceForPlan(_selectedPlan!),
+          user: ref.read(currentUserProvider).value!,
         ),
       ),
     );
