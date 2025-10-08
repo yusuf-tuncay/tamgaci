@@ -178,6 +178,16 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Plan kartları
   Widget _buildPlanCards(List<sub.SubscriptionPlan> plans, bool isDark) {
+    // Planları sırala: Yıllık -> Aylık -> 6 Aylık
+    final sortedPlans = List<sub.SubscriptionPlan>.from(plans);
+    sortedPlans.sort((a, b) {
+      if (a.type == sub.SubscriptionPlanType.annual) return -1;
+      if (b.type == sub.SubscriptionPlanType.annual) return 1;
+      if (a.type == sub.SubscriptionPlanType.monthly) return -1;
+      if (b.type == sub.SubscriptionPlanType.monthly) return 1;
+      return 0;
+    });
+
     return Column(
       children: [
         // Başlık
@@ -201,13 +211,13 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         ),
         const SizedBox(height: 32),
 
-        // Plan kartları
-        ...plans.map((plan) {
+        // Plan kartları - Sıralı şekilde
+        ...sortedPlans.map((plan) {
           final isYearly = plan.type == sub.SubscriptionPlanType.annual;
           final isSelected = _selectedPlan == plan.type;
 
           return Container(
-            margin: const EdgeInsets.only(bottom: 20),
+            margin: const EdgeInsets.only(bottom: 16),
             child: _buildPlanCard(plan, isYearly, isSelected, isDark),
           );
         }),
@@ -216,7 +226,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   }
 
   /// Plan kartı
-  Widget _buildPlanCard(sub.SubscriptionPlan plan, bool isYearly, bool isSelected, bool isDark) {
+  Widget _buildPlanCard(
+      sub.SubscriptionPlan plan, bool isYearly, bool isSelected, bool isDark) {
     return Container(
       decoration: BoxDecoration(
         color: isSelected
@@ -224,14 +235,16 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             : isYearly
                 ? const Color(0xFF10B981)
                 : (isDark ? const Color(0xFF2A2A2A) : Colors.white),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isSelected
               ? TamgaciConstants.primaryColor
               : isYearly
                   ? const Color(0xFF10B981)
-                  : (isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0)),
-          width: isSelected ? 3 : 1,
+                  : (isDark
+                      ? const Color(0xFF333333)
+                      : const Color(0xFFE0E0E0)),
+          width: isSelected ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
@@ -239,9 +252,15 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 ? TamgaciConstants.primaryColor.withValues(alpha: 0.3)
                 : isYearly
                     ? const Color(0xFF10B981).withValues(alpha: 0.3)
-                    : (isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1)),
-            blurRadius: isSelected ? 20 : isYearly ? 15 : 10,
-            offset: const Offset(0, 5),
+                    : (isDark
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.grey.withValues(alpha: 0.1)),
+            blurRadius: isSelected
+                ? 15
+                : isYearly
+                    ? 12
+                    : 8,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -249,50 +268,54 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _selectedPlan = plan.type),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Badge
-                if (isYearly)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.star, size: 16, color: Colors.white),
-                        const SizedBox(width: 4),
-                        Text(
-                          'EN İYİ DEĞER',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                // Badge ve Plan adı
+                Row(
+                  children: [
+                    if (isYearly)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ],
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star, size: 14, color: Colors.white),
+                            const SizedBox(width: 4),
+                            Text(
+                              'EN İYİ DEĞER',
+                              style: GoogleFonts.poppins(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (isYearly) const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        plan.name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected
+                              ? Colors.white
+                              : isYearly
+                                  ? Colors.white
+                                  : (isDark ? Colors.white : const Color(0xFF1A1A1A)),
+                        ),
+                      ),
                     ),
-                  ),
-                if (isYearly) const SizedBox(height: 16),
-
-                // Plan adı
-                Text(
-                  plan.name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? Colors.white
-                        : isYearly
-                            ? Colors.white
-                            : (isDark ? Colors.white : const Color(0xFF1A1A1A)),
-                  ),
+                  ],
                 ),
                 const SizedBox(height: 8),
 
@@ -305,98 +328,123 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                         ? Colors.white.withValues(alpha: 0.9)
                         : isYearly
                             ? Colors.white.withValues(alpha: 0.9)
-                            : (isDark ? Colors.white70 : const Color(0xFF666666)),
+                            : (isDark
+                                ? Colors.white70
+                                : const Color(0xFF666666)),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
 
-                // Fiyat
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '₺${plan.price.toStringAsFixed(0)}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected
-                            ? Colors.white
-                            : isYearly
-                                ? Colors.white
-                                : TamgaciConstants.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '/${plan.durationMonths == 1 ? 'ay' : plan.durationMonths == 6 ? '6 ay' : 'yıl'}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: isSelected
-                            ? Colors.white.withValues(alpha: 0.8)
-                            : isYearly
-                                ? Colors.white.withValues(alpha: 0.8)
-                                : (isDark ? Colors.white70 : const Color(0xFF666666)),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Yıllık plan için aylık fiyat
-                if (isYearly) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Aylık ₺${(plan.price / 12).toStringAsFixed(0)} - %50 Tasarruf!',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
+                // Fiyat bölümü
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : isYearly
+                            ? Colors.white.withValues(alpha: 0.1)
+                            : (isDark ? const Color(0xFF333333) : const Color(0xFFF8F9FA)),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
-                const SizedBox(height: 20),
+                  child: Column(
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '₺${plan.price.toStringAsFixed(0)}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? Colors.white
+                                  : isYearly
+                                      ? Colors.white
+                                      : TamgaciConstants.primaryColor,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '/${plan.durationMonths == 1 ? 'ay' : plan.durationMonths == 6 ? '6 ay' : 'yıl'}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: isSelected
+                                  ? Colors.white.withValues(alpha: 0.8)
+                                  : isYearly
+                                      ? Colors.white.withValues(alpha: 0.8)
+                                      : (isDark
+                                          ? Colors.white70
+                                          : const Color(0xFF666666)),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Yıllık plan için aylık fiyat
+                      if (isYearly) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          'Aylık ₺${(plan.price / 12).toStringAsFixed(0)} - %50 Tasarruf!',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
 
-                // Özellikler
-                ...plan.features.map((feature) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                // Özellikler (sadece ilk 3 tanesini göster)
+                ...plan.features.take(3).map((feature) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
                         children: [
                           Icon(
                             Icons.check_circle,
-                            size: 20,
+                            size: 16,
                             color: isSelected
                                 ? Colors.white
                                 : isYearly
                                     ? Colors.white
                                     : TamgaciConstants.primaryColor,
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               feature,
                               style: GoogleFonts.poppins(
-                                fontSize: 14,
+                                fontSize: 13,
                                 color: isSelected
                                     ? Colors.white.withValues(alpha: 0.9)
                                     : isYearly
                                         ? Colors.white.withValues(alpha: 0.9)
-                                        : (isDark ? Colors.white70 : const Color(0xFF666666)),
+                                        : (isDark
+                                            ? Colors.white70
+                                            : const Color(0xFF666666)),
                               ),
                             ),
                           ),
                         ],
                       ),
                     )),
-                const SizedBox(height: 24),
-
-                // Seçim göstergesi
-                Container(
-                  width: double.infinity,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(2),
+                
+                // Daha fazla özellik varsa göster
+                if (plan.features.length > 3) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    '+${plan.features.length - 3} özellik daha',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: isSelected
+                          ? Colors.white.withValues(alpha: 0.7)
+                          : isYearly
+                              ? Colors.white.withValues(alpha: 0.7)
+                              : (isDark ? Colors.white60 : const Color(0xFF999999)),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -408,19 +456,23 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   /// Devam et butonu
   Widget _buildContinueButton() {
     final isYearlySelected = _selectedPlan == sub.SubscriptionPlanType.annual;
-    
+
     return Container(
       width: double.infinity,
       height: 56,
       decoration: BoxDecoration(
         color: _selectedPlan != null
-            ? (isYearlySelected ? const Color(0xFF10B981) : TamgaciConstants.primaryColor)
+            ? (isYearlySelected
+                ? const Color(0xFF10B981)
+                : TamgaciConstants.primaryColor)
             : const Color(0xFF9CA3AF),
         borderRadius: BorderRadius.circular(16),
         boxShadow: _selectedPlan != null
             ? [
                 BoxShadow(
-                  color: (isYearlySelected ? const Color(0xFF10B981) : TamgaciConstants.primaryColor)
+                  color: (isYearlySelected
+                          ? const Color(0xFF10B981)
+                          : TamgaciConstants.primaryColor)
                       .withValues(alpha: 0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
@@ -458,15 +510,17 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
         ),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.1),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
             blurRadius: 10,
-            offset: const Offset(0, 5),
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -491,7 +545,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                        color: TamgaciConstants.primaryColor
+                            .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Icon(
@@ -506,7 +561,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                         feature,
                         style: GoogleFonts.poppins(
                           fontSize: 16,
-                          color: isDark ? Colors.white70 : const Color(0xFF666666),
+                          color:
+                              isDark ? Colors.white70 : const Color(0xFF666666),
                         ),
                       ),
                     ),
@@ -611,5 +667,4 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       ),
     );
   }
-
 }
