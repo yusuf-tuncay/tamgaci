@@ -25,6 +25,7 @@ class PaytrService {
     try {
       final orderId = _generateOrderId(user.id, planType);
       final userBasket = _generateUserBasket(amount, planType);
+      final userIp = await _getUserIp();
       
       // PayTR parametreleri
       final params = PaytrConfig.getBaseParameters(
@@ -33,15 +34,15 @@ class PaytrService {
         userName: '${user.name} ${user.surname}',
         amount: amount,
         orderId: orderId,
+        userIp: userIp,
         userAddress: userAddress,
       );
 
       // User basket'i ekle
       params['user_basket'] = userBasket;
 
-      // Hash oluştur
-      final hashString = _createHashString(params);
-      final hash = _generateHash(hashString);
+      // PayTR hash oluştur (dokümantasyona göre)
+      final hash = _generatePaytrHash(params);
 
       // PayTR API'ye istek gönder
       final response = await _sendTokenRequest(params, hash);
@@ -77,9 +78,7 @@ class PaytrService {
         'merchant_oid': orderId,
       };
 
-      final hashString = _createHashString(params);
-      final hash = _generateHash(hashString);
-      params['hash'] = hash;
+      // Status query için hash gerekli değil
 
       final response = await http.post(
         Uri.parse(PaytrConfig.statusQueryUrl),
@@ -121,17 +120,30 @@ class PaytrService {
   }
 
 
-  /// Hash string oluştur
-  String _createHashString(Map<String, dynamic> params) {
-    final sortedKeys = params.keys.toList()..sort();
-    return sortedKeys.map((key) => '$key=${params[key]}').join('&');
+  /// Kullanıcı IP adresini al
+  Future<String> _getUserIp() async {
+    try {
+      // Web'de kullanıcı IP'si alınamaz, bu yüzden localhost kullanıyoruz
+      // Production'da backend'den alınmalı
+      return '127.0.0.1';
+    } catch (e) {
+      debugPrint('IP alınamadı: $e');
+      return '127.0.0.1';
+    }
   }
 
-  /// Hash oluştur
-  String _generateHash(String input) {
-    final bytes = utf8.encode(input);
-    final digest = sha256.convert(bytes);
-    return digest.toString();
+  /// PayTR hash oluştur (dokümantasyona göre)
+  String _generatePaytrHash(Map<String, dynamic> params) {
+    // PayTR hash format: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
+    final hashString = '${params['merchant_id']}${params['user_ip']}${params['merchant_oid']}${params['email']}${params['payment_amount']}${params['user_basket']}${params['no_installment']}${params['max_installment']}${params['currency']}${params['test_mode']}';
+    
+    // HMAC-SHA256 ile hash oluştur
+    final key = utf8.encode(params['merchant_key'] as String);
+    final data = utf8.encode(hashString + (params['merchant_salt'] as String));
+    final hmac = Hmac(sha256, key);
+    final digest = hmac.convert(data);
+    
+    return base64.encode(digest.bytes);
   }
 
   /// Token isteği gönder
@@ -155,7 +167,7 @@ class PaytrService {
     }
   }
 
-  /// Callback doğrulama
+  /// Callback doğrulama (PayTR dokümantasyonuna göre)
   bool verifyCallback({
     required String merchantOid,
     required String status,
@@ -163,8 +175,16 @@ class PaytrService {
     required String hash,
   }) {
     try {
-      final hashString = '$merchantOid$status$totalAmount${PaytrConfig.merchantSalt}';
-      final expectedHash = _generateHash(hashString);
+      // PayTR callback hash format: merchant_oid + merchant_salt + status + total_amount
+      final hashString = '$merchantOid${PaytrConfig.merchantSalt}$status$totalAmount';
+      
+      // HMAC-SHA256 ile hash oluştur
+      final key = utf8.encode(PaytrConfig.merchantKey);
+      final data = utf8.encode(hashString);
+      final hmac = Hmac(sha256, key);
+      final digest = hmac.convert(data);
+      final expectedHash = base64.encode(digest.bytes);
+      
       return hash == expectedHash;
     } catch (e) {
       debugPrint('PayTR Callback Verification Error: $e');

@@ -22,12 +22,12 @@ class PaytrConfig {
   /// Test modu (development için)
   static const bool testMode = true; // Production'da false yapılacak
 
-  /// Callback URL'leri (Firebase Hosting)
+  /// Callback URL'leri (Firebase Functions)
   static const String successUrl =
       'https://tamgaci.web.app/#/subscription/success';
   static const String failUrl = 'https://tamgaci.web.app/#/subscription/fail';
   static const String callbackUrl =
-      'https://tamgaci.web.app/api/paytr/callback';
+      'https://us-central1-tamgaci.cloudfunctions.net/paytrCallback';
 
   /// Para birimi
   static const String currency = 'TL';
@@ -72,6 +72,7 @@ class PaytrConfig {
     required String userName,
     required double amount,
     required String orderId,
+    required String userIp,
     String? userAddress,
   }) {
     final credentials = activeCredentials;
@@ -80,6 +81,7 @@ class PaytrConfig {
       'merchant_id': credentials['merchant_id'],
       'merchant_key': credentials['merchant_key'],
       'merchant_salt': credentials['merchant_salt'],
+      'user_ip': userIp,
       'email': userEmail,
       'payment_amount': (amount * 100).toInt(), // PayTR kuruş cinsinden bekler
       'merchant_oid': orderId,
@@ -92,8 +94,9 @@ class PaytrConfig {
       'debug_on': debugMode ? 1 : 0,
       'test_mode': testMode ? 1 : 0,
       'currency': currency,
-      'lang': lang,
       'timeout_limit': timeout,
+      'no_installment': 0, // Taksit yapılmasını istemiyorsanız 1 yapın
+      'max_installment': 0, // Maksimum taksit sayısı (0 = sınırsız)
     };
   }
 

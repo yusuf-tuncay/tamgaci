@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions';
 import * as cors from 'cors';
 import * as admin from 'firebase-admin';
+import * as crypto from 'crypto';
 
 const corsHandler = cors({ origin: true });
 
@@ -98,6 +99,98 @@ export const seedGeoMetadata = functions.https.onRequest((request, response) => 
             response.json({ ok: true, cities: cities.length, taxOffices: taxOffices.length });
         } catch (error) {
             console.error('seedGeoMetadata error:', error);
+            response.status(500).json({ error: 'Internal server error' });
+        }
+    });
+});
+
+// PayTR Callback Handler
+export const paytrCallback = functions.https.onRequest((request, response) => {
+    return corsHandler(request, response, async () => {
+        try {
+            // Sadece POST isteklerine izin ver
+            if (request.method !== 'POST') {
+                response.status(405).json({ error: 'Method not allowed' });
+                return;
+            }
+
+            const post = request.body;
+            
+            // PayTR merchant bilgileri
+            const merchantKey = 'uePB67AfxtAAyqZ';
+            const merchantSalt = 'ejdEC3ReZay7QxE8';
+            
+            // Hash doğrulaması
+            const hash = crypto.createHmac('sha256', merchantKey)
+                .update(post.merchant_oid + merchantSalt + post.status + post.total_amount)
+                .digest('base64');
+            
+            if (hash !== post.hash) {
+                console.error('PayTR callback hash verification failed');
+                response.status(400).json({ error: 'Invalid hash' });
+                return;
+            }
+            
+            const db = admin.firestore();
+            
+            // Sipariş durumunu kontrol et
+            const orderId = post.merchant_oid;
+            const subscriptionRef = db.collection('subscriptions').where('id', '==', orderId);
+            const subscriptionSnapshot = await subscriptionRef.get();
+            
+            if (subscriptionSnapshot.empty) {
+                console.error('Subscription not found:', orderId);
+                response.status(404).json({ error: 'Subscription not found' });
+                return;
+            }
+            
+            const subscriptionDoc = subscriptionSnapshot.docs[0];
+            const subscription = subscriptionDoc.data();
+            
+            // Zaten işlenmiş mi kontrol et
+            if (subscription.status === 'active' || subscription.status === 'expired') {
+                console.log('Subscription already processed:', orderId);
+                response.status(200).send('OK');
+                return;
+            }
+            
+            if (post.status === 'success') {
+                // Ödeme başarılı - aboneliği aktif et
+                const now = new Date();
+                const endDate = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 gün
+                
+                await subscriptionDoc.ref.update({
+                    status: 'active',
+                    startDate: now,
+                    endDate: endDate,
+                    amount: parseFloat(post.total_amount) / 100, // Kuruştan TL'ye çevir
+                    updatedAt: now,
+                });
+                
+                // Kullanıcının abonelik durumunu güncelle
+                const userId = subscription.userId;
+                await db.collection('users').doc(userId).update({
+                    subscriptionStatus: 'active',
+                    subscriptionEndAt: endDate,
+                    updatedAt: now,
+                });
+                
+                console.log('Subscription activated:', orderId);
+            } else {
+                // Ödeme başarısız - aboneliği iptal et
+                await subscriptionDoc.ref.update({
+                    status: 'expired',
+                    updatedAt: new Date(),
+                });
+                
+                console.log('Subscription failed:', orderId);
+            }
+            
+            // PayTR'ye OK yanıtı gönder
+            response.status(200).send('OK');
+            
+        } catch (error) {
+            console.error('PayTR callback error:', error);
             response.status(500).json({ error: 'Internal server error' });
         }
     });
