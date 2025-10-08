@@ -252,9 +252,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 3,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 12,
+              childAspectRatio: 4,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 8,
             ),
             itemCount: features.length,
             itemBuilder: (context, index) {
