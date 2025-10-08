@@ -12,7 +12,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../domain/entities/subscription_plan.dart' as sub;
-import '../widgets/platform_payment_widget.dart';
+import '../widgets/paytr_iframe_widget.dart';
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -850,12 +850,43 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   void _onContinuePressed() {
     if (_selectedPlan == null) return;
 
+    // Direkt PayTR'ye yönlendir
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PlatformPaymentWidget(
+        builder: (context) => PaytrIframeWidget(
+          user: ref.read(currentUserProvider).value!,
           planType: _selectedPlan!,
           amount: PricingConfig.getPriceForPlan(_selectedPlan!),
-          user: ref.read(currentUserProvider).value!,
+          onPaymentSuccess: () {
+            // Ödeme başarılı - ana sayfaya dön
+            Navigator.of(context).pop();
+            Navigator.of(context).pop();
+            // Başarı mesajı göster
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Aboneliğiniz başarıyla aktif edildi!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          },
+          onPaymentFailed: () {
+            // Ödeme başarısız
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          },
+          onPaymentCancelled: () {
+            // Ödeme iptal edildi
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Ödeme işlemi iptal edildi.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          },
         ),
       ),
     );
