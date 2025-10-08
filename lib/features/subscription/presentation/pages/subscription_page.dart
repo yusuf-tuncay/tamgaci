@@ -472,7 +472,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       case sub.SubscriptionPlanType.semiAnnual:
         return '%16 TASARRUF';
       case sub.SubscriptionPlanType.annual:
-        return '%33 TASARRUF';
+        return 'EN İYİ';
       case sub.SubscriptionPlanType.none:
         return '';
     }
