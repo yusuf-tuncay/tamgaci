@@ -229,17 +229,20 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     final seconds = _timeRemaining.inSeconds % 60;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildTimeUnit(days.toString(), 'Gün'),
+          const SizedBox(width: 8),
           _buildTimeUnit(hours.toString().padLeft(2, '0'), 'Saat'),
+          const SizedBox(width: 8),
           _buildTimeUnit(minutes.toString().padLeft(2, '0'), 'Dak'),
+          const SizedBox(width: 8),
           _buildTimeUnit(seconds.toString().padLeft(2, '0'), 'Sn'),
         ],
       ),
@@ -252,25 +255,25 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(4),
           ),
           child: Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 1),
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 11,
+            fontSize: 10,
             fontWeight: FontWeight.w500,
             color: Colors.white.withValues(alpha: 0.8),
           ),
