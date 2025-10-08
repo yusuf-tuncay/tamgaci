@@ -266,26 +266,27 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             value,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: 8,
-            color: Colors.white.withValues(alpha: 0.7),
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.8),
           ),
         ),
       ],
