@@ -112,9 +112,11 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               _buildHeroSection(user, isDark),
               const SizedBox(height: 40),
 
-              // Lansman bilgisi
-              _buildLaunchInfo(isDark),
-              const SizedBox(height: 32),
+              // Lansman bilgisi (sadece lansman döneminde göster)
+              if (PricingConfig.isLaunchPeriod) ...[
+                _buildLaunchInfo(isDark),
+                const SizedBox(height: 32),
+              ],
 
               // Durum mesajı
               if (widget.isTrialExpired || widget.isExpired) ...[
@@ -196,7 +198,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '2026 yılbaşına kadar geçerli özel fiyatlar',
+                  PricingConfig.getPriceLabel(),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     color: Colors.white.withValues(alpha: 0.9),
@@ -205,8 +207,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               ],
             ),
           ),
-          // Countdown
-          _buildCountdownDisplay(),
+          // Countdown (sadece lansman döneminde göster)
+          if (PricingConfig.isLaunchPeriod) _buildCountdownDisplay(),
         ],
       ),
     );
