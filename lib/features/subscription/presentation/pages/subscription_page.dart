@@ -123,24 +123,27 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       ),
       child: Column(
         children: [
-          // Icon
+          // Logo
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Icon(
-              Icons.diamond,
-              size: 48,
+            child: Image.asset(
+              'assets/images/logos/140x140logo.png',
+              width: 48,
+              height: 48,
+              fit: BoxFit.contain,
               color: Colors.white,
+              colorBlendMode: BlendMode.srcIn,
             ),
           ),
           const SizedBox(height: 24),
 
           // Title
           Text(
-            'Premium\'a Geçin',
+            'TAMGACI',
             style: GoogleFonts.poppins(
               fontSize: 32,
               fontWeight: FontWeight.bold,
@@ -152,7 +155,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
           // Subtitle
           Text(
-            'Tüm özelliklerin kilidini açın ve işinizi büyütün',
+            'Süre seçin, tüm özellikler dahil',
             style: GoogleFonts.poppins(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.9),
@@ -175,6 +178,14 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       'Mobil uygulama erişimi',
       '7/24 teknik destek',
       'Otomatik yedekleme',
+      'E-fatura entegrasyonu',
+      'Banka hesap yönetimi',
+      'Kasa işlemleri',
+      'Alış/satış faturaları',
+      'KDV hesaplamaları',
+      'İndirim ve kampanya yönetimi',
+      'Ürün varyantları',
+      'Toplu işlemler',
     ];
 
     return Container(
@@ -214,7 +225,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Premium Özellikler',
+                      'TAMGACI Özellikleri',
                       style: GoogleFonts.poppins(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -222,7 +233,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                       ),
                     ),
                     Text(
-                      'Tüm özellikler dahil',
+                      'Tüm özellikler her planda dahil',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         color: isDark ? Colors.white70 : const Color(0xFF666666),
@@ -342,23 +353,22 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 // Badge
-                if (isYearly)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'EN İYİ',
-                      style: GoogleFonts.poppins(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getBadgeColor(plan.type),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _getBadgeText(plan.type),
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                if (isYearly) const SizedBox(height: 8),
+                ),
+                const SizedBox(height: 8),
 
                 // Plan adı
                 Text(
@@ -401,15 +411,19 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                   ),
                 ),
 
-                // Yıllık plan için aylık fiyat
-                if (isYearly) ...[
+                // Aylık fiyat breakdown
+                if (plan.durationMonths > 1) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '₺${(plan.price / 12).toStringAsFixed(0)}/ay',
+                    '₺${(plan.price / plan.durationMonths).toStringAsFixed(0)}/ay',
                     style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: isSelected
+                          ? Colors.white.withValues(alpha: 0.9)
+                          : isYearly
+                              ? Colors.white.withValues(alpha: 0.9)
+                              : (isDark ? Colors.white70 : const Color(0xFF666666)),
                     ),
                   ),
                 ],
@@ -434,6 +448,34 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         ),
       ),
     );
+  }
+
+  /// Plan tipine göre badge rengi
+  Color _getBadgeColor(sub.SubscriptionPlanType type) {
+    switch (type) {
+      case sub.SubscriptionPlanType.monthly:
+        return Colors.blue;
+      case sub.SubscriptionPlanType.semiAnnual:
+        return Colors.purple;
+      case sub.SubscriptionPlanType.annual:
+        return Colors.orange;
+      case sub.SubscriptionPlanType.none:
+        return Colors.grey;
+    }
+  }
+
+  /// Plan tipine göre badge metni
+  String _getBadgeText(sub.SubscriptionPlanType type) {
+    switch (type) {
+      case sub.SubscriptionPlanType.monthly:
+        return 'ESNEK';
+      case sub.SubscriptionPlanType.semiAnnual:
+        return 'POPÜLER';
+      case sub.SubscriptionPlanType.annual:
+        return 'EN İYİ';
+      case sub.SubscriptionPlanType.none:
+        return '';
+    }
   }
 
   /// Plan tipine göre ana avantaj
