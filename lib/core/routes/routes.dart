@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tamgaci/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:tamgaci/features/auth/presentation/pages/login_page.dart';
 import 'package:tamgaci/features/auth/presentation/pages/register_page.dart';
+import 'package:tamgaci/core/guards/subscription_guard.dart';
 // Eski cash sayfaları kaldırıldı - cash_management kullanılıyor
 import 'package:tamgaci/features/customers/presentation/pages/customer_create_page.dart';
 import 'package:tamgaci/features/customers/presentation/pages/customer_edit_page.dart';
@@ -346,7 +347,14 @@ class TamgaciRoutes {
         return _createRoute(const SplashPage(), settings: settings);
 
       case dashboard:
-        return _createRoute(const DashboardPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: DashboardPage(),
+          ),
+          settings: settings,
+        );
 
       case login:
         return _createRoute(const LoginPage(), settings: settings);
@@ -366,27 +374,43 @@ class TamgaciRoutes {
 
       case TamgaciRoutes.subscription:
         return _createRoute(const SubscriptionPage(), settings: settings);
-        
+
       case TamgaciRoutes.subscriptionTest:
         return _createRoute(const SubscriptionTestPage(), settings: settings);
 
       // ========== SATIŞ ROUTE'LARI ==========
 
       case salesList:
-        return _createRoute(const EnhancedSalesListPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedSalesListPage(),
+          ),
+          settings: settings,
+        );
 
       case createSale:
         {
           final args = settings.arguments;
           if (args is Map) {
             return _createRoute(
-              const CreateSalePage(
-                saleId: null,
+              const SubscriptionGuard(
+                allowTrial: true,
+                allowExpired: false,
+                child: CreateSalePage(saleId: null),
               ),
               settings: settings,
             );
           }
-          return _createRoute(const CreateSalePage(), settings: settings);
+          return _createRoute(
+            const SubscriptionGuard(
+              allowTrial: true,
+              allowExpired: false,
+              child: CreateSalePage(),
+            ),
+            settings: settings,
+          );
         }
 
       case saleDetail:
@@ -394,7 +418,11 @@ class TamgaciRoutes {
         final saleId =
             (arguments is String) ? arguments : arguments?.toString() ?? '';
         return _createRoute(
-          SaleDetailPage(saleId: saleId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: SaleDetailPage(saleId: saleId),
+          ),
           settings: settings,
         );
 
@@ -402,24 +430,46 @@ class TamgaciRoutes {
         // Sale ID parametresi bekleniyor
         final saleId = arguments as String?;
         return _createRoute(
-          CreateSalePage(saleId: saleId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateSalePage(saleId: saleId),
+          ),
           settings: settings,
         );
 
       // ========== FATURA ROUTE'LARI ==========
 
       case invoicesList:
-        return _createRoute(const InvoicesListPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: InvoicesListPage(),
+          ),
+          settings: settings,
+        );
 
       case createInvoice:
-        return _createRoute(const CreateInvoicePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateInvoicePage(),
+          ),
+          settings: settings,
+        );
 
       case invoiceDetail:
         // Sale ID parametresi bekleniyor
         final saleId =
             (arguments is String) ? arguments : arguments?.toString() ?? '';
         return _createRoute(
-          SaleDetailPage(saleId: saleId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: SaleDetailPage(saleId: saleId),
+          ),
           settings: settings,
         );
 
@@ -427,7 +477,11 @@ class TamgaciRoutes {
         // Invoice ID parametresi bekleniyor
         final invoiceId = arguments as String?;
         return _createRoute(
-          CreateInvoicePage(invoiceId: invoiceId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateInvoicePage(invoiceId: invoiceId),
+          ),
           settings: settings,
         );
 
@@ -442,17 +496,34 @@ class TamgaciRoutes {
       // ========== MÜŞTERİ ROUTE'LARI ==========
 
       case customersList:
-        return _createRoute(const EnhancedCustomersListPage(),
-            settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedCustomersListPage(),
+          ),
+          settings: settings,
+        );
 
       case createCustomer:
-        return _createRoute(const CustomerCreatePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CustomerCreatePage(),
+          ),
+          settings: settings,
+        );
 
       case customerDetail:
         // Customer ID parametresi bekleniyor
         final customerId = arguments as String?;
         return _createRoute(
-          EnhancedCustomerDetailPageV2(customerId: customerId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedCustomerDetailPageV2(customerId: customerId ?? ''),
+          ),
           settings: settings,
         );
 
@@ -460,7 +531,11 @@ class TamgaciRoutes {
         // Customer ID parametresi bekleniyor
         final customerId = arguments as String?;
         return _createRoute(
-          CustomerEditPage(customerId: customerId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CustomerEditPage(customerId: customerId ?? ''),
+          ),
           settings: settings,
         );
 
@@ -603,12 +678,25 @@ class TamgaciRoutes {
       // ========== ÜRÜN ROUTE'LARI ==========
 
       case productsList:
-        return _createRoute(const ProductsHomePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ProductsHomePage(),
+          ),
+          settings: settings,
+        );
 
       case createProduct:
         final productId = arguments as String?;
-        return _createRoute(CreateProductPage(productId: productId),
-            settings: settings);
+        return _createRoute(
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateProductPage(productId: productId),
+          ),
+          settings: settings,
+        );
 
       case productVariants:
         return _createRoute(const ProductVariantsPage(), settings: settings);

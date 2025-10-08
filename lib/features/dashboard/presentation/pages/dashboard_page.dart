@@ -13,6 +13,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
+import '../../../../core/guards/subscription_guard.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
@@ -127,15 +128,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final recentActivitiesAsync = ref.watch(recentTransactionsProvider);
     final monthlyChartAsync = ref.watch(monthlyChartDataProvider);
 
-    return ResponsiveScaffold(
-      appBar: const CustomAppBar(title: 'Dashboard', showDrawer: true),
-      drawerContent: const TamgaciDrawerMenu(),
-      persistentOnLarge: false,
-      body: _buildMobileLayout(
-        dashboardSummaryAsync,
-        recentActivitiesAsync,
-        monthlyChartAsync,
-        isDark,
+    return SubscriptionGuard(
+      allowTrial: true, // Deneme süresi kullanıcılarına izin ver
+      allowExpired: false, // Süresi dolan kullanıcılara izin verme
+      child: ResponsiveScaffold(
+        appBar: const CustomAppBar(title: 'Dashboard', showDrawer: true),
+        drawerContent: const TamgaciDrawerMenu(),
+        persistentOnLarge: false,
+        body: _buildMobileLayout(
+          dashboardSummaryAsync,
+          recentActivitiesAsync,
+          monthlyChartAsync,
+          isDark,
+        ),
       ),
     );
   }

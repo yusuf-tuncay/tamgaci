@@ -1053,10 +1053,12 @@ class _ProfilePageState extends State<ProfilePage> {
     final now = DateTime.now();
     String text = 'Abonelik: Yok';
     Color color = Colors.grey;
+    String? usageInfo;
 
     final subscriptionStatus = userData['subscriptionStatus'] ?? 'none';
     final trialEndAt = userData['trialEndAt'];
     final subscriptionEndAt = userData['subscriptionEndAt'];
+    final trialStartAt = userData['trialStartAt'];
 
     if (subscriptionStatus == 'trial' && trialEndAt != null) {
       final trialEnd = (trialEndAt as Timestamp).toDate();
@@ -1065,6 +1067,14 @@ class _ProfilePageState extends State<ProfilePage> {
           ? 'Deneme: $remaining gün kaldı'
           : 'Deneme süresi doldu';
       color = remaining > 0 ? Colors.orange : Colors.red;
+
+      // Kullanım süresi bilgisi
+      if (trialStartAt != null) {
+        final trialStart = (trialStartAt as Timestamp).toDate();
+        final totalTrialDays = trialEnd.difference(trialStart).inDays;
+        final usedDays = now.difference(trialStart).inDays;
+        usageInfo = 'Kullanım: $usedDays/$totalTrialDays gün';
+      }
     } else if (subscriptionStatus == 'active' && subscriptionEndAt != null) {
       final subEnd = (subscriptionEndAt as Timestamp).toDate();
       final remaining = subEnd.difference(now).inDays;
@@ -1072,51 +1082,101 @@ class _ProfilePageState extends State<ProfilePage> {
           ? 'Aktif: $remaining gün kaldı'
           : 'Abonelik süresi doldu';
       color = remaining > 0 ? Colors.green : Colors.red;
+
+      // Abonelik başlangıç tarihi varsa kullanım süresi
+      final subscriptionStartAt = userData['subscriptionStartAt'];
+      if (subscriptionStartAt != null) {
+        final subStart = (subscriptionStartAt as Timestamp).toDate();
+        final usedDays = now.difference(subStart).inDays;
+        usageInfo = 'Kullanım: $usedDays gün';
+      }
+    } else if (subscriptionStatus == 'none' ||
+        subscriptionStatus == 'expired') {
+      // Hiç abonelik yok veya süresi dolmuş
+      text = 'Abonelik: Yok';
+      color = Colors.grey;
+      usageInfo = 'Abonelik gerekli';
     }
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.subscriptions,
-                size: 16,
-                color: color,
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color.withValues(alpha: 0.3)),
               ),
-              const SizedBox(width: 4),
-              Text(
-                text,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.subscriptions,
+                    size: 16,
+                    color: color,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    text,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/subscription');
+              },
+              child: Text(
+                'Yönet',
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: color,
+                  color: TamgaciConstants.primaryColor,
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        const Spacer(),
-        TextButton(
-          onPressed: () {
-            Navigator.of(context).pushNamed('/subscription');
-          },
-          child: Text(
-            'Yönet',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: TamgaciConstants.primaryColor,
+        // Kullanım süresi bilgisi
+        if (usageInfo != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.access_time,
+                  size: 14,
+                  color: Colors.blue,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  usageInfo,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
+        ],
       ],
     );
   }
