@@ -11,6 +11,7 @@ import 'package:tamgaci/features/auth/domain/usecases/sign_up_usecase.dart';
 import 'package:tamgaci/features/auth/domain/usecases/sign_out_usecase.dart';
 import 'package:tamgaci/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:tamgaci/features/auth/domain/usecases/reset_password_usecase.dart';
+import 'package:tamgaci/core/providers/subscription_state_provider.dart';
 
 // ========== DEPENDENCY INJECTION ==========
 
@@ -114,9 +115,10 @@ class AuthState {
 /// Auth durumunu yöneten Notifier
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repository;
+  final Ref _ref;
   StreamSubscription<User?>? _authStateSubscription;
 
-  AuthNotifier(this._repository) : super(const AuthState()) {
+  AuthNotifier(this._repository, this._ref) : super(const AuthState()) {
     _initializeAuthState();
   }
 
@@ -130,8 +132,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isEmailVerified: user?.isEmailVerified ?? false,
           error: null,
         );
+        
+        // Kullanıcı giriş yaptıysa abonelik durumunu kontrol et
+        if (user != null) {
+          _checkUserSubscription(user.id);
+        } else {
+          // Kullanıcı çıkış yaptıysa abonelik cache'ini temizle
+          _ref.read(subscriptionStateProvider.notifier).clearCache();
+        }
       },
     );
+  }
+
+  /// Kullanıcının abonelik durumunu kontrol et
+  void _checkUserSubscription(String userId) {
+    _ref.read(subscriptionStateProvider.notifier).checkUserSubscription(userId);
   }
 
   @override
@@ -309,7 +324,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 /// Auth provider'ı
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final repository = ref.watch(authRepositoryProvider);
-  return AuthNotifier(repository);
+  return AuthNotifier(repository, ref);
 });
 
 /// Mevcut kullanıcı provider'ı (AsyncValue olarak)

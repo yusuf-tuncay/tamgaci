@@ -8,6 +8,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/services/subscription/pricing_config.dart';
 import '../../../../core/services/subscription/firestore_subscription_service.dart';
+import '../../../../core/providers/subscription_state_provider.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -17,7 +18,6 @@ import '../../../../core/services/payment/paytr_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:intl/intl.dart';
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -1223,64 +1223,27 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   Widget _buildSubscriptionStatusCard(bool isDark) {
     return Consumer(
       builder: (context, ref, child) {
+        // Cache'lenmiş abonelik durumunu kullan
+        final subscriptionState = ref.watch(subscriptionStateProvider);
+        
+        if (subscriptionState.isLoading) {
+          return _buildLoadingCard(isDark);
+        }
+        
+        if (subscriptionState.error != null) {
+          return _buildErrorCard('Hata: ${subscriptionState.error}', isDark);
+        }
+        
+        if (subscriptionState.subscriptionResult != null) {
+          return _buildSubscriptionStatusWidget(subscriptionState.subscriptionResult!, isDark);
+        }
+        
+        // Fallback: Kullanıcı verilerinden kontrol et
         final user = ref.watch(currentUserProvider);
         return user.when(
-          data: (userData) {
-            // Gerçek abonelik durumu kontrolü
-            return _buildRealSubscriptionStatusCard(userData, isDark);
-          },
-          loading: () => Container(
-            height: 195,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withValues(alpha: 0.3)
-                      : Colors.grey.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                'Yükleniyor...',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: isDark ? Colors.white70 : const Color(0xFF666666),
-                ),
-              ),
-            ),
-          ),
-          error: (error, stack) => Container(
-            height: 195,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isDark
-                      ? Colors.black.withValues(alpha: 0.3)
-                      : Colors.grey.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                'Hata: $error',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.red,
-                ),
-              ),
-            ),
-          ),
+          data: (userData) => _buildRealSubscriptionStatusCard(userData, isDark),
+          loading: () => _buildLoadingCard(isDark),
+          error: (error, stack) => _buildErrorCard('Hata: $error', isDark),
         );
       },
     );

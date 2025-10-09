@@ -2,6 +2,7 @@
 // lib/features/settings/presentation/pages/profile_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
@@ -12,6 +13,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/permissions/storage_permission_service.dart';
 import '../../../../core/services/subscription/firestore_subscription_service.dart';
+import '../../../../core/providers/subscription_state_provider.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import '../../../../core/validators/input_validators.dart';
@@ -19,14 +21,14 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/utils/logger.dart';
 
 /// Profil sayfası - Tamamen Firebase'den veri çeker
-class ProfilePage extends StatefulWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
@@ -1052,30 +1054,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// Abonelik bilgisi - Canlı Firebase verilerinden
+  /// Abonelik bilgisi - Cache'lenmiş verilerden
   Widget _buildSubscriptionInfoFromFirebase(Map<String, dynamic> userData) {
-    // Firebase Auth'tan user ID'yi al
-    final currentUser = FirebaseAuth.instance.currentUser;
-    final userId = currentUser?.uid ?? userData['id'] ?? '';
-
-    debugPrint('🔍 ProfilePage: Building subscription info for user: $userId');
-    debugPrint('🔍 ProfilePage: userData keys: ${userData.keys.toList()}');
-
-    // Cache'lenmiş future kullan
-    return FutureBuilder<SubscriptionCheckResult>(
-      future: _cachedSubscriptionFuture ??=
-          _getSubscriptionInfoWithFallback(userData, userId),
-      builder: (context, snapshot) {
-        debugPrint(
-            '🔍 ProfilePage: FutureBuilder state: ${snapshot.connectionState}');
-        if (snapshot.hasData) {
-          debugPrint(
-              '🔍 ProfilePage: Subscription result: ${snapshot.data?.hasAccess} - ${snapshot.data?.reason}');
-        }
-        if (snapshot.hasError) {
-          debugPrint('🔍 ProfilePage: Error: ${snapshot.error}');
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
+    return Consumer(
+      builder: (context, ref, child) {
+        // Cache'lenmiş abonelik durumunu kullan
+        final subscriptionState = ref.watch(subscriptionStateProvider);
+        
+        if (subscriptionState.isLoading) {
           return Container(
             padding: const EdgeInsets.all(16),
             child: const Row(
@@ -1091,22 +1077,65 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           );
         }
-
-        if (snapshot.hasError) {
+        
+        if (subscriptionState.error != null) {
           return Container(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 const Icon(Icons.error, color: Colors.red, size: 16),
                 const SizedBox(width: 8),
-                Text('Hata: ${snapshot.error}'),
+                Text('Hata: ${subscriptionState.error}'),
               ],
             ),
           );
         }
+        
+        if (subscriptionState.subscriptionResult != null) {
+          return _buildSubscriptionInfoWidget(subscriptionState.subscriptionResult!);
+        }
+        
+        // Fallback: Kullanıcı verilerinden kontrol et
+        final currentUser = FirebaseAuth.instance.currentUser;
+        final userId = currentUser?.uid ?? userData['id'] ?? '';
+        
+        return FutureBuilder<SubscriptionCheckResult>(
+          future: _cachedSubscriptionFuture ??= _getSubscriptionInfoWithFallback(userData, userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                child: const Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(width: 8),
+                    Text('Abonelik durumu kontrol ediliyor...'),
+                  ],
+                ),
+              );
+            }
 
-        final result = snapshot.data!;
-        return _buildSubscriptionInfoWidget(result);
+            if (snapshot.hasError) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error, color: Colors.red, size: 16),
+                    const SizedBox(width: 8),
+                    Text('Hata: ${snapshot.error}'),
+                  ],
+                ),
+              );
+            }
+
+            final result = snapshot.data!;
+            return _buildSubscriptionInfoWidget(result);
+          },
+        );
       },
     );
   }
