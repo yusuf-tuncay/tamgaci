@@ -131,6 +131,7 @@ class PaytrService {
     // PayTR merchant_oid alfanumerik olmalı, özel karakter içeremez
     // userId'deki özel karakterleri temizle
     final cleanUserId = userId.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+    // PayTR sadece alfanumerik karakterler kabul ediyor, tire (-) kabul etmiyor
     return 'TAMGACI$cleanUserId$planId$timestamp';
   }
 

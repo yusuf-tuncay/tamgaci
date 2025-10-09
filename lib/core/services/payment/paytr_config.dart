@@ -121,13 +121,13 @@ class PaytrConfig {
   static String getProductName(SubscriptionPlanType planType) {
     switch (planType) {
       case SubscriptionPlanType.monthly:
-        return 'Tamgacı Aylık Abonelik';
+        return 'Tamgaci Aylik Abonelik';
       case SubscriptionPlanType.semiAnnual:
-        return 'Tamgacı 6 Aylık Abonelik';
+        return 'Tamgaci 6 Aylik Abonelik';
       case SubscriptionPlanType.annual:
-        return 'Tamgacı Yıllık Abonelik';
+        return 'Tamgaci Yillik Abonelik';
       case SubscriptionPlanType.none:
-        return 'Tamgacı Abonelik';
+        return 'Tamgaci Abonelik';
     }
   }
 }
