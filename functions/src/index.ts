@@ -209,13 +209,38 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
             if (post.status === 'success') {
                 // Ödeme başarılı - aboneliği aktif et
                 const now = new Date();
-                const endDate = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 gün
+                
+                // Plan tipine göre süre hesapla
+                const planType = subscription.planType || 'monthly';
+                let daysToAdd = 30; // Varsayılan aylık
+                
+                switch (planType) {
+                    case 'monthly':
+                        daysToAdd = 30;
+                        break;
+                    case 'six_monthly':
+                        daysToAdd = 180;
+                        break;
+                    case 'yearly':
+                        daysToAdd = 365;
+                        break;
+                    default:
+                        daysToAdd = 30;
+                        break;
+                }
+                
+                const endDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                
+                console.log('Payment successful - Plan:', planType, 'Days to add:', daysToAdd);
+                console.log('New end date:', endDate);
 
                 await subscriptionDoc.ref.update({
                     status: 'active',
                     startDate: now,
                     endDate: endDate,
                     amount: parseFloat(post.total_amount) / 100, // Kuruştan TL'ye çevir
+                    planType: planType,
+                    daysAdded: daysToAdd,
                     updatedAt: now,
                 });
 
@@ -223,11 +248,13 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
                 const userId = subscription.userId;
                 await db.collection('users').doc(userId).update({
                     subscriptionStatus: 'active',
+                    subscriptionStartAt: now,
                     subscriptionEndAt: endDate,
+                    subscriptionPlan: planType,
                     updatedAt: now,
                 });
 
-                console.log('Subscription activated:', orderId);
+                console.log('Subscription activated:', orderId, 'Plan:', planType, 'Days added:', daysToAdd);
             } else {
                 // Ödeme başarısız - aboneliği iptal et
                 await subscriptionDoc.ref.update({
