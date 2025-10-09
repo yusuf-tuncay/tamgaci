@@ -20,11 +20,20 @@ import 'package:tamgaci/core/errors/smart_error_suppressor.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
+// WebView platform implementation for Flutter Web
+import 'package:webview_flutter_web/webview_flutter_web.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+
 /// Tamgaci Ön Muhasebe Uygulaması
 /// Ana uygulama giriş noktası
 void main() async {
   // Flutter widget binding'lerini başlat
   WidgetsFlutterBinding.ensureInitialized();
+
+  // WebView platform implementation'ını ayarla (Flutter Web için)
+  if (kIsWeb) {
+    WebViewPlatform.instance = WebWebViewPlatform();
+  }
 
   // Web için özel disposed view hata bastırma
   if (kIsWeb) {

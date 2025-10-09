@@ -12,7 +12,8 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../domain/entities/subscription_plan.dart' as sub;
-import '../widgets/paytr_iframe_widget.dart';
+import '../../../../core/services/payment/paytr_service.dart';
+import 'package:web/web.dart' as web;
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -1071,49 +1072,58 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   }
 
   /// Devam et butonuna basıldığında
-  void _onContinuePressed() {
+  void _onContinuePressed() async {
     if (_selectedPlan == null) return;
 
-    // Direkt PayTR'ye yönlendir
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PaytrIframeWidget(
-          user: ref.read(currentUserProvider).value!,
-          planType: _selectedPlan!,
-          amount: PricingConfig.getPriceForPlan(_selectedPlan!),
-          onPaymentSuccess: () {
-            // Ödeme başarılı - ana sayfaya dön
-            Navigator.of(context).pop();
-            Navigator.of(context).pop();
-            // Başarı mesajı göster
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Aboneliğiniz başarıyla aktif edildi!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          },
-          onPaymentFailed: () {
-            // Ödeme başarısız
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content:
-                    Text('Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          },
-          onPaymentCancelled: () {
-            // Ödeme iptal edildi
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Ödeme işlemi iptal edildi.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          },
-        ),
+    // Loading göster
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
+
+    try {
+      // PayTR token oluştur
+      final paytrService = PaytrService();
+      final currentUser = ref.read(currentUserProvider).value!;
+      final tokenResponse = await paytrService.createPaymentToken(
+        user: currentUser,
+        planType: _selectedPlan!,
+        amount: PricingConfig.getPriceForPlan(_selectedPlan!),
+        userAddress: currentUser.address, // Kullanıcı adresini geç
+      );
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      if (tokenResponse.success) {
+        // PayTR ödeme sayfasına yönlendir
+        final iframeUrl =
+            'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
+        web.window.location.href = iframeUrl;
+      } else {
+        // Hata mesajı göster
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Ödeme sayfası oluşturulamadı: ${tokenResponse.error ?? 'Bilinmeyen hata'}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      // Hata mesajı göster
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ödeme sayfası oluşturulamadı: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }

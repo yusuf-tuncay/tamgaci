@@ -219,7 +219,7 @@ class PaytrService {
 
   /// PayTR hash oluştur (PayTR resmi dokümantasyonuna göre)
   String _generatePaytrHash(Map<String, dynamic> params) {
-    // PayTR resmi hash format: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
+    // PayTR hash formatı: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
     final hashStr =
         '${params['merchant_id']}${params['user_ip']}${params['merchant_oid']}${params['email']}${params['payment_amount']}${params['user_basket']}${params['no_installment']}${params['max_installment']}${params['currency']}${params['test_mode']}';
 
@@ -227,17 +227,17 @@ class PaytrService {
     debugPrint('PayTR Hash String: $hashStr');
     debugPrint('PayTR Hash String Length: ${hashStr.length}');
 
-    // PayTR resmi format: hash_hmac('sha256', $hash_str.$merchant_salt, $merchant_key, true)
-    // Önce hash_str + merchant_salt birleştir
+    // PayTR format: hash_hmac('sha256', $hash_str.$merchant_salt, $merchant_key, true)
     final paytrToken = hashStr + (params['merchant_salt'] as String);
     debugPrint('PayTR Token String: $paytrToken');
 
-    // HMAC-SHA256 ile hash oluştur
+    // HMAC-SHA256 ile hash oluştur - PayTR formatına göre düzeltildi
     final key = utf8.encode(params['merchant_key'] as String);
     final data = utf8.encode(paytrToken);
     final hmac = Hmac(sha256, key);
     final digest = hmac.convert(data);
 
+    // PayTR Base64 format kullanır
     final hash = base64.encode(digest.bytes);
     debugPrint('PayTR Generated Hash: $hash');
     return hash;

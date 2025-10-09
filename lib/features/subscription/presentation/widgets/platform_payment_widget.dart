@@ -4,12 +4,13 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/services/payment/app_store_service.dart';
 import '../../../../core/services/payment/play_store_service.dart';
+import '../../../../core/services/payment/paytr_service.dart';
 import '../../domain/entities/subscription_plan.dart';
 import '../../../auth/domain/entities/user.dart';
-import 'paytr_iframe_widget.dart';
 
 /// Platform-specific ödeme widget'ı
 class PlatformPaymentWidget extends StatefulWidget {
@@ -396,19 +397,42 @@ class _PlatformPaymentWidgetState extends State<PlatformPaymentWidget> {
   }
 
   /// PayTR ödeme işlemi
-  void _handlePaytrPayment() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PaytrIframeWidget(
-          user: widget.user,
-          planType: widget.planType,
-          amount: widget.amount,
-          onPaymentSuccess: widget.onPaymentSuccess,
-          onPaymentFailed: widget.onPaymentFailed,
-          onPaymentCancelled: widget.onPaymentCancelled,
+  void _handlePaytrPayment() async {
+    try {
+      // PayTR token oluştur
+      final paytrService = PaytrService();
+
+      final tokenResponse = await paytrService.createPaymentToken(
+        user: widget.user,
+        planType: widget.planType,
+        amount: widget.amount,
+      );
+
+      if (tokenResponse.success) {
+        // PayTR ödeme sayfasını tarayıcıda aç
+        final iframeUrl =
+            'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
+
+        // URL'yi tarayıcıda aç
+        if (await canLaunchUrl(Uri.parse(iframeUrl))) {
+          await launchUrl(
+            Uri.parse(iframeUrl),
+            mode: LaunchMode.externalApplication,
+          );
+        } else {
+          throw Exception('PayTR ödeme sayfası açılamadı');
+        }
+      } else {
+        throw Exception(tokenResponse.error ?? 'PayTR token oluşturulamadı');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ödeme sayfası açılamadı: $e'),
+          backgroundColor: Colors.red,
         ),
-      ),
-    );
+      );
+    }
   }
 
   /// iOS platform kontrolü

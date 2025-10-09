@@ -9,7 +9,7 @@ class PaytrConfig {
   static const String merchantId = '622887';
 
   /// Merchant Key (Mağaza Parola)
-  static const String merchantKey = 'uePB67AfxtAAyqZ';
+  static const String merchantKey = 'uePB6f7AfxtAAyqZ';
 
   /// Merchant Salt (Mağaza Gizli Anahtar)
   static const String merchantSalt = 'ejdEC3ReZay7QxE8';
@@ -51,7 +51,7 @@ class PaytrConfig {
   /// Test merchant bilgileri (PayTR test ortamı için)
   static Map<String, String> get testCredentials => {
         'merchant_id': '622887', // Test merchant ID
-        'merchant_key': 'uePB67AfxtAAyqZ', // Test merchant key
+        'merchant_key': 'uePB6f7AfxtAAyqZ', // Test merchant key
         'merchant_salt': 'ejdEC3ReZay7QxE8', // Test merchant salt
       };
 
@@ -85,7 +85,7 @@ class PaytrConfig {
       'user_ip': userIp,
       'email': userEmail,
       'payment_amount':
-          (amount * 100).toInt().toString(), // PayTR kuruş cinsinden bekler
+          (amount * 100).toInt(), // PayTR kuruş cinsinden bekler (int olarak)
       'merchant_oid': orderId,
       'user_name': userName,
       'user_address': userAddress ?? 'Adres belirtilmemiş',
@@ -97,8 +97,8 @@ class PaytrConfig {
       'test_mode': (testMode ? 1 : 0).toString(),
       'currency': currency,
       'timeout_limit': timeout.toString(),
-      'no_installment': '0', // Taksit yapılmasını istemiyorsanız 1 yapın
-      'max_installment': '0', // Maksimum taksit sayısı (0 = sınırsız)
+      'no_installment': 0, // int olarak
+      'max_installment': 0, // int olarak
     };
   }
 

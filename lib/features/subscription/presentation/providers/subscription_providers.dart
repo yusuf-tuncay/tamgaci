@@ -3,6 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../../../../core/services/subscription/subscription_sync_service.dart';
 import '../../../../core/services/subscription/pricing_config.dart';
 import '../../domain/entities/subscription_entity.dart' as sub_entity;
@@ -79,18 +80,21 @@ class SubscriptionSyncNotifier extends StateNotifier<SubscriptionSyncState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final result = await _syncService.syncUserSubscriptions(userId);
+      // Cloud Function kullanarak senkronizasyon yap
+      final functions = FirebaseFunctions.instance;
+      final callable = functions.httpsCallable('syncSubscriptionStatus');
+      final result = await callable.call({'userId': userId});
 
-      if (result.success) {
+      if (result.data['success'] == true) {
         state = state.copyWith(
           isLoading: false,
           lastSyncTime: DateTime.now(),
-          message: result.message,
+          message: result.data['message'],
         );
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: result.error,
+          error: result.data['message'] ?? 'Senkronizasyon başarısız',
         );
       }
     } catch (e) {
