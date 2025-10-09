@@ -148,22 +148,39 @@ class PaytrService {
   /// Kullanıcı IP adresini al
   Future<String> _getUserIp() async {
     try {
-      // PayTR test modunda bile gerçek IP adresi gerekiyor
-      // Test için sabit IP adresi kullanıyoruz
-      return '85.34.78.11'; // Test için sabit IP
+      // Gerçek kullanıcı IP adresini al
+      final response = await http.get(
+        Uri.parse('https://api.ipify.org?format=text'),
+        headers: {'Content-Type': 'text/plain'},
+      );
+
+      if (response.statusCode == 200) {
+        final ip = response.body.trim();
+        // PayTR IPv6 adreslerini desteklemiyor, sadece IPv4 kabul ediyor
+        if (ip.contains(':')) {
+          // IPv6 adresi ise fallback kullan
+          debugPrint('IPv6 adresi tespit edildi, fallback kullanılıyor: $ip');
+          return '85.34.78.11'; // Fallback IPv4 IP
+        }
+        debugPrint('Gerçek kullanıcı IP: $ip');
+        return ip;
+      } else {
+        debugPrint('IP servisi yanıt vermedi: ${response.statusCode}');
+        return '85.34.78.11'; // Fallback IPv4 IP
+      }
     } catch (e) {
       debugPrint('IP alınamadı: $e');
-      return '85.34.78.11'; // Fallback sabit IP
+      return '85.34.78.11'; // Fallback IPv4 IP
     }
   }
 
   /// Telefon numarasını PayTR formatına çevir
   String _formatPhoneNumber(String phone) {
     if (phone.isEmpty) return '5555555555'; // Fallback telefon
-    
+
     // Sadece rakamları al
     final digitsOnly = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     // Türkiye telefon numarası formatı (10 haneli)
     if (digitsOnly.length == 10) {
       return digitsOnly;
@@ -172,7 +189,7 @@ class PaytrService {
     } else if (digitsOnly.length > 10) {
       return digitsOnly.substring(digitsOnly.length - 10); // Son 10 hane
     }
-    
+
     return digitsOnly.padLeft(10, '5'); // 10 haneye tamamla
   }
 
@@ -190,7 +207,7 @@ class PaytrService {
     // Önce hash_str + merchant_salt birleştir
     final paytrToken = hashStr + (params['merchant_salt'] as String);
     debugPrint('PayTR Token String: $paytrToken');
-    
+
     // HMAC-SHA256 ile hash oluştur
     final key = utf8.encode(params['merchant_key'] as String);
     final data = utf8.encode(paytrToken);

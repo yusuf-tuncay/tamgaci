@@ -88,7 +88,7 @@ class PaytrConfig {
           (amount * 100).toInt().toString(), // PayTR kuruş cinsinden bekler
       'merchant_oid': orderId,
       'user_name': userName,
-      'user_address': userAddress ?? 'Test Adres',
+      'user_address': userAddress ?? 'Adres belirtilmemiş',
       'user_phone': userPhone,
       'merchant_ok_url': successUrl,
       'merchant_fail_url': failUrl,
