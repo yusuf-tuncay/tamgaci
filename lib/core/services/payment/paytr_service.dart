@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'paytr_config.dart';
 import '../../../features/subscription/domain/entities/subscription_plan.dart';
 import '../../../features/auth/domain/entities/user.dart';
@@ -58,8 +59,12 @@ class PaytrService {
       debugPrint('test_mode: ${params['test_mode']}');
       debugPrint('merchant_key: ${params['merchant_key']}');
       debugPrint('merchant_salt: ${params['merchant_salt']}');
+      debugPrint('Plan Type: $planType');
       debugPrint('PayTR Hash: $hash');
       debugPrint('========================');
+
+      // Firestore'a abonelik kaydı oluştur
+      await _createSubscriptionRecord(user, planType, amount, orderId);
 
       // PayTR API'ye istek gönder
       final response = await _sendTokenRequest(params, hash);
@@ -283,6 +288,41 @@ class PaytrService {
       return json.decode(response.body);
     } else {
       throw Exception('HTTP ${response.statusCode}: ${response.body}');
+    }
+  }
+
+  /// Firestore'a abonelik kaydı oluştur
+  Future<void> _createSubscriptionRecord(
+    User user,
+    SubscriptionPlanType planType,
+    double amount,
+    String orderId,
+  ) async {
+    try {
+      debugPrint('Creating subscription record for order: $orderId');
+      debugPrint('Plan type: $planType');
+      debugPrint('Amount: $amount');
+      
+      final firestore = FirebaseFirestore.instance;
+      final now = DateTime.now();
+      
+      // Abonelik kaydı oluştur
+      await firestore.collection('subscriptions').doc(orderId).set({
+        'id': orderId,
+        'userId': user.id,
+        'planType': planType.name,
+        'status': 'pending',
+        'provider': 'paytr',
+        'amount': amount,
+        'currency': 'TRY',
+        'createdAt': Timestamp.fromDate(now),
+        'updatedAt': Timestamp.fromDate(now),
+      });
+      
+      debugPrint('Subscription record created successfully in Firestore');
+    } catch (e) {
+      debugPrint('Error creating subscription record: $e');
+      // Hata olsa bile devam et, PayTR token oluşturulabilir
     }
   }
 

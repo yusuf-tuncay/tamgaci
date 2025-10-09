@@ -132,12 +132,16 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
             const merchantSalt = 'ejdEC3ReZay7QxE8';
 
             // Debug log
+            console.log('=== PayTR Callback Debug ===');
             console.log('PayTR Callback Data:', {
                 merchant_oid: post.merchant_oid,
                 status: post.status,
                 total_amount: post.total_amount,
                 received_hash: post.hash
             });
+            console.log('Request method:', request.method);
+            console.log('Request headers:', request.headers);
+            console.log('Request body:', post);
 
             // Hash doğrulaması - PayTR formatına uygun
             // PayTR hash formatı: merchant_oid + merchantSalt + status + total_amount
@@ -214,6 +218,10 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
                 const planType = subscription.planType || 'monthly';
                 let daysToAdd = 30; // Varsayılan aylık
                 
+                console.log('=== Payment Success Debug ===');
+                console.log('Original subscription planType:', subscription.planType);
+                console.log('Using planType:', planType);
+                
                 switch (planType) {
                     case 'monthly':
                         daysToAdd = 30;
@@ -233,6 +241,7 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
                 
                 console.log('Payment successful - Plan:', planType, 'Days to add:', daysToAdd);
                 console.log('New end date:', endDate);
+                console.log('Current time:', now);
 
                 await subscriptionDoc.ref.update({
                     status: 'active',
@@ -246,15 +255,24 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
 
                 // Kullanıcının abonelik durumunu güncelle
                 const userId = subscription.userId;
-                await db.collection('users').doc(userId).update({
+                console.log('Updating user subscription for userId:', userId);
+                
+                const userUpdateData = {
                     subscriptionStatus: 'active',
                     subscriptionStartAt: now,
                     subscriptionEndAt: endDate,
                     subscriptionPlan: planType,
                     updatedAt: now,
-                });
+                };
+                
+                console.log('User update data:', userUpdateData);
+                
+                await db.collection('users').doc(userId).update(userUpdateData);
 
+                console.log('=== Subscription Activation Complete ===');
                 console.log('Subscription activated:', orderId, 'Plan:', planType, 'Days added:', daysToAdd);
+                console.log('User ID:', userId);
+                console.log('End date:', endDate);
             } else {
                 // Ödeme başarısız - aboneliği iptal et
                 await subscriptionDoc.ref.update({
