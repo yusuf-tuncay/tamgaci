@@ -108,7 +108,13 @@ export const seedGeoMetadata = functions.https.onRequest((request, response) => 
 export const paytrCallback = functions.https.onRequest((request, response) => {
     return corsHandler(request, response, async () => {
         try {
-            // Sadece POST isteklerine izin ver
+            // GET isteği ise test amaçlı OK döndür
+            if (request.method === 'GET') {
+                response.status(200).send('PayTR Callback Handler is ready');
+                return;
+            }
+            
+            // POST isteği değilse hata
             if (request.method !== 'POST') {
                 response.status(405).json({ error: 'Method not allowed' });
                 return;
