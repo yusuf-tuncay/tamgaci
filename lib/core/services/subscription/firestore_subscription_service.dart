@@ -20,6 +20,7 @@ class FirestoreSubscriptionService {
     try {
       debugPrint(
           '🔍 FirestoreSubscriptionService: Checking subscription for user: $userId');
+      debugPrint('🔍 FirestoreSubscriptionService: Current time: ${DateTime.now()}');
 
       final now = DateTime.now();
 
@@ -46,6 +47,9 @@ class FirestoreSubscriptionService {
 
         debugPrint('📋 Latest subscription: ${subscriptionData['status']}');
         debugPrint('📅 End date: ${subscriptionData['endDate']}');
+        debugPrint('📅 Plan type: ${subscriptionData['planType']}');
+        debugPrint('📅 User ID: ${subscriptionData['userId']}');
+        debugPrint('📅 Amount: ${subscriptionData['amount']}');
 
         final status = subscriptionData['status'] as String?;
         final endDate = subscriptionData['endDate'] as Timestamp?;

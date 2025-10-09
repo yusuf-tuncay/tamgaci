@@ -14,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/permissions/storage_permission_service.dart';
 import '../../../../core/services/subscription/firestore_subscription_service.dart';
 import '../../../../core/providers/subscription_state_provider.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import '../../../../core/validators/input_validators.dart';
@@ -30,6 +31,23 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
+  
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Sayfa her açıldığında otomatik güncelleme
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoRefreshSubscription();
+    });
+  }
+
+  /// Otomatik abonelik durumu güncelleme
+  void _autoRefreshSubscription() {
+    final user = ref.read(currentUserProvider).value;
+    if (user != null) {
+      ref.read(subscriptionStateProvider.notifier).autoRefreshSubscription(user.id);
+    }
+  }
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -1060,7 +1078,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       builder: (context, ref, child) {
         // Cache'lenmiş abonelik durumunu kullan
         final subscriptionState = ref.watch(subscriptionStateProvider);
-        
+
         if (subscriptionState.isLoading) {
           return Container(
             padding: const EdgeInsets.all(16),
@@ -1077,7 +1095,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           );
         }
-        
+
         if (subscriptionState.error != null) {
           return Container(
             padding: const EdgeInsets.all(16),
@@ -1090,17 +1108,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
           );
         }
-        
+
         if (subscriptionState.subscriptionResult != null) {
-          return _buildSubscriptionInfoWidget(subscriptionState.subscriptionResult!);
+          return _buildSubscriptionInfoWidget(
+              subscriptionState.subscriptionResult!);
         }
-        
+
         // Fallback: Kullanıcı verilerinden kontrol et
         final currentUser = FirebaseAuth.instance.currentUser;
         final userId = currentUser?.uid ?? userData['id'] ?? '';
-        
+
         return FutureBuilder<SubscriptionCheckResult>(
-          future: _cachedSubscriptionFuture ??= _getSubscriptionInfoWithFallback(userData, userId),
+          future: _cachedSubscriptionFuture ??=
+              _getSubscriptionInfoWithFallback(userData, userId),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Container(

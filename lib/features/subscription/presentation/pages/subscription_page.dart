@@ -58,6 +58,24 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   void initState() {
     super.initState();
     _startCountdown();
+    _cachedSubscriptionFuture = null; // Cache'i temizle
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Sayfa her açıldığında otomatik güncelleme
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoRefreshSubscription();
+    });
+  }
+
+  /// Otomatik abonelik durumu güncelleme
+  void _autoRefreshSubscription() {
+    final user = ref.read(currentUserProvider).value;
+    if (user != null) {
+      ref.read(subscriptionStateProvider.notifier).autoRefreshSubscription(user.id);
+    }
   }
 
   @override
@@ -1417,7 +1435,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   void _refreshSubscriptionStatus(WidgetRef ref) async {
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
-      await ref.read(subscriptionStateProvider.notifier).refreshSubscription(user.id);
+      await ref
+          .read(subscriptionStateProvider.notifier)
+          .refreshSubscription(user.id);
     }
   }
 

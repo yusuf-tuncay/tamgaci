@@ -47,20 +47,23 @@ class SubscriptionState {
 class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   final FirestoreSubscriptionService _subscriptionService;
 
-  SubscriptionStateNotifier(this._subscriptionService) 
+  SubscriptionStateNotifier(this._subscriptionService)
       : super(const SubscriptionState());
 
   /// Kullanıcının abonelik durumunu kontrol et ve cache'le
   Future<void> checkUserSubscription(String userId) async {
     try {
-      debugPrint('🔍 SubscriptionStateNotifier: Checking subscription for user: $userId');
-      
+      debugPrint(
+          '🔍 SubscriptionStateNotifier: Checking subscription for user: $userId');
+
       state = state.copyWith(isLoading: true, error: null);
 
-      final result = await _subscriptionService.checkUserSubscriptionStatus(userId);
-      
-      debugPrint('✅ SubscriptionStateNotifier: Subscription check completed: ${result.hasAccess}');
-      
+      final result =
+          await _subscriptionService.checkUserSubscriptionStatus(userId);
+
+      debugPrint(
+          '✅ SubscriptionStateNotifier: Subscription check completed: ${result.hasAccess}');
+
       state = state.copyWith(
         subscriptionResult: result,
         isLoading: false,
@@ -69,7 +72,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
       );
     } catch (e) {
       debugPrint('❌ SubscriptionStateNotifier: Subscription check failed: $e');
-      
+
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -88,10 +91,22 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
     debugPrint('🔄 SubscriptionStateNotifier: Refreshing subscription cache');
     await checkUserSubscription(userId);
   }
+
+  /// Otomatik abonelik durumu güncelleme (sayfa değişimlerinde)
+  Future<void> autoRefreshSubscription(String userId) async {
+    // Sadece cache yoksa veya 5 dakikadan eskiyse güncelle
+    if (state.subscriptionResult == null || 
+        state.lastChecked == null || 
+        DateTime.now().difference(state.lastChecked!).inMinutes > 5) {
+      debugPrint('🔄 SubscriptionStateNotifier: Auto-refreshing subscription cache');
+      await checkUserSubscription(userId);
+    }
+  }
 }
 
 /// Global abonelik durumu provider'ı
-final subscriptionStateProvider = StateNotifierProvider<SubscriptionStateNotifier, SubscriptionState>((ref) {
+final subscriptionStateProvider =
+    StateNotifierProvider<SubscriptionStateNotifier, SubscriptionState>((ref) {
   return SubscriptionStateNotifier(FirestoreSubscriptionService());
 });
 

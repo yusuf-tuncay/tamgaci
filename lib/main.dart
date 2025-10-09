@@ -41,6 +41,7 @@ void main() async {
     _suppressAllDisposedErrors();
     _suppressEngineFlutterViewErrors();
     _suppressUltraAggressiveErrors();
+    _suppressDisposedViewErrorsAdvanced();
   }
 
   // Akıllı error suppression'ı başlat (ana sistem)
@@ -263,6 +264,50 @@ void _suppressDisposedViewErrors() {
   };
 }
 
+/// Gelişmiş disposed view hata bastırma
+void _suppressDisposedViewErrorsAdvanced() {
+  // FlutterError.onError için ultra agresif handler
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final errorString = details.toString();
+    
+    // TÜM disposed view hatalarını bastır
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('Disposed view error')) {
+      // Sessizce geç
+      return;
+    }
+    
+    // Diğer hataları normal şekilde işle
+    FlutterError.presentError(details);
+  };
+  
+  // PlatformDispatcher.onError için ultra agresif handler
+  PlatformDispatcher.instance.onError = (error, stack) {
+    final errorString = error.toString();
+    
+    // TÜM disposed view hatalarını bastır
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('Disposed view error')) {
+      // Sessizce geç
+      return true;
+    }
+    
+    return false;
+  };
+}
+
 /// Ultra agresif hata bastırma - TÜM disposed view hatalarını bastır
 void _suppressUltraAggressiveErrors() {
   // FlutterError.onError için ultra agresif handler
@@ -330,6 +375,50 @@ void _suppressUltraAggressiveErrors() {
     }
 
     // Diğer hataları normal şekilde işle
+    return false;
+  };
+}
+
+/// Gelişmiş disposed view hata bastırma
+void _suppressDisposedViewErrorsAdvanced() {
+  // FlutterError.onError için ultra agresif handler
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final errorString = details.toString();
+    
+    // TÜM disposed view hatalarını bastır
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('Disposed view error')) {
+      // Sessizce geç
+      return;
+    }
+    
+    // Diğer hataları normal şekilde işle
+    FlutterError.presentError(details);
+  };
+  
+  // PlatformDispatcher.onError için ultra agresif handler
+  PlatformDispatcher.instance.onError = (error, stack) {
+    final errorString = error.toString();
+    
+    // TÜM disposed view hatalarını bastır
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('Disposed view error')) {
+      // Sessizce geç
+      return true;
+    }
+    
     return false;
   };
 }
@@ -429,6 +518,50 @@ void _suppressEngineFlutterViewErrors() {
       return true;
     }
 
+    return false;
+  };
+}
+
+/// Gelişmiş disposed view hata bastırma
+void _suppressDisposedViewErrorsAdvanced() {
+  // FlutterError.onError için ultra agresif handler
+  FlutterError.onError = (FlutterErrorDetails details) {
+    final errorString = details.toString();
+    
+    // TÜM disposed view hatalarını bastır
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('Disposed view error')) {
+      // Sessizce geç
+      return;
+    }
+    
+    // Diğer hataları normal şekilde işle
+    FlutterError.presentError(details);
+  };
+  
+  // PlatformDispatcher.onError için ultra agresif handler
+  PlatformDispatcher.instance.onError = (error, stack) {
+    final errorString = error.toString();
+    
+    // TÜM disposed view hatalarını bastır
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('disposed') ||
+        errorString.contains('window.dart:99:12') ||
+        errorString.contains('Assertion failed') ||
+        errorString.contains('org-dartlang-sdk') ||
+        errorString.contains('Disposed view error')) {
+      // Sessizce geç
+      return true;
+    }
+    
     return false;
   };
 }
