@@ -20,7 +20,7 @@ class PaytrConfig {
   static const String statusQueryUrl = '$apiBaseUrl/odeme/durum-sorgu';
 
   /// Test modu (development için)
-  static const bool testMode = false; // Production'da false yapılacak
+  static const bool testMode = true; // Development için true
 
   /// Callback URL'leri (Firebase Functions)
   static const String successUrl =
@@ -49,9 +49,9 @@ class PaytrConfig {
 
   /// Test merchant bilgileri (PayTR test ortamı için)
   static Map<String, String> get testCredentials => {
-        'merchant_id': '622887', // Test için aynı merchant ID
-        'merchant_key': 'uePB67AfxtAAyqZ', // Test için aynı key
-        'merchant_salt': 'ejdEC3ReZay7QxE8', // Test için aynı salt
+        'merchant_id': '622887', // Test merchant ID
+        'merchant_key': 'uePB67AfxtAAyqZ', // Test merchant key
+        'merchant_salt': 'ejdEC3ReZay7QxE8', // Test merchant salt
       };
 
   /// Production merchant bilgileri
