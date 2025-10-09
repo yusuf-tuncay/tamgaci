@@ -218,6 +218,7 @@ class SplashNotifier extends StateNotifier<SplashData> {
         // Kullanıcı unutulmak istendi; mevcut oturumu kapat
         try {
           await FirebaseAuth.instance.signOut();
+          AppLogger.info('User session cleared due to remember_me = false');
         } catch (_) {}
         // Temizlik: güvenli saklanan bilgileri ve cache'i temizle
         try {
@@ -230,6 +231,19 @@ class SplashNotifier extends StateNotifier<SplashData> {
         } catch (_) {}
       }
     } catch (_) {}
+
+    // Firebase Auth durumunu kontrol et
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        AppLogger.info('Auto-login: User is already signed in (${user.email})');
+      } else {
+        AppLogger.info(
+            'Auto-login: No user session found, will redirect to login');
+      }
+    } catch (e) {
+      AppLogger.error('Auto-login check failed', e);
+    }
 
     // Kısa bir bekleme ile UI'ı güncel tut
     await Future.delayed(const Duration(milliseconds: 300));
@@ -971,11 +985,20 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     Future.delayed(const Duration(milliseconds: 500), () async {
       if (!mounted) return;
+
+      // Firebase Auth durumunu kontrol et
       final user = FirebaseAuth.instance.currentUser;
-      final targetRoute = (user == null && widget.loginRoute != null)
-          ? widget.loginRoute!
-          : widget.homeRoute;
-      Navigator.of(context).pushReplacementNamed(targetRoute);
+
+      if (user != null) {
+        // Kullanıcı giriş yapmış - dashboard'a yönlendir
+        AppLogger.info('User is signed in, navigating to dashboard');
+        Navigator.of(context).pushReplacementNamed(widget.homeRoute);
+      } else {
+        // Kullanıcı giriş yapmamış - login sayfasına yönlendir
+        AppLogger.info('User is not signed in, navigating to login');
+        Navigator.of(context)
+            .pushReplacementNamed(widget.loginRoute ?? '/login');
+      }
     });
   }
 }
