@@ -30,7 +30,7 @@ class PaytrService {
       // PayTR parametreleri
       final params = PaytrConfig.getBaseParameters(
         userEmail: user.email,
-        userPhone: user.phone ?? '',
+        userPhone: _formatPhoneNumber(user.phone ?? ''),
         userName: '${user.name} ${user.surname}',
         amount: amount,
         orderId: orderId,
@@ -154,6 +154,25 @@ class PaytrService {
       debugPrint('IP alınamadı: $e');
       return '85.34.78.11'; // Fallback sabit IP
     }
+  }
+
+  /// Telefon numarasını PayTR formatına çevir
+  String _formatPhoneNumber(String phone) {
+    if (phone.isEmpty) return '5555555555'; // Fallback telefon
+    
+    // Sadece rakamları al
+    final digitsOnly = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    
+    // Türkiye telefon numarası formatı (10 haneli)
+    if (digitsOnly.length == 10) {
+      return digitsOnly;
+    } else if (digitsOnly.length == 11 && digitsOnly.startsWith('0')) {
+      return digitsOnly.substring(1); // Başındaki 0'ı kaldır
+    } else if (digitsOnly.length > 10) {
+      return digitsOnly.substring(digitsOnly.length - 10); // Son 10 hane
+    }
+    
+    return digitsOnly.padLeft(10, '5'); // 10 haneye tamamla
   }
 
   /// PayTR hash oluştur (PayTR resmi dokümantasyonuna göre)

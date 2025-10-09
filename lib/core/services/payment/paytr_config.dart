@@ -20,7 +20,8 @@ class PaytrConfig {
   static const String statusQueryUrl = '$apiBaseUrl/odeme/durum-sorgu';
 
   /// Test modu (development için)
-  static const bool testMode = true; // Test modunda true (canlı moda geçiş bekleniyor)
+  static const bool testMode =
+      true; // Test modunda true (canlı moda geçiş bekleniyor)
 
   /// Callback URL'leri (Firebase Functions)
   static const String successUrl =
@@ -87,7 +88,7 @@ class PaytrConfig {
           (amount * 100).toInt().toString(), // PayTR kuruş cinsinden bekler
       'merchant_oid': orderId,
       'user_name': userName,
-      'user_address': userAddress ?? 'Belirtilmemiş',
+      'user_address': userAddress ?? 'Test Adres',
       'user_phone': userPhone,
       'merchant_ok_url': successUrl,
       'merchant_fail_url': failUrl,
