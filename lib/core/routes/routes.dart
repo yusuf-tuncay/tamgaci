@@ -79,6 +79,7 @@ import 'package:tamgaci/core/services/colorized_logger_test_page.dart';
 
 import 'package:tamgaci/features/products/presentation/pages/products_home_page.dart';
 import 'package:tamgaci/features/products/presentation/pages/product_detail_page.dart';
+import 'package:tamgaci/features/landing/presentation/pages/landing_route.dart';
 
 // Silinen modül: payments
 
@@ -90,6 +91,9 @@ class TamgaciRoutes {
   // Ana Route'lar
   /// Splash ekranı route'u
   static const String splash = '/';
+
+  /// Landing page route'u (Web için)
+  static const String landing = '/landing';
 
   /// Ana dashboard route'u
   static const String dashboard = '/dashboard';
@@ -351,6 +355,9 @@ class TamgaciRoutes {
 
       case splash:
         return _createRoute(const SplashPage(), settings: settings);
+
+      case landing:
+        return _createRoute(const LandingRoute(), settings: settings);
 
       case dashboard:
         return _createRoute(
