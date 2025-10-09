@@ -147,9 +147,9 @@ class PaytrService {
   /// Kullanıcı IP adresini al
   Future<String> _getUserIp() async {
     try {
-      // Node.js örneğinde user_ip boş string olarak gönderiliyor
       // PayTR test ortamında boş string kabul ediyor
-      return ''; // Node.js örneğine uygun boş string
+      // Node.js örneğinde de boş string gönderiliyor
+      return ''; // Test için boş string
     } catch (e) {
       debugPrint('IP alınamadı: $e');
       return ''; // Fallback boş string
