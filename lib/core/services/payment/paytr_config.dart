@@ -20,7 +20,7 @@ class PaytrConfig {
   static const String statusQueryUrl = '$apiBaseUrl/odeme/durum-sorgu';
 
   /// Test modu (development için)
-  static const bool testMode = false; // Production modunda false
+  static const bool testMode = true; // Test modunda true (canlı moda geçiş bekleniyor)
 
   /// Callback URL'leri (Firebase Functions)
   static const String successUrl =
