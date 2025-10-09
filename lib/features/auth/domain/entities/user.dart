@@ -19,6 +19,9 @@ class User extends Equatable {
   /// Kullanıcı telefon numarası
   final String? phone;
 
+  /// Kullanıcı adresi
+  final String? address;
+
   /// E164 formatında tam telefon numarası (+905551234567)
   final String? phoneE164;
 
@@ -109,6 +112,7 @@ class User extends Equatable {
     required this.name,
     required this.surname,
     this.phone,
+    this.address,
     this.phoneE164,
     this.phoneCountry,
     this.phoneDialCode,
@@ -148,6 +152,7 @@ class User extends Equatable {
       name: data['name'] ?? '',
       surname: data['surname'] ?? '',
       phone: data['phone'],
+      address: data['address'],
       phoneE164: data['phoneE164'],
       phoneCountry: data['phoneCountry'],
       phoneDialCode: data['phoneDialCode'],
@@ -193,6 +198,7 @@ class User extends Equatable {
       'name': name,
       'surname': surname,
       'phone': phone,
+      'address': address,
       'phoneE164': phoneE164,
       'phoneCountry': phoneCountry,
       'phoneDialCode': phoneDialCode,
@@ -235,6 +241,7 @@ class User extends Equatable {
     String? name,
     String? surname,
     String? phone,
+    String? address,
     String? phoneE164,
     String? phoneCountry,
     String? phoneDialCode,
@@ -270,6 +277,7 @@ class User extends Equatable {
       name: name ?? this.name,
       surname: surname ?? this.surname,
       phone: phone ?? this.phone,
+      address: address ?? this.address,
       phoneE164: phoneE164 ?? this.phoneE164,
       phoneCountry: phoneCountry ?? this.phoneCountry,
       phoneDialCode: phoneDialCode ?? this.phoneDialCode,
@@ -320,6 +328,7 @@ class User extends Equatable {
         name,
         surname,
         phone,
+        address,
         profileImageUrl,
         profileImagePath,
         profileImageMetadata,
