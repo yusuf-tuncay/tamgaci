@@ -35,7 +35,7 @@ class PaytrService {
         amount: amount,
         orderId: orderId,
         userIp: userIp,
-        userAddress: userAddress,
+        userAddress: _formatUserAddress(userAddress),
       );
 
       // User basket'i ekle
@@ -153,13 +153,14 @@ class PaytrService {
         Uri.parse('https://api.ipify.org?format=text'),
         headers: {'Content-Type': 'text/plain'},
       );
-      
+
       if (response.statusCode == 200) {
         final ip = response.body.trim();
         // PayTR IPv6 adreslerini desteklemiyor, sadece IPv4 kabul ediyor
         if (ip.contains(':')) {
           // IPv6 adresi ise fallback kullan
-          debugPrint('IPv6 adresi tespit edildi, PayTR IPv6 desteklemiyor: $ip');
+          debugPrint(
+              'IPv6 adresi tespit edildi, PayTR IPv6 desteklemiyor: $ip');
           // IPv6 adresini IPv4'e çevirmeye çalış
           return ip; // Gerçek IP'yi döndür, PayTR kabul etmezse hata verir
         }
@@ -196,6 +197,24 @@ class PaytrService {
     
     // Eksik haneleri 0 ile tamamla (gerçek numara değil, sadece format için)
     return digitsOnly.padLeft(10, '0');
+  }
+
+  /// Kullanıcı adresini PayTR formatına çevir
+  String _formatUserAddress(String? address) {
+    if (address == null || address.isEmpty) {
+      debugPrint('Kullanıcı adresi boş, PayTR için gerekli');
+      return 'Adres belirtilmemiş';
+    }
+    
+    // Adresi temizle ve formatla
+    final cleanAddress = address.trim();
+    
+    // PayTR için uygun format (maksimum 200 karakter)
+    if (cleanAddress.length > 200) {
+      return cleanAddress.substring(0, 200);
+    }
+    
+    return cleanAddress;
   }
 
   /// PayTR hash oluştur (PayTR resmi dokümantasyonuna göre)
