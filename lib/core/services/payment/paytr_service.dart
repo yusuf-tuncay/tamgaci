@@ -182,10 +182,10 @@ class PaytrService {
       debugPrint('Kullanıcı telefon numarası boş, PayTR için gerekli');
       throw Exception('Kullanıcı telefon numarası boş, PayTR için gerekli');
     }
-    
+
     // Sadece rakamları al
     final digitsOnly = phone.replaceAll(RegExp(r'[^0-9]'), '');
-    
+
     // Türkiye telefon numarası formatı (10 haneli)
     if (digitsOnly.length == 10) {
       return digitsOnly;
@@ -194,7 +194,7 @@ class PaytrService {
     } else if (digitsOnly.length > 10) {
       return digitsOnly.substring(digitsOnly.length - 10); // Son 10 hane
     }
-    
+
     // Eksik haneleri 0 ile tamamla (gerçek numara değil, sadece format için)
     return digitsOnly.padLeft(10, '0');
   }
@@ -205,15 +205,15 @@ class PaytrService {
       debugPrint('Kullanıcı adresi boş, PayTR için gerekli');
       return 'Adres belirtilmemiş';
     }
-    
+
     // Adresi temizle ve formatla
     final cleanAddress = address.trim();
-    
+
     // PayTR için uygun format (maksimum 200 karakter)
     if (cleanAddress.length > 200) {
       return cleanAddress.substring(0, 200);
     }
-    
+
     return cleanAddress;
   }
 
@@ -250,9 +250,9 @@ class PaytrService {
   ) async {
     final requestParams = Map<String, dynamic>.from(params);
 
-    // Node.js örneğine göre merchant_key ve merchant_salt da gönderiliyor
-    // requestParams.remove('merchant_key');
-    // requestParams.remove('merchant_salt');
+    // merchant_key ve merchant_salt sadece hash hesaplamasında kullanılır, POST body'de gönderilmez
+    requestParams.remove('merchant_key');
+    requestParams.remove('merchant_salt');
 
     // Hash'i ekle
     requestParams['paytr_token'] = hash;
