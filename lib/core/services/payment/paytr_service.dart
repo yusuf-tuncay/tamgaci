@@ -134,13 +134,12 @@ class PaytrService {
   /// Kullanıcı IP adresini al
   Future<String> _getUserIp() async {
     try {
-      // PayTR test ortamında bile 127.0.0.1 kabul etmiyor
-      // Dummy bir public IP kullanıyoruz (test için)
-      // Production'da gerçek kullanıcı IP'si backend'den alınmalı
-      return '85.34.78.11'; // Örnek public IP
+      // Node.js örneğinde user_ip boş string olarak gönderiliyor
+      // PayTR test ortamında boş string kabul ediyor
+      return ''; // Node.js örneğine uygun boş string
     } catch (e) {
       debugPrint('IP alınamadı: $e');
-      return '85.34.78.11'; // Fallback public IP
+      return ''; // Fallback boş string
     }
   }
 
@@ -166,9 +165,9 @@ class PaytrService {
   ) async {
     final requestParams = Map<String, dynamic>.from(params);
 
-    // merchant_key ve merchant_salt'ı çıkar (sadece hash için kullanılır)
-    requestParams.remove('merchant_key');
-    requestParams.remove('merchant_salt');
+    // Node.js örneğine göre merchant_key ve merchant_salt da gönderiliyor
+    // requestParams.remove('merchant_key');
+    // requestParams.remove('merchant_salt');
 
     // Hash'i ekle
     requestParams['paytr_token'] = hash;
