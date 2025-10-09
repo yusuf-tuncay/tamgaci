@@ -45,8 +45,21 @@ class PaytrService {
       final hash = _generatePaytrHash(params);
 
       // Debug: Parametreleri yazdır
-      debugPrint('PayTR Request Params: $params');
+      debugPrint('=== PayTR Request Debug ===');
+      debugPrint('merchant_id: ${params['merchant_id']}');
+      debugPrint('user_ip: "${params['user_ip']}"');
+      debugPrint('merchant_oid: ${params['merchant_oid']}');
+      debugPrint('email: ${params['email']}');
+      debugPrint('payment_amount: ${params['payment_amount']}');
+      debugPrint('user_basket: ${params['user_basket']}');
+      debugPrint('no_installment: ${params['no_installment']}');
+      debugPrint('max_installment: ${params['max_installment']}');
+      debugPrint('currency: ${params['currency']}');
+      debugPrint('test_mode: ${params['test_mode']}');
+      debugPrint('merchant_key: ${params['merchant_key']}');
+      debugPrint('merchant_salt: ${params['merchant_salt']}');
       debugPrint('PayTR Hash: $hash');
+      debugPrint('========================');
 
       // PayTR API'ye istek gönder
       final response = await _sendTokenRequest(params, hash);
@@ -143,15 +156,17 @@ class PaytrService {
     }
   }
 
-  /// PayTR hash oluştur (dokümantasyona göre)
+  /// PayTR hash oluştur (Node.js örneğine göre)
   String _generatePaytrHash(Map<String, dynamic> params) {
-    // PayTR hash format: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
+    // Node.js örneğindeki hash format: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
     final hashStr =
         '${params['merchant_id']}${params['user_ip']}${params['merchant_oid']}${params['email']}${params['payment_amount']}${params['user_basket']}${params['no_installment']}${params['max_installment']}${params['currency']}${params['test_mode']}';
 
-    // PayTR PHP: base64_encode(hash_hmac('sha256', $hash_str.$merchant_salt, $merchant_key, true))
+    // Node.js: crypto.createHmac('sha256', merchant_key).update(paytr_token).digest('base64')
+    // paytr_token = hashStr + merchant_salt
+    final paytrToken = hashStr + (params['merchant_salt'] as String);
     final key = utf8.encode(params['merchant_key'] as String);
-    final data = utf8.encode(hashStr + (params['merchant_salt'] as String));
+    final data = utf8.encode(paytrToken);
     final hmac = Hmac(sha256, key);
     final digest = hmac.convert(data);
 
