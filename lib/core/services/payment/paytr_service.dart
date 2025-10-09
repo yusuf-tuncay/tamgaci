@@ -159,28 +159,31 @@ class PaytrService {
         // PayTR IPv6 adreslerini desteklemiyor, sadece IPv4 kabul ediyor
         if (ip.contains(':')) {
           // IPv6 adresi ise fallback kullan
-          debugPrint('IPv6 adresi tespit edildi, fallback kullanılıyor: $ip');
-          return '85.34.78.11'; // Fallback IPv4 IP
+          debugPrint('IPv6 adresi tespit edildi, PayTR IPv6 desteklemiyor: $ip');
+          return '127.0.0.1'; // Localhost fallback
         }
         debugPrint('Gerçek kullanıcı IP: $ip');
         return ip;
       } else {
         debugPrint('IP servisi yanıt vermedi: ${response.statusCode}');
-        return '85.34.78.11'; // Fallback IPv4 IP
+        return '127.0.0.1'; // Localhost fallback
       }
     } catch (e) {
       debugPrint('IP alınamadı: $e');
-      return '85.34.78.11'; // Fallback IPv4 IP
+      return '127.0.0.1'; // Localhost fallback
     }
   }
 
   /// Telefon numarasını PayTR formatına çevir
   String _formatPhoneNumber(String phone) {
-    if (phone.isEmpty) return '5555555555'; // Fallback telefon
-
+    if (phone.isEmpty) {
+      debugPrint('Kullanıcı telefon numarası boş, PayTR için gerekli');
+      return '0000000000'; // PayTR için gerekli alan, boş olamaz
+    }
+    
     // Sadece rakamları al
     final digitsOnly = phone.replaceAll(RegExp(r'[^0-9]'), '');
-
+    
     // Türkiye telefon numarası formatı (10 haneli)
     if (digitsOnly.length == 10) {
       return digitsOnly;
@@ -189,8 +192,9 @@ class PaytrService {
     } else if (digitsOnly.length > 10) {
       return digitsOnly.substring(digitsOnly.length - 10); // Son 10 hane
     }
-
-    return digitsOnly.padLeft(10, '5'); // 10 haneye tamamla
+    
+    // Eksik haneleri 0 ile tamamla (gerçek numara değil, sadece format için)
+    return digitsOnly.padLeft(10, '0');
   }
 
   /// PayTR hash oluştur (PayTR resmi dokümantasyonuna göre)
