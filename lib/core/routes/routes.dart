@@ -376,19 +376,54 @@ class TamgaciRoutes {
             settings: settings);
       // ========== AYARLAR/PROFIL ==========
       case TamgaciRoutes.profile:
-        return _createRoute(const ProfilePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ProfilePage(),
+          ),
+          settings: settings,
+        );
 
       case TamgaciRoutes.subscription:
-        return _createRoute(const SubscriptionPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: SubscriptionPage(),
+          ),
+          settings: settings,
+        );
 
       case TamgaciRoutes.subscriptionTest:
-        return _createRoute(const SubscriptionTestPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: SubscriptionTestPage(),
+          ),
+          settings: settings,
+        );
 
       case TamgaciRoutes.paymentSuccess:
-        return _createRoute(const PaymentSuccessPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: PaymentSuccessPage(),
+          ),
+          settings: settings,
+        );
 
       case TamgaciRoutes.paymentFail:
-        return _createRoute(const PaymentFailPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: PaymentFailPage(),
+          ),
+          settings: settings,
+        );
 
       // ========== SATIŞ ROUTE'LARI ==========
 
@@ -554,17 +589,34 @@ class TamgaciRoutes {
       // ========== TEDARİKÇİ ROUTE'LARI ==========
 
       case suppliersList:
-        return _createRoute(const EnhancedSuppliersListPage(),
-            settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedSuppliersListPage(),
+          ),
+          settings: settings,
+        );
 
       case createSupplier:
-        return _createRoute(const CreateSupplierPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateSupplierPage(),
+          ),
+          settings: settings,
+        );
 
       case supplierDetail:
         // Supplier ID parametresi bekleniyor
         final supplierId = arguments as String?;
         return _createRoute(
-          EnhancedSupplierDetailPage(supplierId: supplierId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedSupplierDetailPage(supplierId: supplierId ?? ''),
+          ),
           settings: settings,
         );
 
@@ -572,23 +624,37 @@ class TamgaciRoutes {
         // Supplier ID parametresi bekleniyor
         final supplierId = arguments as String?;
         return _createRoute(
-          CreateSupplierPage(supplierId: supplierId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateSupplierPage(supplierId: supplierId),
+          ),
           settings: settings,
         );
 
       // ========== ALIŞ ROUTE'LARI ==========
 
       case purchasesList:
-        return _createRoute(const EnhancedPurchasesListPage(),
-            settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedPurchasesListPage(),
+          ),
+          settings: settings,
+        );
 
       case createPurchase:
         final args = arguments as Map<String, dynamic>?;
         return _createRoute(
-          CreatePurchasePage(
-            purchaseId: args?['purchaseId'] as String?,
-            supplierId: args?['supplierId'] as String?,
-            supplierName: args?['supplierName'] as String?,
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreatePurchasePage(
+              purchaseId: args?['purchaseId'] as String?,
+              supplierId: args?['supplierId'] as String?,
+              supplierName: args?['supplierName'] as String?,
+            ),
           ),
           settings: settings,
         );
@@ -597,7 +663,11 @@ class TamgaciRoutes {
         // Purchase ID parametresi bekleniyor
         final purchaseId = arguments as String?;
         return _createRoute(
-          EnhancedPurchaseDetailPage(purchaseId: purchaseId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedPurchaseDetailPage(purchaseId: purchaseId ?? ''),
+          ),
           settings: settings,
         );
 
@@ -605,24 +675,45 @@ class TamgaciRoutes {
         // Purchase ID parametresi bekleniyor
         final purchaseId = arguments as String?;
         return _createRoute(
-          CreatePurchasePage(purchaseId: purchaseId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreatePurchasePage(purchaseId: purchaseId),
+          ),
           settings: settings,
         );
 
       // ========== NAKİT YÖNETİMİ ROUTE'LARI (ESKİ) ==========
 
       case accountsList:
-        return _createRoute(const EnhancedAccountsListPage(),
-            settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedAccountsListPage(),
+          ),
+          settings: settings,
+        );
 
       case createAccount:
-        return _createRoute(const CreateAccountPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateAccountPage(),
+          ),
+          settings: settings,
+        );
 
       case accountDetail:
         // Account ID parametresi bekleniyor
         final accountId = arguments as String?;
         return _createRoute(
-          EnhancedAccountDetailPage(accountId: accountId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedAccountDetailPage(accountId: accountId ?? ''),
+          ),
           settings: settings,
         );
 
@@ -630,62 +721,135 @@ class TamgaciRoutes {
         // Account ID parametresi bekleniyor
         final accountId = arguments as String?;
         return _createRoute(
-          CreateAccountPage(accountId: accountId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateAccountPage(accountId: accountId),
+          ),
           settings: settings,
         );
 
       // ========== HESAPLAR ROUTE'LARI (YENİ) ==========
 
       case accountsHome:
-        return _createRoute(const AccountsHomePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: AccountsHomePage(),
+          ),
+          settings: settings,
+        );
 
       case createNewAccount:
-        return _createRoute(const accounts.CreateAccountPage(),
-            settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: accounts.CreateAccountPage(),
+          ),
+          settings: settings,
+        );
 
       case newAccountDetail:
         // Account objesi parametresi bekleniyor
         final account = arguments as Account?;
         if (account != null) {
           return _createRoute(
-            AccountDetailPage(account: account),
+            SubscriptionGuard(
+              allowTrial: true,
+              allowExpired: false,
+              child: AccountDetailPage(account: account),
+            ),
             settings: settings,
           );
         }
-        return _createRoute(const AccountsHomePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: AccountsHomePage(),
+          ),
+          settings: settings,
+        );
 
       case cashTransactionsList:
-        return _createRoute(const EnhancedCashTransactionsListPage(),
-            settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedCashTransactionsListPage(),
+          ),
+          settings: settings,
+        );
 
       case createCashTransaction:
-        return _createRoute(const CreateCashTransactionPage(),
-            settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateCashTransactionPage(),
+          ),
+          settings: settings,
+        );
 
       case cashTransactionDetail:
         // Transaction ID parametresi bekleniyor
         final transactionId = arguments as String?;
         return _createRoute(
-          EnhancedCashTransactionDetailPage(transactionId: transactionId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: EnhancedCashTransactionDetailPage(
+                transactionId: transactionId ?? ''),
+          ),
           settings: settings,
         );
 
       // ========== RAPORLAR ROUTE'LARI ==========
 
       case reportsList:
-        return _createRoute(const ReportsOverviewPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ReportsOverviewPage(),
+          ),
+          settings: settings,
+        );
 
       case createReport:
         // Geçici olarak reports overview'a yönlendir
-        return _createRoute(const ReportsOverviewPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ReportsOverviewPage(),
+          ),
+          settings: settings,
+        );
 
       case reportDetail:
         // Geçici olarak reports overview'a yönlendir
-        return _createRoute(const ReportsOverviewPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ReportsOverviewPage(),
+          ),
+          settings: settings,
+        );
 
       case editReport:
         // Geçici olarak reports overview'a yönlendir
-        return _createRoute(const ReportsOverviewPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ReportsOverviewPage(),
+          ),
+          settings: settings,
+        );
 
       // ========== ÜRÜN ROUTE'LARI ==========
 
@@ -711,26 +875,45 @@ class TamgaciRoutes {
         );
 
       case productVariants:
-        return _createRoute(const ProductVariantsPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ProductVariantsPage(),
+          ),
+          settings: settings,
+        );
 
       case bulkStockUpdate:
         final warehouseId = arguments as String?;
         return _createRoute(
-          BulkStockUpdatePage(warehouseId: warehouseId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: BulkStockUpdatePage(warehouseId: warehouseId),
+          ),
           settings: settings,
         );
 
       case productDetail:
         final productId = arguments as String?;
         return _createRoute(
-          ProductDetailPage(productId: productId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ProductDetailPage(productId: productId ?? ''),
+          ),
           settings: settings,
         );
 
       case editProduct:
         final productId = arguments as String?;
         return _createRoute(
-          CreateProductPage(productId: productId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateProductPage(productId: productId),
+          ),
           settings: settings,
         );
 
@@ -740,78 +923,169 @@ class TamgaciRoutes {
       // ========== RAPOR ROUTE'LARI ==========
 
       case reportsOverview:
-        return _createRoute(const ReportsOverviewPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ReportsOverviewPage(),
+          ),
+          settings: settings,
+        );
 
       case incomeExpenseReport:
         return _createRoute(
-          const IncomeExpenseReportPage(),
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: IncomeExpenseReportPage(),
+          ),
           settings: settings,
         );
 
       case customerReport:
-        return _createRoute(const CustomerReportPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CustomerReportPage(),
+          ),
+          settings: settings,
+        );
 
       case supplierReport:
-        return _createRoute(const SupplierReportPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: SupplierReportPage(),
+          ),
+          settings: settings,
+        );
 
       case productReport:
-        return _createRoute(const ProductReportPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: ProductReportPage(),
+          ),
+          settings: settings,
+        );
 
       // ========== INVENTORY ROUTE'LARI ==========
       case inventory:
-        return _createRoute(const InventoryPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: InventoryPage(),
+          ),
+          settings: settings,
+        );
 
       case warehouseList:
-        return _createRoute(const WarehousesHomePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: WarehousesHomePage(),
+          ),
+          settings: settings,
+        );
 
       case createWarehouse:
-        return _createRoute(const CreateWarehousePage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateWarehousePage(),
+          ),
+          settings: settings,
+        );
 
       case editWarehouse:
         final warehouse = arguments as Warehouse?;
         return _createRoute(
-          CreateWarehousePage(existingWarehouse: warehouse),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateWarehousePage(existingWarehouse: warehouse),
+          ),
           settings: settings,
         );
 
       case stockCountsList:
         final warehouse = arguments as Warehouse?;
         return _createRoute(
-          StockCountsListPage(warehouse: warehouse),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: StockCountsListPage(warehouse: warehouse),
+          ),
           settings: settings,
         );
 
       case createStockCount:
         final warehouse = arguments as Warehouse;
         return _createRoute(
-          StockCountPage(warehouse: warehouse),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: StockCountPage(warehouse: warehouse),
+          ),
           settings: settings,
         );
 
       case warehouseDetail:
         final warehouse = arguments as Warehouse?;
         return _createRoute(
-          WarehouseDetailPage(warehouse: warehouse!),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: WarehouseDetailPage(warehouse: warehouse!),
+          ),
           settings: settings,
         );
 
       case stockList:
-        return _createRoute(const StockListPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: StockListPage(),
+          ),
+          settings: settings,
+        );
 
       case createStock:
-        return _createRoute(const CreateStockPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateStockPage(),
+          ),
+          settings: settings,
+        );
 
       case editStock:
         final stockId = arguments as String?;
         return _createRoute(
-          CreateStockPage(stockId: stockId),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateStockPage(stockId: stockId),
+          ),
           settings: settings,
         );
 
       case stockDetail:
         final stockId = arguments as String?;
         return _createRoute(
-          StockDetailPage(stockId: stockId ?? ''),
+          SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: StockDetailPage(stockId: stockId ?? ''),
+          ),
           settings: settings,
         );
 
@@ -822,16 +1096,44 @@ class TamgaciRoutes {
       // ========== AYARLAR ROUTE'LARI ==========
 
       case TamgaciRoutes.settings:
-        return _createRoute(const SettingsPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: SettingsPage(),
+          ),
+          settings: settings,
+        );
 
       case permissions:
-        return _createRoute(const PermissionsPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: PermissionsPage(),
+          ),
+          settings: settings,
+        );
 
       case companySettings:
-        return _createRoute(const CompanySettingsPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CompanySettingsPage(),
+          ),
+          settings: settings,
+        );
 
       case taxSettings:
-        return _createRoute(const TaxSettingsPage(), settings: settings);
+        return _createRoute(
+          const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: TaxSettingsPage(),
+          ),
+          settings: settings,
+        );
 
       // ========== BİLDİRİMLER ROUTE'LARI ==========
 
