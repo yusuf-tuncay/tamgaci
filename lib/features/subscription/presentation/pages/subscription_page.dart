@@ -7,13 +7,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/services/subscription/pricing_config.dart';
+import '../../../../core/services/subscription/firestore_subscription_service.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/domain/entities/user.dart';
 import '../../domain/entities/subscription_plan.dart' as sub;
 import '../../../../core/services/payment/paytr_service.dart';
-import 'package:web/web.dart' as web;
+import 'package:flutter/foundation.dart';
+import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart';
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -42,6 +46,14 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   Timer? _countdownTimer;
   Duration _timeRemaining = Duration.zero;
 
+  // Kupon kodu için
+  final TextEditingController _couponController = TextEditingController();
+  String? _couponMessage;
+  bool _isSpecialCouponApplied = false; // 139570 kuponu uygulandı mı?
+
+  // Cache'lenmiş subscription future
+  Future<SubscriptionCheckResult>? _cachedSubscriptionFuture;
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +63,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _couponController.dispose();
     super.dispose();
   }
 
@@ -86,7 +99,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       drawerContent: const SizedBox.shrink(),
       appBar: const CustomAppBar(
         title: 'Abonelik Planları',
-        showBackButton: false,
+        showBackButton: true,
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -133,6 +146,10 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
               // Features Card
               _buildFeaturesCard(isDark),
+              const SizedBox(height: 32),
+
+              // Abonelik durumu ve kupon kartları (yan yana)
+              _buildStatusAndCouponRow(isDark),
               const SizedBox(height: 32),
 
               // Plan Cards (3 yan yana)
@@ -571,7 +588,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
                 // Fiyat
                 Text(
-                  '₺${plan.price.toStringAsFixed(0)}',
+                  _isSpecialCouponApplied
+                      ? '₺1'
+                      : '₺${plan.price.toStringAsFixed(0)}',
                   style: GoogleFonts.poppins(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -600,7 +619,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 if (plan.durationMonths > 1) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '₺${(plan.price / plan.durationMonths).toStringAsFixed(0)}/ay',
+                    _isSpecialCouponApplied
+                        ? '₺1/ay'
+                        : '₺${(plan.price / plan.durationMonths).toStringAsFixed(0)}/ay',
                     style: GoogleFonts.poppins(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -1088,10 +1109,16 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       // PayTR token oluştur
       final paytrService = PaytrService();
       final currentUser = ref.read(currentUserProvider).value!;
+
+      // Özel kupon uygulandıysa fiyatı 1 TL yap (PayTR minimum 1 TL kabul eder)
+      final amount = _isSpecialCouponApplied
+          ? 1.0
+          : PricingConfig.getPriceForPlan(_selectedPlan!);
+
       final tokenResponse = await paytrService.createPaymentToken(
         user: currentUser,
         planType: _selectedPlan!,
-        amount: PricingConfig.getPriceForPlan(_selectedPlan!),
+        amount: amount,
         userAddress: currentUser.address, // Kullanıcı adresini geç
       );
 
@@ -1102,7 +1129,19 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         // PayTR ödeme sayfasına yönlendir
         final iframeUrl =
             'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
-        web.window.location.href = iframeUrl;
+
+        if (kIsWeb) {
+          // Web için URL'yi yeni sekmede aç
+          final uri = Uri.parse(iframeUrl);
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(uri, mode: LaunchMode.externalApplication);
+          } else {
+            throw Exception('PayTR ödeme sayfası açılamadı');
+          }
+        } else {
+          // Mobile için WebView ile ödeme sayfasını göster
+          _showPaymentWebView(context, iframeUrl);
+        }
       } else {
         // Hata mesajı göster
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1125,5 +1164,622 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         ),
       );
     }
+  }
+
+  /// PayTR ödeme sayfasını WebView ile göster
+  void _showPaymentWebView(BuildContext context, String paymentUrl) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('Ödeme'),
+            leading: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+          body: WebViewWidget(
+            controller: WebViewController()
+              ..setJavaScriptMode(JavaScriptMode.unrestricted)
+              ..loadRequest(Uri.parse(paymentUrl))
+              ..setNavigationDelegate(
+                NavigationDelegate(
+                  onNavigationRequest: (NavigationRequest request) {
+                    // PayTR callback URL'lerini kontrol et
+                    if (request.url.contains('paytr.com/callback')) {
+                      // Ödeme tamamlandı, ana sayfaya dön
+                      Navigator.of(context).pop();
+                      Navigator.of(context).pop();
+                      return NavigationDecision.prevent;
+                    }
+                    return NavigationDecision.navigate;
+                  },
+                ),
+              ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Abonelik durumu ve kupon kartları (yan yana)
+  Widget _buildStatusAndCouponRow(bool isDark) {
+    return Row(
+      children: [
+        // Abonelik durumu kartı
+        Expanded(
+          child: _buildSubscriptionStatusCard(isDark),
+        ),
+        const SizedBox(width: 16),
+        // Kupon kodu kartı
+        Expanded(
+          child: _buildCouponCard(isDark),
+        ),
+      ],
+    );
+  }
+
+  /// Kullanıcının abonelik durumunu gösteren kart
+  Widget _buildSubscriptionStatusCard(bool isDark) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final user = ref.watch(currentUserProvider);
+        return user.when(
+          data: (userData) {
+            // Gerçek abonelik durumu kontrolü
+            return _buildRealSubscriptionStatusCard(userData, isDark);
+          },
+          loading: () => Container(
+            height: 195,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                'Yükleniyor...',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.white70 : const Color(0xFF666666),
+                ),
+              ),
+            ),
+          ),
+          error: (error, stack) => Container(
+            height: 195,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Center(
+              child: Text(
+                'Hata: $error',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.red,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Gerçek abonelik durumu kartı
+  Widget _buildRealSubscriptionStatusCard(User? userData, bool isDark) {
+    if (userData == null) {
+      return _buildErrorCard('Kullanıcı verisi bulunamadı', isDark);
+    }
+
+    // Cache'lenmiş future kullan
+    return FutureBuilder<SubscriptionCheckResult>(
+      future: _cachedSubscriptionFuture ??=
+          _getSubscriptionInfoWithFallback(userData, isDark),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildLoadingCard(isDark);
+        }
+
+        if (snapshot.hasError) {
+          return _buildErrorCard('Hata: ${snapshot.error}', isDark);
+        }
+
+        final result = snapshot.data!;
+        return _buildSubscriptionStatusWidget(result, isDark);
+      },
+    );
+  }
+
+  /// Abonelik bilgilerini al (FirestoreSubscriptionService önce, hata olursa kullanıcı verileri)
+  Future<SubscriptionCheckResult> _getSubscriptionInfoWithFallback(
+      User userData, bool isDark) async {
+    try {
+      debugPrint(
+          '🔍 SubscriptionPage: Trying FirestoreSubscriptionService first');
+      // Önce FirestoreSubscriptionService'i dene
+      final result = await FirestoreSubscriptionService()
+          .checkUserSubscriptionStatus(userData.id);
+      debugPrint(
+          '✅ SubscriptionPage: FirestoreSubscriptionService succeeded: ${result.hasAccess}');
+      return result;
+    } catch (e) {
+      debugPrint('❌ SubscriptionPage: FirestoreSubscriptionService failed: $e');
+      debugPrint('🔍 SubscriptionPage: Falling back to user data');
+      // Hata olursa kullanıcı verilerini kullan
+      return _getSubscriptionInfoFromUserData(userData);
+    }
+  }
+
+  /// Kullanıcı verilerinden abonelik bilgilerini al
+  Future<SubscriptionCheckResult> _getSubscriptionInfoFromUserData(
+      User userData) async {
+    try {
+      debugPrint(
+          '🔍 SubscriptionPage: Getting subscription info from user data');
+
+      final now = DateTime.now();
+      final subscriptionStatus = userData.subscriptionStatus;
+      final trialEndAt = userData.trialEndAt;
+      final subscriptionEndAt = userData.subscriptionEndAt;
+
+      debugPrint(
+          '🔍 SubscriptionPage: subscriptionStatus: $subscriptionStatus');
+      debugPrint('🔍 SubscriptionPage: trialEndAt: $trialEndAt');
+      debugPrint('🔍 SubscriptionPage: subscriptionEndAt: $subscriptionEndAt');
+
+      // Aktif abonelik kontrolü
+      if (subscriptionStatus == SubscriptionStatus.active &&
+          subscriptionEndAt != null) {
+        if (now.isBefore(subscriptionEndAt)) {
+          final remainingDays = subscriptionEndAt.difference(now).inDays;
+          debugPrint(
+              '✅ SubscriptionPage: Active subscription found, remaining: $remainingDays days');
+          return SubscriptionCheckResult(
+            hasAccess: true,
+            reason: 'Aktif abonelik - Kullanıcı verilerinden',
+            remainingDays: remainingDays,
+          );
+        }
+      }
+
+      // Trial kontrolü
+      if (subscriptionStatus == SubscriptionStatus.trial &&
+          trialEndAt != null) {
+        if (now.isBefore(trialEndAt)) {
+          final remainingDays = trialEndAt.difference(now).inDays;
+          debugPrint(
+              '✅ SubscriptionPage: Active trial found, remaining: $remainingDays days');
+          return SubscriptionCheckResult(
+            hasAccess: true,
+            reason: 'Aktif deneme süresi - Kullanıcı verilerinden',
+            remainingDays: remainingDays,
+          );
+        }
+      }
+
+      debugPrint('❌ SubscriptionPage: No active subscription or trial found');
+      return const SubscriptionCheckResult(
+        hasAccess: false,
+        reason: 'Abonelik bulunamadı - Kullanıcı verilerinden',
+        needsSubscription: true,
+      );
+    } catch (e) {
+      debugPrint('❌ SubscriptionPage: Error getting subscription info: $e');
+      return SubscriptionCheckResult(
+        hasAccess: false,
+        reason: 'Abonelik kontrolü başarısız: $e',
+        needsSubscription: true,
+      );
+    }
+  }
+
+  /// Yükleme kartı
+  Widget _buildLoadingCard(bool isDark) {
+    return Container(
+      height: 195,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  /// Hata kartı
+  Widget _buildErrorCard(String message, bool isDark) {
+    return Container(
+      height: 195,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          message,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.red,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Abonelik durumu widget'ı
+  Widget _buildSubscriptionStatusWidget(
+      SubscriptionCheckResult result, bool isDark) {
+    String text = 'Abonelik: Yok';
+    Color backgroundColor;
+    Color iconColor;
+    Color iconBackgroundColor;
+
+    if (result.hasAccess) {
+      if (result.reason.contains('Aktif abonelik')) {
+        text = 'Aktif Abonelik';
+        backgroundColor =
+            isDark ? const Color(0xFF1B5E20) : const Color(0xFFE8F5E8);
+        iconColor = Colors.green;
+        iconBackgroundColor = Colors.green.withValues(alpha: 0.1);
+      } else if (result.reason.contains('Aktif deneme')) {
+        text = 'Deneme Süresi';
+        backgroundColor =
+            isDark ? const Color(0xFF8B4513) : const Color(0xFFFFF3E0);
+        iconColor = Colors.orange;
+        iconBackgroundColor = Colors.orange.withValues(alpha: 0.1);
+      } else {
+        text = 'Aktif';
+        backgroundColor =
+            isDark ? const Color(0xFF1B5E20) : const Color(0xFFE8F5E8);
+        iconColor = Colors.green;
+        iconBackgroundColor = Colors.green.withValues(alpha: 0.1);
+      }
+    } else {
+      text = 'Abonelik: Yok';
+      backgroundColor =
+          isDark ? const Color(0xFF8B0000) : const Color(0xFFFFEBEE);
+      iconColor = Colors.red;
+      iconBackgroundColor = Colors.red.withValues(alpha: 0.1);
+    }
+
+    return Container(
+      height: 195,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: iconBackgroundColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  result.hasAccess ? Icons.check_circle : Icons.cancel,
+                  color: iconColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Abonelik Durumu',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      result.hasAccess ? Icons.check_circle : Icons.cancel,
+                      color: iconColor,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      text,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: iconColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                if (result.remainingDays != null) ...[
+                  Text(
+                    'Kalan: ${result.remainingDays} gün',
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: isDark ? Colors.white70 : const Color(0xFF666666),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Kupon kodu kartı
+  Widget _buildCouponCard(bool isDark) {
+    return Container(
+      height: 195, // Sabit yükseklik - abonelik durumu kartıyla aynı
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.grey.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.local_offer,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Kupon Kodu',
+                  style: GoogleFonts.poppins(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          TextField(
+            controller: _couponController,
+            style: GoogleFonts.poppins(fontSize: 12),
+            decoration: InputDecoration(
+              hintText: 'Kupon kodu girin',
+              hintStyle: GoogleFonts.poppins(
+                fontSize: 12,
+                color: isDark ? Colors.white60 : const Color(0xFF999999),
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF444444)
+                      : const Color(0xFFE0E0E0),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide(
+                  color: isDark
+                      ? const Color(0xFF444444)
+                      : const Color(0xFFE0E0E0),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: const BorderSide(
+                  color: Colors.orange,
+                  width: 2,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 8,
+              ),
+              suffixIcon: Container(
+                margin: const EdgeInsets.all(4),
+                child: ElevatedButton(
+                  onPressed: _applyCoupon,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    'Uygula',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          if (_couponMessage != null) ...[
+            const SizedBox(height: 2),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _couponMessage!.contains('başarılı')
+                    ? Colors.green.withValues(alpha: 0.1)
+                    : Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: _couponMessage!.contains('başarılı')
+                      ? Colors.green
+                      : Colors.red,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _couponMessage!.contains('başarılı')
+                        ? Icons.check_circle
+                        : Icons.error,
+                    color: _couponMessage!.contains('başarılı')
+                        ? Colors.green
+                        : Colors.red,
+                    size: 14,
+                  ),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      _couponMessage!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: _couponMessage!.contains('başarılı')
+                            ? Colors.green[700]
+                            : Colors.red[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Kupon kodunu uygula
+  void _applyCoupon() {
+    final couponCode = _couponController.text.trim();
+
+    if (couponCode.isEmpty) {
+      setState(() {
+        _couponMessage = 'Lütfen kupon kodunu girin';
+      });
+      return;
+    }
+
+    // TODO: Gerçek kupon doğrulama API'si entegre edilecek
+    // Şimdilik basit bir simülasyon
+    if (couponCode == '139570') {
+      setState(() {
+        _couponMessage = 'Özel kupon kodu uygulandı! Tüm fiyatlar sıfırlandı.';
+        // TODO: Fiyatları sıfırla - PayTR'a 0 TL gönder
+        _applySpecialCoupon();
+      });
+    } else if (couponCode.toLowerCase() == 'welcome10') {
+      setState(() {
+        _couponMessage =
+            'Kupon kodu başarıyla uygulandı! %10 indirim kazandınız.';
+      });
+    } else if (couponCode.toLowerCase() == 'launch20') {
+      setState(() {
+        _couponMessage =
+            'Kupon kodu başarıyla uygulandı! %20 indirim kazandınız.';
+      });
+    } else {
+      setState(() {
+        _couponMessage = 'Geçersiz kupon kodu. Lütfen tekrar deneyin.';
+      });
+    }
+  }
+
+  /// Özel kupon kodu uygula (139570 - tüm fiyatları sıfırla)
+  void _applySpecialCoupon() {
+    setState(() {
+      _isSpecialCouponApplied = true;
+    });
+
+    // TODO: Bu kupon uygulandığında:
+    // 1. Tüm plan fiyatlarını 0 TL yap
+    // 2. PayTR'a 0 TL gönder
+    // 3. Özel kupon durumunu state'te sakla
+
+    debugPrint('Özel kupon 139570 uygulandı - Tüm fiyatlar sıfırlandı');
   }
 }

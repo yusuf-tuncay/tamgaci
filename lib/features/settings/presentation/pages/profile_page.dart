@@ -11,6 +11,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/services/permissions/storage_permission_service.dart';
+import '../../../../core/services/subscription/firestore_subscription_service.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import '../../../../core/validators/input_validators.dart';
@@ -47,6 +48,9 @@ class _ProfilePageState extends State<ProfilePage> {
   double _uploadProgress = 0.0;
   int _lastProgressPercent = -1;
   String? _resolvedImagePath;
+
+  // Cache'lenmiş subscription future
+  Future<SubscriptionCheckResult>? _cachedSubscriptionFuture;
 
   @override
   void initState() {
@@ -1048,59 +1052,179 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  /// Abonelik bilgisi - Firebase verilerinden
+  /// Abonelik bilgisi - Canlı Firebase verilerinden
   Widget _buildSubscriptionInfoFromFirebase(Map<String, dynamic> userData) {
-    final now = DateTime.now();
+    // Firebase Auth'tan user ID'yi al
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final userId = currentUser?.uid ?? userData['id'] ?? '';
+
+    debugPrint('🔍 ProfilePage: Building subscription info for user: $userId');
+    debugPrint('🔍 ProfilePage: userData keys: ${userData.keys.toList()}');
+
+    // Cache'lenmiş future kullan
+    return FutureBuilder<SubscriptionCheckResult>(
+      future: _cachedSubscriptionFuture ??=
+          _getSubscriptionInfoWithFallback(userData, userId),
+      builder: (context, snapshot) {
+        debugPrint(
+            '🔍 ProfilePage: FutureBuilder state: ${snapshot.connectionState}');
+        if (snapshot.hasData) {
+          debugPrint(
+              '🔍 ProfilePage: Subscription result: ${snapshot.data?.hasAccess} - ${snapshot.data?.reason}');
+        }
+        if (snapshot.hasError) {
+          debugPrint('🔍 ProfilePage: Error: ${snapshot.error}');
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 8),
+                Text('Abonelik durumu kontrol ediliyor...'),
+              ],
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.red, size: 16),
+                const SizedBox(width: 8),
+                Text('Hata: ${snapshot.error}'),
+              ],
+            ),
+          );
+        }
+
+        final result = snapshot.data!;
+        return _buildSubscriptionInfoWidget(result);
+      },
+    );
+  }
+
+  /// Abonelik bilgilerini al (FirestoreSubscriptionService önce, hata olursa kullanıcı verileri)
+  Future<SubscriptionCheckResult> _getSubscriptionInfoWithFallback(
+      Map<String, dynamic> userData, String userId) async {
+    try {
+      debugPrint('🔍 ProfilePage: Trying FirestoreSubscriptionService first');
+      // Önce FirestoreSubscriptionService'i dene
+      final result = await FirestoreSubscriptionService()
+          .checkUserSubscriptionStatus(userId);
+      debugPrint(
+          '✅ ProfilePage: FirestoreSubscriptionService succeeded: ${result.hasAccess}');
+      return result;
+    } catch (e) {
+      debugPrint('❌ ProfilePage: FirestoreSubscriptionService failed: $e');
+      debugPrint('🔍 ProfilePage: Falling back to user data');
+      // Hata olursa kullanıcı verilerini kullan
+      return await _getSubscriptionInfoFromUserData(userData, userId);
+    }
+  }
+
+  /// Kullanıcı verilerinden abonelik bilgilerini al
+  Future<SubscriptionCheckResult> _getSubscriptionInfoFromUserData(
+      Map<String, dynamic> userData, String userId) async {
+    try {
+      debugPrint('🔍 ProfilePage: Getting subscription info from user data');
+
+      final now = DateTime.now();
+      final subscriptionStatus = userData['subscriptionStatus'] ?? 'none';
+      final trialEndAt = userData['trialEndAt'];
+      final subscriptionEndAt = userData['subscriptionEndAt'];
+
+      debugPrint('🔍 ProfilePage: subscriptionStatus: $subscriptionStatus');
+      debugPrint('🔍 ProfilePage: trialEndAt: $trialEndAt');
+      debugPrint('🔍 ProfilePage: subscriptionEndAt: $subscriptionEndAt');
+
+      // Aktif abonelik kontrolü
+      if (subscriptionStatus == 'active' && subscriptionEndAt != null) {
+        final subEnd = (subscriptionEndAt as Timestamp).toDate();
+        if (now.isBefore(subEnd)) {
+          final remainingDays = subEnd.difference(now).inDays;
+          debugPrint(
+              '✅ ProfilePage: Active subscription found, remaining: $remainingDays days');
+          return SubscriptionCheckResult(
+            hasAccess: true,
+            reason: 'Aktif abonelik - Kullanıcı verilerinden',
+            remainingDays: remainingDays,
+          );
+        }
+      }
+
+      // Trial kontrolü
+      if (subscriptionStatus == 'trial' && trialEndAt != null) {
+        final trialEnd = (trialEndAt as Timestamp).toDate();
+        if (now.isBefore(trialEnd)) {
+          final remainingDays = trialEnd.difference(now).inDays;
+          debugPrint(
+              '✅ ProfilePage: Active trial found, remaining: $remainingDays days');
+          return SubscriptionCheckResult(
+            hasAccess: true,
+            reason: 'Aktif deneme süresi - Kullanıcı verilerinden',
+            remainingDays: remainingDays,
+          );
+        }
+      }
+
+      debugPrint('❌ ProfilePage: No active subscription or trial found');
+      return const SubscriptionCheckResult(
+        hasAccess: false,
+        reason: 'Abonelik bulunamadı - Kullanıcı verilerinden',
+        needsSubscription: true,
+      );
+    } catch (e) {
+      debugPrint('❌ ProfilePage: Error getting subscription info: $e');
+      return SubscriptionCheckResult(
+        hasAccess: false,
+        reason: 'Abonelik kontrolü başarısız: $e',
+        needsSubscription: true,
+      );
+    }
+  }
+
+  /// Abonelik bilgisi widget'ı
+  Widget _buildSubscriptionInfoWidget(SubscriptionCheckResult result) {
     String text = 'Abonelik: Yok';
     Color color = Colors.grey;
     String? usageInfo;
 
-    final subscriptionStatus = userData['subscriptionStatus'] ?? 'none';
-    final trialEndAt = userData['trialEndAt'];
-    final subscriptionEndAt = userData['subscriptionEndAt'];
-    final trialStartAt = userData['trialStartAt'];
-
-    if (subscriptionStatus == 'trial' && trialEndAt != null) {
-      final trialEnd = (trialEndAt as Timestamp).toDate();
-      final remaining = trialEnd.difference(now).inDays;
-      final remainingHours = trialEnd.difference(now).inHours % 24;
-      text = remaining >= 0
-          ? 'Deneme: $remaining gün, $remainingHours saat kaldı'
-          : 'Deneme süresi doldu';
-      color = remaining > 0 ? Colors.orange : Colors.red;
-
-      // Kullanım süresi bilgisi
-      if (trialStartAt != null) {
-        final trialStart = (trialStartAt as Timestamp).toDate();
-        final totalTrialDays = trialEnd.difference(trialStart).inDays;
-        final usedDays = now.difference(trialStart).inDays;
-        final usedHours = now.difference(trialStart).inHours % 24;
-        usageInfo =
-            'Kullanım: $usedDays gün, $usedHours saat / $totalTrialDays gün';
+    if (result.hasAccess) {
+      if (result.reason.contains('Aktif abonelik')) {
+        text = 'Aktif Abonelik';
+        color = Colors.green;
+        if (result.remainingDays != null) {
+          usageInfo = 'Kalan: ${result.remainingDays} gün';
+        }
+      } else if (result.reason.contains('Aktif deneme')) {
+        text = 'Deneme Süresi';
+        color = Colors.orange;
+        if (result.remainingDays != null) {
+          usageInfo = 'Kalan: ${result.remainingDays} gün';
+        }
       }
-    } else if (subscriptionStatus == 'active' && subscriptionEndAt != null) {
-      final subEnd = (subscriptionEndAt as Timestamp).toDate();
-      final remaining = subEnd.difference(now).inDays;
-      final remainingHours = subEnd.difference(now).inHours % 24;
-      text = remaining >= 0
-          ? 'Aktif: $remaining gün, $remainingHours saat kaldı'
-          : 'Abonelik süresi doldu';
-      color = remaining > 0 ? Colors.green : Colors.red;
-
-      // Abonelik başlangıç tarihi varsa kullanım süresi
-      final subscriptionStartAt = userData['subscriptionStartAt'];
-      if (subscriptionStartAt != null) {
-        final subStart = (subscriptionStartAt as Timestamp).toDate();
-        final usedDays = now.difference(subStart).inDays;
-        final usedHours = now.difference(subStart).inHours % 24;
-        usageInfo = 'Kullanım: $usedDays gün, $usedHours saat';
+    } else {
+      if (result.reason.contains('Abonelik bulunamadı')) {
+        text = 'Abonelik: Yok';
+        color = Colors.grey;
+        usageInfo = 'Abonelik gerekli';
+      } else if (result.reason.contains('süresi dolmuş')) {
+        text = 'Süresi Dolmuş';
+        color = Colors.red;
+        usageInfo = 'Abonelik gerekli';
+      } else {
+        text = 'Abonelik: Yok';
+        color = Colors.grey;
+        usageInfo = 'Abonelik gerekli';
       }
-    } else if (subscriptionStatus == 'none' ||
-        subscriptionStatus == 'expired') {
-      // Hiç abonelik yok veya süresi dolmuş
-      text = 'Abonelik: Yok';
-      color = Colors.grey;
-      usageInfo = 'Abonelik gerekli';
     }
 
     return Column(
@@ -1138,7 +1262,7 @@ class _ProfilePageState extends State<ProfilePage> {
             const Spacer(),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pushNamed('/subscription');
+                Navigator.of(context).pushNamed('/settings/subscription');
               },
               child: Text(
                 'Yönet',
@@ -1151,7 +1275,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
-        // Kullanım süresi bilgisi
+        // Kalan süre bilgisi
         if (usageInfo != null) ...[
           const SizedBox(height: 8),
           Container(
@@ -1170,12 +1294,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   color: Colors.blue,
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  usageInfo,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.blue,
+                Flexible(
+                  child: Text(
+                    usageInfo,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.blue,
+                    ),
                   ),
                 ),
               ],
