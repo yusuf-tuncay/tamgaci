@@ -41,7 +41,6 @@ void main() async {
     _suppressAllDisposedErrors();
     _suppressEngineFlutterViewErrors();
     _suppressUltraAggressiveErrors();
-    _suppressDisposedViewErrorsAdvanced();
   }
 
   // Akıllı error suppression'ı başlat (ana sistem)
@@ -264,165 +263,6 @@ void _suppressDisposedViewErrors() {
   };
 }
 
-/// Gelişmiş disposed view hata bastırma
-void _suppressDisposedViewErrorsAdvanced() {
-  // FlutterError.onError için ultra agresif handler
-  FlutterError.onError = (FlutterErrorDetails details) {
-    final errorString = details.toString();
-    
-    // TÜM disposed view hatalarını bastır
-    if (errorString.contains('isDisposed') ||
-        errorString.contains('Trying to render a disposed') ||
-        errorString.contains('EngineFlutterView') ||
-        errorString.contains('disposed') ||
-        errorString.contains('window.dart:99:12') ||
-        errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('Disposed view error')) {
-      // Sessizce geç
-      return;
-    }
-    
-    // Diğer hataları normal şekilde işle
-    FlutterError.presentError(details);
-  };
-  
-  // PlatformDispatcher.onError için ultra agresif handler
-  PlatformDispatcher.instance.onError = (error, stack) {
-    final errorString = error.toString();
-    
-    // TÜM disposed view hatalarını bastır
-    if (errorString.contains('isDisposed') ||
-        errorString.contains('Trying to render a disposed') ||
-        errorString.contains('EngineFlutterView') ||
-        errorString.contains('disposed') ||
-        errorString.contains('window.dart:99:12') ||
-        errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('Disposed view error')) {
-      // Sessizce geç
-      return true;
-    }
-    
-    return false;
-  };
-}
-
-/// Ultra agresif hata bastırma - TÜM disposed view hatalarını bastır
-void _suppressUltraAggressiveErrors() {
-  // FlutterError.onError için ultra agresif handler
-  FlutterError.onError = (FlutterErrorDetails details) {
-    final errorString = details.exceptionAsString();
-
-    // TÜM disposed view hatalarını bastır
-    if (errorString.contains('disposed') ||
-        errorString.contains('isDisposed') ||
-        errorString.contains('EngineFlutterView') ||
-        errorString.contains('Trying to render') ||
-        errorString.contains('window.dart:99:12') ||
-        errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('RenderBox') ||
-        errorString.contains('hasSize') ||
-        errorString.contains('NEEDS-LAYOUT') ||
-        errorString.contains('NEEDS-PAINT') ||
-        errorString.contains('RenderPadding') ||
-        errorString.contains('RenderRepaintBoundary') ||
-        errorString.contains('!_debugDoingThisLayout') ||
-        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
-        // Network hatalarını da bastır
-        errorString.contains('DioException') ||
-        errorString.contains('connection error') ||
-        errorString.contains('XMLHttpRequest onError') ||
-        errorString.contains('EVDS fetch failed') ||
-        errorString.contains('Hasan API fallback')) {
-      // Sessizce geç
-      return;
-    }
-
-    // Diğer hataları normal şekilde işle
-    FlutterError.presentError(details);
-  };
-
-  // PlatformDispatcher.onError için ultra agresif handler
-  PlatformDispatcher.instance.onError = (error, stack) {
-    final errorString = error.toString();
-
-    // TÜM disposed view hatalarını bastır
-    if (errorString.contains('disposed') ||
-        errorString.contains('isDisposed') ||
-        errorString.contains('EngineFlutterView') ||
-        errorString.contains('Trying to render') ||
-        errorString.contains('window.dart:99:12') ||
-        errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('RenderBox') ||
-        errorString.contains('hasSize') ||
-        errorString.contains('NEEDS-LAYOUT') ||
-        errorString.contains('NEEDS-PAINT') ||
-        errorString.contains('RenderPadding') ||
-        errorString.contains('RenderRepaintBoundary') ||
-        errorString.contains('!_debugDoingThisLayout') ||
-        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
-        // Network hatalarını da bastır
-        errorString.contains('DioException') ||
-        errorString.contains('connection error') ||
-        errorString.contains('XMLHttpRequest onError') ||
-        errorString.contains('EVDS fetch failed') ||
-        errorString.contains('Hasan API fallback')) {
-      // Sessizce geç
-      return true;
-    }
-
-    // Diğer hataları normal şekilde işle
-    return false;
-  };
-}
-
-/// Gelişmiş disposed view hata bastırma
-void _suppressDisposedViewErrorsAdvanced() {
-  // FlutterError.onError için ultra agresif handler
-  FlutterError.onError = (FlutterErrorDetails details) {
-    final errorString = details.toString();
-    
-    // TÜM disposed view hatalarını bastır
-    if (errorString.contains('isDisposed') ||
-        errorString.contains('Trying to render a disposed') ||
-        errorString.contains('EngineFlutterView') ||
-        errorString.contains('disposed') ||
-        errorString.contains('window.dart:99:12') ||
-        errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('Disposed view error')) {
-      // Sessizce geç
-      return;
-    }
-    
-    // Diğer hataları normal şekilde işle
-    FlutterError.presentError(details);
-  };
-  
-  // PlatformDispatcher.onError için ultra agresif handler
-  PlatformDispatcher.instance.onError = (error, stack) {
-    final errorString = error.toString();
-    
-    // TÜM disposed view hatalarını bastır
-    if (errorString.contains('isDisposed') ||
-        errorString.contains('Trying to render a disposed') ||
-        errorString.contains('EngineFlutterView') ||
-        errorString.contains('disposed') ||
-        errorString.contains('window.dart:99:12') ||
-        errorString.contains('Assertion failed') ||
-        errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('Disposed view error')) {
-      // Sessizce geç
-      return true;
-    }
-    
-    return false;
-  };
-}
-
 /// Tüm disposed hatalarını bastır (ultra agresif yaklaşım)
 void _suppressAllDisposedErrors() {
   // Flutter Web'de disposed hatalarını tamamen bastır
@@ -522,46 +362,72 @@ void _suppressEngineFlutterViewErrors() {
   };
 }
 
-/// Gelişmiş disposed view hata bastırma
-void _suppressDisposedViewErrorsAdvanced() {
+/// Ultra agresif hata bastırma - TÜM disposed view hatalarını bastır
+void _suppressUltraAggressiveErrors() {
   // FlutterError.onError için ultra agresif handler
   FlutterError.onError = (FlutterErrorDetails details) {
-    final errorString = details.toString();
-    
+    final errorString = details.exceptionAsString();
+
     // TÜM disposed view hatalarını bastır
-    if (errorString.contains('isDisposed') ||
-        errorString.contains('Trying to render a disposed') ||
+    if (errorString.contains('disposed') ||
+        errorString.contains('isDisposed') ||
         errorString.contains('EngineFlutterView') ||
-        errorString.contains('disposed') ||
+        errorString.contains('Trying to render') ||
         errorString.contains('window.dart:99:12') ||
         errorString.contains('Assertion failed') ||
         errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('Disposed view error')) {
+        errorString.contains('RenderBox') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        // Network hatalarını da bastır
+        errorString.contains('DioException') ||
+        errorString.contains('connection error') ||
+        errorString.contains('XMLHttpRequest onError') ||
+        errorString.contains('EVDS fetch failed') ||
+        errorString.contains('Hasan API fallback')) {
       // Sessizce geç
       return;
     }
-    
+
     // Diğer hataları normal şekilde işle
     FlutterError.presentError(details);
   };
-  
+
   // PlatformDispatcher.onError için ultra agresif handler
   PlatformDispatcher.instance.onError = (error, stack) {
     final errorString = error.toString();
-    
+
     // TÜM disposed view hatalarını bastır
-    if (errorString.contains('isDisposed') ||
-        errorString.contains('Trying to render a disposed') ||
+    if (errorString.contains('disposed') ||
+        errorString.contains('isDisposed') ||
         errorString.contains('EngineFlutterView') ||
-        errorString.contains('disposed') ||
+        errorString.contains('Trying to render') ||
         errorString.contains('window.dart:99:12') ||
         errorString.contains('Assertion failed') ||
         errorString.contains('org-dartlang-sdk') ||
-        errorString.contains('Disposed view error')) {
+        errorString.contains('RenderBox') ||
+        errorString.contains('hasSize') ||
+        errorString.contains('NEEDS-LAYOUT') ||
+        errorString.contains('NEEDS-PAINT') ||
+        errorString.contains('RenderPadding') ||
+        errorString.contains('RenderRepaintBoundary') ||
+        errorString.contains('!_debugDoingThisLayout') ||
+        errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+        // Network hatalarını da bastır
+        errorString.contains('DioException') ||
+        errorString.contains('connection error') ||
+        errorString.contains('XMLHttpRequest onError') ||
+        errorString.contains('EVDS fetch failed') ||
+        errorString.contains('Hasan API fallback')) {
       // Sessizce geç
       return true;
     }
-    
+
     return false;
   };
 }
