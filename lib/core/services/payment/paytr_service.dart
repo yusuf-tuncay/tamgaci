@@ -153,24 +153,25 @@ class PaytrService {
         Uri.parse('https://api.ipify.org?format=text'),
         headers: {'Content-Type': 'text/plain'},
       );
-
+      
       if (response.statusCode == 200) {
         final ip = response.body.trim();
         // PayTR IPv6 adreslerini desteklemiyor, sadece IPv4 kabul ediyor
         if (ip.contains(':')) {
           // IPv6 adresi ise fallback kullan
           debugPrint('IPv6 adresi tespit edildi, PayTR IPv6 desteklemiyor: $ip');
-          return '127.0.0.1'; // Localhost fallback
+          // IPv6 adresini IPv4'e çevirmeye çalış
+          return ip; // Gerçek IP'yi döndür, PayTR kabul etmezse hata verir
         }
         debugPrint('Gerçek kullanıcı IP: $ip');
         return ip;
       } else {
         debugPrint('IP servisi yanıt vermedi: ${response.statusCode}');
-        return '127.0.0.1'; // Localhost fallback
+        throw Exception('IP servisi yanıt vermedi');
       }
     } catch (e) {
       debugPrint('IP alınamadı: $e');
-      return '127.0.0.1'; // Localhost fallback
+      throw Exception('Kullanıcı IP adresi alınamadı: $e');
     }
   }
 
@@ -178,7 +179,7 @@ class PaytrService {
   String _formatPhoneNumber(String phone) {
     if (phone.isEmpty) {
       debugPrint('Kullanıcı telefon numarası boş, PayTR için gerekli');
-      return '0000000000'; // PayTR için gerekli alan, boş olamaz
+      throw Exception('Kullanıcı telefon numarası boş, PayTR için gerekli');
     }
     
     // Sadece rakamları al
