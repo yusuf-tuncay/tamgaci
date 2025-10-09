@@ -1225,23 +1225,25 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       builder: (context, ref, child) {
         // Cache'lenmiş abonelik durumunu kullan
         final subscriptionState = ref.watch(subscriptionStateProvider);
-        
+
         if (subscriptionState.isLoading) {
           return _buildLoadingCard(isDark);
         }
-        
+
         if (subscriptionState.error != null) {
           return _buildErrorCard('Hata: ${subscriptionState.error}', isDark);
         }
-        
+
         if (subscriptionState.subscriptionResult != null) {
-          return _buildSubscriptionStatusWidget(subscriptionState.subscriptionResult!, isDark);
+          return _buildSubscriptionStatusWidget(
+              subscriptionState.subscriptionResult!, isDark);
         }
-        
+
         // Fallback: Kullanıcı verilerinden kontrol et
         final user = ref.watch(currentUserProvider);
         return user.when(
-          data: (userData) => _buildRealSubscriptionStatusCard(userData, isDark),
+          data: (userData) =>
+              _buildRealSubscriptionStatusCard(userData, isDark),
           loading: () => _buildLoadingCard(isDark),
           error: (error, stack) => _buildErrorCard('Hata: $error', isDark),
         );
@@ -1411,6 +1413,14 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
+  /// Abonelik durumunu yenile
+  void _refreshSubscriptionStatus(WidgetRef ref) async {
+    final user = ref.read(currentUserProvider).value;
+    if (user != null) {
+      await ref.read(subscriptionStateProvider.notifier).refreshSubscription(user.id);
+    }
+  }
+
   /// Abonelik durumu widget'ı
   Widget _buildSubscriptionStatusWidget(
       SubscriptionCheckResult result, bool isDark) {
@@ -1491,6 +1501,16 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                     color: isDark ? Colors.white : const Color(0xFF1A1A1A),
                   ),
                 ),
+              ),
+              // Yenile butonu
+              Consumer(
+                builder: (context, ref, child) {
+                  return IconButton(
+                    onPressed: () => _refreshSubscriptionStatus(ref),
+                    icon: const Icon(Icons.refresh, size: 20),
+                    tooltip: 'Yenile',
+                  );
+                },
               ),
             ],
           ),
