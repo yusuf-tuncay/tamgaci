@@ -147,12 +147,12 @@ class PaytrService {
   /// PayTR hash oluştur (dokümantasyona göre)
   String _generatePaytrHash(Map<String, dynamic> params) {
     // PayTR hash format: merchant_id + user_ip + merchant_oid + email + payment_amount + user_basket + no_installment + max_installment + currency + test_mode
-    final hashString =
+    final hashStr =
         '${params['merchant_id']}${params['user_ip']}${params['merchant_oid']}${params['email']}${params['payment_amount']}${params['user_basket']}${params['no_installment']}${params['max_installment']}${params['currency']}${params['test_mode']}';
 
-    // HMAC-SHA256 ile hash oluştur
+    // PayTR PHP: base64_encode(hash_hmac('sha256', $hash_str.$merchant_salt, $merchant_key, true))
     final key = utf8.encode(params['merchant_key'] as String);
-    final data = utf8.encode(hashString + (params['merchant_salt'] as String));
+    final data = utf8.encode(hashStr + (params['merchant_salt'] as String));
     final hmac = Hmac(sha256, key);
     final digest = hmac.convert(data);
 
