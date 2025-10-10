@@ -313,13 +313,15 @@ class PermissionService {
   }
 
   Future<Map<String, bool>> checkAllPermissions() async {
+    // Sadece izin durumlarını kontrol et, izin isteme
+    // Bu metod uygulamanın açılışında çağrılıyor
     return {
       'internet': await isInternetConnected(),
-      'location': await ensureLocationPermission(),
-      'camera': await ensureCameraPermission(),
-      'storage': await ensureStoragePermission(),
-      'microphone': await ensureMicrophonePermission(),
-      'notification': await ensureNotificationPermission(),
+      'location': (await getLocationPermissionStatus()).isGranted,
+      'camera': (await getCameraPermissionStatus()).isGranted,
+      'storage': (await getStoragePermissionStatus()).isGranted,
+      'microphone': (await getMicrophonePermissionStatus()).isGranted,
+      'notification': (await getNotificationPermissionStatus()).isGranted,
     };
   }
 

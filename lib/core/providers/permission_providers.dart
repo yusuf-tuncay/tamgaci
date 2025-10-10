@@ -87,7 +87,27 @@ class PermissionNotifier extends StateNotifier<Map<String, bool>> {
   final PermissionService _service;
 
   PermissionNotifier(this._service) : super({}) {
-    _checkAllPermissions();
+    // İzinleri asenkron olarak arka planda kontrol et
+    // Uygulamanın açılmasını engelleme
+    _checkAllPermissionsInBackground();
+  }
+
+  /// İzinleri arka planda kontrol et (non-blocking)
+  void _checkAllPermissionsInBackground() {
+    // Asenkron olarak çalıştır, await kullanma
+    Future.microtask(() async {
+      try {
+        final permissions = await _service.checkAllPermissions();
+        if (mounted) {
+          state = permissions;
+        }
+      } catch (e) {
+        // Hata durumunda boş state tut
+        if (mounted) {
+          state = {};
+        }
+      }
+    });
   }
 
   Future<void> _checkAllPermissions() async {
