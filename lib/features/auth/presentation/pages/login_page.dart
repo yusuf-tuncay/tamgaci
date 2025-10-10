@@ -75,40 +75,100 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ? TamgaciConstants.backgroundColorDark
           : TamgaciConstants.backgroundColor,
       body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Masaüstü için responsive layout
+            if (TamgaciConstants.isDesktop(context) ||
+                TamgaciConstants.isWideDesktop(context)) {
+              return _buildDesktopLayout(isDark);
+            }
+
+            // Mobil ve tablet için normal layout
+            return _buildMobileLayout(isDark);
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Masaüstü layout'u
+  Widget _buildDesktopLayout(bool isDark) {
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 500),
         child: SingleChildScrollView(
-          padding: TamgaciConstants.pagePadding(context),
+          padding: const EdgeInsets.all(32),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: 40),
 
                 // Logo ve başlık
                 _buildHeader(isDark),
 
-                const SizedBox(height: TamgaciConstants.spaceXXL),
+                const SizedBox(height: 48),
 
                 // Giriş formu
                 _buildLoginForm(isDark),
 
-                const SizedBox(height: TamgaciConstants.spaceLG),
+                const SizedBox(height: 24),
 
                 // Giriş butonu
                 _buildLoginButton(),
 
-                const SizedBox(height: TamgaciConstants.spaceMD),
+                const SizedBox(height: 16),
 
                 // Şifremi unuttum
                 _buildForgotPassword(isDark),
 
-                const SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: 32),
 
                 // Kayıt ol linki
                 _buildRegisterLink(isDark),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Mobil ve tablet layout'u
+  Widget _buildMobileLayout(bool isDark) {
+    return SingleChildScrollView(
+      padding: TamgaciConstants.pagePadding(context),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: TamgaciConstants.spaceXL),
+
+            // Logo ve başlık
+            _buildHeader(isDark),
+
+            const SizedBox(height: TamgaciConstants.spaceXXL),
+
+            // Giriş formu
+            _buildLoginForm(isDark),
+
+            const SizedBox(height: TamgaciConstants.spaceLG),
+
+            // Giriş butonu
+            _buildLoginButton(),
+
+            const SizedBox(height: TamgaciConstants.spaceMD),
+
+            // Şifremi unuttum
+            _buildForgotPassword(isDark),
+
+            const SizedBox(height: TamgaciConstants.spaceXL),
+
+            // Kayıt ol linki
+            _buildRegisterLink(isDark),
+          ],
         ),
       ),
     );
