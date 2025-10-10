@@ -233,7 +233,7 @@ class ExchangeRateService {
           if (rate == null || rate <= 0) return;
           parsed.add(ExchangeRate(
             code: code,
-            name: code,
+            name: _getCurrencyName(code),
             symbol: _symbolFor(code),
             rate: rate,
             lastUpdated: now2,
@@ -291,7 +291,7 @@ class ExchangeRateService {
               if (cc != null && cc != 'TRY') {
                 parsed.add(ExchangeRate(
                   code: cc,
-                  name: cc,
+                  name: _getCurrencyName(cc),
                   symbol: _symbolFor(cc),
                   rate: normalized,
                   lastUpdated: now2,
@@ -458,6 +458,56 @@ class ExchangeRateService {
         return 'лв';
       case 'XAU':
         return 'Au';
+      default:
+        return code;
+    }
+  }
+
+  // Map currency code to full name
+  String _getCurrencyName(String code) {
+    switch (code) {
+      case 'TRY':
+        return 'Türk Lirası';
+      case 'USD':
+        return 'Amerikan Doları';
+      case 'EUR':
+        return 'Euro';
+      case 'GBP':
+        return 'İngiliz Sterlini';
+      case 'CHF':
+        return 'İsviçre Frangı';
+      case 'JPY':
+        return 'Japon Yeni';
+      case 'CAD':
+        return 'Kanada Doları';
+      case 'AUD':
+        return 'Avustralya Doları';
+      case 'DKK':
+        return 'Danimarka Kronu';
+      case 'SEK':
+        return 'İsveç Kronu';
+      case 'NOK':
+        return 'Norveç Kronu';
+      case 'SAR':
+        return 'Suudi Arabistan Riyali';
+      case 'KWD':
+        return 'Kuveyt Dinarı';
+      case 'BGN':
+        return 'Bulgar Levası';
+      case 'RON':
+        return 'Rumen Leyi';
+      case 'RUB':
+        return 'Rus Rublesi';
+      case 'IRR':
+        return 'İran Riyali';
+      case 'CNY':
+        return 'Çin Yuanı';
+      case 'PKR':
+        return 'Pakistan Rupisi';
+      case 'QAR':
+        return 'Katar Riyali';
+      case 'XAU':
+        return 'Altın (Gram)';
       default:
         return code;
     }
