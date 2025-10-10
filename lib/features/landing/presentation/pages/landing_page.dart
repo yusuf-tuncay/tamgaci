@@ -1,4 +1,4 @@
-// ========== LANDING PAGE FEATURE ==========
+// ========== KURUMSAL LANDING PAGE ==========
 // lib/features/landing/presentation/pages/landing_page.dart
 
 import 'package:flutter/material.dart';
@@ -6,8 +6,9 @@ import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:math' as math;
 
-/// Web'den girildiğinde görünecek premium tanıtım sayfası
+/// Kurumsal ve KOBİ odaklı landing page
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
 
@@ -17,16 +18,22 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage>
     with TickerProviderStateMixin {
+  // Animation Controllers
   late AnimationController _fadeController;
   late AnimationController _slideController;
+  late AnimationController _floatController;
   late AnimationController _pulseController;
 
+  // Animations
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _floatAnimation;
   late Animation<double> _pulseAnimation;
 
+  // State
   bool _isDesktop = false;
   bool _showBanner = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -36,29 +43,40 @@ class _LandingPageState extends State<LandingPage>
   }
 
   void _initializeAnimations() {
+    // Fade animation
     _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+
+    // Slide animation
+    _slideController = AnimationController(
       duration: const Duration(milliseconds: 1000),
       vsync: this,
     );
 
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+    // Float animation
+    _floatController = AnimationController(
+      duration: const Duration(seconds: 3),
       vsync: this,
     );
 
+    // Pulse animation
     _pulseController = AnimationController(
       duration: const Duration(milliseconds: 2000),
       vsync: this,
     );
 
+    // Fade animation
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _fadeController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic,
     ));
 
+    // Slide animation
     _slideAnimation = Tween<Offset>(
       begin: const Offset(0, 0.3),
       end: Offset.zero,
@@ -67,6 +85,16 @@ class _LandingPageState extends State<LandingPage>
       curve: Curves.easeOutCubic,
     ));
 
+    // Float animation
+    _floatAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _floatController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Pulse animation
     _pulseAnimation = Tween<double>(
       begin: 1.0,
       end: 1.05,
@@ -75,11 +103,12 @@ class _LandingPageState extends State<LandingPage>
       curve: Curves.easeInOut,
     ));
 
-    // Animasyonları başlat
+    // Start animations
     _fadeController.forward();
     Future.delayed(const Duration(milliseconds: 300), () {
       _slideController.forward();
     });
+    _floatController.repeat(reverse: true);
     _pulseController.repeat(reverse: true);
   }
 
@@ -98,7 +127,9 @@ class _LandingPageState extends State<LandingPage>
   void dispose() {
     _fadeController.dispose();
     _slideController.dispose();
+    _floatController.dispose();
     _pulseController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -107,251 +138,398 @@ class _LandingPageState extends State<LandingPage>
     return Scaffold(
       body: Stack(
         children: [
-          // Ana içerik
+          // Main content
           _buildMainContent(),
 
-          // Masaüstü kullanıcıları için reklam banner'ı
-          if (_isDesktop && _showBanner) _buildPromoBanner(),
+          // Desktop promo banner
+          if (_isDesktop && _showBanner) _buildProfessionalBanner(),
         ],
       ),
     );
   }
 
-  /// Ana içerik
+  /// Main content with professional design
   Widget _buildMainContent() {
     return SingleChildScrollView(
+      controller: _scrollController,
       child: Column(
         children: [
-          // Hero Section
-          _buildHeroSection(),
+          // Professional Hero Section
+          _buildProfessionalHero(),
 
-          // Özellikler
-          _buildFeaturesSection(),
+          // Business Features
+          _buildBusinessFeatures(),
 
-          // Platform Linkleri
+          // Platform Section
           _buildPlatformSection(),
 
-          // Hakkımızda
+          // About Section
           _buildAboutSection(),
 
-          // İletişim
+          // Contact Section
           _buildContactSection(),
 
-          // Footer
-          _buildFooter(),
+          // Professional Footer
+          _buildProfessionalFooter(),
         ],
       ),
     );
   }
 
-  /// Hero Section
-  Widget _buildHeroSection() {
+  /// Professional Hero Section
+  Widget _buildProfessionalHero() {
     return Container(
       height: MediaQuery.of(context).size.height,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1E3A8A),
-            const Color(0xFF3B82F6),
-            const Color(0xFF8B5CF6),
+            Color(0xFF1E3A8A), // Koyu mavi
+            Color(0xFF3B82F6), // Ana mavi
+            Color(0xFF60A5FA), // Açık mavi
           ],
+          stops: [0.0, 0.5, 1.0],
         ),
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo
-              AnimatedBuilder(
-                animation: _fadeAnimation,
-                builder: (context, child) {
-                  return Opacity(
-                    opacity: _fadeAnimation.value,
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
+      child: Stack(
+        children: [
+          // Subtle background pattern
+          _buildBackgroundPattern(),
+
+          // Main content
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Professional logo
+                  _buildProfessionalLogo(),
+
+                  const SizedBox(height: 60),
+
+                  // Professional text
+                  _buildProfessionalText(),
+
+                  const SizedBox(height: 80),
+
+                  // Professional buttons
+                  _buildProfessionalButtons(),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Background pattern
+  Widget _buildBackgroundPattern() {
+    return AnimatedBuilder(
+      animation: _floatAnimation,
+      builder: (context, child) {
+        return Stack(
+          children: List.generate(8, (index) {
+            final angle = (index * 45.0) * (math.pi / 180);
+            final radius = 150 + (index * 30);
+            final x = MediaQuery.of(context).size.width / 2 +
+                radius * math.cos(angle + _floatAnimation.value * 2 * math.pi);
+            final y = MediaQuery.of(context).size.height / 2 +
+                radius * math.sin(angle + _floatAnimation.value * 2 * math.pi);
+
+            return Positioned(
+              left: x,
+              top: y,
+              child: Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  /// Professional logo
+  Widget _buildProfessionalLogo() {
+    return AnimatedBuilder(
+      animation: _fadeAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _fadeAnimation.value,
+          child: Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF2563EB),
+                  Color(0xFF0EA5E9),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+                  blurRadius: 30,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 15),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Image.asset(
+                  'assets/images/logos/140x140logo.png',
+                  width: 140,
+                  height: 140,
+                  fit: BoxFit.contain,
+                  color: Colors.white,
+                  colorBlendMode: BlendMode.srcIn,
+                ),
+                // Subtle shine effect
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    width: 70,
+                    height: 70,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.white.withValues(alpha: 0.3),
+                          Colors.white.withValues(alpha: 0.1),
+                          Colors.white.withValues(alpha: 0.0),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.account_balance,
-                        size: 60,
-                        color: Color(0xFF3B82F6),
-                      ),
+                      shape: BoxShape.circle,
                     ),
-                  );
-                },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Professional text
+  Widget _buildProfessionalText() {
+    return AnimatedBuilder(
+      animation: _slideAnimation,
+      builder: (context, child) {
+        return SlideTransition(
+          position: _slideAnimation,
+          child: Column(
+            children: [
+              // Main title
+              Text(
+                'TAMGACI',
+                style: GoogleFonts.poppins(
+                  fontSize: 72,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 24),
 
-              // Başlık
-              AnimatedBuilder(
-                animation: _slideAnimation,
-                builder: (context, child) {
-                  return SlideTransition(
-                    position: _slideAnimation,
-                    child: Column(
-                      children: [
-                        Text(
-                          'Tamgacı',
-                          style: GoogleFonts.poppins(
-                            fontSize: 64,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.white,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Modern Ön Muhasebe Çözümü',
-                          style: GoogleFonts.poppins(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white.withValues(alpha: 0.9),
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'İşletmenizi dijitalleştirin, verimliliğinizi artırın',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w300,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  );
-                },
+              // Subtitle
+              Text(
+                'Kurumsal Ön Muhasebe Çözümü',
+                style: GoogleFonts.poppins(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  letterSpacing: 1,
+                ),
               ),
 
-              const SizedBox(height: 60),
+              const SizedBox(height: 16),
 
-              // CTA Butonları
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildPrimaryButton(),
-                        const SizedBox(width: 20),
-                        _buildSecondaryButton(),
-                      ],
-                    ),
-                  );
-                },
+              // Description
+              Text(
+                'İşletmenizin muhasebe işlemlerini dijitalleştirin, verimliliğinizi artırın',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  height: 1.5,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
-        ),
+        );
+      },
+    );
+  }
+
+  /// Professional buttons
+  Widget _buildProfessionalButtons() {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Primary button
+            _buildProfessionalButton(
+              text: 'Hemen Başla',
+              onPressed: () => _launchWebApp(),
+              isPrimary: true,
+            ),
+
+            const SizedBox(width: 24),
+
+            // Secondary button
+            _buildProfessionalButton(
+              text: 'Mobil Uygulamalar',
+              onPressed: () => _scrollToPlatforms(),
+              isPrimary: false,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Professional button
+  Widget _buildProfessionalButton({
+    required String text,
+    required VoidCallback onPressed,
+    required bool isPrimary,
+  }) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: AnimatedBuilder(
+        animation: _pulseAnimation,
+        builder: (context, child) {
+          return Transform.scale(
+            scale: isPrimary ? _pulseAnimation.value : 1.0,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(50),
+                gradient: isPrimary
+                    ? const LinearGradient(
+                        colors: [
+                          Color(0xFF3B82F6),
+                          Color(0xFF2563EB),
+                        ],
+                      )
+                    : LinearGradient(
+                        colors: [
+                          Colors.white.withValues(alpha: 0.2),
+                          Colors.white.withValues(alpha: 0.1),
+                        ],
+                      ),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isPrimary
+                        ? const Color(0xFF3B82F6).withValues(alpha: 0.4)
+                        : Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    text,
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isPrimary ? Colors.white : Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    isPrimary ? Icons.arrow_forward : Icons.download,
+                    color: isPrimary ? Colors.white : Colors.white,
+                    size: 18,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-  /// Ana CTA Butonu
-  Widget _buildPrimaryButton() {
-    return ElevatedButton(
-      onPressed: () => _launchWebApp(),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF3B82F6),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-        ),
-        elevation: 8,
-        shadowColor: Colors.black.withValues(alpha: 0.3),
-      ),
-      child: Text(
-        'Web\'den Kullan',
-        style: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  /// İkincil CTA Butonu
-  Widget _buildSecondaryButton() {
-    return OutlinedButton(
-      onPressed: () => _scrollToPlatforms(),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white,
-        side: const BorderSide(color: Colors.white, width: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(50),
-        ),
-      ),
-      child: Text(
-        'Mobil Uygulamalar',
-        style: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  /// Özellikler Bölümü
-  Widget _buildFeaturesSection() {
+  /// Business features section
+  Widget _buildBusinessFeatures() {
     return Container(
-      padding: const EdgeInsets.all(60),
+      padding: const EdgeInsets.all(80),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFE2E8F0),
+          ],
+        ),
+      ),
       child: Column(
         children: [
           Text(
             'Neden Tamgacı?',
             style: GoogleFonts.poppins(
-              fontSize: 48,
+              fontSize: 56,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1E3A8A),
             ),
           ),
-          const SizedBox(height: 60),
+          const SizedBox(height: 80),
           Row(
             children: [
               Expanded(
-                child: _buildFeatureCard(
+                child: _buildBusinessFeatureCard(
                   icon: Icons.speed,
-                  title: 'Hızlı ve Kolay',
+                  title: 'Hızlı ve Güvenilir',
                   description:
-                      'Kullanıcı dostu arayüz ile işlemlerinizi hızla tamamlayın',
+                      'İşlemlerinizi hızla tamamlayın, verileriniz güvende',
+                  color: const Color(0xFF3B82F6),
                 ),
               ),
-              const SizedBox(width: 30),
+              const SizedBox(width: 40),
               Expanded(
-                child: _buildFeatureCard(
+                child: _buildBusinessFeatureCard(
                   icon: Icons.security,
-                  title: 'Güvenli',
-                  description:
-                      'Verileriniz en yüksek güvenlik standartlarında korunur',
+                  title: 'Güvenli Altyapı',
+                  description: 'Bank level güvenlik ile verilerinizi koruyun',
+                  color: const Color(0xFF2563EB),
                 ),
               ),
-              const SizedBox(width: 30),
+              const SizedBox(width: 40),
               Expanded(
-                child: _buildFeatureCard(
+                child: _buildBusinessFeatureCard(
                   icon: Icons.cloud_sync,
                   title: 'Bulut Tabanlı',
                   description: 'Her yerden erişim, otomatik yedekleme',
+                  color: const Color(0xFF0EA5E9),
                 ),
               ),
             ],
@@ -361,14 +539,15 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// Özellik Kartı
-  Widget _buildFeatureCard({
+  /// Business feature card
+  Widget _buildBusinessFeatureCard({
     required IconData icon,
     required String title,
     required String description,
+    required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(30),
+      padding: const EdgeInsets.all(40),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -383,19 +562,24 @@ class _LandingPageState extends State<LandingPage>
       child: Column(
         children: [
           Container(
-            width: 80,
-            height: 80,
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
-              color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(25),
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.1),
+                  color.withValues(alpha: 0.05),
+                ],
+              ),
             ),
             child: Icon(
               icon,
-              size: 40,
-              color: const Color(0xFF3B82F6),
+              size: 50,
+              color: color,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
           Text(
             title,
             style: GoogleFonts.poppins(
@@ -419,64 +603,65 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// Platform Linkleri Bölümü
+  /// Platform section
   Widget _buildPlatformSection() {
     return Container(
-      padding: const EdgeInsets.all(60),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(80),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            const Color(0xFFF8FAFC),
-            const Color(0xFFE2E8F0),
+            Color(0xFF1E3A8A),
+            Color(0xFF3B82F6),
+            Color(0xFF60A5FA),
           ],
         ),
       ),
       child: Column(
         children: [
           Text(
-            'Platformlar',
+            'Tüm Platformlarda',
             style: GoogleFonts.poppins(
-              fontSize: 48,
+              fontSize: 56,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: Colors.white,
             ),
           ),
-          const SizedBox(height: 60),
+          const SizedBox(height: 80),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildPlatformCard(
                 icon: Icons.web,
                 title: 'Web',
-                description: 'Tarayıcıdan kullanın',
+                description: 'Tarayıcıdan kullan',
+                color: Colors.white,
                 onTap: () => _launchWebApp(),
-                color: const Color(0xFF3B82F6),
               ),
-              const SizedBox(width: 30),
+              const SizedBox(width: 40),
               _buildPlatformCard(
                 icon: Icons.phone_android,
                 title: 'Android',
-                description: 'Google Play Store',
-                onTap: () => _launchGooglePlay(),
+                description: 'Google Play',
                 color: const Color(0xFF34D399),
+                onTap: () => _launchGooglePlay(),
               ),
-              const SizedBox(width: 30),
+              const SizedBox(width: 40),
               _buildPlatformCard(
                 icon: Icons.phone_iphone,
                 title: 'iOS',
                 description: 'App Store',
-                onTap: () => _launchAppStore(),
                 color: const Color(0xFF60A5FA),
+                onTap: () => _launchAppStore(),
               ),
-              const SizedBox(width: 30),
+              const SizedBox(width: 40),
               _buildPlatformCard(
                 icon: Icons.desktop_windows,
                 title: 'Windows',
-                description: 'Masaüstü uygulaması',
-                onTap: () => _launchWindowsApp(),
+                description: 'Masaüstü',
                 color: const Color(0xFF8B5CF6),
+                onTap: () => _launchWindowsApp(),
               ),
             ],
           ),
@@ -485,86 +670,97 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// Platform Kartı
+  /// Platform card
   Widget _buildPlatformCard({
     required IconData icon,
     required String title,
     required String description,
-    required VoidCallback onTap,
     required Color color,
+    required VoidCallback onTap,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 200,
-        padding: const EdgeInsets.all(30),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
+    return AnimatedBuilder(
+      animation: _floatAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, 10 * math.sin(_floatAnimation.value * 2 * math.pi)),
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              width: 200,
+              padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
+                color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-              child: Icon(
-                icon,
-                size: 40,
-                color: color,
+              child: Column(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: color.withValues(alpha: 0.2),
+                    ),
+                    child: Icon(
+                      icon,
+                      size: 40,
+                      color: color,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF1E3A8A),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: const Color(0xFF64748B),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  /// Hakkımızda Bölümü
+  /// About section
   Widget _buildAboutSection() {
     return Container(
-      padding: const EdgeInsets.all(60),
+      padding: const EdgeInsets.all(80),
       child: Column(
         children: [
           Text(
             'Hakkımızda',
             style: GoogleFonts.poppins(
-              fontSize: 48,
+              fontSize: 56,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1E3A8A),
             ),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 60),
           Container(
-            padding: const EdgeInsets.all(40),
+            padding: const EdgeInsets.all(60),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -581,20 +777,20 @@ class _LandingPageState extends State<LandingPage>
                 Text(
                   'Seek IT Apps',
                   style: GoogleFonts.poppins(
-                    fontSize: 32,
+                    fontSize: 48,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E3A8A),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 32),
                 Text(
-                  'Seek IT Apps olarak, işletmelerin dijital dönüşüm sürecinde yanlarında olmaktan gurur duyuyoruz. '
+                  'Kurumsal ve KOBİ işletmelerin dijital dönüşüm sürecinde yanlarında olmaktan gurur duyuyoruz. '
                   'Modern teknoloji ve kullanıcı dostu tasarım anlayışımızla, işletmenizin verimliliğini artıracak '
                   'çözümler sunuyoruz.',
                   style: GoogleFonts.poppins(
-                    fontSize: 18,
+                    fontSize: 20,
                     color: const Color(0xFF64748B),
-                    height: 1.6,
+                    height: 1.8,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -606,17 +802,17 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// İletişim Bölümü
+  /// Contact section
   Widget _buildContactSection() {
     return Container(
-      padding: const EdgeInsets.all(60),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(80),
+      decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1E3A8A),
-            const Color(0xFF3B82F6),
+            Color(0xFF1E3A8A),
+            Color(0xFF3B82F6),
           ],
         ),
       ),
@@ -625,32 +821,32 @@ class _LandingPageState extends State<LandingPage>
           Text(
             'İletişim',
             style: GoogleFonts.poppins(
-              fontSize: 48,
+              fontSize: 56,
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
           ),
-          const SizedBox(height: 60),
+          const SizedBox(height: 80),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildContactInfo(
+              _buildContactCard(
                 icon: Icons.email,
                 title: 'E-posta',
                 value: 'info@seekitapps.com',
                 onTap: () => _launchEmail(),
               ),
-              _buildContactInfo(
+              _buildContactCard(
                 icon: Icons.phone,
                 title: 'Telefon',
                 value: '+90 212 976 4939',
                 onTap: () => _launchPhone(),
               ),
-              _buildContactInfo(
+              _buildContactCard(
                 icon: Icons.location_on,
                 title: 'Adres',
                 value:
-                    'Kocamustafapaşa Mahallesi\nPulcu Sokak, No:28\nFatih, İstanbul',
+                    'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
                 onTap: null,
               ),
             ],
@@ -660,8 +856,8 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// İletişim Bilgisi
-  Widget _buildContactInfo({
+  /// Contact card
+  Widget _buildContactCard({
     required IconData icon,
     required String title,
     required String value,
@@ -670,38 +866,53 @@ class _LandingPageState extends State<LandingPage>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 250,
-        padding: const EdgeInsets.all(30),
+        width: 300,
+        padding: const EdgeInsets.all(40),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: Colors.white.withValues(alpha: 0.3),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Colors.white,
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+              child: Icon(
+                icon,
+                size: 40,
+                color: Colors.white,
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             Text(
               value,
               style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: Colors.white.withValues(alpha: 0.9),
+                fontSize: 16,
+                color: Colors.white.withValues(alpha: 0.8),
                 height: 1.4,
               ),
               textAlign: TextAlign.center,
@@ -712,25 +923,38 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// Footer
-  Widget _buildFooter() {
+  /// Professional footer
+  Widget _buildProfessionalFooter() {
     return Container(
-      padding: const EdgeInsets.all(40),
-      color: const Color(0xFF1E3A8A),
-      child: Column(
+      padding: const EdgeInsets.all(60),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF1E3A8A),
+            Color(0xFF0F172A),
+          ],
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Sol taraf - Şirket adı
           Text(
-            '© 2024 Seek IT Apps. Tüm hakları saklıdır.',
+            '© 2024 Seek IT Apps',
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
               color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
-          const SizedBox(height: 10),
+
+          // Sağ taraf - Vergi bilgileri
           Text(
             'Vergi Dairesi: Fatih VD | Vergi No: 4130689211',
             style: GoogleFonts.poppins(
-              fontSize: 14,
+              fontSize: 16,
               color: Colors.white.withValues(alpha: 0.6),
             ),
           ),
@@ -739,135 +963,160 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// Masaüstü kullanıcıları için reklam banner'ı
-  Widget _buildPromoBanner() {
+  /// Professional banner
+  Widget _buildProfessionalBanner() {
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [
-              const Color(0xFF3B82F6),
-              const Color(0xFF8B5CF6),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            // Kapatma butonu
-            GestureDetector(
-              onTap: () => setState(() => _showBanner = false),
-              child: Container(
-                width: 30,
-                height: 30,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        height: _showBanner ? 100 : 0,
+        curve: Curves.easeInOut,
+        child: _showBanner
+            ? Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: const Icon(
-                  Icons.close,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-            ),
-
-            const SizedBox(width: 20),
-
-            // Banner içeriği
-            Expanded(
-              child: Row(
-                children: [
-                  // İkon
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: const Icon(
-                      Icons.star,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                  gradient: const LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Color(0xFF3B82F6),
+                      Color(0xFF2563EB),
+                    ],
                   ),
-
-                  const SizedBox(width: 20),
-
-                  // Metin
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '30 Gün Ücretsiz Deneyin',
-                          style: GoogleFonts.poppins(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Close button
+                    GestureDetector(
+                      onTap: () => setState(() => _showBanner = false),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        Text(
-                          'Tamgacı\'yı hemen deneyin, hiçbir kredi kartı gerektirmez!',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 16,
                         ),
-                      ],
+                      ),
                     ),
-                  ),
 
-                  const SizedBox(width: 20),
+                    const SizedBox(width: 16),
 
-                  // CTA Butonu
-                  ElevatedButton(
-                    onPressed: () => _launchWebApp(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: const Color(0xFF3B82F6),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 12,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+                    // Banner content
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // Icon
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: const Icon(
+                              Icons.star,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          // Text
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '30 Gün Ücretsiz Deneyin',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  'Hiçbir kredi kartı gerektirmez!',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          // CTA Button
+                          _buildBannerCTA(),
+                        ],
                       ),
                     ),
-                    child: Text(
-                      'Hemen Dene',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                  ],
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  }
+
+  /// Banner CTA button
+  Widget _buildBannerCTA() {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _pulseAnimation.value,
+          child: GestureDetector(
+            onTap: () => _launchWebApp(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
+              child: Text(
+                'Hemen Dene',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF3B82F6),
+                ),
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   // ========== URL LAUNCHER METHODS ==========
 
   Future<void> _launchWebApp() async {
-    // Web uygulamasına yönlendir
     Navigator.of(context).pushReplacementNamed('/dashboard');
   }
 
@@ -908,7 +1157,10 @@ class _LandingPageState extends State<LandingPage>
   }
 
   void _scrollToPlatforms() {
-    // Platform bölümüne scroll yap
-    // Bu kısım scroll controller ile implement edilebilir
+    _scrollController.animateTo(
+      1200,
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+    );
   }
 }
