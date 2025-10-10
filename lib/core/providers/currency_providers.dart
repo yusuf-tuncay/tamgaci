@@ -18,8 +18,113 @@ String _getCountryByCode(String code) {
     'AED': 'Dubai',
     'BGN': 'Bulgaristan',
     'XAU': 'Altın',
+    'JPY': 'Japonya',
+    'CHF': 'İsviçre',
+    'CAD': 'Kanada',
+    'AUD': 'Avustralya',
+    'NZD': 'Yeni Zelanda',
+    'SEK': 'İsveç',
+    'NOK': 'Norveç',
+    'DKK': 'Danimarka',
+    'PLN': 'Polonya',
+    'CZK': 'Çekya',
+    'HUF': 'Macaristan',
+    'RON': 'Romanya',
+    'HRK': 'Hırvatistan',
+    'RSD': 'Sırbistan',
+    'MKD': 'Makedonya',
+    'ALL': 'Arnavutluk',
+    'BAM': 'Bosna',
+    'UAH': 'Ukrayna',
+    'BYN': 'Belarus',
+    'MDL': 'Moldova',
+    'GEL': 'Gürcistan',
+    'AMD': 'Ermenistan',
+    'AZN': 'Azerbaycan',
+    'KZT': 'Kazakistan',
+    'UZS': 'Özbekistan',
+    'KGS': 'Kırgızistan',
+    'TJS': 'Tacikistan',
+    'TMT': 'Türkmenistan',
+    'AFN': 'Afganistan',
+    'PKR': 'Pakistan',
+    'INR': 'Hindistan',
+    'BDT': 'Bangladeş',
+    'LKR': 'Sri Lanka',
+    'NPR': 'Nepal',
+    'BTN': 'Bhutan',
+    'MVR': 'Maldivler',
+    'IDR': 'Endonezya',
+    'MYR': 'Malezya',
+    'SGD': 'Singapur',
+    'THB': 'Tayland',
+    'VND': 'Vietnam',
+    'PHP': 'Filipinler',
+    'KRW': 'Güney Kore',
+    'MNT': 'Moğolistan',
+    'KHR': 'Kamboçya',
+    'LAK': 'Laos',
+    'MMK': 'Myanmar',
+    'BND': 'Brunei',
+    'HKD': 'Hong Kong',
+    'TWD': 'Tayvan',
+    'MOP': 'Makao',
+    'BRL': 'Brezilya',
+    'ARS': 'Arjantin',
+    'CLP': 'Şili',
+    'COP': 'Kolombiya',
+    'PEN': 'Peru',
+    'UYU': 'Uruguay',
+    'VES': 'Venezuela',
+    'BOB': 'Bolivya',
+    'PYG': 'Paraguay',
+    'GYD': 'Guyana',
+    'SRD': 'Surinam',
+    'TTD': 'Trinidad',
+    'JMD': 'Jamaika',
+    'BBD': 'Barbados',
+    'BZD': 'Belize',
+    'GTQ': 'Guatemala',
+    'HNL': 'Honduras',
+    'NIO': 'Nikaragua',
+    'CRC': 'Kosta Rika',
+    'PAB': 'Panama',
+    'DOP': 'Dominik',
+    'HTG': 'Haiti',
+    'CUP': 'Küba',
+    'MXN': 'Meksika',
+    'ZAR': 'Güney Afrika',
+    'EGP': 'Mısır',
+    'MAD': 'Fas',
+    'TND': 'Tunus',
+    'DZD': 'Cezayir',
+    'LYD': 'Libya',
+    'SDG': 'Sudan',
+    'ETB': 'Etiyopya',
+    'KES': 'Kenya',
+    'TZS': 'Tanzanya',
+    'UGX': 'Uganda',
+    'RWF': 'Ruanda',
+    'BIF': 'Burundi',
+    'DJF': 'Cibuti',
+    'SOS': 'Somali',
+    'ERN': 'Eritre',
+    'SLL': 'Sierra Leone',
+    'GMD': 'Gambiya',
+    'GNF': 'Gine',
+    'LRD': 'Liberya',
+    'CDF': 'Kongo',
+    'AOA': 'Angola',
+    'ZMW': 'Zambiya',
+    'BWP': 'Botsvana',
+    'SZL': 'Eswatini',
+    'LSL': 'Lesotho',
+    'NAD': 'Namibya',
+    'MZN': 'Mozambik',
+    'MWK': 'Malavi',
+    'ZWL': 'Zimbabve',
   };
-  return countryMap[code] ?? 'Unknown';
+  return countryMap[code] ?? code; // Unknown yerine para birimi kodunu döndür
 }
 
 /// Kur yenileme notifier'ı
@@ -42,12 +147,48 @@ class CurrencyRefreshNotifier
                 country: _getCountryByCode(rate.code),
                 exchangeRate: rate.rate,
                 lastUpdated: rate.lastUpdated,
+                changeRate: _calculateChangeRate(rate),
+                isIncreasing: _isRateIncreasing(rate),
               ))
           .toList();
       state = AsyncValue.data(currencies);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
+  }
+
+  /// Kur değişim oranını hesapla (mock veri - gerçek uygulamada geçmiş verilerle karşılaştırılmalı)
+  double _calculateChangeRate(ExchangeRate rate) {
+    // Mock değişim oranları - gerçek uygulamada geçmiş verilerle karşılaştırılmalı
+    final mockChanges = {
+      'USD': 0.5, // %0.5 artış
+      'EUR': -0.3, // %0.3 azalış
+      'GBP': 1.2, // %1.2 artış
+      'CHF': -0.8, // %0.8 azalış
+      'JPY': 0.1, // %0.1 artış
+      'CAD': 0.7, // %0.7 artış
+      'AUD': -0.4, // %0.4 azalış
+      'DKK': 0.2, // %0.2 artış
+      'SEK': -0.6, // %0.6 azalış
+      'NOK': 0.9, // %0.9 artış
+      'SAR': 0.3, // %0.3 artış
+      'KWD': -0.1, // %0.1 azalış
+      'BGN': 0.4, // %0.4 artış
+      'RON': -0.2, // %0.2 azalış
+      'RUB': 2.1, // %2.1 artış
+      'IRR': 0.8, // %0.8 artış
+      'CNY': -0.5, // %0.5 azalış
+      'PKR': 1.5, // %1.5 artış
+      'QAR': 0.6, // %0.6 artış
+      'XAU': -1.2, // %1.2 azalış
+    };
+
+    return mockChanges[rate.code] ?? 0.0;
+  }
+
+  /// Kur artış/azalış durumunu belirle
+  bool _isRateIncreasing(ExchangeRate rate) {
+    return _calculateChangeRate(rate) >= 0;
   }
 
   /// Kurları yenile
@@ -73,9 +214,45 @@ final exchangeRatesProvider = FutureProvider<List<Currency>>((ref) async {
             country: _getCountryByCode(rate.code),
             exchangeRate: rate.rate,
             lastUpdated: rate.lastUpdated,
+            changeRate: _calculateChangeRateStatic(rate),
+            isIncreasing: _isRateIncreasingStatic(rate),
           ))
       .toList();
 });
+
+/// Kur değişim oranını hesapla (static versiyon)
+double _calculateChangeRateStatic(ExchangeRate rate) {
+  // Mock değişim oranları - gerçek uygulamada geçmiş verilerle karşılaştırılmalı
+  final mockChanges = {
+    'USD': 0.5, // %0.5 artış
+    'EUR': -0.3, // %0.3 azalış
+    'GBP': 1.2, // %1.2 artış
+    'CHF': -0.8, // %0.8 azalış
+    'JPY': 0.1, // %0.1 artış
+    'CAD': 0.7, // %0.7 artış
+    'AUD': -0.4, // %0.4 azalış
+    'DKK': 0.2, // %0.2 artış
+    'SEK': -0.6, // %0.6 azalış
+    'NOK': 0.9, // %0.9 artış
+    'SAR': 0.3, // %0.3 artış
+    'KWD': -0.1, // %0.1 azalış
+    'BGN': 0.4, // %0.4 artış
+    'RON': -0.2, // %0.2 azalış
+    'RUB': 2.1, // %2.1 artış
+    'IRR': 0.8, // %0.8 artış
+    'CNY': -0.5, // %0.5 azalış
+    'PKR': 1.5, // %1.5 artış
+    'QAR': 0.6, // %0.6 artış
+    'XAU': -1.2, // %1.2 azalış
+  };
+
+  return mockChanges[rate.code] ?? 0.0;
+}
+
+/// Kur artış/azalış durumunu belirle (static versiyon)
+bool _isRateIncreasingStatic(ExchangeRate rate) {
+  return _calculateChangeRateStatic(rate) >= 0;
+}
 
 /// Varsayılan para birimi provider'ı
 final defaultCurrencyProvider = Provider<Currency>((ref) {
@@ -238,6 +415,8 @@ final currencyRefreshProvider =
             country: _getCountryByCode(rate.code),
             exchangeRate: rate.rate,
             lastUpdated: rate.lastUpdated,
+            changeRate: _calculateChangeRateStatic(rate),
+            isIncreasing: _isRateIncreasingStatic(rate),
           ))
       .toList();
 });
