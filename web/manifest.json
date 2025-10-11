@@ -1,11 +1,11 @@
 {
-    "name": "Tamgaci",
-    "short_name": "Tamgaci",
+    "name": "TAMGACI",
+    "short_name": "TAMGACI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "Ön muhasebe, satış/alış, stok ve rapor yönetimi.",
+    "description": "TAMGACI - Ön muhasebe, satış/alış, stok ve rapor yönetimi. İşletmenizi dijitalleştirin.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
