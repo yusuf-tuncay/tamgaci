@@ -11,6 +11,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/theme/constants.dart';
+import '../../../../core/widgets/disposed_error_suppressor_mixin.dart';
 import 'create_product_page.dart';
 import 'product_detail_page.dart';
 
@@ -23,7 +24,7 @@ class ProductsHomePage extends ConsumerStatefulWidget {
 }
 
 class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, ConsumerDisposedErrorSuppressorMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -79,7 +80,66 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
       appBar: const CustomAppBar(title: 'Ürünler', showDrawer: true),
       drawerContent: const TamgaciDrawerMenu(),
       persistentOnLarge: false,
-      body: _buildMobileLayout(productsAsync, statisticsAsync),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          // Masaüstü için kompakt layout
+          if (TamgaciConstants.isDesktop(context) ||
+              TamgaciConstants.isWideDesktop(context)) {
+            return _buildDesktopLayout(productsAsync, statisticsAsync);
+          }
+
+          // Mobil ve tablet için normal layout
+          return _buildMobileLayout(productsAsync, statisticsAsync);
+        },
+      ),
+    );
+  }
+
+  /// Masaüstü için kompakt layout
+  Widget _buildDesktopLayout(
+    AsyncValue<List<Product>> productsAsync,
+    AsyncValue<Map<String, dynamic>> statisticsAsync,
+  ) {
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          child: Column(
+            children: [
+              // Kompakt header - arama ve istatistikler yan yana
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Sol taraf: Arama ve filtreler
+                    Expanded(
+                      flex: 2,
+                      child: _buildCompactSearchAndFilters(),
+                    ),
+                    const SizedBox(width: 16),
+                    // Sağ taraf: Kompakt istatistikler
+                    Expanded(
+                      flex: 1,
+                      child: _buildCompactStatistics(statisticsAsync),
+                    ),
+                  ],
+                ),
+              ),
+              // Ürün listesi - tam yükseklik
+              SizedBox(
+                height: MediaQuery.of(context).size.height - 200,
+                child: _buildDesktopProductsList(productsAsync),
+              ),
+            ],
+          ),
+        ),
+        // Floating Action Button
+        Positioned(
+          bottom: 16,
+          right: 16,
+          child: _buildFloatingActionButton(),
+        ),
+      ],
     );
   }
 
@@ -463,6 +523,535 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
             ),
             const SizedBox(width: 4),
             const Icon(Icons.arrow_drop_down, size: 16, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Kompakt arama ve filtreler
+  Widget _buildCompactSearchAndFilters() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Arama çubuğu
+          TextField(
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Ürün ara...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Filtreler - tek satırda
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedCategory,
+                  decoration: InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Tümü', child: Text('Tümü')),
+                    DropdownMenuItem(
+                        value: 'Elektronik', child: Text('Elektronik')),
+                    DropdownMenuItem(value: 'Gıda', child: Text('Gıda')),
+                    DropdownMenuItem(value: 'Tekstil', child: Text('Tekstil')),
+                    DropdownMenuItem(value: 'İnşaat', child: Text('İnşaat')),
+                    DropdownMenuItem(value: 'Diğer', child: Text('Diğer')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value!;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<ProductType?>(
+                  initialValue: _selectedType,
+                  decoration: InputDecoration(
+                    labelText: 'Tip',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Tümü')),
+                    DropdownMenuItem(
+                        value: ProductType.stocked, child: Text('Ürün')),
+                    DropdownMenuItem(
+                        value: ProductType.service, child: Text('Hizmet')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedType = value;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: CheckboxListTile(
+                  title: const Text('Düşük Stok'),
+                  value: _showLowStockOnly,
+                  onChanged: (value) {
+                    setState(() {
+                      _showLowStockOnly = value ?? false;
+                    });
+                  },
+                  controlAffinity: ListTileControlAffinity.leading,
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Kompakt istatistikler
+  Widget _buildCompactStatistics(
+      AsyncValue<Map<String, dynamic>> statisticsAsync) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return statisticsAsync.when(
+      data: (stats) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Özet',
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
+            ),
+            const SizedBox(height: 12),
+            // İstatistikler - 2x2 grid
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCompactStatCard(
+                    'Toplam',
+                    '${stats['totalProducts'] ?? 0}',
+                    Icons.inventory_2,
+                    Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildCompactStatCard(
+                    'Aktif',
+                    '${stats['activeProducts'] ?? 0}',
+                    Icons.check_circle,
+                    Colors.green,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCompactStatCard(
+                    'Düşük Stok',
+                    '${stats['lowStockProducts'] ?? 0}',
+                    Icons.warning,
+                    Colors.orange,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildCompactStatCard(
+                    'Değer',
+                    CurrencyHelper.formatCurrency(
+                        stats['totalValue'] ?? 0.0, 'TRY'),
+                    Icons.attach_money,
+                    Colors.purple,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      loading: () => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          ),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, stack) => Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          ),
+        ),
+        child: Text('Hata: $error'),
+      ),
+    );
+  }
+
+  /// Kompakt istatistik kartı
+  Widget _buildCompactStatCard(
+      String title, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[300] : Colors.grey[600],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Masaüstü ürün listesi
+  Widget _buildDesktopProductsList(AsyncValue<List<Product>> productsAsync) {
+    return productsAsync.when(
+      data: (products) {
+        final filteredProducts = _filterProducts(products);
+
+        if (filteredProducts.isEmpty) {
+          return _buildEmptyState();
+        }
+
+        return _buildDesktopProductsTable(filteredProducts);
+      },
+      loading: () => _buildLoadingState(),
+      error: (error, stack) => _buildErrorState(error),
+    );
+  }
+
+  /// Masaüstü ürün tablosu
+  Widget _buildDesktopProductsTable(List<Product> products) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Tablo başlığı
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(flex: 2, child: _buildTableHeader('Ürün Adı')),
+                  Expanded(flex: 1, child: _buildTableHeader('Kod')),
+                  Expanded(flex: 1, child: _buildTableHeader('Kategori')),
+                  Expanded(flex: 1, child: _buildTableHeader('Stok')),
+                  Expanded(flex: 1, child: _buildTableHeader('Fiyat')),
+                  Expanded(flex: 1, child: _buildTableHeader('Durum')),
+                  Expanded(flex: 1, child: _buildTableHeader('İşlemler')),
+                ],
+              ),
+            ),
+            // Tablo satırları
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: products.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: isDark ? Colors.grey[700] : Colors.grey[200],
+              ),
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return _buildDesktopProductRow(product, isDark);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Tablo başlığı widget'ı
+  Widget _buildTableHeader(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimary,
+      ),
+    );
+  }
+
+  /// Masaüstü ürün satırı
+  Widget _buildDesktopProductRow(Product product, bool isDark) {
+    final stockColor = product.stockQuantity <= 0
+        ? Colors.red
+        : product.stockQuantity <= 10
+            ? Colors.orange
+            : Colors.green;
+
+    return InkWell(
+      onTap: () => _navigateToProductDetail(product),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Ürün Adı
+            Expanded(
+              flex: 2,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: product.isActive
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.1),
+                    child: Icon(
+                      product.type == ProductType.service
+                          ? Icons.room_service
+                          : Icons.inventory_2,
+                      size: 16,
+                      color: product.isActive ? Colors.green : Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (product.description != null &&
+                            product.description!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            product.description!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Kod
+            Expanded(
+              flex: 1,
+              child: Text(
+                product.productCode ?? '-',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[300] : Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Kategori
+            Expanded(
+              flex: 1,
+              child: Text(
+                product.category ?? '-',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[300] : Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Stok
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: stockColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    product.stockQuantity.toString(),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: stockColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+            // Fiyat
+            Expanded(
+              flex: 1,
+              child: Text(
+                CurrencyHelper.formatCurrency(product.salesPrice, 'TRY'),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Durum
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: product.isActive
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    product.isActive ? 'Aktif' : 'Pasif',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: product.isActive ? Colors.green : Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+            // İşlemler
+            Expanded(
+              flex: 1,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () => _navigateToProductDetail(product),
+                    icon: const Icon(Icons.visibility, size: 18),
+                    tooltip: 'Detayları Görüntüle',
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        TamgaciRoutes.editProduct,
+                        arguments: product.id,
+                      );
+                    },
+                    icon: const Icon(Icons.edit, size: 18),
+                    tooltip: 'Düzenle',
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

@@ -14,6 +14,7 @@ import '../../../../shared/widgets/empty_state_widget.dart';
 import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
 import '../../domain/entities/supplier_enums.dart';
+import '../../../../core/widgets/disposed_error_suppressor_mixin.dart';
 
 /// Gelişmiş tedarikçi listesi sayfası
 class EnhancedSuppliersListPage extends ConsumerStatefulWidget {
@@ -25,7 +26,8 @@ class EnhancedSuppliersListPage extends ConsumerStatefulWidget {
 }
 
 class _EnhancedSuppliersListPageState
-    extends ConsumerState<EnhancedSuppliersListPage> {
+    extends ConsumerState<EnhancedSuppliersListPage>
+    with ConsumerDisposedErrorSuppressorMixin {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   String _selectedCategory = 'Tümü';
@@ -169,24 +171,18 @@ class _EnhancedSuppliersListPageState
       persistentOnLarge: false,
       body: Stack(
         children: [
-          SingleChildScrollView(
-            child: Column(
-              children: [
-                _buildWelcomeCard(isDark),
-                const SizedBox(height: 16),
-                // Arama ve filtre çubuğu
-                _buildSearchAndFilterBar(),
-                const SizedBox(height: 16),
-                // İstatistik kartları
-                _buildStatsCards(operationsState.suppliers),
-                const SizedBox(height: 16),
-                // Tedarikçi listesi
-                SizedBox(
-                  height: MediaQuery.of(context).size.height - 400,
-                  child: _buildSuppliersList(operationsState, searchQuery),
-                ),
-              ],
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Masaüstü için kompakt layout
+              if (TamgaciConstants.isDesktop(context) ||
+                  TamgaciConstants.isWideDesktop(context)) {
+                return _buildDesktopLayout(
+                    operationsState, searchQuery, isDark);
+              }
+
+              // Mobil ve tablet için normal layout
+              return _buildMobileLayout(operationsState, searchQuery, isDark);
+            },
           ),
           // Floating Action Button
           Align(
@@ -204,6 +200,321 @@ class _EnhancedSuppliersListPageState
                 foregroundColor: Colors.white,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Masaüstü için kompakt layout
+  Widget _buildDesktopLayout(SupplierOperationsState operationsState,
+      String searchQuery, bool isDark) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Kompakt header - arama ve istatistikler yan yana
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sol taraf: Arama ve filtreler
+                Expanded(
+                  flex: 2,
+                  child: _buildCompactSearchAndFilters(),
+                ),
+                const SizedBox(width: 16),
+                // Sağ taraf: Kompakt istatistikler
+                Expanded(
+                  flex: 1,
+                  child: _buildCompactStatsCards(operationsState.suppliers),
+                ),
+              ],
+            ),
+          ),
+          // Tedarikçi listesi - tam yükseklik
+          SizedBox(
+            height: MediaQuery.of(context).size.height - 200,
+            child: _buildSuppliersList(operationsState, searchQuery),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Mobil ve tablet için normal layout
+  Widget _buildMobileLayout(SupplierOperationsState operationsState,
+      String searchQuery, bool isDark) {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildWelcomeCard(isDark),
+          const SizedBox(height: 16),
+          // Arama ve filtre çubuğu
+          _buildSearchAndFilterBar(),
+          const SizedBox(height: 16),
+          // İstatistik kartları
+          _buildStatsCards(operationsState.suppliers),
+          const SizedBox(height: 16),
+          // Tedarikçi listesi
+          SizedBox(
+            height: MediaQuery.of(context).size.height - 400,
+            child: _buildSuppliersList(operationsState, searchQuery),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Kompakt arama ve filtreler
+  Widget _buildCompactSearchAndFilters() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Arama çubuğu
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Tedarikçi ara...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Filtreler - tek satırda
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedCategory,
+                  decoration: InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: _categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value!;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedStatus,
+                  decoration: InputDecoration(
+                    labelText: 'Durum',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: _statuses.map((status) {
+                    return DropdownMenuItem(
+                      value: status,
+                      child: Text(status),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedStatus = value!;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _sortBy,
+                  decoration: InputDecoration(
+                    labelText: 'Sırala',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: _sortOptions.map((option) {
+                    return DropdownMenuItem(
+                      value: option,
+                      child: Text(option == 'name'
+                          ? 'İsim'
+                          : option == 'contactPerson'
+                              ? 'İletişim'
+                              : option == 'currentBalance'
+                                  ? 'Bakiye'
+                                  : option == 'creditLimit'
+                                      ? 'Kredi Limiti'
+                                      : option == 'createdAt'
+                                          ? 'Tarih'
+                                          : option),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _sortBy = value!;
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Kompakt istatistik kartları
+  Widget _buildCompactStatsCards(List<Supplier> suppliers) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final activeSuppliers = suppliers.where((s) => s.isActive == true).length;
+    final totalBalance =
+        suppliers.fold<double>(0, (sum, s) => sum + s.currentBalance);
+    final totalCreditLimit =
+        suppliers.fold<double>(0, (sum, s) => sum + (s.creditLimit));
+    final riskySuppliers = suppliers.where((s) => s.currentBalance < 0).length;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Özet',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 12),
+          // İstatistikler - 2x2 grid
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactStatCard(
+                  'Aktif',
+                  activeSuppliers.toString(),
+                  Icons.business,
+                  Colors.green,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildCompactStatCard(
+                  'Bakiye',
+                  CurrencyHelper.formatCurrency(totalBalance, 'TRY'),
+                  Icons.account_balance_wallet,
+                  Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: _buildCompactStatCard(
+                  'Kredi',
+                  CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY'),
+                  Icons.credit_card,
+                  Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildCompactStatCard(
+                  'Riskli',
+                  riskySuppliers.toString(),
+                  Icons.warning,
+                  Colors.red,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Kompakt istatistik kartı
+  Widget _buildCompactStatCard(
+      String title, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: color.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.grey[300] : Colors.grey[600],
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -564,17 +875,340 @@ class _EnhancedSuppliersListPageState
       onRefresh: () async {
         ref.read(supplierOperationsProvider.notifier).loadSuppliers();
       },
-      child: ListView.builder(
-        controller: _scrollController,
-        padding: TamgaciConstants.paddingMedium(context),
-        itemCount: filteredSuppliers.length,
-        itemBuilder: (context, index) {
-          final supplier = filteredSuppliers[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildSupplierCard(supplier),
-          );
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Masaüstü için tablo görünümü
+          if (TamgaciConstants.isDesktop(context) ||
+              TamgaciConstants.isWideDesktop(context)) {
+            return _buildDesktopTable(filteredSuppliers);
+          }
+
+          // Mobil ve tablet için kart görünümü
+          return _buildMobileCards(filteredSuppliers);
         },
+      ),
+    );
+  }
+
+  /// Masaüstü için tablo görünümü
+  Widget _buildDesktopTable(List<Supplier> suppliers) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Tablo başlığı
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(flex: 2, child: _buildTableHeader('Tedarikçi Adı')),
+                  Expanded(flex: 1, child: _buildTableHeader('Kod')),
+                  Expanded(flex: 1, child: _buildTableHeader('İletişim')),
+                  Expanded(flex: 1, child: _buildTableHeader('Bakiye')),
+                  Expanded(flex: 1, child: _buildTableHeader('Durum')),
+                  Expanded(flex: 1, child: _buildTableHeader('İşlemler')),
+                ],
+              ),
+            ),
+            // Tablo satırları
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: suppliers.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: isDark ? Colors.grey[700] : Colors.grey[200],
+              ),
+              itemBuilder: (context, index) {
+                final supplier = suppliers[index];
+                return _buildDesktopTableRow(supplier, isDark);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Mobil ve tablet için kart görünümü
+  Widget _buildMobileCards(List<Supplier> suppliers) {
+    return ListView.builder(
+      controller: _scrollController,
+      padding: TamgaciConstants.paddingMedium(context),
+      itemCount: suppliers.length,
+      itemBuilder: (context, index) {
+        final supplier = suppliers[index];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildSupplierCard(supplier),
+        );
+      },
+    );
+  }
+
+  /// Tablo başlığı widget'ı
+  Widget _buildTableHeader(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimary,
+      ),
+    );
+  }
+
+  /// Masaüstü tablo satırı
+  Widget _buildDesktopTableRow(Supplier supplier, bool isDark) {
+    final balanceColor = supplier.currentBalance > 0
+        ? Colors.green
+        : supplier.currentBalance < 0
+            ? Colors.red
+            : Colors.grey;
+
+    return InkWell(
+      onTap: () => _navigateToDetail(supplier.id),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Tedarikçi Adı
+            Expanded(
+              flex: 2,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: supplier.isActive == true
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.1),
+                    child: Icon(
+                      Icons.business,
+                      size: 16,
+                      color: supplier.isActive == true
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          supplier.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (supplier.contactPerson != null &&
+                            supplier.contactPerson!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            supplier.contactPerson!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        // Tedarikçi kategorileri etiketleri
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 2,
+                          children: [
+                            if (supplier.category1 != null &&
+                                supplier.category1!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.blue.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  supplier.category1!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.blue[700],
+                                  ),
+                                ),
+                              ),
+                            if (supplier.category2 != null &&
+                                supplier.category2!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.purple.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  supplier.category2!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.purple[700],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Kod
+            Expanded(
+              flex: 1,
+              child: Text(
+                supplier.supplierCode ?? '-',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[300] : Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // İletişim
+            Expanded(
+              flex: 1,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (supplier.phone != null && supplier.phone!.isNotEmpty)
+                    Text(
+                      supplier.phone!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: isDark ? Colors.grey[300] : Colors.grey[600],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  if (supplier.email != null && supplier.email!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      supplier.email!,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10,
+                        color: isDark ? Colors.grey[400] : Colors.grey[500],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            // Bakiye
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: balanceColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    CurrencyHelper.formatCurrency(
+                        supplier.currentBalance, 'TRY'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: balanceColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+            // Durum
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: supplier.isActive == true
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    supplier.isActive == true ? 'Aktif' : 'Pasif',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: supplier.isActive == true
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+            // İşlemler
+            Expanded(
+              flex: 1,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () => _navigateToDetail(supplier.id),
+                    icon: const Icon(Icons.visibility, size: 18),
+                    tooltip: 'Detayları Görüntüle',
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      // Düzenleme sayfasına yönlendir
+                      Navigator.of(context)
+                          .pushNamed('/suppliers/edit', arguments: supplier.id);
+                    },
+                    icon: const Icon(Icons.edit, size: 18),
+                    tooltip: 'Düzenle',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
