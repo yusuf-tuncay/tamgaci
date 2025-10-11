@@ -23,7 +23,6 @@ import '../../../auth/domain/entities/user.dart' as auth_domain;
 import '../providers/dashboard_providers.dart';
 import '../widgets/exchange_rates_widget.dart';
 import '../widgets/dashboard_stats_card.dart';
-import '../widgets/dashboard_chart_widget.dart';
 import '../widgets/quick_actions_widget.dart';
 import '../widgets/recent_activities_widget.dart';
 // Silinen widget: product_variants_widget - gereksiz
@@ -135,11 +134,36 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         appBar: const CustomAppBar(title: 'Dashboard', showDrawer: true),
         drawerContent: const TamgaciDrawerMenu(),
         persistentOnLarge: false,
-        body: _buildMobileLayout(
-          dashboardSummaryAsync,
-          recentActivitiesAsync,
-          monthlyChartAsync,
-          isDark,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            // Masaüstü için optimize edilmiş layout
+            if (constraints.maxWidth >= 1200) {
+              return _buildDesktopLayout(
+                dashboardSummaryAsync,
+                recentActivitiesAsync,
+                monthlyChartAsync,
+                isDark,
+              );
+            }
+            // Tablet için layout
+            else if (constraints.maxWidth >= 768) {
+              return _buildTabletLayout(
+                dashboardSummaryAsync,
+                recentActivitiesAsync,
+                monthlyChartAsync,
+                isDark,
+              );
+            }
+            // Mobil için layout
+            else {
+              return _buildMobileLayout(
+                dashboardSummaryAsync,
+                recentActivitiesAsync,
+                monthlyChartAsync,
+                isDark,
+              );
+            }
+          },
         ),
       ),
     );
@@ -217,8 +241,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const SizedBox(height: 16),
             _buildPaymentsSection(isDark),
             const SizedBox(height: 16),
-            _buildChartSection(monthlyChartAsync, isDark),
-            const SizedBox(height: 16),
             const ExchangeRatesWidget(),
             const SizedBox(height: 16),
             // Silinen widget: ProductVariantsWidget - gereksiz
@@ -229,20 +251,36 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  // ignore: unused_element
+  /// Tablet için optimize edilmiş dashboard layout'u
   Widget _buildTabletLayout(
-      AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
+    AsyncValue<DashboardSummary> dashboardSummaryAsync,
+    AsyncValue<List<TransactionItem>> recentActivitiesAsync,
+    AsyncValue<List<MonthlyChartData>> monthlyChartAsync,
+    bool isDark,
+  ) {
+    final user = ref.watch(currentUserProvider);
+    final banner = _buildSubscriptionBanner(user.value);
+
     return RefreshIndicator(
       onRefresh: () async {
         // Refresh dashboard data and exchange rates
         ref.invalidate(exchangeRatesProvider);
         ref.invalidate(dashboardSummaryProvider);
+        ref.invalidate(recentTransactionsProvider);
+        ref.invalidate(monthlyChartDataProvider);
       },
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Banner (if exists)
+            if (banner != null) ...[
+              banner,
+              const SizedBox(height: 20),
+            ],
+
+            // Üst satır: Welcome Card + Quick Stats
             Row(
               children: [
                 Expanded(flex: 2, child: _buildWelcomeCard(isDark)),
@@ -251,48 +289,101 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     child: _buildQuickStats(dashboardSummaryAsync, isDark)),
               ],
             ),
-            const SizedBox(height: 24),
+
+            const SizedBox(height: 20),
+
+            // Quick Actions
             _buildQuickActions(isDark),
-            const SizedBox(height: 24),
-            _buildRecentActivities(isDark),
+
+            const SizedBox(height: 20),
+
+            // Stats Grid
+            _buildStatsGrid(dashboardSummaryAsync, isDark),
+
+            const SizedBox(height: 20),
+
+            // Payments Section
+            _buildPaymentsSection(isDark),
+
+            const SizedBox(height: 20),
+
+            // Exchange Rates
+            const ExchangeRatesWidget(),
+
+            const SizedBox(height: 20),
+
+            // Recent Activities
+            _buildRecentActivitiesSection(recentActivitiesAsync, isDark),
           ],
         ),
       ),
     );
   }
 
-  // ignore: unused_element
+  /// Masaüstü için optimize edilmiş dashboard layout'u
   Widget _buildDesktopLayout(
-      AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
+    AsyncValue<DashboardSummary> dashboardSummaryAsync,
+    AsyncValue<List<TransactionItem>> recentActivitiesAsync,
+    AsyncValue<List<MonthlyChartData>> monthlyChartAsync,
+    bool isDark,
+  ) {
+    final user = ref.watch(currentUserProvider);
+    final banner = _buildSubscriptionBanner(user.value);
+
     return RefreshIndicator(
       onRefresh: () async {
         // Refresh dashboard data and exchange rates
         ref.invalidate(exchangeRatesProvider);
         ref.invalidate(dashboardSummaryProvider);
+        ref.invalidate(recentTransactionsProvider);
+        ref.invalidate(monthlyChartDataProvider);
       },
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Expanded(flex: 3, child: _buildWelcomeCard(isDark)),
-                const SizedBox(width: 24),
-                Expanded(
-                    flex: 2,
-                    child: _buildQuickStats(dashboardSummaryAsync, isDark)),
-              ],
-            ),
-            const SizedBox(height: 32),
+            // Banner (if exists)
+            if (banner != null) ...[
+              banner,
+              const SizedBox(height: 24),
+            ],
+
+            // Üst satır: Welcome Card (full width)
+            _buildWelcomeCard(isDark),
+
+            const SizedBox(height: 24),
+
+            // İkinci satır: Quick Actions (full width, compact)
+            _buildQuickActionsCompactFull(isDark),
+
+            const SizedBox(height: 24),
+
+            // Üçüncü satır: Quick Stats + Exchange Rates
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 2, child: _buildQuickActions(isDark)),
+                Expanded(
+                  flex: 2,
+                  child: _buildQuickStats(dashboardSummaryAsync, isDark),
+                ),
                 const SizedBox(width: 24),
-                Expanded(flex: 3, child: _buildRecentActivities(isDark)),
+                const Expanded(
+                  flex: 1,
+                  child: ExchangeRatesWidget(),
+                ),
               ],
             ),
+
+            const SizedBox(height: 24),
+
+            // Dördüncü satır: Stats Grid (full width)
+            _buildStatsGrid(dashboardSummaryAsync, isDark),
+
+            const SizedBox(height: 24),
+
+            // Alt satır: Recent Activities (full width)
+            _buildRecentActivitiesSection(recentActivitiesAsync, isDark),
           ],
         ),
       ),
@@ -437,49 +528,114 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
           const SizedBox(height: 16),
-          _buildStatItem(
-              'Toplam Müşteri', '12', Icons.people, Colors.blue, isDark),
-          const SizedBox(height: 8),
-          _buildStatItem(
-              'Toplam Ürün', '45', Icons.inventory, Colors.orange, isDark),
-          const SizedBox(height: 8),
-          warehousesAsync.when(
-            data: (warehouses) {
-              final activeWarehouses =
-                  warehouses.where((w) => w.isActive).length;
-              return _buildStatItem('Aktif Depo', activeWarehouses.toString(),
-                  Icons.warehouse, Colors.green, isDark);
-            },
-            loading: () => _buildStatItem(
-                'Aktif Depo', '...', Icons.warehouse, Colors.green, isDark),
-            error: (error, stack) => _buildStatItem(
-                'Aktif Depo', '0', Icons.warehouse, Colors.green, isDark),
+          // İlk satır: Müşteri ve Ürün
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem(
+                    'Toplam Müşteri', '12', Icons.people, Colors.blue, isDark),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatItem('Toplam Ürün', '45', Icons.inventory,
+                    Colors.orange, isDark),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          lowStocksAsync.when(
-            data: (lowStocks) => _buildStatItem('Düşük Stok',
-                lowStocks.length.toString(), Icons.warning, Colors.red, isDark),
-            loading: () => _buildStatItem(
-                'Düşük Stok', '...', Icons.warning, Colors.red, isDark),
-            error: (error, stack) => _buildStatItem(
-                'Düşük Stok', '0', Icons.warning, Colors.red, isDark),
+          const SizedBox(height: 12),
+          // İkinci satır: Depo ve Düşük Stok
+          Row(
+            children: [
+              Expanded(
+                child: warehousesAsync.when(
+                  data: (warehouses) {
+                    final activeWarehouses =
+                        warehouses.where((w) => w.isActive).length;
+                    return _buildStatItem(
+                        'Aktif Depo',
+                        activeWarehouses.toString(),
+                        Icons.warehouse,
+                        Colors.green,
+                        isDark);
+                  },
+                  loading: () => _buildStatItem('Aktif Depo', '...',
+                      Icons.warehouse, Colors.green, isDark),
+                  error: (error, stack) => _buildStatItem(
+                      'Aktif Depo', '0', Icons.warehouse, Colors.green, isDark),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: lowStocksAsync.when(
+                  data: (lowStocks) => _buildStatItem(
+                      'Düşük Stok',
+                      lowStocks.length.toString(),
+                      Icons.warning,
+                      Colors.red,
+                      isDark),
+                  loading: () => _buildStatItem(
+                      'Düşük Stok', '...', Icons.warning, Colors.red, isDark),
+                  error: (error, stack) => _buildStatItem(
+                      'Düşük Stok', '0', Icons.warning, Colors.red, isDark),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          totalStockValueAsync.when(
-            data: (totalStockValue) => _buildStatItem(
-                'Stok Değeri',
-                '₺${totalStockValue.toStringAsFixed(0)}',
-                Icons.attach_money,
-                Colors.purple,
-                isDark),
-            loading: () => _buildStatItem('Stok Değeri', '...',
-                Icons.attach_money, Colors.purple, isDark),
-            error: (error, stack) => _buildStatItem(
-                'Stok Değeri', '₺0', Icons.attach_money, Colors.purple, isDark),
+          const SizedBox(height: 12),
+          // Üçüncü satır: Stok Değeri ve Bekleyen Fatura
+          Row(
+            children: [
+              Expanded(
+                child: totalStockValueAsync.when(
+                  data: (totalStockValue) => _buildStatItem(
+                      'Stok Değeri',
+                      '₺${totalStockValue.toStringAsFixed(0)}',
+                      Icons.attach_money,
+                      Colors.purple,
+                      isDark),
+                  loading: () => _buildStatItem('Stok Değeri', '...',
+                      Icons.attach_money, Colors.purple, isDark),
+                  error: (error, stack) => _buildStatItem('Stok Değeri', '₺0',
+                      Icons.attach_money, Colors.purple, isDark),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatItem(
+                    'Bekleyen Fatura', '5', Icons.receipt, Colors.red, isDark),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          _buildStatItem(
-              'Bekleyen Fatura', '5', Icons.receipt, Colors.red, isDark),
+          const SizedBox(height: 12),
+          // Dördüncü satır: Bu Ay Satış ve Bu Ay Alış
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem('Bu Ay Satış', '₺12,450',
+                    Icons.trending_up, Colors.green, isDark),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatItem('Bu Ay Alış', '₺8,230',
+                    Icons.trending_down, Colors.orange, isDark),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Beşinci satır: Net Kar ve Nakit Durumu
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatItem('Net Kar', '₺4,220',
+                    Icons.account_balance_wallet, Colors.teal, isDark),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatItem('Nakit Durumu', '₺15,680',
+                    Icons.account_balance, Colors.indigo, isDark),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -625,12 +781,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildRecentActivities(bool isDark) {
+  /// Tam genişlikte kompakt hızlı işlemler widget'ı
+  Widget _buildQuickActionsCompactFull(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
         ),
@@ -638,60 +795,149 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Text(
+            'Hızlı İşlemler',
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          // 4x2 grid layout for full width compact view
+          Column(
             children: [
-              Text(
-                'Son Aktiviteler',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
-                ),
-              ),
-              // Silinen modül: expenses
-              TextButton(
-                onPressed: null, // Devre dışı
-                child: Text(
-                  'Tümünü Gör',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey,
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Fatura',
+                      Icons.receipt,
+                      Colors.blue,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.invoicesList),
+                      isDark,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Alış',
+                      Icons.shopping_cart,
+                      Colors.orange,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.purchasesList),
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Müşteri',
+                      Icons.person_add,
+                      Colors.green,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.createCustomer),
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Ürün',
+                      Icons.add_box,
+                      Colors.purple,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.createProduct),
+                      isDark,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Stok',
+                      Icons.warehouse,
+                      Colors.teal,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.inventory),
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Depo',
+                      Icons.list,
+                      Colors.indigo,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.warehouseList),
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Rapor',
+                      Icons.analytics,
+                      Colors.pink,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.dashboard),
+                      isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionCardMini(
+                      'Ayarlar',
+                      Icons.settings,
+                      Colors.grey,
+                      () => Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.settings),
+                      isDark,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _buildEmptyActivities(isDark),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyActivities(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        children: [
-          Icon(
-            Icons.history,
-            size: 48,
-            color: isDark
-                ? TamgaciConstants.textSecondaryDark
-                : TamgaciConstants.textSecondary,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Henüz aktivite yok',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: isDark
-                  ? TamgaciConstants.textSecondaryDark
-                  : TamgaciConstants.textSecondary,
+  /// Mini action card
+  Widget _buildActionCardMini(String title, IconData icon, Color color,
+      VoidCallback onTap, bool isDark) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 16),
+            const SizedBox(height: 2),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.poppins(
+                fontSize: 9,
+                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -864,48 +1110,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         child: Text(
           'Veri yüklenirken hata oluştu: $error',
           style: GoogleFonts.poppins(color: Colors.red),
-        ),
-      ),
-    );
-  }
-
-  /// Grafik bölümü
-  Widget _buildChartSection(
-      AsyncValue<List<MonthlyChartData>> monthlyChartAsync, bool isDark) {
-    return monthlyChartAsync.when(
-      data: (chartData) {
-        final chartDataList = chartData
-            .map((data) => ChartData(
-                  label: data.month,
-                  value: data.income,
-                ))
-            .toList();
-
-        return DashboardChartWidget(
-          title: 'Aylık Satış Grafiği',
-          data: chartDataList,
-          type: ChartType.bar,
-        );
-      },
-      loading: () => Container(
-        height: 200,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey[800] : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Center(child: CircularProgressIndicator()),
-      ),
-      error: (error, stack) => Container(
-        height: 200,
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey[800] : Colors.white,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Text(
-            'Grafik yüklenirken hata oluştu',
-            style: GoogleFonts.poppins(color: Colors.red),
-          ),
         ),
       ),
     );

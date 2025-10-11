@@ -14,6 +14,7 @@ import '../../../../core/routes/routes.dart';
 import '../../../../core/services/excel_service.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
+import '../../../../core/widgets/disposed_error_suppressor_mixin.dart';
 
 /// Gelişmiş müşteri listesi sayfası
 class EnhancedCustomersListPage extends ConsumerStatefulWidget {
@@ -25,7 +26,8 @@ class EnhancedCustomersListPage extends ConsumerStatefulWidget {
 }
 
 class _EnhancedCustomersListPageState
-    extends ConsumerState<EnhancedCustomersListPage> {
+    extends ConsumerState<EnhancedCustomersListPage>
+    with ConsumerDisposedErrorSuppressorMixin {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'Tümü';
@@ -486,13 +488,366 @@ class _EnhancedCustomersListPageState
       onRefresh: () async {
         ref.invalidate(customersProvider);
       },
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: filteredCustomers.length,
-        itemBuilder: (context, index) {
-          final customer = filteredCustomers[index];
-          return _buildCustomerCard(customer, isDark);
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Masaüstü için tablo görünümü
+          if (TamgaciConstants.isDesktop(context) ||
+              TamgaciConstants.isWideDesktop(context)) {
+            return _buildDesktopTable(filteredCustomers, isDark);
+          }
+
+          // Mobil ve tablet için kart görünümü
+          return _buildMobileCards(filteredCustomers, isDark);
         },
+      ),
+    );
+  }
+
+  /// Masaüstü için tablo görünümü
+  Widget _buildDesktopTable(List<Customer> customers, bool isDark) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          ),
+        ),
+        child: Column(
+          children: [
+            // Tablo başlığı
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey[800] : Colors.grey[50],
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(flex: 2, child: _buildTableHeader('Müşteri Adı')),
+                  Expanded(flex: 1, child: _buildTableHeader('Kod')),
+                  Expanded(flex: 1, child: _buildTableHeader('Telefon')),
+                  Expanded(flex: 1, child: _buildTableHeader('Bakiye')),
+                  Expanded(flex: 1, child: _buildTableHeader('Durum')),
+                  Expanded(flex: 1, child: _buildTableHeader('İşlemler')),
+                ],
+              ),
+            ),
+            // Tablo satırları
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: customers.length,
+              separatorBuilder: (context, index) => Divider(
+                height: 1,
+                color: isDark ? Colors.grey[700] : Colors.grey[200],
+              ),
+              itemBuilder: (context, index) {
+                final customer = customers[index];
+                return _buildDesktopTableRow(customer, isDark);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Mobil ve tablet için kart görünümü
+  Widget _buildMobileCards(List<Customer> customers, bool isDark) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: customers.length,
+      itemBuilder: (context, index) {
+        final customer = customers[index];
+        return _buildCustomerCard(customer, isDark);
+      },
+    );
+  }
+
+  /// Tablo başlığı widget'ı
+  Widget _buildTableHeader(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: TamgaciConstants.textPrimary,
+      ),
+    );
+  }
+
+  /// Masaüstü tablo satırı
+  Widget _buildDesktopTableRow(Customer customer, bool isDark) {
+    final balanceColor = customer.balance > 0
+        ? Colors.green
+        : customer.balance < 0
+            ? Colors.red
+            : Colors.grey;
+
+    return InkWell(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          TamgaciRoutes.customerDetail,
+          arguments: customer.id,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            // Müşteri Adı
+            Expanded(
+              flex: 2,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: customer.isActive == true
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.1),
+                    child: Icon(
+                      customer.customerType.toString().contains('company')
+                          ? Icons.business
+                          : Icons.person,
+                      size: 16,
+                      color: customer.isActive == true
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          customer.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (customer.email != null &&
+                            customer.email!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            customer.email!,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        // Müşteri kategorileri etiketleri
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 2,
+                          children: [
+                            if (customer.category1 != null &&
+                                customer.category1!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.blue.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  customer.category1!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.blue[700],
+                                  ),
+                                ),
+                              ),
+                            if (customer.category2 != null &&
+                                customer.category2!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.purple.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.purple.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Text(
+                                  customer.category2!,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.purple[700],
+                                  ),
+                                ),
+                              ),
+                            // Şube ikonu
+                            if (customer.branches != null &&
+                                customer.branches!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.orange.withValues(alpha: 0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.business,
+                                      size: 10,
+                                      color: Colors.orange[700],
+                                    ),
+                                    const SizedBox(width: 2),
+                                    Text(
+                                      '${customer.branches!.length} Şube',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w500,
+                                        color: Colors.orange[700],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Kod
+            Expanded(
+              flex: 1,
+              child: Text(
+                customer.customerCode ?? '-',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[300] : Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Telefon
+            Expanded(
+              flex: 1,
+              child: Text(
+                customer.phone ?? '-',
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[300] : Colors.grey[600],
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            // Bakiye
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: balanceColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    CurrencyHelper.formatCurrency(customer.balance, 'TRY'),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: balanceColor,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+            // Durum
+            Expanded(
+              flex: 1,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: customer.isActive == true
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.grey.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    customer.isActive == true ? 'Aktif' : 'Pasif',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: customer.isActive == true
+                          ? Colors.green
+                          : Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+            // İşlemler
+            Expanded(
+              flex: 1,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        TamgaciRoutes.customerDetail,
+                        arguments: customer.id,
+                      );
+                    },
+                    icon: const Icon(Icons.visibility, size: 18),
+                    tooltip: 'Detayları Görüntüle',
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        TamgaciRoutes.editCustomer,
+                        arguments: customer.id,
+                      );
+                    },
+                    icon: const Icon(Icons.edit, size: 18),
+                    tooltip: 'Düzenle',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

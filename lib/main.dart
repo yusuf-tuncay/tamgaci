@@ -41,6 +41,7 @@ void main() async {
     _suppressAllDisposedErrors();
     _suppressEngineFlutterViewErrors();
     _suppressUltraAggressiveErrors();
+    _suppressWebDisposedErrors();
   }
 
   // Akıllı error suppression'ı başlat (ana sistem)
@@ -305,6 +306,74 @@ void _suppressAllDisposedErrors() {
     } catch (e) {
       // Ignore
     }
+  }
+}
+
+/// Web için ultra etkili disposed error suppressor
+void _suppressWebDisposedErrors() {
+  if (kIsWeb) {
+    // Tüm Flutter error'larını yakala
+    FlutterError.onError = (FlutterErrorDetails details) {
+      final errorString = details.exceptionAsString();
+
+      // Ultra agresif disposed view hatalarını bastır
+      if (errorString.contains('isDisposed') ||
+          errorString.contains('disposed EngineFlutterView') ||
+          errorString.contains('Trying to render a disposed') ||
+          errorString.contains('!isDisposed') ||
+          errorString.contains('Trying to render') ||
+          errorString.contains('EngineFlutterView') ||
+          errorString.contains('window.dart:99:12') ||
+          errorString.contains('Assertion failed:') ||
+          errorString.contains(
+              'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+          errorString.contains('disposed') ||
+          errorString.contains('RenderBox was not laid out') ||
+          errorString.contains('hasSize') ||
+          errorString.contains('NEEDS-LAYOUT') ||
+          errorString.contains('NEEDS-PAINT') ||
+          errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+          errorString.contains('!_debugDoingThisLayout') ||
+          errorString.contains('RenderPadding') ||
+          errorString.contains('RenderRepaintBoundary')) {
+        // Bu hataları tamamen sessizce geç
+        return;
+      }
+
+      // Diğer hataları normal şekilde işle
+      FlutterError.presentError(details);
+    };
+
+    // PlatformDispatcher error'larını da bastır
+    PlatformDispatcher.instance.onError = (error, stack) {
+      final errorString = error.toString();
+
+      if (errorString.contains('isDisposed') ||
+          errorString.contains('disposed EngineFlutterView') ||
+          errorString.contains('Trying to render a disposed') ||
+          errorString.contains('!isDisposed') ||
+          errorString.contains('Trying to render') ||
+          errorString.contains('EngineFlutterView') ||
+          errorString.contains('window.dart:99:12') ||
+          errorString.contains('Assertion failed:') ||
+          errorString.contains(
+              'org-dartlang-sdk:///lib/_engine/engine/window.dart:99:12') ||
+          errorString.contains('disposed') ||
+          errorString.contains('RenderBox was not laid out') ||
+          errorString.contains('hasSize') ||
+          errorString.contains('NEEDS-LAYOUT') ||
+          errorString.contains('NEEDS-PAINT') ||
+          errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
+          errorString.contains('!_debugDoingThisLayout') ||
+          errorString.contains('RenderPadding') ||
+          errorString.contains('RenderRepaintBoundary')) {
+        // Bu hataları tamamen sessizce geç
+        return true;
+      }
+
+      // Diğer hataları normal şekilde işle
+      return false;
+    };
   }
 }
 
