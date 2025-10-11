@@ -199,71 +199,76 @@ class _LandingPageState extends State<LandingPage>
 
           // Main content
           SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return Padding(
-                  padding:
-                      EdgeInsets.all(constraints.maxWidth > 768 ? 24.0 : 16.0),
-                  child: constraints.maxWidth > 768
-                      ? Row(
-                          children: [
-                            // Sol taraf - Reklam görseli (Desktop)
-                            Expanded(
-                              flex: 1,
-                              child: Center(
-                                child: _buildAdvertisementImage(),
-                              ),
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                  left: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                  right: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                  bottom: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                ),
+                child: MediaQuery.of(context).size.width > 768
+                    ? Row(
+                        children: [
+                          // Sol taraf - Reklam görseli (Desktop)
+                          Expanded(
+                            flex: 1,
+                            child: Center(
+                              child: _buildAdvertisementImage(),
                             ),
+                          ),
 
-                            const SizedBox(width: 40),
+                          const SizedBox(width: 40),
 
-                            // Sağ taraf - Logo, metin ve butonlar (Desktop)
-                            Expanded(
-                              flex: 1,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Professional logo
-                                  _buildProfessionalLogo(),
+                          // Sağ taraf - Logo, metin ve butonlar (Desktop)
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                // Professional logo
+                                _buildProfessionalLogo(),
 
-                                  const SizedBox(height: 40),
+                                const SizedBox(height: 40),
 
-                                  // Professional text
-                                  _buildProfessionalText(),
+                                // Professional text
+                                _buildProfessionalText(),
 
-                                  const SizedBox(height: 60),
+                                const SizedBox(height: 60),
 
-                                  // Professional buttons
-                                  _buildProfessionalButtons(),
-                                ],
-                              ),
+                                // Professional buttons
+                                _buildProfessionalButtons(),
+                              ],
                             ),
-                          ],
-                        )
-                      : Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Reklam görseli (Mobile - üstte)
-                            _buildAdvertisementImageMobile(),
+                          ),
+                        ],
+                      )
+                    : Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Professional logo - üst ve alt margin ile
+                          Container(
+                            margin: const EdgeInsets.only(top: 120),
+                            child: _buildProfessionalLogo(),
+                          ),
 
-                            const SizedBox(height: 30),
+                          const SizedBox(height: 20),
 
-                            // Professional logo
-                            _buildProfessionalLogo(),
+                          // Professional text
+                          _buildProfessionalText(),
 
-                            const SizedBox(height: 30),
+                          const SizedBox(height: 20),
 
-                            // Professional text
-                            _buildProfessionalText(),
+                          // Professional buttons
+                          _buildProfessionalButtons(),
 
-                            const SizedBox(height: 30),
+                          const SizedBox(height: 20),
 
-                            // Professional buttons
-                            _buildProfessionalButtons(),
-                          ],
-                        ),
-                );
-              },
+                          // Reklam görseli (Mobile - butonların altında)
+                          _buildAdvertisementImageMobile(),
+                        ],
+                      ),
+              ),
             ),
           ),
         ],
@@ -304,18 +309,18 @@ class _LandingPageState extends State<LandingPage>
         return Transform.scale(
           scale: _fadeAnimation.value,
           child: Container(
-            width: 300,
-            height: 400, // Mobile için dikey oran
+            width: 250,
+            height: 300, // Mobile için daha küçük boyut
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(16),
             ),
             clipBehavior: Clip.antiAlias,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
+              borderRadius: BorderRadius.circular(16),
               child: Image.asset(
-                'assets/images/ads/landingMobileImage.png', // Mobile için ayrı görsel
-                width: 300,
-                height: 400,
+                'assets/images/ads/landingMainImage.png', // Ana görseli kullan
+                width: 250,
+                height: 300,
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.high,
                 isAntiAlias: true,
@@ -612,7 +617,8 @@ class _LandingPageState extends State<LandingPage>
   /// Business features section
   Widget _buildBusinessFeatures() {
     return Container(
-      padding: const EdgeInsets.all(80),
+      padding:
+          EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 80 : 40),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -628,43 +634,73 @@ class _LandingPageState extends State<LandingPage>
           Text(
             'Neden Tamgacı?',
             style: GoogleFonts.poppins(
-              fontSize: 56,
+              fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1E3A8A),
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 80),
-          Row(
-            children: [
-              Expanded(
-                child: _buildBusinessFeatureCard(
-                  icon: Icons.speed,
-                  title: 'Hızlı ve Güvenilir',
-                  description:
-                      'İşlemlerinizi hızla tamamlayın, verileriniz güvende',
-                  color: const Color(0xFF3B82F6),
+          SizedBox(height: MediaQuery.of(context).size.width > 768 ? 80 : 40),
+          // Mobil için dikey düzen, desktop için yatay
+          MediaQuery.of(context).size.width > 768
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: _buildBusinessFeatureCard(
+                        icon: Icons.speed,
+                        title: 'Hızlı ve Güvenilir',
+                        description:
+                            'İşlemlerinizi hızla tamamlayın, verileriniz güvende',
+                        color: const Color(0xFF3B82F6),
+                      ),
+                    ),
+                    const SizedBox(width: 40),
+                    Expanded(
+                      child: _buildBusinessFeatureCard(
+                        icon: Icons.security,
+                        title: 'Güvenli Altyapı',
+                        description:
+                            'Bank level güvenlik ile verilerinizi koruyun',
+                        color: const Color(0xFF2563EB),
+                      ),
+                    ),
+                    const SizedBox(width: 40),
+                    Expanded(
+                      child: _buildBusinessFeatureCard(
+                        icon: Icons.cloud_sync,
+                        title: 'Bulut Tabanlı',
+                        description: 'Her yerden erişim, otomatik yedekleme',
+                        color: const Color(0xFF0EA5E9),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildBusinessFeatureCard(
+                      icon: Icons.speed,
+                      title: 'Hızlı ve Güvenilir',
+                      description:
+                          'İşlemlerinizi hızla tamamlayın, verileriniz güvende',
+                      color: const Color(0xFF3B82F6),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildBusinessFeatureCard(
+                      icon: Icons.security,
+                      title: 'Güvenli Altyapı',
+                      description:
+                          'Bank level güvenlik ile verilerinizi koruyun',
+                      color: const Color(0xFF2563EB),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildBusinessFeatureCard(
+                      icon: Icons.cloud_sync,
+                      title: 'Bulut Tabanlı',
+                      description: 'Her yerden erişim, otomatik yedekleme',
+                      color: const Color(0xFF0EA5E9),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 40),
-              Expanded(
-                child: _buildBusinessFeatureCard(
-                  icon: Icons.security,
-                  title: 'Güvenli Altyapı',
-                  description: 'Bank level güvenlik ile verilerinizi koruyun',
-                  color: const Color(0xFF2563EB),
-                ),
-              ),
-              const SizedBox(width: 40),
-              Expanded(
-                child: _buildBusinessFeatureCard(
-                  icon: Icons.cloud_sync,
-                  title: 'Bulut Tabanlı',
-                  description: 'Her yerden erişim, otomatik yedekleme',
-                  color: const Color(0xFF0EA5E9),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -677,8 +713,11 @@ class _LandingPageState extends State<LandingPage>
     required String description,
     required Color color,
   }) {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
     return Container(
-      padding: const EdgeInsets.all(40),
+      width: isMobile ? double.infinity : null,
+      padding: EdgeInsets.all(isMobile ? 24 : 40),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -693,8 +732,8 @@ class _LandingPageState extends State<LandingPage>
       child: Column(
         children: [
           Container(
-            width: 100,
-            height: 100,
+            width: isMobile ? 80 : 100,
+            height: isMobile ? 80 : 100,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(25),
               gradient: LinearGradient(
@@ -706,24 +745,25 @@ class _LandingPageState extends State<LandingPage>
             ),
             child: Icon(
               icon,
-              size: 50,
+              size: isMobile ? 40 : 50,
               color: color,
             ),
           ),
-          const SizedBox(height: 32),
+          SizedBox(height: isMobile ? 24 : 32),
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 24,
+              fontSize: isMobile ? 20 : 24,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1E3A8A),
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
           Text(
             description,
             style: GoogleFonts.poppins(
-              fontSize: 16,
+              fontSize: isMobile ? 14 : 16,
               color: const Color(0xFF64748B),
               height: 1.6,
             ),
@@ -737,7 +777,8 @@ class _LandingPageState extends State<LandingPage>
   /// Platform section
   Widget _buildPlatformSection() {
     return Container(
-      padding: const EdgeInsets.all(80),
+      padding:
+          EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 80 : 40),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -754,56 +795,94 @@ class _LandingPageState extends State<LandingPage>
           Text(
             'Tüm Platformlarda',
             style: GoogleFonts.poppins(
-              fontSize: 56,
+              fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 80),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: _buildPlatformCard(
-                  icon: Icons.web,
-                  title: 'Web',
-                  description: 'Tarayıcıdan kullan',
-                  color: Colors.white,
-                  onTap: () => _launchWebApp(),
+          SizedBox(height: MediaQuery.of(context).size.width > 768 ? 50 : 30),
+          // Mobil için dikey düzen, desktop için yatay
+          MediaQuery.of(context).size.width > 768
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.web,
+                        title: 'Web',
+                        description: 'Tüm Tarayıcılar',
+                        color: Colors.white,
+                        onTap: () => _launchWebApp(),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.phone_android,
+                        title: 'Android',
+                        description: 'Google Play',
+                        color: const Color.fromARGB(255, 62, 255, 184),
+                        onTap: () => _launchGooglePlay(),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.phone_iphone,
+                        title: 'iOS',
+                        description: 'App Store',
+                        color: const Color.fromARGB(255, 101, 219, 255),
+                        onTap: () => _launchAppStore(),
+                      ),
+                    ),
+                    const SizedBox(width: 20),
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.desktop_windows,
+                        title: 'Windows',
+                        description: 'Masaüstü',
+                        color: const Color.fromARGB(255, 248, 179, 122),
+                        onTap: () => _launchWindowsApp(),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildPlatformCard(
+                      icon: Icons.web,
+                      title: 'Web',
+                      description: 'Tüm Tarayıcılar',
+                      color: Colors.white,
+                      onTap: () => _launchWebApp(),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildPlatformCard(
+                      icon: Icons.phone_android,
+                      title: 'Android',
+                      description: 'Google Play',
+                      color: const Color.fromARGB(255, 62, 255, 184),
+                      onTap: () => _launchGooglePlay(),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildPlatformCard(
+                      icon: Icons.phone_iphone,
+                      title: 'iOS',
+                      description: 'App Store',
+                      color: const Color.fromARGB(255, 101, 219, 255),
+                      onTap: () => _launchAppStore(),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildPlatformCard(
+                      icon: Icons.desktop_windows,
+                      title: 'Windows',
+                      description: 'Masaüstü',
+                      color: const Color.fromARGB(255, 248, 179, 122),
+                      onTap: () => _launchWindowsApp(),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 20),
-              Flexible(
-                child: _buildPlatformCard(
-                  icon: Icons.phone_android,
-                  title: 'Android',
-                  description: 'Google Play',
-                  color: const Color(0xFF34D399),
-                  onTap: () => _launchGooglePlay(),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Flexible(
-                child: _buildPlatformCard(
-                  icon: Icons.phone_iphone,
-                  title: 'iOS',
-                  description: 'App Store',
-                  color: const Color(0xFF60A5FA),
-                  onTap: () => _launchAppStore(),
-                ),
-              ),
-              const SizedBox(width: 20),
-              Flexible(
-                child: _buildPlatformCard(
-                  icon: Icons.desktop_windows,
-                  title: 'Windows',
-                  description: 'Masaüstü',
-                  color: const Color(0xFF8B5CF6),
-                  onTap: () => _launchWindowsApp(),
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -817,6 +896,8 @@ class _LandingPageState extends State<LandingPage>
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
     return AnimatedBuilder(
       animation: _floatAnimation,
       builder: (context, child) {
@@ -825,8 +906,8 @@ class _LandingPageState extends State<LandingPage>
           child: GestureDetector(
             onTap: onTap,
             child: Container(
-              width: 200,
-              padding: const EdgeInsets.all(40),
+              width: isMobile ? double.infinity : 200,
+              padding: EdgeInsets.all(isMobile ? 24 : 40),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
@@ -845,23 +926,23 @@ class _LandingPageState extends State<LandingPage>
               child: Column(
                 children: [
                   Container(
-                    width: 80,
-                    height: 80,
+                    width: isMobile ? 60 : 80,
+                    height: isMobile ? 60 : 80,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       color: color.withValues(alpha: 0.2),
                     ),
                     child: Icon(
                       icon,
-                      size: 40,
+                      size: isMobile ? 30 : 40,
                       color: color,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: isMobile ? 16 : 24),
                   Text(
                     title,
                     style: GoogleFonts.poppins(
-                      fontSize: 20,
+                      fontSize: isMobile ? 18 : 20,
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
@@ -870,7 +951,7 @@ class _LandingPageState extends State<LandingPage>
                   Text(
                     description,
                     style: GoogleFonts.poppins(
-                      fontSize: 14,
+                      fontSize: isMobile ? 12 : 14,
                       color: Colors.white.withValues(alpha: 0.8),
                     ),
                   ),
@@ -892,7 +973,7 @@ class _LandingPageState extends State<LandingPage>
           Text(
             'Hakkımızda',
             style: GoogleFonts.poppins(
-              fontSize: 56,
+              fontSize: 54,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF1E3A8A),
             ),
@@ -916,7 +997,7 @@ class _LandingPageState extends State<LandingPage>
                 Text(
                   'Seek IT Apps',
                   style: GoogleFonts.poppins(
-                    fontSize: 48,
+                    fontSize: 42,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF1E3A8A),
                   ),
@@ -944,7 +1025,8 @@ class _LandingPageState extends State<LandingPage>
   /// Contact section
   Widget _buildContactSection() {
     return Container(
-      padding: const EdgeInsets.all(80),
+      padding:
+          EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 80 : 40),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -960,42 +1042,70 @@ class _LandingPageState extends State<LandingPage>
           Text(
             'İletişim',
             style: GoogleFonts.poppins(
-              fontSize: 56,
+              fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 80),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Flexible(
-                child: _buildContactCard(
-                  icon: Icons.email,
-                  title: 'E-posta',
-                  value: 'info@seekitapps.com',
-                  onTap: () => _launchEmail(),
+          SizedBox(height: MediaQuery.of(context).size.width > 768 ? 100 : 40),
+          // Mobil için dikey düzen, desktop için yatay
+          MediaQuery.of(context).size.width > 768
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Flexible(
+                      child: _buildContactCard(
+                        icon: Icons.email,
+                        title: 'E-posta',
+                        value: 'info@seekitapps.com',
+                        onTap: () => _launchEmail(),
+                      ),
+                    ),
+                    Flexible(
+                      child: _buildContactCard(
+                        icon: Icons.phone,
+                        title: 'Telefon',
+                        value: '+90 212 976 4939',
+                        onTap: () => _launchPhone(),
+                      ),
+                    ),
+                    Flexible(
+                      child: _buildContactCard(
+                        icon: Icons.location_on,
+                        title: 'Adres',
+                        value:
+                            'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
+                        onTap: null,
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildContactCard(
+                      icon: Icons.email,
+                      title: 'E-posta',
+                      value: 'info@seekitapps.com',
+                      onTap: () => _launchEmail(),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildContactCard(
+                      icon: Icons.phone,
+                      title: 'Telefon',
+                      value: '+90 212 976 4939',
+                      onTap: () => _launchPhone(),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildContactCard(
+                      icon: Icons.location_on,
+                      title: 'Adres',
+                      value:
+                          'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
+                      onTap: null,
+                    ),
+                  ],
                 ),
-              ),
-              Flexible(
-                child: _buildContactCard(
-                  icon: Icons.phone,
-                  title: 'Telefon',
-                  value: '+90 212 976 4939',
-                  onTap: () => _launchPhone(),
-                ),
-              ),
-              Flexible(
-                child: _buildContactCard(
-                  icon: Icons.location_on,
-                  title: 'Adres',
-                  value:
-                      'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
-                  onTap: null,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
@@ -1008,11 +1118,13 @@ class _LandingPageState extends State<LandingPage>
     required String value,
     required VoidCallback? onTap,
   }) {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 300,
-        padding: const EdgeInsets.all(40),
+        width: isMobile ? double.infinity : 300,
+        padding: EdgeInsets.all(isMobile ? 24 : 40),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
@@ -1031,23 +1143,23 @@ class _LandingPageState extends State<LandingPage>
         child: Column(
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: isMobile ? 60 : 80,
+              height: isMobile ? 60 : 80,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 color: Colors.white.withValues(alpha: 0.1),
               ),
               child: Icon(
                 icon,
-                size: 40,
+                size: isMobile ? 30 : 40,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: isMobile ? 16 : 24),
             Text(
               title,
               style: GoogleFonts.poppins(
-                fontSize: 20,
+                fontSize: isMobile ? 18 : 20,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
               ),
@@ -1056,7 +1168,7 @@ class _LandingPageState extends State<LandingPage>
             Text(
               value,
               style: GoogleFonts.poppins(
-                fontSize: 16,
+                fontSize: isMobile ? 14 : 16,
                 color: Colors.white.withValues(alpha: 0.8),
                 height: 1.4,
               ),
@@ -1071,7 +1183,8 @@ class _LandingPageState extends State<LandingPage>
   /// Professional footer
   Widget _buildProfessionalFooter() {
     return Container(
-      padding: const EdgeInsets.all(60),
+      padding:
+          EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 60 : 30),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -1086,21 +1199,28 @@ class _LandingPageState extends State<LandingPage>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Sol taraf - Şirket adı
-          Text(
-            '© 2024 Seek IT Apps',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.8),
+          Expanded(
+            child: Text(
+              '© 2025 Seek IT Apps',
+              style: GoogleFonts.poppins(
+                fontSize: MediaQuery.of(context).size.width > 768 ? 20 : 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.8),
+              ),
             ),
           ),
 
           // Sağ taraf - Vergi bilgileri
-          Text(
-            'Vergi Dairesi: Fatih VD | Vergi No: 4130689211',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.6),
+          Expanded(
+            child: Text(
+              MediaQuery.of(context).size.width > 768
+                  ? 'Vergi Dairesi: Fatih VD | Vergi No: 4130689211'
+                  : 'Vergi Dairesi: Fatih VD\nVergi No: 4130689211',
+              style: GoogleFonts.poppins(
+                fontSize: MediaQuery.of(context).size.width > 768 ? 16 : 12,
+                color: Colors.white.withValues(alpha: 0.6),
+              ),
+              textAlign: TextAlign.end,
             ),
           ),
         ],
@@ -1116,12 +1236,16 @@ class _LandingPageState extends State<LandingPage>
       right: 0,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
-        height: _showBanner ? 100 : 0,
+        height: _showBanner
+            ? (MediaQuery.of(context).size.width > 768 ? 100 : 80)
+            : 0,
         curve: Curves.easeInOut,
         child: _showBanner
             ? Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width > 768 ? 24 : 16,
+                  vertical: MediaQuery.of(context).size.width > 768 ? 16 : 12,
+                ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     begin: Alignment.centerLeft,
@@ -1191,15 +1315,23 @@ class _LandingPageState extends State<LandingPage>
                                 Text(
                                   '30 Gün Ücretsiz Deneyin',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 18,
+                                    fontSize:
+                                        MediaQuery.of(context).size.width > 768
+                                            ? 18
+                                            : 16,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
                                   ),
                                 ),
                                 Text(
-                                  'Hiçbir kredi kartı gerektirmez!',
+                                  MediaQuery.of(context).size.width > 768
+                                      ? 'Hiçbir kredi kartı gerektirmez!'
+                                      : 'Kredi kartı gerektirmez!',
                                   style: GoogleFonts.poppins(
-                                    fontSize: 14,
+                                    fontSize:
+                                        MediaQuery.of(context).size.width > 768
+                                            ? 14
+                                            : 12,
                                     color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
@@ -1232,7 +1364,10 @@ class _LandingPageState extends State<LandingPage>
           child: GestureDetector(
             onTap: () => _launchWebApp(),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              padding: EdgeInsets.symmetric(
+                horizontal: MediaQuery.of(context).size.width > 768 ? 24 : 16,
+                vertical: MediaQuery.of(context).size.width > 768 ? 12 : 8,
+              ),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(25),
@@ -1247,7 +1382,7 @@ class _LandingPageState extends State<LandingPage>
               child: Text(
                 'Hemen Dene',
                 style: GoogleFonts.poppins(
-                  fontSize: 14,
+                  fontSize: MediaQuery.of(context).size.width > 768 ? 14 : 12,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF3B82F6),
                 ),
