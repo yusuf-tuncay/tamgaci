@@ -212,6 +212,9 @@ class _EnhancedSuppliersListPageState
     return SingleChildScrollView(
       child: Column(
         children: [
+          // Header card
+          _buildWelcomeCard(isDark),
+          const SizedBox(height: 16),
           // Kompakt header - arama ve istatistikler yan yana
           Container(
             padding: const EdgeInsets.all(16),
