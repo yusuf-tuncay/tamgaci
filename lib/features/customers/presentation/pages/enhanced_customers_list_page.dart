@@ -116,7 +116,13 @@ class _EnhancedCustomersListPageState
     return filtered;
   }
 
-  Widget _buildWelcomeCard(bool isDark) {
+  Widget _buildWelcomeCard(bool isDark, List<Customer> customers) {
+    final activeCustomers = customers.where((c) => c.isActive == true).length;
+    final totalBalance = customers.fold<double>(0, (sum, c) => sum + c.balance);
+    final totalCreditLimit =
+        customers.fold<double>(0, (sum, c) => sum + (c.creditLimit));
+    final riskyCustomers = customers.where((c) => c.balance < 0).length;
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -144,28 +150,54 @@ class _EnhancedCustomersListPageState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Müşteriler',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Müşteri bilgilerini yönetin ve takip edin',
-            maxLines: 1,
-            softWrap: true,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.9),
-              fontWeight: FontWeight.w500,
-            ),
+          // Başlık ve açıklama
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Müşteriler',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Müşteri bilgilerini yönetin ve takip edin',
+                      maxLines: 1,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Özet istatistikler - yan yana
+              Row(
+                children: [
+                  _buildHeaderStatCard('Aktif', activeCustomers.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Bakiye',
+                      CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Kredi',
+                      CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Container(
@@ -179,6 +211,37 @@ class _EnhancedCustomersListPageState
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Header içindeki istatistik kartı - banner timer gibi
+  Widget _buildHeaderStatCard(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -200,8 +263,8 @@ class _EnhancedCustomersListPageState
           SingleChildScrollView(
             child: Column(
               children: [
-                _buildWelcomeCard(isDark),
-                const SizedBox(height: 16),
+                _buildWelcomeCard(isDark, customersAsync.value ?? []),
+                const SizedBox(height: 8),
                 _buildSearchAndFilters(isDark),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -269,168 +332,153 @@ class _EnhancedCustomersListPageState
 
   Widget _buildSearchAndFilters(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[800] : Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
-          ),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
         ),
       ),
-      child: Column(
+      child: Row(
         children: [
           // Arama çubuğu
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Müşteri ara...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
+          Expanded(
+            flex: 2,
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Müşteri ara...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              filled: true,
-              fillColor: isDark ? Colors.grey[700] : Colors.grey[50],
             ),
           ),
-          const SizedBox(height: 12),
-          // Filtreler
-          Row(
-            children: [
-              // Kategori filtresi
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedCategory,
-                  decoration: InputDecoration(
-                    labelText: 'Kategori',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  items: _categories.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value!;
-                    });
-                  },
+          const SizedBox(width: 12),
+          // Kategori filtresi
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              initialValue: _selectedCategory,
+              decoration: InputDecoration(
+                labelText: 'Kategori',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              const SizedBox(width: 12),
-              // Sıralama
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _sortBy,
-                  decoration: InputDecoration(
-                    labelText: 'Sırala',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'name', child: Text('İsim')),
-                    DropdownMenuItem(value: 'balance', child: Text('Bakiye')),
-                    DropdownMenuItem(value: 'phone', child: Text('Telefon')),
-                    DropdownMenuItem(value: 'code', child: Text('Kod')),
-                    DropdownMenuItem(value: 'date', child: Text('Tarih')),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _sortBy = value!;
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Sıralama yönü
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _sortAscending = !_sortAscending;
-                  });
-                },
-                icon: Icon(
-                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                ),
-                tooltip: _sortAscending ? 'Artan' : 'Azalan',
-              ),
-            ],
+              items: _categories.map((category) {
+                return DropdownMenuItem(
+                  value: category,
+                  child: Text(category),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedCategory = value!;
+                });
+              },
+            ),
           ),
-          const SizedBox(height: 12),
-          // Bakiye filtresi
+          const SizedBox(width: 8),
+          // Sıralama
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              initialValue: _sortBy,
+              decoration: InputDecoration(
+                labelText: 'Sırala',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'name', child: Text('İsim')),
+                DropdownMenuItem(value: 'balance', child: Text('Bakiye')),
+                DropdownMenuItem(value: 'phone', child: Text('Telefon')),
+                DropdownMenuItem(value: 'code', child: Text('Kod')),
+                DropdownMenuItem(value: 'date', child: Text('Tarih')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _sortBy = value!;
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Sıralama yönü
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _sortAscending = !_sortAscending;
+              });
+            },
+            icon: Icon(
+              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+            ),
+            tooltip: _sortAscending ? 'Artan' : 'Azalan',
+          ),
+          const SizedBox(width: 8),
+          // Excel, CSV, PDF, Import butonları
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Checkbox(
-                value: _showOnlyWithBalance,
-                onChanged: (value) {
-                  setState(() {
-                    _showOnlyWithBalance = value!;
-                  });
-                },
-              ),
-              Text(
-                'Sadece bakiyeli müşteriler',
-                style: GoogleFonts.poppins(fontSize: 14),
-              ),
-              const Spacer(),
-              // Excel dışa aktarım
+              // Excel Export
               IconButton(
-                onPressed: () {
-                  _exportToExcel();
-                },
+                onPressed: _exportToExcel,
                 icon: const Icon(Icons.table_chart),
                 tooltip: 'Excel\'e Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.green.withValues(alpha: 0.1),
+                  foregroundColor: Colors.green,
+                ),
               ),
-              // CSV dışa aktarım
+              const SizedBox(width: 4),
+              // CSV Export
               IconButton(
-                onPressed: () {
-                  _exportToCSV();
-                },
+                onPressed: _exportToCSV,
                 icon: const Icon(Icons.description),
                 tooltip: 'CSV\'ye Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                  foregroundColor: Colors.blue,
+                ),
               ),
-              // PDF dışa aktarım
+              const SizedBox(width: 4),
+              // PDF Export
               IconButton(
-                onPressed: () {
-                  _exportToPDF();
-                },
+                onPressed: _exportToPDF,
                 icon: const Icon(Icons.picture_as_pdf),
                 tooltip: 'PDF\'ye Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.red.withValues(alpha: 0.1),
+                  foregroundColor: Colors.red,
+                ),
               ),
-              // Excel/CSV içe aktarım
+              const SizedBox(width: 4),
+              // Import
               IconButton(
-                onPressed: () {
-                  _importFromExcel();
-                },
-                icon: const Icon(Icons.file_upload),
-                tooltip: 'Dosyadan İçe Aktar',
-              ),
-              // Yeni müşteri
-              IconButton(
-                onPressed: () {
-                  Navigator.of(context).pushNamed('/customers/create');
-                },
-                icon: const Icon(Icons.person_add),
-                tooltip: 'Yeni Müşteri',
+                onPressed: _showImportDialog,
+                icon: const Icon(Icons.upload_file),
+                tooltip: 'Dosya İçe Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                  foregroundColor: Colors.orange,
+                ),
               ),
             ],
           ),
@@ -1335,210 +1383,6 @@ class _EnhancedCustomersListPageState
     }
   }
 
-  void _importFromExcel() async {
-    try {
-      // Import seçenekleri göster
-      showModalBottomSheet(
-        context: context,
-        builder: (context) => Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Müşteri İçe Aktarım',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                leading: const Icon(Icons.table_chart, color: Colors.green),
-                title: const Text('Excel Dosyası (.xlsx)'),
-                subtitle: const Text('Excel formatında müşteri listesi'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _importFromExcelFile();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.description, color: Colors.blue),
-                title: const Text('CSV Dosyası (.csv)'),
-                subtitle: const Text('Virgülle ayrılmış değerler'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _importFromCSVFile();
-                },
-              ),
-            ],
-          ),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('İçe aktarım hatası: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _importFromExcelFile() async {
-    try {
-      // Loading göster
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      final customers = await ExcelService.importCustomersFromExcel();
-
-      // Loading'i kapat
-      Navigator.of(context).pop();
-
-      if (customers.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Excel dosyasında geçerli müşteri bulunamadı'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-
-      // Onay dialogu göster
-      final shouldImport = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Müşteri İçe Aktarım'),
-          content: Text(
-              '${customers.length} müşteri içe aktarılacak. Devam etmek istiyor musunuz?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('İçe Aktar'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldImport == true) {
-        // Müşterileri kaydet
-        final repository = ref.read(customerRepositoryProvider);
-        await repository.createCustomers(customers);
-
-        // Provider'ı yenile
-        ref.invalidate(customersProvider);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('${customers.length} müşteri başarıyla içe aktarıldı'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      // Loading'i kapat
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Excel içe aktarım hatası: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _importFromCSVFile() async {
-    try {
-      // Loading göster
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-
-      final customers = await ExcelService.importCustomersFromCSV();
-
-      // Loading'i kapat
-      Navigator.of(context).pop();
-
-      if (customers.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('CSV dosyasında geçerli müşteri bulunamadı'),
-            backgroundColor: Colors.orange,
-          ),
-        );
-        return;
-      }
-
-      // Onay dialogu göster
-      final shouldImport = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Müşteri İçe Aktarım'),
-          content: Text(
-              '${customers.length} müşteri içe aktarılacak. Devam etmek istiyor musunuz?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('İçe Aktar'),
-            ),
-          ],
-        ),
-      );
-
-      if (shouldImport == true) {
-        // Müşterileri kaydet
-        final repository = ref.read(customerRepositoryProvider);
-        await repository.createCustomers(customers);
-
-        // Provider'ı yenile
-        ref.invalidate(customersProvider);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('${customers.length} müşteri başarıyla içe aktarıldı'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      // Loading'i kapat
-      if (Navigator.of(context).canPop()) {
-        Navigator.of(context).pop();
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('CSV içe aktarım hatası: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   void _shareFile(String fileName) async {
     try {
       // TODO: Dosya paylaşım implementasyonu
@@ -1556,5 +1400,22 @@ class _EnhancedCustomersListPageState
         ),
       );
     }
+  }
+
+  void _showImportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dosya İçe Aktar'),
+        content: const Text(
+            'Excel/CSV dosya içe aktarım özellikleri yakında eklenecek.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
   }
 }
