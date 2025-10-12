@@ -6,10 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
+import '../providers/reports_providers.dart';
+import '../../domain/entities/report.dart';
 
 /// Raporlar ana sayfası
 class ReportsOverviewPage extends ConsumerStatefulWidget {
@@ -24,8 +25,17 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
   String _selectedPeriod = 'Bu Ay';
   String _selectedReportType = 'Tümü';
   bool _showFavorites = false;
+  bool _sortAscending = true;
 
-  Widget _buildWelcomeCard(bool isDark) {
+  Widget _buildWelcomeCard(bool isDark, List<Report> reports) {
+    final totalReports = reports.length;
+    final activeReports =
+        reports.where((r) => r.status == ReportStatus.generating).length;
+    final completedReports =
+        reports.where((r) => r.status == ReportStatus.completed).length;
+    final pendingReports =
+        reports.where((r) => r.status == ReportStatus.pending).length;
+
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -53,28 +63,57 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Raporlar',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: Colors.white,
-              letterSpacing: 0.2,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'İşletme raporlarını görüntüleyin ve analiz edin',
-            maxLines: 1,
-            softWrap: true,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.9),
-              fontWeight: FontWeight.w500,
-            ),
+          // Başlık ve açıklama
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Raporlar',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'İşletme raporlarını görüntüleyin ve analiz edin',
+                      maxLines: 1,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Özet istatistikler - yan yana
+              Row(
+                children: [
+                  _buildHeaderStatCard('Toplam', totalReports.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Aktif', activeReports.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard(
+                      'Tamamlanan', completedReports.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Bekleyen', pendingReports.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Gelir', '₺125.000'),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Gider', '₺85.000'),
+                ],
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Container(
@@ -95,76 +134,182 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
     );
   }
 
-  /// Filtreleme ve arama bölümü oluşturur
-  Widget _buildFiltersSection(bool isDark) {
+  /// Header içindeki istatistik kartı - banner timer gibi
+  Widget _buildHeaderStatCard(String title, String value) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+
+  /// Filtreleme ve arama bölümü oluşturur
+  Widget _buildFiltersSection(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[800] : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        ),
+      ),
+      child: Row(
         children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.filter_list,
-                color: TamgaciConstants.primaryColor,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Filtreler',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey[800],
+          // Arama çubuğu
+          Expanded(
+            flex: 2,
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Rapor ara...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               ),
-              const Spacer(),
-              if (_showFavorites)
-                IconButton(
-                  onPressed: () => setState(() => _showFavorites = false),
-                  icon: const Icon(Icons.favorite, color: Colors.red),
-                  tooltip: 'Favorileri gizle',
-                )
-              else
-                IconButton(
-                  onPressed: () => setState(() => _showFavorites = true),
-                  icon: const Icon(Icons.favorite_border, color: Colors.grey),
-                  tooltip: 'Favorileri göster',
-                ),
-            ],
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(width: 12),
+          // Rapor türü filtresi
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              initialValue: _selectedReportType,
+              decoration: InputDecoration(
+                labelText: 'Tür',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'Tümü', child: Text('Tümü')),
+                DropdownMenuItem(value: 'Satış', child: Text('Satış')),
+                DropdownMenuItem(value: 'Alış', child: Text('Alış')),
+                DropdownMenuItem(
+                    value: 'Nakit Akış', child: Text('Nakit Akış')),
+                DropdownMenuItem(value: 'Envanter', child: Text('Envanter')),
+                DropdownMenuItem(value: 'Kar/Zarar', child: Text('Kar/Zarar')),
+                DropdownMenuItem(value: 'Bilanço', child: Text('Bilanço')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedReportType = value!;
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Dönem filtresi
+          Expanded(
+            child: DropdownButtonFormField<String>(
+              initialValue: _selectedPeriod,
+              decoration: InputDecoration(
+                labelText: 'Dönem',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'Bu Ay', child: Text('Bu Ay')),
+                DropdownMenuItem(value: 'Geçen Ay', child: Text('Geçen Ay')),
+                DropdownMenuItem(value: 'Son 3 Ay', child: Text('Son 3 Ay')),
+                DropdownMenuItem(value: 'Bu Yıl', child: Text('Bu Yıl')),
+                DropdownMenuItem(value: 'Geçen Yıl', child: Text('Geçen Yıl')),
+                DropdownMenuItem(value: 'Özel', child: Text('Özel')),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedPeriod = value!;
+                });
+              },
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Sıralama yönü
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _sortAscending = !_sortAscending;
+              });
+            },
+            icon: Icon(
+              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+            ),
+            tooltip: _sortAscending ? 'Artan' : 'Azalan',
+          ),
+          const SizedBox(width: 8),
+          // Excel, CSV, PDF, Import butonları
           Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Expanded(
-                child: _buildFilterChip(
-                  'Rapor Türü',
-                  _selectedReportType,
-                  () => _showReportTypeDialog(),
-                  isDark,
+              // Excel Export
+              IconButton(
+                onPressed: _exportToExcel,
+                icon: const Icon(Icons.table_chart),
+                tooltip: 'Excel\'e Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.green.withValues(alpha: 0.1),
+                  foregroundColor: Colors.green,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildFilterChip(
-                  'Dönem',
-                  _selectedPeriod,
-                  () => _showPeriodDialog(),
-                  isDark,
+              const SizedBox(width: 4),
+              // CSV Export
+              IconButton(
+                onPressed: _exportToCSV,
+                icon: const Icon(Icons.description),
+                tooltip: 'CSV\'ye Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                  foregroundColor: Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 4),
+              // PDF Export
+              IconButton(
+                onPressed: _exportToPDF,
+                icon: const Icon(Icons.picture_as_pdf),
+                tooltip: 'PDF\'ye Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.red.withValues(alpha: 0.1),
+                  foregroundColor: Colors.red,
+                ),
+              ),
+              const SizedBox(width: 4),
+              // Import
+              IconButton(
+                onPressed: _showImportDialog,
+                icon: const Icon(Icons.upload_file),
+                tooltip: 'Dosya İçe Aktar',
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                  foregroundColor: Colors.orange,
                 ),
               ),
             ],
@@ -175,193 +320,11 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
   }
 
   /// Filtre chip'i oluşturur
-  Widget _buildFilterChip(
-      String label, String value, VoidCallback onTap, bool isDark) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDark ? Colors.grey[700] : Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isDark ? Colors.grey[600]! : Colors.grey[300]!,
-          ),
-        ),
-        child: Row(
-          children: [
-            Text(
-              '$label: ',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: isDark ? Colors.grey[300] : Colors.grey[600],
-              ),
-            ),
-            Expanded(
-              child: Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : Colors.grey[800],
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Icon(
-              Icons.arrow_drop_down,
-              size: 16,
-              color: isDark ? Colors.grey[300] : Colors.grey[600],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Rapor türü dialog'u gösterir
-  void _showReportTypeDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Rapor Türü Seçin', style: GoogleFonts.poppins()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogOption('Tümü', _selectedReportType == 'Tümü'),
-            _buildDialogOption(
-                'Satış Raporları', _selectedReportType == 'Satış Raporları'),
-            _buildDialogOption(
-                'Mali Raporlar', _selectedReportType == 'Mali Raporlar'),
-            _buildDialogOption(
-                'Stok Raporları', _selectedReportType == 'Stok Raporları'),
-            _buildDialogOption('Müşteri Raporları',
-                _selectedReportType == 'Müşteri Raporları'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Kapat', style: GoogleFonts.poppins()),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Dönem dialog'u gösterir
-  void _showPeriodDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Dönem Seçin', style: GoogleFonts.poppins()),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogOption('Bu Hafta', _selectedPeriod == 'Bu Hafta'),
-            _buildDialogOption('Bu Ay', _selectedPeriod == 'Bu Ay'),
-            _buildDialogOption('Son 3 Ay', _selectedPeriod == 'Son 3 Ay'),
-            _buildDialogOption('Bu Yıl', _selectedPeriod == 'Bu Yıl'),
-            _buildDialogOption('Özel Tarih', _selectedPeriod == 'Özel Tarih'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Kapat', style: GoogleFonts.poppins()),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Dialog seçenek oluşturur
-  Widget _buildDialogOption(String title, bool isSelected) {
-    return ListTile(
-      title: Text(title, style: GoogleFonts.poppins()),
-      leading: Checkbox(
-        value: isSelected,
-        onChanged: (value) {
-          setState(() {
-            if (title == 'Rapor Türü') {
-              _selectedReportType = title;
-            } else {
-              _selectedPeriod = title;
-            }
-          });
-          Navigator.pop(context);
-        },
-      ),
-      onTap: () {
-        setState(() {
-          if (title == 'Rapor Türü') {
-            _selectedReportType = title;
-          } else {
-            _selectedPeriod = title;
-          }
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
 
   /// Dönem seçici oluşturur
-  Widget _buildPeriodSelector() {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-      ),
-      child: Padding(
-        padding: TamgaciConstants.paddingMedium(context),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_today,
-              color: TamgaciConstants.primaryColor,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Dönem: ',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: TamgaciConstants.textSecondary,
-              ),
-            ),
-            Expanded(
-              child: DropdownButton<String>(
-                value: _selectedPeriod,
-                isExpanded: true,
-                underline: const SizedBox(),
-                items: ['Bu Hafta', 'Bu Ay', 'Son 3 Ay', 'Bu Yıl', 'Özel Tarih']
-                    .map((period) => DropdownMenuItem(
-                          value: period,
-                          child: Text(
-                            period,
-                            style: GoogleFonts.poppins(fontSize: 14),
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedPeriod = value!;
-                  });
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
-    final reportsSummaryAsync = AsyncValue.data(_DummyReportsSummary());
-
     return ResponsiveScaffold(
       appBar: CustomAppBar(
         title: 'Raporlar',
@@ -432,48 +395,23 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
         builder: (context, ref, child) {
           final theme = Theme.of(context);
           final isDark = theme.brightness == Brightness.dark;
+          final reportsAsync = ref.watch(reportsNotifierProvider);
 
           return CustomScrollView(
             slivers: [
               // Header
               SliverToBoxAdapter(
-                child: _buildWelcomeCard(isDark),
+                child: _buildWelcomeCard(isDark, reportsAsync.reports),
               ),
 
               // Filtreleme ve arama bölümü
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   child: _buildFiltersSection(isDark),
                 ),
               ),
-
-              // Dönem seçici
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildPeriodSelector(),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
-
-              // Özet kartları
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: reportsSummaryAsync.when(
-                    data: (summary) => _buildSummaryCards(summary, isDark),
-                    loading: () =>
-                        const Center(child: CircularProgressIndicator()),
-                    error: (error, stack) => Center(
-                      child: Text('Hata: $error'),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
               // Grafik bölümü
               SliverToBoxAdapter(
@@ -498,139 +436,6 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
             ],
           );
         },
-      ),
-    );
-  }
-
-  /// Özet kartları oluşturur
-  Widget _buildSummaryCards(_DummyReportsSummary summary, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Özet',
-          style: GoogleFonts.poppins(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: TamgaciConstants.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
-          children: [
-            _buildSummaryCard(
-              'Toplam Gelir',
-              CurrencyHelper.formatCurrency(summary.totalIncome, 'TRY'),
-              Icons.trending_up,
-              TamgaciConstants.successColor,
-              isDark,
-            ),
-            _buildSummaryCard(
-              'Toplam Gider',
-              CurrencyHelper.formatCurrency(summary.totalExpense, 'TRY'),
-              Icons.trending_down,
-              TamgaciConstants.errorColor,
-              isDark,
-            ),
-            _buildSummaryCard(
-              'Net Kar',
-              CurrencyHelper.formatCurrency(summary.netProfit, 'TRY'),
-              Icons.account_balance_wallet,
-              TamgaciConstants.primaryColor,
-              isDark,
-            ),
-            _buildSummaryCard(
-              'Aktif Müşteri',
-              '${summary.activeCustomers}',
-              Icons.people,
-              TamgaciConstants.infoColor,
-              isDark,
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  /// Özet kartı oluşturur
-  Widget _buildSummaryCard(
-      String title, String value, IconData icon, Color color, bool isDark) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              color.withValues(alpha: 0.05),
-              color.withValues(alpha: 0.02),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(icon, color: color, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: TamgaciConstants.textSecondary,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    Icons.trending_up,
-                    color: color,
-                    size: 16,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: color,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Son 30 gün',
-                style: GoogleFonts.poppins(
-                  fontSize: 10,
-                  color: TamgaciConstants.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -662,14 +467,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                   height: 200,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _buildBarChart('Oca', 80, TamgaciConstants.successColor),
-                      _buildBarChart('Şub', 65, TamgaciConstants.successColor),
-                      _buildBarChart('Mar', 90, TamgaciConstants.successColor),
-                      _buildBarChart('Nis', 75, TamgaciConstants.successColor),
-                      _buildBarChart('May', 85, TamgaciConstants.successColor),
-                      _buildBarChart('Haz', 95, TamgaciConstants.successColor),
-                    ],
+                    children: _buildMonthlyCharts(),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -688,28 +486,119 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
     );
   }
 
-  /// Bar grafik oluşturur
-  Widget _buildBarChart(String label, double percentage, Color color) {
+  /// 12 aylık grafik verilerini oluşturur
+  List<Widget> _buildMonthlyCharts() {
+    final now = DateTime.now();
+    final currentMonth = now.month;
+    final currentYear = now.year;
+
+    // 12 aylık veri oluştur
+    List<Widget> charts = [];
+
+    for (int i = 0; i < 12; i++) {
+      final monthDate = DateTime(currentYear, currentMonth - 11 + i, 1);
+      final monthName = DateFormat('MMM', 'tr_TR').format(monthDate);
+      final isFutureMonth = monthDate.isAfter(now);
+
+      if (isFutureMonth) {
+        // Gelecek aylar için boş bar
+        charts.add(_buildEmptyBar(monthName));
+      } else {
+        // Geçmiş aylar için veri
+        final incomePercentage = _getIncomePercentage(i);
+        final expensePercentage = _getExpensePercentage(i);
+
+        charts.add(
+            _buildMonthlyBar(monthName, incomePercentage, expensePercentage));
+      }
+    }
+
+    return charts;
+  }
+
+  /// Aylık gelir yüzdesini hesaplar
+  double _getIncomePercentage(int monthIndex) {
+    // Gerçek veri yerine örnek veri
+    final incomeData = [80, 65, 90, 75, 85, 95, 70, 88, 92, 78, 85, 90];
+    return incomeData[monthIndex].toDouble();
+  }
+
+  /// Aylık gider yüzdesini hesaplar
+  double _getExpensePercentage(int monthIndex) {
+    // Gerçek veri yerine örnek veri
+    final expenseData = [60, 55, 70, 65, 75, 80, 65, 72, 78, 68, 70, 75];
+    return expenseData[monthIndex].toDouble();
+  }
+
+  /// Aylık bar grafik oluşturur (gelir ve gider)
+  Widget _buildMonthlyBar(
+      String label, double incomePercentage, double expensePercentage) {
     return Expanded(
       child: Column(
         children: [
+          // Gider bar (kırmızı)
           Expanded(
+            flex: (expensePercentage * 2).round(),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.8),
-                borderRadius: BorderRadius.circular(TamgaciConstants.radiusXS),
+                color: TamgaciConstants.errorColor,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(4)),
               ),
-              height: percentage * 2, // Yükseklik yüzdeye göre
+            ),
+          ),
+          // Gelir bar (yeşil)
+          Expanded(
+            flex: (incomePercentage * 2).round(),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: TamgaciConstants.successColor,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             label,
             style: GoogleFonts.poppins(
-              fontSize: 12,
+              fontSize: 10,
               fontWeight: FontWeight.w500,
               color: TamgaciConstants.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Boş bar oluşturur (gelecek aylar için)
+  Widget _buildEmptyBar(String label) {
+    return Expanded(
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[500],
             ),
           ),
         ],
@@ -1095,18 +984,70 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
       ),
     );
   }
+
+  void _exportToExcel() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excel\'e Aktar'),
+        content: const Text('Excel dosyası oluşturuluyor...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportToCSV() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('CSV\'ye Aktar'),
+        content: const Text('CSV dosyası oluşturuluyor...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportToPDF() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('PDF\'ye Aktar'),
+        content: const Text('PDF dosyası oluşturuluyor...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dosya İçe Aktar'),
+        content: const Text('Dosya seçin ve içe aktarın...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// Dummy rapor özeti sınıfı
-class _DummyReportsSummary {
-  final double totalIncome;
-  final double totalExpense;
-  final double netProfit;
-  final int activeCustomers;
-
-  _DummyReportsSummary()
-      : totalIncome = 125000.0,
-        totalExpense = 85000.0,
-        netProfit = 40000.0,
-        activeCustomers = 156;
-}

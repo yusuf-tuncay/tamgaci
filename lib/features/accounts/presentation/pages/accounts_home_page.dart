@@ -31,6 +31,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   AccountType? _selectedType;
   AccountStatus? _selectedStatus;
   String? _selectedCurrency;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -119,72 +120,140 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
 
   Widget _buildHeaderSection() {
     return SliverToBoxAdapter(
-      child: Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              TamgaciConstants.primaryColor,
-              Color(0xFF4C6EF5),
-              TamgaciConstants.primaryColorDark,
+      child: _buildWelcomeCard(
+          []), // Boş liste, mobilde istatistikler ayrı gösterilecek
+    );
+  }
+
+  Widget _buildWelcomeCard(List<Account> accounts) {
+    final totalAccounts = accounts.length;
+    final activeAccounts =
+        accounts.where((a) => a.status == AccountStatus.active).length;
+    final totalBalance = accounts.fold<double>(0, (sum, a) => sum + a.balance);
+    final totalCredit =
+        accounts.fold<double>(0, (sum, a) => sum + a.availableBalance);
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Başlık ve açıklama
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hesaplarım',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Hesap bilgilerini yönetin ve takip edin',
+                      maxLines: 1,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Özet istatistikler - yan yana
+              Row(
+                children: [
+                  _buildHeaderStatCard('Toplam', totalAccounts.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Aktif', activeAccounts.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard(
+                      'Bakiye', totalBalance.toStringAsFixed(0)),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Kredi', totalCredit.toStringAsFixed(0)),
+                ],
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          boxShadow: [
-            BoxShadow(
-              color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
-              blurRadius: 18,
-              spreadRadius: 1,
-              offset: const Offset(0, 10),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hesaplarım',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: 0.2,
-              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Header içindeki istatistik kartı - banner timer gibi
+  Widget _buildHeaderStatCard(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Hesap bilgilerini yönetin ve takip edin',
-              maxLines: 1,
-              softWrap: true,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.9),
-                fontWeight: FontWeight.w500,
-              ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.white.withValues(alpha: 0.8),
             ),
-            const SizedBox(height: 8),
-            Container(
-              height: 1,
-              width: double.infinity,
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -304,112 +373,186 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   Widget _buildFiltersSection() {
     return SliverToBoxAdapter(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              'Filtreler',
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[800],
+            // Arama çubuğu
+            Expanded(
+              flex: 2,
+              child: TextField(
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Hesap ara...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(width: 12),
+            // Tür filtresi
+            Expanded(
+              child: DropdownButtonFormField<AccountType?>(
+                initialValue: _selectedType,
+                decoration: InputDecoration(
+                  labelText: 'Tür',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Tümü')),
+                  DropdownMenuItem(
+                      value: AccountType.checking, child: Text('Vadesiz')),
+                  DropdownMenuItem(
+                      value: AccountType.savings, child: Text('Vadeli')),
+                  DropdownMenuItem(
+                      value: AccountType.credit, child: Text('Kredi')),
+                  DropdownMenuItem(
+                      value: AccountType.investment, child: Text('Yatırım')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedType = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Durum filtresi
+            Expanded(
+              child: DropdownButtonFormField<AccountStatus?>(
+                initialValue: _selectedStatus,
+                decoration: InputDecoration(
+                  labelText: 'Durum',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Tümü')),
+                  DropdownMenuItem(
+                      value: AccountStatus.active, child: Text('Aktif')),
+                  DropdownMenuItem(
+                      value: AccountStatus.inactive, child: Text('Pasif')),
+                  DropdownMenuItem(
+                      value: AccountStatus.suspended,
+                      child: Text('Askıya Alınmış')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStatus = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Para birimi filtresi
+            Expanded(
+              child: DropdownButtonFormField<String?>(
+                initialValue: _selectedCurrency,
+                decoration: InputDecoration(
+                  labelText: 'Para Birimi',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Tümü')),
+                  DropdownMenuItem(value: 'TRY', child: Text('TRY')),
+                  DropdownMenuItem(value: 'USD', child: Text('USD')),
+                  DropdownMenuItem(value: 'EUR', child: Text('EUR')),
+                  DropdownMenuItem(value: 'GBP', child: Text('GBP')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCurrency = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            // Sıralama yönü
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _sortAscending = !_sortAscending;
+                });
+              },
+              icon: Icon(
+                _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+              ),
+              tooltip: _sortAscending ? 'Artan' : 'Azalan',
+            ),
+            const SizedBox(width: 8),
+            // Excel, CSV, PDF, Import butonları
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: _buildSearchField(),
+                // Excel Export
+                IconButton(
+                  onPressed: _exportToExcel,
+                  icon: const Icon(Icons.table_chart),
+                  tooltip: 'Excel\'e Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.green.withValues(alpha: 0.1),
+                    foregroundColor: Colors.green,
+                  ),
                 ),
-                const SizedBox(width: 12),
-                _buildFilterChip(
-                  'Tür',
-                  _selectedType?.displayName ?? 'Tümü',
-                  () => _showTypeFilter(),
+                const SizedBox(width: 4),
+                // CSV Export
+                IconButton(
+                  onPressed: _exportToCSV,
+                  icon: const Icon(Icons.description),
+                  tooltip: 'CSV\'ye Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                    foregroundColor: Colors.blue,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _buildFilterChip(
-                  'Durum',
-                  _selectedStatus?.displayName ?? 'Tümü',
-                  () => _showStatusFilter(),
+                const SizedBox(width: 4),
+                // PDF Export
+                IconButton(
+                  onPressed: _exportToPDF,
+                  icon: const Icon(Icons.picture_as_pdf),
+                  tooltip: 'PDF\'ye Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.red.withValues(alpha: 0.1),
+                    foregroundColor: Colors.red,
+                  ),
                 ),
-                const SizedBox(width: 8),
-                _buildFilterChip(
-                  'Para Birimi',
-                  _selectedCurrency ?? 'Tümü',
-                  () => _showCurrencyFilter(),
+                const SizedBox(width: 4),
+                // Import
+                IconButton(
+                  onPressed: _showImportDialog,
+                  icon: const Icon(Icons.upload_file),
+                  tooltip: 'Dosya İçe Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                    foregroundColor: Colors.orange,
+                  ),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchField() {
-    return TextField(
-      onChanged: (value) {
-        setState(() {
-          _searchQuery = value;
-        });
-      },
-      decoration: InputDecoration(
-        hintText: 'Hesap ara...',
-        hintStyle: GoogleFonts.poppins(color: Colors.grey[400]),
-        prefixIcon: Icon(Icons.search, color: Colors.grey[400]),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue[400]!),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String value, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$label: $value',
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.arrow_drop_down, size: 16, color: Colors.grey[600]),
           ],
         ),
       ),
@@ -709,192 +852,75 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
     );
   }
 
-  void _showTypeFilter() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => _buildTypeFilterSheet(),
-    );
-  }
-
-  void _showStatusFilter() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => _buildStatusFilterSheet(),
-    );
-  }
-
-  void _showCurrencyFilter() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => _buildCurrencyFilterSheet(),
-    );
-  }
-
-  Widget _buildTypeFilterSheet() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Hesap Türü Seçin',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...AccountType.values.map(
-            (type) => ListTile(
-              leading: Text(type.icon, style: const TextStyle(fontSize: 24)),
-              title: Text(type.displayName),
-              onTap: () {
-                setState(() {
-                  _selectedType = type;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.clear),
-            title: const Text('Tümü'),
-            onTap: () {
-              setState(() {
-                _selectedType = null;
-              });
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatusFilterSheet() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Hesap Durumu Seçin',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...AccountStatus.values.map(
-            (status) => ListTile(
-              leading: Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: _getStatusColor(status),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              title: Text(status.displayName),
-              onTap: () {
-                setState(() {
-                  _selectedStatus = status;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.clear),
-            title: const Text('Tümü'),
-            onTap: () {
-              setState(() {
-                _selectedStatus = null;
-              });
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCurrencyFilterSheet() {
-    final currencies = ['TRY', 'USD', 'EUR', 'GBP'];
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Para Birimi Seçin',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 16),
-          ...currencies.map(
-            (currency) => ListTile(
-              leading: Text(currency,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-              title: Text(currency),
-              onTap: () {
-                setState(() {
-                  _selectedCurrency = currency;
-                });
-                Navigator.pop(context);
-              },
-            ),
-          ),
-          ListTile(
-            leading: const Icon(Icons.clear),
-            title: const Text('Tümü'),
-            onTap: () {
-              setState(() {
-                _selectedCurrency = null;
-              });
-              Navigator.pop(context);
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getStatusColor(AccountStatus status) {
-    switch (status) {
-      case AccountStatus.active:
-        return Colors.green;
-      case AccountStatus.inactive:
-        return Colors.orange;
-      case AccountStatus.blocked:
-        return Colors.red;
-      case AccountStatus.closed:
-        return Colors.grey;
-      case AccountStatus.suspended:
-        return Colors.yellow;
-    }
-  }
-
   void _navigateToCreateAccount() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const CreateAccountPage(),
+      ),
+    );
+  }
+
+  void _exportToExcel() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excel\'e Aktar'),
+        content: const Text('Excel dosyası oluşturuluyor...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportToCSV() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('CSV\'ye Aktar'),
+        content: const Text('CSV dosyası oluşturuluyor...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportToPDF() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('PDF\'ye Aktar'),
+        content: const Text('PDF dosyası oluşturuluyor...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showImportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dosya İçe Aktar'),
+        content: const Text('Dosya seçin ve içe aktarın...'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
+          ),
+        ],
       ),
     );
   }
@@ -923,5 +949,4 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
     ref.read(accountNotifierProvider.notifier).refresh();
     ref.invalidate(accountStatisticsProvider);
   }
-
 }
