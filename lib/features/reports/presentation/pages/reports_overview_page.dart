@@ -446,7 +446,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Gelir-Gider Trendi',
+          'Gelir-Gider Analizi',
           style: GoogleFonts.poppins(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -463,19 +463,29 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
             padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                SizedBox(
-                  height: 200,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: _buildMonthlyCharts(),
-                  ),
+                // 3 Pasta Grafik - Yan yana
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildPieChart('Haftalık', _getWeeklyData()),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildPieChart('Aylık', _getMonthlyData()),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _buildPieChart('Yıllık', _getYearlyData()),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
+                // Açıklama
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildLegendItem('Gelir', TamgaciConstants.successColor),
-                    _buildLegendItem('Gider', TamgaciConstants.errorColor),
+                    _buildLegendItem('Gelir', Colors.blue),
+                    _buildLegendItem('Gider', Colors.white),
                   ],
                 ),
               ],
@@ -486,124 +496,154 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
     );
   }
 
-  /// 12 aylık grafik verilerini oluşturur
-  List<Widget> _buildMonthlyCharts() {
-    final now = DateTime.now();
-    final currentMonth = now.month;
-    final currentYear = now.year;
+  /// Haftalık veri oluşturur
+  Map<String, double> _getWeeklyData() {
+    return {
+      'Gelir': 25000.0,
+      'Gider': 18000.0,
+    };
+  }
 
-    // 12 aylık veri oluştur
-    List<Widget> charts = [];
+  /// Aylık veri oluşturur
+  Map<String, double> _getMonthlyData() {
+    return {
+      'Gelir': 125000.0,
+      'Gider': 85000.0,
+    };
+  }
 
-    for (int i = 0; i < 12; i++) {
-      final monthDate = DateTime(currentYear, currentMonth - 11 + i, 1);
-      final monthName = DateFormat('MMM', 'tr_TR').format(monthDate);
-      final isFutureMonth = monthDate.isAfter(now);
+  /// Yıllık veri oluşturur
+  Map<String, double> _getYearlyData() {
+    return {
+      'Gelir': 1500000.0,
+      'Gider': 1200000.0,
+    };
+  }
 
-      if (isFutureMonth) {
-        // Gelecek aylar için boş bar
-        charts.add(_buildEmptyBar(monthName));
-      } else {
-        // Geçmiş aylar için veri
-        final incomePercentage = _getIncomePercentage(i);
-        final expensePercentage = _getExpensePercentage(i);
+  /// Pasta grafik oluşturur
+  Widget _buildPieChart(String title, Map<String, double> data) {
+    final total = data.values.reduce((a, b) => a + b);
+    final incomeValue = data['Gelir'] ?? 0;
+    final expenseValue = data['Gider'] ?? 0;
 
-        charts.add(
-            _buildMonthlyBar(monthName, incomePercentage, expensePercentage));
-      }
+    final incomePercentage = (incomeValue / total) * 100;
+    final expensePercentage = (expenseValue / total) * 100;
+
+    return Column(
+      children: [
+        // Başlık
+        Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: TamgaciConstants.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        // Pasta grafik
+        SizedBox(
+          width: 120,
+          height: 120,
+          child: Stack(
+            children: [
+              // Gider (beyaz - tam daire)
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey[300]!, width: 2),
+                ),
+              ),
+              // Gelir (mavi - kısmi daire)
+              if (incomePercentage > 0)
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: SweepGradient(
+                      startAngle: -1.57, // -90 derece (üstten başla)
+                      endAngle: -1.57 +
+                          (incomePercentage / 100) * 6.28, // Yüzdeye göre açı
+                      colors: [Colors.blue, Colors.blue],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        // Yüzde bilgileri
+        Column(
+          children: [
+            _buildPercentageRow('Gelir', incomePercentage, Colors.blue),
+            const SizedBox(height: 4),
+            _buildPercentageRow('Gider', expensePercentage, Colors.white),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Tutar bilgileri
+        Column(
+          children: [
+            Text(
+              '₺${_formatCurrency(incomeValue)}',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.blue,
+              ),
+            ),
+            Text(
+              '₺${_formatCurrency(expenseValue)}',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Yüzde satırı oluşturur
+  Widget _buildPercentageRow(String label, double percentage, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+            color: TamgaciConstants.textSecondary,
+          ),
+        ),
+        Text(
+          '${percentage.toStringAsFixed(1)}%',
+          style: GoogleFonts.poppins(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Para birimi formatlar
+  String _formatCurrency(double value) {
+    if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(0)}K';
+    } else {
+      return value.toStringAsFixed(0);
     }
-
-    return charts;
-  }
-
-  /// Aylık gelir yüzdesini hesaplar
-  double _getIncomePercentage(int monthIndex) {
-    // Gerçek veri yerine örnek veri
-    final incomeData = [80, 65, 90, 75, 85, 95, 70, 88, 92, 78, 85, 90];
-    return incomeData[monthIndex].toDouble();
-  }
-
-  /// Aylık gider yüzdesini hesaplar
-  double _getExpensePercentage(int monthIndex) {
-    // Gerçek veri yerine örnek veri
-    final expenseData = [60, 55, 70, 65, 75, 80, 65, 72, 78, 68, 70, 75];
-    return expenseData[monthIndex].toDouble();
-  }
-
-  /// Aylık bar grafik oluşturur (gelir ve gider)
-  Widget _buildMonthlyBar(
-      String label, double incomePercentage, double expensePercentage) {
-    return Expanded(
-      child: Column(
-        children: [
-          // Gider bar (kırmızı)
-          Expanded(
-            flex: (expensePercentage * 2).round(),
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: TamgaciConstants.errorColor,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(4)),
-              ),
-            ),
-          ),
-          // Gelir bar (yeşil)
-          Expanded(
-            flex: (incomePercentage * 2).round(),
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: TamgaciConstants.successColor,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(4)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: TamgaciConstants.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Boş bar oluşturur (gelecek aylar için)
-  Widget _buildEmptyBar(String label) {
-    return Expanded(
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(4)),
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// Grafik açıklaması oluşturur

@@ -5,8 +5,8 @@ import 'package:tamgaci/core/routes/routes.dart';
 import 'package:tamgaci/core/theme/app_theme.dart';
 import 'package:tamgaci/core/providers/theme_provider.dart';
 import 'package:tamgaci/core/providers/locale_provider.dart';
-import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/features/landing/presentation/pages/landing_route.dart';
+import 'package:tamgaci/features/landing/presentation/pages/mobile_landing_route.dart';
 import 'package:tamgaci/shared/pages/not_found_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tamgaci/l10n/generated/app_localizations.dart';
@@ -40,8 +40,8 @@ class TamgaciApp extends ConsumerWidget {
       locale: ref.watch(localeProvider),
       // ========== NAVİGASYON AYARLARI ==========
 
-      /// İlk açılacak sayfa - Web'de landing page, mobilde splash
-      home: kIsWeb ? const LandingRoute() : const SplashPage(),
+      /// İlk açılacak sayfa - Web'de landing page, mobilde authentication kontrolü
+      home: kIsWeb ? const LandingRoute() : const MobileLandingRoute(),
 
       /// Route generator
       onGenerateRoute: TamgaciRoutes.generateRoute,

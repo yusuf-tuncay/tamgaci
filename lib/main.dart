@@ -65,11 +65,11 @@ void main() async {
   // Firebase-only approach - SQLite removed
   AppLogger.info('Using Firebase-only data storage');
 
-  // Notification service'i başlat
-  await NotificationService().initialize();
+  // Notification service'i başlat (asenkron)
+  NotificationService().initialize();
 
-  // Firebase Notification service'i başlat
-  await FirebaseNotificationService.initialize();
+  // Firebase Notification service'i başlat (asenkron)
+  FirebaseNotificationService.initialize();
 
   // Tenant setup artık login sonrası yapılıyor
 

@@ -25,14 +25,14 @@ class FirebaseNotificationService {
     }
   }
 
-  /// Servisi başlat
+  /// Servisi başlat (asenkron - izin beklemeden)
   Future<void> _initialize() async {
     try {
-      // İzin iste
-      await _requestPermission();
+      // İzin iste (asenkron - beklemeden)
+      _requestPermission();
 
-      // Token al
-      await _getToken();
+      // Token al (asenkron)
+      _getToken();
 
       // Mesaj dinleyicilerini ayarla
       _setupMessageHandlers();
