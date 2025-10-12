@@ -1,32 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description"
-    content="TAMGACI - Ön muhasebe, satış, alış, stok ve rapor yönetimi. İşletmenizi dijitalleştirin.">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    content="Tamgacı, yapay zeka ile fatura ve irsaliye girişi yapmanızı sağlar. Çoklu para birimi desteği ile KOBİ ve kurumsal çözümler. Fatura okuma, irsaliye yönetimi ve çoklu döviz desteği ile Tamgacı ile muhasebe süreçlerinizi otomatikleştirin.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#0175C2" />
-  <meta property="og:title" content="TAMGACI" />
-  <meta property="og:description" content="Ön muhasebe ve işletme yönetimi. İşletmenizi dijitalleştirin." />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="TAMGACI" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:title" content="Tamgacı | AI Destekli Fatura & Ön Muhasebe Yazılımı" />
+  <meta property="og:description" content="Tamgacı, yapay zeka ile fatura ve irsaliye girişi yapmanızı sağlar. Çoklu para birimi desteği ile KOBİ ve kurumsal çözümler. Fatura okuma, irsaliye yönetimi ve çoklu döviz desteği ile Tamgacı ile muhasebe süreçlerinizi otomatikleştirin." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="/assets/images/logos/512x512logo.png" />
+  <meta property="og:url" content="https://tamgaci.web.app/" />
+  <meta property="og:site_name" content="TAMGACI" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Tamgacı | AI Destekli Fatura & Ön Muhasebe Yazılımı" />
+  <meta name="twitter:description" content="Tamgacı, yapay zeka ile fatura ve irsaliye girişi yapmanızı sağlar. Çoklu para birimi desteği ile KOBİ ve kurumsal çözümler. Fatura okuma, irsaliye yönetimi ve çoklu döviz desteği ile Tamgacı ile muhasebe süreçlerinizi otomatikleştirin." />
+  <meta name="twitter:image" content="/assets/images/logos/512x512logo.png" />
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -41,11 +40,91 @@
   <link rel="shortcut icon" href="assets/images/logos/favicon_48x48.png" />
   <link rel="canonical" href="https://tamgaci.web.app/" />
 
-  <title>TAMGACI</title>
+  <!-- Preload critical resources -->
+  <link rel="preload" href="assets/images/logos/192x192logo.png" as="image" />
+  <link rel="preload" href="assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin />
+
+  <!-- DNS prefetch for external resources -->
+  <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+  <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+  <link rel="dns-prefetch" href="//firebaseapp.com" />
+
+  <title>Tamgacı | AI Destekli Fatura & Ön Muhasebe Yazılımı</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Loading screen styles -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #0175C2 0%, #0256A3 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+    }
+
+    .loading-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      color: white;
+    }
+
+    .loading-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      animation: pulse 2s infinite;
+    }
+
+    .loading-text {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
 </head>
 
 <body>
+  <!-- Loading screen -->
+  <div class="loading-container">
+    <img src="assets/images/logos/192x192logo.png" alt="TAMGACI" class="loading-logo" />
+    <div class="loading-text">TAMGACI Yükleniyor...</div>
+    <div class="loading-spinner"></div>
+  </div>
+
   <script src="flutter_bootstrap.js" async></script>
 </body>
 
