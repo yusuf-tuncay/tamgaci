@@ -59,9 +59,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-  bool _acceptTerms = false;
+  final bool _isPasswordVisible = false;
+  final bool _isConfirmPasswordVisible = false;
+  final bool _acceptTerms = false;
   final bool _isLoading = false;
   bool _agreeToTerms = false;
   bool _isRegistering = false;
@@ -342,32 +342,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _apartmentNoController.dispose();
     _postalCodeController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickProfileImage() async {
-    try {
-      final XFile? image = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 400,
-        maxHeight: 400,
-        imageQuality: 80,
-      );
-
-      if (image != null) {
-        setState(() {
-          _profileImage = File(image.path);
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Resim seçilirken hata oluştu: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   Future<void> _pickAvatar() async {
@@ -1211,817 +1185,870 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     );
   }
 
-  /// Masaüstü layout'u
+  /// Masaüstü layout'u - Beyaz arkaplan, sol görsel
   Widget _buildDesktopLayout(bool isDark) {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40),
+    return Container(
+      height: MediaQuery.of(context).size.height,
+      color: Colors.white, // Beyaz arkaplan
+      child: Row(children: [
+        // Sol taraf - Register görseli
+        Expanded(
+          flex: 1,
+          child: Center(
+            child: _buildRegisterImage(),
+          ),
+        ),
 
-                // Premium Logo
-                Column(
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                const Color(0xFF2563EB).withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            spreadRadius: 2,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          Image.asset(
-                            'assets/images/logos/140x140logo.png',
-                            fit: BoxFit.contain,
-                            color: Colors.white,
-                            colorBlendMode: BlendMode.srcIn,
-                          ),
-                          // Premium parıltı efekti
-                          Align(
-                            alignment: Alignment.topLeft,
-                            child: Container(
-                              width: 50,
-                              height: 50,
+        // Sağ taraf - Register formu
+        Expanded(
+            flex: 1,
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(maxWidth: 600),
+                padding: const EdgeInsets.all(32),
+                child: SingleChildScrollView(
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 40),
+
+                        // Premium Logo
+                        Column(
+                          children: [
+                            Container(
+                              width: 100,
+                              height: 100,
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
+                                gradient: const LinearGradient(
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                   colors: [
-                                    Colors.white.withValues(alpha: 0.4),
-                                    Colors.white.withValues(alpha: 0.1),
-                                    Colors.white.withValues(alpha: 0.0),
+                                    Color(0xFF2563EB),
+                                    Color(0xFF0EA5E9)
                                   ],
                                 ),
-                                shape: BoxShape.circle,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF2563EB)
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.asset(
+                                    'assets/images/logos/140x140logo.png',
+                                    fit: BoxFit.contain,
+                                    color: Colors.white,
+                                    colorBlendMode: BlendMode.srcIn,
+                                  ),
+                                  // Premium parıltı efekti
+                                  Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Container(
+                                      width: 50,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          colors: [
+                                            Colors.white.withValues(alpha: 0.4),
+                                            Colors.white.withValues(alpha: 0.1),
+                                            Colors.white.withValues(alpha: 0.0),
+                                          ],
+                                        ),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                      ).createShader(bounds),
-                      child: Text(
-                        'Hesap Oluştur',
-                        style: GoogleFonts.poppins(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Builder(builder: (context) {
-                      final scheme = Theme.of(context).colorScheme;
-                      final hintColor = scheme.onSurface.withValues(alpha: 0.7);
-                      return Text(
-                        "Tamgaci'ye hoş geldiniz!",
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: hintColor,
-                        ),
-                      );
-                    }),
-                  ],
-                ),
-
-                const SizedBox(height: 40),
-
-                // Profil fotoğrafı ve Ad/Soyad
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    GestureDetector(
-                      onTap: _pickAvatar,
-                      child: CircleAvatar(
-                        radius: 28,
-                        backgroundColor:
-                            Theme.of(context).brightness == Brightness.light
-                                ? Colors.grey.shade300
-                                : Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
-                        backgroundImage: _avatarBytes != null
-                            ? MemoryImage(_avatarBytes!)
-                            : null,
-                        child: _avatarBytes == null
-                            ? Icon(
-                                Icons.camera_alt_outlined,
-                                color: Theme.of(context).brightness ==
-                                        Brightness.light
-                                    ? Colors.black87
-                                    : Colors.white,
-                              )
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _firstNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Ad *',
-                              hintText: 'Adınız',
-                              prefixIcon: Icon(Icons.person_outline),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Ad gereklidir';
-                              }
-                              if (value.trim().length < 2) {
-                                return 'Ad en az 2 karakter olmalı';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: _lastNameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Soyad *',
-                              hintText: 'Soyadınız',
-                              prefixIcon: Icon(Icons.person_outline),
-                              border: OutlineInputBorder(),
-                            ),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Soyad gereklidir';
-                              }
-                              if (value.trim().length < 2) {
-                                return 'Soyad en az 2 karakter olmalı';
-                              }
-                              return null;
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // E-posta
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'E-posta *',
-                    hintText: 'ornek@email.com',
-                    prefixIcon: Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'E-posta gereklidir';
-                    }
-                    if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    ).hasMatch(value)) {
-                      return 'Geçerli bir e-posta adresi girin';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                // Şirket Adı
-                TextFormField(
-                  controller: _companyNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Şirket Adı',
-                    hintText: 'Örnek Teknoloji A.Ş.',
-                    prefixIcon: Icon(Icons.business_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Telefon (alan kodu + numara)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Telefon',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: TamgaciConstants.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    GestureDetector(
-                      onTap: () {
-                        showCountryPicker(
-                          context: context,
-                          showPhoneCode: true,
-                          onSelect: (Country country) {
-                            setState(() {
-                              _selectedCountry = country.countryCode;
-                              _selectedDialCode = '+${country.phoneCode}';
-                            });
-                          },
-                        );
-                      },
-                      child: Builder(builder: (context) {
-                        final scheme = Theme.of(context).colorScheme;
-                        return Container(
-                          decoration: BoxDecoration(
-                            border: Border.all(color: scheme.outlineVariant),
-                            borderRadius: BorderRadius.circular(8),
-                            color: scheme.surface,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 12),
-                          child: Row(
-                            children: [
-                              Text(
-                                _countryFlagEmoji(_selectedCountry),
-                                style: const TextStyle(fontSize: 20),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _selectedDialCode,
+                            const SizedBox(height: 24),
+                            ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                              ).createShader(bounds),
+                              child: Text(
+                                'Hesap Oluştur',
                                 style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              const Icon(Icons.arrow_drop_down),
-                              const SizedBox(width: 12),
-                              const VerticalDivider(width: 1),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _phoneController,
-                                  keyboardType: TextInputType.number,
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(15),
-                                  ],
-                                  decoration: const InputDecoration(
-                                    hintText: '5551234567',
-                                    border: InputBorder.none,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Vergi Kimlik Numarası
-                TextFormField(
-                  controller: _taxIdController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(15),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Vergi Kimlik Numarası',
-                    hintText: 'TCKN/VKN',
-                    prefixIcon: Icon(Icons.badge_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Vergi Dairesi: TR ise arama/seçim, diğer ülkelerde serbest metin
-                if (_selectedCountry == 'TR')
-                  RawAutocomplete<String>(
-                    optionsBuilder: (TextEditingValue textEditingValue) {
-                      final q = textEditingValue.text.trim().toLowerCase();
-                      if (q.isEmpty) {
-                        // Yazmadan da önde gelenleri göster (ilk 100)
-                        return _allTaxOffices.take(100);
-                      }
-                      return _allTaxOffices
-                          .where((o) => o.toLowerCase().contains(q));
-                    },
-                    initialValue:
-                        TextEditingValue(text: _taxOfficeController.text),
-                    onSelected: (String selection) {
-                      _taxOfficeController.text = selection;
-                    },
-                    fieldViewBuilder:
-                        (context, controller, focusNode, onFieldSubmitted) {
-                      if (controller.text != _taxOfficeController.text) {
-                        controller.text = _taxOfficeController.text;
-                        controller.selection = TextSelection.fromPosition(
-                          TextPosition(offset: controller.text.length),
-                        );
-                      }
-                      controller.addListener(() {
-                        _taxOfficeController.text = controller.text;
-                      });
-                      focusNode.addListener(() {
-                        if (focusNode.hasFocus && controller.text.isEmpty) {
-                          controller.text = '';
-                        }
-                      });
-                      return TextFormField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Vergi Dairesi',
-                          hintText: 'Yazarak arayın veya listeden seçin',
-                          prefixIcon: Icon(Icons.apartment_outlined),
-                          border: OutlineInputBorder(),
-                        ),
-                      );
-                    },
-                    optionsViewBuilder: (context, onSelected, options) {
-                      final scheme = Theme.of(context).colorScheme;
-                      return Align(
-                        alignment: Alignment.topLeft,
-                        child: Material(
-                          elevation: 4,
-                          color: scheme.surface,
-                          borderRadius: BorderRadius.circular(8),
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                                maxHeight: 300, minWidth: 280),
-                            child: ListView.builder(
-                              padding: EdgeInsets.zero,
-                              shrinkWrap: true,
-                              itemCount: options.length,
-                              itemBuilder: (context, index) {
-                                final opt = options.elementAt(index);
-                                return ListTile(
-                                  dense: true,
-                                  title: Text(opt,
-                                      overflow: TextOverflow.ellipsis,
-                                      style:
-                                          TextStyle(color: scheme.onSurface)),
-                                  onTap: () => onSelected(opt),
-                                );
-                              },
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  )
-                else
-                  TextFormField(
-                    controller: _taxOfficeController,
-                    decoration: const InputDecoration(
-                      labelText: 'Vergi Dairesi',
-                      hintText: 'Vergi dairesini yazın',
-                      prefixIcon: Icon(Icons.apartment_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                const SizedBox(height: 16),
-
-                // Ülke/İl/İlçe ve adres detayları
-                Column(
-                  children: [
-                    // Ülke sabit country picker ile
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text('Ülke: $_selectedCountry',
-                              style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: TamgaciConstants.textSecondary)),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            showCountryPicker(
-                              context: context,
-                              showPhoneCode: true,
-                              onSelect: (Country country) {
-                                setState(() {
-                                  _selectedCountry = country.countryCode;
-                                  _selectedDialCode = '+${country.phoneCode}';
-                                });
-                              },
-                            );
-                          },
-                          icon: const Icon(Icons.public),
-                          label: const Text('Ülke Seç'),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Türkiye seçili değilse adres alanlarını serbest bırak
-                    if (_selectedCountry == 'TR')
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              isExpanded: true,
-                              initialValue: _selectedCity,
-                              items: _cities
-                                  .map((c) => DropdownMenuItem(
-                                        value: c,
-                                        child: Text(c,
-                                            overflow: TextOverflow.ellipsis,
-                                            softWrap: false),
-                                      ))
-                                  .toList(),
-                              selectedItemBuilder: (context) => _cities
-                                  .map((c) => Align(
-                                        alignment: Alignment.centerLeft,
-                                        child: Text(c,
-                                            overflow: TextOverflow.ellipsis,
-                                            softWrap: false),
-                                      ))
-                                  .toList(),
-                              onChanged: (v) {
-                                setState(() {
-                                  _selectedCity = v;
-                                  _selectedDistrict = null;
-                                  _cityController.text = v ?? '';
-                                  _districtController.clear();
-                                  // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
-                                });
-                              },
-                              decoration: const InputDecoration(
-                                labelText: 'İl',
-                                prefixIcon: Icon(Icons.location_city),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _selectedDistrict,
-                              items: (_selectedCity != null)
-                                  ? (_districtsByCity[_selectedCity!] ?? [])
-                                      .map((d) => DropdownMenuItem(
-                                          value: d, child: Text(d)))
-                                      .toList()
-                                  : const [],
-                              onChanged: (v) {
-                                setState(() {
-                                  _selectedDistrict = v;
-                                  _districtController.text = v ?? '';
-                                  // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
-                                });
-                              },
-                              decoration: const InputDecoration(
-                                labelText: 'İlçe',
-                                prefixIcon: Icon(Icons.map_outlined),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (_selectedCountry == 'TR') const SizedBox(height: 12),
-                    if (_selectedCountry == 'TR')
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _neighborhoodController,
-                              decoration: const InputDecoration(
-                                labelText: 'Mahalle',
-                                prefixIcon: Icon(Icons.home_work_outlined),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _streetController,
-                              decoration: const InputDecoration(
-                                labelText: 'Sokak/Cadde',
-                                prefixIcon: Icon(Icons.alt_route_outlined),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    if (_selectedCountry == 'TR') const SizedBox(height: 12),
-                    if (_selectedCountry == 'TR')
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _buildingNoController,
-                              decoration: const InputDecoration(
-                                labelText: 'Bina No',
-                                prefixIcon: Icon(Icons.apartment),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _apartmentNoController,
-                              decoration: const InputDecoration(
-                                labelText: 'Daire No',
-                                prefixIcon: Icon(Icons.meeting_room_outlined),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _postalCodeController,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(10)
-                              ],
-                              decoration: const InputDecoration(
-                                labelText: 'Posta Kodu',
-                                prefixIcon:
-                                    Icon(Icons.local_post_office_outlined),
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _addressController,
-                      maxLines: _selectedCountry == 'TR' ? 2 : 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Adres (Açıklama)',
-                        hintText: 'Opsiyonel ek açıklama',
-                        prefixIcon: Icon(Icons.sticky_note_2_outlined),
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Şifre
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      onChanged: (value) => setState(() {}),
-                      decoration: InputDecoration(
-                        labelText: 'Şifre *',
-                        hintText:
-                            'En az 8 karakter, büyük/küçük harf, rakam ve sembol',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
-                          ),
-                        ),
-                        border: const OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Şifre gereklidir';
-                        }
-                        if (!_isStrongPassword(value)) {
-                          return 'Şifre güvenlik gereksinimlerini karşılamıyor';
-                        }
-                        return null;
-                      },
-                    ),
-                    if (_passwordController.text.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      _buildPasswordStrengthIndicator(),
-                    ],
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // Şifre Tekrar
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  obscureText: _obscureConfirmPassword,
-                  decoration: InputDecoration(
-                    labelText: 'Şifre Tekrar *',
-                    hintText: 'Şifrenizi tekrar girin',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _obscureConfirmPassword = !_obscureConfirmPassword;
-                        });
-                      },
-                      icon: Icon(
-                        _obscureConfirmPassword
-                            ? Icons.visibility_outlined
-                            : Icons.visibility_off_outlined,
-                      ),
-                    ),
-                    border: const OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Şifre tekrarı gereklidir';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Şifreler eşleşmiyor';
-                    }
-                    if (!_isStrongPassword(_passwordController.text)) {
-                      return 'Şifre gereksinimlerini karşılamıyor';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // Kullanım şartları
-                Row(
-                  children: [
-                    Checkbox(
-                      value: _agreeToTerms,
-                      onChanged: (value) {
-                        setState(() {
-                          _agreeToTerms = value ?? false;
-                        });
-                      },
-                    ),
-                    Expanded(
-                      child: RichText(
-                        text: TextSpan(
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: TamgaciConstants.textSecondary,
-                          ),
-                          children: [
-                            const TextSpan(text: 'Kullanım şartlarını ve '),
-                            WidgetSpan(
-                              child: GestureDetector(
-                                onTap: () {
-                                  showPrivacyPolicyDialog(context);
-                                },
-                                child: Text(
-                                  "Gizlilik Politikası'nı",
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 14,
-                                    color: TamgaciConstants.primaryColor,
-                                    fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.underline,
-                                  ),
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                  letterSpacing: 1.0,
                                 ),
                               ),
                             ),
-                            const TextSpan(text: ' kabul ediyorum'),
+                            const SizedBox(height: 8),
+                            Builder(builder: (context) {
+                              final scheme = Theme.of(context).colorScheme;
+                              final hintColor =
+                                  scheme.onSurface.withValues(alpha: 0.7);
+                              return Text(
+                                "Tamgaci'ye hoş geldiniz!",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: hintColor,
+                                ),
+                              );
+                            }),
                           ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 32),
+                        const SizedBox(height: 40),
 
-                // Kayıt ol butonu
-                Consumer(
-                  builder: (context, ref, child) {
-                    final authLoading = ref.watch(authLoadingProvider);
-                    final isLoading = authLoading || _isRegistering;
-
-                    return ElevatedButton(
-                      onPressed: isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                        // Profil fotoğrafı ve Ad/Soyad
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            GestureDetector(
+                              onTap: _pickAvatar,
+                              child: CircleAvatar(
+                                radius: 28,
+                                backgroundColor: Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.grey.shade300
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .surfaceContainerHighest,
+                                backgroundImage: _avatarBytes != null
+                                    ? MemoryImage(_avatarBytes!)
+                                    : null,
+                                child: _avatarBytes == null
+                                    ? Icon(
+                                        Icons.camera_alt_outlined,
+                                        color: Theme.of(context).brightness ==
+                                                Brightness.light
+                                            ? Colors.black87
+                                            : Colors.white,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  TextFormField(
+                                    controller: _firstNameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Ad *',
+                                      hintText: 'Adınız',
+                                      prefixIcon: Icon(Icons.person_outline),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Ad gereklidir';
+                                      }
+                                      if (value.trim().length < 2) {
+                                        return 'Ad en az 2 karakter olmalı';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextFormField(
+                                    controller: _lastNameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Soyad *',
+                                      hintText: 'Soyadınız',
+                                      prefixIcon: Icon(Icons.person_outline),
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    validator: (value) {
+                                      if (value == null ||
+                                          value.trim().isEmpty) {
+                                        return 'Soyad gereklidir';
+                                      }
+                                      if (value.trim().length < 2) {
+                                        return 'Soyad en az 2 karakter olmalı';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        elevation: isLoading ? 0 : 2,
-                      ),
-                      child: isLoading
-                          ? Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Theme.of(context).colorScheme.onPrimary,
+
+                        const SizedBox(height: 16),
+
+                        // E-posta
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                            labelText: 'E-posta *',
+                            hintText: 'ornek@email.com',
+                            prefixIcon: Icon(Icons.email_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'E-posta gereklidir';
+                            }
+                            if (!RegExp(
+                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                            ).hasMatch(value)) {
+                              return 'Geçerli bir e-posta adresi girin';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Şirket Adı
+                        TextFormField(
+                          controller: _companyNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Şirket Adı',
+                            hintText: 'Örnek Teknoloji A.Ş.',
+                            prefixIcon: Icon(Icons.business_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Telefon (alan kodu + numara)
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Telefon',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: TamgaciConstants.textSecondary,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () {
+                                showCountryPicker(
+                                  context: context,
+                                  showPhoneCode: true,
+                                  onSelect: (Country country) {
+                                    setState(() {
+                                      _selectedCountry = country.countryCode;
+                                      _selectedDialCode =
+                                          '+${country.phoneCode}';
+                                    });
+                                  },
+                                );
+                              },
+                              child: Builder(builder: (context) {
+                                final scheme = Theme.of(context).colorScheme;
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: scheme.outlineVariant),
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: scheme.surface,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 12),
+                                  child: Row(
+                                    children: [
+                                      Text(
+                                        _countryFlagEmoji(_selectedCountry),
+                                        style: const TextStyle(fontSize: 20),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _selectedDialCode,
+                                        style: GoogleFonts.poppins(
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                      const Icon(Icons.arrow_drop_down),
+                                      const SizedBox(width: 12),
+                                      const VerticalDivider(width: 1),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: _phoneController,
+                                          keyboardType: TextInputType.number,
+                                          inputFormatters: [
+                                            FilteringTextInputFormatter
+                                                .digitsOnly,
+                                            LengthLimitingTextInputFormatter(
+                                                15),
+                                          ],
+                                          decoration: const InputDecoration(
+                                            hintText: '5551234567',
+                                            border: InputBorder.none,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Vergi Kimlik Numarası
+                        TextFormField(
+                          controller: _taxIdController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(15),
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Vergi Kimlik Numarası',
+                            hintText: 'TCKN/VKN',
+                            prefixIcon: Icon(Icons.badge_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Vergi Dairesi: TR ise arama/seçim, diğer ülkelerde serbest metin
+                        if (_selectedCountry == 'TR')
+                          RawAutocomplete<String>(
+                            optionsBuilder:
+                                (TextEditingValue textEditingValue) {
+                              final q =
+                                  textEditingValue.text.trim().toLowerCase();
+                              if (q.isEmpty) {
+                                // Yazmadan da önde gelenleri göster (ilk 100)
+                                return _allTaxOffices.take(100);
+                              }
+                              return _allTaxOffices
+                                  .where((o) => o.toLowerCase().contains(q));
+                            },
+                            initialValue: TextEditingValue(
+                                text: _taxOfficeController.text),
+                            onSelected: (String selection) {
+                              _taxOfficeController.text = selection;
+                            },
+                            fieldViewBuilder: (context, controller, focusNode,
+                                onFieldSubmitted) {
+                              if (controller.text !=
+                                  _taxOfficeController.text) {
+                                controller.text = _taxOfficeController.text;
+                                controller.selection =
+                                    TextSelection.fromPosition(
+                                  TextPosition(offset: controller.text.length),
+                                );
+                              }
+                              controller.addListener(() {
+                                _taxOfficeController.text = controller.text;
+                              });
+                              focusNode.addListener(() {
+                                if (focusNode.hasFocus &&
+                                    controller.text.isEmpty) {
+                                  controller.text = '';
+                                }
+                              });
+                              return TextFormField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: const InputDecoration(
+                                  labelText: 'Vergi Dairesi',
+                                  hintText:
+                                      'Yazarak arayın veya listeden seçin',
+                                  prefixIcon: Icon(Icons.apartment_outlined),
+                                  border: OutlineInputBorder(),
+                                ),
+                              );
+                            },
+                            optionsViewBuilder: (context, onSelected, options) {
+                              final scheme = Theme.of(context).colorScheme;
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 4,
+                                  color: scheme.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: ConstrainedBox(
+                                    constraints: const BoxConstraints(
+                                        maxHeight: 300, minWidth: 280),
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      shrinkWrap: true,
+                                      itemCount: options.length,
+                                      itemBuilder: (context, index) {
+                                        final opt = options.elementAt(index);
+                                        return ListTile(
+                                          dense: true,
+                                          title: Text(opt,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                  color: scheme.onSurface)),
+                                          onTap: () => onSelected(opt),
+                                        );
+                                      },
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  _isRegistering
-                                      ? (_avatarBytes != null
-                                          ? 'Fotoğraf yükleniyor...'
-                                          : 'Kayıt oluşturuluyor...')
-                                      : 'Kayıt Ol',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              );
+                            },
+                          )
+                        else
+                          TextFormField(
+                            controller: _taxOfficeController,
+                            decoration: const InputDecoration(
+                              labelText: 'Vergi Dairesi',
+                              hintText: 'Vergi dairesini yazın',
+                              prefixIcon: Icon(Icons.apartment_outlined),
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+
+                        const SizedBox(height: 16),
+
+                        // Ülke/İl/İlçe ve adres detayları
+                        Column(
+                          children: [
+                            // Ülke sabit country picker ile
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text('Ülke: $_selectedCountry',
+                                      style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color:
+                                              TamgaciConstants.textSecondary)),
+                                ),
+                                OutlinedButton.icon(
+                                  onPressed: () {
+                                    showCountryPicker(
+                                      context: context,
+                                      showPhoneCode: true,
+                                      onSelect: (Country country) {
+                                        setState(() {
+                                          _selectedCountry =
+                                              country.countryCode;
+                                          _selectedDialCode =
+                                              '+${country.phoneCode}';
+                                        });
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(Icons.public),
+                                  label: const Text('Ülke Seç'),
                                 ),
                               ],
-                            )
-                          : Text(
-                              'Kayıt Ol',
-                              style: GoogleFonts.poppins(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                            ),
+                            const SizedBox(height: 8),
+                            // Türkiye seçili değilse adres alanlarını serbest bırak
+                            if (_selectedCountry == 'TR')
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DropdownButtonFormField<String>(
+                                      isExpanded: true,
+                                      initialValue: _selectedCity,
+                                      items: _cities
+                                          .map((c) => DropdownMenuItem(
+                                                value: c,
+                                                child: Text(c,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    softWrap: false),
+                                              ))
+                                          .toList(),
+                                      selectedItemBuilder: (context) => _cities
+                                          .map((c) => Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Text(c,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    softWrap: false),
+                                              ))
+                                          .toList(),
+                                      onChanged: (v) {
+                                        setState(() {
+                                          _selectedCity = v;
+                                          _selectedDistrict = null;
+                                          _cityController.text = v ?? '';
+                                          _districtController.clear();
+                                          // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                                        });
+                                      },
+                                      decoration: const InputDecoration(
+                                        labelText: 'İl',
+                                        prefixIcon: Icon(Icons.location_city),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: DropdownButtonFormField<String>(
+                                      initialValue: _selectedDistrict,
+                                      items: (_selectedCity != null)
+                                          ? (_districtsByCity[_selectedCity!] ??
+                                                  [])
+                                              .map((d) => DropdownMenuItem(
+                                                  value: d, child: Text(d)))
+                                              .toList()
+                                          : const [],
+                                      onChanged: (v) {
+                                        setState(() {
+                                          _selectedDistrict = v;
+                                          _districtController.text = v ?? '';
+                                          // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                                        });
+                                      },
+                                      decoration: const InputDecoration(
+                                        labelText: 'İlçe',
+                                        prefixIcon: Icon(Icons.map_outlined),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (_selectedCountry == 'TR')
+                              const SizedBox(height: 12),
+                            if (_selectedCountry == 'TR')
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _neighborhoodController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Mahalle',
+                                        prefixIcon:
+                                            Icon(Icons.home_work_outlined),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _streetController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Sokak/Cadde',
+                                        prefixIcon:
+                                            Icon(Icons.alt_route_outlined),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            if (_selectedCountry == 'TR')
+                              const SizedBox(height: 12),
+                            if (_selectedCountry == 'TR')
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _buildingNoController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Bina No',
+                                        prefixIcon: Icon(Icons.apartment),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _apartmentNoController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Daire No',
+                                        prefixIcon:
+                                            Icon(Icons.meeting_room_outlined),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _postalCodeController,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly,
+                                        LengthLimitingTextInputFormatter(10)
+                                      ],
+                                      decoration: const InputDecoration(
+                                        labelText: 'Posta Kodu',
+                                        prefixIcon: Icon(
+                                            Icons.local_post_office_outlined),
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: _addressController,
+                              maxLines: _selectedCountry == 'TR' ? 2 : 3,
+                              decoration: const InputDecoration(
+                                labelText: 'Adres (Açıklama)',
+                                hintText: 'Opsiyonel ek açıklama',
+                                prefixIcon: Icon(Icons.sticky_note_2_outlined),
+                                border: OutlineInputBorder(),
                               ),
                             ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 24),
-
-                // Giriş yap linki
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Zaten hesabınız var mı? ',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: TamgaciConstants.textSecondary,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).pushReplacementNamed(TamgaciRoutes.login);
-                      },
-                      child: Text(
-                        'Giriş Yap',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: TamgaciConstants.primaryColor,
+                          ],
                         ),
-                      ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 40),
-              ],
-            ),
-          ),
-        ),
-      ),
+                        const SizedBox(height: 16),
+
+                        // Şifre
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _passwordController,
+                              obscureText: _obscurePassword,
+                              onChanged: (value) => setState(() {}),
+                              decoration: InputDecoration(
+                                labelText: 'Şifre *',
+                                hintText:
+                                    'En az 8 karakter, büyük/küçük harf, rakam ve sembol',
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                suffixIcon: IconButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                ),
+                                border: const OutlineInputBorder(),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Şifre gereklidir';
+                                }
+                                if (!_isStrongPassword(value)) {
+                                  return 'Şifre güvenlik gereksinimlerini karşılamıyor';
+                                }
+                                return null;
+                              },
+                            ),
+                            if (_passwordController.text.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              _buildPasswordStrengthIndicator(),
+                            ],
+                          ],
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Şifre Tekrar
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          obscureText: _obscureConfirmPassword,
+                          decoration: InputDecoration(
+                            labelText: 'Şifre Tekrar *',
+                            hintText: 'Şifrenizi tekrar girin',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _obscureConfirmPassword =
+                                      !_obscureConfirmPassword;
+                                });
+                              },
+                              icon: Icon(
+                                _obscureConfirmPassword
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                              ),
+                            ),
+                            border: const OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Şifre tekrarı gereklidir';
+                            }
+                            if (value != _passwordController.text) {
+                              return 'Şifreler eşleşmiyor';
+                            }
+                            if (!_isStrongPassword(_passwordController.text)) {
+                              return 'Şifre gereksinimlerini karşılamıyor';
+                            }
+                            return null;
+                          },
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Kullanım şartları
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _agreeToTerms,
+                              onChanged: (value) {
+                                setState(() {
+                                  _agreeToTerms = value ?? false;
+                                });
+                              },
+                            ),
+                            Expanded(
+                              child: RichText(
+                                text: TextSpan(
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: TamgaciConstants.textSecondary,
+                                  ),
+                                  children: [
+                                    const TextSpan(
+                                        text: 'Kullanım şartlarını ve '),
+                                    WidgetSpan(
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          showPrivacyPolicyDialog(context);
+                                        },
+                                        child: Text(
+                                          "Gizlilik Politikası'nı",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 14,
+                                            color:
+                                                TamgaciConstants.primaryColor,
+                                            fontWeight: FontWeight.w600,
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const TextSpan(text: ' kabul ediyorum'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 32),
+
+                        // Kayıt ol butonu
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final authLoading = ref.watch(authLoadingProvider);
+                            final isLoading = authLoading || _isRegistering;
+
+                            return ElevatedButton(
+                              onPressed: isLoading ? null : _register,
+                              style: ElevatedButton.styleFrom(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: isLoading ? 0 : 2,
+                              ),
+                              child: isLoading
+                                  ? Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Text(
+                                          _isRegistering
+                                              ? (_avatarBytes != null
+                                                  ? 'Fotoğraf yükleniyor...'
+                                                  : 'Kayıt oluşturuluyor...')
+                                              : 'Kayıt Ol',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      'Kayıt Ol',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                            );
+                          },
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Giriş yap linki
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Zaten hesabınız var mı? ',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: TamgaciConstants.textSecondary,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(
+                                  context,
+                                ).pushReplacementNamed(TamgaciRoutes.login);
+                              },
+                              child: Text(
+                                'Giriş Yap',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: TamgaciConstants.primaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ))
+      ]),
     );
   }
 
-  /// Mobil ve tablet layout'u
+  /// Mobil ve tablet layout'u - Desktop formu ile aynı
   Widget _buildMobileLayout(bool isDark) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -2092,25 +2119,24 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   shaderCallback: (bounds) => const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
+                    colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                   ).createShader(bounds),
                   child: Text(
-                    'TAMGACI',
+                    'Hesap Oluştur',
                     style: GoogleFonts.poppins(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
+                      letterSpacing: 1.0,
                     ),
                   ),
                 ),
                 const SizedBox(height: 8),
                 Builder(builder: (context) {
-                  final hintColor =
-                      Theme.of(context).brightness == Brightness.dark
-                          ? Colors.white.withValues(alpha: 0.7)
-                          : Colors.black.withValues(alpha: 0.6);
+                  final scheme = Theme.of(context).colorScheme;
+                  final hintColor = scheme.onSurface.withValues(alpha: 0.7);
                   return Text(
-                    'Hesabınızı oluşturun',
+                    "Tamgaci'ye hoş geldiniz!",
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
@@ -2124,89 +2150,74 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             const SizedBox(height: 40),
 
             // Profil fotoğrafı ve Ad/Soyad
-            Column(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Profil fotoğrafı
                 GestureDetector(
-                  onTap: _pickProfileImage,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: TamgaciConstants.primaryColor,
-                        width: 3,
-                      ),
-                      color:
-                          TamgaciConstants.primaryColor.withValues(alpha: 0.1),
-                    ),
-                    child: _profileImage != null
-                        ? ClipOval(
-                            child: Image.file(
-                              _profileImage!,
-                              fit: BoxFit.cover,
-                            ),
+                  onTap: _pickAvatar,
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: Theme.of(context).brightness ==
+                            Brightness.light
+                        ? Colors.grey.shade300
+                        : Theme.of(context).colorScheme.surfaceContainerHighest,
+                    backgroundImage: _avatarBytes != null
+                        ? MemoryImage(_avatarBytes!)
+                        : null,
+                    child: _avatarBytes == null
+                        ? Icon(
+                            Icons.camera_alt_outlined,
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black87
+                                    : Colors.white,
                           )
-                        : const Icon(
-                            Icons.person_add,
-                            size: 40,
-                            color: TamgaciConstants.primaryColor,
-                          ),
+                        : null,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Profil fotoğrafı seçin',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: TamgaciConstants.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Ad/Soyad
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    children: [
+                      TextFormField(
                         controller: _firstNameController,
                         decoration: const InputDecoration(
-                          labelText: 'Ad',
+                          labelText: 'Ad *',
+                          hintText: 'Adınız',
                           prefixIcon: Icon(Icons.person_outline),
                           border: OutlineInputBorder(),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Ad gerekli';
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Ad gereklidir';
                           }
-                          if (value.length < 2) {
+                          if (value.trim().length < 2) {
                             return 'Ad en az 2 karakter olmalı';
                           }
                           return null;
                         },
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
+                      const SizedBox(height: 12),
+                      TextFormField(
                         controller: _lastNameController,
                         decoration: const InputDecoration(
-                          labelText: 'Soyad',
+                          labelText: 'Soyad *',
+                          hintText: 'Soyadınız',
                           prefixIcon: Icon(Icons.person_outline),
                           border: OutlineInputBorder(),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Soyad gerekli';
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Soyad gereklidir';
                           }
-                          if (value.length < 2) {
+                          if (value.trim().length < 2) {
                             return 'Soyad en az 2 karakter olmalı';
                           }
                           return null;
                         },
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -2218,17 +2229,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
-                labelText: 'E-posta',
+                labelText: 'E-posta *',
                 hintText: 'ornek@email.com',
                 prefixIcon: Icon(Icons.email_outlined),
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'E-posta adresi gerekli';
+                if (value == null || value.trim().isEmpty) {
+                  return 'E-posta gereklidir';
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                    .hasMatch(value)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value)) {
                   return 'Geçerli bir e-posta adresi girin';
                 }
                 return null;
@@ -2237,71 +2249,88 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
             const SizedBox(height: 16),
 
-            // Telefon
-            Row(
+            // Şirket Adı
+            TextFormField(
+              controller: _companyNameController,
+              decoration: const InputDecoration(
+                labelText: 'Şirket Adı',
+                hintText: 'Örnek Teknoloji A.Ş.',
+                prefixIcon: Icon(Icons.business_outlined),
+                border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Telefon (alan kodu + numara)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  flex: 2,
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _selectedCountry,
-                    decoration: const InputDecoration(
-                      labelText: 'Ülke',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'TR',
-                        child: Row(
-                          children: [
-                            Text('🇹🇷', style: TextStyle(fontSize: 20)),
-                            SizedBox(width: 8),
-                            Text('Türkiye (+90)'),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'US',
-                        child: Row(
-                          children: [
-                            Text('🇺🇸', style: TextStyle(fontSize: 20)),
-                            SizedBox(width: 8),
-                            Text('Amerika (+1)'),
-                          ],
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: 'DE',
-                        child: Row(
-                          children: [
-                            Text('🇩🇪', style: TextStyle(fontSize: 20)),
-                            SizedBox(width: 8),
-                            Text('Almanya (+49)'),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedCountry = value ?? 'TR';
-                      });
-                    },
+                Text(
+                  'Telefon',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: TamgaciConstants.textSecondary,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 3,
-                  child: TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(15),
-                    ],
-                    decoration: const InputDecoration(
-                      hintText: '5551234567',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () {
+                    showCountryPicker(
+                      context: context,
+                      showPhoneCode: true,
+                      onSelect: (Country country) {
+                        setState(() {
+                          _selectedCountry = country.countryCode;
+                          _selectedDialCode = '+${country.phoneCode}';
+                        });
+                      },
+                    );
+                  },
+                  child: Builder(builder: (context) {
+                    final scheme = Theme.of(context).colorScheme;
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: scheme.outlineVariant),
+                        borderRadius: BorderRadius.circular(8),
+                        color: scheme.surface,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                      child: Row(
+                        children: [
+                          Text(
+                            _countryFlagEmoji(_selectedCountry),
+                            style: const TextStyle(fontSize: 20),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _selectedDialCode,
+                            style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w600),
+                          ),
+                          const Icon(Icons.arrow_drop_down),
+                          const SizedBox(width: 12),
+                          const VerticalDivider(width: 1),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _phoneController,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(15),
+                              ],
+                              decoration: const InputDecoration(
+                                hintText: '5551234567',
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
               ],
             ),
@@ -2326,61 +2355,122 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
             const SizedBox(height: 16),
 
-            // Adres bilgileri
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Adres Bilgileri',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+            // Vergi Dairesi: TR ise arama/seçim, diğer ülkelerde serbest metin
+            if (_selectedCountry == 'TR')
+              RawAutocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  final q = textEditingValue.text.trim().toLowerCase();
+                  if (q.isEmpty) {
+                    // Yazmadan da önde gelenleri göster (ilk 100)
+                    return _allTaxOffices.take(100);
+                  }
+                  return _allTaxOffices
+                      .where((o) => o.toLowerCase().contains(q));
+                },
+                initialValue: TextEditingValue(text: _taxOfficeController.text),
+                onSelected: (String selection) {
+                  _taxOfficeController.text = selection;
+                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onFieldSubmitted) {
+                  if (controller.text != _taxOfficeController.text) {
+                    controller.text = _taxOfficeController.text;
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                  controller.addListener(() {
+                    _taxOfficeController.text = controller.text;
+                  });
+                  focusNode.addListener(() {
+                    if (focusNode.hasFocus && controller.text.isEmpty) {
+                      controller.text = '';
+                    }
+                  });
+                  return TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Vergi Dairesi',
+                      hintText: 'Yazarak arayın veya listeden seçin',
+                      prefixIcon: Icon(Icons.apartment_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  final scheme = Theme.of(context).colorScheme;
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxHeight: 300, minWidth: 280),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final opt = options.elementAt(index);
+                            return ListTile(
+                              dense: true,
+                              title: Text(opt,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: scheme.onSurface)),
+                              onTap: () => onSelected(opt),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              )
+            else
+              TextFormField(
+                controller: _taxOfficeController,
+                decoration: const InputDecoration(
+                  labelText: 'Vergi Dairesi',
+                  hintText: 'Vergi dairesini yazın',
+                  prefixIcon: Icon(Icons.apartment_outlined),
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedCountry,
-                  decoration: const InputDecoration(
-                    labelText: 'Ülke',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'TR',
-                      child: Row(
-                        children: [
-                          Text('🇹🇷', style: TextStyle(fontSize: 20)),
-                          SizedBox(width: 8),
-                          Text('Türkiye'),
-                        ],
-                      ),
+              ),
+
+            const SizedBox(height: 16),
+
+            // Ülke/İl/İlçe ve adres detayları
+            Column(
+              children: [
+                // Ülke sabit country picker ile
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Ülke: $_selectedCountry',
+                          style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: TamgaciConstants.textSecondary)),
                     ),
-                    DropdownMenuItem(
-                      value: 'US',
-                      child: Row(
-                        children: [
-                          Text('🇺🇸', style: TextStyle(fontSize: 20)),
-                          SizedBox(width: 8),
-                          Text('Amerika'),
-                        ],
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: 'DE',
-                      child: Row(
-                        children: [
-                          Text('🇩🇪', style: TextStyle(fontSize: 20)),
-                          SizedBox(width: 8),
-                          Text('Almanya'),
-                        ],
-                      ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        showCountryPicker(
+                          context: context,
+                          showPhoneCode: true,
+                          onSelect: (Country country) {
+                            setState(() {
+                              _selectedCountry = country.countryCode;
+                              _selectedDialCode = '+${country.phoneCode}';
+                            });
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.public),
+                      label: const Text('Ülke Seç'),
                     ),
                   ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCountry = value ?? 'TR';
-                    });
-                  },
                 ),
                 const SizedBox(height: 8),
                 // Türkiye seçili değilse adres alanlarını serbest bırak
@@ -2388,22 +2478,61 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: TextFormField(
-                          controller: _cityController,
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          initialValue: _selectedCity,
+                          items: _cities
+                              .map((c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false),
+                                  ))
+                              .toList(),
+                          selectedItemBuilder: (context) => _cities
+                              .map((c) => Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(c,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false),
+                                  ))
+                              .toList(),
+                          onChanged: (v) {
+                            setState(() {
+                              _selectedCity = v;
+                              _selectedDistrict = null;
+                              _cityController.text = v ?? '';
+                              _districtController.clear();
+                              // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                            });
+                          },
                           decoration: const InputDecoration(
                             labelText: 'İl',
-                            prefixIcon: Icon(Icons.location_city_outlined),
+                            prefixIcon: Icon(Icons.location_city),
                             border: OutlineInputBorder(),
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: TextFormField(
-                          controller: _districtController,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _selectedDistrict,
+                          items: (_selectedCity != null)
+                              ? (_districtsByCity[_selectedCity!] ?? [])
+                                  .map((d) => DropdownMenuItem(
+                                      value: d, child: Text(d)))
+                                  .toList()
+                              : const [],
+                          onChanged: (v) {
+                            setState(() {
+                              _selectedDistrict = v;
+                              _districtController.text = v ?? '';
+                              // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                            });
+                          },
                           decoration: const InputDecoration(
                             labelText: 'İlçe',
-                            prefixIcon: Icon(Icons.alt_route_outlined),
+                            prefixIcon: Icon(Icons.map_outlined),
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -2419,7 +2548,45 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           controller: _neighborhoodController,
                           decoration: const InputDecoration(
                             labelText: 'Mahalle',
-                            prefixIcon: Icon(Icons.location_on_outlined),
+                            prefixIcon: Icon(Icons.home_work_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _streetController,
+                          decoration: const InputDecoration(
+                            labelText: 'Sokak/Cadde',
+                            prefixIcon: Icon(Icons.alt_route_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (_selectedCountry == 'TR') const SizedBox(height: 12),
+                if (_selectedCountry == 'TR')
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _buildingNoController,
+                          decoration: const InputDecoration(
+                            labelText: 'Bina No',
+                            prefixIcon: Icon(Icons.apartment),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _apartmentNoController,
+                          decoration: const InputDecoration(
+                            labelText: 'Daire No',
+                            prefixIcon: Icon(Icons.meeting_room_outlined),
                             border: OutlineInputBorder(),
                           ),
                         ),
@@ -2447,7 +2614,277 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   controller: _addressController,
                   maxLines: _selectedCountry == 'TR' ? 2 : 3,
                   decoration: const InputDecoration(
-                    labelText: 'Adres',
+                    labelText: 'Adres (Açıklama)',
+                    hintText: 'Opsiyonel ek açıklama',
+                    prefixIcon: Icon(Icons.sticky_note_2_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            // Vergi Dairesi: TR ise arama/seçim, diğer ülkelerde serbest metin
+            if (_selectedCountry == 'TR')
+              RawAutocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  final q = textEditingValue.text.trim().toLowerCase();
+                  if (q.isEmpty) {
+                    // Yazmadan da önde gelenleri göster (ilk 100)
+                    return _allTaxOffices.take(100);
+                  }
+                  return _allTaxOffices
+                      .where((o) => o.toLowerCase().contains(q));
+                },
+                initialValue: TextEditingValue(text: _taxOfficeController.text),
+                onSelected: (String selection) {
+                  _taxOfficeController.text = selection;
+                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onFieldSubmitted) {
+                  if (controller.text != _taxOfficeController.text) {
+                    controller.text = _taxOfficeController.text;
+                    controller.selection = TextSelection.fromPosition(
+                      TextPosition(offset: controller.text.length),
+                    );
+                  }
+                  controller.addListener(() {
+                    _taxOfficeController.text = controller.text;
+                  });
+                  focusNode.addListener(() {
+                    if (focusNode.hasFocus && controller.text.isEmpty) {
+                      controller.text = '';
+                    }
+                  });
+                  return TextFormField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    decoration: const InputDecoration(
+                      labelText: 'Vergi Dairesi',
+                      hintText: 'Yazarak arayın veya listeden seçin',
+                      prefixIcon: Icon(Icons.apartment_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  );
+                },
+                optionsViewBuilder: (context, onSelected, options) {
+                  final scheme = Theme.of(context).colorScheme;
+                  return Align(
+                    alignment: Alignment.topLeft,
+                    child: Material(
+                      elevation: 4,
+                      color: scheme.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      child: ConstrainedBox(
+                        constraints:
+                            const BoxConstraints(maxHeight: 300, minWidth: 280),
+                        child: ListView.builder(
+                          padding: EdgeInsets.zero,
+                          shrinkWrap: true,
+                          itemCount: options.length,
+                          itemBuilder: (context, index) {
+                            final opt = options.elementAt(index);
+                            return ListTile(
+                              dense: true,
+                              title: Text(opt,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(color: scheme.onSurface)),
+                              onTap: () => onSelected(opt),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              )
+            else
+              TextFormField(
+                controller: _taxOfficeController,
+                decoration: const InputDecoration(
+                  labelText: 'Vergi Dairesi',
+                  hintText: 'Vergi dairesini yazın',
+                  prefixIcon: Icon(Icons.apartment_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+            const SizedBox(height: 16),
+
+            // Ülke/İl/İlçe ve adres detayları
+            Column(
+              children: [
+                // Ülke sabit country picker ile
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text('Ülke: $_selectedCountry',
+                          style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: TamgaciConstants.textSecondary)),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        showCountryPicker(
+                          context: context,
+                          showPhoneCode: true,
+                          onSelect: (Country country) {
+                            setState(() {
+                              _selectedCountry = country.countryCode;
+                              _selectedDialCode = '+${country.phoneCode}';
+                            });
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.public),
+                      label: const Text('Ülke Seç'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                // Türkiye seçili değilse adres alanlarını serbest bırak
+                if (_selectedCountry == 'TR')
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          initialValue: _selectedCity,
+                          items: _cities
+                              .map((c) => DropdownMenuItem(
+                                    value: c,
+                                    child: Text(c,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false),
+                                  ))
+                              .toList(),
+                          selectedItemBuilder: (context) => _cities
+                              .map((c) => Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(c,
+                                        overflow: TextOverflow.ellipsis,
+                                        softWrap: false),
+                                  ))
+                              .toList(),
+                          onChanged: (v) {
+                            setState(() {
+                              _selectedCity = v;
+                              _selectedDistrict = null;
+                              _cityController.text = v ?? '';
+                              _districtController.clear();
+                              // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'İl',
+                            prefixIcon: Icon(Icons.location_city),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _selectedDistrict,
+                          items: (_selectedCity != null)
+                              ? (_districtsByCity[_selectedCity!] ?? [])
+                                  .map((d) => DropdownMenuItem(
+                                      value: d, child: Text(d)))
+                                  .toList()
+                              : const [],
+                          onChanged: (v) {
+                            setState(() {
+                              _selectedDistrict = v;
+                              _districtController.text = v ?? '';
+                              // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
+                            });
+                          },
+                          decoration: const InputDecoration(
+                            labelText: 'İlçe',
+                            prefixIcon: Icon(Icons.map_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (_selectedCountry == 'TR') const SizedBox(height: 12),
+                if (_selectedCountry == 'TR')
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _neighborhoodController,
+                          decoration: const InputDecoration(
+                            labelText: 'Mahalle',
+                            prefixIcon: Icon(Icons.home_work_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _streetController,
+                          decoration: const InputDecoration(
+                            labelText: 'Sokak/Cadde',
+                            prefixIcon: Icon(Icons.alt_route_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                if (_selectedCountry == 'TR') const SizedBox(height: 12),
+                if (_selectedCountry == 'TR')
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _buildingNoController,
+                          decoration: const InputDecoration(
+                            labelText: 'Bina No',
+                            prefixIcon: Icon(Icons.apartment),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _apartmentNoController,
+                          decoration: const InputDecoration(
+                            labelText: 'Daire No',
+                            prefixIcon: Icon(Icons.meeting_room_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _postalCodeController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                            LengthLimitingTextInputFormatter(10)
+                          ],
+                          decoration: const InputDecoration(
+                            labelText: 'Posta Kodu',
+                            prefixIcon: Icon(Icons.local_post_office_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _addressController,
+                  maxLines: _selectedCountry == 'TR' ? 2 : 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Adres (Açıklama)',
                     hintText: 'Opsiyonel ek açıklama',
                     prefixIcon: Icon(Icons.sticky_note_2_outlined),
                     border: OutlineInputBorder(),
@@ -2460,34 +2897,37 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
             // Şifre
             Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 TextFormField(
                   controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
+                  obscureText: _obscurePassword,
+                  onChanged: (value) => setState(() {}),
                   decoration: InputDecoration(
-                    labelText: 'Şifre',
-                    hintText: '••••••••',
-                    prefixIcon: const Icon(Icons.lock_outlined),
+                    labelText: 'Şifre *',
+                    hintText:
+                        'En az 8 karakter, büyük/küçük harf, rakam ve sembol',
+                    prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
                       onPressed: () {
                         setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
+                          _obscurePassword = !_obscurePassword;
                         });
                       },
                       icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
                       ),
                     ),
                     border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Şifre gerekli';
+                      return 'Şifre gereklidir';
                     }
-                    if (value.length < 8) {
-                      return 'Şifre en az 8 karakter olmalı';
+                    if (!_isStrongPassword(value)) {
+                      return 'Şifre güvenlik gereksinimlerini karşılamıyor';
                     }
                     return null;
                   },
@@ -2504,67 +2944,78 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             // Şifre Tekrar
             TextFormField(
               controller: _confirmPasswordController,
-              obscureText: !_isConfirmPasswordVisible,
+              obscureText: _obscureConfirmPassword,
               decoration: InputDecoration(
-                labelText: 'Şifre Tekrar',
-                hintText: '••••••••',
-                prefixIcon: const Icon(Icons.lock_outlined),
+                labelText: 'Şifre Tekrar *',
+                hintText: 'Şifrenizi tekrar girin',
+                prefixIcon: const Icon(Icons.lock_outline),
                 suffixIcon: IconButton(
                   onPressed: () {
                     setState(() {
-                      _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
                     });
                   },
                   icon: Icon(
-                    _isConfirmPasswordVisible
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
+                    _obscureConfirmPassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                   ),
                 ),
                 border: const OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
-                  return 'Şifre tekrarı gerekli';
+                  return 'Şifre tekrarı gereklidir';
                 }
                 if (value != _passwordController.text) {
                   return 'Şifreler eşleşmiyor';
+                }
+                if (!_isStrongPassword(_passwordController.text)) {
+                  return 'Şifre gereksinimlerini karşılamıyor';
                 }
                 return null;
               },
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // Kullanım şartları
             Row(
               children: [
                 Checkbox(
-                  value: _acceptTerms,
+                  value: _agreeToTerms,
                   onChanged: (value) {
                     setState(() {
-                      _acceptTerms = value ?? false;
+                      _agreeToTerms = value ?? false;
                     });
                   },
                 ),
                 Expanded(
-                  child: Text.rich(
-                    TextSpan(
-                      text:
-                          'Kullanım şartlarını ve gizlilik politikasını kabul ediyorum',
+                  child: RichText(
+                    text: TextSpan(
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         color: TamgaciConstants.textSecondary,
                       ),
                       children: [
-                        TextSpan(
-                          text: ' Kullanım Şartları',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: TamgaciConstants.primaryColor,
+                        const TextSpan(text: 'Kullanım şartlarını ve '),
+                        WidgetSpan(
+                          child: GestureDetector(
+                            onTap: () {
+                              showPrivacyPolicyDialog(context);
+                            },
+                            child: Text(
+                              "Gizlilik Politikası'nı",
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                color: TamgaciConstants.primaryColor,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
                           ),
                         ),
+                        const TextSpan(text: ' kabul ediyorum'),
                       ],
                     ),
                   ),
@@ -2572,35 +3023,60 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ],
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
 
             // Kayıt ol butonu
-            ElevatedButton(
-              onPressed: _isLoading ? null : _register,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: TamgaciConstants.primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      'Kayıt Ol',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+            Consumer(
+              builder: (context, ref, child) {
+                final authLoading = ref.watch(authLoadingProvider);
+                final isLoading = authLoading || _isRegistering;
+
+                return ElevatedButton(
+                  onPressed: isLoading ? null : _register,
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    elevation: isLoading ? 0 : 2,
+                  ),
+                  child: isLoading
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              _isRegistering
+                                  ? (_avatarBytes != null
+                                      ? 'Fotoğraf yükleniyor...'
+                                      : 'Kayıt oluşturuluyor...')
+                                  : 'Kayıt Ol',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          'Kayıt Ol',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                );
+              },
             ),
 
             const SizedBox(height: 24),
@@ -2618,8 +3094,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context)
-                        .pushReplacementNamed(TamgaciRoutes.login);
+                    Navigator.of(
+                      context,
+                    ).pushReplacementNamed(TamgaciRoutes.login);
                   },
                   child: Text(
                     'Giriş Yap',
@@ -2635,6 +3112,36 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
             const SizedBox(height: 40),
           ],
+        ),
+      ),
+    );
+  }
+
+  /// Register görseli
+  Widget _buildRegisterImage() {
+    return Container(
+      width: 550,
+      height: 650,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.asset(
+          'assets/images/ads/registerImage.png',
+          width: 500,
+          height: 600,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
         ),
       ),
     );
