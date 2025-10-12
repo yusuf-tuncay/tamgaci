@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:async';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/routes/routes.dart';
 import '../../../../core/services/tenant_service.dart';
@@ -27,11 +28,42 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _rememberMe = true;
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
+  // Banner state
+  bool _showBanner = true;
+
+  // Countdown timer
+  Timer? _countdownTimer;
+  Duration _timeLeft =
+      const Duration(days: 0, hours: 0, minutes: 0, seconds: 0);
+
   @override
   void initState() {
     super.initState();
     _loadRememberMe();
     _prefillCredentialsIfRemembered();
+    _startCountdown();
+  }
+
+  void _startCountdown() {
+    _calculateTimeToNewYear();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_timeLeft.inSeconds > 0) {
+        setState(() {
+          _timeLeft = Duration(seconds: _timeLeft.inSeconds - 1);
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  void _calculateTimeToNewYear() {
+    final now = DateTime.now();
+    final newYear = DateTime(now.year + 1, 1, 1, 0, 0, 0);
+    final difference = newYear.difference(now);
+    setState(() {
+      _timeLeft = difference;
+    });
   }
 
   Future<void> _loadRememberMe() async {
@@ -60,6 +92,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -91,47 +124,75 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  /// Masaüstü layout'u
+  /// Masaüstü layout'u - Beyaz arkaplan, sol görsel
   Widget _buildDesktopLayout(bool isDark) {
-    return Center(
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 500),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 40),
+    return Stack(
+      children: [
+        Container(
+          height: MediaQuery.of(context).size.height,
+          color: Colors.white, // Beyaz arkaplan
+          child: Row(
+            children: [
+              // Sol taraf - Login görseli
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: _buildLoginImage(),
+                ),
+              ),
 
-                // Logo ve başlık
-                _buildHeader(isDark),
+              // Sağ taraf - Login formu
+              Expanded(
+                flex: 1,
+                child: Center(
+                  child: Container(
+                    constraints: const BoxConstraints(maxWidth: 500),
+                    padding: const EdgeInsets.all(32),
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const SizedBox(
+                                height: 120), // Banner için ekstra alan
 
-                const SizedBox(height: 48),
+                            // Logo ve başlık
+                            _buildHeader(isDark),
 
-                // Giriş formu
-                _buildLoginForm(isDark),
+                            const SizedBox(height: 48),
 
-                const SizedBox(height: 24),
+                            // Giriş formu
+                            _buildLoginForm(isDark),
 
-                // Giriş butonu
-                _buildLoginButton(),
+                            const SizedBox(height: 24),
 
-                const SizedBox(height: 16),
+                            // Giriş butonu
+                            _buildLoginButton(),
 
-                // Şifremi unuttum
-                _buildForgotPassword(isDark),
+                            const SizedBox(height: 16),
 
-                const SizedBox(height: 32),
+                            // Şifremi unuttum
+                            _buildForgotPassword(isDark),
 
-                // Kayıt ol linki
-                _buildRegisterLink(isDark),
-              ],
-            ),
+                            const SizedBox(height: 32),
+
+                            // Kayıt ol linki
+                            _buildRegisterLink(isDark),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-      ),
+
+        // Banner - sadece desktop'ta göster
+        if (_showBanner) _buildBanner(),
+      ],
     );
   }
 
@@ -556,5 +617,204 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return 'Ağ bağlantı sorunu. İnternetinizi kontrol edin ve tekrar deneyin.';
     }
     return 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin ve tekrar deneyin.';
+  }
+
+  /// Login görseli
+  Widget _buildLoginImage() {
+    return Container(
+      width: 500,
+      height: 600,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Image.asset(
+          'assets/images/ads/loginImage.png',
+          width: 500,
+          height: 600,
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+          isAntiAlias: true,
+        ),
+      ),
+    );
+  }
+
+  /// Countdown box builder
+  Widget _buildCountdownBox(String value, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Banner - sadece desktop'ta göster
+  Widget _buildBanner() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        height: _showBanner ? 100 : 0,
+        curve: Curves.easeInOut,
+        child: _showBanner
+            ? Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Color(0xFF3B82F6),
+                      Color(0xFF2563EB),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    // Close button
+                    GestureDetector(
+                      onTap: () => setState(() => _showBanner = false),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    // Banner content
+                    Expanded(
+                      child: Row(
+                        children: [
+                          // Icon
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: const Icon(
+                              Icons.star,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          // Text
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Yılbaşı Özel İndirimleri',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  'Son gün 31 Aralık %70 indirim fırsatı',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(width: 16),
+
+                          // Countdown Timer
+                          Row(
+                            children: [
+                              _buildCountdownBox(
+                                  _timeLeft.inDays.toString().padLeft(2, '0'),
+                                  'GÜN'),
+                              const SizedBox(width: 8),
+                              _buildCountdownBox(
+                                  (_timeLeft.inHours % 24)
+                                      .toString()
+                                      .padLeft(2, '0'),
+                                  'SAAT'),
+                              const SizedBox(width: 8),
+                              _buildCountdownBox(
+                                  (_timeLeft.inMinutes % 60)
+                                      .toString()
+                                      .padLeft(2, '0'),
+                                  'DK'),
+                              const SizedBox(width: 8),
+                              _buildCountdownBox(
+                                  (_timeLeft.inSeconds % 60)
+                                      .toString()
+                                      .padLeft(2, '0'),
+                                  'SN'),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
   }
 }
