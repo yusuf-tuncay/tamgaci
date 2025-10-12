@@ -35,6 +35,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return ResponsiveScaffold(
       appBar: CustomAppBar(title: l10n.settings, showDrawer: true),
       drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(

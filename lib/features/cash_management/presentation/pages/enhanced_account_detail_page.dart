@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../domain/entities/account.dart';
 
 /// Gelişmiş hesap detay sayfası
@@ -40,13 +41,9 @@ class _EnhancedAccountDetailPageState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final account = _getMockAccount();
 
-    return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+    return ResponsiveScaffold(
       appBar: AppBar(
         title: Text(account.name),
         actions: [
@@ -99,7 +96,8 @@ class _EnhancedAccountDetailPageState
           ],
         ),
       ),
-      drawer: const TamgaciDrawerMenu(),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: TabBarView(
         controller: _tabController,
         children: [

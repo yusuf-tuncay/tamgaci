@@ -8,6 +8,8 @@ import '../widgets/account_card.dart';
 import '../widgets/account_statistics_card.dart';
 import '../../data/services/account_initialization_service.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
+import '../../../../shared/widgets/responsive_scaffold.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/firebase/firebase_auth_service.dart';
 import '../../../../core/theme/constants.dart';
 import 'create_account_page.dart';
@@ -77,22 +79,28 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
     final accountsAsync = ref.watch(accountNotifierProvider);
     final statisticsAsync = ref.watch(accountStatisticsProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      drawer: const Drawer(
-        width: 280,
-        child: TamgaciDrawerMenu(),
-      ),
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          _buildHeaderSection(),
-          _buildStatisticsSection(statisticsAsync),
-          _buildFiltersSection(),
-          _buildAccountsSection(accountsAsync),
+    return ResponsiveScaffold(
+      appBar: const CustomAppBar(title: 'Hesaplar', showDrawer: true),
+      drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
+      body: Stack(
+        children: [
+          CustomScrollView(
+            slivers: [
+              _buildAppBar(),
+              _buildHeaderSection(),
+              _buildStatisticsSection(statisticsAsync),
+              _buildFiltersSection(),
+              _buildAccountsSection(accountsAsync),
+            ],
+          ),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: _buildFloatingActionButton(),
+          ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 

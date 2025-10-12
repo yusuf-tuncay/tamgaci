@@ -83,6 +83,7 @@ class _EnhancedCustomerDetailPageV2State
     return ResponsiveScaffold(
       appBar: const CustomAppBar(title: 'Müşteri Detayı', showDrawer: true),
       drawerContent: const TamgaciDrawerMenu(),
+      persistentOnLarge: false,
       body: customersAsync.when(
         data: (customers) {
           // Widget dispose edildiyse boş widget döndür
