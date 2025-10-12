@@ -172,6 +172,104 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget? _buildSubscriptionBanner(auth_domain.User? user) {
     if (user == null) return null;
     final now = DateTime.now();
+
+    // Deneme süresi kullanıcıları için özel kart
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial &&
+        user.trialEndAt != null) {
+      final trialEnd = user.trialEndAt!;
+      final remainingDays = trialEnd.difference(now).inDays;
+      final remainingHours = trialEnd.difference(now).inHours % 24;
+
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.blue[400]!,
+              Colors.blue[600]!,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.access_time,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Text ve süre bilgisi
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Deneme Süreniz',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    remainingDays > 0
+                        ? '$remainingDays gün, $remainingHours saat kaldı'
+                        : 'Deneme süreniz doldu',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Süre satın al butonu
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed(TamgaciRoutes.subscription),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.blue[600],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Süre Satın Al',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Diğer durumlar için mevcut banner
     DateTime? end;
     if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial) {
       end = user.trialEndAt;
@@ -239,8 +337,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const SizedBox(height: 16),
             _buildStatsGrid(dashboardSummaryAsync, isDark),
             const SizedBox(height: 16),
-            _buildPaymentsSection(isDark),
-            const SizedBox(height: 16),
             const ExchangeRatesWidget(),
             const SizedBox(height: 16),
             // Silinen widget: ProductVariantsWidget - gereksiz
@@ -299,11 +395,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
             // Stats Grid
             _buildStatsGrid(dashboardSummaryAsync, isDark),
-
-            const SizedBox(height: 20),
-
-            // Payments Section
-            _buildPaymentsSection(isDark),
 
             const SizedBox(height: 20),
 
@@ -938,67 +1029,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// Tahsilat bölümü
-  Widget _buildPaymentsSection(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 16,
-            spreadRadius: 1,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.black12,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.payments_outlined,
-                color: Colors.green,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Tahsilat İstatistikleri',
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : Colors.grey[800],
-                ),
-              ),
-              const Spacer(),
-              // Silinen modül: payments
-              TextButton(
-                onPressed: null, // Devre dışı
-                child: Text(
-                  'Tümünü Gör',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.green,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Silinen modül: payments - payment stats widget'ı kaldırıldı
-        ],
       ),
     );
   }

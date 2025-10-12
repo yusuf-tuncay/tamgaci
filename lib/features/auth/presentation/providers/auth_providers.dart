@@ -127,12 +127,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Firebase Auth durumu değişikliklerini dinle
     _authStateSubscription = _repository.authStateChanges.listen(
       (User? user) {
-        state = state.copyWith(
+        // State'i tamamen temizle ve yeni kullanıcıyı set et
+        state = AuthState(
           user: user,
           isEmailVerified: user?.isEmailVerified ?? false,
           error: null,
+          isLoading: false,
         );
-        
+
         // Kullanıcı giriş yaptıysa abonelik durumunu kontrol et
         if (user != null) {
           _checkUserSubscription(user.id);
@@ -140,6 +142,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
           // Kullanıcı çıkış yaptıysa abonelik cache'ini temizle
           _ref.read(subscriptionStateProvider.notifier).clearCache();
         }
+      },
+      onError: (error) {
+        // Auth state hatalarını yakala
+        state = state.copyWith(
+          user: null,
+          error: error.toString(),
+          isLoading: false,
+        );
       },
     );
   }
@@ -219,7 +229,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       state = state.copyWith(isLoading: true, error: null);
 
+      // Önce state'i temizle
+      state = state.copyWith(
+        user: null,
+        isEmailVerified: false,
+        error: null,
+      );
+
       await _repository.signOut();
+
+      // Abonelik cache'ini temizle
+      _ref.read(subscriptionStateProvider.notifier).clearCache();
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
@@ -330,15 +350,15 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 /// Mevcut kullanıcı provider'ı (AsyncValue olarak)
 final currentUserProvider = Provider<AsyncValue<User?>>((ref) {
   final authState = ref.watch(authProvider);
-  
+
   if (authState.isLoading) {
     return const AsyncValue.loading();
   }
-  
+
   if (authState.error != null) {
     return AsyncValue.error(authState.error!, StackTrace.current);
   }
-  
+
   return AsyncValue.data(authState.user);
 });
 

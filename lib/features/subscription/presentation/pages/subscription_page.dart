@@ -201,56 +201,114 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Icon
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLargeScreen = constraints.maxWidth > 768;
+
+          if (isLargeScreen) {
+            // Büyük ekranlar: Timer sağda, yazıyla aynı hizada
+            return Row(
+              children: [
+                // Icon
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.local_fire_department,
+                    color: Colors.white,
+                    size: 24,
+                  ),
                 ),
-                child: const Icon(
-                  Icons.local_fire_department,
-                  color: Colors.white,
-                  size: 24,
+                const SizedBox(width: 16),
+                // Text
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Lansmana Özel Fiyatlar!',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        PricingConfig.getPriceLabel(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              // Text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Timer sağda
+                if (PricingConfig.isLaunchPeriod) ...[
+                  const SizedBox(width: 16),
+                  _buildCountdownDisplay(),
+                ],
+              ],
+            );
+          } else {
+            // Küçük ekranlar: Dikey düzen
+            return Column(
+              children: [
+                Row(
                   children: [
-                    Text(
-                      'Lansmana Özel Fiyatlar!',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                    // Icon
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.local_fire_department,
                         color: Colors.white,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      PricingConfig.getPriceLabel(),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.9),
+                    const SizedBox(width: 16),
+                    // Text
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Lansmana Özel Fiyatlar!',
+                            style: GoogleFonts.poppins(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            PricingConfig.getPriceLabel(),
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          // Countdown (sadece lansman döneminde göster, altta iki yana yaslı)
-          if (PricingConfig.isLaunchPeriod) ...[
-            const SizedBox(height: 16),
-            _buildCountdownDisplay(),
-          ],
-        ],
+                // Countdown (sadece lansman döneminde göster, altta ortalanmış)
+                if (PricingConfig.isLaunchPeriod) ...[
+                  const SizedBox(height: 16),
+                  _buildCountdownDisplay(),
+                ],
+              ],
+            );
+          }
+        },
       ),
     );
   }

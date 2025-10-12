@@ -579,8 +579,16 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       }
 
       try {
+        // Kullanıcı token'ını yenile
+        await firebaseUser.reload();
+        final refreshedUser = _firebaseAuth.currentUser;
+
+        if (refreshedUser == null) {
+          return null;
+        }
+
         final userDoc =
-            await _firestore.collection('users').doc(firebaseUser.uid).get();
+            await _firestore.collection('users').doc(refreshedUser.uid).get();
 
         if (!userDoc.exists) {
           return null;
@@ -588,6 +596,7 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
 
         return UserModel.fromFirestore(userDoc);
       } catch (e) {
+        // Auth hatası durumunda null döndür
         return null;
       }
     });
