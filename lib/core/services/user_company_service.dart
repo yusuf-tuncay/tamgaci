@@ -28,14 +28,17 @@ class UserCompanyService {
     }
   }
 
-  /// Kullanıcının şirket bilgilerini al
+  /// Kullanıcının şirket bilgilerini al (Multi-tenant safe)
   Future<Map<String, dynamic>?> getUserCompany() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return null;
 
-      // Önce kullanıcı dokümanından companyName'i al
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      // Cache'i bypass et - her zaman fresh data al
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .get(const GetOptions(source: Source.server));
       if (userDoc.exists) {
         final userData = userDoc.data() as Map<String, dynamic>;
         final companyName = userData['companyName'] as String?;

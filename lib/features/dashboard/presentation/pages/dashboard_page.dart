@@ -123,7 +123,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Sadece kritik verileri hemen yükle
     final dashboardSummaryAsync = ref.watch(dashboardSummaryProvider);
+    // Diğer verileri lazy load yap
     final recentActivitiesAsync = ref.watch(recentTransactionsProvider);
     final monthlyChartAsync = ref.watch(monthlyChartDataProvider);
 
@@ -173,10 +175,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (user == null) return null;
     final now = DateTime.now();
 
+    // Debug bilgileri
     // Deneme süresi kullanıcıları için özel kart
-    // Test için: Her zaman göster (geçici)
-    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial ||
-        user.trialStartAt != null ||
+
+    // 1. Deneme süresi hiç abonelik satın almamış olanlar (trial status)
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial &&
         user.trialEndAt != null) {
       final trialEnd = user.trialEndAt!;
       final remainingDays = trialEnd.difference(now).inDays;
@@ -189,14 +192,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.blue[400]!,
-              Colors.blue[600]!,
+              Colors.orange[400]!,
+              Colors.orange[600]!,
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.blue.withValues(alpha: 0.3),
+              color: Colors.orange.withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -271,43 +274,193 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       );
     }
 
-    // Diğer durumlar için mevcut banner
-    DateTime? end;
-    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial) {
-      end = user.trialEndAt;
-    } else if (user.subscriptionStatus ==
-        auth_domain.SubscriptionStatus.active) {
-      end = user.subscriptionEndAt;
-    }
-    if (end == null) return null;
-    final remaining = end.difference(now).inDays;
-    if (remaining > 3 && now.isBefore(end)) return null;
-    final isExpired = now.isAfter(end);
-    final text = isExpired
-        ? 'Abonelik süreniz doldu. Devam etmek için lütfen aboneliğinizi yenileyin.'
-        : 'Aboneliğinizin bitmesine $remaining gün kaldı. Yenilemeyi unutmayın.';
-    final color = isExpired ? Colors.red : Colors.orange;
-    return InkWell(
-      onTap: () => Navigator.of(context).pushNamed(TamgaciRoutes.subscription),
-      child: Container(
+    // 2. Süresi bitmiş olanlar (expired status)
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.expired) {
+      return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(12),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          gradient: LinearGradient(
+            colors: [
+              Colors.red[400]!,
+              Colors.red[600]!,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.red.withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: color),
-            const SizedBox(width: 8),
-            Expanded(child: Text(text)),
-            const SizedBox(width: 8),
-            const Icon(Icons.arrow_forward_ios, size: 14),
+            // Icon
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.warning,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Text ve bilgi
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Abonelik Süresi Doldu',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Aboneliğinizi yenileyerek tüm özelliklerden yararlanmaya devam edin',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Abonelik yenile butonu
+            ElevatedButton(
+              onPressed: () =>
+                  Navigator.of(context).pushNamed(TamgaciRoutes.subscription),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.red[600],
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: Text(
+                'Abonelik Yenile',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
-      ),
-    );
+      );
+    }
+
+    // 3. Daha önce abonelik almış ama süresi azalan (45 günden az kalan)
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.active &&
+        user.subscriptionEndAt != null) {
+      final subscriptionEnd = user.subscriptionEndAt!;
+      final remainingDays = subscriptionEnd.difference(now).inDays;
+
+      if (remainingDays <= 45 && remainingDays > 0) {
+        debugPrint(
+            '=== DEBUG: Showing subscription renewal card ($remainingDays days left) ===');
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.blue[400]!,
+                Colors.blue[600]!,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withValues(alpha: 0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.schedule,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Text ve bilgi
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Abonelik Süresi Azalıyor',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '$remainingDays gün kaldı. Yenilemeyi unutmayın!',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Abonelik yenile butonu
+              ElevatedButton(
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(TamgaciRoutes.subscription),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue[600],
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  'Abonelik Yenile',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+
+    return null;
   }
 
   Widget _buildMobileLayout(

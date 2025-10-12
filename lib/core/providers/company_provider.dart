@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../entities/company.dart';
 import '../services/user_company_service.dart';
 import '../utils/logger.dart';
+import '../../features/auth/presentation/providers/auth_providers.dart';
 
 /// Company service provider
 final companyServiceProvider = Provider<UserCompanyService>((ref) {
@@ -20,7 +21,6 @@ final currentCompanyProvider = FutureProvider<Company?>((ref) async {
     if (companyData != null) {
       return Company.fromJson(companyData);
     }
-
     return null;
   } catch (e) {
     AppLogger.error('Error loading current company', e);
@@ -28,8 +28,10 @@ final currentCompanyProvider = FutureProvider<Company?>((ref) async {
   }
 });
 
-/// Company name provider (with fallback)
+/// Company name provider (with fallback) - Multi-tenant safe
 final companyNameProvider = Provider<String>((ref) {
+  // Auth state'i de izle ki kullanıcı giriş yaptığında yenilensin
+  ref.watch(authProvider); // Auth state değişikliklerini izle
   final companyAsync = ref.watch(currentCompanyProvider);
 
   return companyAsync.when(
@@ -59,33 +61,43 @@ class CompanyNotifier extends StateNotifier<AsyncValue<Company?>> {
   }
 
   Future<void> _loadCompany() async {
+    if (!mounted) return;
+
     try {
       state = const AsyncValue.loading();
       final companyData = await _companyService.getUserCompany();
 
-      if (companyData != null) {
-        final company = Company.fromJson(companyData);
-        state = AsyncValue.data(company);
-      } else {
-        state = const AsyncValue.data(null);
+      if (mounted) {
+        if (companyData != null) {
+          final company = Company.fromJson(companyData);
+          state = AsyncValue.data(company);
+        } else {
+          state = const AsyncValue.data(null);
+        }
       }
     } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      if (mounted) {
+        state = AsyncValue.error(error, stackTrace);
+      }
     }
   }
 
   /// Refresh company data
   Future<void> refresh() async {
-    await _loadCompany();
+    if (mounted) {
+      await _loadCompany();
+    }
   }
 
   /// Update company
   Future<void> updateCompany(Company company) async {
-    try {
-      // Update logic would go here
-      state = AsyncValue.data(company);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+    if (mounted) {
+      try {
+        // Update logic would go here
+        state = AsyncValue.data(company);
+      } catch (error, stackTrace) {
+        state = AsyncValue.error(error, stackTrace);
+      }
     }
   }
 }
