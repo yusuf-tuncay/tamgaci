@@ -46,7 +46,6 @@ class _EnhancedPurchaseDetailPageState
       );
     }
 
-    final theme = Theme.of(context);
 
     return ResponsiveScaffold(
       appBar: CustomAppBar(

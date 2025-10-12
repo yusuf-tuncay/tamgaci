@@ -40,7 +40,6 @@ class _EnhancedAccountDetailPageState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final account = _getMockAccount();
 
     return ResponsiveScaffold(

@@ -45,7 +45,6 @@ class _EnhancedSaleDetailPageState extends ConsumerState<EnhancedSaleDetailPage>
       );
     }
 
-    final theme = Theme.of(context);
 
     return ResponsiveScaffold(
       appBar: CustomAppBar(
