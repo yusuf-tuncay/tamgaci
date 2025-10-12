@@ -2,7 +2,7 @@
 // lib/core/services/firebase/firebase_notification_service.dart
 
 import 'package:firebase_messaging/firebase_messaging.dart';
-// import 'package:flutter/foundation.dart'; // Removed - not needed
+import 'package:flutter/foundation.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 
 /// Firebase bildirim servisi
@@ -43,23 +43,47 @@ class FirebaseNotificationService {
     }
   }
 
-  /// Bildirim izni iste
+  /// Bildirim izni iste (asenkron)
   Future<void> _requestPermission() async {
-    try {
-      final settings = await _messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
+    // Asenkron olarak arka planda çalıştır
+    Future.microtask(() async {
+      try {
+        // Web için özel permission handling
+        if (kIsWeb) {
+          // Web'de service worker'ı kaydet
+          await _registerServiceWorker();
+        }
 
-      AppLogger.info(
-          'Notification permission status: ${settings.authorizationStatus}');
-    } catch (e) {
-      AppLogger.error('Error requesting notification permission', e);
+        final settings = await _messaging.requestPermission(
+          alert: true,
+          announcement: false,
+          badge: true,
+          carPlay: false,
+          criticalAlert: false,
+          provisional: false,
+          sound: true,
+        );
+
+        AppLogger.info(
+            'Notification permission status: ${settings.authorizationStatus}');
+      } catch (e) {
+        AppLogger.error('Error requesting notification permission', e);
+      }
+    });
+  }
+
+  /// Web için service worker kaydet
+  Future<void> _registerServiceWorker() async {
+    if (kIsWeb) {
+      try {
+        // Service worker'ı kaydet - VAPID key olmadan
+        await _messaging.getToken();
+        AppLogger.info('Service worker registered for web notifications');
+      } catch (e) {
+        AppLogger.warning(
+            'Service worker registration failed (non-critical): $e');
+        // Service worker hatası kritik değil, uygulama çalışmaya devam eder
+      }
     }
   }
 

@@ -110,6 +110,8 @@ class ProductCard extends StatelessWidget {
                 width: 64,
                 height: 64,
                 fit: BoxFit.cover,
+                filterQuality: FilterQuality.high,
+                isAntiAlias: true,
                 errorBuilder: (context, error, stackTrace) {
                   return Icon(
                     _getTypeIcon(),

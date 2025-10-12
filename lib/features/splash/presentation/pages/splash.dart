@@ -101,39 +101,38 @@ class SplashNotifier extends StateNotifier<SplashData> {
       // 1. Adım: İlk yükleme
       await _updateState(
         SplashState.loading,
-        10,
+        20,
         'Uygulama başlatılıyor...',
       );
-      await Future.delayed(const Duration(milliseconds: 500));
 
-      // 2. Adım: İlk kurulum kontrolleri
+      // 2. Adım: İlk kurulum kontrolleri (hızlı)
       await _updateState(
         SplashState.initializing,
-        30,
+        40,
         'Ayarlar kontrol ediliyor...',
       );
       await _performInitialSetup();
 
-      // 3. Adım: Veritabanı bağlantısı kontrolü
+      // 3. Adım: Veritabanı bağlantısı kontrolü (hızlı)
       await _updateState(
         SplashState.initializing,
-        50,
+        60,
         'Veritabanı hazırlanıyor...',
       );
       await _initializeDatabase();
 
-      // 4. Adım: Kullanıcı oturum kontrolü
+      // 4. Adım: Kullanıcı oturum kontrolü (hızlı)
       await _updateState(
         SplashState.checkingAuth,
-        70,
+        80,
         'Oturum bilgileri kontrol ediliyor...',
       );
       await _checkUserAuthentication();
 
-      // 5. Adım: Tema ve dil ayarları
+      // 5. Adım: Tema ve dil ayarları (hızlı)
       await _updateState(
         SplashState.initializing,
-        85,
+        90,
         'Tema ayarları yükleniyor...',
       );
       await _loadAppSettings();
@@ -144,7 +143,7 @@ class SplashNotifier extends StateNotifier<SplashData> {
         100,
         'Tamgacı hazır!',
       );
-      await Future.delayed(const Duration(milliseconds: 800));
+      // Delay'i kaldırdık - hemen geçiş yap
     } catch (error) {
       // Hata durumunda state'i güncelle
       state = state.copyWith(
@@ -983,23 +982,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     // Haptic feedback
     HapticFeedback.lightImpact();
 
-    Future.delayed(const Duration(milliseconds: 500), () async {
-      if (!mounted) return;
+    // Delay'i kaldırdık - hemen yönlendir
+    if (!mounted) return;
 
-      // Firebase Auth durumunu kontrol et
-      final user = FirebaseAuth.instance.currentUser;
+    // Firebase Auth durumunu kontrol et
+    final user = FirebaseAuth.instance.currentUser;
 
-      if (user != null) {
-        // Kullanıcı giriş yapmış - dashboard'a yönlendir
-        AppLogger.info('User is signed in, navigating to dashboard');
-        Navigator.of(context).pushReplacementNamed(widget.homeRoute);
-      } else {
-        // Kullanıcı giriş yapmamış - login sayfasına yönlendir
-        AppLogger.info('User is not signed in, navigating to login');
-        Navigator.of(context)
-            .pushReplacementNamed(widget.loginRoute ?? '/login');
-      }
-    });
+    if (user != null) {
+      // Kullanıcı giriş yapmış - dashboard'a yönlendir
+      AppLogger.info('User is signed in, navigating to dashboard');
+      Navigator.of(context).pushReplacementNamed(widget.homeRoute);
+    } else {
+      // Kullanıcı giriş yapmamış - login sayfasına yönlendir
+      AppLogger.info('User is not signed in, navigating to login');
+      Navigator.of(context).pushReplacementNamed(widget.loginRoute ?? '/login');
+    }
   }
 }
 

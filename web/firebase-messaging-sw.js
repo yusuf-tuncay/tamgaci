@@ -1,32 +1,79 @@
-// Firebase Cloud Messaging Service Worker
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
+// Firebase Messaging Service Worker
+// Bu dosya web bildirimleri için gerekli
 
-// Firebase config (bu değerleri firebase_options.dart'tan alın)
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+// Firebase config - gerçek değerlerle değiştirilmeli
 const firebaseConfig = {
-    apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-    authDomain: "tamgaci-xxxxx.firebaseapp.com",
-    projectId: "tamgaci-xxxxx",
-    storageBucket: "tamgaci-xxxxx.appspot.com",
+    apiKey: "AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    authDomain: "tamgaci.firebaseapp.com",
+    projectId: "tamgaci",
+    storageBucket: "tamgaci.appspot.com",
     messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abcdefghijklmnop"
+    appId: "1:123456789012:web:abcdef1234567890abcdef"
 };
 
 // Firebase'i başlat
-firebase.initializeApp(firebaseConfig);
+try {
+    firebase.initializeApp(firebaseConfig);
+    console.log('Firebase initialized in service worker');
+} catch (error) {
+    console.log('Firebase already initialized or error:', error);
+}
 
-// Messaging instance'ını al
+// Messaging instance'ı al
 const messaging = firebase.messaging();
 
 // Background message handler
 messaging.onBackgroundMessage(function (payload) {
-    console.log('[firebase-messaging-sw.js] Received background message ', payload);
+    console.log('Background message received:', payload);
 
-    const notificationTitle = payload.notification.title;
+    const notificationTitle = payload.notification?.title || 'TAMGACI';
     const notificationOptions = {
-        body: payload.notification.body,
-        icon: '/favicon.ico'
+        body: payload.notification?.body || 'Yeni bir bildirim var',
+        icon: '/assets/images/logos/192x192logo.png',
+        badge: '/assets/images/logos/192x192logo.png',
+        tag: 'tamgaci-notification',
+        requireInteraction: true,
+        actions: [
+            {
+                action: 'open',
+                title: 'Aç',
+                icon: '/assets/images/logos/192x192logo.png'
+            },
+            {
+                action: 'close',
+                title: 'Kapat'
+            }
+        ]
     };
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Notification click handler
+self.addEventListener('notificationclick', function (event) {
+    console.log('Notification clicked:', event);
+
+    event.notification.close();
+
+    if (event.action === 'open' || !event.action) {
+        // Uygulamayı aç
+        event.waitUntil(
+            clients.openWindow('/')
+        );
+    }
+});
+
+// Service worker install
+self.addEventListener('install', function (event) {
+    console.log('Service worker installed');
+    self.skipWaiting();
+});
+
+// Service worker activate
+self.addEventListener('activate', function (event) {
+    console.log('Service worker activated');
+    event.waitUntil(self.clients.claim());
 });

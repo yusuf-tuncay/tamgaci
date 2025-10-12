@@ -319,6 +319,8 @@ class ProductDetailPage extends ConsumerWidget {
                           width: 100,
                           height: 100,
                           fit: BoxFit.cover,
+                          filterQuality: FilterQuality.high,
+                          isAntiAlias: true,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               width: 100,

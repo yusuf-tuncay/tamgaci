@@ -33,6 +33,7 @@ class _EnhancedSuppliersListPageState
   String _selectedCategory = 'Tümü';
   String _selectedStatus = 'Tümü';
   String _sortBy = 'name';
+  bool _sortAscending = true;
 
   final List<String> _categories = [
     'Tümü',
@@ -436,6 +437,19 @@ class _EnhancedSuppliersListPageState
                 });
               },
             ),
+          ),
+          const SizedBox(width: 8),
+          // Sıralama yönü
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _sortAscending = !_sortAscending;
+              });
+            },
+            icon: Icon(
+              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+            ),
+            tooltip: _sortAscending ? 'Artan' : 'Azalan',
           ),
           const SizedBox(width: 8),
           // Excel, Import, Export, PDF butonları
@@ -1233,20 +1247,29 @@ class _EnhancedSuppliersListPageState
 
     // Sıralama
     filtered.sort((a, b) {
+      int comparison = 0;
       switch (_sortBy) {
         case 'name':
-          return a.name.compareTo(b.name);
+          comparison = a.name.compareTo(b.name);
+          break;
         case 'contactPerson':
-          return (a.contactPerson ?? '').compareTo(b.contactPerson ?? '');
+          comparison = (a.contactPerson ?? '').compareTo(b.contactPerson ?? '');
+          break;
         case 'currentBalance':
-          return b.currentBalance.compareTo(a.currentBalance);
+          comparison = a.currentBalance.compareTo(b.currentBalance);
+          break;
         case 'creditLimit':
-          return b.creditLimit.compareTo(a.creditLimit);
+          comparison = a.creditLimit.compareTo(b.creditLimit);
+          break;
         case 'createdAt':
-          return b.createdAt.compareTo(a.createdAt);
+          comparison = a.createdAt.compareTo(b.createdAt);
+          break;
         default:
-          return a.name.compareTo(b.name);
+          comparison = a.name.compareTo(b.name);
       }
+
+      // Sıralama yönünü uygula
+      return _sortAscending ? comparison : -comparison;
     });
 
     return filtered;

@@ -1,4 +1,5 @@
 {
+    "id": "/",
     "name": "TAMGACI",
     "short_name": "TAMGACI",
     "start_url": ".",
@@ -8,6 +9,16 @@
     "description": "TAMGACI - Ön muhasebe, satış/alış, stok ve rapor yönetimi. İşletmenizi dijitalleştirin.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "permissions": [
+        "notifications"
+    ],
+    "categories": [
+        "business",
+        "productivity",
+        "finance"
+    ],
+    "lang": "tr",
+    "scope": "/",
     "icons": [
         {
             "src": "assets/images/logos/192x192logo.png",

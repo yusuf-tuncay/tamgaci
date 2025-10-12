@@ -186,25 +186,39 @@ class PermissionService {
   }
 
   Future<PermissionStatus> getNotificationPermissionStatus() async {
-    return await Permission.notification.status;
+    try {
+      // Web için basit permission kontrolü - permission_handler kullan
+      return await Permission.notification.status;
+    } catch (e) {
+      return PermissionStatus.denied;
+    }
   }
 
   Future<PermissionStatus> requestNotificationPermission() async {
-    return await Permission.notification.request();
+    try {
+      // Web için basit permission request - permission_handler kullan
+      return await Permission.notification.request();
+    } catch (e) {
+      return PermissionStatus.denied;
+    }
   }
 
   Future<bool> ensureNotificationPermission() async {
-    final status = await getNotificationPermissionStatus();
-    if (status.isGranted) return true;
-    if (status.isDenied) {
-      final result = await requestNotificationPermission();
-      return result.isGranted;
-    }
-    if (status.isPermanentlyDenied) {
-      await openAppSettings();
+    try {
+      final status = await getNotificationPermissionStatus();
+      if (status.isGranted) return true;
+      if (status.isDenied) {
+        final result = await requestNotificationPermission();
+        return result.isGranted;
+      }
+      if (status.isPermanentlyDenied) {
+        await openAppSettings();
+        return false;
+      }
+      return false;
+    } catch (e) {
       return false;
     }
-    return false;
   }
 
   Future<Map<String, dynamic>> getDeviceInfo() async {

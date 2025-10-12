@@ -30,6 +30,7 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
   String _searchQuery = '';
   WarehouseType? _selectedType;
   WarehouseStatus? _selectedStatus;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -100,7 +101,6 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
         CustomScrollView(
           slivers: [
             _buildHeaderSection(),
-            _buildStatisticsSection(statisticsAsync),
             _buildFiltersSection(),
             _buildWarehousesSection(warehousesAsync),
           ],
@@ -123,31 +123,55 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
             opacity: _fadeAnimation,
             child: SlideTransition(
               position: _slideAnimation,
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      TamgaciConstants.primaryColor,
-                      Color(0xFF4C6EF5),
-                      TamgaciConstants.primaryColorDark,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
-                      blurRadius: 18,
-                      spreadRadius: 1,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
+              child: _buildWelcomeCard(
+                  []), // Boş liste, mobilde istatistikler ayrı gösterilecek
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildWelcomeCard(List<Warehouse> warehouses) {
+    final totalWarehouses = warehouses.length;
+    final activeWarehouses =
+        warehouses.where((w) => w.status == WarehouseStatus.active).length;
+    final totalCapacity =
+        warehouses.fold<int>(0, (sum, w) => sum + (w.capacity ?? 0));
+    final usedCapacity = warehouses.fold<int>(0,
+        (sum, w) => sum + (w.capacity ?? 0) ~/ 2); // Placeholder: yarısı dolu
+
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Başlık ve açıklama
+          Row(
+            children: [
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -174,151 +198,66 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 1,
-                      width: double.infinity,
-                      color: Colors.white.withValues(alpha: 0.12),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
-                    ),
                   ],
                 ),
               ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildStatisticsSection(
-      AsyncValue<Map<String, dynamic>> statisticsAsync) {
-    return SliverToBoxAdapter(
-      child: AnimatedBuilder(
-        animation: _fadeAnimation,
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: statisticsAsync.when(
-                  data: (stats) => _buildStatisticsCards(stats),
-                  loading: () => _buildLoadingStatistics(),
-                  error: (error, stack) => _buildErrorStatistics(error),
-                ),
+              // Özet istatistikler - yan yana
+              Row(
+                children: [
+                  _buildHeaderStatCard('Toplam', totalWarehouses.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Aktif', activeWarehouses.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Kapasite', totalCapacity.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Dolu', usedCapacity.toString()),
+                ],
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildStatisticsCards(Map<String, dynamic> stats) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Toplam Depo',
-            '${stats['totalWarehouses'] ?? 0}',
-            Icons.warehouse,
-            Colors.blue,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Aktif Depo',
-            '${stats['activeWarehouses'] ?? 0}',
-            Icons.check_circle,
-            Colors.green,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Pasif Depo',
-            '${stats['inactiveWarehouses'] ?? 0}',
-            Icons.pause_circle,
-            Colors.orange,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
           ),
         ],
       ),
+    );
+  }
+
+  /// Header içindeki istatistik kartı - banner timer gibi
+  Widget _buildHeaderStatCard(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 8),
           Text(
             value,
             style: GoogleFonts.poppins(
               fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingStatistics() {
-    return const SizedBox(
-      height: 80,
-      child: Center(child: CircularProgressIndicator()),
-    );
-  }
-
-  Widget _buildErrorStatistics(Object error) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red[200]!),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: Colors.red[600]),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              'İstatistikler yüklenemedi',
-              style: GoogleFonts.poppins(color: Colors.red[600]),
+              fontSize: 10,
+              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -337,41 +276,180 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
               position: _slideAnimation,
               child: Container(
                 margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey[200]!),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Text(
-                      'Filtreler',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                    // Arama çubuğu
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Depo ara...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSearchField(),
+                    const SizedBox(width: 12),
+                    // Tür filtresi
+                    Expanded(
+                      child: DropdownButtonFormField<WarehouseType?>(
+                        initialValue: _selectedType,
+                        decoration: InputDecoration(
+                          labelText: 'Tür',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                         ),
-                        const SizedBox(width: 12),
-                        _buildFilterButton(
-                            'Tür', _selectedType?.displayName ?? 'Tümü'),
-                        const SizedBox(width: 8),
-                        _buildFilterButton(
-                            'Durum', _selectedStatus?.displayName ?? 'Tümü'),
+                        items: const [
+                          DropdownMenuItem(value: null, child: Text('Tümü')),
+                          DropdownMenuItem(
+                              value: WarehouseType.main, child: Text('Ana')),
+                          DropdownMenuItem(
+                              value: WarehouseType.branch, child: Text('Şube')),
+                          DropdownMenuItem(
+                              value: WarehouseType.retail,
+                              child: Text('Perakende')),
+                          DropdownMenuItem(
+                              value: WarehouseType.wholesale,
+                              child: Text('Toptan')),
+                          DropdownMenuItem(
+                              value: WarehouseType.cold, child: Text('Soğuk')),
+                          DropdownMenuItem(
+                              value: WarehouseType.bonded,
+                              child: Text('Gümrük')),
+                          DropdownMenuItem(
+                              value: WarehouseType.virtual,
+                              child: Text('Sanal')),
+                          DropdownMenuItem(
+                              value: WarehouseType.other, child: Text('Diğer')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Durum filtresi
+                    Expanded(
+                      child: DropdownButtonFormField<WarehouseStatus?>(
+                        initialValue: _selectedStatus,
+                        decoration: InputDecoration(
+                          labelText: 'Durum',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: null, child: Text('Tümü')),
+                          DropdownMenuItem(
+                              value: WarehouseStatus.active,
+                              child: Text('Aktif')),
+                          DropdownMenuItem(
+                              value: WarehouseStatus.inactive,
+                              child: Text('Pasif')),
+                          DropdownMenuItem(
+                              value: WarehouseStatus.maintenance,
+                              child: Text('Bakımda')),
+                          DropdownMenuItem(
+                              value: WarehouseStatus.closed,
+                              child: Text('Kapalı')),
+                          DropdownMenuItem(
+                              value: WarehouseStatus.suspended,
+                              child: Text('Askıya Alınmış')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatus = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Sıralama yönü
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _sortAscending = !_sortAscending;
+                        });
+                      },
+                      icon: Icon(
+                        _sortAscending
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
+                      ),
+                      tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                    ),
+                    const SizedBox(width: 8),
+                    // Excel, CSV, PDF, Import butonları
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Excel Export
+                        IconButton(
+                          onPressed: _showExportDialog,
+                          icon: const Icon(Icons.table_chart),
+                          tooltip: 'Excel\'e Aktar',
+                          style: IconButton.styleFrom(
+                            backgroundColor:
+                                Colors.green.withValues(alpha: 0.1),
+                            foregroundColor: Colors.green,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // CSV Export
+                        IconButton(
+                          onPressed: _showExportDialog,
+                          icon: const Icon(Icons.description),
+                          tooltip: 'CSV\'ye Aktar',
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                            foregroundColor: Colors.blue,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // PDF Export
+                        IconButton(
+                          onPressed: _showExportDialog,
+                          icon: const Icon(Icons.picture_as_pdf),
+                          tooltip: 'PDF\'ye Aktar',
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.red.withValues(alpha: 0.1),
+                            foregroundColor: Colors.red,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        // Import
+                        IconButton(
+                          onPressed: _showImportDialog,
+                          icon: const Icon(Icons.upload_file),
+                          tooltip: 'Dosya İçe Aktar',
+                          style: IconButton.styleFrom(
+                            backgroundColor:
+                                Colors.orange.withValues(alpha: 0.1),
+                            foregroundColor: Colors.orange,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -384,135 +462,47 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
     );
   }
 
-  Widget _buildSearchField() {
-    return TextField(
-      onChanged: (value) {
-        setState(() {
-          _searchQuery = value;
-        });
-      },
-      decoration: InputDecoration(
-        hintText: 'Depo ara...',
-        hintStyle: GoogleFonts.poppins(color: Colors.grey[500]),
-        prefixIcon: const Icon(Icons.search, color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF6366F1)),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      ),
-    );
-  }
-
-  Widget _buildFilterButton(String label, String value) {
-    return InkWell(
-      onTap: () => _showFilterDialog(label),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '$label: $value',
-              style: GoogleFonts.poppins(fontSize: 12),
-            ),
-            const SizedBox(width: 4),
-            const Icon(Icons.arrow_drop_down, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFilterDialog(String filterType) {
+  /// Export dialog göster
+  void _showExportDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$filterType Filtresi'),
-        content:
-            filterType == 'Tür' ? _buildTypeFilter() : _buildStatusFilter(),
+        title: const Text('Dışa Aktar'),
+        content: const Text(
+            'Depolar Excel, CSV veya PDF formatında dışa aktarılacak.'),
         actions: [
           TextButton(
-            onPressed: () {
-              setState(() {
-                if (filterType == 'Tür') {
-                  _selectedType = null;
-                } else {
-                  _selectedStatus = null;
-                }
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('Temizle'),
-          ),
-          TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat'),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTypeFilter() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: WarehouseType.values.map((type) {
-        return ListTile(
-          title: Text(type.displayName),
-          leading: Icon(
-            _selectedType == type
-                ? Icons.radio_button_checked
-                : Icons.radio_button_unchecked,
-            color:
-                _selectedType == type ? const Color(0xFF6366F1) : Colors.grey,
+  /// Import dialog göster
+  void _showImportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('İçe Aktar'),
+        content:
+            const Text('Excel veya CSV dosyasından depolar içe aktarılacak.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
           ),
-          onTap: () {
-            setState(() {
-              _selectedType = type;
-            });
-            Navigator.pop(context);
-          },
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildStatusFilter() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: WarehouseStatus.values.map((status) {
-        return ListTile(
-          title: Text(status.displayName),
-          leading: Icon(
-            _selectedStatus == status
-                ? Icons.radio_button_checked
-                : Icons.radio_button_unchecked,
-            color: _selectedStatus == status
-                ? const Color(0xFF6366F1)
-                : Colors.grey,
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Tamam'),
           ),
-          onTap: () {
-            setState(() {
-              _selectedStatus = status;
-            });
-            Navigator.pop(context);
-          },
-        );
-      }).toList(),
+        ],
+      ),
     );
   }
 
