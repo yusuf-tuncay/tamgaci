@@ -42,6 +42,7 @@ void main() async {
     _suppressEngineFlutterViewErrors();
     _suppressUltraAggressiveErrors();
     _suppressWebDisposedErrors();
+    _suppressUltraDisposedErrors();
   }
 
   // Akıllı error suppression'ı başlat (ana sistem)

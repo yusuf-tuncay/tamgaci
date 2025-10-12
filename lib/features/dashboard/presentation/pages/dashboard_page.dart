@@ -174,7 +174,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final now = DateTime.now();
 
     // Deneme süresi kullanıcıları için özel kart
-    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial &&
+    // Test için: Her zaman göster (geçici)
+    if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial ||
+        user.trialStartAt != null ||
         user.trialEndAt != null) {
       final trialEnd = user.trialEndAt!;
       final remainingDays = trialEnd.difference(now).inDays;
