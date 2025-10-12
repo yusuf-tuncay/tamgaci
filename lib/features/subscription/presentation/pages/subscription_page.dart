@@ -74,7 +74,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   void _autoRefreshSubscription() {
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
-      ref.read(subscriptionStateProvider.notifier).autoRefreshSubscription(user.id);
+      ref
+          .read(subscriptionStateProvider.notifier)
+          .autoRefreshSubscription(user.id);
     }
   }
 
@@ -161,10 +163,6 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 _buildUsageInfo(user),
                 const SizedBox(height: 32),
               ],
-
-              // Features Card
-              _buildFeaturesCard(isDark),
-              const SizedBox(height: 32),
 
               // Abonelik durumu ve kupon kartları (yan yana)
               _buildStatusAndCouponRow(isDark),
@@ -313,67 +311,6 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Hero Section
   Widget _buildHeroSection(User? user, bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: TamgaciConstants.primaryColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Logo
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Image.asset(
-              'assets/images/logos/140x140logo.png',
-              width: 48,
-              height: 48,
-              fit: BoxFit.contain,
-              color: Colors.white,
-              colorBlendMode: BlendMode.srcIn,
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
-            'TAMGACI',
-            style: GoogleFonts.poppins(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-
-          // Subtitle
-          Text(
-            'Süre seçin, tüm özellikler dahil',
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.9),
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Özellikler kartı
-  Widget _buildFeaturesCard(bool isDark) {
     final features = [
       'Sınırsız satış ve fatura oluşturma',
       'Tüm raporlara erişim',
@@ -394,101 +331,258 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        color: TamgaciConstants.primaryColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: isDark
-                ? Colors.black.withValues(alpha: 0.3)
-                : Colors.grey.withValues(alpha: 0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Başlık
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.star,
-                  color: TamgaciConstants.primaryColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmallScreen = constraints.maxWidth < 768;
+
+          if (isSmallScreen) {
+            // Mobil: Logo ve başlık yukarıda, özellikler altında
+            return Column(
+              children: [
+                // Logo ve başlık - yukarıda
+                Column(
                   children: [
-                    Text(
-                      'TAMGACI Özellikleri',
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : const Color(0xFF1A1A1A),
+                    // Logo
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Image.asset(
+                        'assets/images/logos/140x140logo.png',
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.contain,
+                        color: Colors.white,
+                        colorBlendMode: BlendMode.srcIn,
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    // Başlık ve açıklama
                     Text(
-                      'Tüm özellikler her planda dahil',
+                      'TAMGACI',
                       style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color:
-                            isDark ? Colors.white70 : const Color(0xFF666666),
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Süre seçin, tüm özellikler dahil',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Özellikler - 2 sütun halinde
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Sol sütun özellikler
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: features
+                            .take(8)
+                            .map((feature) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.check_circle,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          feature,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            color: Colors.white
+                                                .withValues(alpha: 0.9),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Sağ sütun özellikler
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: features
+                            .skip(8)
+                            .map((feature) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.check_circle,
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          feature,
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 13,
+                                            color: Colors.white
+                                                .withValues(alpha: 0.9),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ))
+                            .toList(),
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Özellikler grid
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 4,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 8,
-            ),
-            itemCount: features.length,
-            itemBuilder: (context, index) {
-              return Row(
-                children: [
-                  const Icon(
-                    Icons.check_circle,
-                    size: 18,
-                    color: TamgaciConstants.primaryColor,
+              ],
+            );
+          } else {
+            // Desktop: 3 sütunlu düzen
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sol sütun özellikler
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: features
+                        .take(8)
+                        .map((feature) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      feature,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.9),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ))
+                        .toList(),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      features[index],
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color:
-                            isDark ? Colors.white70 : const Color(0xFF666666),
+                ),
+                const SizedBox(width: 16),
+                // Orta sütun - Logo ve başlık
+                Column(
+                  children: [
+                    // Logo
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Image.asset(
+                        'assets/images/logos/140x140logo.png',
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.contain,
+                        color: Colors.white,
+                        colorBlendMode: BlendMode.srcIn,
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    // Başlık ve açıklama
+                    Text(
+                      'TAMGACI',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Süre seçin, tüm özellikler dahil',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 16),
+                // Sağ sütun özellikler
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: features
+                        .skip(8)
+                        .map((feature) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      feature,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.9),
+                                      ),
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.check_circle,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              ),
+                            ))
+                        .toList(),
                   ),
-                ],
-              );
-            },
-          ),
-        ],
+                ),
+              ],
+            );
+          }
+        },
       ),
     );
   }
