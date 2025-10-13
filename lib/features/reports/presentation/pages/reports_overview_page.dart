@@ -35,6 +35,10 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
         reports.where((r) => r.status == ReportStatus.completed).length;
     final pendingReports =
         reports.where((r) => r.status == ReportStatus.pending).length;
+    
+    // Geçici sabit değerler - gelecekte dinamik hale getirilecek
+    final totalIncome = 125000.0;
+    final totalExpense = 85000.0;
 
     return Container(
       margin: const EdgeInsets.all(16),
@@ -109,9 +113,9 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                     const SizedBox(width: 8),
                     _buildHeaderStatCard('Bekleyen', pendingReports.toString()),
                     const SizedBox(width: 8),
-                    _buildHeaderStatCard('Gelir', '₺125.000'),
+                    _buildHeaderStatCard('Gelir', _formatCurrency(totalIncome)),
                     const SizedBox(width: 8),
-                    _buildHeaderStatCard('Gider', '₺85.000'),
+                    _buildHeaderStatCard('Gider', _formatCurrency(totalExpense)),
                   ],
                 ),
             ],
@@ -1081,6 +1085,16 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
         ],
       ),
     );
+  }
+
+  /// Para birimi formatlaması için helper metod
+  String _formatCurrency(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: 'tr_TR',
+      symbol: '₺',
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
   }
 }
 
