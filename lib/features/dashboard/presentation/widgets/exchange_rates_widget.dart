@@ -175,11 +175,8 @@ class ExchangeRatesWidget extends ConsumerWidget {
     final changeColor = isPositive ? Colors.green : Colors.red;
     final changeIcon = isPositive ? Icons.trending_up : Icons.trending_down;
 
-    // Seçili para birimine göre kur formatla
-    final rateText = ExchangeRateService.formatCurrencyRate(
-      currency.exchangeRate,
-      currency.code,
-    );
+    // Türk Lirası cinsinden kur göster
+    final rateText = '${currency.exchangeRate.toStringAsFixed(2)} ₺';
 
     return Row(
       children: [
