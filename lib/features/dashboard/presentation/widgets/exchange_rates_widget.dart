@@ -273,6 +273,17 @@ class ExchangeRatesWidget extends ConsumerWidget {
                     : TamgaciConstants.textSecondary,
               ),
             ),
+            const SizedBox(height: 2),
+            Text(
+              '1 ₺ = ${(1 / currency.exchangeRate).toStringAsFixed(4)} ${currency.code}',
+              style: GoogleFonts.poppins(
+                fontSize: 9,
+                fontWeight: FontWeight.w400,
+                color: isDark
+                    ? TamgaciConstants.textSecondaryDark.withValues(alpha: 0.7)
+                    : TamgaciConstants.textSecondary.withValues(alpha: 0.7),
+              ),
+            ),
           ],
         ),
       ],
