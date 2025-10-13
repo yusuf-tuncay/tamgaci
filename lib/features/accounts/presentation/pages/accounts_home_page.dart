@@ -86,14 +86,13 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
       body: Stack(
         children: [
           CustomScrollView(
-            slivers: [
-              _buildAppBar(),
-              _buildHeaderSection(),
-              _buildStatisticsSection(statisticsAsync),
-              _buildFiltersSection(),
-              _buildAccountsSection(accountsAsync),
-            ],
-          ),
+        slivers: [
+          _buildHeaderSection(),
+          _buildStatisticsSection(statisticsAsync),
+          _buildFiltersSection(),
+          _buildAccountsSection(accountsAsync),
+        ],
+      ),
           Positioned(
             bottom: 16,
             right: 16,
@@ -104,27 +103,6 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
     );
   }
 
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      expandedHeight: 60,
-      floating: false,
-      pinned: true,
-      backgroundColor: Colors.white,
-      elevation: 1,
-      leading: Builder(
-        builder: (context) => IconButton(
-          icon: const Icon(Icons.menu, color: Colors.black87, size: 24),
-          onPressed: () => Scaffold.of(context).openDrawer(),
-        ),
-      ),
-      flexibleSpace: Container(
-        color: Colors.white,
-        child: const SafeArea(
-          child: SizedBox.shrink(),
-        ),
-      ),
-    );
-  }
 
   Widget _buildHeaderSection() {
     return SliverToBoxAdapter(
@@ -142,29 +120,29 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
         accounts.fold<double>(0, (sum, a) => sum + a.availableBalance);
 
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            TamgaciConstants.primaryColor,
-            Color(0xFF4C6EF5),
-            TamgaciConstants.primaryColorDark,
+        margin: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              TamgaciConstants.primaryColor,
+              Color(0xFF4C6EF5),
+              TamgaciConstants.primaryColorDark,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+              blurRadius: 18,
+              spreadRadius: 1,
+              offset: const Offset(0, 10),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
-            blurRadius: 18,
-            spreadRadius: 1,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -172,31 +150,31 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Hesaplarım',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Hesap bilgilerini yönetin ve takip edin',
-                      maxLines: 1,
-                      softWrap: true,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontWeight: FontWeight.w500,
-                      ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hesaplarım',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Hesap bilgilerini yönetin ve takip edin',
+              maxLines: 1,
+              softWrap: true,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w500,
+              ),
                     ),
                   ],
                 ),
@@ -217,23 +195,23 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                   ],
                 ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 1,
-            width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
             ),
-          ),
-        ],
-      ),
+            const SizedBox(height: 8),
+            Container(
+              height: 1,
+              width: double.infinity,
+              color: Colors.white.withValues(alpha: 0.12),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -395,7 +373,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             // Masaüstünde tek satır, mobilde iki satır
             if (constraints.maxWidth > 768) {
               return Row(
-                children: [
+          children: [
                   // Arama çubuğu
                   Expanded(
                     flex: 2,
@@ -415,8 +393,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                             horizontal: 12, vertical: 12),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                ),
+                const SizedBox(width: 12),
                   // Tür filtresi
                   Expanded(
                     child: DropdownButtonFormField<AccountType?>(
@@ -448,8 +426,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                         });
                       },
                     ),
-                  ),
-                  const SizedBox(width: 8),
+                ),
+                const SizedBox(width: 8),
                   // Durum filtresi
                   Expanded(
                     child: DropdownButtonFormField<AccountStatus?>(
@@ -580,16 +558,16 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                 children: [
                   // Arama çubuğu - tam genişlik
                   TextField(
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: 'Hesap ara...',
+      onChanged: (value) {
+        setState(() {
+          _searchQuery = value;
+        });
+      },
+      decoration: InputDecoration(
+        hintText: 'Hesap ara...',
                       prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 12),
@@ -606,7 +584,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                           decoration: InputDecoration(
                             labelText: 'Tür',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(8),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 12),
@@ -640,7 +618,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                           decoration: InputDecoration(
                             labelText: 'Durum',
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(8),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 12),
@@ -714,8 +692,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                       const SizedBox(width: 8),
                       // Excel, CSV, PDF, Import butonları
                       Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+          mainAxisSize: MainAxisSize.min,
+          children: [
                           // Excel Export
                           IconButton(
                             onPressed: _exportToExcel,
@@ -725,9 +703,9 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                               backgroundColor:
                                   Colors.green.withValues(alpha: 0.1),
                               foregroundColor: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
+              ),
+            ),
+            const SizedBox(width: 4),
                           // CSV Export
                           IconButton(
                             onPressed: _exportToCSV,
