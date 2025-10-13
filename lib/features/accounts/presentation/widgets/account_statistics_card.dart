@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
 /// Hesap İstatistikleri Kartı
 class AccountStatisticsCard extends StatelessWidget {
@@ -389,6 +390,11 @@ class AccountStatisticsCard extends StatelessWidget {
   }
 
   String _formatCurrency(double amount) {
-    return amount.toStringAsFixed(2);
+    final formatter = NumberFormat.currency(
+      locale: 'tr_TR',
+      symbol: '₺',
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
   }
 }
