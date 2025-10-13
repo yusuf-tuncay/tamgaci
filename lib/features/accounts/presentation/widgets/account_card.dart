@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../domain/entities/account.dart';
 
 /// Premium Hesap Kartı Widget'ı
@@ -321,6 +322,11 @@ class AccountCard extends StatelessWidget {
   }
 
   String _formatCurrency(double amount, String currency) {
-    return '${amount.toStringAsFixed(2)} $currency';
+    final formatter = NumberFormat.currency(
+      locale: 'tr_TR',
+      symbol: currency == 'TRY' ? '₺' : currency,
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
   }
 }
