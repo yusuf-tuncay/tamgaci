@@ -201,19 +201,21 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                   ],
                 ),
               ),
-              // Özet istatistikler - yan yana
-              Row(
-                children: [
-                  _buildHeaderStatCard('Toplam', totalAccounts.toString()),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Aktif', activeAccounts.toString()),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard(
-                      'Bakiye', totalBalance.toStringAsFixed(0)),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Kredi', totalCredit.toStringAsFixed(0)),
-                ],
-              ),
+              // Özet istatistikler - sadece masaüstünde göster
+              if (MediaQuery.of(context).size.width > 768)
+                Row(
+                  children: [
+                    _buildHeaderStatCard('Toplam', totalAccounts.toString()),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Aktif', activeAccounts.toString()),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard(
+                        'Bakiye', totalBalance.toStringAsFixed(0)),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard(
+                        'Kredi', totalCredit.toStringAsFixed(0)),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -382,182 +384,189 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.grey[200]!),
         ),
-        child: Row(
+        child: Column(
           children: [
-            // Arama çubuğu
-            Expanded(
-              flex: 2,
-              child: TextField(
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Hesap ara...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            // Tür filtresi
-            Expanded(
-              child: DropdownButtonFormField<AccountType?>(
-                initialValue: _selectedType,
-                decoration: InputDecoration(
-                  labelText: 'Tür',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Tümü')),
-                  DropdownMenuItem(
-                      value: AccountType.checking, child: Text('Vadesiz')),
-                  DropdownMenuItem(
-                      value: AccountType.savings, child: Text('Vadeli')),
-                  DropdownMenuItem(
-                      value: AccountType.credit, child: Text('Kredi')),
-                  DropdownMenuItem(
-                      value: AccountType.investment, child: Text('Yatırım')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedType = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Durum filtresi
-            Expanded(
-              child: DropdownButtonFormField<AccountStatus?>(
-                initialValue: _selectedStatus,
-                decoration: InputDecoration(
-                  labelText: 'Durum',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Tümü')),
-                  DropdownMenuItem(
-                      value: AccountStatus.active, child: Text('Aktif')),
-                  DropdownMenuItem(
-                      value: AccountStatus.inactive, child: Text('Pasif')),
-                  DropdownMenuItem(
-                      value: AccountStatus.suspended,
-                      child: Text('Askıya Alınmış')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedStatus = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Para birimi filtresi
-            Expanded(
-              child: DropdownButtonFormField<String?>(
-                initialValue: _selectedCurrency,
-                decoration: InputDecoration(
-                  labelText: 'Para Birimi',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Tümü')),
-                  DropdownMenuItem(value: 'TRY', child: Text('TRY')),
-                  DropdownMenuItem(value: 'USD', child: Text('USD')),
-                  DropdownMenuItem(value: 'EUR', child: Text('EUR')),
-                  DropdownMenuItem(value: 'GBP', child: Text('GBP')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedCurrency = value;
-                  });
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Sıralama yönü
-            IconButton(
-              onPressed: () {
+            // Arama çubuğu - tam genişlik
+            TextField(
+              onChanged: (value) {
                 setState(() {
-                  _sortAscending = !_sortAscending;
+                  _searchQuery = value;
                 });
               },
-              icon: Icon(
-                _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+              decoration: InputDecoration(
+                hintText: 'Hesap ara...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               ),
-              tooltip: _sortAscending ? 'Artan' : 'Azalan',
             ),
-            const SizedBox(width: 8),
-            // Excel, CSV, PDF, Import butonları
+            const SizedBox(height: 12),
+            // Filtreler - iki satır
             Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                // Excel Export
-                IconButton(
-                  onPressed: _exportToExcel,
-                  icon: const Icon(Icons.table_chart),
-                  tooltip: 'Excel\'e Aktar',
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.green.withValues(alpha: 0.1),
-                    foregroundColor: Colors.green,
+                // İlk satır: Tür ve Durum
+                Expanded(
+                  child: DropdownButtonFormField<AccountType?>(
+                    initialValue: _selectedType,
+                    decoration: InputDecoration(
+                      labelText: 'Tür',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('Tümü')),
+                      DropdownMenuItem(
+                          value: AccountType.checking, child: Text('Vadesiz')),
+                      DropdownMenuItem(
+                          value: AccountType.savings, child: Text('Vadeli')),
+                      DropdownMenuItem(
+                          value: AccountType.credit, child: Text('Kredi')),
+                      DropdownMenuItem(
+                          value: AccountType.investment,
+                          child: Text('Yatırım')),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedType = value;
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(width: 4),
-                // CSV Export
-                IconButton(
-                  onPressed: _exportToCSV,
-                  icon: const Icon(Icons.description),
-                  tooltip: 'CSV\'ye Aktar',
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                    foregroundColor: Colors.blue,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: DropdownButtonFormField<AccountStatus?>(
+                    initialValue: _selectedStatus,
+                    decoration: InputDecoration(
+                      labelText: 'Durum',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('Tümü')),
+                      DropdownMenuItem(
+                          value: AccountStatus.active, child: Text('Aktif')),
+                      DropdownMenuItem(
+                          value: AccountStatus.inactive, child: Text('Pasif')),
+                      DropdownMenuItem(
+                          value: AccountStatus.suspended,
+                          child: Text('Askıya Alınmış')),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedStatus = value;
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(width: 4),
-                // PDF Export
-                IconButton(
-                  onPressed: _exportToPDF,
-                  icon: const Icon(Icons.picture_as_pdf),
-                  tooltip: 'PDF\'ye Aktar',
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.red.withValues(alpha: 0.1),
-                    foregroundColor: Colors.red,
+              ],
+            ),
+            const SizedBox(height: 12),
+            // İkinci satır: Para Birimi ve Export/Import
+            Row(
+              children: [
+                // Para birimi filtresi
+                Expanded(
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _selectedCurrency,
+                    decoration: InputDecoration(
+                      labelText: 'Para Birimi',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('Tümü')),
+                      DropdownMenuItem(value: 'TRY', child: Text('TRY')),
+                      DropdownMenuItem(value: 'USD', child: Text('USD')),
+                      DropdownMenuItem(value: 'EUR', child: Text('EUR')),
+                      DropdownMenuItem(value: 'GBP', child: Text('GBP')),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedCurrency = value;
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(width: 4),
-                // Import
+                const SizedBox(width: 8),
+                // Sıralama yönü
                 IconButton(
-                  onPressed: _showImportDialog,
-                  icon: const Icon(Icons.upload_file),
-                  tooltip: 'Dosya İçe Aktar',
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                    foregroundColor: Colors.orange,
+                  onPressed: () {
+                    setState(() {
+                      _sortAscending = !_sortAscending;
+                    });
+                  },
+                  icon: Icon(
+                    _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
                   ),
+                  tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                ),
+                const SizedBox(width: 8),
+                // Excel, CSV, PDF, Import butonları
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Excel Export
+                    IconButton(
+                      onPressed: _exportToExcel,
+                      icon: const Icon(Icons.table_chart),
+                      tooltip: 'Excel\'e Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.green.withValues(alpha: 0.1),
+                        foregroundColor: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // CSV Export
+                    IconButton(
+                      onPressed: _exportToCSV,
+                      icon: const Icon(Icons.description),
+                      tooltip: 'CSV\'ye Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                        foregroundColor: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // PDF Export
+                    IconButton(
+                      onPressed: _exportToPDF,
+                      icon: const Icon(Icons.picture_as_pdf),
+                      tooltip: 'PDF\'ye Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.red.withValues(alpha: 0.1),
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Import
+                    IconButton(
+                      onPressed: _showImportDialog,
+                      icon: const Icon(Icons.upload_file),
+                      tooltip: 'Dosya İçe Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                        foregroundColor: Colors.orange,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

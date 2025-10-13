@@ -31,6 +31,7 @@ class _EnhancedCustomersListPageState
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'Tümü';
+  String _selectedStatus = 'Tümü';
   String _sortBy = 'name';
   bool _sortAscending = true;
   bool _showOnlyWithBalance = false;
@@ -41,6 +42,12 @@ class _EnhancedCustomersListPageState
     'Normal',
     'Kurumsal',
     'Bireysel'
+  ];
+
+  final List<String> _statuses = [
+    'Tümü',
+    'Aktif',
+    'Pasif',
   ];
 
   @override
@@ -183,20 +190,21 @@ class _EnhancedCustomersListPageState
                   ],
                 ),
               ),
-              // Özet istatistikler - yan yana
-              Row(
-                children: [
-                  _buildHeaderStatCard('Aktif', activeCustomers.toString()),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Bakiye',
-                      CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Kredi',
-                      CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
-                ],
-              ),
+              // Özet istatistikler - sadece masaüstünde göster
+              if (MediaQuery.of(context).size.width > 768)
+                Row(
+                  children: [
+                    _buildHeaderStatCard('Aktif', activeCustomers.toString()),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Bakiye',
+                        CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Kredi',
+                        CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 8),
@@ -332,159 +340,188 @@ class _EnhancedCustomersListPageState
 
   Widget _buildSearchAndFilters(bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[800] : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          // Arama çubuğu
-          Expanded(
-            flex: 2,
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Müşteri ara...',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Column(children: [
+          // Arama çubuğu - tam genişlik
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Müşteri ara...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                      },
+                    )
+                  : null,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             ),
           ),
-          const SizedBox(width: 12),
-          // Kategori filtresi
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              initialValue: _selectedCategory,
-              decoration: InputDecoration(
-                labelText: 'Kategori',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              items: _categories.map((category) {
-                return DropdownMenuItem(
-                  value: category,
-                  child: Text(category),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedCategory = value!;
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Sıralama
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              initialValue: _sortBy,
-              decoration: InputDecoration(
-                labelText: 'Sırala',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'name', child: Text('İsim')),
-                DropdownMenuItem(value: 'balance', child: Text('Bakiye')),
-                DropdownMenuItem(value: 'phone', child: Text('Telefon')),
-                DropdownMenuItem(value: 'code', child: Text('Kod')),
-                DropdownMenuItem(value: 'date', child: Text('Tarih')),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _sortBy = value!;
-                });
-              },
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Sıralama yönü
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _sortAscending = !_sortAscending;
-              });
-            },
-            icon: Icon(
-              _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-            ),
-            tooltip: _sortAscending ? 'Artan' : 'Azalan',
-          ),
-          const SizedBox(width: 8),
-          // Excel, CSV, PDF, Import butonları
+          const SizedBox(height: 12),
+          // Filtreler - iki satır
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              // Excel Export
-              IconButton(
-                onPressed: _exportToExcel,
-                icon: const Icon(Icons.table_chart),
-                tooltip: 'Excel\'e Aktar',
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.green.withValues(alpha: 0.1),
-                  foregroundColor: Colors.green,
+              // İlk satır: Kategori ve Durum
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedCategory,
+                  decoration: InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                  ),
+                  items: _categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value!;
+                    });
+                  },
                 ),
               ),
-              const SizedBox(width: 4),
-              // CSV Export
-              IconButton(
-                onPressed: _exportToCSV,
-                icon: const Icon(Icons.description),
-                tooltip: 'CSV\'ye Aktar',
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.blue.withValues(alpha: 0.1),
-                  foregroundColor: Colors.blue,
-                ),
-              ),
-              const SizedBox(width: 4),
-              // PDF Export
-              IconButton(
-                onPressed: _exportToPDF,
-                icon: const Icon(Icons.picture_as_pdf),
-                tooltip: 'PDF\'ye Aktar',
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.red.withValues(alpha: 0.1),
-                  foregroundColor: Colors.red,
-                ),
-              ),
-              const SizedBox(width: 4),
-              // Import
-              IconButton(
-                onPressed: _showImportDialog,
-                icon: const Icon(Icons.upload_file),
-                tooltip: 'Dosya İçe Aktar',
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                  foregroundColor: Colors.orange,
+              const SizedBox(width: 8),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _selectedStatus,
+                  decoration: InputDecoration(
+                    labelText: 'Durum',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                  ),
+                  items: _statuses.map((status) {
+                    return DropdownMenuItem(
+                      value: status,
+                      child: Text(status),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedStatus = value!;
+                    });
+                  },
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
+          const SizedBox(height: 12),
+          // İkinci satır: Sıralama ve Export/Import
+          Row(
+            children: [
+              // Sıralama
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _sortBy,
+                  decoration: InputDecoration(
+                    labelText: 'Sırala',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'name', child: Text('İsim')),
+                    DropdownMenuItem(value: 'balance', child: Text('Bakiye')),
+                    DropdownMenuItem(value: 'phone', child: Text('Telefon')),
+                    DropdownMenuItem(value: 'code', child: Text('Kod')),
+                    DropdownMenuItem(value: 'date', child: Text('Tarih')),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _sortBy = value!;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Sıralama yönü
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _sortAscending = !_sortAscending;
+                  });
+                },
+                icon: Icon(
+                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                ),
+                tooltip: _sortAscending ? 'Artan' : 'Azalan',
+              ),
+              const SizedBox(width: 8),
+              // Excel, CSV, PDF, Import butonları
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Excel Export
+                  IconButton(
+                    onPressed: _exportToExcel,
+                    icon: const Icon(Icons.table_chart),
+                    tooltip: 'Excel\'e Aktar',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.green.withValues(alpha: 0.1),
+                      foregroundColor: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // CSV Export
+                  IconButton(
+                    onPressed: _exportToCSV,
+                    icon: const Icon(Icons.description),
+                    tooltip: 'CSV\'ye Aktar',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                      foregroundColor: Colors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // PDF Export
+                  IconButton(
+                    onPressed: _exportToPDF,
+                    icon: const Icon(Icons.picture_as_pdf),
+                    tooltip: 'PDF\'ye Aktar',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.red.withValues(alpha: 0.1),
+                      foregroundColor: Colors.red,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // Import
+                  IconButton(
+                    onPressed: _showImportDialog,
+                    icon: const Icon(Icons.upload_file),
+                    tooltip: 'Dosya İçe Aktar',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                      foregroundColor: Colors.orange,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ]));
   }
 
   Widget _buildCustomersList(List<Customer> customers, bool isDark) {
