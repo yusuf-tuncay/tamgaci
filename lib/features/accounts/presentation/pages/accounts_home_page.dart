@@ -111,6 +111,16 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
     );
   }
 
+  /// Türkçe format ile para birimi formatla
+  String _formatCurrency(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: 'tr_TR',
+      symbol: '₺',
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
+  }
+
   Widget _buildWelcomeCard(List<Account> accounts) {
     final totalAccounts = accounts.length;
     final activeAccounts =
@@ -188,10 +198,10 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                     _buildHeaderStatCard('Aktif', activeAccounts.toString()),
                     const SizedBox(width: 8),
                     _buildHeaderStatCard(
-                        'Bakiye', totalBalance.toStringAsFixed(0)),
+                        'Bakiye', _formatCurrency(totalBalance)),
                     const SizedBox(width: 8),
                     _buildHeaderStatCard(
-                        'Kredi', totalCredit.toStringAsFixed(0)),
+                        'Kredi', _formatCurrency(totalCredit)),
                   ],
                 ),
             ],
