@@ -23,7 +23,6 @@ import '../../../auth/domain/entities/user.dart' as auth_domain;
 import '../providers/dashboard_providers.dart';
 import '../widgets/exchange_rates_widget.dart';
 import '../widgets/dashboard_stats_card.dart';
-import '../widgets/quick_actions_widget.dart';
 import '../widgets/recent_activities_widget.dart';
 // Silinen widget: product_variants_widget - gereksiz
 import '../../domain/entities/dashboard_summary.dart';
@@ -486,7 +485,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             if (banner != null) banner,
             _buildWelcomeCard(isDark),
             const SizedBox(height: 16),
-            const QuickActionsWidget(),
+            _buildQuickActions(isDark),
             const SizedBox(height: 16),
             // Stats Grid (full width on mobile)
             _buildStatsGrid(dashboardSummaryAsync, isDark),
@@ -765,48 +764,87 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 80,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildActionCardHorizontal('Fatura Oluştur', Icons.receipt_long,
-                    TamgaciConstants.primaryColor, () {
-                  Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList);
-                }, isDark),
-                const SizedBox(width: 12),
-                _buildActionCardHorizontal(
-                    'Ürün Ekle', Icons.inventory_2, Colors.orange, () {
-                  Navigator.of(context).pushNamed(TamgaciRoutes.createProduct);
-                }, isDark),
-                const SizedBox(width: 12),
-                _buildActionCardHorizontal(
-                    'Müşteri Ekle', Icons.person_add, Colors.blue, () {
-                  Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer);
-                }, isDark),
-                const SizedBox(width: 12),
-                _buildActionCardHorizontal(
-                    'Stok İşlemi', Icons.warehouse, Colors.purple, () {
-                  Navigator.of(context).pushNamed(TamgaciRoutes.inventory);
-                }, isDark),
-                const SizedBox(width: 12),
-                _buildActionCardHorizontal(
-                    'Depo Listesi', Icons.list, Colors.indigo, () {
-                  Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList);
-                }, isDark),
-                const SizedBox(width: 12),
-                _buildActionCardHorizontal(
-                    'Stok Listesi', Icons.inventory, Colors.teal, () {
-                  Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
-                }, isDark),
-                const SizedBox(width: 12),
-                _buildActionCardHorizontal(
-                    'Logger Test', Icons.color_lens, Colors.pink, () {
-                  Navigator.of(context)
-                      .pushNamed(TamgaciRoutes.colorizedLoggerTest);
-                }, isDark),
-              ],
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 768;
+              return SizedBox(
+                height: isMobile ? 60 : 80,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    _buildActionCardHorizontal(
+                      isMobile ? 'Fatura' : 'Fatura Oluştur', 
+                      Icons.receipt_long,
+                      TamgaciConstants.primaryColor, 
+                      () {
+                        Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList);
+                      }, 
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionCardHorizontal(
+                      isMobile ? 'Ürün' : 'Ürün Ekle', 
+                      Icons.inventory_2, 
+                      Colors.orange,
+                      () {
+                        Navigator.of(context).pushNamed(TamgaciRoutes.createProduct);
+                      }, 
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionCardHorizontal(
+                      isMobile ? 'Müşteri' : 'Müşteri Ekle', 
+                      Icons.person_add, 
+                      Colors.blue,
+                      () {
+                        Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer);
+                      }, 
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionCardHorizontal(
+                      isMobile ? 'Stok' : 'Stok İşlemi', 
+                      Icons.warehouse, 
+                      Colors.purple,
+                      () {
+                        Navigator.of(context).pushNamed(TamgaciRoutes.inventory);
+                      }, 
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionCardHorizontal(
+                      isMobile ? 'Depo' : 'Depo Listesi', 
+                      Icons.list, 
+                      Colors.indigo, 
+                      () {
+                        Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList);
+                      }, 
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionCardHorizontal(
+                      isMobile ? 'Stok Listesi' : 'Stok Listesi', 
+                      Icons.inventory, 
+                      Colors.teal,
+                      () {
+                        Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
+                      }, 
+                      isDark
+                    ),
+                    const SizedBox(width: 12),
+                    _buildActionCardHorizontal(
+                      isMobile ? 'Test' : 'Logger Test', 
+                      Icons.color_lens, 
+                      Colors.pink,
+                      () {
+                        Navigator.of(context).pushNamed(TamgaciRoutes.colorizedLoggerTest);
+                      }, 
+                      isDark
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),
