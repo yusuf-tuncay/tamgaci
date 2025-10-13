@@ -488,21 +488,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const SizedBox(height: 16),
             const QuickActionsWidget(),
             const SizedBox(height: 16),
-            // Stats Grid + Exchange Rates (3x3 grid)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: _buildStatsGrid(dashboardSummaryAsync, isDark),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  flex: 1,
-                  child: ExchangeRatesWidget(),
-                ),
-              ],
-            ),
+            // Stats Grid (full width on mobile)
+            _buildStatsGrid(dashboardSummaryAsync, isDark),
+            const SizedBox(height: 16),
+            // Exchange Rates (below stats on mobile)
+            const ExchangeRatesWidget(),
             const SizedBox(height: 16),
             // Silinen widget: ProductVariantsWidget - gereksiz
             _buildRecentActivitiesSection(recentActivitiesAsync, isDark),
@@ -785,32 +775,33 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList);
                 }, isDark),
                 const SizedBox(width: 12),
-                _buildActionCardHorizontal('Ürün Ekle', Icons.inventory_2, Colors.orange,
-                    () {
+                _buildActionCardHorizontal(
+                    'Ürün Ekle', Icons.inventory_2, Colors.orange, () {
                   Navigator.of(context).pushNamed(TamgaciRoutes.createProduct);
                 }, isDark),
                 const SizedBox(width: 12),
-                _buildActionCardHorizontal('Müşteri Ekle', Icons.person_add, Colors.blue,
-                    () {
+                _buildActionCardHorizontal(
+                    'Müşteri Ekle', Icons.person_add, Colors.blue, () {
                   Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer);
                 }, isDark),
                 const SizedBox(width: 12),
-                _buildActionCardHorizontal('Stok İşlemi', Icons.warehouse, Colors.purple,
-                    () {
+                _buildActionCardHorizontal(
+                    'Stok İşlemi', Icons.warehouse, Colors.purple, () {
                   Navigator.of(context).pushNamed(TamgaciRoutes.inventory);
                 }, isDark),
                 const SizedBox(width: 12),
-                _buildActionCardHorizontal('Depo Listesi', Icons.list, Colors.indigo, () {
+                _buildActionCardHorizontal(
+                    'Depo Listesi', Icons.list, Colors.indigo, () {
                   Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList);
                 }, isDark),
                 const SizedBox(width: 12),
-                _buildActionCardHorizontal('Stok Listesi', Icons.inventory, Colors.teal,
-                    () {
+                _buildActionCardHorizontal(
+                    'Stok Listesi', Icons.inventory, Colors.teal, () {
                   Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
                 }, isDark),
                 const SizedBox(width: 12),
-                _buildActionCardHorizontal('Logger Test', Icons.color_lens, Colors.pink,
-                    () {
+                _buildActionCardHorizontal(
+                    'Logger Test', Icons.color_lens, Colors.pink, () {
                   Navigator.of(context)
                       .pushNamed(TamgaciRoutes.colorizedLoggerTest);
                 }, isDark),
@@ -821,7 +812,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
     );
   }
-
 
   /// Yatay kaydırılabilir action card
   Widget _buildActionCardHorizontal(String title, IconData icon, Color color,
@@ -883,29 +873,69 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             child: ListView(
               scrollDirection: Axis.horizontal,
               children: [
-                _buildActionCardHorizontal('Fatura', Icons.receipt, Colors.blue,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList), isDark),
+                _buildActionCardHorizontal(
+                    'Fatura',
+                    Icons.receipt,
+                    Colors.blue,
+                    () => Navigator.of(context)
+                        .pushNamed(TamgaciRoutes.invoicesList),
+                    isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Alış', Icons.shopping_cart, Colors.orange,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.purchasesList), isDark),
+                _buildActionCardHorizontal(
+                    'Alış',
+                    Icons.shopping_cart,
+                    Colors.orange,
+                    () => Navigator.of(context)
+                        .pushNamed(TamgaciRoutes.purchasesList),
+                    isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Müşteri', Icons.person_add, Colors.green,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer), isDark),
+                _buildActionCardHorizontal(
+                    'Müşteri',
+                    Icons.person_add,
+                    Colors.green,
+                    () => Navigator.of(context)
+                        .pushNamed(TamgaciRoutes.createCustomer),
+                    isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Ürün', Icons.add_box, Colors.purple,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.createProduct), isDark),
+                _buildActionCardHorizontal(
+                    'Ürün',
+                    Icons.add_box,
+                    Colors.purple,
+                    () => Navigator.of(context)
+                        .pushNamed(TamgaciRoutes.createProduct),
+                    isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Stok', Icons.warehouse, Colors.teal,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.inventory), isDark),
+                _buildActionCardHorizontal(
+                    'Stok',
+                    Icons.warehouse,
+                    Colors.teal,
+                    () => Navigator.of(context)
+                        .pushNamed(TamgaciRoutes.inventory),
+                    isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Depo', Icons.list, Colors.indigo,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList), isDark),
+                _buildActionCardHorizontal(
+                    'Depo',
+                    Icons.list,
+                    Colors.indigo,
+                    () => Navigator.of(context)
+                        .pushNamed(TamgaciRoutes.warehouseList),
+                    isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Rapor', Icons.analytics, Colors.pink,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.dashboard), isDark),
+                _buildActionCardHorizontal(
+                    'Rapor',
+                    Icons.analytics,
+                    Colors.pink,
+                    () => Navigator.of(context)
+                        .pushNamed(TamgaciRoutes.dashboard),
+                    isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Ayarlar', Icons.settings, Colors.grey,
-                    () => Navigator.of(context).pushNamed(TamgaciRoutes.settings), isDark),
+                _buildActionCardHorizontal(
+                    'Ayarlar',
+                    Icons.settings,
+                    Colors.grey,
+                    () =>
+                        Navigator.of(context).pushNamed(TamgaciRoutes.settings),
+                    isDark),
               ],
             ),
           ),
@@ -913,7 +943,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
     );
   }
-
 
   // Silinen modül: payments - _buildPaymentStatCard metodu kaldırıldı
 
