@@ -283,223 +283,447 @@ class _WarehousesHomePageState extends ConsumerState<WarehousesHomePage>
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: Colors.grey[200]!),
                 ),
-                child: Column(
-                  children: [
-                    // Arama çubuğu - tam genişlik
-                    TextField(
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value;
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: 'Depo ara...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Filtreler - iki satır
-                    Row(
-                      children: [
-                        // İlk satır: Tür ve Durum
-                        Expanded(
-                          child: DropdownButtonFormField<WarehouseType?>(
-                            initialValue: _selectedType,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Masaüstünde tek satır, mobilde iki satır
+                    if (constraints.maxWidth > 768) {
+                      return Row(
+                        children: [
+                          // Arama çubuğu
+                          Expanded(
+                            flex: 2,
+                            child: TextField(
+                              onChanged: (value) {
+                                setState(() {
+                                  _searchQuery = value;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                hintText: 'Depo ara...',
+                                prefixIcon: const Icon(Icons.search),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // Tür filtresi
+                          Expanded(
+                            child: DropdownButtonFormField<WarehouseType?>(
+                              initialValue: _selectedType,
+                              decoration: InputDecoration(
+                                labelText: 'Tür',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: null, child: Text('Tümü')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.main,
+                                    child: Text('Ana')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.branch,
+                                    child: Text('Şube')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.retail,
+                                    child: Text('Perakende')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.wholesale,
+                                    child: Text('Toptan')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.cold,
+                                    child: Text('Soğuk')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.bonded,
+                                    child: Text('Gümrük')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.virtual,
+                                    child: Text('Sanal')),
+                                DropdownMenuItem(
+                                    value: WarehouseType.other,
+                                    child: Text('Diğer')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedType = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Durum filtresi
+                          Expanded(
+                            child: DropdownButtonFormField<WarehouseStatus?>(
+                              initialValue: _selectedStatus,
+                              decoration: InputDecoration(
+                                labelText: 'Durum',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: null, child: Text('Tümü')),
+                                DropdownMenuItem(
+                                    value: WarehouseStatus.active,
+                                    child: Text('Aktif')),
+                                DropdownMenuItem(
+                                    value: WarehouseStatus.inactive,
+                                    child: Text('Pasif')),
+                                DropdownMenuItem(
+                                    value: WarehouseStatus.maintenance,
+                                    child: Text('Bakımda')),
+                                DropdownMenuItem(
+                                    value: WarehouseStatus.closed,
+                                    child: Text('Kapalı')),
+                                DropdownMenuItem(
+                                    value: WarehouseStatus.suspended,
+                                    child: Text('Askıya Alınmış')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  _selectedStatus = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Sıralama
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              initialValue: 'name',
+                              decoration: InputDecoration(
+                                labelText: 'Sırala',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 12),
+                              ),
+                              items: const [
+                                DropdownMenuItem(
+                                    value: 'name', child: Text('İsim')),
+                                DropdownMenuItem(
+                                    value: 'type', child: Text('Tür')),
+                                DropdownMenuItem(
+                                    value: 'status', child: Text('Durum')),
+                                DropdownMenuItem(
+                                    value: 'capacity', child: Text('Kapasite')),
+                                DropdownMenuItem(
+                                    value: 'createdAt', child: Text('Tarih')),
+                              ],
+                              onChanged: (value) {
+                                setState(() {
+                                  // Sıralama logic
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Sıralama yönü
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _sortAscending = !_sortAscending;
+                              });
+                            },
+                            icon: Icon(
+                              _sortAscending
+                                  ? Icons.arrow_upward
+                                  : Icons.arrow_downward,
+                            ),
+                            tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                          ),
+                          const SizedBox(width: 8),
+                          // Excel, CSV, PDF, Import butonları
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Excel Export
+                              IconButton(
+                                onPressed: _showExportDialog,
+                                icon: const Icon(Icons.table_chart),
+                                tooltip: 'Excel\'e Aktar',
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.green.withValues(alpha: 0.1),
+                                  foregroundColor: Colors.green,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              // CSV Export
+                              IconButton(
+                                onPressed: _showExportDialog,
+                                icon: const Icon(Icons.description),
+                                tooltip: 'CSV\'ye Aktar',
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.blue.withValues(alpha: 0.1),
+                                  foregroundColor: Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              // PDF Export
+                              IconButton(
+                                onPressed: _showExportDialog,
+                                icon: const Icon(Icons.picture_as_pdf),
+                                tooltip: 'PDF\'ye Aktar',
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.red.withValues(alpha: 0.1),
+                                  foregroundColor: Colors.red,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              // Import
+                              IconButton(
+                                onPressed: _showImportDialog,
+                                icon: const Icon(Icons.upload_file),
+                                tooltip: 'Dosya İçe Aktar',
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Colors.orange.withValues(alpha: 0.1),
+                                  foregroundColor: Colors.orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    } else {
+                      // Mobile - iki satır
+                      return Column(
+                        children: [
+                          // Arama çubuğu - tam genişlik
+                          TextField(
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
                             decoration: InputDecoration(
-                              labelText: 'Tür',
+                              hintText: 'Depo ara...',
+                              prefixIcon: const Icon(Icons.search),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 12),
                             ),
-                            items: const [
-                              DropdownMenuItem(
-                                  value: null, child: Text('Tümü')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.main,
-                                  child: Text('Ana')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.branch,
-                                  child: Text('Şube')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.retail,
-                                  child: Text('Perakende')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.wholesale,
-                                  child: Text('Toptan')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.cold,
-                                  child: Text('Soğuk')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.bonded,
-                                  child: Text('Gümrük')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.virtual,
-                                  child: Text('Sanal')),
-                              DropdownMenuItem(
-                                  value: WarehouseType.other,
-                                  child: Text('Diğer')),
+                          ),
+                          const SizedBox(height: 12),
+                          // Filtreler - iki satır
+                          Row(
+                            children: [
+                              // İlk satır: Tür ve Durum
+                              Expanded(
+                                child: DropdownButtonFormField<WarehouseType?>(
+                                  initialValue: _selectedType,
+                                  decoration: InputDecoration(
+                                    labelText: 'Tür',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 12),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: null, child: Text('Tümü')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.main,
+                                        child: Text('Ana')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.branch,
+                                        child: Text('Şube')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.retail,
+                                        child: Text('Perakende')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.wholesale,
+                                        child: Text('Toptan')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.cold,
+                                        child: Text('Soğuk')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.bonded,
+                                        child: Text('Gümrük')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.virtual,
+                                        child: Text('Sanal')),
+                                    DropdownMenuItem(
+                                        value: WarehouseType.other,
+                                        child: Text('Diğer')),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedType = value;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child:
+                                    DropdownButtonFormField<WarehouseStatus?>(
+                                  initialValue: _selectedStatus,
+                                  decoration: InputDecoration(
+                                    labelText: 'Durum',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 12),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: null, child: Text('Tümü')),
+                                    DropdownMenuItem(
+                                        value: WarehouseStatus.active,
+                                        child: Text('Aktif')),
+                                    DropdownMenuItem(
+                                        value: WarehouseStatus.inactive,
+                                        child: Text('Pasif')),
+                                    DropdownMenuItem(
+                                        value: WarehouseStatus.maintenance,
+                                        child: Text('Bakımda')),
+                                    DropdownMenuItem(
+                                        value: WarehouseStatus.closed,
+                                        child: Text('Kapalı')),
+                                    DropdownMenuItem(
+                                        value: WarehouseStatus.suspended,
+                                        child: Text('Askıya Alınmış')),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedStatus = value;
+                                    });
+                                  },
+                                ),
+                              ),
                             ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedType = value;
-                              });
-                            },
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: DropdownButtonFormField<WarehouseStatus?>(
-                            initialValue: _selectedStatus,
-                            decoration: InputDecoration(
-                              labelText: 'Durum',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
+                          const SizedBox(height: 12),
+                          // İkinci satır: Sıralama ve Export/Import
+                          Row(
+                            children: [
+                              // Sıralama
+                              Expanded(
+                                child: DropdownButtonFormField<String>(
+                                  initialValue: 'name',
+                                  decoration: InputDecoration(
+                                    labelText: 'Sırala',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 12),
+                                  ),
+                                  items: const [
+                                    DropdownMenuItem(
+                                        value: 'name', child: Text('İsim')),
+                                    DropdownMenuItem(
+                                        value: 'type', child: Text('Tür')),
+                                    DropdownMenuItem(
+                                        value: 'status', child: Text('Durum')),
+                                    DropdownMenuItem(
+                                        value: 'capacity',
+                                        child: Text('Kapasite')),
+                                    DropdownMenuItem(
+                                        value: 'createdAt',
+                                        child: Text('Tarih')),
+                                  ],
+                                  onChanged: (value) {
+                                    setState(() {
+                                      // Sıralama logic
+                                    });
+                                  },
+                                ),
                               ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 12),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                  value: null, child: Text('Tümü')),
-                              DropdownMenuItem(
-                                  value: WarehouseStatus.active,
-                                  child: Text('Aktif')),
-                              DropdownMenuItem(
-                                  value: WarehouseStatus.inactive,
-                                  child: Text('Pasif')),
-                              DropdownMenuItem(
-                                  value: WarehouseStatus.maintenance,
-                                  child: Text('Bakımda')),
-                              DropdownMenuItem(
-                                  value: WarehouseStatus.closed,
-                                  child: Text('Kapalı')),
-                              DropdownMenuItem(
-                                  value: WarehouseStatus.suspended,
-                                  child: Text('Askıya Alınmış')),
+                              const SizedBox(width: 8),
+                              // Sıralama yönü
+                              IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _sortAscending = !_sortAscending;
+                                  });
+                                },
+                                icon: Icon(
+                                  _sortAscending
+                                      ? Icons.arrow_upward
+                                      : Icons.arrow_downward,
+                                ),
+                                tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                              ),
+                              const SizedBox(width: 8),
+                              // Excel, CSV, PDF, Import butonları
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Excel Export
+                                  IconButton(
+                                    onPressed: _showExportDialog,
+                                    icon: const Icon(Icons.table_chart),
+                                    tooltip: 'Excel\'e Aktar',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor:
+                                          Colors.green.withValues(alpha: 0.1),
+                                      foregroundColor: Colors.green,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  // CSV Export
+                                  IconButton(
+                                    onPressed: _showExportDialog,
+                                    icon: const Icon(Icons.description),
+                                    tooltip: 'CSV\'ye Aktar',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor:
+                                          Colors.blue.withValues(alpha: 0.1),
+                                      foregroundColor: Colors.blue,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  // PDF Export
+                                  IconButton(
+                                    onPressed: _showExportDialog,
+                                    icon: const Icon(Icons.picture_as_pdf),
+                                    tooltip: 'PDF\'ye Aktar',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor:
+                                          Colors.red.withValues(alpha: 0.1),
+                                      foregroundColor: Colors.red,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  // Import
+                                  IconButton(
+                                    onPressed: _showImportDialog,
+                                    icon: const Icon(Icons.upload_file),
+                                    tooltip: 'Dosya İçe Aktar',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor:
+                                          Colors.orange.withValues(alpha: 0.1),
+                                      foregroundColor: Colors.orange,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedStatus = value;
-                              });
-                            },
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // İkinci satır: Sıralama ve Export/Import
-                    Row(
-                      children: [
-                        // Sıralama
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: 'name',
-                            decoration: InputDecoration(
-                              labelText: 'Sırala',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 12),
-                            ),
-                            items: const [
-                              DropdownMenuItem(
-                                  value: 'name', child: Text('İsim')),
-                              DropdownMenuItem(
-                                  value: 'type', child: Text('Tür')),
-                              DropdownMenuItem(
-                                  value: 'status', child: Text('Durum')),
-                              DropdownMenuItem(
-                                  value: 'capacity', child: Text('Kapasite')),
-                              DropdownMenuItem(
-                                  value: 'createdAt', child: Text('Tarih')),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                // Sıralama logic
-                              });
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Sıralama yönü
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _sortAscending = !_sortAscending;
-                            });
-                          },
-                          icon: Icon(
-                            _sortAscending
-                                ? Icons.arrow_upward
-                                : Icons.arrow_downward,
-                          ),
-                          tooltip: _sortAscending ? 'Artan' : 'Azalan',
-                        ),
-                        const SizedBox(width: 8),
-                        // Excel, CSV, PDF, Import butonları
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Excel Export
-                            IconButton(
-                              onPressed: _showExportDialog,
-                              icon: const Icon(Icons.table_chart),
-                              tooltip: 'Excel\'e Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.green.withValues(alpha: 0.1),
-                                foregroundColor: Colors.green,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            // CSV Export
-                            IconButton(
-                              onPressed: _showExportDialog,
-                              icon: const Icon(Icons.description),
-                              tooltip: 'CSV\'ye Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.blue.withValues(alpha: 0.1),
-                                foregroundColor: Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            // PDF Export
-                            IconButton(
-                              onPressed: _showExportDialog,
-                              icon: const Icon(Icons.picture_as_pdf),
-                              tooltip: 'PDF\'ye Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.red.withValues(alpha: 0.1),
-                                foregroundColor: Colors.red,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            // Import
-                            IconButton(
-                              onPressed: _showImportDialog,
-                              icon: const Icon(Icons.upload_file),
-                              tooltip: 'Dosya İçe Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.orange.withValues(alpha: 0.1),
-                                foregroundColor: Colors.orange,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      );
+                    }
+                  },
                 ),
               ),
             ),
