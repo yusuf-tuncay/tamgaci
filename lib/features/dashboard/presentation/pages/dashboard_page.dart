@@ -27,8 +27,6 @@ import '../widgets/quick_actions_widget.dart';
 import '../widgets/recent_activities_widget.dart';
 // Silinen widget: product_variants_widget - gereksiz
 import '../../domain/entities/dashboard_summary.dart';
-import '../../../inventory/presentation/providers/warehouse_providers.dart';
-import '../../../inventory/presentation/providers/stock_providers.dart';
 // Silinen modül: user_profile
 // Silinen modül: payments
 // imports removed: invoice backfill kaldırıldı
@@ -490,9 +488,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             const SizedBox(height: 16),
             const QuickActionsWidget(),
             const SizedBox(height: 16),
-            _buildStatsGrid(dashboardSummaryAsync, isDark),
-            const SizedBox(height: 16),
-            const ExchangeRatesWidget(),
+            // Stats Grid + Exchange Rates (3x3 grid)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildStatsGrid(dashboardSummaryAsync, isDark),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  flex: 1,
+                  child: ExchangeRatesWidget(),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             // Silinen widget: ProductVariantsWidget - gereksiz
             _buildRecentActivitiesSection(recentActivitiesAsync, isDark),
@@ -531,15 +541,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               const SizedBox(height: 20),
             ],
 
-            // Üst satır: Welcome Card + Quick Stats
-            Row(
-              children: [
-                Expanded(flex: 2, child: _buildWelcomeCard(isDark)),
-                const SizedBox(width: 16),
-                Expanded(
-                    child: _buildQuickStats(dashboardSummaryAsync, isDark)),
-              ],
-            ),
+            // Üst satır: Welcome Card (full width)
+            _buildWelcomeCard(isDark),
 
             const SizedBox(height: 20),
 
@@ -548,13 +551,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
             const SizedBox(height: 20),
 
-            // Stats Grid
-            _buildStatsGrid(dashboardSummaryAsync, isDark),
-
-            const SizedBox(height: 20),
-
-            // Exchange Rates
-            const ExchangeRatesWidget(),
+            // Stats Grid + Exchange Rates (3x3 grid)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: _buildStatsGrid(dashboardSummaryAsync, isDark),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  flex: 1,
+                  child: ExchangeRatesWidget(),
+                ),
+              ],
+            ),
 
             const SizedBox(height: 20),
 
@@ -605,13 +616,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
             const SizedBox(height: 24),
 
-            // Üçüncü satır: Quick Stats + Exchange Rates
+            // Üçüncü satır: Stats Grid + Exchange Rates (3x3 grid)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   flex: 2,
-                  child: _buildQuickStats(dashboardSummaryAsync, isDark),
+                  child: _buildStatsGrid(dashboardSummaryAsync, isDark),
                 ),
                 const SizedBox(width: 24),
                 const Expanded(
@@ -620,11 +631,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ),
               ],
             ),
-
-            const SizedBox(height: 24),
-
-            // Dördüncü satır: Stats Grid (full width)
-            _buildStatsGrid(dashboardSummaryAsync, isDark),
 
             const SizedBox(height: 24),
 
@@ -747,186 +753,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildQuickStats(
-      AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
-    final warehousesAsync = ref.watch(warehousesProvider);
-    final lowStocksAsync = ref.watch(lowStocksProvider);
-    final totalStockValueAsync = ref.watch(totalStockValueProvider);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Hızlı İstatistikler',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : TamgaciConstants.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // İlk satır: Müşteri ve Ürün
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem(
-                    'Toplam Müşteri', '12', Icons.people, Colors.blue, isDark),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatItem('Toplam Ürün', '45', Icons.inventory,
-                    Colors.orange, isDark),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // İkinci satır: Depo ve Düşük Stok
-          Row(
-            children: [
-              Expanded(
-                child: warehousesAsync.when(
-                  data: (warehouses) {
-                    final activeWarehouses =
-                        warehouses.where((w) => w.isActive).length;
-                    return _buildStatItem(
-                        'Aktif Depo',
-                        activeWarehouses.toString(),
-                        Icons.warehouse,
-                        Colors.green,
-                        isDark);
-                  },
-                  loading: () => _buildStatItem('Aktif Depo', '...',
-                      Icons.warehouse, Colors.green, isDark),
-                  error: (error, stack) => _buildStatItem(
-                      'Aktif Depo', '0', Icons.warehouse, Colors.green, isDark),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: lowStocksAsync.when(
-                  data: (lowStocks) => _buildStatItem(
-                      'Düşük Stok',
-                      lowStocks.length.toString(),
-                      Icons.warning,
-                      Colors.red,
-                      isDark),
-                  loading: () => _buildStatItem(
-                      'Düşük Stok', '...', Icons.warning, Colors.red, isDark),
-                  error: (error, stack) => _buildStatItem(
-                      'Düşük Stok', '0', Icons.warning, Colors.red, isDark),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Üçüncü satır: Stok Değeri ve Bekleyen Fatura
-          Row(
-            children: [
-              Expanded(
-                child: totalStockValueAsync.when(
-                  data: (totalStockValue) => _buildStatItem(
-                      'Stok Değeri',
-                      '₺${totalStockValue.toStringAsFixed(0)}',
-                      Icons.attach_money,
-                      Colors.purple,
-                      isDark),
-                  loading: () => _buildStatItem('Stok Değeri', '...',
-                      Icons.attach_money, Colors.purple, isDark),
-                  error: (error, stack) => _buildStatItem('Stok Değeri', '₺0',
-                      Icons.attach_money, Colors.purple, isDark),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatItem(
-                    'Bekleyen Fatura', '5', Icons.receipt, Colors.red, isDark),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Dördüncü satır: Bu Ay Satış ve Bu Ay Alış
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem('Bu Ay Satış', '₺12,450',
-                    Icons.trending_up, Colors.green, isDark),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatItem('Bu Ay Alış', '₺8,230',
-                    Icons.trending_down, Colors.orange, isDark),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Beşinci satır: Net Kar ve Nakit Durumu
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatItem('Net Kar', '₺4,220',
-                    Icons.account_balance_wallet, Colors.teal, isDark),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatItem('Nakit Durumu', '₺15,680',
-                    Icons.account_balance, Colors.indigo, isDark),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-      String title, String value, IconData icon, Color color, bool isDark) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: isDark
-                      ? TamgaciConstants.textSecondaryDark
-                      : TamgaciConstants.textSecondary,
-                ),
-              ),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildQuickActions(bool isDark) {
     return Container(
@@ -1267,27 +1094,18 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
         ];
 
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            // Responsive max item width so small screens do not overflow
-            double maxExtent = 260;
-            if (width < 400) {
-              maxExtent = 300; // allow single column if very narrow
-            }
-            return GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: maxExtent,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.1,
-              ),
-              itemCount: cards.length,
-              itemBuilder: (context, index) => cards[index],
-            );
-          },
+        // 3x3 grid için sabit 3 sütun
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 1.1,
+          ),
+          itemCount: cards.length,
+          itemBuilder: (context, index) => cards[index],
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
