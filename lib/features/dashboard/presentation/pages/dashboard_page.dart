@@ -1023,18 +1023,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
         ];
 
-        // 3x3 grid için sabit 3 sütun
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.1,
-          ),
-          itemCount: cards.length,
-          itemBuilder: (context, index) => cards[index],
+        // Responsive grid - mobilde 2 sütun, desktop'ta 3 sütun
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final isMobile = constraints.maxWidth < 768;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: isMobile ? 2 : 3,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: isMobile ? 1.2 : 1.1,
+              ),
+              itemCount: cards.length,
+              itemBuilder: (context, index) => cards[index],
+            );
+          },
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
