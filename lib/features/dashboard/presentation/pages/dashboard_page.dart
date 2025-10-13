@@ -753,8 +753,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-
-
   Widget _buildQuickActions(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -777,73 +775,76 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
           const SizedBox(height: 16),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.1,
-            children: [
-              _buildActionCard('Fatura Oluştur', Icons.receipt_long,
-                  TamgaciConstants.primaryColor, () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList);
-              }, isDark),
-              // Silinen modül: expenses
-              // Silinen modül: income
-              _buildActionCard('Ürün Ekle', Icons.inventory_2, Colors.orange,
-                  () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.createProduct);
-              }, isDark),
-              _buildActionCard('Müşteri Ekle', Icons.person_add, Colors.blue,
-                  () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer);
-              }, isDark),
-              _buildActionCard('Stok İşlemi', Icons.warehouse, Colors.purple,
-                  () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.inventory);
-              }, isDark),
-              _buildActionCard('Depo Listesi', Icons.list, Colors.indigo, () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList);
-              }, isDark),
-              _buildActionCard('Stok Listesi', Icons.inventory, Colors.teal,
-                  () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
-              }, isDark),
-              _buildActionCard('Logger Test', Icons.color_lens, Colors.pink,
-                  () {
-                Navigator.of(context)
-                    .pushNamed(TamgaciRoutes.colorizedLoggerTest);
-              }, isDark),
-            ],
+          SizedBox(
+            height: 80,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildActionCardHorizontal('Fatura Oluştur', Icons.receipt_long,
+                    TamgaciConstants.primaryColor, () {
+                  Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList);
+                }, isDark),
+                const SizedBox(width: 12),
+                _buildActionCardHorizontal('Ürün Ekle', Icons.inventory_2, Colors.orange,
+                    () {
+                  Navigator.of(context).pushNamed(TamgaciRoutes.createProduct);
+                }, isDark),
+                const SizedBox(width: 12),
+                _buildActionCardHorizontal('Müşteri Ekle', Icons.person_add, Colors.blue,
+                    () {
+                  Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer);
+                }, isDark),
+                const SizedBox(width: 12),
+                _buildActionCardHorizontal('Stok İşlemi', Icons.warehouse, Colors.purple,
+                    () {
+                  Navigator.of(context).pushNamed(TamgaciRoutes.inventory);
+                }, isDark),
+                const SizedBox(width: 12),
+                _buildActionCardHorizontal('Depo Listesi', Icons.list, Colors.indigo, () {
+                  Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList);
+                }, isDark),
+                const SizedBox(width: 12),
+                _buildActionCardHorizontal('Stok Listesi', Icons.inventory, Colors.teal,
+                    () {
+                  Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
+                }, isDark),
+                const SizedBox(width: 12),
+                _buildActionCardHorizontal('Logger Test', Icons.color_lens, Colors.pink,
+                    () {
+                  Navigator.of(context)
+                      .pushNamed(TamgaciRoutes.colorizedLoggerTest);
+                }, isDark),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionCard(String title, IconData icon, Color color,
+
+  /// Yatay kaydırılabilir action card
+  Widget _buildActionCardHorizontal(String title, IconData icon, Color color,
       VoidCallback onTap, bool isDark) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 8),
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
             Text(
               title,
-              textAlign: TextAlign.center,
               style: GoogleFonts.poppins(
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: isDark ? Colors.white : TamgaciConstants.textPrimary,
               ),
@@ -877,143 +878,42 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
           const SizedBox(height: 12),
-          // 4x2 grid layout for full width compact view
-          Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Fatura',
-                      Icons.receipt,
-                      Colors.blue,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.invoicesList),
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Alış',
-                      Icons.shopping_cart,
-                      Colors.orange,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.purchasesList),
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Müşteri',
-                      Icons.person_add,
-                      Colors.green,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.createCustomer),
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Ürün',
-                      Icons.add_box,
-                      Colors.purple,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.createProduct),
-                      isDark,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Stok',
-                      Icons.warehouse,
-                      Colors.teal,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.inventory),
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Depo',
-                      Icons.list,
-                      Colors.indigo,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.warehouseList),
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Rapor',
-                      Icons.analytics,
-                      Colors.pink,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.dashboard),
-                      isDark,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionCardMini(
-                      'Ayarlar',
-                      Icons.settings,
-                      Colors.grey,
-                      () => Navigator.of(context)
-                          .pushNamed(TamgaciRoutes.settings),
-                      isDark,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          SizedBox(
+            height: 50,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: [
+                _buildActionCardHorizontal('Fatura', Icons.receipt, Colors.blue,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList), isDark),
+                const SizedBox(width: 8),
+                _buildActionCardHorizontal('Alış', Icons.shopping_cart, Colors.orange,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.purchasesList), isDark),
+                const SizedBox(width: 8),
+                _buildActionCardHorizontal('Müşteri', Icons.person_add, Colors.green,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer), isDark),
+                const SizedBox(width: 8),
+                _buildActionCardHorizontal('Ürün', Icons.add_box, Colors.purple,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.createProduct), isDark),
+                const SizedBox(width: 8),
+                _buildActionCardHorizontal('Stok', Icons.warehouse, Colors.teal,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.inventory), isDark),
+                const SizedBox(width: 8),
+                _buildActionCardHorizontal('Depo', Icons.list, Colors.indigo,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList), isDark),
+                const SizedBox(width: 8),
+                _buildActionCardHorizontal('Rapor', Icons.analytics, Colors.pink,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.dashboard), isDark),
+                const SizedBox(width: 8),
+                _buildActionCardHorizontal('Ayarlar', Icons.settings, Colors.grey,
+                    () => Navigator.of(context).pushNamed(TamgaciRoutes.settings), isDark),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// Mini action card
-  Widget _buildActionCardMini(String title, IconData icon, Color color,
-      VoidCallback onTap, bool isDark) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(height: 2),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.poppins(
-                fontSize: 9,
-                fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   // Silinen modül: payments - _buildPaymentStatCard metodu kaldırıldı
 
