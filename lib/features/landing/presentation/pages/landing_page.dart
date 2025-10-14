@@ -1237,14 +1237,14 @@ class _LandingPageState extends State<LandingPage>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         height: _showBanner
-            ? (MediaQuery.of(context).size.width > 768 ? 100 : 80)
+            ? (MediaQuery.of(context).size.width > 768 ? 100 : 70)
             : 0,
         curve: Curves.easeInOut,
         child: _showBanner
             ? Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: MediaQuery.of(context).size.width > 768 ? 24 : 16,
-                  vertical: MediaQuery.of(context).size.width > 768 ? 16 : 12,
+                  horizontal: MediaQuery.of(context).size.width > 768 ? 24 : 12,
+                  vertical: MediaQuery.of(context).size.width > 768 ? 16 : 8,
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -1291,20 +1291,22 @@ class _LandingPageState extends State<LandingPage>
                         children: [
                           // Icon
                           Container(
-                            width: 48,
-                            height: 48,
+                            width: MediaQuery.of(context).size.width > 768 ? 48 : 36,
+                            height: MediaQuery.of(context).size.width > 768 ? 48 : 36,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(
+                                MediaQuery.of(context).size.width > 768 ? 24 : 18,
+                              ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.star,
                               color: Colors.white,
-                              size: 24,
+                              size: MediaQuery.of(context).size.width > 768 ? 24 : 18,
                             ),
                           ),
 
-                          const SizedBox(width: 16),
+                          SizedBox(width: MediaQuery.of(context).size.width > 768 ? 16 : 12),
 
                           // Text
                           Expanded(
@@ -1318,7 +1320,7 @@ class _LandingPageState extends State<LandingPage>
                                     fontSize:
                                         MediaQuery.of(context).size.width > 768
                                             ? 18
-                                            : 16,
+                                            : 14,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
                                   ),
@@ -1331,7 +1333,7 @@ class _LandingPageState extends State<LandingPage>
                                     fontSize:
                                         MediaQuery.of(context).size.width > 768
                                             ? 14
-                                            : 12,
+                                            : 10,
                                     color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
