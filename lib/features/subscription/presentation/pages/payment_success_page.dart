@@ -7,6 +7,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
+import '../../../../core/providers/subscription_state_provider.dart';
+import '../../../../features/auth/presentation/providers/auth_providers.dart';
 
 /// PayTR ödeme başarılı sayfası
 class PaymentSuccessPage extends ConsumerStatefulWidget {
@@ -20,17 +22,28 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
   @override
   void initState() {
     super.initState();
-    // Sayfa yüklendiğinde kullanıcıyı dashboard'a yönlendir
-    _redirectToDashboard();
+    // Sayfa yüklendiğinde abonelik durumunu yenile ve kullanıcıyı dashboard'a yönlendir
+    _refreshSubscriptionAndRedirect();
   }
 
-  void _redirectToDashboard() {
+  /// Abonelik durumunu yenile ve dashboard'a yönlendir
+  void _refreshSubscriptionAndRedirect() async {
+    try {
+      // Kullanıcı bilgilerini al
+      final user = ref.read(currentUserProvider).value;
+      if (user != null) {
+        // Abonelik durumunu yenile
+        await ref.read(subscriptionStateProvider.notifier).refreshSubscription(user.id);
+        debugPrint('✅ PaymentSuccess: Subscription refreshed for user: ${user.id}');
+      }
+    } catch (e) {
+      debugPrint('❌ PaymentSuccess: Failed to refresh subscription: $e');
+    }
+    
     // 3 saniye sonra dashboard'a yönlendir
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+        Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (route) => false);
       }
     });
   }

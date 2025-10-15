@@ -1321,6 +1321,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         // Satın alım işlemi başladığında cache'i temizle
         if (mounted) {
           _clearPurchaseHistoryCache();
+          // Abonelik durumunu da yenile
+          _refreshSubscriptionStatus(ref);
         }
 
         if (kIsWeb) {
@@ -2274,10 +2276,10 @@ class _PurchaseHistoryListState extends State<_PurchaseHistoryList> {
                 ),
               ),
               Text(
-                planType == 'monthly' 
-                    ? 'Aylık' 
-                    : planType == 'semiAnnual' 
-                        ? '6 Aylık' 
+                planType == 'monthly'
+                    ? 'Aylık'
+                    : planType == 'semiAnnual'
+                        ? '6 Aylık'
                         : 'Yıllık',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
