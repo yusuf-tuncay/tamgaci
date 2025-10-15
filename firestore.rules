@@ -337,5 +337,25 @@ service cloud.firestore {
       allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
       allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
+
+    // Subscriptions collection rules - Global subscription management
+    match /subscriptions/{subscriptionId} {
+      // Kullanıcılar kendi aboneliklerini okuyabilir
+      allow read: if isSignedIn() && resource.data.userId == userId();
+      // Sadece admin veya sistem abonelik oluşturabilir/güncelleyebilir
+      allow create, update: if isSignedIn() && (isAdmin() || request.resource.data.userId == userId());
+      // Sadece admin silebilir
+      allow delete: if isSignedIn() && isAdmin();
+    }
+
+    // Subscription updates collection - Real-time updates
+    match /subscription_updates/{userId} {
+      // Kullanıcılar kendi güncellemelerini okuyabilir
+      allow read: if isSignedIn() && userId == userId();
+      // Sadece sistem (Cloud Functions) güncelleme oluşturabilir
+      allow create, update: if isSignedIn() && (isAdmin() || request.resource.data.userId == userId());
+      // Sadece admin silebilir
+      allow delete: if isSignedIn() && isAdmin();
+    }
   }
 }

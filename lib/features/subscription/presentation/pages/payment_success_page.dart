@@ -32,18 +32,25 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
       // Kullanıcı bilgilerini al
       final user = ref.read(currentUserProvider).value;
       if (user != null) {
+        // Real-time listener başlat
+        ref.read(subscriptionStateProvider.notifier).listenToSubscriptionUpdates(user.id);
+        
         // Abonelik durumunu yenile
-        await ref.read(subscriptionStateProvider.notifier).refreshSubscription(user.id);
-        debugPrint('✅ PaymentSuccess: Subscription refreshed for user: ${user.id}');
+        await ref
+            .read(subscriptionStateProvider.notifier)
+            .refreshSubscription(user.id);
+        debugPrint(
+            '✅ PaymentSuccess: Subscription refreshed for user: ${user.id}');
       }
     } catch (e) {
       debugPrint('❌ PaymentSuccess: Failed to refresh subscription: $e');
     }
-    
-    // 3 saniye sonra dashboard'a yönlendir
-    Future.delayed(const Duration(seconds: 3), () {
+
+    // 5 saniye sonra dashboard'a yönlendir (daha uzun süre ver)
+    Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/dashboard', (route) => false);
+        Navigator.of(context)
+            .pushNamedAndRemoveUntil('/dashboard', (route) => false);
       }
     });
   }
@@ -67,7 +74,7 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha:0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -133,10 +140,10 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
                   return StreamBuilder<int>(
                     stream: Stream.periodic(
                       const Duration(seconds: 1),
-                      (i) => 3 - i,
-                    ).take(4),
+                      (i) => 5 - i,
+                    ).take(6),
                     builder: (context, snapshot) {
-                      final count = snapshot.data ?? 3;
+                      final count = snapshot.data ?? 5;
                       return Text(
                         '$count saniye sonra yönlendirileceksiniz...',
                         style: GoogleFonts.poppins(

@@ -226,10 +226,10 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
                     case 'monthly':
                         daysToAdd = 30;
                         break;
-                    case 'six_monthly':
+                    case 'semiAnnual':
                         daysToAdd = 180;
                         break;
-                    case 'yearly':
+                    case 'annual':
                         daysToAdd = 365;
                         break;
                     default:
@@ -237,16 +237,41 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
                         break;
                 }
                 
-                const endDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                // Kullanıcının mevcut abonelik durumunu kontrol et
+                const userId = subscription.userId;
+                const userDoc = await db.collection('users').doc(userId).get();
+                const userData = userDoc.data();
+
+                let newEndDate: Date;
+
+                if (userData && userData.subscriptionEndAt) {
+                    // Mevcut abonelik süresi varsa, kalan süre üzerine ekle
+                    const currentEndDate = userData.subscriptionEndAt.toDate();
+                    const nowTime = now.getTime();
+
+                    if (currentEndDate.getTime() > nowTime) {
+                        // Kalan süre üzerine ekle
+                        newEndDate = new Date(currentEndDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                        console.log('Adding to existing subscription - Current end:', currentEndDate, 'New end:', newEndDate);
+                    } else {
+                        // Mevcut süre dolmuş, şimdiden başlat
+                        newEndDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                        console.log('Starting new subscription from now - End date:', newEndDate);
+                    }
+                } else {
+                    // Hiç abonelik yok, şimdiden başlat
+                    newEndDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                    console.log('First subscription - End date:', newEndDate);
+                }
                 
                 console.log('Payment successful - Plan:', planType, 'Days to add:', daysToAdd);
-                console.log('New end date:', endDate);
+                console.log('New end date:', newEndDate);
                 console.log('Current time:', now);
 
                 await subscriptionDoc.ref.update({
                     status: 'active',
                     startDate: now,
-                    endDate: endDate,
+                    endDate: newEndDate,
                     amount: parseFloat(post.total_amount) / 100, // Kuruştan TL'ye çevir
                     planType: planType,
                     daysAdded: daysToAdd,
@@ -254,13 +279,12 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
                 });
 
                 // Kullanıcının abonelik durumunu güncelle
-                const userId = subscription.userId;
                 console.log('Updating user subscription for userId:', userId);
                 
                 const userUpdateData = {
                     subscriptionStatus: 'active',
                     subscriptionStartAt: now,
-                    subscriptionEndAt: endDate,
+                    subscriptionEndAt: newEndDate,
                     subscriptionPlan: planType,
                     updatedAt: now,
                 };
@@ -269,10 +293,21 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
                 
                 await db.collection('users').doc(userId).update(userUpdateData);
 
+                // Real-time bildirim için özel bir document oluştur
+                await db.collection('subscription_updates').doc(userId).set({
+                    userId: userId,
+                    status: 'updated',
+                    subscriptionEndAt: newEndDate,
+                    subscriptionPlan: planType,
+                    updatedAt: now,
+                    orderId: orderId,
+                    daysAdded: daysToAdd,
+                });
+
                 console.log('=== Subscription Activation Complete ===');
                 console.log('Subscription activated:', orderId, 'Plan:', planType, 'Days added:', daysToAdd);
                 console.log('User ID:', userId);
-                console.log('End date:', endDate);
+                console.log('End date:', newEndDate);
             } else {
                 // Ödeme başarısız - aboneliği iptal et
                 await subscriptionDoc.ref.update({

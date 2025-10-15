@@ -3,6 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/subscription/firestore_subscription_service.dart';
 
 /// Global abonelik durumu state'i
@@ -109,6 +110,26 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
       await checkUserSubscription(userId);
     }
     // Cache fresh olduğunda log yazdırma
+  }
+
+  /// Real-time abonelik güncellemelerini dinle
+  void listenToSubscriptionUpdates(String userId) {
+    debugPrint('🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
+    
+    FirebaseFirestore.instance
+        .collection('subscription_updates')
+        .doc(userId)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data()!;
+        if (data['status'] == 'updated') {
+          debugPrint('🔔 SubscriptionStateNotifier: Real-time update received for user: $userId');
+          // Abonelik durumunu yenile
+          checkUserSubscription(userId);
+        }
+      }
+    });
   }
 }
 
