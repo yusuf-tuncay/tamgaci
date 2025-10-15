@@ -20,7 +20,8 @@ class FirestoreSubscriptionService {
     try {
       debugPrint(
           '🔍 FirestoreSubscriptionService: Checking subscription for user: $userId');
-      debugPrint('🔍 FirestoreSubscriptionService: Current time: ${DateTime.now()}');
+      debugPrint(
+          '🔍 FirestoreSubscriptionService: Current time: ${DateTime.now()}');
 
       final now = DateTime.now();
 
@@ -77,24 +78,69 @@ class FirestoreSubscriptionService {
         }
       }
 
-      // 3. Kullanıcının trial durumunu kontrol et
+      // 3. Kullanıcının user dokümanındaki abonelik bilgilerini kontrol et
       final userDoc = await _firestore.collection('users').doc(userId).get();
       if (userDoc.exists) {
         final userData = userDoc.data()!;
+        final subscriptionStatus = userData['subscriptionStatus'] as String?;
+        final subscriptionEndAt = userData['subscriptionEndAt'] as Timestamp?;
         final trialEndAt = userData['trialEndAt'] as Timestamp?;
-        debugPrint(
-            '👤 User data - subscriptionStatus: ${userData['subscriptionStatus']}, trialEndAt: $trialEndAt, subscriptionEndAt: ${userData['subscriptionEndAt']}');
+        final createdAt = userData['createdAt'] as Timestamp?;
 
+        debugPrint(
+            '👤 User data - subscriptionStatus: $subscriptionStatus, subscriptionEndAt: $subscriptionEndAt, trialEndAt: $trialEndAt, createdAt: $createdAt');
+
+        // 3.1. ÖNCE: Aktif abonelik kontrolü (user dokümanından) - en yüksek öncelik
+        if (subscriptionStatus == 'active' && subscriptionEndAt != null) {
+          final subscriptionEndDateTime = subscriptionEndAt.toDate();
+          debugPrint('🎯 User subscription end date: $subscriptionEndDateTime');
+
+          if (now.isBefore(subscriptionEndDateTime)) {
+            final remainingDays =
+                subscriptionEndDateTime.difference(now).inDays;
+            debugPrint(
+                '✅ Active user subscription found - $remainingDays days remaining');
+            return SubscriptionCheckResult(
+              hasAccess: true,
+              reason: 'Aktif abonelik - $remainingDays gün kaldı',
+              remainingDays: remainingDays,
+            );
+          } else {
+            debugPrint('❌ User subscription expired');
+          }
+        }
+
+        // 3.3. ÜÇÜNCÜ: 30 günlük kayıt sonrası kullanım hakkı kontrolü (sadece abonelik yoksa)
+        if (createdAt != null) {
+          final registrationDate = createdAt.toDate();
+          final thirtyDaysAfterRegistration =
+              registrationDate.add(const Duration(days: 30));
+
+          if (now.isBefore(thirtyDaysAfterRegistration)) {
+            final remainingDays =
+                thirtyDaysAfterRegistration.difference(now).inDays;
+            debugPrint(
+                '✅ 30-day usage right found - $remainingDays days remaining');
+            return SubscriptionCheckResult(
+              hasAccess: true,
+              reason: '30 günlük kullanım hakkı - $remainingDays gün kaldı',
+              remainingDays: remainingDays,
+            );
+          }
+        }
+
+        // 3.4. DÖRDÜNCÜ: Deneme süresi kontrolü (backward compatibility)
         if (trialEndAt != null) {
           final trialEndDateTime = trialEndAt.toDate();
           debugPrint('🎯 Trial end date: $trialEndDateTime');
 
           if (now.isBefore(trialEndDateTime)) {
-            debugPrint('✅ Active trial found');
+            final remainingDays = trialEndDateTime.difference(now).inDays;
+            debugPrint('✅ Active trial found - $remainingDays days remaining');
             return SubscriptionCheckResult(
               hasAccess: true,
-              reason: 'Aktif deneme süresi - Firestore kontrolü',
-              remainingDays: trialEndDateTime.difference(now).inDays,
+              reason: 'Aktif deneme süresi - $remainingDays gün kaldı',
+              remainingDays: remainingDays,
             );
           }
         }
@@ -108,6 +154,74 @@ class FirestoreSubscriptionService {
       );
     } catch (e) {
       debugPrint('❌ FirestoreSubscriptionService error: $e');
+
+      // Firestore erişim hatası durumunda kullanıcı entity'sindeki verileri kullan
+      if (e.toString().contains('permission-denied') ||
+          e.toString().contains('Missing or insufficient permissions')) {
+        debugPrint(
+            '🔄 FirestoreSubscriptionService: Permission denied, trying to get user data from cache');
+
+        // Kullanıcı verilerini al (cache'den veya local'den)
+        try {
+          final userDoc =
+              await _firestore.collection('users').doc(userId).get();
+          if (userDoc.exists) {
+            final userData = userDoc.data()!;
+            final subscriptionStatus =
+                userData['subscriptionStatus'] as String?;
+            final subscriptionEndAt =
+                userData['subscriptionEndAt'] as Timestamp?;
+            final createdAt = userData['createdAt'] as Timestamp?;
+
+            debugPrint(
+                '🔄 FirestoreSubscriptionService: Using user data from cache');
+
+            // Şimdiki zamanı al
+            final now = DateTime.now();
+
+            // 30 günlük kullanım hakkı kontrolü
+            if (createdAt != null) {
+              final registrationDate = createdAt.toDate();
+              final thirtyDaysAfterRegistration =
+                  registrationDate.add(const Duration(days: 30));
+
+              if (now.isBefore(thirtyDaysAfterRegistration)) {
+                final remainingDays =
+                    thirtyDaysAfterRegistration.difference(now).inDays;
+                debugPrint(
+                    '✅ FirestoreSubscriptionService: 30-day usage right found via fallback - $remainingDays days remaining');
+                return SubscriptionCheckResult(
+                  hasAccess: true,
+                  reason:
+                      '30 günlük kullanım hakkı (fallback) - $remainingDays gün kaldı',
+                  remainingDays: remainingDays,
+                );
+              }
+            }
+
+            // Aktif abonelik kontrolü
+            if (subscriptionStatus == 'active' && subscriptionEndAt != null) {
+              final subscriptionEndDateTime = subscriptionEndAt.toDate();
+              if (now.isBefore(subscriptionEndDateTime)) {
+                final remainingDays =
+                    subscriptionEndDateTime.difference(now).inDays;
+                debugPrint(
+                    '✅ FirestoreSubscriptionService: Active subscription found via fallback - $remainingDays days remaining');
+                return SubscriptionCheckResult(
+                  hasAccess: true,
+                  reason:
+                      'Aktif abonelik (fallback) - $remainingDays gün kaldı',
+                  remainingDays: remainingDays,
+                );
+              }
+            }
+          }
+        } catch (fallbackError) {
+          debugPrint(
+              '❌ FirestoreSubscriptionService: Fallback also failed: $fallbackError');
+        }
+      }
+
       return SubscriptionCheckResult(
         hasAccess: false,
         reason: 'Abonelik kontrolü başarısız: $e',

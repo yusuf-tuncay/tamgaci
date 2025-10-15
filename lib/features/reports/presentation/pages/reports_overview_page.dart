@@ -37,8 +37,8 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
         reports.where((r) => r.status == ReportStatus.pending).length;
     
     // Geçici sabit değerler - gelecekte dinamik hale getirilecek
-    final totalIncome = 125000.0;
-    final totalExpense = 85000.0;
+    const totalIncome = 125000.0;
+    const totalExpense = 85000.0;
 
     return Container(
       margin: const EdgeInsets.all(16),

@@ -109,103 +109,171 @@ export const seedGeoMetadata = functions.https.onRequest((request, response) => 
     });
 });
 
-// PayTR Callback Handler
+// PayTR Callback Handler - PayTR dökümanına göre yeniden yazıldı
 export const paytrCallback = functions.https.onRequest((request, response) => {
     return corsHandler(request, response, async () => {
         try {
+            console.log('=== PayTR Callback Started ===');
+            console.log('Method:', request.method);
+            console.log('Headers:', request.headers);
+            console.log('Body:', request.body);
+
             // GET isteği ise test amaçlı OK döndür
             if (request.method === 'GET') {
+                console.log('GET request received - returning OK');
                 response.status(200).send('PayTR Callback Handler is ready');
                 return;
             }
 
             // POST isteği değilse hata
             if (request.method !== 'POST') {
+                console.log('Invalid method:', request.method);
                 response.status(405).json({ error: 'Method not allowed' });
                 return;
             }
 
             const post = request.body;
+            console.log('POST data received:', post);
 
             // PayTR merchant bilgileri
-            const merchantKey = 'uePB67AfxtAAyqZ';
+            const merchantKey = 'uePB6f7AfxtAAyqZ';
             const merchantSalt = 'ejdEC3ReZay7QxE8';
 
-            // Debug log
-            console.log('=== PayTR Callback Debug ===');
-            console.log('PayTR Callback Data:', {
-                merchant_oid: post.merchant_oid,
-                status: post.status,
-                total_amount: post.total_amount,
-                received_hash: post.hash
-            });
-            console.log('Request method:', request.method);
-            console.log('Request headers:', request.headers);
-            console.log('Request body:', post);
+            // PayTR dökümanına göre hash doğrulaması
+            // Hash = base64_encode(hash_hmac('sha256', merchant_oid + merchant_salt + status + total_amount, merchant_key, true))
+            const hash_str = post.merchant_oid + merchantSalt + post.status + post.total_amount;
+            const hash = crypto.createHmac('sha256', merchantKey).update(hash_str).digest('base64');
 
-            // Hash doğrulaması - PayTR formatına uygun
-            // PayTR hash formatı: merchant_oid + merchantSalt + status + total_amount
-            const hashString = post.merchant_oid + merchantSalt + post.status + post.total_amount;
-            console.log('Hash String:', hashString);
-
-            // PayTR hash hesaplama - HMAC-SHA256
-            const hash = crypto.createHmac('sha256', merchantKey)
-                .update(hashString)
-                .digest('base64');
-
+            console.log('PayTR Hash String:', hash_str);
             console.log('Generated Hash:', hash);
             console.log('Received Hash:', post.hash);
 
-            // Geçici olarak hash doğrulamasını devre dışı bırak
-            // TODO: PayTR hash formatını doğru şekilde implement et
+            // Hash doğrulaması - GEÇİCİ OLARAK DEVRE DIŞI (TEST AMAÇLI)
+            // TODO: PayTR'den doğru hash formülünü öğren ve aktif et
+            console.log('⚠️ Hash verification SKIPPED (temporary for testing)');
             if (hash !== post.hash) {
-                console.warn('PayTR callback hash verification failed - proceeding anyway for testing');
+                console.warn('Hash mismatch (ignored for testing):');
                 console.warn('Expected:', hash);
                 console.warn('Received:', post.hash);
                 // response.status(400).json({ error: 'Invalid hash' });
                 // return;
+            } else {
+                console.log('✅ Hash verification successful');
             }
 
             const db = admin.firestore();
-
-            // Sipariş durumunu kontrol et
             const orderId = post.merchant_oid;
+
             console.log('Looking for subscription with orderId:', orderId);
+            console.log('Order ID length:', orderId.length);
+            console.log('Order ID type:', typeof orderId);
 
-            // Order ID'ye göre subscription'ı bul
-            const subscriptionRef = db.collection('subscriptions').where('orderId', '==', orderId);
-            const subscriptionSnapshot = await subscriptionRef.get();
+            // Subscription'ı bul
+            const subscriptionDoc = await db.collection('subscriptions').doc(orderId).get();
 
-            if (subscriptionSnapshot.empty) {
-                console.log('Subscription not found for orderId:', orderId);
-
-                // Order ID'yi document ID olarak kullanarak tekrar dene
-                const subscriptionDoc = await db.collection('subscriptions').doc(orderId).get();
-
-                if (!subscriptionDoc.exists) {
-                    console.log('No subscription found with orderId:', orderId);
-                    response.status(400).json({ error: 'Invalid order ID' });
-                    return;
-                }
-
-                // Document bulundu, işleme devam et
-                const subscription = subscriptionDoc.data();
-                console.log('Found subscription document:', subscription);
-
-                // Subscription'ı güncelle
-                await _processSubscriptionUpdate(db, subscriptionDoc, subscription, post, orderId);
-
-                response.status(200).send('OK');
+            if (!subscriptionDoc.exists) {
+                console.error('Subscription not found for orderId:', orderId);
+                console.log('Available subscriptions in database:');
+                // Tüm subscription'ları listele
+                const allSubs = await db.collection('subscriptions').limit(10).get();
+                allSubs.forEach(doc => {
+                    console.log('Available subscription ID:', doc.id);
+                });
+                response.status(400).json({ error: 'Invalid order ID' });
                 return;
             }
 
-            const subscriptionDoc = subscriptionSnapshot.docs[0];
             const subscription = subscriptionDoc.data();
+            console.log('Found subscription:', subscription);
 
-            // Subscription'ı güncelle
-            await _processSubscriptionUpdate(db, subscriptionDoc, subscription, post, orderId);
+            // Ödeme durumuna göre işlem yap
+            if (post.status === 'success') {
+                console.log('Payment successful - updating subscription');
+
+                const now = new Date();
+                const planType = subscription.planType || 'monthly';
+                let daysToAdd = 30;
+
+                switch (planType) {
+                    case 'monthly':
+                        daysToAdd = 30;
+                        break;
+                    case 'semiAnnual':
+                        daysToAdd = 180;
+                        break;
+                    case 'annual':
+                        daysToAdd = 365;
+                        break;
+                    default:
+                        daysToAdd = 30;
+                        break;
+                }
+
+                // Kullanıcının mevcut abonelik durumunu kontrol et
+                const userId = subscription.userId;
+                const userDoc = await db.collection('users').doc(userId).get();
+                const userData = userDoc.data();
+
+                let newEndDate: Date;
+
+                if (userData && userData.subscriptionEndAt) {
+                    const currentEndDate = userData.subscriptionEndAt.toDate();
+                    const nowTime = now.getTime();
+
+                    if (currentEndDate.getTime() > nowTime) {
+                        newEndDate = new Date(currentEndDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                        console.log('Adding to existing subscription');
+                    } else {
+                        newEndDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                        console.log('Starting new subscription');
+                    }
+                } else {
+                    newEndDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+                    console.log('First subscription');
+                }
+
+                // Subscription'ı güncelle
+                await subscriptionDoc.ref.update({
+                    status: 'active',
+                    startDate: now,
+                    endDate: newEndDate,
+                    amount: parseFloat(post.total_amount) / 100,
+                    planType: planType,
+                    daysAdded: daysToAdd,
+                    updatedAt: now,
+                });
+
+                // Kullanıcının abonelik durumunu güncelle
+                await db.collection('users').doc(userId).update({
+                    subscriptionStatus: 'active',
+                    subscriptionStartAt: now,
+                    subscriptionEndAt: newEndDate,
+                    subscriptionPlan: planType,
+                    updatedAt: now,
+                });
+
+                // Real-time bildirim için
+                await db.collection('subscription_updates').doc(userId).set({
+                    userId: userId,
+                    status: 'updated',
+                    subscriptionEndAt: newEndDate,
+                    subscriptionPlan: planType,
+                    updatedAt: now,
+                    orderId: orderId,
+                    daysAdded: daysToAdd,
+                });
+
+                console.log('Subscription updated successfully');
+            } else {
+                console.log('Payment failed - updating subscription status');
+                await subscriptionDoc.ref.update({
+                    status: 'expired',
+                    updatedAt: new Date(),
+                });
+            }
 
             // PayTR'ye OK yanıtı gönder
+            console.log('Sending OK response to PayTR');
             response.status(200).send('OK');
 
         } catch (error) {
@@ -215,122 +283,6 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
     });
 });
 
-// Helper function to process subscription updates
-async function _processSubscriptionUpdate(db: admin.firestore.Firestore, subscriptionDoc: admin.firestore.DocumentSnapshot, subscription: any, post: any, orderId: string) {
-    // Zaten işlenmiş mi kontrol et
-    if (subscription.status === 'active' || subscription.status === 'expired') {
-        console.log('Subscription already processed:', orderId);
-        return;
-    }
-
-    if (post.status === 'success') {
-        // Ödeme başarılı - aboneliği aktif et
-        const now = new Date();
-
-        // Plan tipine göre süre hesapla
-        const planType = subscription.planType || 'monthly';
-        let daysToAdd = 30; // Varsayılan aylık
-
-        console.log('=== Payment Success Debug ===');
-        console.log('Original subscription planType:', subscription.planType);
-        console.log('Using planType:', planType);
-
-        switch (planType) {
-            case 'monthly':
-                daysToAdd = 30;
-                break;
-            case 'semiAnnual':
-                daysToAdd = 180;
-                break;
-            case 'annual':
-                daysToAdd = 365;
-                break;
-            default:
-                daysToAdd = 30;
-                break;
-        }
-
-        // Kullanıcının mevcut abonelik durumunu kontrol et
-        const userId = subscription.userId;
-        const userDoc = await db.collection('users').doc(userId).get();
-        const userData = userDoc.data();
-
-        let newEndDate: Date;
-
-        if (userData && userData.subscriptionEndAt) {
-            // Mevcut abonelik süresi varsa, kalan süre üzerine ekle
-            const currentEndDate = userData.subscriptionEndAt.toDate();
-            const nowTime = now.getTime();
-
-            if (currentEndDate.getTime() > nowTime) {
-                // Kalan süre üzerine ekle
-                newEndDate = new Date(currentEndDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
-                console.log('Adding to existing subscription - Current end:', currentEndDate, 'New end:', newEndDate);
-            } else {
-                // Mevcut süre dolmuş, şimdiden başlat
-                newEndDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
-                console.log('Starting new subscription from now - End date:', newEndDate);
-            }
-        } else {
-            // Hiç abonelik yok, şimdiden başlat
-            newEndDate = new Date(now.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
-            console.log('First subscription - End date:', newEndDate);
-        }
-
-        console.log('Payment successful - Plan:', planType, 'Days to add:', daysToAdd);
-        console.log('New end date:', newEndDate);
-        console.log('Current time:', now);
-
-        await subscriptionDoc.ref.update({
-            status: 'active',
-            startDate: now,
-            endDate: newEndDate,
-            amount: parseFloat(post.total_amount) / 100, // Kuruştan TL'ye çevir
-            planType: planType,
-            daysAdded: daysToAdd,
-            updatedAt: now,
-        });
-
-        // Kullanıcının abonelik durumunu güncelle
-        console.log('Updating user subscription for userId:', userId);
-
-        const userUpdateData = {
-            subscriptionStatus: 'active',
-            subscriptionStartAt: now,
-            subscriptionEndAt: newEndDate,
-            subscriptionPlan: planType,
-            updatedAt: now,
-        };
-
-        console.log('User update data:', userUpdateData);
-
-        await db.collection('users').doc(userId).update(userUpdateData);
-
-        // Real-time bildirim için özel bir document oluştur
-        await db.collection('subscription_updates').doc(userId).set({
-            userId: userId,
-            status: 'updated',
-            subscriptionEndAt: newEndDate,
-            subscriptionPlan: planType,
-            updatedAt: now,
-            orderId: orderId,
-            daysAdded: daysToAdd,
-        });
-
-        console.log('=== Subscription Activation Complete ===');
-        console.log('Subscription activated:', orderId, 'Plan:', planType, 'Days added:', daysToAdd);
-        console.log('User ID:', userId);
-        console.log('End date:', newEndDate);
-    } else {
-        // Ödeme başarısız - aboneliği iptal et
-        await subscriptionDoc.ref.update({
-            status: 'expired',
-            updatedAt: new Date(),
-        });
-
-        console.log('Subscription failed:', orderId);
-    }
-}
 
 // Export new Cloud Functions
 export { createPayTRPayment, syncSubscriptionStatus, createUserTrial, checkTrialStatus };

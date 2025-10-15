@@ -36,8 +36,9 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
         ref
             .read(subscriptionStateProvider.notifier)
             .listenToSubscriptionUpdates(user.id);
-        
-        debugPrint('✅ PaymentSuccess: Real-time listener started for user: ${user.id}');
+
+        debugPrint(
+            '✅ PaymentSuccess: Real-time listener started for user: ${user.id}');
       }
     } catch (e) {
       debugPrint('❌ PaymentSuccess: Failed to start real-time listener: $e');
@@ -134,22 +135,22 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
               // Yönlendirme sayacı
               Consumer(
                 builder: (context, ref, child) {
-    return StreamBuilder<int>(
-      stream: Stream.periodic(
-        const Duration(seconds: 1),
-        (i) => 3 - i,
-      ).take(4),
-      builder: (context, snapshot) {
-        final count = snapshot.data ?? 3;
-        return Text(
-          '$count saniye sonra yönlendirileceksiniz...',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.grey[500],
-          ),
-        );
-      },
-    );
+                  return StreamBuilder<int>(
+                    stream: Stream.periodic(
+                      const Duration(seconds: 1),
+                      (i) => 3 - i,
+                    ).take(4),
+                    builder: (context, snapshot) {
+                      final count = snapshot.data ?? 3;
+                      return Text(
+                        '$count saniye sonra yönlendirileceksiniz...',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.grey[500],
+                        ),
+                      );
+                    },
+                  );
                 },
               ),
             ],

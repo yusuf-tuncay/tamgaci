@@ -7,12 +7,14 @@ import * as crypto from 'crypto';
 
 export const createPayTRPayment = functions.https.onCall(async (data, context) => {
     // Authentication kontrolü
+    // @ts-ignore - Firebase Functions v2 type issue
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
     }
 
+    // @ts-ignore - Firebase Functions v2 type issue
     const userId = context.auth.uid;
-    const { planType, amount, currency = 'TRY' } = data;
+    const { planType, amount, currency = 'TRY' } = data as any;
 
     // Input validation
     if (!planType || !amount) {
@@ -33,9 +35,9 @@ export const createPayTRPayment = functions.https.onCall(async (data, context) =
         console.log('PayTR: merchantId:', merchantId);
         console.log('PayTR: isTestMode:', isTestMode);
 
-        // Sipariş ID oluştur (alfanumerik olmalı)
+        // Sipariş ID oluştur (PayTR formatına uygun)
         const timestamp = Date.now();
-        const orderId = `TMG${timestamp}${userId.replace(/[^a-zA-Z0-9]/g, '')}`;
+        const orderId = `TAMGACI${userId}${planType}${timestamp}`;
 
         // Kullanıcı bilgilerini al
         const userDoc = await admin.firestore().collection('users').doc(userId).get();

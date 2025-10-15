@@ -83,7 +83,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       ref
           .read(subscriptionStateProvider.notifier)
           .listenToSubscriptionUpdates(user.id);
-      
+
       // Sadece ilk yüklemede kontrol et
       ref
           .read(subscriptionStateProvider.notifier)
@@ -1324,10 +1324,10 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         final iframeUrl =
             'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
 
-      // Real-time listener otomatik güncelleme yapacak
-      if (mounted) {
-        _triggerRealTimeUpdate();
-      }
+        // Real-time listener otomatik güncelleme yapacak
+        if (mounted) {
+          _triggerRealTimeUpdate();
+        }
 
         if (kIsWeb) {
           // Web için URL'yi yeni sekmede aç

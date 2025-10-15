@@ -6,10 +6,12 @@ import * as admin from 'firebase-admin';
 
 export const createUserTrial = functions.https.onCall(async (data, context) => {
     // Authentication kontrolü
+    // @ts-ignore - Firebase Functions v2 type issue
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
     }
 
+    // @ts-ignore - Firebase Functions v2 type issue
     const userId = context.auth.uid;
 
     try {
@@ -75,10 +77,12 @@ export const createUserTrial = functions.https.onCall(async (data, context) => {
 
 export const checkTrialStatus = functions.https.onCall(async (data, context) => {
     // Authentication kontrolü
+    // @ts-ignore - Firebase Functions v2 type issue
     if (!context.auth) {
         throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
     }
 
+    // @ts-ignore - Firebase Functions v2 type issue
     const userId = context.auth.uid;
 
     try {

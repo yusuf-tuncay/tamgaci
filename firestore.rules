@@ -352,8 +352,8 @@ service cloud.firestore {
     match /subscription_updates/{userId} {
       // Kullanıcılar kendi güncellemelerini okuyabilir
       allow read: if isSignedIn() && userId == userId();
-      // Sadece sistem (Cloud Functions) güncelleme oluşturabilir
-      allow create, update: if isSignedIn() && (isAdmin() || request.resource.data.userId == userId());
+      // Cloud Functions ve kullanıcılar güncelleme oluşturabilir
+      allow create, update: if isSignedIn() && (isAdmin() || request.resource.data.userId == userId() || userId == userId());
       // Sadece admin silebilir
       allow delete: if isSignedIn() && isAdmin();
     }
