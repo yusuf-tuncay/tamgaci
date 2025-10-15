@@ -17,9 +17,6 @@ class TamgaciApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Global real-time listener'ı başlat
-    ref.read(startGlobalRealtimeListenerProvider);
-    
     return MaterialApp(
       // ========== UYGULAMA AYARLARI ==========
 

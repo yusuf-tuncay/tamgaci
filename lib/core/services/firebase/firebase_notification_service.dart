@@ -28,6 +28,11 @@ class FirebaseNotificationService {
   /// Servisi başlat (asenkron - izin beklemeden)
   Future<void> _initialize() async {
     try {
+      // Web için service worker'ı önce kaydet
+      if (kIsWeb) {
+        await _registerServiceWorker();
+      }
+
       // İzin iste (asenkron - beklemeden)
       _requestPermission();
 
@@ -76,8 +81,16 @@ class FirebaseNotificationService {
   Future<void> _registerServiceWorker() async {
     if (kIsWeb) {
       try {
-        // Service worker'ı kaydet - VAPID key olmadan
-        await _messaging.getToken();
+        // Service worker'ı kaydet - timeout ile
+        await _messaging.getToken(
+          vapidKey: "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o"
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () {
+            AppLogger.warning('Service worker registration timeout');
+            return null;
+          },
+        );
         AppLogger.info('Service worker registered for web notifications');
       } catch (e) {
         AppLogger.warning(
@@ -90,7 +103,16 @@ class FirebaseNotificationService {
   /// FCM token al
   Future<String?> _getToken() async {
     try {
-      final token = await _messaging.getToken();
+      String? token;
+      if (kIsWeb) {
+        // Web için VAPID key ile token al
+        token = await _messaging.getToken(
+          vapidKey: "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o"
+        );
+      } else {
+        // Mobile için normal token al
+        token = await _messaging.getToken();
+      }
       AppLogger.info('FCM Token: $token');
       return token;
     } catch (e) {
@@ -186,7 +208,15 @@ class FirebaseNotificationService {
   /// Mevcut token'ı al
   Future<String?> getCurrentToken() async {
     try {
-      return await _messaging.getToken();
+      if (kIsWeb) {
+        // Web için VAPID key ile token al
+        return await _messaging.getToken(
+          vapidKey: "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o"
+        );
+      } else {
+        // Mobile için normal token al
+        return await _messaging.getToken();
+      }
     } catch (e) {
       AppLogger.error('Error getting current token', e);
       return null;

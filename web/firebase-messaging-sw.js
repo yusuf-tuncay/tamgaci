@@ -14,6 +14,12 @@ const firebaseConfig = {
     appId: "1:123456789012:web:abcdef1234567890abcdef"
 };
 
+// VAPID key (Firebase Console'dan alınmalı)
+const vapidKey = "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o";
+
+// Service worker registration timeout
+const SW_REGISTRATION_TIMEOUT = 15000; // 15 saniye
+
 // Firebase'i başlat
 try {
     firebase.initializeApp(firebaseConfig);
@@ -22,8 +28,9 @@ try {
     console.log('Firebase already initialized or error:', error);
 }
 
-// Messaging instance'ı al
+// Messaging instance'ı al - VAPID key ile
 const messaging = firebase.messaging();
+messaging.usePublicVapidKey(vapidKey);
 
 // Background message handler
 messaging.onBackgroundMessage(function (payload) {
@@ -77,3 +84,8 @@ self.addEventListener('activate', function (event) {
     console.log('Service worker activated');
     event.waitUntil(self.clients.claim());
 });
+
+// Service worker registration timeout handler
+setTimeout(() => {
+    console.log('Service worker registration timeout reached');
+}, SW_REGISTRATION_TIMEOUT);

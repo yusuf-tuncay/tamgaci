@@ -3,6 +3,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -19,10 +20,12 @@ class GlobalRealtimeNotifier extends StateNotifier<bool> {
     // Firebase Auth state değişikliklerini dinle
     FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
-        debugPrint('🔔 GlobalRealtimeNotifier: User signed in, starting subscription listener');
+        debugPrint(
+            '🔔 GlobalRealtimeNotifier: User signed in, starting subscription listener');
         _startSubscriptionListener(user.uid);
       } else {
-        debugPrint('🔔 GlobalRealtimeNotifier: User signed out, stopping listeners');
+        debugPrint(
+            '🔔 GlobalRealtimeNotifier: User signed out, stopping listeners');
         _stopAllListeners();
       }
     });
@@ -32,7 +35,8 @@ class GlobalRealtimeNotifier extends StateNotifier<bool> {
 
   /// Abonelik real-time listener'ını başlat
   void _startSubscriptionListener(String userId) {
-    debugPrint('🔔 GlobalRealtimeNotifier: Starting subscription listener for user: $userId');
+    debugPrint(
+        '🔔 GlobalRealtimeNotifier: Starting subscription listener for user: $userId');
 
     FirebaseFirestore.instance
         .collection('subscription_updates')
@@ -42,7 +46,8 @@ class GlobalRealtimeNotifier extends StateNotifier<bool> {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         if (data['status'] == 'updated') {
-          debugPrint('🔔 GlobalRealtimeNotifier: Real-time subscription update received');
+          debugPrint(
+              '🔔 GlobalRealtimeNotifier: Real-time subscription update received');
           // Global subscription state'i güncelle
           _updateGlobalSubscriptionState(userId);
         }
@@ -73,11 +78,15 @@ class GlobalRealtimeNotifier extends StateNotifier<bool> {
 }
 
 /// Global real-time listener provider
-final globalRealtimeProvider = StateNotifierProvider<GlobalRealtimeNotifier, bool>((ref) {
+final globalRealtimeProvider =
+    StateNotifierProvider<GlobalRealtimeNotifier, bool>((ref) {
   return GlobalRealtimeNotifier();
 });
 
-/// Global real-time listener'ı başlat
+/// Global real-time listener'ı başlat (lazy initialization)
 final startGlobalRealtimeListenerProvider = Provider<void>((ref) {
-  ref.read(globalRealtimeProvider.notifier).startGlobalListener();
+  // Lazy initialization - sadece gerektiğinde başlat
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    ref.read(globalRealtimeProvider.notifier).startGlobalListener();
+  });
 });
