@@ -2274,7 +2274,11 @@ class _PurchaseHistoryListState extends State<_PurchaseHistoryList> {
                 ),
               ),
               Text(
-                planType == 'monthly' ? 'Aylık' : 'Yıllık',
+                planType == 'monthly' 
+                    ? 'Aylık' 
+                    : planType == 'semiAnnual' 
+                        ? '6 Aylık' 
+                        : 'Yıllık',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
