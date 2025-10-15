@@ -53,16 +53,22 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Kullanıcının abonelik durumunu kontrol et ve cache'le
   Future<void> checkUserSubscription(String userId) async {
     try {
-      debugPrint(
-          '🔍 SubscriptionStateNotifier: Checking subscription for user: $userId');
+      // Sadece ilk kez veya hata durumunda log yazdır
+      if (state.subscriptionResult == null) {
+        debugPrint(
+            '🔍 SubscriptionStateNotifier: Checking subscription for user: $userId');
+      }
 
       state = state.copyWith(isLoading: true, error: null);
 
       final result =
           await _subscriptionService.checkUserSubscriptionStatus(userId);
 
-      debugPrint(
-          '✅ SubscriptionStateNotifier: Subscription check completed: ${result.hasAccess}');
+      // Sadece hata durumunda log yazdır
+      if (!result.hasAccess) {
+        debugPrint(
+            '✅ SubscriptionStateNotifier: Subscription check completed: ${result.hasAccess}');
+      }
 
       state = state.copyWith(
         subscriptionResult: result,
@@ -94,13 +100,15 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
 
   /// Otomatik abonelik durumu güncelleme (sayfa değişimlerinde)
   Future<void> autoRefreshSubscription(String userId) async {
-    // Sadece cache yoksa veya 5 dakikadan eskiyse güncelle
-    if (state.subscriptionResult == null || 
-        state.lastChecked == null || 
-        DateTime.now().difference(state.lastChecked!).inMinutes > 5) {
-      debugPrint('🔄 SubscriptionStateNotifier: Auto-refreshing subscription cache');
+    // Sadece cache yoksa veya 10 dakikadan eskiyse güncelle (daha az sıklıkta)
+    if (state.subscriptionResult == null ||
+        state.lastChecked == null ||
+        DateTime.now().difference(state.lastChecked!).inMinutes > 10) {
+      debugPrint(
+          '🔄 SubscriptionStateNotifier: Auto-refreshing subscription cache');
       await checkUserSubscription(userId);
     }
+    // Cache fresh olduğunda log yazdırma
   }
 }
 

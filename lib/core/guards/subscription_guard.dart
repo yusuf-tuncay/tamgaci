@@ -47,14 +47,12 @@ class SubscriptionGuard extends ConsumerWidget {
         }
 
         // Cache'lenmiş abonelik durumunu kullan
-        final subscriptionState = ref.watch(subscriptionStateProvider);
-        
-        if (subscriptionState.isLoading) {
-          return loadingWidget ?? _buildLoadingWidget();
-        }
-        
-        if (subscriptionState.error != null) {
-          // Hata durumunda kullanıcı entity'sindeki veriyi kullan
+        SubscriptionState subscriptionState;
+        try {
+          subscriptionState = ref.watch(subscriptionStateProvider);
+        } catch (e) {
+          debugPrint('❌ SubscriptionGuard: Provider error: $e');
+          // Fallback: Kullanıcı entity'sindeki veriyi kullan
           final fallbackCheck = _checkSubscriptionStatus(user);
           if (fallbackCheck.hasAccess) {
             return child;
@@ -62,19 +60,54 @@ class SubscriptionGuard extends ConsumerWidget {
             return _buildRedirectToSubscription(context, fallbackCheck);
           }
         }
-        
+
+        // Debug log'ları sadece gerektiğinde yazdır
+        if (subscriptionState.isLoading || subscriptionState.error != null) {
+          debugPrint('🔍 SubscriptionGuard: User ID: ${user.id}');
+          debugPrint(
+              '🔍 SubscriptionGuard: Subscription state - isLoading: ${subscriptionState.isLoading}, error: ${subscriptionState.error}');
+        }
+
+        if (subscriptionState.isLoading) {
+          debugPrint('⏳ SubscriptionGuard: Loading subscription state');
+          return loadingWidget ?? _buildLoadingWidget();
+        }
+
+        if (subscriptionState.error != null) {
+          debugPrint(
+              '❌ SubscriptionGuard: Subscription state error: ${subscriptionState.error}');
+          // Hata durumunda kullanıcı entity'sindeki veriyi kullan
+          final fallbackCheck = _checkSubscriptionStatus(user);
+          debugPrint(
+              '🔄 SubscriptionGuard: Fallback check result: ${fallbackCheck.hasAccess} - ${fallbackCheck.reason}');
+          if (fallbackCheck.hasAccess) {
+            return child;
+          } else {
+            return _buildRedirectToSubscription(context, fallbackCheck);
+          }
+        }
+
         if (subscriptionState.subscriptionResult != null) {
           final subscriptionCheck = subscriptionState.subscriptionResult!;
-          
+          // Sadece hata durumunda log yazdır
+          if (!subscriptionCheck.hasAccess) {
+            debugPrint(
+                '✅ SubscriptionGuard: Using cached subscription result: ${subscriptionCheck.hasAccess} - ${subscriptionCheck.reason}');
+          }
+
           if (subscriptionCheck.hasAccess) {
             return child;
           } else {
             return _buildRedirectToSubscription(context, subscriptionCheck);
           }
         }
-        
+
         // Fallback: Kullanıcı entity'sindeki veriyi kullan
         final fallbackCheck = _checkSubscriptionStatus(user);
+        if (!fallbackCheck.hasAccess) {
+          debugPrint(
+              '🔄 SubscriptionGuard: Fallback check result: ${fallbackCheck.hasAccess} - ${fallbackCheck.reason}');
+        }
         if (fallbackCheck.hasAccess) {
           return child;
         } else {
@@ -90,31 +123,48 @@ class SubscriptionGuard extends ConsumerWidget {
   SubscriptionCheckResult _checkSubscriptionStatus(User user) {
     final now = DateTime.now();
 
-    // print('🔍 _checkSubscriptionStatus Debug:');
-    // print('  - Subscription Status: ${user.subscriptionStatus}');
-    // print('  - Trial End At: ${user.trialEndAt}');
-    // print('  - Subscription End At: ${user.subscriptionEndAt}');
-    // print('  - Now: $now');
+    debugPrint('🔍 _checkSubscriptionStatus: User ID: ${user.id}');
+    debugPrint(
+        '🔍 _checkSubscriptionStatus: User createdAt: ${user.createdAt}');
+    debugPrint(
+        '🔍 _checkSubscriptionStatus: User subscriptionStatus: ${user.subscriptionStatus}');
+    debugPrint(
+        '🔍 _checkSubscriptionStatus: User subscriptionEndAt: ${user.subscriptionEndAt}');
+    debugPrint(
+        '🔍 _checkSubscriptionStatus: User trialEndAt: ${user.trialEndAt}');
+    debugPrint('🔍 _checkSubscriptionStatus: Current time: $now');
 
-    // Aktif abonelik var mı?
+    // 1. ÖNCE: Aktif abonelik kontrolü (en yüksek öncelik)
     if (user.subscriptionStatus == SubscriptionStatus.active) {
-      // print('✅ Active subscription found');
-      return const SubscriptionCheckResult(
-        hasAccess: true,
-        reason: 'Aktif abonelik',
-      );
+      debugPrint('🔍 _checkSubscriptionStatus: Active subscription found');
+      // Aktif abonelik var mı ve süresi dolmamış mı?
+      if (user.subscriptionEndAt != null &&
+          now.isBefore(user.subscriptionEndAt!)) {
+        final remainingDays = user.subscriptionEndAt!.difference(now).inDays;
+        debugPrint(
+            '✅ _checkSubscriptionStatus: Active subscription with remaining time - $remainingDays days');
+        return SubscriptionCheckResult(
+          hasAccess: true,
+          reason: 'Aktif abonelik - $remainingDays gün kaldı',
+          remainingDays: remainingDays,
+        );
+      } else {
+        debugPrint(
+            '❌ _checkSubscriptionStatus: Active subscription but expired, checking usage time');
+        // Abonelik süresi dolmuş ama kullanım hakkı devam ediyor mu?
+        return _checkUsageTimeAfterSubscription(user, now);
+      }
     }
 
-    // Deneme süresi kontrolü
+    // 3. ÜÇÜNCÜ: Deneme süresi kontrolü (eski sistem - backward compatibility)
     if (user.subscriptionStatus == SubscriptionStatus.trial) {
       if (user.trialEndAt != null && now.isBefore(user.trialEndAt!)) {
-        // print('✅ Active trial found');
-        // Deneme süresi aktif
         if (allowTrial) {
+          final remainingDays = user.trialEndAt!.difference(now).inDays;
           return SubscriptionCheckResult(
             hasAccess: true,
-            reason: 'Aktif deneme süresi',
-            remainingDays: user.trialEndAt!.difference(now).inDays,
+            reason: 'Aktif deneme süresi - $remainingDays gün kaldı',
+            remainingDays: remainingDays,
           );
         } else {
           return const SubscriptionCheckResult(
@@ -123,8 +173,6 @@ class SubscriptionGuard extends ConsumerWidget {
           );
         }
       } else {
-        // print('❌ Trial expired');
-        // Deneme süresi dolmuş
         return SubscriptionCheckResult(
           hasAccess: allowExpired,
           reason: 'Deneme süresi dolmuş',
@@ -133,39 +181,58 @@ class SubscriptionGuard extends ConsumerWidget {
       }
     }
 
-    // Süresi dolan abonelik - ama hala kullanım süresi var mı kontrol et
-    if (user.subscriptionStatus == SubscriptionStatus.expired) {
-      // print('🔍 Checking expired subscription with usage time');
-      // Eğer subscriptionEndAt tarihi varsa ve henüz geçmemişse erişim ver
-      if (user.subscriptionEndAt != null &&
-          now.isBefore(user.subscriptionEndAt!)) {
-        // print('✅ Expired but still has usage time');
-        return const SubscriptionCheckResult(
-          hasAccess: true,
-          reason: 'Kullanım süresi devam ediyor',
-        );
-      }
+    // 4. DÖRDÜNCÜ: 30 günlük kayıt sonrası kullanım hakkı kontrolü (sadece abonelik yoksa)
+    final registrationDate = user.createdAt;
+    final thirtyDaysAfterRegistration =
+        registrationDate.add(const Duration(days: 30));
 
-      // print('❌ Expired and no usage time left');
+    debugPrint(
+        '🔍 _checkSubscriptionStatus: 30 days after registration: $thirtyDaysAfterRegistration');
+
+    // Eğer kayıt tarihinden 30 gün geçmemişse, herkese erişim ver
+    if (now.isBefore(thirtyDaysAfterRegistration)) {
+      final remainingDays = thirtyDaysAfterRegistration.difference(now).inDays;
+      debugPrint(
+          '✅ _checkSubscriptionStatus: 30-day usage right found - $remainingDays days remaining');
       return SubscriptionCheckResult(
-        hasAccess: allowExpired,
-        reason: 'Abonelik süresi dolmuş',
-        isExpired: true,
+        hasAccess: true,
+        reason: '30 günlük kullanım hakkı - $remainingDays gün kaldı',
+        remainingDays: remainingDays,
       );
     }
 
-    // print(
-    //     '❌ No subscription found - checking Firestore for active subscriptions');
+    // 5. BEŞİNCİ: Süresi dolan abonelik - kullanım süresi kontrolü
+    if (user.subscriptionStatus == SubscriptionStatus.expired) {
+      return _checkUsageTimeAfterSubscription(user, now);
+    }
 
-    // Firestore'dan kullanıcının aktif aboneliklerini kontrol et
-    // Bu durumda kullanıcının gerçek subscription durumunu kontrol etmek için
-    // Firestore'dan subscription verilerini alıp kontrol edelim
-
-    // Şimdilik geçici olarak erişim ver (gerçek kontrol için Firestore'dan veri alınmalı)
-    // TODO: Firestore'dan subscription verilerini alıp gerçek kontrol yap
+    // 6. SON: Hiçbir abonelik yok - 30 günlük kullanım hakkı da dolmuş
     return const SubscriptionCheckResult(
-      hasAccess: true,
-      reason: 'Geçici erişim - Firestore kontrolü gerekli',
+      hasAccess: false,
+      reason: '30 günlük kullanım hakkı ve abonelik süresi dolmuş',
+      needsSubscription: true,
+    );
+  }
+
+  /// Abonelik süresi dolduktan sonra kalan kullanım süresini kontrol et
+  SubscriptionCheckResult _checkUsageTimeAfterSubscription(
+      User user, DateTime now) {
+    // Eğer subscriptionEndAt tarihi varsa ve henüz geçmemişse erişim ver
+    if (user.subscriptionEndAt != null &&
+        now.isBefore(user.subscriptionEndAt!)) {
+      final remainingDays = user.subscriptionEndAt!.difference(now).inDays;
+      return SubscriptionCheckResult(
+        hasAccess: true,
+        reason: 'Kullanım süresi devam ediyor - $remainingDays gün kaldı',
+        remainingDays: remainingDays,
+      );
+    }
+
+    // Kullanım süresi de dolmuş
+    return SubscriptionCheckResult(
+      hasAccess: allowExpired,
+      reason: 'Abonelik ve kullanım süresi dolmuş',
+      isExpired: true,
     );
   }
 

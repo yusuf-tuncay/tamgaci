@@ -18,6 +18,7 @@ import '../../../../core/services/payment/paytr_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -171,6 +172,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               // Plan Cards (3 yan yana)
               _buildPlanCardsRow(plans, isDark),
               const SizedBox(height: 32),
+
+              // Geçmiş Satın Alımlar
+              if (user != null) ...[
+                _buildPurchaseHistorySection(user, isDark),
+                const SizedBox(height: 32),
+              ],
 
               // Dynamic Continue Button
               _buildDynamicContinueButton(isDark),
@@ -1300,6 +1307,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         final iframeUrl =
             'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
 
+        // Satın alım işlemi başladığında cache'i temizle
+        _clearPurchaseHistoryCache();
+
         if (kIsWeb) {
           // Web için URL'yi yeni sekmede aç
           final uri = Uri.parse(iframeUrl);
@@ -1936,5 +1946,391 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     // 3. Özel kupon durumunu state'te sakla
 
     debugPrint('Özel kupon 139570 uygulandı - Tüm fiyatlar sıfırlandı');
+  }
+
+  /// Geçmiş satın alımlar cache'ini temizle
+  void _clearPurchaseHistoryCache() {
+    // Bu metod _PurchaseHistoryList widget'ının cache'ini temizlemek için kullanılır
+    // Widget'ın onRefresh callback'i ile cache temizlenir
+    setState(() {
+      // setState çağrısı _PurchaseHistoryList'in onRefresh callback'ini tetikler
+    });
+  }
+
+  /// Geçmiş satın alımlar bölümü
+  Widget _buildPurchaseHistorySection(User user, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.history,
+                color: isDark ? Colors.white : const Color(0xFF2D2D2D),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Geçmiş Satın Alımlar',
+                style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF2D2D2D),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildPurchaseHistoryList(user, isDark),
+        ],
+      ),
+    );
+  }
+
+  /// Geçmiş satın alımlar listesi
+  Widget _buildPurchaseHistoryList(User user, bool isDark) {
+    return _PurchaseHistoryList(
+      userId: user.id,
+      isDark: isDark,
+      onRefresh: () {
+        // Satın alımdan sonra yenileme için callback
+        setState(() {});
+      },
+    );
+  }
+}
+
+/// Geçmiş satın alımlar listesi widget'ı - cache'li
+class _PurchaseHistoryList extends StatefulWidget {
+  final String userId;
+  final bool isDark;
+  final VoidCallback onRefresh;
+
+  const _PurchaseHistoryList({
+    required this.userId,
+    required this.isDark,
+    required this.onRefresh,
+  });
+
+  @override
+  State<_PurchaseHistoryList> createState() => _PurchaseHistoryListState();
+}
+
+class _PurchaseHistoryListState extends State<_PurchaseHistoryList> {
+  List<Map<String, dynamic>>? _cachedData;
+  bool _isLoading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  @override
+  void didUpdateWidget(_PurchaseHistoryList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Sadece userId değişirse yenile
+    if (oldWidget.userId != widget.userId) {
+      _loadData();
+    }
+    // onRefresh callback'i çağrıldığında cache'i temizle
+    if (oldWidget.onRefresh != widget.onRefresh) {
+      _clearCache();
+    }
+  }
+
+  /// Cache'i temizle ve yeniden yükle
+  void _clearCache() {
+    setState(() {
+      _cachedData = null;
+      _error = null;
+    });
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    if (_cachedData != null) return; // Cache varsa yenileme
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final data = await _getPurchaseHistory(widget.userId);
+      if (mounted) {
+        setState(() {
+          _cachedData = data;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _getPurchaseHistory(String userId) async {
+    try {
+      final query = FirebaseFirestore.instance
+          .collection('subscriptions')
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .limit(10);
+
+      final snapshot = await query.get();
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return {
+          'id': doc.id,
+          'status': data['status'] ?? 'unknown',
+          'planType': data['planType'] ?? 'unknown',
+          'amount': data['amount'] ?? 0,
+          'createdAt': data['createdAt'],
+          'endDate': data['endDate'],
+          'orderId': data['orderId'] ?? '',
+        };
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching purchase history: $e');
+      rethrow;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Geçmiş satın alımlar yüklenirken hata oluştu',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.red,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _cachedData = null;
+                    _error = null;
+                  });
+                  _loadData();
+                },
+                child: const Text('Tekrar Dene'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_cachedData == null || _cachedData!.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.shopping_cart_outlined,
+                color: Colors.grey,
+                size: 48,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Henüz satın alım geçmişi bulunmuyor',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _cachedData!.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      itemBuilder: (context, index) {
+        final purchase = _cachedData![index];
+        return _buildPurchaseHistoryItem(purchase, widget.isDark);
+      },
+    );
+  }
+
+  Widget _buildPurchaseHistoryItem(Map<String, dynamic> purchase, bool isDark) {
+    final status = purchase['status'] as String;
+    final planType = purchase['planType'] as String;
+    final amount = (purchase['amount'] as num).toDouble();
+    final createdAt = purchase['createdAt'] as Timestamp?;
+    final endDate = purchase['endDate'] as Timestamp?;
+    final orderId = purchase['orderId'] as String;
+
+    // Status renkleri
+    Color statusColor;
+    String statusText;
+    switch (status) {
+      case 'active':
+        statusColor = Colors.green;
+        statusText = 'Aktif';
+        break;
+      case 'expired':
+        statusColor = Colors.red;
+        statusText = 'Süresi Dolmuş';
+        break;
+      case 'pending':
+        statusColor = Colors.orange;
+        statusText = 'Beklemede';
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusText = 'Bilinmiyor';
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? const Color(0xFF333333) : const Color(0xFFE0E0E0),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Üst satır: Status ve plan tipi
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  statusText,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+              Text(
+                planType == 'monthly' ? 'Aylık' : 'Yıllık',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: isDark ? Colors.white : const Color(0xFF2D2D2D),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Orta satır: Tutar ve tarih
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '₺${amount.toStringAsFixed(2)}',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF2D2D2D),
+                ),
+              ),
+              if (createdAt != null)
+                Text(
+                  _formatDate(createdAt.toDate()),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.grey,
+                  ),
+                ),
+            ],
+          ),
+
+          // Alt satır: Sipariş ID ve bitiş tarihi
+          if (orderId.isNotEmpty || endDate != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (orderId.isNotEmpty)
+                  Expanded(
+                    child: Text(
+                      'Sipariş: ${orderId.length > 20 ? '${orderId.substring(0, 20)}...' : orderId}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                if (endDate != null)
+                  Text(
+                    'Bitiş: ${_formatDate(endDate.toDate())}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
