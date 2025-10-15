@@ -65,14 +65,18 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Sayfa her açıldığında otomatik güncelleme
+    // Sadece ilk kez açıldığında otomatik güncelleme
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _autoRefreshSubscription();
+      if (mounted) {
+        _autoRefreshSubscription();
+      }
     });
   }
 
   /// Otomatik abonelik durumu güncelleme
   void _autoRefreshSubscription() {
+    if (!mounted) return;
+
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
       ref
@@ -95,16 +99,20 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     _timeRemaining = targetDate.difference(now);
 
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        final now = DateTime.now();
-        final targetDate = DateTime(2026, 1, 1);
-        _timeRemaining = targetDate.difference(now);
+      if (mounted) {
+        setState(() {
+          final now = DateTime.now();
+          final targetDate = DateTime(2026, 1, 1);
+          _timeRemaining = targetDate.difference(now);
 
-        if (_timeRemaining.isNegative) {
-          _timeRemaining = Duration.zero;
-          timer.cancel();
-        }
-      });
+          if (_timeRemaining.isNegative) {
+            _timeRemaining = Duration.zero;
+            timer.cancel();
+          }
+        });
+      } else {
+        timer.cancel();
+      }
     });
   }
 
@@ -173,14 +181,15 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
               _buildPlanCardsRow(plans, isDark),
               const SizedBox(height: 32),
 
+              // Dynamic Continue Button
+              _buildDynamicContinueButton(isDark),
+              const SizedBox(height: 32),
+
               // Geçmiş Satın Alımlar
               if (user != null) ...[
                 _buildPurchaseHistorySection(user, isDark),
                 const SizedBox(height: 32),
               ],
-
-              // Dynamic Continue Button
-              _buildDynamicContinueButton(isDark),
             ],
           ),
         ),
@@ -1300,7 +1309,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       );
 
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (tokenResponse.success) {
         // PayTR ödeme sayfasına yönlendir
@@ -1308,7 +1319,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
 
         // Satın alım işlemi başladığında cache'i temizle
-        _clearPurchaseHistoryCache();
+        if (mounted) {
+          _clearPurchaseHistoryCache();
+        }
 
         if (kIsWeb) {
           // Web için URL'yi yeni sekmede aç
@@ -1320,29 +1333,37 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           }
         } else {
           // Mobile için WebView ile ödeme sayfasını göster
-          _showPaymentWebView(context, iframeUrl);
+          if (mounted) {
+            _showPaymentWebView(context, iframeUrl);
+          }
         }
       } else {
         // Hata mesajı göster
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Ödeme sayfası oluşturulamadı: ${tokenResponse.error ?? 'Bilinmeyen hata'}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Loading'i kapat
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Hata mesajı göster
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'Ödeme sayfası oluşturulamadı: ${tokenResponse.error ?? 'Bilinmeyen hata'}'),
+            content: Text('Ödeme sayfası oluşturulamadı: $e'),
             backgroundColor: Colors.red,
           ),
         );
       }
-    } catch (e) {
-      // Loading'i kapat
-      Navigator.of(context).pop();
-
-      // Hata mesajı göster
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ödeme sayfası oluşturulamadı: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -1595,6 +1616,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Abonelik durumunu yenile
   void _refreshSubscriptionStatus(WidgetRef ref) async {
+    if (!mounted) return;
+
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
       await ref
@@ -1952,9 +1975,11 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   void _clearPurchaseHistoryCache() {
     // Bu metod _PurchaseHistoryList widget'ının cache'ini temizlemek için kullanılır
     // Widget'ın onRefresh callback'i ile cache temizlenir
-    setState(() {
-      // setState çağrısı _PurchaseHistoryList'in onRefresh callback'ini tetikler
-    });
+    if (mounted) {
+      setState(() {
+        // setState çağrısı _PurchaseHistoryList'in yeniden oluşturulmasını sağlar
+      });
+    }
   }
 
   /// Geçmiş satın alımlar bölümü
@@ -2005,10 +2030,6 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     return _PurchaseHistoryList(
       userId: user.id,
       isDark: isDark,
-      onRefresh: () {
-        // Satın alımdan sonra yenileme için callback
-        setState(() {});
-      },
     );
   }
 }
@@ -2017,12 +2038,10 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 class _PurchaseHistoryList extends StatefulWidget {
   final String userId;
   final bool isDark;
-  final VoidCallback onRefresh;
 
   const _PurchaseHistoryList({
     required this.userId,
     required this.isDark,
-    required this.onRefresh,
   });
 
   @override
@@ -2047,28 +2066,17 @@ class _PurchaseHistoryListState extends State<_PurchaseHistoryList> {
     if (oldWidget.userId != widget.userId) {
       _loadData();
     }
-    // onRefresh callback'i çağrıldığında cache'i temizle
-    if (oldWidget.onRefresh != widget.onRefresh) {
-      _clearCache();
-    }
-  }
-
-  /// Cache'i temizle ve yeniden yükle
-  void _clearCache() {
-    setState(() {
-      _cachedData = null;
-      _error = null;
-    });
-    _loadData();
   }
 
   Future<void> _loadData() async {
     if (_cachedData != null) return; // Cache varsa yenileme
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+    }
 
     try {
       final data = await _getPurchaseHistory(widget.userId);
