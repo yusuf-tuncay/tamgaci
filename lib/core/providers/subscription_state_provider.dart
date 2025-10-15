@@ -93,29 +93,26 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
     state = const SubscriptionState();
   }
 
-  /// Cache'i yenile (manuel olarak)
+  /// Cache'i yenile (sadece real-time listener tetiklenmediğinde)
   Future<void> refreshSubscription(String userId) async {
-    debugPrint('🔄 SubscriptionStateNotifier: Refreshing subscription cache');
+    debugPrint('🔄 SubscriptionStateNotifier: Manual refresh requested');
     await checkUserSubscription(userId);
   }
 
-  /// Otomatik abonelik durumu güncelleme (sayfa değişimlerinde)
+  /// Otomatik abonelik durumu güncelleme (sadece ilk yüklemede)
   Future<void> autoRefreshSubscription(String userId) async {
-    // Sadece cache yoksa veya 10 dakikadan eskiyse güncelle (daha az sıklıkta)
-    if (state.subscriptionResult == null ||
-        state.lastChecked == null ||
-        DateTime.now().difference(state.lastChecked!).inMinutes > 10) {
-      debugPrint(
-          '🔄 SubscriptionStateNotifier: Auto-refreshing subscription cache');
+    // Sadece ilk kez yüklendiğinde kontrol et
+    if (state.subscriptionResult == null) {
+      debugPrint('🔄 SubscriptionStateNotifier: Initial subscription check');
       await checkUserSubscription(userId);
     }
-    // Cache fresh olduğunda log yazdırma
   }
 
   /// Real-time abonelik güncellemelerini dinle
   void listenToSubscriptionUpdates(String userId) {
-    debugPrint('🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
-    
+    debugPrint(
+        '🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
+
     FirebaseFirestore.instance
         .collection('subscription_updates')
         .doc(userId)
@@ -124,7 +121,8 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         if (data['status'] == 'updated') {
-          debugPrint('🔔 SubscriptionStateNotifier: Real-time update received for user: $userId');
+          debugPrint(
+              '🔔 SubscriptionStateNotifier: Real-time update received for user: $userId');
           // Abonelik durumunu yenile
           checkUserSubscription(userId);
         }

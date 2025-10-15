@@ -5,6 +5,7 @@ import 'package:tamgaci/core/routes/routes.dart';
 import 'package:tamgaci/core/theme/app_theme.dart';
 import 'package:tamgaci/core/providers/theme_provider.dart';
 import 'package:tamgaci/core/providers/locale_provider.dart';
+import 'package:tamgaci/core/providers/global_realtime_provider.dart';
 import 'package:tamgaci/features/landing/presentation/pages/landing_route.dart';
 import 'package:tamgaci/features/landing/presentation/pages/mobile_landing_route.dart';
 import 'package:tamgaci/shared/pages/not_found_page.dart';
@@ -16,6 +17,9 @@ class TamgaciApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Global real-time listener'ı başlat
+    ref.read(startGlobalRealtimeListenerProvider);
+    
     return MaterialApp(
       // ========== UYGULAMA AYARLARI ==========
 

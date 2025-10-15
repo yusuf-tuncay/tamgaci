@@ -65,20 +65,26 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Sadece ilk kez açıldığında otomatik güncelleme
+    // Real-time listener başlat
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _autoRefreshSubscription();
+        _startRealTimeListener();
       }
     });
   }
 
-  /// Otomatik abonelik durumu güncelleme
-  void _autoRefreshSubscription() {
+  /// Real-time listener başlat (manuel güncelleme yerine)
+  void _startRealTimeListener() {
     if (!mounted) return;
 
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
+      // Real-time listener başlat
+      ref
+          .read(subscriptionStateProvider.notifier)
+          .listenToSubscriptionUpdates(user.id);
+      
+      // Sadece ilk yüklemede kontrol et
       ref
           .read(subscriptionStateProvider.notifier)
           .autoRefreshSubscription(user.id);
@@ -1318,12 +1324,10 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         final iframeUrl =
             'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
 
-        // Satın alım işlemi başladığında cache'i temizle
-        if (mounted) {
-          _clearPurchaseHistoryCache();
-          // Abonelik durumunu da yenile
-          _refreshSubscriptionStatus(ref);
-        }
+      // Real-time listener otomatik güncelleme yapacak
+      if (mounted) {
+        _triggerRealTimeUpdate();
+      }
 
         if (kIsWeb) {
           // Web için URL'yi yeni sekmede aç
@@ -1973,15 +1977,11 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     debugPrint('Özel kupon 139570 uygulandı - Tüm fiyatlar sıfırlandı');
   }
 
-  /// Geçmiş satın alımlar cache'ini temizle
-  void _clearPurchaseHistoryCache() {
-    // Bu metod _PurchaseHistoryList widget'ının cache'ini temizlemek için kullanılır
-    // Widget'ın onRefresh callback'i ile cache temizlenir
-    if (mounted) {
-      setState(() {
-        // setState çağrısı _PurchaseHistoryList'in yeniden oluşturulmasını sağlar
-      });
-    }
+  /// Real-time listener ile otomatik güncelleme (manuel cache temizleme yerine)
+  void _triggerRealTimeUpdate() {
+    // Real-time listener otomatik olarak güncelleme yapacak
+    // Manuel cache temizleme gerekmez
+    debugPrint('🔄 SubscriptionPage: Real-time update triggered');
   }
 
   /// Geçmiş satın alımlar bölümü

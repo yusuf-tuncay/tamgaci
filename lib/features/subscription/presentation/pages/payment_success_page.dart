@@ -22,32 +22,29 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
   @override
   void initState() {
     super.initState();
-    // Sayfa yüklendiğinde abonelik durumunu yenile ve kullanıcıyı dashboard'a yönlendir
-    _refreshSubscriptionAndRedirect();
+    // Real-time listener başlat ve dashboard'a yönlendir
+    _startRealTimeListenerAndRedirect();
   }
 
-  /// Abonelik durumunu yenile ve dashboard'a yönlendir
-  void _refreshSubscriptionAndRedirect() async {
+  /// Real-time listener başlat ve dashboard'a yönlendir
+  void _startRealTimeListenerAndRedirect() async {
     try {
       // Kullanıcı bilgilerini al
       final user = ref.read(currentUserProvider).value;
       if (user != null) {
-        // Real-time listener başlat
-        ref.read(subscriptionStateProvider.notifier).listenToSubscriptionUpdates(user.id);
-        
-        // Abonelik durumunu yenile
-        await ref
+        // Real-time listener başlat (otomatik güncelleme için)
+        ref
             .read(subscriptionStateProvider.notifier)
-            .refreshSubscription(user.id);
-        debugPrint(
-            '✅ PaymentSuccess: Subscription refreshed for user: ${user.id}');
+            .listenToSubscriptionUpdates(user.id);
+        
+        debugPrint('✅ PaymentSuccess: Real-time listener started for user: ${user.id}');
       }
     } catch (e) {
-      debugPrint('❌ PaymentSuccess: Failed to refresh subscription: $e');
+      debugPrint('❌ PaymentSuccess: Failed to start real-time listener: $e');
     }
 
-    // 5 saniye sonra dashboard'a yönlendir (daha uzun süre ver)
-    Future.delayed(const Duration(seconds: 5), () {
+    // 3 saniye sonra dashboard'a yönlendir (real-time listener otomatik güncelleme yapacak)
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
         Navigator.of(context)
             .pushNamedAndRemoveUntil('/dashboard', (route) => false);
@@ -137,22 +134,22 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
               // Yönlendirme sayacı
               Consumer(
                 builder: (context, ref, child) {
-                  return StreamBuilder<int>(
-                    stream: Stream.periodic(
-                      const Duration(seconds: 1),
-                      (i) => 5 - i,
-                    ).take(6),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data ?? 5;
-                      return Text(
-                        '$count saniye sonra yönlendirileceksiniz...',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      );
-                    },
-                  );
+    return StreamBuilder<int>(
+      stream: Stream.periodic(
+        const Duration(seconds: 1),
+        (i) => 3 - i,
+      ).take(4),
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 3;
+        return Text(
+          '$count saniye sonra yönlendirileceksiniz...',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.grey[500],
+          ),
+        );
+      },
+    );
                 },
               ),
             ],
