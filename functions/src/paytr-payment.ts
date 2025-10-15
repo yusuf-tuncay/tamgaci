@@ -74,6 +74,7 @@ export const createPayTRPayment = functions.https.onCall(async (data, context) =
         // Firestore'da abonelik kaydı oluştur
         const subscriptionData = {
             id: orderId,
+            orderId: orderId, // PayTR callback için gerekli
             userId: userId,
             planType: planType,
             status: 'pending',

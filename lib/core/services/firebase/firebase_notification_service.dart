@@ -81,16 +81,8 @@ class FirebaseNotificationService {
   Future<void> _registerServiceWorker() async {
     if (kIsWeb) {
       try {
-        // Service worker'ı kaydet - timeout ile
-        await _messaging.getToken(
-          vapidKey: "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o"
-        ).timeout(
-          const Duration(seconds: 15),
-          onTimeout: () {
-            AppLogger.warning('Service worker registration timeout');
-            return null;
-          },
-        );
+        // Service worker'ı kaydet
+        await _messaging.getToken();
         AppLogger.info('Service worker registered for web notifications');
       } catch (e) {
         AppLogger.warning(
@@ -104,15 +96,8 @@ class FirebaseNotificationService {
   Future<String?> _getToken() async {
     try {
       String? token;
-      if (kIsWeb) {
-        // Web için VAPID key ile token al
-        token = await _messaging.getToken(
-          vapidKey: "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o"
-        );
-      } else {
-        // Mobile için normal token al
-        token = await _messaging.getToken();
-      }
+      // Tüm platformlar için normal token al
+      token = await _messaging.getToken();
       AppLogger.info('FCM Token: $token');
       return token;
     } catch (e) {
@@ -211,8 +196,8 @@ class FirebaseNotificationService {
       if (kIsWeb) {
         // Web için VAPID key ile token al
         return await _messaging.getToken(
-          vapidKey: "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o"
-        );
+            vapidKey:
+                "BEl62iUYgUivxIkv69yViEuiBIa40HI8lF7vVfHhf4KEyXpgQXr5lUI3kI8yP9OfLQcAbP6eg2SWg1-2tpg4o");
       } else {
         // Mobile için normal token al
         return await _messaging.getToken();
