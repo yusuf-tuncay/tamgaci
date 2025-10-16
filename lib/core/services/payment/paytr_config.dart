@@ -23,9 +23,9 @@ class PaytrConfig {
   static const bool testMode =
       true; // Test modunda true (canlı moda geçiş bekleniyor)
 
-  /// Callback URL'leri (Özel sayfa - sekme kapatma)
-  static const String successUrl = 'https://tamgaci.web.app/#/subscription/success';
-  static const String failUrl = 'https://tamgaci.web.app/#/subscription/fail';
+  /// Callback URL'leri (Callback sayfası - sekme kapatma)
+  static const String successUrl = 'https://tamgaci.web.app/#/payment/callback';
+  static const String failUrl = 'https://tamgaci.web.app/#/payment/callback';
   static const String callbackUrl =
       'https://us-central1-tamgaci.cloudfunctions.net/paytrCallback';
 
