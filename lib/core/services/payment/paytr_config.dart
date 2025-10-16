@@ -23,10 +23,10 @@ class PaytrConfig {
   static const bool testMode =
       true; // Test modunda true (canlı moda geçiş bekleniyor)
 
-  /// Callback URL'leri (Firebase Functions)
+  /// Callback URL'leri (Subscription sayfasına dön)
   static const String successUrl =
-      'https://tamgaci.web.app/#/subscription/success';
-  static const String failUrl = 'https://tamgaci.web.app/#/subscription/fail';
+      'https://tamgaci.web.app/#/settings/subscription';
+  static const String failUrl = 'https://tamgaci.web.app/#/settings/subscription';
   static const String callbackUrl =
       'https://us-central1-tamgaci.cloudfunctions.net/paytrCallback';
 

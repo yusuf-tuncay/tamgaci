@@ -17,7 +17,6 @@ import '../../domain/entities/subscription_plan.dart' as sub;
 import '../../../../core/services/payment/paytr_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Abonelik sayfası
@@ -82,15 +81,17 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
-      debugPrint('🔔 SubscriptionPage: Starting simple Firestore listener for user: ${user.id}');
-      
+      debugPrint(
+          '🔔 SubscriptionPage: Starting simple Firestore listener for user: ${user.id}');
+
       _userListener = FirebaseFirestore.instance
           .collection('users')
           .doc(user.id)
           .snapshots()
           .listen((snapshot) {
         if (snapshot.exists && mounted) {
-          debugPrint('🔔 SubscriptionPage: User data updated - forcing rebuild');
+          debugPrint(
+              '🔔 SubscriptionPage: User data updated - forcing rebuild');
           setState(() {
             // Widget'ı yeniden build et
           });
@@ -132,7 +133,6 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       }
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1345,19 +1345,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           _triggerRealTimeUpdate();
         }
 
-        if (kIsWeb) {
-          // Web için URL'yi yeni sekmede aç
-          final uri = Uri.parse(iframeUrl);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          } else {
-            throw Exception('PayTR ödeme sayfası açılamadı');
-          }
-        } else {
-          // Mobile için WebView ile ödeme sayfasını göster
-          if (mounted) {
-            _showPaymentWebView(context, iframeUrl);
-          }
+        // Hem web hem mobile için aynı sekmede WebView kullan
+        if (mounted) {
+          _showPaymentWebView(context, iframeUrl);
         }
       } else {
         // Hata mesajı göster
@@ -1409,9 +1399,10 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 NavigationDelegate(
                   onNavigationRequest: (NavigationRequest request) {
                     // PayTR callback URL'lerini kontrol et
-                    if (request.url.contains('paytr.com/callback')) {
-                      // Ödeme tamamlandı, ana sayfaya dön
-                      Navigator.of(context).pop();
+                    if (request.url.contains('paytr.com/callback') || 
+                        request.url.contains('success') ||
+                        request.url.contains('fail')) {
+                      // Ödeme tamamlandı, sadece WebView'i kapat
                       Navigator.of(context).pop();
                       return NavigationDecision.prevent;
                     }
