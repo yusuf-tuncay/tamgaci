@@ -1397,6 +1397,11 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Web platformu için yeni sekmede ödeme sayfası
   void _showPaymentIframe(BuildContext context, String paymentUrl) {
+    debugPrint('🔍 Payment Flow: Opening payment in new tab');
+    debugPrint('🔍 Payment URL: $paymentUrl');
+    debugPrint('🔍 Success URL: https://tamgaci.web.app/#/payment/success');
+    debugPrint('🔍 Fail URL: https://tamgaci.web.app/#/payment/fail');
+    
     // Web için yeni sekmede aç ama callback URL'leri subscription sayfasına yönlendir
     html.window.open(paymentUrl, '_blank');
 

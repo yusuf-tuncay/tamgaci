@@ -345,6 +345,8 @@ class TamgaciRoutes {
 
     // Debug modda route log'u
     debugPrint('🚀 Navigating to: $routeName');
+    debugPrint('🔍 Route access check: ${canAccess(routeName)}');
+    debugPrint('🔍 Is public route: ${[splash, login, register, forgotPassword, notFound, paymentSuccess, paymentFail].contains(routeName)}');
     if (arguments != null) {
       debugPrint('📦 Arguments: $arguments');
     }
@@ -413,7 +415,7 @@ class TamgaciRoutes {
         );
 
       // ========== ÖDEME SONUÇ SAYFALARI (PUBLIC ROUTES) ==========
-      
+
       case TamgaciRoutes.paymentSuccess:
         return _createRoute(
           const PaymentSuccessPage(),
@@ -421,6 +423,22 @@ class TamgaciRoutes {
         );
 
       case TamgaciRoutes.paymentFail:
+        return _createRoute(
+          const PaymentFailPage(),
+          settings: settings,
+        );
+
+      // ========== TEST ROUTES (DEBUG) ==========
+      
+      case '/test/payment/success':
+        debugPrint('🔍 TEST: Payment success route accessed');
+        return _createRoute(
+          const PaymentSuccessPage(),
+          settings: settings,
+        );
+
+      case '/test/payment/fail':
+        debugPrint('🔍 TEST: Payment fail route accessed');
         return _createRoute(
           const PaymentFailPage(),
           settings: settings,
@@ -1276,10 +1294,24 @@ class TamgaciRoutes {
 
   /// Route erişim izni kontrolü
   static bool canAccess(String routeName) {
+    debugPrint('🔍 Route Access Check: $routeName');
+    
     // Public route'lar - Giriş gerektirmez
-    const publicRoutes = [splash, login, register, forgotPassword, notFound, paymentSuccess, paymentFail];
+    const publicRoutes = [
+      splash,
+      login,
+      register,
+      forgotPassword,
+      notFound,
+      paymentSuccess,
+      paymentFail
+    ];
 
-    if (publicRoutes.contains(routeName)) {
+    final isPublic = publicRoutes.contains(routeName);
+    debugPrint('🔍 Is public route: $isPublic');
+    
+    if (isPublic) {
+      debugPrint('🔍 Route access granted (public): $routeName');
       return true;
     }
 

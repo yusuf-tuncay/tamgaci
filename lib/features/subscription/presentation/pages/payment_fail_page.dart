@@ -20,6 +20,8 @@ class _PaymentFailPageState extends State<PaymentFailPage> {
   void initState() {
     super.initState();
     debugPrint('🔄 PaymentFailPage: initState called');
+    debugPrint('🔍 PaymentFailPage: Current URL: ${Uri.base}');
+    debugPrint('🔍 PaymentFailPage: Route: ${ModalRoute.of(context)?.settings.name}');
     _closeTabAfterDelay();
   }
 
@@ -49,7 +51,7 @@ class _PaymentFailPageState extends State<PaymentFailPage> {
   @override
   Widget build(BuildContext context) {
     debugPrint('🔄 PaymentFailPage: build called');
-    
+
     return Scaffold(
       backgroundColor: TamgaciConstants.backgroundColor,
       body: SafeArea(

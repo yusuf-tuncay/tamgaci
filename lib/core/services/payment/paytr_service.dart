@@ -48,6 +48,9 @@ class PaytrService {
       // Debug: Parametreleri yazdır
       debugPrint('=== PayTR Request Debug ===');
       debugPrint('merchant_id: ${params['merchant_id']}');
+      debugPrint('🔍 PayTR Success URL: ${PaytrConfig.successUrl}');
+      debugPrint('🔍 PayTR Fail URL: ${PaytrConfig.failUrl}');
+      debugPrint('🔍 PayTR Callback URL: ${PaytrConfig.callbackUrl}');
       debugPrint('user_ip: "${params['user_ip']}"');
       debugPrint('merchant_oid: ${params['merchant_oid']}');
       debugPrint('email: ${params['email']}');

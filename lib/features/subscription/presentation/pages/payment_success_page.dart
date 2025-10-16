@@ -20,6 +20,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   void initState() {
     super.initState();
     debugPrint('🔄 PaymentSuccessPage: initState called');
+    debugPrint('🔍 PaymentSuccessPage: Current URL: ${Uri.base}');
+    debugPrint('🔍 PaymentSuccessPage: Route: ${ModalRoute.of(context)?.settings.name}');
     _closeTabAfterDelay();
   }
 
@@ -49,7 +51,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   @override
   Widget build(BuildContext context) {
     debugPrint('🔄 PaymentSuccessPage: build called');
-    
+
     return Scaffold(
       backgroundColor: TamgaciConstants.backgroundColor,
       body: SafeArea(
