@@ -1633,30 +1633,39 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                             // Vergi Dairesi: TR ise arama/seçim, diğer ülkelerde serbest metin
                             if (_selectedCountry == 'TR')
                               RawAutocomplete<String>(
-                                optionsBuilder: (TextEditingValue textEditingValue) {
-                                  final q = textEditingValue.text.trim().toLowerCase();
+                                optionsBuilder:
+                                    (TextEditingValue textEditingValue) {
+                                  final q = textEditingValue.text
+                                      .trim()
+                                      .toLowerCase();
                                   if (q.isEmpty) {
                                     return _allTaxOffices.take(100);
                                   }
-                                  return _allTaxOffices
-                                      .where((o) => o.toLowerCase().contains(q));
+                                  return _allTaxOffices.where(
+                                      (o) => o.toLowerCase().contains(q));
                                 },
-                                initialValue: TextEditingValue(text: _taxOfficeController.text),
+                                initialValue: TextEditingValue(
+                                    text: _taxOfficeController.text),
                                 onSelected: (String selection) {
                                   _taxOfficeController.text = selection;
                                 },
-                                fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                                  if (controller.text != _taxOfficeController.text) {
+                                fieldViewBuilder: (context, controller,
+                                    focusNode, onFieldSubmitted) {
+                                  if (controller.text !=
+                                      _taxOfficeController.text) {
                                     controller.text = _taxOfficeController.text;
-                                    controller.selection = TextSelection.fromPosition(
-                                      TextPosition(offset: controller.text.length),
+                                    controller.selection =
+                                        TextSelection.fromPosition(
+                                      TextPosition(
+                                          offset: controller.text.length),
                                     );
                                   }
                                   controller.addListener(() {
                                     _taxOfficeController.text = controller.text;
                                   });
                                   focusNode.addListener(() {
-                                    if (focusNode.hasFocus && controller.text.isEmpty) {
+                                    if (focusNode.hasFocus &&
+                                        controller.text.isEmpty) {
                                       controller.text = '';
                                     }
                                   });
@@ -1665,13 +1674,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                     focusNode: focusNode,
                                     decoration: const InputDecoration(
                                       labelText: 'Vergi Dairesi',
-                                      hintText: 'Yazarak arayın veya listeden seçin',
-                                      prefixIcon: Icon(Icons.apartment_outlined),
+                                      hintText:
+                                          'Yazarak arayın veya listeden seçin',
+                                      prefixIcon:
+                                          Icon(Icons.apartment_outlined),
                                       border: OutlineInputBorder(),
                                     ),
                                   );
                                 },
-                                optionsViewBuilder: (context, onSelected, options) {
+                                optionsViewBuilder:
+                                    (context, onSelected, options) {
                                   final scheme = Theme.of(context).colorScheme;
                                   return Align(
                                     alignment: Alignment.topLeft,
@@ -1680,18 +1692,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                       color: scheme.surface,
                                       borderRadius: BorderRadius.circular(8),
                                       child: ConstrainedBox(
-                                        constraints: const BoxConstraints(maxHeight: 300, minWidth: 280),
+                                        constraints: const BoxConstraints(
+                                            maxHeight: 300, minWidth: 280),
                                         child: ListView.builder(
                                           padding: EdgeInsets.zero,
                                           shrinkWrap: true,
                                           itemCount: options.length,
                                           itemBuilder: (context, index) {
-                                            final opt = options.elementAt(index);
+                                            final opt =
+                                                options.elementAt(index);
                                             return ListTile(
                                               dense: true,
                                               title: Text(opt,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: TextStyle(color: scheme.onSurface)),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                      color: scheme.onSurface)),
                                               onTap: () => onSelected(opt),
                                             );
                                           },
@@ -1724,7 +1740,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                       child: Text('Ülke: $_selectedCountry',
                                           style: GoogleFonts.poppins(
                                               fontSize: 12,
-                                              color: TamgaciConstants.textSecondary)),
+                                              color: TamgaciConstants
+                                                  .textSecondary)),
                                     ),
                                     OutlinedButton.icon(
                                       onPressed: () {
@@ -1733,8 +1750,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           showPhoneCode: true,
                                           onSelect: (Country country) {
                                             setState(() {
-                                              _selectedCountry = country.countryCode;
-                                              _selectedDialCode = '+${country.phoneCode}';
+                                              _selectedCountry =
+                                                  country.countryCode;
+                                              _selectedDialCode =
+                                                  '+${country.phoneCode}';
                                             });
                                           },
                                         );
@@ -1757,16 +1776,20 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                               .map((c) => DropdownMenuItem(
                                                     value: c,
                                                     child: Text(c,
-                                                        overflow: TextOverflow.ellipsis,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                         softWrap: false),
                                                   ))
                                               .toList(),
                                           selectedItemBuilder: (context) =>
                                               _cities
                                                   .map((c) => Align(
-                                                        alignment: Alignment.centerLeft,
+                                                        alignment: Alignment
+                                                            .centerLeft,
                                                         child: Text(c,
-                                                            overflow: TextOverflow.ellipsis,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
                                                             softWrap: false),
                                                       ))
                                                   .toList(),
@@ -1780,7 +1803,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           },
                                           decoration: const InputDecoration(
                                             labelText: 'İl',
-                                            prefixIcon: Icon(Icons.location_city),
+                                            prefixIcon:
+                                                Icon(Icons.location_city),
                                             border: OutlineInputBorder(),
                                           ),
                                         ),
@@ -1790,7 +1814,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                         child: DropdownButtonFormField<String>(
                                           initialValue: _selectedDistrict,
                                           items: (_selectedCity != null)
-                                              ? (_districtsByCity[_selectedCity!] ?? [])
+                                              ? (_districtsByCity[
+                                                          _selectedCity!] ??
+                                                      [])
                                                   .map((d) => DropdownMenuItem(
                                                       value: d, child: Text(d)))
                                                   .toList()
@@ -1798,12 +1824,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           onChanged: (v) {
                                             setState(() {
                                               _selectedDistrict = v;
-                                              _districtController.text = v ?? '';
+                                              _districtController.text =
+                                                  v ?? '';
                                             });
                                           },
                                           decoration: const InputDecoration(
                                             labelText: 'İlçe',
-                                            prefixIcon: Icon(Icons.map_outlined),
+                                            prefixIcon:
+                                                Icon(Icons.map_outlined),
                                             border: OutlineInputBorder(),
                                           ),
                                         ),
@@ -1820,7 +1848,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           controller: _neighborhoodController,
                                           decoration: const InputDecoration(
                                             labelText: 'Mahalle',
-                                            prefixIcon: Icon(Icons.home_work_outlined),
+                                            prefixIcon:
+                                                Icon(Icons.home_work_outlined),
                                             border: OutlineInputBorder(),
                                           ),
                                         ),
@@ -1831,7 +1860,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           controller: _streetController,
                                           decoration: const InputDecoration(
                                             labelText: 'Sokak/Cadde',
-                                            prefixIcon: Icon(Icons.alt_route_outlined),
+                                            prefixIcon:
+                                                Icon(Icons.alt_route_outlined),
                                             border: OutlineInputBorder(),
                                           ),
                                         ),
@@ -1859,7 +1889,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           controller: _apartmentNoController,
                                           decoration: const InputDecoration(
                                             labelText: 'Daire No',
-                                            prefixIcon: Icon(Icons.meeting_room_outlined),
+                                            prefixIcon: Icon(
+                                                Icons.meeting_room_outlined),
                                             border: OutlineInputBorder(),
                                           ),
                                         ),
@@ -1870,12 +1901,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           controller: _postalCodeController,
                                           keyboardType: TextInputType.number,
                                           inputFormatters: [
-                                            FilteringTextInputFormatter.digitsOnly,
+                                            FilteringTextInputFormatter
+                                                .digitsOnly,
                                             LengthLimitingTextInputFormatter(10)
                                           ],
                                           decoration: const InputDecoration(
                                             labelText: 'Posta Kodu',
-                                            prefixIcon: Icon(Icons.local_post_office_outlined),
+                                            prefixIcon: Icon(Icons
+                                                .local_post_office_outlined),
                                             border: OutlineInputBorder(),
                                           ),
                                         ),
@@ -1889,7 +1922,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   decoration: const InputDecoration(
                                     labelText: 'Adres (Açıklama)',
                                     hintText: 'Opsiyonel ek açıklama',
-                                    prefixIcon: Icon(Icons.sticky_note_2_outlined),
+                                    prefixIcon:
+                                        Icon(Icons.sticky_note_2_outlined),
                                     border: OutlineInputBorder(),
                                   ),
                                 ),
@@ -2446,189 +2480,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   border: OutlineInputBorder(),
                 ),
               ),
-
-            const SizedBox(height: 16),
-
-            // Ülke/İl/İlçe ve adres detayları
-            Column(
-              children: [
-                // Ülke sabit country picker ile
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text('Ülke: $_selectedCountry',
-                          style: GoogleFonts.poppins(
-                              fontSize: 12,
-                              color: TamgaciConstants.textSecondary)),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        showCountryPicker(
-                          context: context,
-                          showPhoneCode: true,
-                          onSelect: (Country country) {
-                            setState(() {
-                              _selectedCountry = country.countryCode;
-                              _selectedDialCode = '+${country.phoneCode}';
-                            });
-                          },
-                        );
-                      },
-                      icon: const Icon(Icons.public),
-                      label: const Text('Ülke Seç'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Türkiye seçili değilse adres alanlarını serbest bırak
-                if (_selectedCountry == 'TR')
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          isExpanded: true,
-                          initialValue: _selectedCity,
-                          items: _cities
-                              .map((c) => DropdownMenuItem(
-                                    value: c,
-                                    child: Text(c,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false),
-                                  ))
-                              .toList(),
-                          selectedItemBuilder: (context) => _cities
-                              .map((c) => Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(c,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false),
-                                  ))
-                              .toList(),
-                          onChanged: (v) {
-                            setState(() {
-                              _selectedCity = v;
-                              _selectedDistrict = null;
-                              _cityController.text = v ?? '';
-                              _districtController.clear();
-                              // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            labelText: 'İl',
-                            prefixIcon: Icon(Icons.location_city),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _selectedDistrict,
-                          items: (_selectedCity != null)
-                              ? (_districtsByCity[_selectedCity!] ?? [])
-                                  .map((d) => DropdownMenuItem(
-                                      value: d, child: Text(d)))
-                                  .toList()
-                              : const [],
-                          onChanged: (v) {
-                            setState(() {
-                              _selectedDistrict = v;
-                              _districtController.text = v ?? '';
-                              // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            labelText: 'İlçe',
-                            prefixIcon: Icon(Icons.map_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                if (_selectedCountry == 'TR') const SizedBox(height: 12),
-                if (_selectedCountry == 'TR')
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _neighborhoodController,
-                          decoration: const InputDecoration(
-                            labelText: 'Mahalle',
-                            prefixIcon: Icon(Icons.home_work_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _streetController,
-                          decoration: const InputDecoration(
-                            labelText: 'Sokak/Cadde',
-                            prefixIcon: Icon(Icons.alt_route_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                if (_selectedCountry == 'TR') const SizedBox(height: 12),
-                if (_selectedCountry == 'TR')
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _buildingNoController,
-                          decoration: const InputDecoration(
-                            labelText: 'Bina No',
-                            prefixIcon: Icon(Icons.apartment),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _apartmentNoController,
-                          decoration: const InputDecoration(
-                            labelText: 'Daire No',
-                            prefixIcon: Icon(Icons.meeting_room_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _postalCodeController,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(10)
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'Posta Kodu',
-                            prefixIcon: Icon(Icons.local_post_office_outlined),
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _addressController,
-                  maxLines: _selectedCountry == 'TR' ? 2 : 3,
-                  decoration: const InputDecoration(
-                    labelText: 'Adres (Açıklama)',
-                    hintText: 'Opsiyonel ek açıklama',
-                    prefixIcon: Icon(Icons.sticky_note_2_outlined),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
 
             const SizedBox(height: 16),
 
