@@ -101,15 +101,21 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Otomatik abonelik durumu güncelleme (sadece ilk yüklemede)
   Future<void> autoRefreshSubscription(String userId) async {
     // Sadece ilk kez yüklendiğinde veya cache süresi dolmuşsa kontrol et
-    if (state.subscriptionResult == null || 
-        (state.lastChecked != null && 
-         DateTime.now().difference(state.lastChecked!).inMinutes >= 2)) {
+    if (state.subscriptionResult == null ||
+        (state.lastChecked != null &&
+            DateTime.now().difference(state.lastChecked!).inMinutes >= 2)) {
       await checkUserSubscription(userId);
     }
   }
 
   /// Real-time abonelik güncellemelerini dinle
   void listenToSubscriptionUpdates(String userId) {
+    // Listener zaten başlatılmışsa tekrar başlatma
+    if (state.subscriptionResult != null && state.lastChecked != null) {
+      debugPrint('🔔 SubscriptionStateNotifier: Listener already active for user: $userId');
+      return;
+    }
+    
     debugPrint(
         '🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
 
@@ -121,10 +127,8 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         .listen((snapshot) {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
-        // Log yoğunluğunu azalt - sadece önemli değişiklikleri logla
-        debugPrint(
-            '🔔 SubscriptionStateNotifier: User data updated for user: $userId');
-        // Detaylı log'ları kaldır - performans için
+        // Log yoğunluğunu azalt - sadece gerçek değişikliklerde logla
+        // debugPrint('🔔 SubscriptionStateNotifier: User data updated for user: $userId');
 
         // Cache'i temizle ve abonelik durumunu yenile
         state = state.copyWith(
@@ -147,6 +151,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         if (data['status'] == 'updated') {
+          // Sadece gerçek güncellemelerde logla
           debugPrint(
               '🔔 SubscriptionStateNotifier: Real-time update received for user: $userId');
           // Cache'i temizle ve abonelik durumunu yenile
