@@ -55,10 +55,11 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Kullanıcının abonelik durumunu kontrol et ve cache'le
   Future<void> checkUserSubscription(String userId) async {
     try {
-      // Cache kontrolü - 10 dakika içinde tekrar kontrol etme (log yoğunluğunu azalt)
+      // Cache kontrolü - real-time listener'lar sayesinde daha az kontrol gerekli
       if (state.lastChecked != null) {
-        final timeSinceLastCheck = DateTime.now().difference(state.lastChecked!);
-        if (timeSinceLastCheck.inMinutes < 10) {
+        final timeSinceLastCheck =
+            DateTime.now().difference(state.lastChecked!);
+        if (timeSinceLastCheck.inMinutes < 30) {
           // Cache hala geçerli, tekrar kontrol etme
           return;
         }
@@ -100,9 +101,9 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Otomatik abonelik durumu güncelleme (sadece ilk yüklemede)
   Future<void> autoRefreshSubscription(String userId) async {
     // Sadece ilk kez yüklendiğinde veya cache süresi dolmuşsa kontrol et
-    if (state.subscriptionResult == null || 
-        (state.lastChecked != null && 
-         DateTime.now().difference(state.lastChecked!).inMinutes >= 10)) {
+    if (state.subscriptionResult == null ||
+        (state.lastChecked != null &&
+            DateTime.now().difference(state.lastChecked!).inMinutes >= 30)) {
       await checkUserSubscription(userId);
     }
   }
@@ -121,9 +122,10 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         // Log yoğunluğunu azalt - sadece önemli değişiklikleri logla
-        debugPrint('🔔 SubscriptionStateNotifier: User data updated for user: $userId');
+        debugPrint(
+            '🔔 SubscriptionStateNotifier: User data updated for user: $userId');
         // Detaylı log'ları kaldır - performans için
-        
+
         // Cache'i temizle ve abonelik durumunu yenile
         state = state.copyWith(
           subscriptionResult: null,
@@ -132,7 +134,8 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         checkUserSubscription(userId);
       }
     }, onError: (error) {
-      debugPrint('❌ SubscriptionStateNotifier: Users collection listener error: $error');
+      debugPrint(
+          '❌ SubscriptionStateNotifier: Users collection listener error: $error');
     });
 
     // Ek olarak subscription_updates collection'ını da dinle
@@ -155,14 +158,14 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         }
       }
     }, onError: (error) {
-      debugPrint('❌ SubscriptionStateNotifier: Subscription updates listener error: $error');
+      debugPrint(
+          '❌ SubscriptionStateNotifier: Subscription updates listener error: $error');
     });
 
-    // Her 5 dakikada bir manuel kontrol et (fallback) - log yoğunluğunu azalt
-    Timer.periodic(const Duration(minutes: 5), (timer) {
-      debugPrint('🔔 SubscriptionStateNotifier: Periodic check for user: $userId (5min interval)');
-      checkUserSubscription(userId);
-    });
+    // Periyodik timer kaldırıldı - sadece real-time listener kullanılıyor
+    // Real-time listener'lar zaten tüm değişiklikleri yakalıyor
+    debugPrint(
+        '🔔 SubscriptionStateNotifier: Using only real-time listeners (no periodic timer)');
   }
 }
 
