@@ -1368,7 +1368,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         }
 
         debugPrint('🔍 PAYMENT FLOW: Platform check - kIsWeb: $kIsWeb');
-        
+
         // Platform-specific ödeme sayfası göster
         if (mounted) {
           if (kIsWeb) {
@@ -1379,12 +1379,15 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             _showPaymentWebView(context, iframeUrl);
           }
         }
-        
+
         // TEST: Payment sayfalarını test et
         debugPrint('🧪 TEST: Testing payment routes...');
         debugPrint('🧪 TEST: You can manually test these URLs:');
-        debugPrint('🧪 TEST: Success: https://tamgaci.web.app/#/payment/success');
-        debugPrint('🧪 TEST: Fail: https://tamgaci.web.app/#/payment/fail');
+        debugPrint('🧪 TEST: Success: https://tamgaci.web.app/payment/success');
+        debugPrint('🧪 TEST: Fail: https://tamgaci.web.app/payment/fail');
+        debugPrint('🧪 TEST: Hash versions:');
+        debugPrint('🧪 TEST: Success Hash: https://tamgaci.web.app/#/payment/success');
+        debugPrint('🧪 TEST: Fail Hash: https://tamgaci.web.app/#/payment/fail');
       } else {
         // Hata mesajı göster
         if (mounted) {

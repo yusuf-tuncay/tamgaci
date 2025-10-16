@@ -346,7 +346,15 @@ class TamgaciRoutes {
     // Debug modda route log'u
     debugPrint('🚀 Navigating to: $routeName');
     debugPrint('🔍 Route access check: ${canAccess(routeName)}');
-    debugPrint('🔍 Is public route: ${[splash, login, register, forgotPassword, notFound, paymentSuccess, paymentFail].contains(routeName)}');
+    debugPrint('🔍 Is public route: ${[
+      splash,
+      login,
+      register,
+      forgotPassword,
+      notFound,
+      paymentSuccess,
+      paymentFail
+    ].contains(routeName)}');
     if (arguments != null) {
       debugPrint('📦 Arguments: $arguments');
     }
@@ -439,6 +447,22 @@ class TamgaciRoutes {
 
       case '/test/payment/fail':
         debugPrint('🔍 TEST: Payment fail route accessed');
+        return _createRoute(
+          const PaymentFailPage(),
+          settings: settings,
+        );
+
+      // ========== MANUAL TEST ROUTES ==========
+      
+      case '/payment/success':
+        debugPrint('🔍 MANUAL: Payment success route accessed (no hash)');
+        return _createRoute(
+          const PaymentSuccessPage(),
+          settings: settings,
+        );
+
+      case '/payment/fail':
+        debugPrint('🔍 MANUAL: Payment fail route accessed (no hash)');
         return _createRoute(
           const PaymentFailPage(),
           settings: settings,
@@ -1295,7 +1319,7 @@ class TamgaciRoutes {
   /// Route erişim izni kontrolü
   static bool canAccess(String routeName) {
     debugPrint('🔍 Route Access Check: $routeName');
-    
+
     // Public route'lar - Giriş gerektirmez
     const publicRoutes = [
       splash,
@@ -1309,7 +1333,7 @@ class TamgaciRoutes {
 
     final isPublic = publicRoutes.contains(routeName);
     debugPrint('🔍 Is public route: $isPublic');
-    
+
     if (isPublic) {
       debugPrint('🔍 Route access granted (public): $routeName');
       return true;
