@@ -3,7 +3,6 @@
 
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Ödeme başarılı sayfası - sekme kapatma
 class PaymentSuccessPage extends StatefulWidget {
@@ -18,51 +17,61 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   void initState() {
     super.initState();
     debugPrint('🎉 PaymentSuccessPage: initState called');
-    _closeTabAfterDelay();
+    _closeTabImmediately();
   }
 
-  /// Sekmeyi 3 saniye sonra kapat
-  void _closeTabAfterDelay() {
-    debugPrint('🎉 PaymentSuccessPage: Starting 3 second timer');
+  /// Sekmeyi hemen kapat
+  void _closeTabImmediately() {
+    debugPrint('🎉 PaymentSuccessPage: Attempting to close window immediately');
     
     // Hemen kapatmayı dene
-    Future.delayed(const Duration(milliseconds: 500), () {
-      debugPrint('🎉 PaymentSuccessPage: First attempt to close window');
+    html.window.close();
+    
+    // Eğer kapanmazsa 1 saniye sonra tekrar dene
+    Future.delayed(const Duration(seconds: 1), () {
+      debugPrint('🎉 PaymentSuccessPage: Second attempt to close window');
       html.window.close();
     });
     
-    // 3 saniye sonra tekrar dene
+    // Son çare olarak 3 saniye sonra tekrar dene
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        debugPrint('🎉 PaymentSuccessPage: Second attempt to close window');
-        html.window.close();
-      } else {
-        debugPrint('🎉 PaymentSuccessPage: Widget not mounted, cannot close');
-      }
+      debugPrint('🎉 PaymentSuccessPage: Final attempt to close window');
+      html.window.close();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     debugPrint('🎉 PaymentSuccessPage: build called');
-    
-    // Hemen kapatmayı dene
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      debugPrint('🎉 PaymentSuccessPage: PostFrameCallback - attempting immediate close');
-      html.window.close();
-    });
-    
     return Scaffold(
       backgroundColor: Colors.green[50],
       body: const Center(
-        child: Text(
-          'Ödeme Başarılı!\nSekme kapanıyor...',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.green,
-          ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle,
+              color: Colors.green,
+              size: 80,
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Ödeme Başarılı!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Sekme kapanıyor...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
         ),
       ),
     );

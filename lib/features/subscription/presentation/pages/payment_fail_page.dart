@@ -3,7 +3,6 @@
 
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Ödeme başarısız sayfası - sekme kapatma
 class PaymentFailPage extends StatefulWidget {
@@ -17,94 +16,62 @@ class _PaymentFailPageState extends State<PaymentFailPage> {
   @override
   void initState() {
     super.initState();
-    _closeTabAfterDelay();
+    debugPrint('❌ PaymentFailPage: initState called');
+    _closeTabImmediately();
   }
 
-  /// Sekmeyi 3 saniye sonra kapat
-  void _closeTabAfterDelay() {
+  /// Sekmeyi hemen kapat
+  void _closeTabImmediately() {
+    debugPrint('❌ PaymentFailPage: Attempting to close window immediately');
+
+    // Hemen kapatmayı dene
+    html.window.close();
+
+    // Eğer kapanmazsa 1 saniye sonra tekrar dene
+    Future.delayed(const Duration(seconds: 1), () {
+      debugPrint('❌ PaymentFailPage: Second attempt to close window');
+      html.window.close();
+    });
+
+    // Son çare olarak 3 saniye sonra tekrar dene
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        // Sekmeyi kapat
-        html.window.close();
-      }
+      debugPrint('❌ PaymentFailPage: Final attempt to close window');
+      html.window.close();
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('❌ PaymentFailPage: build called');
     return Scaffold(
       backgroundColor: Colors.red[50],
-      body: Center(
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.red.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+      body: const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.cancel,
+              color: Colors.red,
+              size: 80,
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Ödeme Başarısız',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Hata ikonu
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.red[100],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.cancel,
-                  color: Colors.red[600],
-                  size: 50,
-                ),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Sekme kapanıyor...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
               ),
-              const SizedBox(height: 24),
-              
-              // Başlık
-              Text(
-                'Ödeme Başarısız',
-                style: GoogleFonts.poppins(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red[700],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              
-              // Açıklama
-              Text(
-                'Ödeme işlemi tamamlanamadı.\nBu sayfa otomatik olarak kapanacak.',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              
-              // Yükleme animasyonu
-              const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
-              ),
-              const SizedBox(height: 16),
-              
-              Text(
-                'Ana sayfaya yönlendiriliyor...',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
