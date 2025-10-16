@@ -1303,8 +1303,15 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Devam et butonuna basıldığında
   void _onContinuePressed() async {
-    if (_selectedPlan == null) return;
+    debugPrint('🔍 PAYMENT FLOW: Continue button pressed');
+    debugPrint('🔍 PAYMENT FLOW: Selected plan: $_selectedPlan');
 
+    if (_selectedPlan == null) {
+      debugPrint('❌ PAYMENT FLOW: No plan selected');
+      return;
+    }
+
+    debugPrint('🔍 PAYMENT FLOW: Showing loading dialog');
     // Loading göster
     showDialog(
       context: context,
@@ -1315,14 +1322,22 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
 
     try {
+      debugPrint('🔍 PAYMENT FLOW: Creating PayTR service');
       // PayTR token oluştur
       final paytrService = PaytrService();
       final currentUser = ref.read(currentUserProvider).value!;
+
+      debugPrint('🔍 PAYMENT FLOW: Current user: ${currentUser.email}');
+      debugPrint(
+          '🔍 PAYMENT FLOW: Special coupon applied: $_isSpecialCouponApplied');
 
       // Özel kupon uygulandıysa fiyatı 1 TL yap (PayTR minimum 1 TL kabul eder)
       final amount = _isSpecialCouponApplied
           ? 1.0
           : PricingConfig.getPriceForPlan(_selectedPlan!);
+
+      debugPrint('🔍 PAYMENT FLOW: Amount: $amount');
+      debugPrint('🔍 PAYMENT FLOW: Calling createPaymentToken...');
 
       final tokenResponse = await paytrService.createPaymentToken(
         user: currentUser,
@@ -1331,29 +1346,45 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         userAddress: currentUser.address, // Kullanıcı adresini geç
       );
 
+      debugPrint(
+          '🔍 PAYMENT FLOW: Token response received: ${tokenResponse.success}');
+
       // Loading'i kapat
       if (mounted) {
         Navigator.of(context).pop();
       }
 
       if (tokenResponse.success) {
+        debugPrint('🔍 PAYMENT FLOW: Token success, creating payment URL');
         // PayTR ödeme sayfasına yönlendir
         final iframeUrl =
             'https://www.paytr.com/odeme/guvenli/${tokenResponse.token}';
+
+        debugPrint('🔍 PAYMENT FLOW: Payment URL: $iframeUrl');
 
         // Real-time listener otomatik güncelleme yapacak
         if (mounted) {
           _triggerRealTimeUpdate();
         }
 
+        debugPrint('🔍 PAYMENT FLOW: Platform check - kIsWeb: $kIsWeb');
+        
         // Platform-specific ödeme sayfası göster
         if (mounted) {
           if (kIsWeb) {
+            debugPrint('🔍 PAYMENT FLOW: Using web payment method');
             _showPaymentWebView(context, iframeUrl);
           } else {
+            debugPrint('🔍 PAYMENT FLOW: Using mobile payment method');
             _showPaymentWebView(context, iframeUrl);
           }
         }
+        
+        // TEST: Payment sayfalarını test et
+        debugPrint('🧪 TEST: Testing payment routes...');
+        debugPrint('🧪 TEST: You can manually test these URLs:');
+        debugPrint('🧪 TEST: Success: https://tamgaci.web.app/#/payment/success');
+        debugPrint('🧪 TEST: Fail: https://tamgaci.web.app/#/payment/fail');
       } else {
         // Hata mesajı göster
         if (mounted) {
@@ -1401,7 +1432,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     debugPrint('🔍 Payment URL: $paymentUrl');
     debugPrint('🔍 Success URL: https://tamgaci.web.app/#/payment/success');
     debugPrint('🔍 Fail URL: https://tamgaci.web.app/#/payment/fail');
-    
+
     // Web için yeni sekmede aç ama callback URL'leri subscription sayfasına yönlendir
     html.window.open(paymentUrl, '_blank');
 
