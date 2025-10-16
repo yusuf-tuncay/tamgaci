@@ -17,21 +17,34 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   @override
   void initState() {
     super.initState();
+    debugPrint('🎉 PaymentSuccessPage: initState called');
     _closeTabAfterDelay();
   }
 
   /// Sekmeyi 3 saniye sonra kapat
   void _closeTabAfterDelay() {
+    debugPrint('🎉 PaymentSuccessPage: Starting 3 second timer');
+    
+    // Hemen kapatmayı dene
+    Future.delayed(const Duration(milliseconds: 500), () {
+      debugPrint('🎉 PaymentSuccessPage: First attempt to close window');
+      html.window.close();
+    });
+    
+    // 3 saniye sonra tekrar dene
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        // Sekmeyi kapat
+        debugPrint('🎉 PaymentSuccessPage: Second attempt to close window');
         html.window.close();
+      } else {
+        debugPrint('🎉 PaymentSuccessPage: Widget not mounted, cannot close');
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('🎉 PaymentSuccessPage: build called');
     return Scaffold(
       backgroundColor: Colors.green[50],
       body: Center(
@@ -66,7 +79,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Başlık
               Text(
                 'Ödeme Başarılı!',
@@ -78,7 +91,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
-              
+
               // Açıklama
               Text(
                 'Aboneliğiniz başarıyla oluşturuldu.\nBu sayfa otomatik olarak kapanacak.',
@@ -89,13 +102,13 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
-              
+
               // Yükleme animasyonu
               const CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
               ),
               const SizedBox(height: 16),
-              
+
               Text(
                 'Ana sayfaya yönlendiriliyor...',
                 style: GoogleFonts.poppins(
