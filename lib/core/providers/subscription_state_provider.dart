@@ -54,22 +54,19 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Kullanıcının abonelik durumunu kontrol et ve cache'le
   Future<void> checkUserSubscription(String userId) async {
     try {
-      // Sadece ilk kez veya hata durumunda log yazdır
-      if (state.subscriptionResult == null) {
-        debugPrint(
-            '🔍 SubscriptionStateNotifier: Checking subscription for user: $userId');
+      // Cache kontrolü - 5 dakika içinde tekrar kontrol etme
+      if (state.lastChecked != null) {
+        final timeSinceLastCheck = DateTime.now().difference(state.lastChecked!);
+        if (timeSinceLastCheck.inMinutes < 5) {
+          // Cache hala geçerli, tekrar kontrol etme
+          return;
+        }
       }
 
       state = state.copyWith(isLoading: true, error: null);
 
       final result =
           await _subscriptionService.checkUserSubscriptionStatus(userId);
-
-      // Sadece hata durumunda log yazdır
-      if (!result.hasAccess) {
-        debugPrint(
-            '✅ SubscriptionStateNotifier: Subscription check completed: ${result.hasAccess}');
-      }
 
       state = state.copyWith(
         subscriptionResult: result,
@@ -101,9 +98,10 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
 
   /// Otomatik abonelik durumu güncelleme (sadece ilk yüklemede)
   Future<void> autoRefreshSubscription(String userId) async {
-    // Sadece ilk kez yüklendiğinde kontrol et
-    if (state.subscriptionResult == null) {
-      debugPrint('🔄 SubscriptionStateNotifier: Initial subscription check');
+    // Sadece ilk kez yüklendiğinde veya cache süresi dolmuşsa kontrol et
+    if (state.subscriptionResult == null || 
+        (state.lastChecked != null && 
+         DateTime.now().difference(state.lastChecked!).inMinutes >= 5)) {
       await checkUserSubscription(userId);
     }
   }

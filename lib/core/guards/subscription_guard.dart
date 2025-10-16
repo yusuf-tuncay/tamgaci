@@ -46,55 +46,49 @@ class SubscriptionGuard extends ConsumerWidget {
           return _buildRedirectToLogin(context);
         }
 
-        // Cache'lenmiş abonelik durumunu kullan
+        // ÖNCE: Kullanıcı entity'sindeki veriyi kullan (daha hızlı)
+        final userCheck = _checkSubscriptionStatus(user);
+        
+        // Eğer kullanıcı entity'sinde yeterli bilgi varsa, direkt kullan
+        if (userCheck.hasAccess || user.subscriptionStatus == SubscriptionStatus.none) {
+          if (userCheck.hasAccess) {
+            return child;
+          } else {
+            return _buildRedirectToSubscription(context, userCheck);
+          }
+        }
+
+        // Sadece gerekli durumlarda subscription state provider'ı kullan
         SubscriptionState subscriptionState;
         try {
           subscriptionState = ref.watch(subscriptionStateProvider);
         } catch (e) {
           debugPrint('❌ SubscriptionGuard: Provider error: $e');
           // Fallback: Kullanıcı entity'sindeki veriyi kullan
-          final fallbackCheck = _checkSubscriptionStatus(user);
-          if (fallbackCheck.hasAccess) {
+          if (userCheck.hasAccess) {
             return child;
           } else {
-            return _buildRedirectToSubscription(context, fallbackCheck);
+            return _buildRedirectToSubscription(context, userCheck);
           }
         }
 
-        // Debug log'ları sadece gerektiğinde yazdır
-        if (subscriptionState.isLoading || subscriptionState.error != null) {
-          debugPrint('🔍 SubscriptionGuard: User ID: ${user.id}');
-          debugPrint(
-              '🔍 SubscriptionGuard: Subscription state - isLoading: ${subscriptionState.isLoading}, error: ${subscriptionState.error}');
-        }
-
+        // Sadece loading durumunda log yazdır
         if (subscriptionState.isLoading) {
-          debugPrint('⏳ SubscriptionGuard: Loading subscription state');
           return loadingWidget ?? _buildLoadingWidget();
         }
 
+        // Hata durumunda kullanıcı entity'sindeki veriyi kullan
         if (subscriptionState.error != null) {
-          debugPrint(
-              '❌ SubscriptionGuard: Subscription state error: ${subscriptionState.error}');
-          // Hata durumunda kullanıcı entity'sindeki veriyi kullan
-          final fallbackCheck = _checkSubscriptionStatus(user);
-          debugPrint(
-              '🔄 SubscriptionGuard: Fallback check result: ${fallbackCheck.hasAccess} - ${fallbackCheck.reason}');
-          if (fallbackCheck.hasAccess) {
+          if (userCheck.hasAccess) {
             return child;
           } else {
-            return _buildRedirectToSubscription(context, fallbackCheck);
+            return _buildRedirectToSubscription(context, userCheck);
           }
         }
 
+        // Cache'lenmiş sonucu kullan
         if (subscriptionState.subscriptionResult != null) {
           final subscriptionCheck = subscriptionState.subscriptionResult!;
-          // Sadece hata durumunda log yazdır
-          if (!subscriptionCheck.hasAccess) {
-            debugPrint(
-                '✅ SubscriptionGuard: Using cached subscription result: ${subscriptionCheck.hasAccess} - ${subscriptionCheck.reason}');
-          }
-
           if (subscriptionCheck.hasAccess) {
             return child;
           } else {
@@ -102,16 +96,11 @@ class SubscriptionGuard extends ConsumerWidget {
           }
         }
 
-        // Fallback: Kullanıcı entity'sindeki veriyi kullan
-        final fallbackCheck = _checkSubscriptionStatus(user);
-        if (!fallbackCheck.hasAccess) {
-          debugPrint(
-              '🔄 SubscriptionGuard: Fallback check result: ${fallbackCheck.hasAccess} - ${fallbackCheck.reason}');
-        }
-        if (fallbackCheck.hasAccess) {
+        // Son fallback: Kullanıcı entity'sindeki veriyi kullan
+        if (userCheck.hasAccess) {
           return child;
         } else {
-          return _buildRedirectToSubscription(context, fallbackCheck);
+          return _buildRedirectToSubscription(context, userCheck);
         }
       },
       loading: () => loadingWidget ?? _buildLoadingWidget(),
@@ -123,34 +112,21 @@ class SubscriptionGuard extends ConsumerWidget {
   SubscriptionCheckResult _checkSubscriptionStatus(User user) {
     final now = DateTime.now();
 
-    debugPrint('🔍 _checkSubscriptionStatus: User ID: ${user.id}');
-    debugPrint(
-        '🔍 _checkSubscriptionStatus: User createdAt: ${user.createdAt}');
-    debugPrint(
-        '🔍 _checkSubscriptionStatus: User subscriptionStatus: ${user.subscriptionStatus}');
-    debugPrint(
-        '🔍 _checkSubscriptionStatus: User subscriptionEndAt: ${user.subscriptionEndAt}');
-    debugPrint(
-        '🔍 _checkSubscriptionStatus: User trialEndAt: ${user.trialEndAt}');
-    debugPrint('🔍 _checkSubscriptionStatus: Current time: $now');
+    // Debug log'ları sadece hata durumunda yazdır
+    // debugPrint('🔍 _checkSubscriptionStatus: User ID: ${user.id}');
 
     // 1. ÖNCE: Aktif abonelik kontrolü (en yüksek öncelik)
     if (user.subscriptionStatus == SubscriptionStatus.active) {
-      debugPrint('🔍 _checkSubscriptionStatus: Active subscription found');
       // Aktif abonelik var mı ve süresi dolmamış mı?
       if (user.subscriptionEndAt != null &&
           now.isBefore(user.subscriptionEndAt!)) {
         final remainingDays = user.subscriptionEndAt!.difference(now).inDays;
-        debugPrint(
-            '✅ _checkSubscriptionStatus: Active subscription with remaining time - $remainingDays days');
         return SubscriptionCheckResult(
           hasAccess: true,
           reason: 'Aktif abonelik - $remainingDays gün kaldı',
           remainingDays: remainingDays,
         );
       } else {
-        debugPrint(
-            '❌ _checkSubscriptionStatus: Active subscription but expired, checking usage time');
         // Abonelik süresi dolmuş ama kullanım hakkı devam ediyor mu?
         return _checkUsageTimeAfterSubscription(user, now);
       }
@@ -186,14 +162,9 @@ class SubscriptionGuard extends ConsumerWidget {
     final thirtyDaysAfterRegistration =
         registrationDate.add(const Duration(days: 30));
 
-    debugPrint(
-        '🔍 _checkSubscriptionStatus: 30 days after registration: $thirtyDaysAfterRegistration');
-
     // Eğer kayıt tarihinden 30 gün geçmemişse, herkese erişim ver
     if (now.isBefore(thirtyDaysAfterRegistration)) {
       final remainingDays = thirtyDaysAfterRegistration.difference(now).inDays;
-      debugPrint(
-          '✅ _checkSubscriptionStatus: 30-day usage right found - $remainingDays days remaining');
       return SubscriptionCheckResult(
         hasAccess: true,
         reason: '30 günlük kullanım hakkı - $remainingDays gün kaldı',
