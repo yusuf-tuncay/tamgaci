@@ -1,166 +1,107 @@
 // ========== PAYMENT FAIL PAGE ==========
 // lib/features/subscription/presentation/pages/payment_fail_page.dart
 
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/constants.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/responsive_scaffold.dart';
 
-/// PayTR ödeme başarısız sayfası
-class PaymentFailPage extends ConsumerStatefulWidget {
+/// Ödeme başarısız sayfası - sekme kapatma
+class PaymentFailPage extends StatefulWidget {
   const PaymentFailPage({super.key});
 
   @override
-  ConsumerState<PaymentFailPage> createState() => _PaymentFailPageState();
+  State<PaymentFailPage> createState() => _PaymentFailPageState();
 }
 
-class _PaymentFailPageState extends ConsumerState<PaymentFailPage> {
+class _PaymentFailPageState extends State<PaymentFailPage> {
   @override
   void initState() {
     super.initState();
-    // Sayfa yüklendiğinde kullanıcıyı abonelik sayfasına yönlendir
-    _redirectToSubscription();
+    _closeTabAfterDelay();
   }
 
-  void _redirectToSubscription() {
-    // 5 saniye sonra abonelik sayfasına yönlendir
-    Future.delayed(const Duration(seconds: 5), () {
+  /// Sekmeyi 3 saniye sonra kapat
+  void _closeTabAfterDelay() {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil(
-          '/subscription',
-          (route) => false,
-        );
+        // Sekmeyi kapat
+        html.window.close();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveScaffold(
-      appBar: const CustomAppBar(
-        title: 'Ödeme Başarısız',
-        showBackButton: false,
-      ),
-      drawerContent: const SizedBox.shrink(), // Boş drawer
+    return Scaffold(
+      backgroundColor: Colors.red[50],
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.red.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Hata ikonu
               Container(
-                width: 120,
-                height: 120,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.red.withValues(alpha:0.1),
+                  color: Colors.red[100],
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.error,
-                  size: 80,
-                  color: Colors.red,
+                child: Icon(
+                  Icons.cancel,
+                  color: Colors.red[600],
+                  size: 50,
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Hata mesajı
+              const SizedBox(height: 24),
+              
+              // Başlık
               Text(
-                'Ödeme İşlemi Başarısız',
+                'Ödeme Başarısız',
                 style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.red,
+                  color: Colors.red[700],
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 16),
-
+              
+              // Açıklama
               Text(
-                'Ödeme işleminiz tamamlanamadı. Lütfen tekrar deneyin.',
+                'Ödeme işlemi tamamlanamadı.\nBu sayfa otomatik olarak kapanacak.',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
-
-              const SizedBox(height: 48),
-
-              // Tekrar dene butonu
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/subscription',
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tekrar Dene'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Ana sayfa butonu
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    '/dashboard',
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.home),
-                label: const Text('Ana Sayfa'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 24),
-
-              // Yönlendirme sayacı
-              Consumer(
-                builder: (context, ref, child) {
-                  return StreamBuilder<int>(
-                    stream: Stream.periodic(
-                      const Duration(seconds: 1),
-                      (i) => 5 - i,
-                    ).take(6),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data ?? 5;
-                      return Text(
-                        '$count saniye sonra abonelik sayfasına yönlendirileceksiniz...',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      );
-                    },
-                  );
-                },
+              
+              // Yükleme animasyonu
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.red),
+              ),
+              const SizedBox(height: 16),
+              
+              Text(
+                'Ana sayfaya yönlendiriliyor...',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
               ),
             ],
           ),

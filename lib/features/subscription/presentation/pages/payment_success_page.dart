@@ -1,162 +1,107 @@
 // ========== PAYMENT SUCCESS PAGE ==========
 // lib/features/subscription/presentation/pages/payment_success_page.dart
 
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/constants.dart';
-import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/responsive_scaffold.dart';
-import '../../../../core/providers/subscription_state_provider.dart';
-import '../../../../features/auth/presentation/providers/auth_providers.dart';
 
-/// PayTR ödeme başarılı sayfası
-class PaymentSuccessPage extends ConsumerStatefulWidget {
+/// Ödeme başarılı sayfası - sekme kapatma
+class PaymentSuccessPage extends StatefulWidget {
   const PaymentSuccessPage({super.key});
 
   @override
-  ConsumerState<PaymentSuccessPage> createState() => _PaymentSuccessPageState();
+  State<PaymentSuccessPage> createState() => _PaymentSuccessPageState();
 }
 
-class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
+class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
   @override
   void initState() {
     super.initState();
-    // Real-time listener başlat ve dashboard'a yönlendir
-    _startRealTimeListenerAndRedirect();
+    _closeTabAfterDelay();
   }
 
-  /// Real-time listener başlat ve dashboard'a yönlendir
-  void _startRealTimeListenerAndRedirect() async {
-    try {
-      // Kullanıcı bilgilerini al
-      final user = ref.read(currentUserProvider).value;
-      if (user != null) {
-        // Önce abonelik durumunu manuel olarak yenile
-        await ref
-            .read(subscriptionStateProvider.notifier)
-            .refreshSubscription(user.id);
-        
-        // Real-time listener başlat (otomatik güncelleme için)
-        ref
-            .read(subscriptionStateProvider.notifier)
-            .listenToSubscriptionUpdates(user.id);
-
-        debugPrint(
-            '✅ PaymentSuccess: Real-time listener started for user: ${user.id}');
-      }
-    } catch (e) {
-      debugPrint('❌ PaymentSuccess: Failed to start real-time listener: $e');
-    }
-
-    // 5 saniye sonra dashboard'a yönlendir (real-time listener otomatik güncelleme yapacak)
-    Future.delayed(const Duration(seconds: 5), () {
+  /// Sekmeyi 3 saniye sonra kapat
+  void _closeTabAfterDelay() {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        Navigator.of(context)
-            .pushNamedAndRemoveUntil('/dashboard', (route) => false);
+        // Sekmeyi kapat
+        html.window.close();
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveScaffold(
-      appBar: const CustomAppBar(
-        title: 'Ödeme Başarılı',
-        showBackButton: false,
-      ),
-      drawerContent: const SizedBox.shrink(), // Boş drawer
+    return Scaffold(
+      backgroundColor: Colors.green[50],
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
+        child: Container(
+          padding: const EdgeInsets.all(32),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.green.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Başarı ikonu
               Container(
-                width: 120,
-                height: 120,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
-                  color: Colors.green.withValues(alpha: 0.1),
+                  color: Colors.green[100],
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.check_circle,
-                  size: 80,
-                  color: Colors.green,
+                  color: Colors.green[600],
+                  size: 50,
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Başarı mesajı
+              const SizedBox(height: 24),
+              
+              // Başlık
               Text(
-                'Ödeme Başarıyla Tamamlandı!',
+                'Ödeme Başarılı!',
                 style: GoogleFonts.poppins(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: Colors.green[700],
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 16),
-
+              
+              // Açıklama
               Text(
-                'Aboneliğiniz aktif edildi. Dashboard\'a yönlendiriliyorsunuz...',
+                'Aboneliğiniz başarıyla oluşturuldu.\nBu sayfa otomatik olarak kapanacak.',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
-
-              const SizedBox(height: 48),
-
-              // Yönlendirme butonu
-              ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.of(
-                    context,
-                  ).pushNamedAndRemoveUntil('/dashboard', (route) => false);
-                },
-                icon: const Icon(Icons.dashboard),
-                label: const Text('Dashboard\'a Git'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-
               const SizedBox(height: 24),
-
-              // Yönlendirme sayacı
-              Consumer(
-                builder: (context, ref, child) {
-                  return StreamBuilder<int>(
-                    stream: Stream.periodic(
-                      const Duration(seconds: 1),
-                      (i) => 3 - i,
-                    ).take(4),
-                    builder: (context, snapshot) {
-                      final count = snapshot.data ?? 3;
-                      return Text(
-                        '$count saniye sonra yönlendirileceksiniz...',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      );
-                    },
-                  );
-                },
+              
+              // Yükleme animasyonu
+              const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              ),
+              const SizedBox(height: 16),
+              
+              Text(
+                'Ana sayfaya yönlendiriliyor...',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
               ),
             ],
           ),
