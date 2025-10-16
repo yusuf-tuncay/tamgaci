@@ -14,6 +14,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/guards/subscription_guard.dart';
+import '../../../../core/providers/subscription_state_provider.dart';
 
 import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
@@ -46,6 +47,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   void initState() {
     super.initState();
     _loadWeather();
+    _startRealTimeListener();
+  }
+
+  /// Real-time listener başlat
+  void _startRealTimeListener() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final user = ref.read(currentUserProvider).value;
+        if (user != null) {
+          // Real-time listener başlat
+          ref
+              .read(subscriptionStateProvider.notifier)
+              .listenToSubscriptionUpdates(user.id);
+        }
+      }
+    });
   }
 
   Future<void> _loadWeather() async {

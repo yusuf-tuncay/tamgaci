@@ -32,6 +32,11 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
       // Kullanıcı bilgilerini al
       final user = ref.read(currentUserProvider).value;
       if (user != null) {
+        // Önce abonelik durumunu manuel olarak yenile
+        await ref
+            .read(subscriptionStateProvider.notifier)
+            .refreshSubscription(user.id);
+        
         // Real-time listener başlat (otomatik güncelleme için)
         ref
             .read(subscriptionStateProvider.notifier)
@@ -44,8 +49,8 @@ class _PaymentSuccessPageState extends ConsumerState<PaymentSuccessPage> {
       debugPrint('❌ PaymentSuccess: Failed to start real-time listener: $e');
     }
 
-    // 3 saniye sonra dashboard'a yönlendir (real-time listener otomatik güncelleme yapacak)
-    Future.delayed(const Duration(seconds: 3), () {
+    // 5 saniye sonra dashboard'a yönlendir (real-time listener otomatik güncelleme yapacak)
+    Future.delayed(const Duration(seconds: 5), () {
       if (mounted) {
         Navigator.of(context)
             .pushNamedAndRemoveUntil('/dashboard', (route) => false);

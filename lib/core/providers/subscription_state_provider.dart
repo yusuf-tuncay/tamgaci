@@ -121,7 +121,11 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         if (data['status'] == 'updated') {
           debugPrint(
               '🔔 SubscriptionStateNotifier: Real-time update received for user: $userId');
-          // Abonelik durumunu yenile
+          // Cache'i temizle ve abonelik durumunu yenile
+          state = state.copyWith(
+            subscriptionResult: null,
+            lastChecked: null,
+          );
           checkUserSubscription(userId);
         }
       }
