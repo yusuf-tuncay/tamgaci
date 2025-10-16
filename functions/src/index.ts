@@ -143,7 +143,7 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
             // Hash = base64_encode(hash_hmac('sha256', merchant_oid + merchant_salt + status + total_amount, merchant_key, true))
             const hash_str = post.merchant_oid + merchantSalt + post.status + post.total_amount;
             const hash = crypto.createHmac('sha256', merchantKey).update(hash_str).digest('base64');
-            
+
             console.log('🔍 HASH DEBUG INFO:');
             console.log('merchant_oid:', post.merchant_oid);
             console.log('merchant_salt:', merchantSalt);
