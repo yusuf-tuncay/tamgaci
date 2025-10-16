@@ -1,6 +1,7 @@
 // ========== GLOBAL SUBSCRIPTION STATE PROVIDER ==========
 // lib/core/providers/subscription_state_provider.dart
 
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -131,6 +132,8 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         );
         checkUserSubscription(userId);
       }
+    }, onError: (error) {
+      debugPrint('❌ SubscriptionStateNotifier: Users collection listener error: $error');
     });
 
     // Ek olarak subscription_updates collection'ını da dinle
@@ -152,6 +155,14 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
           checkUserSubscription(userId);
         }
       }
+    }, onError: (error) {
+      debugPrint('❌ SubscriptionStateNotifier: Subscription updates listener error: $error');
+    });
+
+    // Her 10 saniyede bir manuel kontrol et (fallback)
+    Timer.periodic(const Duration(seconds: 10), (timer) {
+      debugPrint('🔔 SubscriptionStateNotifier: Periodic check for user: $userId');
+      checkUserSubscription(userId);
     });
   }
 }
