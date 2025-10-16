@@ -400,7 +400,7 @@ final customerRepo = CustomerRepository();
 // Yeni müşteri oluşturma
 final newCustomer = Customer(
   name: 'Ahmet Yılmaz',
-  email: 'ahmet@example.com',
+  email: 'example@example.com',
   phone: '+905551234567',
   address: 'İstanbul, Türkiye',
 );

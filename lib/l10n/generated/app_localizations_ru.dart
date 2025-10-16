@@ -39,7 +39,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settings => 'Настройки';
 
   @override
-  String get settingsDescription => 'Управляйте валютами, языком и другими предпочтениями';
+  String get settingsDescription =>
+      'Управляйте валютами, языком и другими предпочтениями';
 
   @override
   String get language => 'Настройки языка';
@@ -75,7 +76,8 @@ class AppLocalizationsRu extends AppLocalizations {
   String get defaultCurrency => 'Валюта по умолчанию';
 
   @override
-  String get defaultCurrencyDescription => 'Выберите валюту по умолчанию для всех транзакций';
+  String get defaultCurrencyDescription =>
+      'Выберите валюту по умолчанию для всех транзакций';
 
   @override
   String get selectCurrency => 'Выберите валюту';
@@ -93,11 +95,13 @@ class AppLocalizationsRu extends AppLocalizations {
   String get autoUpdateRates => 'Автообновление курсов';
 
   @override
-  String get autoUpdateRatesDescription => 'Курсы будут обновляться автоматически';
+  String get autoUpdateRatesDescription =>
+      'Курсы будут обновляться автоматически';
 
   @override
   String get notifications => 'Уведомления';
 
   @override
-  String get notificationsDescription => 'Получать уведомления о важных транзакциях';
+  String get notificationsDescription =>
+      'Получать уведомления о важных транзакциях';
 }

@@ -1,24 +1,22 @@
 // ========== PAYTR PAYMENT CLOUD FUNCTION ==========
 // functions/src/paytr-payment.ts
 
-import * as functions from 'firebase-functions';
+import { onCall } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
 
-export const createPayTRPayment = functions.https.onCall(async (data, context) => {
+export const createPayTRPayment = onCall(async (request) => {
     // Authentication kontrolü
-    // @ts-ignore - Firebase Functions v2 type issue
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    if (!request.auth) {
+        throw new Error('User must be authenticated');
     }
 
-    // @ts-ignore - Firebase Functions v2 type issue
-    const userId = context.auth.uid;
-    const { planType, amount, currency = 'TRY' } = data as any;
+    const userId = request.auth.uid;
+    const { planType, amount, currency = 'TRY' } = request.data;
 
     // Input validation
     if (!planType || !amount) {
-        throw new functions.https.HttpsError('invalid-argument', 'planType and amount are required');
+        throw new Error('planType and amount are required');
     }
 
     try {
@@ -42,7 +40,7 @@ export const createPayTRPayment = functions.https.onCall(async (data, context) =
         // Kullanıcı bilgilerini al
         const userDoc = await admin.firestore().collection('users').doc(userId).get();
         if (!userDoc.exists) {
-            throw new functions.https.HttpsError('not-found', 'User not found');
+            throw new Error('User not found');
         }
 
         const userData = userDoc.data()!;
@@ -117,12 +115,12 @@ export const createPayTRPayment = functions.https.onCall(async (data, context) =
                 orderId: orderId,
             };
         } else {
-            throw new functions.https.HttpsError('internal', result.reason || 'PayTR payment creation failed');
+            throw new Error(result.reason || 'PayTR payment creation failed');
         }
 
     } catch (error) {
         console.error('PayTR payment creation error:', error);
-        throw new functions.https.HttpsError('internal', `PayTR payment creation failed: ${error}`);
+        throw new Error(`PayTR payment creation failed: ${error}`);
     }
 });
 

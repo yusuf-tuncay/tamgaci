@@ -7,6 +7,7 @@ Bu kılavuz, Tamgaci uygulamasının production ortamına deploy edilmesi için 
 - [Genel Bakış](#genel-bakış)
 - [Ön Gereksinimler](#ön-gereksinimler)
 - [Firebase Configuration](#firebase-configuration)
+- [PayTR Entegrasyonu](#paytr-entegrasyonu)
 - [Build Configuration](#build-configuration)
 - [Deployment Strategies](#deployment-strategies)
 - [Environment Setup](#environment-setup)
@@ -288,6 +289,46 @@ class DefaultFirebaseOptions {
   );
 }
 ```
+
+## 💳 PayTR Entegrasyonu
+
+### PayTR Konfigürasyonu
+
+PayTR ödeme sistemi entegrasyonu için gerekli konfigürasyon:
+
+```bash
+# Firebase Functions config
+firebase functions:config:set paytr.merchant_id="622887"
+firebase functions:config:set paytr.merchant_key="uePB6f7AfxtAAyqZ"
+firebase functions:config:set paytr.merchant_salt="ejdEC3ReZay7QxE8"
+firebase functions:config:set paytr.callback_url="https://us-central1-tamgaci.cloudfunctions.net/paytrCallback"
+firebase functions:config:set paytr.test_mode="1"
+```
+
+### PayTR Panel Ayarları
+
+PayTR panelinde şu URL'ler ayarlanmalıdır:
+
+```
+Bildirim URL (Callback URL): https://us-central1-tamgaci.cloudfunctions.net/paytrCallback
+Site Adresi: https://tamgaci.online/
+```
+
+### Hash Verification
+
+PayTR resmi dökümantasyonuna göre hash doğrulaması:
+
+```typescript
+// PayTR RESMİ DÖKÜMANTASYONUNA GÖRE
+const hash_str = merchant_oid + merchant_salt + status + total_amount;
+const hash = crypto.createHmac('sha256', merchant_key).update(hash_str).digest('base64');
+```
+
+### Detaylı Dökümantasyon
+
+- [PayTR Entegrasyon Rehberi](paytr_integration_guide.md)
+- [PayTR Hızlı Referans](paytr_quick_reference.md)
+- [PayTR Konfigürasyon](paytr_config.md)
 
 ## 🔧 Build Configuration
 

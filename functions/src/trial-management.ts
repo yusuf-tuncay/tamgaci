@@ -1,18 +1,16 @@
 // ========== TRIAL MANAGEMENT CLOUD FUNCTION ==========
 // functions/src/trial-management.ts
 
-import * as functions from 'firebase-functions';
+import { onCall } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
-export const createUserTrial = functions.https.onCall(async (data, context) => {
+export const createUserTrial = onCall(async (request) => {
     // Authentication kontrolü
-    // @ts-ignore - Firebase Functions v2 type issue
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    if (!request.auth) {
+        throw new Error('User must be authenticated');
     }
 
-    // @ts-ignore - Firebase Functions v2 type issue
-    const userId = context.auth.uid;
+    const userId = request.auth.uid;
 
     try {
         console.log('Trial: Creating trial for user:', userId);
@@ -71,19 +69,17 @@ export const createUserTrial = functions.https.onCall(async (data, context) => {
 
     } catch (error) {
         console.error('Trial: Trial creation error:', error);
-        throw new functions.https.HttpsError('internal', `Trial creation failed: ${error}`);
+        throw new Error(`Trial creation failed: ${error}`);
     }
 });
 
-export const checkTrialStatus = functions.https.onCall(async (data, context) => {
+export const checkTrialStatus = onCall(async (request) => {
     // Authentication kontrolü
-    // @ts-ignore - Firebase Functions v2 type issue
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    if (!request.auth) {
+        throw new Error('User must be authenticated');
     }
 
-    // @ts-ignore - Firebase Functions v2 type issue
-    const userId = context.auth.uid;
+    const userId = request.auth.uid;
 
     try {
         console.log('Trial: Checking trial status for user:', userId);
@@ -148,6 +144,6 @@ export const checkTrialStatus = functions.https.onCall(async (data, context) => 
 
     } catch (error) {
         console.error('Trial: Trial status check error:', error);
-        throw new functions.https.HttpsError('internal', `Trial status check failed: ${error}`);
+        throw new Error(`Trial status check failed: ${error}`);
     }
 });

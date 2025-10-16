@@ -11,4 +11,4 @@ PRODUCT_NAME = tamgaci
 PRODUCT_BUNDLE_IDENTIFIER = com.seekitapps.tamgaci
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2025 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2025 com.seekitapps. All rights reserved.

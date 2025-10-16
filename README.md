@@ -59,7 +59,7 @@ lib/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/tamgaci.git
+   git clone https://github.com/gucluoglu/tamgaci.git
    cd tamgaci
    ```
 
@@ -219,7 +219,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 For support and questions:
-- Email: support@tamgaci.com
+- Email: info@seekitapps.com
 - Issues: [GitHub Issues](https://github.com/yourusername/tamgaci/issues)
 
 ## 🎯 Roadmap

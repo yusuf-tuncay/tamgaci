@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
 import * as cors from 'cors';
 import * as admin from 'firebase-admin';
 import * as crypto from 'crypto';
@@ -17,7 +17,7 @@ try {
 // EVDS API Key - Server-side'da güvenli şekilde saklanıyor (şimdilik kullanılmıyor)
 // const EVDS_API_KEY = 'Kkze5A46Sf';
 
-export const evdsProxy = functions.https.onRequest((request, response) => {
+export const evdsProxy = onRequest((request, response) => {
     return corsHandler(request, response, async () => {
         try {
             // Sadece GET isteklerine izin ver
@@ -70,7 +70,7 @@ export const evdsProxy = functions.https.onRequest((request, response) => {
 });
 
 // One-time seeding function to load il/ilçe and tax offices into Firestore
-export const seedGeoMetadata = functions.https.onRequest((request, response) => {
+export const seedGeoMetadata = onRequest((request, response) => {
     return corsHandler(request, response, async () => {
         try {
             if (request.method !== 'POST') {
@@ -110,7 +110,7 @@ export const seedGeoMetadata = functions.https.onRequest((request, response) => 
 });
 
 // PayTR Callback Handler - PayTR dökümanına göre yeniden yazıldı
-export const paytrCallback = functions.https.onRequest((request, response) => {
+export const paytrCallback = onRequest((request, response) => {
     return corsHandler(request, response, async () => {
         try {
             console.log('=== PayTR Callback Started ===');
@@ -139,36 +139,41 @@ export const paytrCallback = functions.https.onRequest((request, response) => {
             const merchantKey = 'uePB6f7AfxtAAyqZ';
             const merchantSalt = 'ejdEC3ReZay7QxE8';
 
-            // PayTR dökümanına göre hash doğrulaması - DÜZELTİLDİ
-            // Hash = base64_encode(hash_hmac('sha256', merchant_oid + merchant_salt + status + total_amount, merchant_key, true))
+            // PayTR RESMİ DÖKÜMANTASYONUNA GÖRE HASH DOĞRULAMASI
+            // PayTR callback hash: HMAC-SHA256(merchant_oid + merchant_salt + status + total_amount, merchant_key)
+            // Kaynak: https://dev.paytr.com - Resmi PayTR dökümantasyonu
             const hash_str = post.merchant_oid + merchantSalt + post.status + post.total_amount;
             const hash = crypto.createHmac('sha256', merchantKey).update(hash_str).digest('base64');
 
-            console.log('🔍 HASH DEBUG INFO:');
+            console.log('🔍 PAYTR HASH DEBUG (RESMİ DÖKÜMANTASYON):');
             console.log('merchant_oid:', post.merchant_oid);
             console.log('merchant_salt:', merchantSalt);
             console.log('status:', post.status);
             console.log('total_amount:', post.total_amount);
-            console.log('hash_str:', hash_str);
             console.log('merchant_key:', merchantKey);
+            console.log('Hash String (merchant_oid + merchant_salt + status + total_amount):', hash_str);
+            console.log('Generated Hash (HMAC-SHA256):', hash);
 
-            console.log('PayTR Hash String:', hash_str);
+            console.log('Received Hash:', post.hash);
+
+            // PayTR RESMİ DÖKÜMANTASYONUNA GÖRE HASH DOĞRULAMASI
+            console.log('🔐 PAYTR HASH VERIFICATION (RESMİ DÖKÜMANTASYON):');
+            console.log('Hash String:', hash_str);
+            console.log('Merchant Key:', merchantKey);
             console.log('Generated Hash:', hash);
             console.log('Received Hash:', post.hash);
 
-            // Hash doğrulaması - GEÇİCİ OLARAK DEVRE DIŞI (TEST AMAÇLI)
-            // TODO: PayTR'den doğru hash formülünü öğren ve aktif et
-            // Hash doğrulaması - DÜZELTİLMİŞ FORMÜL İLE
-            console.log('🔐 HASH VERIFICATION - CORRECTED FORMULA');
             if (hash !== post.hash) {
-                console.error('❌ Hash verification failed - MISMATCH DETECTED');
-                console.error('Expected:', hash);
+                console.error('❌ PayTR Hash verification failed - MISMATCH DETECTED');
+                console.error('Expected (PayTR Official):', hash);
                 console.error('Received:', post.hash);
                 console.error('Hash string used:', hash_str);
+                console.error('Merchant Key used:', merchantKey);
+                console.error('Merchant Salt used:', merchantSalt);
                 response.status(400).json({ error: 'Invalid hash' });
                 return;
             } else {
-                console.log('✅ Hash verification successful - PROCEEDING');
+                console.log('✅ PayTR Hash verification successful - PROCEEDING');
             }
 
             const db = admin.firestore();

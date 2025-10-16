@@ -1,18 +1,16 @@
 // ========== SYNC SUBSCRIPTION CLOUD FUNCTION ==========
 // functions/src/sync-subscription.ts
 
-import * as functions from 'firebase-functions';
+import { onCall } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
-export const syncSubscriptionStatus = functions.https.onCall(async (data, context) => {
+export const syncSubscriptionStatus = onCall(async (request) => {
     // Authentication kontrolü
-    // @ts-ignore - Firebase Functions v2 type issue
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    if (!request.auth) {
+        throw new Error('User must be authenticated');
     }
 
-    // @ts-ignore - Firebase Functions v2 type issue
-    const userId = context.auth.uid;
+    const userId = request.auth.uid;
 
     try {
         console.log('Sync: Starting subscription sync for user:', userId);
@@ -53,7 +51,7 @@ export const syncSubscriptionStatus = functions.https.onCall(async (data, contex
         // Kullanıcının trial durumunu kontrol et
         const userDoc = await db.collection('users').doc(userId).get();
         if (!userDoc.exists) {
-            throw new functions.https.HttpsError('not-found', 'User not found');
+            throw new Error('User not found');
         }
 
         const userData = userDoc.data()!;
@@ -97,6 +95,6 @@ export const syncSubscriptionStatus = functions.https.onCall(async (data, contex
 
     } catch (error) {
         console.error('Sync: Subscription sync error:', error);
-        throw new functions.https.HttpsError('internal', `Subscription sync failed: ${error}`);
+        throw new Error(`Subscription sync failed: ${error}`);
     }
 });
