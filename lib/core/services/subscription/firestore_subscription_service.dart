@@ -66,6 +66,7 @@ class FirestoreSubscriptionService {
               hasAccess: true,
               reason: 'Aktif abonelik - Firestore kontrolü',
               remainingDays: endDateTime.difference(now).inDays,
+              subscriptionEndAt: endDateTime,
             );
           } else {
             debugPrint('❌ Subscription expired');
@@ -104,6 +105,7 @@ class FirestoreSubscriptionService {
               hasAccess: true,
               reason: 'Aktif abonelik - $remainingDays gün kaldı',
               remainingDays: remainingDays,
+              subscriptionEndAt: subscriptionEndDateTime,
             );
           } else {
             debugPrint('❌ User subscription expired');
@@ -125,6 +127,7 @@ class FirestoreSubscriptionService {
               hasAccess: true,
               reason: '30 günlük kullanım hakkı - $remainingDays gün kaldı',
               remainingDays: remainingDays,
+              trialEndAt: thirtyDaysAfterRegistration,
             );
           }
         }
@@ -141,6 +144,7 @@ class FirestoreSubscriptionService {
               hasAccess: true,
               reason: 'Aktif deneme süresi - $remainingDays gün kaldı',
               remainingDays: remainingDays,
+              trialEndAt: trialEndDateTime,
             );
           }
         }
@@ -195,6 +199,7 @@ class FirestoreSubscriptionService {
                   reason:
                       '30 günlük kullanım hakkı (fallback) - $remainingDays gün kaldı',
                   remainingDays: remainingDays,
+                  trialEndAt: thirtyDaysAfterRegistration,
                 );
               }
             }
@@ -212,6 +217,7 @@ class FirestoreSubscriptionService {
                   reason:
                       'Aktif abonelik (fallback) - $remainingDays gün kaldı',
                   remainingDays: remainingDays,
+                  subscriptionEndAt: subscriptionEndDateTime,
                 );
               }
             }
@@ -239,6 +245,8 @@ class SubscriptionCheckResult {
   final bool needsSubscription;
   final bool isTrialExpired;
   final bool isExpired;
+  final DateTime? trialEndAt;
+  final DateTime? subscriptionEndAt;
 
   const SubscriptionCheckResult({
     required this.hasAccess,
@@ -247,5 +255,7 @@ class SubscriptionCheckResult {
     this.needsSubscription = false,
     this.isTrialExpired = false,
     this.isExpired = false,
+    this.trialEndAt,
+    this.subscriptionEndAt,
   });
 }

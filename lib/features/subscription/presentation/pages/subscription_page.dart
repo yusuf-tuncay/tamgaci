@@ -1068,13 +1068,13 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     // Real-time listener'dan gelen güncel veriyi kullan
     final subscriptionState = ref.watch(subscriptionStateProvider);
     DateTime trialEnd;
-    
+
     if (subscriptionState.subscriptionResult?.trialEndAt != null) {
       trialEnd = subscriptionState.subscriptionResult!.trialEndAt!;
     } else {
       trialEnd = user.trialEndAt!;
     }
-    
+
     final remainingDays = trialEnd.difference(now).inDays;
     final remainingHours = trialEnd.difference(now).inHours % 24;
 
@@ -1188,13 +1188,13 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     // Real-time listener'dan gelen güncel veriyi kullan
     final subscriptionState = ref.watch(subscriptionStateProvider);
     DateTime subEnd;
-    
+
     if (subscriptionState.subscriptionResult?.subscriptionEndAt != null) {
       subEnd = subscriptionState.subscriptionResult!.subscriptionEndAt!;
     } else {
       subEnd = user.subscriptionEndAt!;
     }
-    
+
     final remainingDays = subEnd.difference(now).inDays;
     final remainingHours = subEnd.difference(now).inHours % 24;
 

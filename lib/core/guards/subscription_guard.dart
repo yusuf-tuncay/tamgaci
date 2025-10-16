@@ -55,9 +55,10 @@ class SubscriptionGuard extends ConsumerWidget {
 
         // ÖNCE: Kullanıcı entity'sindeki veriyi kullan (daha hızlı)
         final userCheck = _checkSubscriptionStatus(user);
-        
+
         // Eğer kullanıcı entity'sinde yeterli bilgi varsa, direkt kullan
-        if (userCheck.hasAccess || user.subscriptionStatus == SubscriptionStatus.none) {
+        if (userCheck.hasAccess ||
+            user.subscriptionStatus == SubscriptionStatus.none) {
           if (userCheck.hasAccess) {
             return child;
           } else {
