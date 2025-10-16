@@ -55,10 +55,15 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   // Cache'lenmiş subscription future
   Future<SubscriptionCheckResult>? _cachedSubscriptionFuture;
 
+  // Real-time abonelik süresi için timer
+  Timer? _subscriptionTimer;
+  DateTime _currentTime = DateTime.now();
+
   @override
   void initState() {
     super.initState();
     _startCountdown();
+    _startSubscriptionTimer();
     _cachedSubscriptionFuture = null; // Cache'i temizle
   }
 
@@ -94,6 +99,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _subscriptionTimer?.cancel();
     _couponController.dispose();
     super.dispose();
   }
@@ -115,6 +121,19 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
             _timeRemaining = Duration.zero;
             timer.cancel();
           }
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  /// Real-time abonelik süresi timer'ını başlat
+  void _startSubscriptionTimer() {
+    _subscriptionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _currentTime = DateTime.now();
         });
       } else {
         timer.cancel();
@@ -1047,7 +1066,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Kullanım süresi bilgisi (trial veya aktif abonelik)
   Widget _buildUsageInfo(User user) {
-    final now = DateTime.now();
+    // Real-time güncellenen zamanı kullan
+    final now = _currentTime;
 
     // Trial kullanıcı
     if (user.trialEndAt != null && !widget.isTrialExpired) {
