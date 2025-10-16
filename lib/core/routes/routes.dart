@@ -53,7 +53,6 @@ import 'package:tamgaci/features/settings/presentation/pages/settings_page.dart'
 import 'package:tamgaci/features/settings/presentation/pages/tax_settings_page.dart';
 import 'package:tamgaci/features/subscription/presentation/pages/subscription_page.dart';
 import 'package:tamgaci/features/subscription/presentation/pages/subscription_test_page.dart';
-import 'package:tamgaci/features/subscription/presentation/pages/payment_callback_page.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/create_supplier_page.dart';
 // import 'package:tamgaci/features/suppliers/presentation/pages/supplier_detail_page.dart'; // Unused
@@ -273,7 +272,6 @@ class TamgaciRoutes {
   static const String subscriptionTest = '/subscription-test';
 
   /// PayTR callback sayfası
-  static const String paymentCallback = '/payment/callback';
 
   /// İzinler sayfası
   static const String permissions = '/settings/permissions';
@@ -410,11 +408,6 @@ class TamgaciRoutes {
           settings: settings,
         );
 
-      case TamgaciRoutes.paymentCallback:
-        return _createRoute(
-          const PaymentCallbackPage(),
-          settings: settings,
-        );
 
       // ========== SATIŞ ROUTE'LARI ==========
 
@@ -1267,7 +1260,7 @@ class TamgaciRoutes {
   /// Route erişim izni kontrolü
   static bool canAccess(String routeName) {
     // Public route'lar - Giriş gerektirmez
-    const publicRoutes = [splash, login, register, forgotPassword, notFound, paymentCallback];
+    const publicRoutes = [splash, login, register, forgotPassword, notFound];
 
     if (publicRoutes.contains(routeName)) {
       return true;
