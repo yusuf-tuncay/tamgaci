@@ -55,11 +55,11 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Kullanıcının abonelik durumunu kontrol et ve cache'le
   Future<void> checkUserSubscription(String userId) async {
     try {
-      // Cache kontrolü - real-time listener'lar sayesinde daha az kontrol gerekli
+      // Cache kontrolü - 2 dakika cache süresi
       if (state.lastChecked != null) {
         final timeSinceLastCheck =
             DateTime.now().difference(state.lastChecked!);
-        if (timeSinceLastCheck.inMinutes < 30) {
+        if (timeSinceLastCheck.inMinutes < 2) {
           // Cache hala geçerli, tekrar kontrol etme
           return;
         }
@@ -101,9 +101,9 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Otomatik abonelik durumu güncelleme (sadece ilk yüklemede)
   Future<void> autoRefreshSubscription(String userId) async {
     // Sadece ilk kez yüklendiğinde veya cache süresi dolmuşsa kontrol et
-    if (state.subscriptionResult == null ||
-        (state.lastChecked != null &&
-            DateTime.now().difference(state.lastChecked!).inMinutes >= 30)) {
+    if (state.subscriptionResult == null || 
+        (state.lastChecked != null && 
+         DateTime.now().difference(state.lastChecked!).inMinutes >= 2)) {
       await checkUserSubscription(userId);
     }
   }
