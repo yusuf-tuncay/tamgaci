@@ -1275,7 +1275,7 @@ class TamgaciRoutes {
   /// Route erişim izni kontrolü
   static bool canAccess(String routeName) {
     // Public route'lar - Giriş gerektirmez
-    const publicRoutes = [splash, login, register, forgotPassword, notFound];
+    const publicRoutes = [splash, login, register, forgotPassword, notFound, paymentSuccess, paymentFail];
 
     if (publicRoutes.contains(routeName)) {
       return true;
