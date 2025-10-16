@@ -1068,13 +1068,20 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     // Real-time listener'dan gelen güncel veriyi kullan
     final subscriptionState = ref.watch(subscriptionStateProvider);
     DateTime trialEnd;
-
+    
+    // Real-time listener'dan gelen veriyi öncelikle kullan
     if (subscriptionState.subscriptionResult?.trialEndAt != null) {
       trialEnd = subscriptionState.subscriptionResult!.trialEndAt!;
-    } else {
+      debugPrint('🔄 Trial: Using real-time data: $trialEnd');
+    } else if (user.trialEndAt != null) {
       trialEnd = user.trialEndAt!;
+      debugPrint('🔄 Trial: Using user entity data: $trialEnd');
+    } else {
+      // Fallback: şu anki zaman + 30 gün
+      trialEnd = now.add(const Duration(days: 30));
+      debugPrint('🔄 Trial: Using fallback data: $trialEnd');
     }
-
+    
     final remainingDays = trialEnd.difference(now).inDays;
     final remainingHours = trialEnd.difference(now).inHours % 24;
 
@@ -1188,13 +1195,20 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     // Real-time listener'dan gelen güncel veriyi kullan
     final subscriptionState = ref.watch(subscriptionStateProvider);
     DateTime subEnd;
-
+    
+    // Real-time listener'dan gelen veriyi öncelikle kullan
     if (subscriptionState.subscriptionResult?.subscriptionEndAt != null) {
       subEnd = subscriptionState.subscriptionResult!.subscriptionEndAt!;
-    } else {
+      debugPrint('🔄 Subscription: Using real-time data: $subEnd');
+    } else if (user.subscriptionEndAt != null) {
       subEnd = user.subscriptionEndAt!;
+      debugPrint('🔄 Subscription: Using user entity data: $subEnd');
+    } else {
+      // Fallback: şu anki zaman + 30 gün
+      subEnd = now.add(const Duration(days: 30));
+      debugPrint('🔄 Subscription: Using fallback data: $subEnd');
     }
-
+    
     final remainingDays = subEnd.difference(now).inDays;
     final remainingHours = subEnd.difference(now).inHours % 24;
 

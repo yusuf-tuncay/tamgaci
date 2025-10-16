@@ -130,6 +130,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
           subscriptionResult: null,
           lastChecked: null,
         );
+        // Real-time güncelleme için hemen kontrol et
         checkUserSubscription(userId);
       }
     }, onError: (error) {
