@@ -58,6 +58,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   // Real-time abonelik süresi için timer
   Timer? _subscriptionTimer;
   DateTime _currentTime = DateTime.now();
+  
+  // Listener'ın sadece bir kere başlatılması için
+  bool _listenerStarted = false;
 
   @override
   void initState() {
@@ -70,12 +73,15 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Real-time listener başlat
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _startRealTimeListener();
-      }
-    });
+    // Real-time listener başlat (sadece bir kere)
+    if (!_listenerStarted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _startRealTimeListener();
+          _listenerStarted = true;
+        }
+      });
+    }
   }
 
   /// Real-time listener başlat (manuel güncelleme yerine)
@@ -101,6 +107,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     _countdownTimer?.cancel();
     _subscriptionTimer?.cancel();
     _couponController.dispose();
+    _listenerStarted = false;
     super.dispose();
   }
 
@@ -130,10 +137,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
   /// Real-time abonelik süresi timer'ını başlat
   void _startSubscriptionTimer() {
+    debugPrint('🕐 SubscriptionPage: Starting subscription timer');
     _subscriptionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
           _currentTime = DateTime.now();
+          debugPrint('🕐 SubscriptionPage: Timer tick - ${_currentTime.toIso8601String()}');
         });
       } else {
         timer.cancel();
@@ -192,8 +201,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 const SizedBox(height: 32),
               ],
 
-              // Kullanım süresi bilgisi (trial veya aktif abonelik)
-              if (user != null && _shouldShowUsageInfo(user)) ...[
+              // Kullanım süresi bilgisi (trial veya aktif abonelik) - Real-time timer için her zaman render et
+              if (user != null) ...[
                 _buildUsageInfo(user),
                 const SizedBox(height: 32),
               ],
@@ -1048,21 +1057,6 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
-  /// Kullanım süresi bilgisini göstermeli mi?
-  bool _shouldShowUsageInfo(User user) {
-    // Trial kullanıcılar için
-    if (user.trialEndAt != null && !widget.isTrialExpired) {
-      return true;
-    }
-
-    // Aktif abonelik kullanıcıları için
-    if (user.subscriptionStatus == SubscriptionStatus.active &&
-        user.subscriptionEndAt != null) {
-      return true;
-    }
-
-    return false;
-  }
 
   /// Kullanım süresi bilgisi (trial veya aktif abonelik)
   Widget _buildUsageInfo(User user) {
@@ -1080,6 +1074,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       return _buildSubscriptionUsageInfo(user, now);
     }
 
+    // Abonelik yoksa gizli widget döndür (timer çalışmaya devam etsin)
     return const SizedBox.shrink();
   }
 
