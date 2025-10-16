@@ -79,6 +79,16 @@ class SubscriptionGuard extends ConsumerWidget {
           }
         }
 
+        // Real-time listener'dan gelen güncellemeleri UI'ya yansıt
+        if (subscriptionState.subscriptionResult != null) {
+          final subscriptionCheck = subscriptionState.subscriptionResult!;
+          if (subscriptionCheck.hasAccess) {
+            return child;
+          } else {
+            return _buildRedirectToSubscription(context, subscriptionCheck);
+          }
+        }
+
         // Sadece loading durumunda log yazdır
         if (subscriptionState.isLoading) {
           return loadingWidget ?? _buildLoadingWidget();
