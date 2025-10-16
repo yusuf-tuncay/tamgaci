@@ -46,6 +46,13 @@ class SubscriptionGuard extends ConsumerWidget {
           return _buildRedirectToLogin(context);
         }
 
+        // Real-time listener'ı başlat
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref
+              .read(subscriptionStateProvider.notifier)
+              .listenToSubscriptionUpdates(user.id);
+        });
+
         // ÖNCE: Kullanıcı entity'sindeki veriyi kullan (daha hızlı)
         final userCheck = _checkSubscriptionStatus(user);
         

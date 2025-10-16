@@ -790,74 +790,56 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     _buildActionCardHorizontal(
-                      isMobile ? 'Fatura' : 'Fatura Oluştur', 
-                      Icons.receipt_long,
-                      TamgaciConstants.primaryColor, 
-                      () {
-                        Navigator.of(context).pushNamed(TamgaciRoutes.invoicesList);
-                      }, 
-                      isDark
-                    ),
+                        isMobile ? 'Fatura' : 'Fatura Oluştur',
+                        Icons.receipt_long,
+                        TamgaciConstants.primaryColor, () {
+                      Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.invoicesList);
+                    }, isDark),
+                    const SizedBox(width: 12),
+                    _buildActionCardHorizontal(isMobile ? 'Ürün' : 'Ürün Ekle',
+                        Icons.inventory_2, Colors.orange, () {
+                      Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.createProduct);
+                    }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
-                      isMobile ? 'Ürün' : 'Ürün Ekle', 
-                      Icons.inventory_2, 
-                      Colors.orange,
-                      () {
-                        Navigator.of(context).pushNamed(TamgaciRoutes.createProduct);
-                      }, 
-                      isDark
-                    ),
+                        isMobile ? 'Müşteri' : 'Müşteri Ekle',
+                        Icons.person_add,
+                        Colors.blue, () {
+                      Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.createCustomer);
+                    }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
-                      isMobile ? 'Müşteri' : 'Müşteri Ekle', 
-                      Icons.person_add, 
-                      Colors.blue,
-                      () {
-                        Navigator.of(context).pushNamed(TamgaciRoutes.createCustomer);
-                      }, 
-                      isDark
-                    ),
+                        isMobile ? 'Stok' : 'Stok İşlemi',
+                        Icons.warehouse,
+                        Colors.purple, () {
+                      Navigator.of(context).pushNamed(TamgaciRoutes.inventory);
+                    }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
-                      isMobile ? 'Stok' : 'Stok İşlemi', 
-                      Icons.warehouse, 
-                      Colors.purple,
-                      () {
-                        Navigator.of(context).pushNamed(TamgaciRoutes.inventory);
-                      }, 
-                      isDark
-                    ),
+                        isMobile ? 'Depo' : 'Depo Listesi',
+                        Icons.list,
+                        Colors.indigo, () {
+                      Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.warehouseList);
+                    }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
-                      isMobile ? 'Depo' : 'Depo Listesi', 
-                      Icons.list, 
-                      Colors.indigo, 
-                      () {
-                        Navigator.of(context).pushNamed(TamgaciRoutes.warehouseList);
-                      }, 
-                      isDark
-                    ),
+                        isMobile ? 'Stok Listesi' : 'Stok Listesi',
+                        Icons.inventory,
+                        Colors.teal, () {
+                      Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
+                    }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
-                      isMobile ? 'Stok Listesi' : 'Stok Listesi', 
-                      Icons.inventory, 
-                      Colors.teal,
-                      () {
-                        Navigator.of(context).pushNamed(TamgaciRoutes.stockList);
-                      }, 
-                      isDark
-                    ),
-                    const SizedBox(width: 12),
-                    _buildActionCardHorizontal(
-                      isMobile ? 'Test' : 'Logger Test', 
-                      Icons.color_lens, 
-                      Colors.pink,
-                      () {
-                        Navigator.of(context).pushNamed(TamgaciRoutes.colorizedLoggerTest);
-                      }, 
-                      isDark
-                    ),
+                        isMobile ? 'Test' : 'Logger Test',
+                        Icons.color_lens,
+                        Colors.pink, () {
+                      Navigator.of(context)
+                          .pushNamed(TamgaciRoutes.colorizedLoggerTest);
+                    }, isDark),
                   ],
                 ),
               );

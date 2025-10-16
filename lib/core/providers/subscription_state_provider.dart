@@ -111,6 +111,29 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
     debugPrint(
         '🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
 
+    // Kullanıcı verilerini dinle (asıl abonelik verisi burada)
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data()!;
+        debugPrint(
+            '🔔 SubscriptionStateNotifier: User data updated for user: $userId');
+        debugPrint('🔔 SubscriptionStateNotifier: subscriptionEndAt: ${data['subscriptionEndAt']}');
+        debugPrint('🔔 SubscriptionStateNotifier: subscriptionStatus: ${data['subscriptionStatus']}');
+        
+        // Cache'i temizle ve abonelik durumunu yenile
+        state = state.copyWith(
+          subscriptionResult: null,
+          lastChecked: null,
+        );
+        checkUserSubscription(userId);
+      }
+    });
+
+    // Ek olarak subscription_updates collection'ını da dinle
     FirebaseFirestore.instance
         .collection('subscription_updates')
         .doc(userId)
