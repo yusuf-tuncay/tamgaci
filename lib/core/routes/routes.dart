@@ -53,6 +53,8 @@ import 'package:tamgaci/features/settings/presentation/pages/settings_page.dart'
 import 'package:tamgaci/features/settings/presentation/pages/tax_settings_page.dart';
 import 'package:tamgaci/features/subscription/presentation/pages/subscription_page.dart';
 import 'package:tamgaci/features/subscription/presentation/pages/subscription_test_page.dart';
+import 'package:tamgaci/features/subscription/presentation/pages/payment_success_page.dart';
+import 'package:tamgaci/features/subscription/presentation/pages/payment_fail_page.dart';
 import 'package:tamgaci/features/splash/presentation/pages/splash_page.dart';
 import 'package:tamgaci/features/suppliers/presentation/pages/create_supplier_page.dart';
 // import 'package:tamgaci/features/suppliers/presentation/pages/supplier_detail_page.dart'; // Unused
@@ -271,7 +273,9 @@ class TamgaciRoutes {
   static const String subscription = '/settings/subscription';
   static const String subscriptionTest = '/subscription-test';
 
-  /// PayTR callback sayfası
+  /// Ödeme sonuç sayfaları (Public routes)
+  static const String paymentSuccess = '/payment/success';
+  static const String paymentFail = '/payment/fail';
 
   /// İzinler sayfası
   static const String permissions = '/settings/permissions';
@@ -408,6 +412,19 @@ class TamgaciRoutes {
           settings: settings,
         );
 
+      // ========== ÖDEME SONUÇ SAYFALARI (PUBLIC ROUTES) ==========
+      
+      case TamgaciRoutes.paymentSuccess:
+        return _createRoute(
+          const PaymentSuccessPage(),
+          settings: settings,
+        );
+
+      case TamgaciRoutes.paymentFail:
+        return _createRoute(
+          const PaymentFailPage(),
+          settings: settings,
+        );
 
       // ========== SATIŞ ROUTE'LARI ==========
 
@@ -1260,7 +1277,7 @@ class TamgaciRoutes {
   /// Route erişim izni kontrolü
   static bool canAccess(String routeName) {
     // Public route'lar - Giriş gerektirmez
-    const publicRoutes = [splash, login, register, forgotPassword, notFound];
+    const publicRoutes = [splash, login, register, forgotPassword, notFound, paymentSuccess, paymentFail];
 
     if (publicRoutes.contains(routeName)) {
       return true;
