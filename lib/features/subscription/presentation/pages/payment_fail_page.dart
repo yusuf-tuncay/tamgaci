@@ -21,7 +21,8 @@ class _PaymentFailPageState extends State<PaymentFailPage> {
     super.initState();
     debugPrint('🔄 PaymentFailPage: initState called');
     debugPrint('🔍 PaymentFailPage: Current URL: ${Uri.base}');
-    debugPrint('🔍 PaymentFailPage: Route: ${ModalRoute.of(context)?.settings.name}');
+    debugPrint(
+        '🔍 PaymentFailPage: Route: ${ModalRoute.of(context)?.settings.name}');
     _closeTabAfterDelay();
   }
 

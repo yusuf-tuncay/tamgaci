@@ -305,10 +305,10 @@ class PaytrService {
       debugPrint('Creating subscription record for order: $orderId');
       debugPrint('Plan type: $planType');
       debugPrint('Amount: $amount');
-      
+
       final firestore = FirebaseFirestore.instance;
       final now = DateTime.now();
-      
+
       // Abonelik kaydı oluştur
       await firestore.collection('subscriptions').doc(orderId).set({
         'id': orderId,
@@ -321,7 +321,7 @@ class PaytrService {
         'createdAt': Timestamp.fromDate(now),
         'updatedAt': Timestamp.fromDate(now),
       });
-      
+
       debugPrint('Subscription record created successfully in Firestore');
     } catch (e) {
       debugPrint('Error creating subscription record: $e');

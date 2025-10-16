@@ -1386,8 +1386,10 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         debugPrint('🧪 TEST: Success: https://tamgaci.web.app/payment/success');
         debugPrint('🧪 TEST: Fail: https://tamgaci.web.app/payment/fail');
         debugPrint('🧪 TEST: Hash versions:');
-        debugPrint('🧪 TEST: Success Hash: https://tamgaci.web.app/#/payment/success');
-        debugPrint('🧪 TEST: Fail Hash: https://tamgaci.web.app/#/payment/fail');
+        debugPrint(
+            '🧪 TEST: Success Hash: https://tamgaci.web.app/#/payment/success');
+        debugPrint(
+            '🧪 TEST: Fail Hash: https://tamgaci.web.app/#/payment/fail');
       } else {
         // Hata mesajı göster
         if (mounted) {

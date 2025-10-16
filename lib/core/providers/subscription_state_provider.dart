@@ -112,10 +112,11 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   void listenToSubscriptionUpdates(String userId) {
     // Listener zaten başlatılmışsa tekrar başlatma
     if (state.subscriptionResult != null && state.lastChecked != null) {
-      debugPrint('🔔 SubscriptionStateNotifier: Listener already active for user: $userId');
+      debugPrint(
+          '🔔 SubscriptionStateNotifier: Listener already active for user: $userId');
       return;
     }
-    
+
     debugPrint(
         '🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
 

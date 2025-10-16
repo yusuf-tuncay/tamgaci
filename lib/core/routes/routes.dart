@@ -437,7 +437,7 @@ class TamgaciRoutes {
         );
 
       // ========== TEST ROUTES (DEBUG) ==========
-      
+
       case '/test/payment/success':
         debugPrint('🔍 TEST: Payment success route accessed');
         return _createRoute(
@@ -453,7 +453,7 @@ class TamgaciRoutes {
         );
 
       // ========== MANUAL TEST ROUTES ==========
-      
+
       case '/payment/success':
         debugPrint('🔍 MANUAL: Payment success route accessed (no hash)');
         return _createRoute(

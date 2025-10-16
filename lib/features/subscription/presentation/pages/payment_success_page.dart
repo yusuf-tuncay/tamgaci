@@ -21,7 +21,8 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
     super.initState();
     debugPrint('🔄 PaymentSuccessPage: initState called');
     debugPrint('🔍 PaymentSuccessPage: Current URL: ${Uri.base}');
-    debugPrint('🔍 PaymentSuccessPage: Route: ${ModalRoute.of(context)?.settings.name}');
+    debugPrint(
+        '🔍 PaymentSuccessPage: Route: ${ModalRoute.of(context)?.settings.name}');
     _closeTabAfterDelay();
   }
 
