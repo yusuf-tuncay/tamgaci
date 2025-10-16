@@ -18,6 +18,7 @@ import '../../../../core/services/payment/paytr_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:html' as html;
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -1345,9 +1346,13 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
           _triggerRealTimeUpdate();
         }
 
-        // Hem web hem mobile için aynı sekmede WebView kullan
+        // Platform-specific ödeme sayfası göster
         if (mounted) {
-          _showPaymentWebView(context, iframeUrl);
+          if (kIsWeb) {
+            _showPaymentWebView(context, iframeUrl);
+          } else {
+            _showPaymentWebView(context, iframeUrl);
+          }
         }
       } else {
         // Hata mesajı göster
@@ -1379,8 +1384,34 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     }
   }
 
-  /// PayTR ödeme sayfasını WebView ile göster
+  /// PayTR ödeme sayfasını platform-specific olarak göster
   void _showPaymentWebView(BuildContext context, String paymentUrl) {
+    if (kIsWeb) {
+      // Web platformu için iframe kullan
+      _showPaymentIframe(context, paymentUrl);
+    } else {
+      // Mobile platformu için WebView kullan
+      _showPaymentMobileWebView(context, paymentUrl);
+    }
+  }
+
+  /// Web platformu için yeni sekmede ödeme sayfası
+  void _showPaymentIframe(BuildContext context, String paymentUrl) {
+    // Web için yeni sekmede aç ama callback URL'leri subscription sayfasına yönlendir
+    html.window.open(paymentUrl, '_blank');
+
+    // Kullanıcıya bilgi ver
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+            'Ödeme sayfası yeni sekmede açıldı. Ödeme tamamlandıktan sonra bu sayfaya döneceksiniz.'),
+        duration: Duration(seconds: 5),
+      ),
+    );
+  }
+
+  /// Mobile platformu için WebView ile ödeme sayfası
+  void _showPaymentMobileWebView(BuildContext context, String paymentUrl) {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => Scaffold(
@@ -1399,7 +1430,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                 NavigationDelegate(
                   onNavigationRequest: (NavigationRequest request) {
                     // PayTR callback URL'lerini kontrol et
-                    if (request.url.contains('paytr.com/callback') || 
+                    if (request.url.contains('paytr.com/callback') ||
                         request.url.contains('success') ||
                         request.url.contains('fail')) {
                       // Ödeme tamamlandı, sadece WebView'i kapat
