@@ -55,59 +55,57 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   // Cache'lenmiş subscription future
   Future<SubscriptionCheckResult>? _cachedSubscriptionFuture;
 
-  // Real-time abonelik süresi için timer
-  Timer? _subscriptionTimer;
-  DateTime _currentTime = DateTime.now();
-  
-  // Listener'ın sadece bir kere başlatılması için
-  bool _listenerStarted = false;
+  // Basit Firestore listener
+  StreamSubscription<DocumentSnapshot>? _userListener;
 
   @override
   void initState() {
     super.initState();
     _startCountdown();
-    _startSubscriptionTimer();
     _cachedSubscriptionFuture = null; // Cache'i temizle
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Real-time listener başlat (sadece bir kere)
-    if (!_listenerStarted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _startRealTimeListener();
-          _listenerStarted = true;
-        }
-      });
-    }
+    // Basit Firestore listener başlat
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _startSimpleFirestoreListener();
+      }
+    });
   }
 
-  /// Real-time listener başlat (manuel güncelleme yerine)
-  void _startRealTimeListener() {
+  /// Basit Firestore listener başlat
+  void _startSimpleFirestoreListener() {
     if (!mounted) return;
 
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
-      // Real-time listener başlat
-      ref
-          .read(subscriptionStateProvider.notifier)
-          .listenToSubscriptionUpdates(user.id);
-
-      // Sadece ilk yüklemede kontrol et
-      ref
-          .read(subscriptionStateProvider.notifier)
-          .autoRefreshSubscription(user.id);
+      debugPrint('🔔 SubscriptionPage: Starting simple Firestore listener for user: ${user.id}');
+      
+      _userListener = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.id)
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.exists && mounted) {
+          debugPrint('🔔 SubscriptionPage: User data updated - forcing rebuild');
+          setState(() {
+            // Widget'ı yeniden build et
+          });
+        }
+      }, onError: (error) {
+        debugPrint('❌ SubscriptionPage: Firestore listener error: $error');
+      });
     }
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
-    _subscriptionTimer?.cancel();
+    _userListener?.cancel();
     _couponController.dispose();
-    _listenerStarted = false;
     super.dispose();
   }
 
@@ -135,20 +133,6 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     });
   }
 
-  /// Real-time abonelik süresi timer'ını başlat
-  void _startSubscriptionTimer() {
-    debugPrint('🕐 SubscriptionPage: Starting subscription timer');
-    _subscriptionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {
-          _currentTime = DateTime.now();
-          debugPrint('🕐 SubscriptionPage: Timer tick - ${_currentTime.toIso8601String()}');
-        });
-      } else {
-        timer.cancel();
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -1057,11 +1041,10 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     );
   }
 
-
   /// Kullanım süresi bilgisi (trial veya aktif abonelik)
   Widget _buildUsageInfo(User user) {
-    // Real-time güncellenen zamanı kullan
-    final now = _currentTime;
+    // Firestore listener sayesinde her güncellemede yeniden hesaplanır
+    final now = DateTime.now();
 
     // Trial kullanıcı
     if (user.trialEndAt != null && !widget.isTrialExpired) {
@@ -1074,7 +1057,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       return _buildSubscriptionUsageInfo(user, now);
     }
 
-    // Abonelik yoksa gizli widget döndür (timer çalışmaya devam etsin)
+    // Abonelik yoksa gizli widget döndür
     return const SizedBox.shrink();
   }
 
