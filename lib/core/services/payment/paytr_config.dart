@@ -25,8 +25,11 @@ class PaytrConfig {
 
   /// Callback URL'leri (Public payment result pages)
   /// PayTR için hash (#) karakteri sorun yaratabilir, URL'leri düzelt
-  static const String successUrl = 'https://tamgaci.web.app/payment/success';
-  static const String failUrl = 'https://tamgaci.web.app/payment/fail';
+  /// Success URL'i subscription sayfasına yönlendir (auth state korunur)
+  static const String successUrl =
+      'https://tamgaci.web.app/payment/success?from=payment';
+  static const String failUrl =
+      'https://tamgaci.web.app/payment/fail?from=payment';
   static const String callbackUrl =
       'https://us-central1-tamgaci.cloudfunctions.net/paytrCallback';
 

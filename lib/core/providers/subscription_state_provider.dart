@@ -95,6 +95,11 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Cache'i yenile (sadece real-time listener tetiklenmediğinde)
   Future<void> refreshSubscription(String userId) async {
     debugPrint('🔄 SubscriptionStateNotifier: Manual refresh requested');
+
+    // Cache'i tamamen temizle
+    state = const SubscriptionState();
+
+    // Yeniden kontrol et
     await checkUserSubscription(userId);
   }
 
@@ -127,15 +132,28 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         .snapshots()
         .listen((snapshot) {
       if (snapshot.exists && snapshot.data() != null) {
-        // Log yoğunluğunu azalt - sadece gerçek değişikliklerde logla
-        // debugPrint('🔔 SubscriptionStateNotifier: User data updated for user: $userId');
+        final data = snapshot.data()!;
 
-        // Cache'i temizle ve abonelik durumunu yenile
-        state = state.copyWith(
-          subscriptionResult: null,
-          lastChecked: null,
-        );
-        checkUserSubscription(userId);
+        // PayTR callback'inden sonra subscription alanları güncellenir
+        // Bu durumda realtime listener tetiklenmeli
+        final hasSubscriptionFields = data.containsKey('subscriptionEndAt') ||
+            data.containsKey('subscriptionStartAt') ||
+            data.containsKey('subscriptionStatus') ||
+            data.containsKey('subscriptionPlan');
+
+        if (hasSubscriptionFields) {
+          debugPrint(
+              '🔔 SubscriptionStateNotifier: User data updated for user: $userId');
+          debugPrint(
+              '🔔 SubscriptionStateNotifier: Subscription fields detected, refreshing...');
+
+          // Cache'i temizle ve abonelik durumunu yenile
+          state = state.copyWith(
+            subscriptionResult: null,
+            lastChecked: null,
+          );
+          checkUserSubscription(userId);
+        }
       }
     }, onError: (error) {
       debugPrint(

@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/domain/entities/user.dart';
 import '../../features/subscription/presentation/pages/subscription_page.dart';
@@ -228,7 +229,7 @@ class SubscriptionGuard extends ConsumerWidget {
   /// Login sayfasına yönlendirme
   Widget _buildRedirectToLogin(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.of(context).pushReplacementNamed('/login');
+      context.go('/login');
     });
     return _buildLoadingWidget();
   }
@@ -237,15 +238,7 @@ class SubscriptionGuard extends ConsumerWidget {
   Widget _buildRedirectToSubscription(
       BuildContext context, SubscriptionCheckResult result) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => SubscriptionPage(
-            isTrialExpired: result.isTrialExpired,
-            isExpired: result.isExpired,
-            reason: result.reason,
-          ),
-        ),
-      );
+      context.go('/settings/subscription');
     });
     return _buildLoadingWidget();
   }

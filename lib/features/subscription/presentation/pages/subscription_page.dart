@@ -43,6 +43,7 @@ class SubscriptionPage extends ConsumerStatefulWidget {
 }
 
 class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
+  bool _hasCheckedPaymentResult = false;
   sub.SubscriptionPlanType? _selectedPlan;
   Timer? _countdownTimer;
   Duration _timeRemaining = Duration.zero;
@@ -63,6 +64,54 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     super.initState();
     _startCountdown();
     _cachedSubscriptionFuture = null; // Cache'i temizle
+    _checkPaymentResult();
+  }
+
+  /// Payment sonucunu kontrol et
+  void _checkPaymentResult() {
+    if (_hasCheckedPaymentResult) return;
+    _hasCheckedPaymentResult = true;
+
+    // URL parametrelerini kontrol et
+    final uri = Uri.base;
+    final paymentResult = uri.queryParameters['payment'];
+
+    debugPrint('🔍 SubscriptionPage: Checking payment result: $paymentResult');
+    debugPrint('🔍 SubscriptionPage: Current URL: $uri');
+
+    if (paymentResult == 'success') {
+      _showPaymentSuccessMessage();
+    } else if (paymentResult == 'fail') {
+      _showPaymentFailMessage();
+    }
+  }
+
+  /// Payment başarı mesajı göster
+  void _showPaymentSuccessMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('✅ Ödeme başarıyla tamamlandı! Aboneliğiniz aktif edildi.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  /// Payment hata mesajı göster
+  void _showPaymentFailMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('❌ Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
   }
 
   @override
@@ -1707,9 +1756,22 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
+      debugPrint('🔄 SubscriptionPage: Manual refresh requested');
+
+      // Cache'i temizle
+      _cachedSubscriptionFuture = null;
+
+      // Subscription state'i yenile
       await ref
           .read(subscriptionStateProvider.notifier)
           .refreshSubscription(user.id);
+
+      // Widget'ı yeniden build et
+      if (mounted) {
+        setState(() {
+          // Force rebuild
+        });
+      }
     }
   }
 

@@ -7,7 +7,12 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Ödeme başarı sayfası - Public route (authentication gerektirmez)
 class PaymentSuccessPage extends StatefulWidget {
-  const PaymentSuccessPage({super.key});
+  final bool fromPayment;
+
+  const PaymentSuccessPage({
+    super.key,
+    this.fromPayment = false,
+  });
 
   @override
   State<PaymentSuccessPage> createState() => _PaymentSuccessPageState();
@@ -19,31 +24,77 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
     super.initState();
     debugPrint('🔄 PaymentSuccessPage: initState called');
     debugPrint('🔍 PaymentSuccessPage: Current URL: ${Uri.base}');
+    debugPrint('🔍 PaymentSuccessPage: Current path: ${Uri.base.path}');
+    debugPrint('🔍 PaymentSuccessPage: Current fragment: ${Uri.base.fragment}');
+    debugPrint('🔍 PaymentSuccessPage: Current query: ${Uri.base.query}');
+    debugPrint('🔍 PaymentSuccessPage: From payment: ${widget.fromPayment}');
     debugPrint(
         '🔍 PaymentSuccessPage: Route: ${ModalRoute.of(context)?.settings.name}');
 
-    // Hemen kapanmayı dene
-    _closeTabImmediately();
+    // Payment'tan geliyorsa parent window'a mesaj gönder ve sekmeyi kapat
+    if (widget.fromPayment) {
+      _notifyParentAndClose();
+    } else {
+      // Normal kullanıcı için sadece bilgi göster
+      _showSuccessMessage();
+    }
   }
 
-  /// Sekmeyi hemen kapat
-  void _closeTabImmediately() {
-    debugPrint('🔄 PaymentSuccessPage: Attempting immediate tab close');
+  /// Parent window'a mesaj gönder ve sekmeyi kapat
+  void _notifyParentAndClose() {
+    debugPrint('🔄 PaymentSuccessPage: Notifying parent window');
 
-    // Hemen kapatmayı dene
-    html.window.close();
+    try {
+      // Parent window'a ödeme başarılı mesajı gönder
+      html.window.opener?.postMessage('payment_success', '*');
+      debugPrint('✅ PaymentSuccessPage: Success message sent to parent');
 
-    // 1 saniye sonra tekrar dene
-    Future.delayed(const Duration(seconds: 1), () {
-      debugPrint('🔄 PaymentSuccessPage: Second attempt to close window');
-      html.window.close();
+      // Parent window'u subscription sayfasına yönlendir
+      html.window.opener?.location.href =
+          'https://tamgaci.web.app/settings/subscription?payment=success';
+      debugPrint(
+          '✅ PaymentSuccessPage: Redirected parent to subscription page');
+    } catch (e) {
+      debugPrint('❌ PaymentSuccessPage: Failed to send message to parent: $e');
+    }
+
+    // 2 saniye sonra sekmeyi kapat
+    Future.delayed(const Duration(seconds: 2), () {
+      debugPrint('🔄 PaymentSuccessPage: Attempting to close window');
+      try {
+        html.window.close();
+      } catch (e) {
+        debugPrint('❌ PaymentSuccessPage: Failed to close window: $e');
+        // Kapatılamazsa kullanıcıya bilgi ver
+        _showCloseMessage();
+      }
     });
+  }
 
-    // 3 saniye sonra son deneme
-    Future.delayed(const Duration(seconds: 3), () {
-      debugPrint('🔄 PaymentSuccessPage: Final attempt to close window');
-      html.window.close();
-    });
+  /// Kullanıcıya sekmeyi kapatması gerektiğini söyle
+  void _showCloseMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ödeme başarılı! Bu sekmeyi kapatabilirsiniz.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  /// Normal kullanıcı için başarı mesajı göster
+  void _showSuccessMessage() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ödeme başarıyla tamamlandı!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   @override
@@ -100,8 +151,16 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Sadece sekmeyi kapat
-                      html.window.close();
+                      // Parent window'a mesaj gönder, yönlendir ve sekmeyi kapat
+                      try {
+                        html.window.opener?.postMessage('payment_success', '*');
+                        html.window.opener?.location.href =
+                            'https://tamgaci.web.app/settings/subscription?payment=success';
+                        html.window.close();
+                      } catch (e) {
+                        debugPrint('❌ PaymentSuccessPage: Failed to close: $e');
+                        _showCloseMessage();
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
