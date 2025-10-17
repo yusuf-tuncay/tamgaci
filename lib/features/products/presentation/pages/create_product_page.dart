@@ -2260,7 +2260,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         if (mounted) {
           Future.microtask(() {
             if (!mounted) return;
-            context.goNamed('products');
+            context.goNamed('products-list');
           });
         }
       } else {
@@ -2276,7 +2276,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         if (mounted) {
           Future.microtask(() {
             if (!mounted) return;
-            context.goNamed('products');
+            context.goNamed('products-list');
           });
         }
       }

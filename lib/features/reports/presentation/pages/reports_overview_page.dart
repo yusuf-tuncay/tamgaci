@@ -703,7 +703,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Aylık gelir ve gider analizi',
                 icon: Icons.trending_up_outlined,
                 color: TamgaciConstants.primaryColor,
-                onTap: () => context.pushNamed('income-expense-report'),
+                onTap: () => context.goNamed('income-expense-report'),
                 isFavorite: true,
                 lastGenerated:
                     DateTime.now().subtract(const Duration(hours: 2)),
@@ -713,7 +713,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Satış ekibi ve ürün performansı',
                 icon: Icons.bar_chart_outlined,
                 color: TamgaciConstants.successColor,
-                onTap: () => context.pushNamed('sales-performance-report'),
+                onTap: () => context.goNamed('sales-performance-report'),
                 isFavorite: false,
                 lastGenerated: DateTime.now().subtract(const Duration(days: 1)),
               ),
@@ -722,7 +722,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Müşteri segmentasyonu ve davranış analizi',
                 icon: Icons.people_outline,
                 color: TamgaciConstants.warningColor,
-                onTap: () => context.pushNamed('customer-analysis-report'),
+                onTap: () => context.goNamed('customer-analysis-report'),
                 isFavorite: true,
                 lastGenerated: DateTime.now().subtract(const Duration(days: 3)),
               ),
@@ -736,7 +736,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Giriş ve çıkış nakit akışı',
                 icon: Icons.account_balance_wallet_outlined,
                 color: TamgaciConstants.infoColor,
-                onTap: () => context.pushNamed('cash-flow-report'),
+                onTap: () => context.goNamed('cash-flow-report'),
                 isFavorite: false,
                 lastGenerated:
                     DateTime.now().subtract(const Duration(hours: 6)),
@@ -746,7 +746,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Detaylı kar-zarar analizi',
                 icon: Icons.account_balance_outlined,
                 color: TamgaciConstants.errorColor,
-                onTap: () => context.pushNamed('profit-loss-report'),
+                onTap: () => context.goNamed('profit-loss-report'),
                 isFavorite: true,
                 lastGenerated: DateTime.now().subtract(const Duration(days: 2)),
               ),
@@ -760,7 +760,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Mevcut stok seviyeleri ve uyarılar',
                 icon: Icons.inventory_2_outlined,
                 color: TamgaciConstants.secondaryColor,
-                onTap: () => context.pushNamed('inventory-status-report'),
+                onTap: () => context.goNamed('inventory-status-report'),
                 isFavorite: false,
                 lastGenerated:
                     DateTime.now().subtract(const Duration(hours: 4)),
@@ -770,7 +770,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Giriş-çıkış hareketleri',
                 icon: Icons.swap_horiz_outlined,
                 color: TamgaciConstants.primaryColor,
-                onTap: () => context.pushNamed('inventory-movement-report'),
+                onTap: () => context.goNamed('inventory-movement-report'),
                 isFavorite: true,
                 lastGenerated: DateTime.now().subtract(const Duration(days: 1)),
               ),
@@ -784,7 +784,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                 subtitle: 'Ödeme geçmişi ve risk analizi',
                 icon: Icons.payment_outlined,
                 color: TamgaciConstants.warningColor,
-                onTap: () => context.pushNamed('customer-payments-report'),
+                onTap: () => context.goNamed('customer-payments-report'),
                 isFavorite: false,
                 lastGenerated: DateTime.now().subtract(const Duration(days: 5)),
               ),
@@ -812,7 +812,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                   style: GoogleFonts.poppins(fontSize: 12)),
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamed('income-expense-report');
+                context.goNamed('income-expense-report');
               },
             ),
             ListTile(
@@ -824,7 +824,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                   style: GoogleFonts.poppins(fontSize: 12)),
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamed('sales-performance-report');
+                context.goNamed('sales-performance-report');
               },
             ),
             ListTile(
@@ -835,7 +835,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                   style: GoogleFonts.poppins(fontSize: 12)),
               onTap: () {
                 Navigator.pop(context);
-                context.pushNamed('cash-flow-report');
+                context.goNamed('cash-flow-report');
               },
             ),
           ],

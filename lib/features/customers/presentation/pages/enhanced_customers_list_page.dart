@@ -10,7 +10,7 @@ import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/services/excel_service.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
@@ -321,7 +321,7 @@ class _EnhancedCustomersListPageState
               padding: const EdgeInsets.all(16),
               child: FloatingActionButton.extended(
                 onPressed: () {
-                  Navigator.pushNamed(context, TamgaciRoutes.createCustomer);
+                  context.go('/customers/create');
                 },
                 icon: const Icon(Icons.person_add),
                 label: Text(
@@ -867,7 +867,7 @@ class _EnhancedCustomersListPageState
       onTap: () {
         Navigator.pushNamed(
           context,
-          TamgaciRoutes.customerDetail,
+          '/customers/detail',
           arguments: customer.id,
         );
       },
@@ -1098,7 +1098,7 @@ class _EnhancedCustomersListPageState
                     onPressed: () {
                       Navigator.pushNamed(
                         context,
-                        TamgaciRoutes.customerDetail,
+                        '/customers/detail',
                         arguments: customer.id,
                       );
                     },
@@ -1109,7 +1109,7 @@ class _EnhancedCustomersListPageState
                     onPressed: () {
                       Navigator.pushNamed(
                         context,
-                        TamgaciRoutes.editCustomer,
+                        '/customers/edit',
                         arguments: customer.id,
                       );
                     },
@@ -1142,7 +1142,7 @@ class _EnhancedCustomersListPageState
         onTap: () {
           Navigator.pushNamed(
             context,
-            TamgaciRoutes.customerDetail,
+            '/customers/detail',
             arguments: customer.id,
           );
         },
@@ -1346,7 +1346,7 @@ class _EnhancedCustomersListPageState
                       Navigator.pop(context);
                       Navigator.pushNamed(
                         context,
-                        TamgaciRoutes.createSale,
+                        '/sales/create',
                         arguments: {
                           'customerId': customer.id,
                           'customerName': customer.name,
@@ -1402,7 +1402,7 @@ class _EnhancedCustomersListPageState
                       Navigator.pop(context);
                       Navigator.pushNamed(
                         context,
-                        TamgaciRoutes.editCustomer,
+                        '/customers/edit',
                         arguments: customer.id,
                       );
                     },

@@ -8,7 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:tamgaci/features/products/presentation/providers/product_providers.dart';
 import 'package:tamgaci/features/products/domain/entities/product.dart';
 import 'package:tamgaci/features/customers/domain/entities/customer_branch.dart';
-import 'package:tamgaci/core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tamgaci/core/services/business/inventory_service.dart';
 import 'package:tamgaci/features/inventory/presentation/providers/warehouse_providers.dart';
 import 'package:tamgaci/features/settings/presentation/providers/settings_providers.dart';
@@ -2804,7 +2804,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   }
 
   Future<void> _createNewCustomer() async {
-    await TamgaciRoutes.pushNamed(context, TamgaciRoutes.createCustomer);
+    await context.push('/customers/create');
     if (mounted) {
       ref.invalidate(customersProvider);
     }

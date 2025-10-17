@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:async';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/services/tenant_service.dart';
 import '../../../../core/utils/logger.dart';
 import '../providers/auth_providers.dart';
@@ -488,7 +488,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Widget _buildForgotPassword(bool isDark) {
     return TextButton(
       onPressed: () {
-        TamgaciRoutes.pushNamed(context, TamgaciRoutes.forgotPassword);
+        context.go('/forgot-password');
       },
       child: Text(
         'Şifremi Unuttum',
@@ -518,7 +518,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         ),
         TextButton(
           onPressed: () {
-            TamgaciRoutes.pushNamed(context, TamgaciRoutes.register);
+            context.go('/register');
           },
           child: Text(
             'Kayıt Ol',
@@ -579,10 +579,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
       if (mounted) {
         // Başarılı giriş sonrası dashboard'a yönlendir
-        TamgaciRoutes.pushNamedAndClearAll(
-          context,
-          TamgaciRoutes.dashboard,
-        );
+        context.go('/dashboard');
       }
     } catch (e) {
       if (mounted) {

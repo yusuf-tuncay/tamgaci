@@ -1070,10 +1070,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
                   Navigator.of(context).pop();
                 }
-                final current = ModalRoute.of(context)?.settings.name;
-                if (current != item.route) {
-                  Navigator.of(context).pushReplacementNamed(item.route);
-                }
+                // Go Router ile navigation
+                context.goNamed(item.route);
               }
             },
           ),
@@ -1154,10 +1152,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
               Navigator.of(context).pop();
             }
-            final current = ModalRoute.of(context)?.settings.name;
-            if (current != subItem.route) {
-              Navigator.of(context).pushReplacementNamed(subItem.route);
-            }
+            // Go Router ile navigation
+            context.goNamed(subItem.route);
           }
         },
       ),

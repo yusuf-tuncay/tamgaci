@@ -5,7 +5,6 @@ import 'package:tamgaci/features/sales/presentation/providers/sale_providers.dar
 import 'package:tamgaci/features/sales/presentation/widgets/sale_detail_card.dart';
 import 'package:tamgaci/features/sales/presentation/widgets/sale_items_list.dart';
 import 'package:tamgaci/features/sales/presentation/widgets/sale_actions_bottom_sheet.dart';
-import 'package:tamgaci/core/routes/routes.dart';
 import 'package:tamgaci/core/widgets/loading_widget.dart';
 import 'package:tamgaci/core/widgets/error_widget.dart' as core_widgets;
 import 'package:tamgaci/core/widgets/empty_state_widget.dart';
@@ -53,7 +52,7 @@ class _SaleDetailPageState extends ConsumerState<SaleDetailPage> {
                   case 'edit':
                     Navigator.pushNamed(
                       context,
-                      TamgaciRoutes.editSale,
+                      '/sales/edit',
                       arguments: sale.id,
                     );
                     break;

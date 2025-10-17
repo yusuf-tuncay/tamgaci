@@ -8,7 +8,6 @@ import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
-import '../../../../core/routes/routes.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../providers/warehouse_providers.dart';
 import '../../domain/entities/warehouse.dart';
@@ -36,7 +35,7 @@ class WarehouseDetailPage extends ConsumerWidget {
           IconButton(
             onPressed: () {
               Navigator.of(context).pushNamed(
-                TamgaciRoutes.editWarehouse,
+                '/warehouses/edit',
                 arguments: warehouseId,
               );
             },
@@ -370,7 +369,8 @@ class WarehouseDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProductsCard(Warehouse warehouse, bool isDark, WidgetRef ref, BuildContext context) {
+  Widget _buildProductsCard(
+      Warehouse warehouse, bool isDark, WidgetRef ref, BuildContext context) {
     final productsAsync = ref.watch(productsStreamProvider);
 
     return Card(
@@ -401,7 +401,7 @@ class WarehouseDetailPage extends ConsumerWidget {
                 TextButton.icon(
                   onPressed: () {
                     Navigator.of(context).pushNamed(
-                      TamgaciRoutes.productsList,
+                      '/products',
                       arguments: {'warehouseId': warehouse.id},
                     );
                   },
@@ -418,13 +418,14 @@ class WarehouseDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProductsList(AsyncValue<List<Product>> productsAsync, String warehouseId, bool isDark) {
+  Widget _buildProductsList(AsyncValue<List<Product>> productsAsync,
+      String warehouseId, bool isDark) {
     return productsAsync.when(
       data: (products) {
         // Bu depodaki ürünleri filtrele
-        final warehouseProducts = products.where((product) => 
-          product.warehouseId == warehouseId
-        ).toList();
+        final warehouseProducts = products
+            .where((product) => product.warehouseId == warehouseId)
+            .toList();
 
         if (warehouseProducts.isEmpty) {
           return Container(
@@ -464,11 +465,13 @@ class WarehouseDetailPage extends ConsumerWidget {
 
         return Column(
           children: [
-            ...displayProducts.map((product) => _buildProductItem(product, isDark)),
+            ...displayProducts
+                .map((product) => _buildProductItem(product, isDark)),
             if (warehouseProducts.length > 5) ...[
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: TamgaciConstants.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -528,9 +531,9 @@ class WarehouseDetailPage extends ConsumerWidget {
         color: isDark ? Colors.grey[800] : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: product.stockQuantity > 0 
-            ? Colors.green.withValues(alpha: 0.3)
-            : Colors.red.withValues(alpha: 0.3),
+          color: product.stockQuantity > 0
+              ? Colors.green.withValues(alpha: 0.3)
+              : Colors.red.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -539,9 +542,9 @@ class WarehouseDetailPage extends ConsumerWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: product.stockQuantity > 0 
-                ? Colors.green.withValues(alpha: 0.1)
-                : Colors.red.withValues(alpha: 0.1),
+              color: product.stockQuantity > 0
+                  ? Colors.green.withValues(alpha: 0.1)
+                  : Colors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -752,7 +755,7 @@ class WarehouseDetailPage extends ConsumerWidget {
           child: ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context).pushNamed(
-                TamgaciRoutes.editWarehouse,
+                '/warehouses/edit',
                 arguments: warehouseId,
               );
             },

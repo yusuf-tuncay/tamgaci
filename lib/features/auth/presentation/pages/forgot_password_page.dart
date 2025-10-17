@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/auth_providers.dart';
 
 /// Şifre sıfırlama sayfası
@@ -266,9 +266,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                     ),
                     TextButton(
                       onPressed: () {
-                        Navigator.of(
-                          context,
-                        ).pushReplacementNamed(TamgaciRoutes.login);
+                        context.go('/login');
                       },
                       child: Text(
                         'Giriş Yap',

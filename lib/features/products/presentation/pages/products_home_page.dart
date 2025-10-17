@@ -9,7 +9,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/utils/currency_helper.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/disposed_error_suppressor_mixin.dart';
 import 'create_product_page.dart';
@@ -1146,7 +1146,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                     onPressed: () {
                       Navigator.pushNamed(
                         context,
-                        TamgaciRoutes.editProduct,
+                        '/products/edit',
                         arguments: product.id,
                       );
                     },
@@ -1358,7 +1358,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   }
 
   void _navigateToBulkStockUpdate() {
-    Navigator.of(context).pushNamed(TamgaciRoutes.bulkStockUpdate);
+    context.go('/products/bulk-stock-update');
   }
 
   void _showFilterDialog(String filterType) {

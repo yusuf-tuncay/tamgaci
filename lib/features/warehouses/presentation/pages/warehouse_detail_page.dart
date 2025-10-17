@@ -9,7 +9,6 @@ import 'transfer_product_from_warehouse_page.dart';
 import '../../../products/presentation/providers/product_providers.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../products/presentation/pages/product_detail_page.dart';
-import '../../../../core/routes/routes.dart';
 import '../../../inventory/presentation/pages/stock_count_page.dart';
 
 /// Depo Detay Sayfası
@@ -1047,7 +1046,7 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
           ElevatedButton.icon(
             onPressed: () {
               Navigator.of(context).pushNamed(
-                TamgaciRoutes.productsList,
+                '/products',
                 arguments: {'warehouseId': widget.warehouse.id},
               );
             },

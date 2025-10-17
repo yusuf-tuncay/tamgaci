@@ -10,7 +10,7 @@ import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/entities/customer.dart';
 // import '../../domain/entities/customer_transaction.dart';
 import '../providers/customer_providers.dart';
@@ -60,7 +60,7 @@ class _EnhancedCustomerDetailPageV2State
     // Load cash transactions to enable payment counts and lists
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-      ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
+        ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
       }
     });
   }
@@ -361,14 +361,7 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Satış Yap',
               color: Colors.green,
               onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  TamgaciRoutes.createSale,
-                  arguments: {
-                    'customerId': customer.id,
-                    'customerName': customer.name,
-                  },
-                );
+                context.go('/sales/create');
               },
             ),
           ),
@@ -379,14 +372,7 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Alış Yap',
               color: Colors.orange,
               onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  TamgaciRoutes.createPurchase,
-                  arguments: {
-                    'supplierId': customer.id,
-                    'supplierName': customer.name,
-                  },
-                );
+                context.go('/purchases/create');
               },
             ),
           ),
@@ -406,11 +392,7 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Düzenle',
               color: Colors.grey,
               onTap: () {
-                Navigator.pushNamed(
-                  context,
-                  TamgaciRoutes.editCustomer,
-                  arguments: customer.id,
-                );
+                context.go('/customers/edit');
               },
             ),
           ),
@@ -777,32 +759,32 @@ class _EnhancedCustomerDetailPageV2State
 
             final transactions = transactionSnapshot.data ?? [];
             final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
-        final payments = cashState.cashTransactions
-            .where((t) => invoiceIds.contains(t.relatedDocumentId))
-            .toList();
+            final payments = cashState.cashTransactions
+                .where((t) => invoiceIds.contains(t.relatedDocumentId))
+                .toList();
 
             // Tüm işlemleri birleştir ve tarihe göre sırala (en yeni en üstte)
             final allItems = <Map<String, dynamic>>[
-          // Faturalar
-          ...invoices.map((i) => {
-                'type': 'invoice',
+              // Faturalar
+              ...invoices.map((i) => {
+                    'type': 'invoice',
                     'date': _parseDateTime(i['saleDate']) ??
                         _parseDateTime(i['invoiceDate']) ??
                         DateTime.now(),
-                'data': i,
-              }),
-          // Ödemeler
-          ...payments.map((t) => {
-                'type': 'payment',
-                'date': t.transactionDate,
-                'data': t,
-              }),
+                    'data': i,
+                  }),
+              // Ödemeler
+              ...payments.map((t) => {
+                    'type': 'payment',
+                    'date': t.transactionDate,
+                    'data': t,
+                  }),
               // İşlemler
               ...transactions.map((t) => {
-                'type': 'transaction',
+                    'type': 'transaction',
                     'date': _parseDateTime(t.transactionDate) ?? DateTime.now(),
-                'data': t,
-              }),
+                    'data': t,
+                  }),
             ]..sort((a, b) {
                 final dateA = a['date'] as DateTime?;
                 final dateB = b['date'] as DateTime?;
@@ -813,40 +795,40 @@ class _EnhancedCustomerDetailPageV2State
               });
 
             if (allItems.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
                       Icons.receipt_long,
-                  size: 64,
-                  color: isDark ? Colors.grey[600] : Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
+                      size: 64,
+                      color: isDark ? Colors.grey[600] : Colors.grey[400],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
                       'Henüz işlem bulunmuyor',
-              style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        }
+              );
+            }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
               itemCount: allItems.length,
-          itemBuilder: (context, index) {
+              itemBuilder: (context, index) {
                 final item = allItems[index];
                 if (item['type'] == 'invoice') {
                   return _buildInvoiceTile(item['data'], isDark);
                 } else if (item['type'] == 'payment') {
                   return _buildPaymentTile(
                       item['data'] as CashTransaction, isDark);
-            } else {
+                } else {
                   return _buildTransactionTile(item['data'], isDark);
                 }
               },
@@ -956,27 +938,27 @@ class _EnhancedCustomerDetailPageV2State
                                 }).toList();
 
                                 if (filteredInvoices.isEmpty) {
-          return Center(
-            child: Text(
-              'Fatura bulunamadı',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
+                                  return Center(
+                                    child: Text(
+                                      'Fatura bulunamadı',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
                                         color: isDark
                                             ? Colors.grey[400]
                                             : Colors.grey[600],
-              ),
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
+                                      ),
+                                    ),
+                                  );
+                                }
+                                return ListView.builder(
+                                  padding: const EdgeInsets.all(16),
                                   itemCount: filteredInvoices.length,
-          itemBuilder: (context, index) {
+                                  itemBuilder: (context, index) {
                                     final invoice = filteredInvoices[index];
-            return _buildInvoiceTile(invoice, isDark);
-          },
-        );
-      },
+                                    return _buildInvoiceTile(invoice, isDark);
+                                  },
+                                );
+                              },
                             ),
                             // İrsaliye (Satış) - waybill type ile filtrele
                             Builder(
@@ -987,7 +969,7 @@ class _EnhancedCustomerDetailPageV2State
                                 }
                                 if (hasError) {
                                   return Center(
-        child: Text(
+                                    child: Text(
                                       'İrsaliyeler yüklenemedi',
                                       style: GoogleFonts.poppins(
                                         color: Colors.red,
@@ -1006,12 +988,12 @@ class _EnhancedCustomerDetailPageV2State
                                   return Center(
                                     child: Text(
                                       'İrsaliye bulunamadı',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
                                     ),
                                   );
                                 }
@@ -1034,7 +1016,7 @@ class _EnhancedCustomerDetailPageV2State
                                 }
                                 if (hasError) {
                                   return Center(
-                              child: Text(
+                                    child: Text(
                                       'Proformalar yüklenemedi',
                                       style: GoogleFonts.poppins(
                                         color: Colors.red,
@@ -1053,12 +1035,12 @@ class _EnhancedCustomerDetailPageV2State
                                   return Center(
                                     child: Text(
                                       'Proforma bulunamadı',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: isDark
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.grey[400]
+                                            : Colors.grey[600],
+                                      ),
                                     ),
                                   );
                                 }
@@ -1180,21 +1162,21 @@ class _EnhancedCustomerDetailPageV2State
     final hasError = purchasesAsync.hasError;
 
     return DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 8),
-                      TabBar(
-                        isScrollable: true,
-                        labelColor: Theme.of(context).colorScheme.onSurface,
-                        tabs: const [
-                          Tab(text: 'Normal Alış'),
-                          Tab(text: 'Satıştan İade Alışı'),
-                        ],
-                      ),
+      length: 2,
+      child: Column(
+        children: [
+          const SizedBox(height: 8),
+          TabBar(
+            isScrollable: true,
+            labelColor: Theme.of(context).colorScheme.onSurface,
+            tabs: const [
+              Tab(text: 'Normal Alış'),
+              Tab(text: 'Satıştan İade Alışı'),
+            ],
+          ),
           Expanded(
-                        child: TabBarView(
-                          children: [
+            child: TabBarView(
+              children: [
                 // Normal Alış - normal purchase type ile filtrele
                 Builder(
                   builder: (_) {
@@ -1203,7 +1185,7 @@ class _EnhancedCustomerDetailPageV2State
                     }
                     if (hasError) {
                       return Center(
-                              child: Text(
+                        child: Text(
                           'Normal alışlar yüklenemedi',
                           style: GoogleFonts.poppins(
                             color: Colors.red,
@@ -1219,7 +1201,7 @@ class _EnhancedCustomerDetailPageV2State
 
                     if (filteredPurchases.isEmpty) {
                       return Center(
-                              child: Text(
+                        child: Text(
                           'Normal alış bulunamadı',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
@@ -1251,9 +1233,9 @@ class _EnhancedCustomerDetailPageV2State
                           style: GoogleFonts.poppins(
                             color: Colors.red,
                           ),
-      ),
-    );
-  }
+                        ),
+                      );
+                    }
 
                     // ReturnFromSale purchase type'a göre filtrele
                     final filteredPurchases = purchasesList.where((purchase) {
@@ -1261,26 +1243,26 @@ class _EnhancedCustomerDetailPageV2State
                     }).toList();
 
                     if (filteredPurchases.isEmpty) {
-          return Center(
-            child: Text(
+                      return Center(
+                        child: Text(
                           'Satıştan iade alışı bulunamadı',
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
-              ),
-            ),
-          );
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                        ),
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.all(16),
                       itemCount: filteredPurchases.length,
-          itemBuilder: (context, index) {
+                      itemBuilder: (context, index) {
                         final purchase = filteredPurchases[index];
                         return _buildPurchaseTile(purchase, isDark);
-          },
-        );
-      },
-        ),
+                      },
+                    );
+                  },
+                ),
               ],
             ),
           ),

@@ -9,7 +9,7 @@ import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/stock_providers.dart';
 import '../providers/warehouse_providers.dart';
 import '../../domain/entities/stock.dart';
@@ -38,7 +38,7 @@ class StockListPage extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).pushNamed(TamgaciRoutes.createStock);
+          context.go('/inventory/stock/create');
         },
         backgroundColor: TamgaciConstants.primaryColor,
         foregroundColor: Colors.white,
@@ -189,7 +189,7 @@ class StockListPage extends ConsumerWidget {
       child: InkWell(
         onTap: () {
           Navigator.of(context).pushNamed(
-            TamgaciRoutes.stockDetail,
+            '/inventory/stock/detail',
             arguments: stock.id.toString(),
           );
         },
@@ -301,7 +301,7 @@ class StockListPage extends ConsumerWidget {
                   IconButton(
                     onPressed: () {
                       Navigator.of(context).pushNamed(
-                        TamgaciRoutes.editStock,
+                        '/inventory/stock/edit',
                         arguments: stock.id.toString(),
                       );
                     },

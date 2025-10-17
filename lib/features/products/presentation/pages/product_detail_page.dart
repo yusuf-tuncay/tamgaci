@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart' as custom_error;
@@ -1093,7 +1093,6 @@ class ProductDetailPage extends ConsumerWidget {
 
       // Navigation'ı önceden hazırla
       debugPrint('🚀 Navigation hazırlanıyor...');
-      final navigator = Navigator.of(context);
 
       // Firebase Storage'dan fotoğrafları sil
       if (product.images.isNotEmpty) {
@@ -1115,23 +1114,15 @@ class ProductDetailPage extends ConsumerWidget {
       // Stream'in güncellenmesi için bekleme
       await Future.delayed(const Duration(milliseconds: 300));
 
-      debugPrint(
-          '🚀 Ürün listesi sayfasına yönlendiriliyor: ${TamgaciRoutes.productsList}');
+      debugPrint('🚀 Ürün listesi sayfasına yönlendiriliyor: /products');
       // Tüm stack'i temizleyip ürün listesi sayfasına git
-      navigator.pushNamedAndRemoveUntil(
-        TamgaciRoutes.productsList,
-        (route) => false,
-      );
+      context.go('/products');
       debugPrint('✅ Navigation tamamlandı');
     } catch (e) {
       debugPrint('❌ Ürün silinirken hata: $e');
       // Hata durumunda da navigation yap
       try {
-        final navigator = Navigator.of(context);
-        navigator.pushNamedAndRemoveUntil(
-          TamgaciRoutes.productsList,
-          (route) => false,
-        );
+        context.go('/products');
         debugPrint('✅ Hata durumu navigation tamamlandı');
       } catch (navError) {
         debugPrint('❌ Navigation hatası: $navError');

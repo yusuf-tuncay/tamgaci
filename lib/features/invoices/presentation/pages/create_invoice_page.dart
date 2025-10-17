@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../core/providers/currency_providers.dart';
 import '../../domain/entities/invoice.dart';
@@ -1330,11 +1330,7 @@ class _CreateInvoicePageState extends ConsumerState<CreateInvoicePage> {
         );
       } else {
         // Yeni fatura modu - detay sayfasına git
-        TamgaciRoutes.pushReplacementNamed(
-          context,
-          TamgaciRoutes.invoiceDetail,
-          arguments: invoiceId,
-        );
+        context.go('/invoices/detail/$invoiceId');
       }
     }
   }

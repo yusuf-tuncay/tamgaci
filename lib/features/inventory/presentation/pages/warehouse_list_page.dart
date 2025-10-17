@@ -7,7 +7,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/warehouse_providers.dart';
 import '../../domain/entities/warehouse.dart';
 
@@ -38,7 +38,7 @@ class WarehouseListPage extends ConsumerWidget {
             bottom: 16,
             child: FloatingActionButton(
               onPressed: () {
-                Navigator.of(context).pushNamed(TamgaciRoutes.createWarehouse);
+                context.go('/warehouses/create');
               },
               backgroundColor: TamgaciConstants.primaryColor,
               child: const Icon(Icons.add, color: Colors.white),
@@ -78,7 +78,7 @@ class WarehouseListPage extends ConsumerWidget {
       child: InkWell(
         onTap: () {
           Navigator.of(context).pushNamed(
-            TamgaciRoutes.warehouseDetail,
+            '/warehouses/detail',
             arguments: warehouse.id.toString(),
           );
         },
@@ -241,7 +241,7 @@ class WarehouseListPage extends ConsumerWidget {
                       IconButton(
                         onPressed: () {
                           Navigator.of(context).pushNamed(
-                            TamgaciRoutes.editWarehouse,
+                            '/warehouses/edit',
                             arguments: warehouse.id.toString(),
                           );
                         },

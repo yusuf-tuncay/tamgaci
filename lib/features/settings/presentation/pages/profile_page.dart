@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
@@ -31,7 +32,7 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -45,9 +46,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void _autoRefreshSubscription() {
     final user = ref.read(currentUserProvider).value;
     if (user != null) {
-      ref.read(subscriptionStateProvider.notifier).autoRefreshSubscription(user.id);
+      ref
+          .read(subscriptionStateProvider.notifier)
+          .autoRefreshSubscription(user.id);
     }
   }
+
   final _nameController = TextEditingController();
   final _surnameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -572,12 +576,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     if (Navigator.of(context).canPop()) {
                       Navigator.of(context).pop();
                     } else {
-                      Navigator.of(context).pushReplacementNamed('/dashboard');
+                      context.go('/dashboard');
                     }
                   } catch (e) {
                     debugPrint('Navigation error: $e');
                     // Fallback navigation
-                    Navigator.of(context).pushReplacementNamed('/dashboard');
+                    context.go('/dashboard');
                   }
                 },
         ),
@@ -1311,7 +1315,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             const Spacer(),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pushNamed('/settings/subscription');
+                context.go('/settings/subscription');
               },
               child: Text(
                 'Yönet',

@@ -263,7 +263,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
             // Süre satın al butonu
             ElevatedButton(
-              onPressed: () => context.pushNamed('subscription'),
+              onPressed: () => context.go('/settings/subscription'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.blue[600],
@@ -351,7 +351,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
             // Abonelik yenile butonu
             ElevatedButton(
-              onPressed: () => context.pushNamed('subscription'),
+              onPressed: () => context.go('/settings/subscription'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: Colors.red[600],
@@ -446,7 +446,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               ),
               // Abonelik yenile butonu
               ElevatedButton(
-                onPressed: () => context.pushNamed('subscription'),
+                onPressed: () => context.go('/settings/subscription'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.blue[600],
@@ -932,7 +932,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     Colors.pink, () => context.pushNamed('dashboard'), isDark),
                 const SizedBox(width: 8),
                 _buildActionCardHorizontal('Ayarlar', Icons.settings,
-                    Colors.grey, () => context.pushNamed('settings'), isDark),
+                    Colors.grey, () => context.go('/settings'), isDark),
               ],
             ),
           ),

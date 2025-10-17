@@ -14,7 +14,7 @@ import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/providers/locale_provider.dart';
 import '../../presentation/providers/settings_providers.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../company/presentation/pages/company_settings_page.dart';
 
@@ -442,7 +442,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     return Column(
       children: [
         _buildActionButton("Profili Düzenle", isDark, () {
-          Navigator.of(context).pushNamed(TamgaciRoutes.profile);
+          context.go('/settings/profile');
         }),
         const SizedBox(height: 8),
         _buildActionButton("Firma Bilgilerini Düzenle", isDark, () {}),
@@ -472,7 +472,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildActionButton("Abonelik Planları", isDark, () {
-          Navigator.of(context).pushNamed(TamgaciRoutes.subscription);
+          context.go('/settings/subscription');
         }),
         const SizedBox(height: 8),
         Text(

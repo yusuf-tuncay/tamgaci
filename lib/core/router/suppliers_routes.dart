@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/guards/subscription_guard.dart';
 import '../../features/suppliers/presentation/pages/enhanced_suppliers_list_page.dart';
 import '../../features/suppliers/presentation/pages/enhanced_supplier_detail_page.dart';
+import '../../features/suppliers/presentation/pages/create_supplier_page.dart';
 
 /// Suppliers routes
 class SuppliersRoutes {
@@ -18,6 +19,16 @@ class SuppliersRoutes {
             allowTrial: true,
             allowExpired: false,
             child: EnhancedSuppliersListPage(),
+          ),
+        ),
+
+        GoRoute(
+          path: '/suppliers/create',
+          name: 'create-supplier',
+          builder: (context, state) => const SubscriptionGuard(
+            allowTrial: true,
+            allowExpired: false,
+            child: CreateSupplierPage(),
           ),
         ),
 

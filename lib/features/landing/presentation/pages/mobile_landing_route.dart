@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tamgaci/core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 
 /// Mobil uygulamadan girildiğinde authentication kontrolü yapan route
@@ -34,7 +34,7 @@ class _MobileLandingRouteState extends ConsumerState<MobileLandingRoute> {
       AppLogger.info('User is signed in, navigating to dashboard');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed(TamgaciRoutes.dashboard);
+          context.go('/dashboard');
         }
       });
     } else {
@@ -42,7 +42,7 @@ class _MobileLandingRouteState extends ConsumerState<MobileLandingRoute> {
       AppLogger.info('User is not signed in, navigating to splash');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed(TamgaciRoutes.splash);
+          context.go('/');
         }
       });
     }

@@ -159,4 +159,128 @@ class NavigationHelpers {
   static void goToPaymentFail(BuildContext context) {
     context.goNamed('payment-fail');
   }
+
+  // ========== ACCOUNTS NAVIGATION ==========
+
+  /// Accounts list'e git
+  static void goToAccountsList(BuildContext context) {
+    context.goNamed('accounts-list');
+  }
+
+  /// Accounts home'e git
+  static void goToAccountsHome(BuildContext context) {
+    context.goNamed('accounts-home');
+  }
+
+  /// Create account'e git
+  static void goToCreateAccount(BuildContext context) {
+    context.goNamed('create-account');
+  }
+
+  /// Account detail'e git
+  static void goToAccountDetail(BuildContext context, String accountId) {
+    context.goNamed('account-detail', pathParameters: {'id': accountId});
+  }
+
+  // ========== SUPPLIERS NAVIGATION ==========
+
+  /// Suppliers list'e git
+  static void goToSuppliersList(BuildContext context) {
+    context.goNamed('suppliers-list');
+  }
+
+  /// Create supplier'e git
+  static void goToCreateSupplier(BuildContext context) {
+    context.goNamed('create-supplier');
+  }
+
+  /// Supplier detail'e git
+  static void goToSupplierDetail(BuildContext context, String supplierId) {
+    context.goNamed('supplier-detail', pathParameters: {'id': supplierId});
+  }
+
+  // ========== PURCHASES NAVIGATION ==========
+
+  /// Purchases list'e git
+  static void goToPurchasesList(BuildContext context) {
+    context.goNamed('purchases-list');
+  }
+
+  /// Create purchase'e git
+  static void goToCreatePurchase(BuildContext context) {
+    context.goNamed('create-purchase');
+  }
+
+  /// Purchase detail'e git
+  static void goToPurchaseDetail(BuildContext context, String purchaseId) {
+    context.goNamed('purchase-detail', pathParameters: {'id': purchaseId});
+  }
+
+  // ========== WAREHOUSE NAVIGATION ==========
+
+  /// Warehouses home'e git
+  static void goToWarehousesHome(BuildContext context) {
+    context.goNamed('warehouses-home');
+  }
+
+  /// Create warehouse'e git
+  static void goToCreateWarehouse(BuildContext context) {
+    context.goNamed('create-warehouse');
+  }
+
+  /// Warehouse detail'e git
+  static void goToWarehouseDetail(BuildContext context, String warehouseId) {
+    context.goNamed('warehouse-detail', pathParameters: {'id': warehouseId});
+  }
+
+  /// Inventory warehouse detail'e git
+  static void goToInventoryWarehouseDetail(
+      BuildContext context, String warehouseId) {
+    context.goNamed('inventory-warehouse-detail',
+        pathParameters: {'id': warehouseId});
+  }
+
+  // ========== INVENTORY NAVIGATION ==========
+
+  /// Inventory'e git
+  static void goToInventory(BuildContext context) {
+    context.goNamed('inventory');
+  }
+
+  /// Stock list'e git
+  static void goToStockList(BuildContext context) {
+    context.goNamed('stock-list');
+  }
+
+  /// Create stock'e git
+  static void goToCreateStock(BuildContext context) {
+    context.goNamed('create-stock');
+  }
+
+  /// Stock detail'e git
+  static void goToStockDetail(BuildContext context, String stockId) {
+    context.goNamed('stock-detail', pathParameters: {'id': stockId});
+  }
+
+  /// Stock count'e git
+  static void goToStockCount(BuildContext context) {
+    context.goNamed('stock-count');
+  }
+
+  /// Stock counts list'e git
+  static void goToStockCountsList(BuildContext context) {
+    context.goNamed('stock-counts-list');
+  }
+
+  // ========== INVOICES NAVIGATION ==========
+
+  /// Invoices list'e git
+  static void goToInvoicesList(BuildContext context) {
+    context.goNamed('invoices-list');
+  }
+
+  /// Create invoice'e git
+  static void goToCreateInvoice(BuildContext context) {
+    context.goNamed('create-invoice');
+  }
 }

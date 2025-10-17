@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../domain/entities/invoice.dart';
@@ -171,7 +171,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
               padding: const EdgeInsets.all(16),
               child: FloatingActionButton(
                 onPressed: () {
-                  TamgaciRoutes.pushNamed(context, TamgaciRoutes.createInvoice);
+                  context.go('/invoices/create');
                 },
                 child: const Icon(Icons.receipt_long),
               ),
@@ -448,11 +448,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
       ),
       child: InkWell(
         onTap: () {
-          TamgaciRoutes.pushNamed(
-            context,
-            TamgaciRoutes.invoiceDetail,
-            arguments: invoice.id,
-          );
+          context.go('/invoices/detail/${invoice.id}');
         },
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         child: Padding(
@@ -721,7 +717,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
           if (searchQuery.isEmpty && selectedStatus == null)
             ElevatedButton.icon(
               onPressed: () {
-                TamgaciRoutes.pushNamed(context, TamgaciRoutes.createInvoice);
+                context.go('/invoices/create');
               },
               icon: const Icon(Icons.receipt_long),
               label: const Text('İlk Faturayı Oluştur'),
@@ -798,11 +794,7 @@ class _InvoicesListPageState extends ConsumerState<InvoicesListPage> {
   void _handleInvoiceAction(String action, Invoice invoice) {
     switch (action) {
       case 'view':
-        TamgaciRoutes.pushNamed(
-          context,
-          TamgaciRoutes.invoiceDetail,
-          arguments: invoice.id,
-        );
+        context.go('/invoices/detail/${invoice.id}');
         break;
       case 'edit':
         Navigator.of(context).pushNamed('/invoice/edit', arguments: invoice.id);

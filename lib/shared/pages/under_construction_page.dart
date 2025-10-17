@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/constants.dart';
-import '../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 
 /// Yapım Aşamasında sayfası
 class UnderConstructionPage extends StatefulWidget {
@@ -166,10 +166,7 @@ class _UnderConstructionPageState extends State<UnderConstructionPage>
                   height: TamgaciConstants.buttonHeight(context),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      TamgaciRoutes.pushReplacementNamed(
-                        context,
-                        TamgaciRoutes.dashboard,
-                      );
+                      context.go('/dashboard');
                     },
                     icon: const Icon(Icons.home_outlined),
                     label: Text(

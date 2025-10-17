@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/splash/presentation/pages/splash.dart' show SplashScreen;
 
@@ -28,7 +28,7 @@ class AuthGuard extends ConsumerWidget {
 
     // Loading durumunda splash göster
     if (authState.isLoading) {
-      return const SplashScreen(homeRoute: TamgaciRoutes.dashboard);
+      return const SplashScreen(homeRoute: '/dashboard');
     }
 
     // Auth gerekiyorsa ve kullanıcı giriş yapmamışsa
@@ -36,24 +36,24 @@ class AuthGuard extends ConsumerWidget {
       // Redirect sayfası belirtilmişse oraya yönlendir
       if (redirectTo != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.of(context).pushReplacementNamed(redirectTo!);
+          context.go(redirectTo!);
         });
       } else {
         // Varsayılan olarak login sayfasına yönlendir
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.of(context).pushReplacementNamed(TamgaciRoutes.login);
+          context.go('/login');
         });
       }
-      return const SplashScreen(homeRoute: TamgaciRoutes.dashboard);
+      return const SplashScreen(homeRoute: '/dashboard');
     }
 
     // Auth gerekmeyen sayfalar için (login, register gibi)
     // Kullanıcı zaten giriş yapmışsa dashboard'a yönlendir
     if (!requireAuth && isSignedIn) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.of(context).pushReplacementNamed(TamgaciRoutes.dashboard);
+        context.go('/dashboard');
       });
-      return const SplashScreen(homeRoute: TamgaciRoutes.dashboard);
+      return const SplashScreen(homeRoute: '/dashboard');
     }
 
     // Normal durumda child widget'ı göster
@@ -142,9 +142,7 @@ class LogoutButton extends ConsumerWidget {
                 } else {
                   // Varsayılan olarak login sayfasına yönlendir
                   if (context.mounted) {
-                    Navigator.of(context).pushReplacementNamed(
-                      TamgaciRoutes.login,
-                    );
+                    context.go('/login');
                   }
                 }
               } catch (e) {

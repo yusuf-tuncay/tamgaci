@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/theme/constants.dart';
-import '../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 
 /// 404 - Sayfa Bulunamadı sayfası
 class NotFoundPage extends StatelessWidget {
@@ -103,10 +103,7 @@ class NotFoundPage extends StatelessWidget {
                   height: TamgaciConstants.buttonHeight(context),
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      TamgaciRoutes.pushNamedAndClearAll(
-                        context,
-                        TamgaciRoutes.dashboard,
-                      );
+                      context.go('/dashboard');
                     },
                     icon: const Icon(Icons.home_outlined),
                     label: Text(
@@ -124,12 +121,9 @@ class NotFoundPage extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () {
                     if (Navigator.of(context).canPop()) {
-                      TamgaciRoutes.pop(context);
+                      context.pop();
                     } else {
-                      TamgaciRoutes.pushReplacementNamed(
-                        context,
-                        TamgaciRoutes.dashboard,
-                      );
+                      context.go('/dashboard');
                     }
                   },
                   icon: const Icon(Icons.arrow_back_outlined),

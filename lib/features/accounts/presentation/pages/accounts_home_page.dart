@@ -1055,7 +1055,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _navigateToCreateAccount() {
-    context.pushNamed('create-account');
+    context.goNamed('create-account');
   }
 
   void _exportToExcel() {
@@ -1123,7 +1123,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _navigateToAccountDetail(Account account) {
-    context.pushNamed('account-detail', pathParameters: {'id': account.id});
+    context.goNamed('account-detail', pathParameters: {'id': account.id});
   }
 
   /// Varsayılan hesapları oluştur

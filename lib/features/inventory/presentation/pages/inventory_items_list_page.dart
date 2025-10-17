@@ -4,7 +4,7 @@ import 'package:tamgaci/features/inventory/domain/entities/inventory_item.dart';
 import 'package:tamgaci/features/inventory/presentation/providers/inventory_providers.dart';
 import 'package:tamgaci/features/inventory/presentation/widgets/inventory_item_card.dart';
 import 'package:tamgaci/features/inventory/presentation/widgets/inventory_item_filter_bottom_sheet.dart';
-import 'package:tamgaci/core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tamgaci/core/widgets/loading_widget.dart';
 import 'package:tamgaci/core/widgets/error_widget.dart' as core_widgets;
 import 'package:tamgaci/features/inventory/presentation/states/inventory_state.dart';
@@ -226,7 +226,7 @@ class _InventoryItemsListPageState
       ),
       floatingActionButton: FabWidget(
         onPressed: () {
-          Navigator.pushNamed(context, TamgaciRoutes.createStock);
+          context.go('/inventory/stock/create');
         },
         tooltip: 'Yeni Envanter Öğesi',
       ),
@@ -270,7 +270,7 @@ class _InventoryItemsListPageState
                 _selectedStockLevel != null
             ? _clearFilters
             : () {
-                Navigator.pushNamed(context, TamgaciRoutes.createStock);
+                context.go('/inventory/stock/create');
               },
       );
     }
@@ -291,14 +291,14 @@ class _InventoryItemsListPageState
               onTap: () {
                 Navigator.pushNamed(
                   context,
-                  TamgaciRoutes.stockDetail,
+                  '/inventory/stock/detail',
                   arguments: inventoryItem.id,
                 );
               },
               onEdit: () {
                 Navigator.pushNamed(
                   context,
-                  TamgaciRoutes.editStock,
+                  '/inventory/stock/edit',
                   arguments: inventoryItem.id,
                 );
               },

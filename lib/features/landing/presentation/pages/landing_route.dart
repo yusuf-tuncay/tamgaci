@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:tamgaci/core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'landing_page.dart';
 
@@ -36,7 +36,7 @@ class _LandingRouteState extends ConsumerState<LandingRoute> {
       AppLogger.info('User is signed in, navigating to dashboard');
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Navigator.of(context).pushReplacementNamed(TamgaciRoutes.dashboard);
+          context.go('/dashboard');
         }
       });
     } else {

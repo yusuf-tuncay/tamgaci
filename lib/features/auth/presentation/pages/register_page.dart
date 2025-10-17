@@ -17,7 +17,7 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 import '../providers/auth_providers.dart';
 import '../../../../shared/widgets/privacy_policy_dialog.dart';
 // Silinen modül: user_profile
@@ -553,8 +553,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 if (mounted) {
                   _showErrorSnackBar(
                       'Bu hesap zaten mevcut ve tamamlanmış. Giriş sayfasından giriş yapınız.');
-                  Navigator.of(context)
-                      .pushReplacementNamed(TamgaciRoutes.login);
+                  context.go('/login');
                 }
                 return;
               }
@@ -707,7 +706,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (mounted) {
         _showSuccessSnackBar('Kayıt başarılı! Giriş yapabilirsiniz.');
         debugPrint('🚀 Navigating to login page...');
-        Navigator.of(context).pushReplacementNamed(TamgaciRoutes.login);
+        context.go('/login');
         debugPrint('✅ Navigation completed');
       }
     } catch (e) {
@@ -2057,9 +2056,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                 ),
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.of(
-                                      context,
-                                    ).pushReplacementNamed(TamgaciRoutes.login);
+                                    context.go('/login');
                                   },
                                   child: Text(
                                     'Giriş Yap',
@@ -2865,9 +2862,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(
-                      context,
-                    ).pushReplacementNamed(TamgaciRoutes.login);
+                    context.go('/login');
                   },
                   child: Text(
                     'Giriş Yap',
