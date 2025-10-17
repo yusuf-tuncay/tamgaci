@@ -4,8 +4,6 @@
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
 
 /// Ödeme başarı sayfası - Public route (authentication gerektirmez)
 class PaymentSuccessPage extends StatefulWidget {
@@ -23,27 +21,26 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
     debugPrint('🔍 PaymentSuccessPage: Current URL: ${Uri.base}');
     debugPrint(
         '🔍 PaymentSuccessPage: Route: ${ModalRoute.of(context)?.settings.name}');
-    _closeTabAfterDelay();
+
+    // Hemen kapanmayı dene
+    _closeTabImmediately();
   }
 
-  /// Sekmeyi gecikmeli olarak kapat
-  void _closeTabAfterDelay() {
-    debugPrint('🔄 PaymentSuccessPage: Starting delayed tab close sequence');
+  /// Sekmeyi hemen kapat
+  void _closeTabImmediately() {
+    debugPrint('🔄 PaymentSuccessPage: Attempting immediate tab close');
 
-    // 2 saniye sonra sekmeyi kapatmayı dene
-    Future.delayed(const Duration(seconds: 2), () {
-      debugPrint('🔄 PaymentSuccessPage: First attempt to close window');
-      html.window.close();
-    });
+    // Hemen kapatmayı dene
+    html.window.close();
 
-    // 5 saniye sonra tekrar dene
-    Future.delayed(const Duration(seconds: 5), () {
+    // 1 saniye sonra tekrar dene
+    Future.delayed(const Duration(seconds: 1), () {
       debugPrint('🔄 PaymentSuccessPage: Second attempt to close window');
       html.window.close();
     });
 
-    // 10 saniye sonra son deneme
-    Future.delayed(const Duration(seconds: 10), () {
+    // 3 saniye sonra son deneme
+    Future.delayed(const Duration(seconds: 3), () {
       debugPrint('🔄 PaymentSuccessPage: Final attempt to close window');
       html.window.close();
     });
@@ -54,129 +51,68 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
     debugPrint('🔄 PaymentSuccessPage: build called');
 
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: Padding(
-            padding: TamgaciConstants.pagePadding(context),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Başarı ikonu
-                Icon(
+                const Icon(
                   Icons.check_circle_outline,
-                  size: TamgaciConstants.getResponsiveValue(
-                    context,
-                    mobile: 120.0,
-                    tablet: 140.0,
-                    desktop: 160.0,
-                    wideDesktop: 180.0,
-                  ),
+                  size: 120.0,
                   color: Colors.green,
                 ),
 
-                const SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: 32),
 
                 // Başarı mesajı
                 Text(
                   'Ödeme Başarılı!',
                   style: GoogleFonts.poppins(
-                    fontSize: TamgaciConstants.getResponsiveValue(
-                      context,
-                      mobile: 28.0,
-                      tablet: 32.0,
-                      desktop: 36.0,
-                      wideDesktop: 40.0,
-                    ),
+                    fontSize: 32.0,
                     fontWeight: FontWeight.w700,
                     color: Colors.green,
                   ),
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: TamgaciConstants.spaceMD),
+                const SizedBox(height: 16),
 
                 // Açıklama metni
                 Text(
-                  'Aboneliğiniz başarıyla aktif edildi.\nSekme otomatik olarak kapanacaktır.',
+                  'Aboneliğiniz başarıyla aktif edildi.\nBu ekranı kapatabilirsiniz.',
                   style: GoogleFonts.poppins(
-                    fontSize: TamgaciConstants.getResponsiveValue(
-                      context,
-                      mobile: 16.0,
-                      tablet: 17.0,
-                      desktop: 18.0,
-                      wideDesktop: 19.0,
-                    ),
+                    fontSize: 18.0,
                     fontWeight: FontWeight.w400,
-                    color: TamgaciConstants.textSecondary,
+                    color: Colors.grey[600],
                   ),
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: TamgaciConstants.spaceXL),
+                const SizedBox(height: 48),
 
-                // Ana sayfaya git butonu
+                // Kapat butonu
                 SizedBox(
-                  width: TamgaciConstants.getResponsiveValue(
-                    context,
-                    mobile: double.infinity,
-                    tablet: 300.0,
-                    desktop: 350.0,
-                    wideDesktop: 400.0,
-                  ),
-                  height: TamgaciConstants.buttonHeight(context),
-                  child: ElevatedButton.icon(
+                  width: 200,
+                  height: 50,
+                  child: ElevatedButton(
                     onPressed: () {
-                      // Ana sayfaya yönlendir
-                      TamgaciRoutes.pushNamedAndClearAll(
-                        context,
-                        TamgaciRoutes.dashboard,
-                      );
+                      // Sadece sekmeyi kapat
+                      html.window.close();
                     },
-                    icon: const Icon(Icons.home_outlined),
-                    label: Text(
-                      'Ana Sayfaya Git',
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: TamgaciConstants.primaryColor,
+                      backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: TamgaciConstants.spaceMD),
-
-                // Abonelik sayfasına git butonu
-                SizedBox(
-                  width: TamgaciConstants.getResponsiveValue(
-                    context,
-                    mobile: double.infinity,
-                    tablet: 300.0,
-                    desktop: 350.0,
-                    wideDesktop: 400.0,
-                  ),
-                  height: TamgaciConstants.buttonHeight(context),
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Abonelik sayfasına yönlendir
-                      TamgaciRoutes.pushNamedAndClearAll(
-                        context,
-                        TamgaciRoutes.subscription,
-                      );
-                    },
-                    icon: const Icon(Icons.subscriptions_outlined),
-                    label: Text(
-                      'Abonelik Sayfası',
+                    child: Text(
+                      'Bu Ekranı Kapat',
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w500,
+                        fontSize: 16,
                       ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: TamgaciConstants.primaryColor,
-                      side: BorderSide(color: TamgaciConstants.primaryColor),
                     ),
                   ),
                 ),

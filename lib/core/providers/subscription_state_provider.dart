@@ -127,7 +127,6 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         .snapshots()
         .listen((snapshot) {
       if (snapshot.exists && snapshot.data() != null) {
-        final data = snapshot.data()!;
         // Log yoğunluğunu azalt - sadece gerçek değişikliklerde logla
         // debugPrint('🔔 SubscriptionStateNotifier: User data updated for user: $userId');
 

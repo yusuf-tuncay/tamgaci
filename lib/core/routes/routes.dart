@@ -453,7 +453,7 @@ class TamgaciRoutes {
         );
 
       // ========== MANUAL TEST ROUTES ==========
-
+      // Hash olmadan route'lar (PayTR için)
       case '/payment/success':
         debugPrint('🔍 MANUAL: Payment success route accessed (no hash)');
         return _createRoute(
@@ -1320,6 +1320,15 @@ class TamgaciRoutes {
   static bool canAccess(String routeName) {
     debugPrint('🔍 Route Access Check: $routeName');
 
+    // Payment sayfaları - TAMAMEN BYPASS (hiçbir kontrol yapma)
+    if (routeName == '/payment/success' ||
+        routeName == '/payment/fail' ||
+        routeName == paymentSuccess ||
+        routeName == paymentFail) {
+      debugPrint('🔍 Payment route - BYPASSING all checks: $routeName');
+      return true;
+    }
+
     // Public route'lar - Giriş gerektirmez
     const publicRoutes = [
       splash,
@@ -1327,8 +1336,6 @@ class TamgaciRoutes {
       register,
       forgotPassword,
       notFound,
-      paymentSuccess,
-      paymentFail
     ];
 
     final isPublic = publicRoutes.contains(routeName);
