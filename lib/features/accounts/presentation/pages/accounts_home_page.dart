@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/account.dart';
@@ -12,8 +13,6 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/firebase/firebase_auth_service.dart';
 import '../../../../core/theme/constants.dart';
-import 'create_account_page.dart';
-import 'account_detail_page.dart';
 
 /// Hesaplar Ana Sayfası - Premium Tasarım
 class AccountsHomePage extends ConsumerStatefulWidget {
@@ -86,13 +85,13 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
       body: Stack(
         children: [
           CustomScrollView(
-        slivers: [
-          _buildHeaderSection(),
-          _buildStatisticsSection(statisticsAsync),
-          _buildFiltersSection(),
-          _buildAccountsSection(accountsAsync),
-        ],
-      ),
+            slivers: [
+              _buildHeaderSection(),
+              _buildStatisticsSection(statisticsAsync),
+              _buildFiltersSection(),
+              _buildAccountsSection(accountsAsync),
+            ],
+          ),
           Positioned(
             bottom: 16,
             right: 16,
@@ -102,7 +101,6 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
       ),
     );
   }
-
 
   Widget _buildHeaderSection() {
     return SliverToBoxAdapter(
@@ -130,29 +128,29 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
         accounts.fold<double>(0, (sum, a) => sum + a.availableBalance);
 
     return Container(
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              TamgaciConstants.primaryColor,
-              Color(0xFF4C6EF5),
-              TamgaciConstants.primaryColorDark,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-          boxShadow: [
-            BoxShadow(
-              color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
-              blurRadius: 18,
-              spreadRadius: 1,
-              offset: const Offset(0, 10),
-            ),
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
           ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -160,31 +158,31 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
           Row(
             children: [
               Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hesaplarım',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: 0.2,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Hesap bilgilerini yönetin ve takip edin',
-              maxLines: 1,
-              softWrap: true,
-              overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.poppins(
-                fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.9),
-                fontWeight: FontWeight.w500,
-              ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hesaplarım',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Hesap bilgilerini yönetin ve takip edin',
+                      maxLines: 1,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
@@ -200,28 +198,27 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                     _buildHeaderStatCard(
                         'Bakiye', _formatCurrency(totalBalance)),
                     const SizedBox(width: 8),
-                    _buildHeaderStatCard(
-                        'Kredi', _formatCurrency(totalCredit)),
+                    _buildHeaderStatCard('Kredi', _formatCurrency(totalCredit)),
                   ],
                 ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
             ),
-            const SizedBox(height: 8),
-            Container(
-              height: 1,
-              width: double.infinity,
-              color: Colors.white.withValues(alpha: 0.12),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -383,7 +380,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             // Masaüstünde tek satır, mobilde iki satır
             if (constraints.maxWidth > 768) {
               return Row(
-          children: [
+                children: [
                   // Arama çubuğu
                   Expanded(
                     flex: 2,
@@ -403,8 +400,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                             horizontal: 12, vertical: 12),
                       ),
                     ),
-                ),
-                const SizedBox(width: 12),
+                  ),
+                  const SizedBox(width: 12),
                   // Tür filtresi
                   Expanded(
                     child: DropdownButtonFormField<AccountType?>(
@@ -436,8 +433,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                         });
                       },
                     ),
-                ),
-                const SizedBox(width: 8),
+                  ),
+                  const SizedBox(width: 8),
                   // Durum filtresi
                   Expanded(
                     child: DropdownButtonFormField<AccountStatus?>(
@@ -568,16 +565,16 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                 children: [
                   // Arama çubuğu - tam genişlik
                   TextField(
-      onChanged: (value) {
-        setState(() {
-          _searchQuery = value;
-        });
-      },
-      decoration: InputDecoration(
-        hintText: 'Hesap ara...',
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Hesap ara...',
                       prefixIcon: const Icon(Icons.search),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 12),
@@ -594,7 +591,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                           decoration: InputDecoration(
                             labelText: 'Tür',
                             border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 12),
@@ -628,7 +625,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                           decoration: InputDecoration(
                             labelText: 'Durum',
                             border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8),
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 12),
@@ -702,8 +699,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                       const SizedBox(width: 8),
                       // Excel, CSV, PDF, Import butonları
                       Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                           // Excel Export
                           IconButton(
                             onPressed: _exportToExcel,
@@ -713,9 +710,9 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                               backgroundColor:
                                   Colors.green.withValues(alpha: 0.1),
                               foregroundColor: Colors.green,
-              ),
-            ),
-            const SizedBox(width: 4),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
                           // CSV Export
                           IconButton(
                             onPressed: _exportToCSV,
@@ -1058,12 +1055,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _navigateToCreateAccount() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CreateAccountPage(),
-      ),
-    );
+    context.pushNamed('create-account');
   }
 
   void _exportToExcel() {
@@ -1131,12 +1123,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _navigateToAccountDetail(Account account) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AccountDetailPage(account: account),
-      ),
-    );
+    context.pushNamed('account-detail', pathParameters: {'id': account.id});
   }
 
   /// Varsayılan hesapları oluştur

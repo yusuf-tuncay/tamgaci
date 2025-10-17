@@ -4,7 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
-import '../../../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 
 /// Hızlı işlemler widget'ı
 class QuickActionsWidget extends StatelessWidget {
@@ -57,36 +57,35 @@ class QuickActionsWidget extends StatelessWidget {
                 'Yeni Satış',
                 Icons.sell_outlined,
                 AppColors.primary,
-                () => Navigator.pushNamed(context, TamgaciRoutes.createInvoice),
+                () => context.pushNamed('create-invoice'),
               ),
               _buildQuickAction(
                 context,
                 'Yeni Alış',
                 Icons.shopping_cart_outlined,
                 Colors.orange,
-                () => Navigator.pushNamed(context, TamgaciRoutes.suppliersList),
+                () => context.pushNamed('suppliers-list'),
               ),
               _buildQuickAction(
                 context,
                 'Müşteri Ekle',
                 Icons.person_add_outlined,
                 Colors.green,
-                () =>
-                    Navigator.pushNamed(context, TamgaciRoutes.createCustomer),
+                () => context.pushNamed('create-customer'),
               ),
               _buildQuickAction(
                 context,
                 'Ürün Ekle',
                 Icons.add_box_outlined,
                 Colors.blue,
-                () => Navigator.pushNamed(context, TamgaciRoutes.createProduct),
+                () => context.pushNamed('create-product'),
               ),
               _buildQuickAction(
                 context,
                 'Hesaplarım',
                 Icons.account_balance_wallet_outlined,
                 Colors.purple,
-                () => Navigator.pushNamed(context, TamgaciRoutes.accountsHome),
+                () => context.pushNamed('accounts-home'),
               ),
               // Silinen modül: expenses
               // Silinen modül: income
@@ -96,15 +95,14 @@ class QuickActionsWidget extends StatelessWidget {
                 'Raporlar',
                 Icons.assessment_outlined,
                 Colors.indigo,
-                () => Navigator.pushNamed(context, TamgaciRoutes.reportsList),
+                () => context.pushNamed('reports-overview'),
               ),
               _buildQuickAction(
                 context,
                 'Logger Test',
                 Icons.color_lens,
                 Colors.pink,
-                () => Navigator.pushNamed(
-                    context, TamgaciRoutes.colorizedLoggerTest),
+                () => context.pushNamed('colorized-logger-test'),
               ),
             ],
           ),

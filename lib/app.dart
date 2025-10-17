@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tamgaci/core/routes/routes.dart';
+import 'package:tamgaci/core/routing/app_router.dart';
 import 'package:tamgaci/core/theme/app_theme.dart';
 import 'package:tamgaci/core/providers/theme_provider.dart';
 import 'package:tamgaci/core/providers/locale_provider.dart';
-import 'package:tamgaci/features/landing/presentation/pages/landing_route.dart';
-import 'package:tamgaci/features/landing/presentation/pages/mobile_landing_route.dart';
-import 'package:tamgaci/shared/pages/not_found_page.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tamgaci/l10n/generated/app_localizations.dart';
 
@@ -16,7 +12,7 @@ class TamgaciApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
+    return MaterialApp.router(
       // ========== UYGULAMA AYARLARI ==========
 
       /// Uygulama başlığı
@@ -38,20 +34,11 @@ class TamgaciApp extends ConsumerWidget {
 
       /// Dil (provider'dan al)
       locale: ref.watch(localeProvider),
-      // ========== NAVİGASYON AYARLARI ==========
 
-      /// İlk açılacak sayfa - Web'de landing page, mobilde authentication kontrolü
-      home: kIsWeb ? const LandingRoute() : const MobileLandingRoute(),
+      // ========== GO ROUTER AYARLARI ==========
 
-      /// Route generator
-      onGenerateRoute: TamgaciRoutes.generateRoute,
-
-      /// Bilinmeyen route handler
-      onUnknownRoute: (settings) =>
-          MaterialPageRoute(builder: (context) => const NotFoundPage()),
-
-      /// İlk route
-      initialRoute: TamgaciRoutes.splash,
+      /// Go Router configuration
+      routerConfig: AppRouter.router,
 
       // ========== LOKALİZASYON AYARLARI ==========
       localizationsDelegates: const [
@@ -86,9 +73,6 @@ class TamgaciApp extends ConsumerWidget {
 
       /// Scaffold messenger key
       scaffoldMessengerKey: GlobalKey<ScaffoldMessengerState>(),
-
-      /// Navigator key
-      navigatorKey: GlobalKey<NavigatorState>(),
     );
   }
 }

@@ -452,22 +452,6 @@ class TamgaciRoutes {
           settings: settings,
         );
 
-      // ========== MANUAL TEST ROUTES ==========
-      // Hash olmadan route'lar (PayTR için)
-      case '/payment/success':
-        debugPrint('🔍 MANUAL: Payment success route accessed (no hash)');
-        return _createRoute(
-          const PaymentSuccessPage(),
-          settings: settings,
-        );
-
-      case '/payment/fail':
-        debugPrint('🔍 MANUAL: Payment fail route accessed (no hash)');
-        return _createRoute(
-          const PaymentFailPage(),
-          settings: settings,
-        );
-
       // ========== SATIŞ ROUTE'LARI ==========
 
       case salesList:

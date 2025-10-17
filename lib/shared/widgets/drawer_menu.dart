@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../../core/theme/constants.dart';
-import '../../core/routes/routes.dart';
+import 'package:go_router/go_router.dart';
 // Silinen modül: user_profile
 import '../../core/providers/currency_providers.dart';
 import '../../core/providers/company_provider.dart';
@@ -110,7 +110,7 @@ class DrawerMenuNotifier extends StateNotifier<Map<String, dynamic>> {
   /// Constructor
   DrawerMenuNotifier()
       : super({
-          'activeRoute': TamgaciRoutes.dashboard,
+          'activeRoute': 'dashboard',
           'expandedItems': <String>{},
         });
 
@@ -137,7 +137,7 @@ class DrawerMenuNotifier extends StateNotifier<Map<String, dynamic>> {
   }
 
   /// Aktif route'u döndürür
-  String get activeRoute => state['activeRoute'] ?? TamgaciRoutes.dashboard;
+  String get activeRoute => state['activeRoute'] ?? 'dashboard';
 
   /// Alt menünün açık olup olmadığını kontrol eder
   bool isExpanded(String itemId) {
@@ -162,7 +162,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'dashboard',
       title: 'Dashboard',
       icon: Icons.dashboard_outlined,
-      route: TamgaciRoutes.dashboard,
+      route: 'dashboard',
     ),
 
     // Müşteriler
@@ -170,7 +170,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'customers',
       title: 'Müşteriler',
       icon: Icons.people_outlined,
-      route: TamgaciRoutes.customersList,
+      route: 'customers',
     ),
 
     // Tedarikçiler
@@ -178,7 +178,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'suppliers',
       title: 'Tedarikçiler',
       icon: Icons.local_shipping_outlined,
-      route: TamgaciRoutes.suppliersList,
+      route: 'suppliers',
     ),
 
     // Ürünler (Açılır Menü)
@@ -192,19 +192,19 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'products-list',
           title: 'Ürün / Hizmetler',
           icon: Icons.inventory_outlined,
-          route: TamgaciRoutes.productsList,
+          route: 'products',
         ),
         DrawerMenuItem(
           id: 'warehouses',
           title: 'Depolar',
           icon: Icons.warehouse_outlined,
-          route: TamgaciRoutes.warehouseList,
+          route: 'warehouses',
         ),
         DrawerMenuItem(
           id: 'stock-counts',
           title: 'Stok Sayımları',
           icon: Icons.fact_check_outlined,
-          route: TamgaciRoutes.stockCountsList,
+          route: 'stock-counts',
           isActive: true,
         ),
         DrawerMenuItem(
@@ -225,7 +225,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'product-variants',
           title: 'Ürün Varyantları',
           icon: Icons.style_outlined,
-          route: TamgaciRoutes.productVariants,
+          route: 'product-variants',
           isActive: true,
         ),
       ],
@@ -236,7 +236,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'sales',
       title: 'Satışlar',
       icon: Icons.sell_outlined,
-      route: TamgaciRoutes.invoicesList,
+      route: 'invoices',
     ),
 
     // Alışlar
@@ -244,7 +244,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'purchases',
       title: 'Alışlar',
       icon: Icons.shopping_cart_outlined,
-      route: TamgaciRoutes.purchasesList,
+      route: 'purchases',
     ),
 
     // Nakit Yönetimi (Açılır Menü)
@@ -258,7 +258,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'accounts',
           title: 'Hesaplarım',
           icon: Icons.account_balance_outlined,
-          route: TamgaciRoutes.accountsHome,
+          route: 'accounts',
         ),
         DrawerMenuItem(
           id: 'employees',
@@ -310,7 +310,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'reports',
       title: 'Raporlar',
       icon: Icons.assessment_outlined,
-      route: TamgaciRoutes.reportsList,
+      route: 'reports',
     ),
   ];
 });
@@ -866,13 +866,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
         if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
           Navigator.of(context).pop();
         }
-        ref
-            .read(drawerMenuProvider.notifier)
-            .setActiveRoute(TamgaciRoutes.profile);
-        final current = ModalRoute.of(context)?.settings.name;
-        if (current != TamgaciRoutes.profile) {
-          Navigator.of(context).pushNamed(TamgaciRoutes.profile);
-        }
+        ref.read(drawerMenuProvider.notifier).setActiveRoute('profile');
+        context.goNamed('profile');
       },
       borderRadius: BorderRadius.circular(8),
       child: Container(
@@ -1062,15 +1057,11 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 if (_isSubscriptionExpired(user)) {
                   ref
                       .read(drawerMenuProvider.notifier)
-                      .setActiveRoute(TamgaciRoutes.subscription);
+                      .setActiveRoute('subscription');
                   if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
                     Navigator.of(context).pop();
                   }
-                  final current = ModalRoute.of(context)?.settings.name;
-                  if (current != TamgaciRoutes.subscription) {
-                    Navigator.of(context)
-                        .pushReplacementNamed(TamgaciRoutes.subscription);
-                  }
+                  context.goNamed('subscription');
                   return;
                 }
                 ref
@@ -1244,12 +1235,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 if (Scaffold.maybeOf(context)?.isDrawerOpen ?? false) {
                   Navigator.of(context).pop();
                 }
-                final current = ModalRoute.of(context)?.settings.name;
-                if (current != TamgaciRoutes.settings) {
-                  Navigator.of(context).pushReplacementNamed(
-                    TamgaciRoutes.settings,
-                  );
-                }
+                context.goNamed('settings');
               },
             ),
           ),
@@ -1371,10 +1357,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 await FirebaseAuthService.signOut();
               } catch (_) {}
               if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  TamgaciRoutes.login,
-                  (route) => false,
-                );
+                context.goNamed('login');
               }
             },
             child: const Text(

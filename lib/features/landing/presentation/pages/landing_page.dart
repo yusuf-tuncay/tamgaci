@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 
 /// Kurumsal ve KOBİ odaklı landing page
@@ -1399,7 +1400,7 @@ class _LandingPageState extends State<LandingPage>
   // ========== URL LAUNCHER METHODS ==========
 
   Future<void> _launchWebApp() async {
-    Navigator.of(context).pushReplacementNamed('/dashboard');
+    context.go('/dashboard');
   }
 
   Future<void> _launchGooglePlay() async {

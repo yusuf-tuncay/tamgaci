@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -14,7 +15,6 @@ import '../../domain/entities/product.dart';
 import '../../domain/entities/product_variant.dart';
 import '../../domain/utils/barcode_generator.dart';
 import '../providers/product_providers.dart';
-import '../../../../core/routes/routes.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
 import '../../../warehouses/presentation/providers/warehouse_providers.dart';
 import '../../data/services/firebase_storage_service.dart';
@@ -2260,10 +2260,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         if (mounted) {
           Future.microtask(() {
             if (!mounted) return;
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              TamgaciRoutes.productsList,
-              (route) => false,
-            );
+            context.goNamed('products');
           });
         }
       } else {
@@ -2279,10 +2276,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         if (mounted) {
           Future.microtask(() {
             if (!mounted) return;
-            Navigator.of(context).pushNamedAndRemoveUntil(
-              TamgaciRoutes.productsList,
-              (route) => false,
-            );
+            context.goNamed('products');
           });
         }
       }

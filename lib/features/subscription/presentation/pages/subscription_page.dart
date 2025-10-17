@@ -275,7 +275,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                       Text(
                         PricingConfig.getPriceLabel(),
                         style: GoogleFonts.poppins(
-                          fontSize: 14,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white.withValues(alpha: 0.9),
                         ),
                       ),
@@ -326,7 +327,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
                           Text(
                             PricingConfig.getPriceLabel(),
                             style: GoogleFonts.poppins(
-                              fontSize: 14,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
