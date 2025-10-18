@@ -92,8 +92,14 @@ class _EnhancedPurchasesListPageState
     final totalPurchases = purchases.length;
     final totalAmount = purchases.fold<double>(
         0, (sum, purchase) => sum + (purchase.totalAmount));
-    final paidPurchases = purchases.where((purchase) => purchase.paymentStatus == PurchasePaymentStatus.paid).length;
-    final pendingPurchases = purchases.where((purchase) => purchase.paymentStatus != PurchasePaymentStatus.paid).length;
+    final paidPurchases = purchases
+        .where(
+            (purchase) => purchase.paymentStatus == PurchasePaymentStatus.paid)
+        .length;
+    final pendingPurchases = purchases
+        .where(
+            (purchase) => purchase.paymentStatus != PurchasePaymentStatus.paid)
+        .length;
 
     return Container(
       width: double.infinity,
@@ -121,19 +127,6 @@ class _EnhancedPurchasesListPageState
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.shopping_bag,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,24 +149,41 @@ class _EnhancedPurchasesListPageState
                   ],
                 ),
               ),
+              // Özet istatistikler - sadece masaüstünde göster
+              if (MediaQuery.of(context).size.width > 768)
+                Row(
+                  children: [
+                    _buildHeaderStatCard('Toplam Alış',
+                        CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Alış Sayısı', totalPurchases.toString()),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Bekleyen', pendingPurchases.toString()),
+                  ],
+                ),
             ],
           ),
-          const SizedBox(height: 20),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildHeaderStatCard('Toplam Alış',
-                    CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
-                const SizedBox(width: 8),
-                _buildHeaderStatCard('Alış Sayısı', totalPurchases.toString()),
-                const SizedBox(width: 8),
-                _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
-                const SizedBox(width: 8),
-                _buildHeaderStatCard('Bekleyen', pendingPurchases.toString()),
-              ],
+          // Mobil için istatistikler
+          if (MediaQuery.of(context).size.width <= 768) ...[
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildHeaderStatCard('Toplam Alış',
+                      CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Alış Sayısı', totalPurchases.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Bekleyen', pendingPurchases.toString()),
+                ],
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 8),
           Container(
             height: 1,
@@ -263,7 +273,7 @@ class _EnhancedPurchasesListPageState
             padding: const EdgeInsets.all(16.0),
             child: _buildWelcomeCard(purchases),
           ),
-          
+
           // Arama ve filtre çubuğu
           _buildSearchAndFilterBar(),
 

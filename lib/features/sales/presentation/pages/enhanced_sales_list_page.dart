@@ -88,8 +88,8 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   /// Header kartı - istatistikler ve hoş geldin mesajı
   Widget _buildWelcomeCard(List<Sale> sales) {
     final totalSales = sales.length;
-    final totalAmount = sales.fold<double>(
-        0, (sum, sale) => sum + (sale.totalAmount));
+    final totalAmount =
+        sales.fold<double>(0, (sum, sale) => sum + (sale.totalAmount));
     final paidSales = sales.where((sale) => sale.isPaid == true).length;
     final pendingSales = sales.where((sale) => sale.isPaid == false).length;
 
@@ -119,19 +119,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.shopping_cart,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,24 +141,41 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                   ],
                 ),
               ),
+              // Özet istatistikler - sadece masaüstünde göster
+              if (MediaQuery.of(context).size.width > 768)
+                Row(
+                  children: [
+                    _buildHeaderStatCard('Toplam Satış',
+                        CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
+                  ],
+                ),
             ],
           ),
-          const SizedBox(height: 20),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildHeaderStatCard('Toplam Satış',
-                    CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
-                const SizedBox(width: 8),
-                _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
-                const SizedBox(width: 8),
-                _buildHeaderStatCard('Ödenen', paidSales.toString()),
-                const SizedBox(width: 8),
-                _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
-              ],
+          // Mobil için istatistikler
+          if (MediaQuery.of(context).size.width <= 768) ...[
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildHeaderStatCard('Toplam Satış',
+                      CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
+                ],
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: 8),
           Container(
             height: 1,
@@ -261,7 +265,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
             padding: const EdgeInsets.all(16.0),
             child: _buildWelcomeCard(sales),
           ),
-          
+
           // Arama ve filtre çubuğu
           _buildSearchAndFilterBar(),
 
