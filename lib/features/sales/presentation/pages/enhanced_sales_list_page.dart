@@ -546,7 +546,13 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 8),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Üçüncü satır: Sıralama, Sıralama yönü ve Import/Export butonları
+                Row(
+                  children: [
+                    // Sıralama dropdown
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _getSortDisplayName(_sortBy),
@@ -572,12 +578,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                         },
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Üçüncü satır: Sıralama yönü ve Import/Export butonları
-                Row(
-                  children: [
+                    const SizedBox(width: 8),
                     // Sıralama yönü
                     IconButton(
                       onPressed: () {
