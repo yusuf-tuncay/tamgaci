@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -84,6 +85,143 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     Navigator.of(context).pushNamed('/sales/create');
   }
 
+  /// Header kartı - istatistikler ve hoş geldin mesajı
+  Widget _buildWelcomeCard(List<Sale> sales) {
+    final totalSales = sales.length;
+    final totalAmount = sales.fold<double>(
+        0, (sum, sale) => sum + (sale.totalAmount));
+    final paidSales = sales.where((sale) => sale.isPaid == true).length;
+    final pendingSales = sales.where((sale) => sale.isPaid == false).length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.primary.withValues(alpha: 0.8),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.shopping_cart,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Satışlar',
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Text(
+                      'Satış işlemlerinizi yönetin',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildHeaderStatCard('Toplam Satış',
+                    CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                const SizedBox(width: 8),
+                _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
+                const SizedBox(width: 8),
+                _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                const SizedBox(width: 8),
+                _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: Colors.white.withValues(alpha: 0.12),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Header içindeki istatistik kartı
+  Widget _buildHeaderStatCard(String title, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _navigateToDetail(String saleId) {
     Navigator.of(context).pushNamed('/sales/detail', arguments: saleId);
   }
@@ -118,6 +256,12 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
       persistentOnLarge: false,
       body: Column(
         children: [
+          // Header kartı
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildWelcomeCard(sales),
+          ),
+          
           // Arama ve filtre çubuğu
           _buildSearchAndFilterBar(),
 
