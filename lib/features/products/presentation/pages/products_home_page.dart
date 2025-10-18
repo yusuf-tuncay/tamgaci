@@ -12,8 +12,6 @@ import '../../../../core/utils/currency_helper.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/widgets/disposed_error_suppressor_mixin.dart';
-import 'create_product_page.dart';
-import 'product_detail_page.dart';
 
 /// Ürünler Ana Sayfası
 class ProductsHomePage extends ConsumerStatefulWidget {
@@ -166,17 +164,22 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Row(
-                  children: [
-                    _buildHeaderStatCard('Toplam', totalProducts.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Aktif', activeProducts.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Kategori', categories.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard(
-                        'Düşük Stok', lowStockProducts.toString()),
-                  ],
+                Flexible(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildHeaderStatCard('Toplam', totalProducts.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Aktif', activeProducts.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Kategori', categories.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard(
+                            'Düşük Stok', lowStockProducts.toString()),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -1144,11 +1147,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                   ),
                   IconButton(
                     onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/products/edit',
-                        arguments: product.id,
-                      );
+                      context.go('/products/edit/${product.id}');
                     },
                     icon: const Icon(Icons.edit, size: 18),
                     tooltip: 'Düzenle',
@@ -1556,20 +1555,10 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   }
 
   void _navigateToCreateProduct() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const CreateProductPage(),
-      ),
-    );
+    context.go('/products/create');
   }
 
   void _navigateToProductDetail(Product product) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ProductDetailPage(productId: product.id),
-      ),
-    );
+    context.go('/products/detail/${product.id}');
   }
 }

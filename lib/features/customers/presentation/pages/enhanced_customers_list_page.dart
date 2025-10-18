@@ -192,18 +192,23 @@ class _EnhancedCustomersListPageState
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Row(
-                  children: [
-                    _buildHeaderStatCard('Aktif', activeCustomers.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Bakiye',
-                        CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Kredi',
-                        CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
-                  ],
+                Flexible(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildHeaderStatCard('Aktif', activeCustomers.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Bakiye',
+                            CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Kredi',
+                            CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -865,11 +870,7 @@ class _EnhancedCustomersListPageState
 
     return InkWell(
       onTap: () {
-        Navigator.pushNamed(
-          context,
-          '/customers/detail',
-          arguments: customer.id,
-        );
+        context.go('/customers/detail/${customer.id}');
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -1096,22 +1097,14 @@ class _EnhancedCustomersListPageState
                 children: [
                   IconButton(
                     onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/customers/detail',
-                        arguments: customer.id,
-                      );
+                      context.go('/customers/detail/${customer.id}');
                     },
                     icon: const Icon(Icons.visibility, size: 18),
                     tooltip: 'Detayları Görüntüle',
                   ),
                   IconButton(
                     onPressed: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/customers/edit',
-                        arguments: customer.id,
-                      );
+                      context.go('/customers/edit/${customer.id}');
                     },
                     icon: const Icon(Icons.edit, size: 18),
                     tooltip: 'Düzenle',
@@ -1140,11 +1133,7 @@ class _EnhancedCustomersListPageState
       ),
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(
-            context,
-            '/customers/detail',
-            arguments: customer.id,
-          );
+          context.go('/customers/detail/${customer.id}');
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -1344,14 +1333,8 @@ class _EnhancedCustomersListPageState
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      Navigator.pushNamed(
-                        context,
-                        '/sales/create',
-                        arguments: {
-                          'customerId': customer.id,
-                          'customerName': customer.name,
-                        },
-                      );
+                      context.go(
+                          '/sales/create?customerId=${customer.id}&customerName=${Uri.encodeComponent(customer.name)}');
                     },
                     icon: const Icon(Icons.sell),
                     label: const Text('Satış Yap'),
@@ -1400,11 +1383,7 @@ class _EnhancedCustomersListPageState
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      Navigator.pushNamed(
-                        context,
-                        '/customers/edit',
-                        arguments: customer.id,
-                      );
+                      context.go('/customers/edit/${customer.id}');
                     },
                     icon: const Icon(Icons.edit),
                     label: const Text('Düzenle'),
