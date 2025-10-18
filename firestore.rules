@@ -271,11 +271,21 @@ service cloud.firestore {
     
     // Inventory/Stock collection rules
     match /tenants/{tenantId}/inventory/{id} {
-      allow read, write: if isSignedIn() && isTenantMember(tenantId);
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
     
     match /tenants/{tenantId}/stock_movements/{id} {
-      allow read, write: if isSignedIn() && isTenantMember(tenantId);
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
     
     // Stock Counts - Stok sayımları
