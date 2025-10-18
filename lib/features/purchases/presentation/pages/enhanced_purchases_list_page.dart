@@ -156,11 +156,13 @@ class _EnhancedPurchasesListPageState
                     _buildHeaderStatCard('Toplam Alış',
                         CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
                     const SizedBox(width: 8),
-                    _buildHeaderStatCard('Alış Sayısı', totalPurchases.toString()),
+                    _buildHeaderStatCard(
+                        'Alış Sayısı', totalPurchases.toString()),
                     const SizedBox(width: 8),
                     _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
                     const SizedBox(width: 8),
-                    _buildHeaderStatCard('Bekleyen', pendingPurchases.toString()),
+                    _buildHeaderStatCard(
+                        'Bekleyen', pendingPurchases.toString()),
                   ],
                 ),
             ],
@@ -175,7 +177,8 @@ class _EnhancedPurchasesListPageState
                   _buildHeaderStatCard('Toplam Alış',
                       CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
                   const SizedBox(width: 8),
-                  _buildHeaderStatCard('Alış Sayısı', totalPurchases.toString()),
+                  _buildHeaderStatCard(
+                      'Alış Sayısı', totalPurchases.toString()),
                   const SizedBox(width: 8),
                   _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
                   const SizedBox(width: 8),
@@ -242,8 +245,7 @@ class _EnhancedPurchasesListPageState
   Widget build(BuildContext context) {
     final searchQuery = _searchController.text;
     final purchases = _getMockPurchases();
-
-    Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ResponsiveScaffold(
       appBar: CustomAppBar(
@@ -275,7 +277,7 @@ class _EnhancedPurchasesListPageState
           ),
 
           // Arama ve filtre çubuğu
-          _buildSearchAndFilterBar(),
+          _buildSearchAndFilters(isDark),
 
           // İstatistik kartları
           _buildStatsCards(purchases),
@@ -287,123 +289,239 @@ class _EnhancedPurchasesListPageState
     );
   }
 
-  Widget _buildSearchAndFilterBar() {
+  Widget _buildSearchAndFilters(bool isDark) {
     return Container(
-      padding: TamgaciConstants.paddingMedium(context),
-      child: Column(
-        children: [
-          // Arama çubuğu
-          TextField(
-            controller: _searchController,
-            decoration: InputDecoration(
-              hintText: 'Alış ara...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      onPressed: () {
-                        _searchController.clear();
-                      },
-                      icon: const Icon(Icons.clear),
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // Filtre çipleri
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildFilterChip('Tür', _selectedType, _types, (value) {
-                  setState(() {
-                    _selectedType = value;
-                  });
-                }),
-                const SizedBox(width: 8),
-                _buildFilterChip('Durum', _selectedStatus, _statuses, (value) {
-                  setState(() {
-                    _selectedStatus = value;
-                  });
-                }),
-                const SizedBox(width: 8),
-                _buildFilterChip(
-                    'Ödeme', _selectedPaymentStatus, _paymentStatuses, (value) {
-                  setState(() {
-                    _selectedPaymentStatus = value;
-                  });
-                }),
-                const SizedBox(width: 8),
-                _buildFilterChip('Sırala', _getSortDisplayName(_sortBy),
-                    _sortOptions.map(_getSortDisplayName).toList(), (value) {
-                  setState(() {
-                    _sortBy = _getSortKeyFromDisplayName(value);
-                  });
-                }),
-                const SizedBox(width: 8),
-                FilterChip(
-                  label: Text(_dateRange != null
-                      ? '${_formatDate(_dateRange!.start)} - ${_formatDate(_dateRange!.end)}'
-                      : 'Tarih'),
-                  selected: _dateRange != null,
-                  onSelected: (selected) {
-                    if (selected) {
-                      _selectDateRange();
-                    } else {
-                      setState(() {
-                        _dateRange = null;
-                      });
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, String selectedValue,
-      List<String> options, Function(String) onChanged) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: selectedValue == options.first
-            ? AppColors.primary
-            : Colors.grey[200],
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: selectedValue,
-          items: options.map((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: selectedValue == options.first
-                      ? Colors.white
-                      : Colors.black87,
-                ),
-              ),
-            );
-          }).toList(),
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              onChanged(newValue);
-            }
-          },
+        color: isDark ? Colors.grey[800] : Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
         ),
       ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Masaüstünde tek satır, mobilde iki satır
+          if (constraints.maxWidth > 768) {
+            return Row(
+              children: [
+                // Arama çubuğu
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Alış ara...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Tür filtresi
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedType,
+                    decoration: InputDecoration(
+                      labelText: 'Tür',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                    ),
+                    items: _types.map((type) {
+                      return DropdownMenuItem(
+                        value: type,
+                        child: Text(type),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedType = value!;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Durum filtresi
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _selectedStatus,
+                    decoration: InputDecoration(
+                      labelText: 'Durum',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                    ),
+                    items: _statuses.map((status) {
+                      return DropdownMenuItem(
+                        value: status,
+                        child: Text(status),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedStatus = value!;
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Sıralama
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: _getSortDisplayName(_sortBy),
+                    decoration: InputDecoration(
+                      labelText: 'Sırala',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 12),
+                    ),
+                    items: _sortOptions.map(_getSortDisplayName).map((sort) {
+                      return DropdownMenuItem(
+                        value: sort,
+                        child: Text(sort),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        _sortBy = _getSortKeyFromDisplayName(value!);
+                      });
+                    },
+                  ),
+                ),
+              ],
+            );
+          } else {
+            // Mobil layout - iki satır
+            return Column(
+              children: [
+                // İlk satır: Arama
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Alış ara...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 12),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // İkinci satır: Filtreler
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedType,
+                        decoration: InputDecoration(
+                          labelText: 'Tür',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                        ),
+                        items: _types.map((type) {
+                          return DropdownMenuItem(
+                            value: type,
+                            child: Text(type),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedType = value!;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedStatus,
+                        decoration: InputDecoration(
+                          labelText: 'Durum',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                        ),
+                        items: _statuses.map((status) {
+                          return DropdownMenuItem(
+                            value: status,
+                            child: Text(status),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedStatus = value!;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _getSortDisplayName(_sortBy),
+                        decoration: InputDecoration(
+                          labelText: 'Sırala',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                        ),
+                        items: _sortOptions.map(_getSortDisplayName).map((sort) {
+                          return DropdownMenuItem(
+                            value: sort,
+                            child: Text(sort),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _sortBy = _getSortKeyFromDisplayName(value!);
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          }
+        },
+      ),
     );
   }
+
 
   String _getSortDisplayName(String key) {
     switch (key) {
@@ -991,19 +1109,6 @@ class _EnhancedPurchasesListPageState
     ];
   }
 
-  Future<void> _selectDateRange() async {
-    final DateTimeRange? picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDateRange: _dateRange,
-    );
-    if (picked != null && picked != _dateRange) {
-      setState(() {
-        _dateRange = picked;
-      });
-    }
-  }
 
   void _showFilterDialog() {
     showDialog(
