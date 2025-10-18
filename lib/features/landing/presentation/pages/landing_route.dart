@@ -28,6 +28,22 @@ class _LandingRouteState extends ConsumerState<LandingRoute> {
 
   /// Authentication durumunu kontrol et
   void _checkAuthStatus() {
+    // Payment sayfalarından gelip gelmediğini kontrol et
+    final currentUrl = Uri.base.toString();
+    final isFromPayment = currentUrl.contains('/payment/') ||
+        currentUrl.contains('payment_success') ||
+        currentUrl.contains('payment_fail');
+
+    AppLogger.info('LandingRoute: Current URL: $currentUrl');
+    AppLogger.info('LandingRoute: Is from payment: $isFromPayment');
+
+    // Payment sayfalarından geliyorsa auth check yapma
+    if (isFromPayment) {
+      AppLogger.info(
+          'LandingRoute: Coming from payment page, skipping auth check');
+      return;
+    }
+
     // Firebase Auth durumunu kontrol et
     final user = FirebaseAuth.instance.currentUser;
 

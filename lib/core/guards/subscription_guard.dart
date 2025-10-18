@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
 import '../../features/auth/domain/entities/user.dart';
-import '../../features/subscription/presentation/pages/subscription_page.dart';
 import '../services/subscription/firestore_subscription_service.dart';
 import '../providers/subscription_state_provider.dart';
 
