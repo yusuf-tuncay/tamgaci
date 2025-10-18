@@ -143,17 +143,22 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Row(
-                  children: [
-                    _buildHeaderStatCard('Toplam Satış',
-                        CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Ödenen', paidSales.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
-                  ],
+                Flexible(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildHeaderStatCard('Toplam Satış',
+                            CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -488,7 +493,8 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 12),
                         ),
-                        items: _sortOptions.map(_getSortDisplayName).map((sort) {
+                        items:
+                            _sortOptions.map(_getSortDisplayName).map((sort) {
                           return DropdownMenuItem(
                             value: sort,
                             child: Text(sort),
@@ -510,7 +516,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
       ),
     );
   }
-
 
   String _getSortDisplayName(String key) {
     switch (key) {
@@ -1096,7 +1101,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
       ),
     ];
   }
-
 
   void _showFilterDialog() {
     showDialog(

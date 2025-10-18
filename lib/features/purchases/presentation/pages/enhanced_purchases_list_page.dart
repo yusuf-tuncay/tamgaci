@@ -151,19 +151,24 @@ class _EnhancedPurchasesListPageState
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Row(
-                  children: [
-                    _buildHeaderStatCard('Toplam Alış',
-                        CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard(
-                        'Alış Sayısı', totalPurchases.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard(
-                        'Bekleyen', pendingPurchases.toString()),
-                  ],
+                Flexible(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildHeaderStatCard('Toplam Alış',
+                            CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard(
+                            'Alış Sayısı', totalPurchases.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard(
+                            'Bekleyen', pendingPurchases.toString()),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -499,7 +504,8 @@ class _EnhancedPurchasesListPageState
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 12),
                         ),
-                        items: _sortOptions.map(_getSortDisplayName).map((sort) {
+                        items:
+                            _sortOptions.map(_getSortDisplayName).map((sort) {
                           return DropdownMenuItem(
                             value: sort,
                             child: Text(sort),
@@ -521,7 +527,6 @@ class _EnhancedPurchasesListPageState
       ),
     );
   }
-
 
   String _getSortDisplayName(String key) {
     switch (key) {
@@ -1108,7 +1113,6 @@ class _EnhancedPurchasesListPageState
       ),
     ];
   }
-
 
   void _showFilterDialog() {
     showDialog(
