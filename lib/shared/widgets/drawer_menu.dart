@@ -170,7 +170,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'customers',
       title: 'Müşteriler',
       icon: Icons.people_outlined,
-      route: 'customers',
+      route: 'customers-list',
     ),
 
     // Tedarikçiler
@@ -178,7 +178,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'suppliers',
       title: 'Tedarikçiler',
       icon: Icons.local_shipping_outlined,
-      route: 'suppliers',
+      route: 'suppliers-list',
     ),
 
     // Ürünler (Açılır Menü)
@@ -192,19 +192,19 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'products-list',
           title: 'Ürün / Hizmetler',
           icon: Icons.inventory_outlined,
-          route: 'products',
+          route: 'products-list',
         ),
         DrawerMenuItem(
           id: 'warehouses',
           title: 'Depolar',
           icon: Icons.warehouse_outlined,
-          route: 'warehouses',
+          route: 'warehouses-home',
         ),
         DrawerMenuItem(
           id: 'stock-counts',
           title: 'Stok Sayımları',
           icon: Icons.fact_check_outlined,
-          route: 'stock-counts',
+          route: 'stock-counts-list',
           isActive: true,
         ),
         DrawerMenuItem(
@@ -236,7 +236,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'sales',
       title: 'Satışlar',
       icon: Icons.sell_outlined,
-      route: 'invoices',
+      route: 'sales-list',
     ),
 
     // Alışlar
@@ -244,7 +244,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'purchases',
       title: 'Alışlar',
       icon: Icons.shopping_cart_outlined,
-      route: 'purchases',
+      route: 'purchases-list',
     ),
 
     // Nakit Yönetimi (Açılır Menü)
@@ -258,7 +258,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'accounts',
           title: 'Hesaplarım',
           icon: Icons.account_balance_outlined,
-          route: 'accounts',
+          route: 'accounts-list',
         ),
         DrawerMenuItem(
           id: 'employees',
@@ -310,7 +310,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       id: 'reports',
       title: 'Raporlar',
       icon: Icons.assessment_outlined,
-      route: 'reports',
+      route: 'reports-overview',
     ),
   ];
 });
