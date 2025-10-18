@@ -11,6 +11,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
+import '../../../../core/services/excel_service.dart';
 import '../../domain/entities/purchase.dart';
 
 /// Gelişmiş alışlar listesi sayfası
@@ -30,6 +31,7 @@ class _EnhancedPurchasesListPageState
   String _selectedStatus = 'Tümü';
   String _selectedPaymentStatus = 'Tümü';
   String _sortBy = 'purchaseDate';
+  bool _sortAscending = true;
   DateTimeRange? _dateRange;
 
   final List<String> _types = [
@@ -411,6 +413,69 @@ class _EnhancedPurchasesListPageState
                       });
                     },
                   ),
+                ),
+                const SizedBox(width: 8),
+                // Sıralama yönü
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _sortAscending = !_sortAscending;
+                    });
+                  },
+                  icon: Icon(
+                    _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                  ),
+                  tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                ),
+                const SizedBox(width: 8),
+                // Excel, CSV, PDF, Import butonları
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Excel Export
+                    IconButton(
+                      onPressed: _exportToExcel,
+                      icon: const Icon(Icons.table_chart),
+                      tooltip: 'Excel\'e Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.green.withValues(alpha: 0.1),
+                        foregroundColor: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // CSV Export
+                    IconButton(
+                      onPressed: _exportToCSV,
+                      icon: const Icon(Icons.description),
+                      tooltip: 'CSV\'ye Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                        foregroundColor: Colors.blue,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // PDF Export
+                    IconButton(
+                      onPressed: _exportToPDF,
+                      icon: const Icon(Icons.picture_as_pdf),
+                      tooltip: 'PDF\'ye Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.red.withValues(alpha: 0.1),
+                        foregroundColor: Colors.red,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    // Import
+                    IconButton(
+                      onPressed: _showImportDialog,
+                      icon: const Icon(Icons.upload_file),
+                      tooltip: 'Dosya İçe Aktar',
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                        foregroundColor: Colors.orange,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             );
@@ -1137,6 +1202,136 @@ class _EnhancedPurchasesListPageState
         title: const Text('Dışa Aktar'),
         content:
             const Text('Excel/PDF dışa aktarım özellikleri yakında eklenecek.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Tamam'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportToExcel() async {
+    try {
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+
+      final fileName = await ExcelService.exportCustomersToExcel([]);
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      // Başarı mesajı
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Excel dosyası oluşturuldu: $fileName'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      // Hata mesajı
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Excel oluşturulurken hata: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _exportToCSV() async {
+    try {
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+
+      final fileName = await ExcelService.exportCustomersToCSV([]);
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      // Başarı mesajı
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CSV dosyası oluşturuldu: $fileName'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      // Hata mesajı
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('CSV oluşturulurken hata: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _exportToPDF() async {
+    try {
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+
+      final fileName = await ExcelService.exportCustomersToPDF([]);
+
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      // Başarı mesajı
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('PDF dosyası oluşturuldu: $fileName'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Loading'i kapat
+      Navigator.of(context).pop();
+
+      // Hata mesajı
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('PDF oluşturulurken hata: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showImportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dosya İçe Aktar'),
+        content: const Text('Bu özellik yakında eklenecek.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
