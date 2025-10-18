@@ -585,6 +585,73 @@ class _EnhancedPurchasesListPageState
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                // Üçüncü satır: Sıralama yönü ve Import/Export butonları
+                Row(
+                  children: [
+                    // Sıralama yönü
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _sortAscending = !_sortAscending;
+                        });
+                      },
+                      icon: Icon(
+                        _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                      ),
+                      tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                    ),
+                    const SizedBox(width: 8),
+                    // Import/Export butonları
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Excel Export
+                          IconButton(
+                            onPressed: _exportToExcel,
+                            icon: const Icon(Icons.table_chart),
+                            tooltip: 'Excel\'e Aktar',
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.green.withValues(alpha: 0.1),
+                              foregroundColor: Colors.green,
+                            ),
+                          ),
+                          // CSV Export
+                          IconButton(
+                            onPressed: _exportToCSV,
+                            icon: const Icon(Icons.description),
+                            tooltip: 'CSV\'ye Aktar',
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                              foregroundColor: Colors.blue,
+                            ),
+                          ),
+                          // PDF Export
+                          IconButton(
+                            onPressed: _exportToPDF,
+                            icon: const Icon(Icons.picture_as_pdf),
+                            tooltip: 'PDF\'ye Aktar',
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.red.withValues(alpha: 0.1),
+                              foregroundColor: Colors.red,
+                            ),
+                          ),
+                          // Import
+                          IconButton(
+                            onPressed: _showImportDialog,
+                            icon: const Icon(Icons.upload_file),
+                            tooltip: 'Dosya İçe Aktar',
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                              foregroundColor: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ],
             );
           }
