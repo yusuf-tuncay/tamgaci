@@ -6,8 +6,7 @@ import '../../core/guards/subscription_guard.dart';
 import '../../features/accounts/presentation/pages/accounts_home_page.dart';
 import '../../features/accounts/presentation/pages/create_account_page.dart'
     as accounts;
-import '../../features/cash_management/presentation/pages/enhanced_accounts_list_page.dart';
-import '../../features/cash_management/presentation/pages/enhanced_account_detail_page.dart';
+import '../../features/accounts/presentation/pages/account_detail_page.dart';
 
 /// Accounts routes
 class AccountsRoutes {
@@ -20,7 +19,7 @@ class AccountsRoutes {
           builder: (context, state) => const SubscriptionGuard(
             allowTrial: true,
             allowExpired: false,
-            child: EnhancedAccountsListPage(),
+            child: AccountsHomePage(),
           ),
         ),
 
@@ -52,7 +51,7 @@ class AccountsRoutes {
             return SubscriptionGuard(
               allowTrial: true,
               allowExpired: false,
-              child: EnhancedAccountDetailPage(accountId: id),
+              child: AccountDetailPage(accountId: id),
             );
           },
         ),
