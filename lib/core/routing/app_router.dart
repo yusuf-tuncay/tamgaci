@@ -88,21 +88,32 @@ class AppRouter {
         '/forgot-password',
       ].contains(state.matchedLocation);
 
+      debugPrint('🔍 AppRouter: Redirect check - Location: ${state.matchedLocation}');
+      debugPrint('🔍 AppRouter: Redirect check - Full location: ${state.uri}');
+      debugPrint('🔍 AppRouter: Redirect check - Is authenticated: $isAuthenticated');
+      debugPrint('🔍 AppRouter: Redirect check - Is payment page: $isOnPaymentPage');
+      debugPrint('🔍 AppRouter: Redirect check - Is public page: $isOnPublicPage');
+
       // Payment sayfaları için hiçbir redirect yapma
       if (isOnPaymentPage) {
+        debugPrint('🔍 AppRouter: Payment page detected, no redirect');
         return null;
       }
 
       // Public sayfalar için redirect yapma
       if (isOnPublicPage) {
+        debugPrint('🔍 AppRouter: Public page detected, no redirect');
         return null;
       }
 
       // Protected sayfalar için authentication kontrolü
       if (!isAuthenticated) {
+        debugPrint(
+            '🔍 AppRouter: User not authenticated, redirecting to login');
         return '/login';
       }
 
+      debugPrint('🔍 AppRouter: User authenticated, no redirect needed');
       return null;
     },
 

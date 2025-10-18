@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
 
 /// Kurumsal ve KOBİ odaklı landing page
@@ -1292,22 +1293,33 @@ class _LandingPageState extends State<LandingPage>
                         children: [
                           // Icon
                           Container(
-                            width: MediaQuery.of(context).size.width > 768 ? 48 : 36,
-                            height: MediaQuery.of(context).size.width > 768 ? 48 : 36,
+                            width: MediaQuery.of(context).size.width > 768
+                                ? 48
+                                : 36,
+                            height: MediaQuery.of(context).size.width > 768
+                                ? 48
+                                : 36,
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(
-                                MediaQuery.of(context).size.width > 768 ? 24 : 18,
+                                MediaQuery.of(context).size.width > 768
+                                    ? 24
+                                    : 18,
                               ),
                             ),
                             child: Icon(
                               Icons.star,
                               color: Colors.white,
-                              size: MediaQuery.of(context).size.width > 768 ? 24 : 18,
+                              size: MediaQuery.of(context).size.width > 768
+                                  ? 24
+                                  : 18,
                             ),
                           ),
 
-                          SizedBox(width: MediaQuery.of(context).size.width > 768 ? 16 : 12),
+                          SizedBox(
+                              width: MediaQuery.of(context).size.width > 768
+                                  ? 16
+                                  : 12),
 
                           // Text
                           Expanded(
@@ -1400,7 +1412,18 @@ class _LandingPageState extends State<LandingPage>
   // ========== URL LAUNCHER METHODS ==========
 
   Future<void> _launchWebApp() async {
-    context.go('/dashboard');
+    // Firebase Auth durumunu kontrol et
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // Kullanıcı giriş yapmış - dashboard'a yönlendir
+      debugPrint('LandingPage: User is signed in, navigating to dashboard');
+      context.go('/dashboard');
+    } else {
+      // Kullanıcı giriş yapmamış - login sayfasına yönlendir
+      debugPrint('LandingPage: User is not signed in, navigating to login');
+      context.go('/login');
+    }
   }
 
   Future<void> _launchGooglePlay() async {

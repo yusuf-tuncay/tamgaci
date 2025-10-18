@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/constants.dart';
 
 /// Özel AppBar widget'ı
@@ -227,7 +228,7 @@ class _CustomAppBarState extends State<CustomAppBar>
 
     if (widget.showBackButton) {
       return IconButton(
-        onPressed: widget.onBackPressed ?? () => Navigator.of(context).pop(),
+        onPressed: widget.onBackPressed ?? () => context.pop(),
         icon: Icon(
           Icons.arrow_back_ios,
           color: iconColor,
