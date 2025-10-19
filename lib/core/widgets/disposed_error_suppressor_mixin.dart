@@ -38,6 +38,7 @@ mixin DisposedErrorSuppressorMixin<T extends StatefulWidget> on State<T> {
             errorString.contains('LegacyJavaScriptObject') ||
             errorString.contains('is not a subtype of type') ||
             errorString.contains('RenderObject') ||
+            errorString.contains('ImageSizeInfo') ||
             errorString.contains('a[\$keys] is not iterable')) {
           // Bu hataları tamamen sessizce geç
           return;
@@ -124,6 +125,7 @@ mixin ConsumerDisposedErrorSuppressorMixin<T extends ConsumerStatefulWidget>
             errorString.contains('LegacyJavaScriptObject') ||
             errorString.contains('is not a subtype of type') ||
             errorString.contains('RenderObject') ||
+            errorString.contains('ImageSizeInfo') ||
             errorString.contains('a[\$keys] is not iterable')) {
           // Bu hataları tamamen sessizce geç
           return;
