@@ -107,6 +107,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: 16),
 
             _buildSettingsCategoryCard(
+              title: "Ürün Varyantları",
+              icon: Icons.style_outlined,
+              description: "Ürün varyantları ve özelliklerini yönetin",
+              isDark: isDark,
+              onTap: () => context.goNamed('product-variants'),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSettingsCategoryCard(
               title: "Yazdırma & Belge",
               icon: Icons.print,
               description: "Yazıcı ayarları, belge formatları, şablonlar",

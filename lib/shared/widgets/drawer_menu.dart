@@ -221,13 +221,6 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           route: '',
           isActive: false,
         ),
-        DrawerMenuItem(
-          id: 'product-variants',
-          title: 'Ürün Varyantları',
-          icon: Icons.style_outlined,
-          route: 'product-variants',
-          isActive: true,
-        ),
       ],
     ),
 
