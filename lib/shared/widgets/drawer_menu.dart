@@ -50,6 +50,9 @@ class DrawerMenuItem {
   /// Admin yetkisi gerekip gerekmediği
   final bool requiresAdmin;
 
+  /// Yakında gelecek özellik olup olmadığı
+  final bool comingSoon;
+
   const DrawerMenuItem({
     required this.id,
     required this.title,
@@ -60,6 +63,7 @@ class DrawerMenuItem {
     this.isActive = true,
     this.isVisible = true,
     this.requiresAdmin = false,
+    this.comingSoon = false,
   });
 
   /// DrawerMenuItem kopyalama metodu
@@ -73,6 +77,7 @@ class DrawerMenuItem {
     bool? isActive,
     bool? isVisible,
     bool? requiresAdmin,
+    bool? comingSoon,
   }) {
     return DrawerMenuItem(
       id: id ?? this.id,
@@ -84,6 +89,7 @@ class DrawerMenuItem {
       isActive: isActive ?? this.isActive,
       isVisible: isVisible ?? this.isVisible,
       requiresAdmin: requiresAdmin ?? this.requiresAdmin,
+      comingSoon: comingSoon ?? this.comingSoon,
     );
   }
 }
@@ -306,12 +312,30 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       route: 'reports-overview',
     ),
 
-    // Entegrasyonlar (tek öğe)
+    // Entegrasyonlar (Açılır Menü)
     const DrawerMenuItem(
       id: 'integrations',
       title: 'Entegrasyonlar',
       icon: Icons.integration_instructions_outlined,
-      route: 'integrations-overview',
+      route: '', // Alt menü olduğu için boş
+      subItems: [
+        DrawerMenuItem(
+          id: 'e-invoice',
+          title: 'E-Fatura',
+          icon: Icons.receipt_long_outlined,
+          route: '',
+          isActive: false,
+          comingSoon: true,
+        ),
+        DrawerMenuItem(
+          id: 'e-commerce',
+          title: 'E-Ticaret',
+          icon: Icons.shopping_cart_outlined,
+          route: '',
+          isActive: false,
+          comingSoon: true,
+        ),
+      ],
     ),
 
     // Eklentiler (tek öğe)
@@ -1146,7 +1170,27 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                   ),
                 ),
               )
-            : null,
+            : subItem.comingSoon
+                ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.orange.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      'Yakında',
+                      style: GoogleFonts.poppins(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange[700],
+                      ),
+                    ),
+                  )
+                : null,
         selected: isActive,
         selectedTileColor: Theme.of(context).brightness == Brightness.dark
             ? TamgaciConstants.primaryColor.withValues(alpha: 0.15)
