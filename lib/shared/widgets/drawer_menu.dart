@@ -213,13 +213,6 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           route: 'stock-counts-list',
           isActive: true,
         ),
-        DrawerMenuItem(
-          id: 'price-lists',
-          title: 'Özel Fiyat Listeleri',
-          icon: Icons.price_check_outlined,
-          route: '',
-          isActive: false,
-        ),
       ],
     ),
 
