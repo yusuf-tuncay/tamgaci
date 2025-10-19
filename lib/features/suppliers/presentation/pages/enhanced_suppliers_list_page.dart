@@ -167,8 +167,10 @@ class _EnhancedSuppliersListPageState
                       _buildHeaderStatCard('Bakiye',
                           CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
                       const SizedBox(width: 8),
-                      _buildHeaderStatCard('Kredi',
-                          CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
+                      _buildHeaderStatCard(
+                          'Kredi',
+                          CurrencyHelper.formatCurrency(
+                              totalCreditLimit, 'TRY')),
                       const SizedBox(width: 8),
                       _buildHeaderStatCard('Riskli', riskySuppliers.toString()),
                     ],
