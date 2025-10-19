@@ -13,6 +13,7 @@ import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
 import '../../domain/entities/supplier_enums.dart';
 import '../../domain/entities/supplier_transaction.dart';
+import 'package:go_router/go_router.dart';
 
 /// Gelişmiş tedarikçi detay sayfası
 class EnhancedSupplierDetailPage extends ConsumerStatefulWidget {
@@ -270,7 +271,115 @@ class _EnhancedSupplierDetailPageState
               ),
             ],
           ),
+
+          const SizedBox(height: 20),
+
+          // Action buttons
+          _buildActionButtons(supplier),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(Supplier supplier) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.shopping_cart,
+            label: 'Alış Yap',
+            color: Colors.orange,
+            onTap: () {
+              context.go('/purchases/create?supplierId=${supplier.id}&supplierName=${Uri.encodeComponent(supplier.name)}');
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.receipt,
+            label: 'Fatura Al',
+            color: Colors.blue,
+            onTap: () {
+              context.go('/purchases/create?supplierId=${supplier.id}&supplierName=${Uri.encodeComponent(supplier.name)}');
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.payment,
+            label: 'Ödeme Yap',
+            color: Colors.green,
+            onTap: () {
+              // Ödeme yapma işlemi
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.edit,
+            label: 'Düzenle',
+            color: Colors.grey,
+            onTap: () {
+              context.go('/suppliers/edit/${supplier.id}');
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: _buildActionButton(
+            icon: Icons.delete,
+            label: 'Sil',
+            color: Colors.red,
+            onTap: () {
+              // Silme işlemi
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: color,
+              size: 20,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

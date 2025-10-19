@@ -15,6 +15,7 @@ import '../providers/supplier_providers.dart';
 import '../../domain/entities/supplier.dart';
 import '../../domain/entities/supplier_enums.dart';
 import '../../../../core/widgets/disposed_error_suppressor_mixin.dart';
+import 'package:go_router/go_router.dart';
 
 /// Gelişmiş tedarikçi listesi sayfası
 class EnhancedSuppliersListPage extends ConsumerStatefulWidget {
@@ -80,11 +81,11 @@ class _EnhancedSuppliersListPageState
   }
 
   void _navigateToCreate() {
-    Navigator.of(context).pushNamed('/suppliers/create');
+    context.go('/suppliers/create');
   }
 
   void _navigateToDetail(String supplierId) {
-    Navigator.of(context).pushNamed('/suppliers/detail', arguments: supplierId);
+    context.go('/suppliers/detail/$supplierId');
   }
 
   Widget _buildWelcomeCard(bool isDark, List<Supplier> suppliers) {
