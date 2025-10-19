@@ -289,9 +289,6 @@ class _EnhancedPurchasesListPageState
           // Arama ve filtre çubuğu
           _buildSearchAndFilters(isDark),
 
-          // İstatistik kartları
-          _buildStatsCards(purchases),
-
           // Alış listesi
           Expanded(child: _buildPurchasesList(purchases, searchQuery)),
         ],
@@ -702,88 +699,6 @@ class _EnhancedPurchasesListPageState
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  Widget _buildStatsCards(List<Purchase> purchases) {
-    final totalPurchases = purchases.length;
-    final totalAmount = purchases.fold<double>(
-        0, (sum, purchase) => sum + purchase.totalAmount);
-    final pendingPayments = purchases.where((p) => p.isPaymentPending).length;
-    final overduePayments = purchases.where((p) => p.isOverdue).length;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              'Toplam Alış',
-              totalPurchases.toString(),
-              Icons.shopping_cart,
-              AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildStatCard(
-              'Toplam Tutar',
-              CurrencyHelper.formatCurrency(totalAmount, 'TRY'),
-              Icons.attach_money,
-              AppColors.success,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildStatCard(
-              'Bekleyen Ödeme',
-              pendingPayments.toString(),
-              Icons.pending,
-              AppColors.warning,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildStatCard(
-              'Vadesi Geçmiş',
-              overduePayments.toString(),
-              Icons.warning,
-              AppColors.error,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildPurchasesList(List<Purchase> purchases, String searchQuery) {
     List<Purchase> filteredPurchases = _applyFilters(purchases, searchQuery);

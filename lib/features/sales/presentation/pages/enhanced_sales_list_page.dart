@@ -278,9 +278,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
           // Arama ve filtre çubuğu
           _buildSearchAndFilters(isDark),
 
-          // İstatistik kartları
-          _buildStatsCards(sales),
-
           // Satış listesi
           Expanded(child: _buildSalesList(sales, searchQuery)),
         ],
@@ -691,88 +688,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     return '${date.day}/${date.month}/${date.year}';
   }
 
-  Widget _buildStatsCards(List<Sale> sales) {
-    final totalSales = sales.length;
-    final totalAmount =
-        sales.fold<double>(0, (sum, sale) => sum + sale.totalAmount);
-    final pendingPayments = sales.where((s) => s.isPaymentPending).length;
-    final overduePayments = sales.where((s) => s.isOverdue).length;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              'Toplam Satış',
-              totalSales.toString(),
-              Icons.sell,
-              AppColors.primary,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildStatCard(
-              'Toplam Tutar',
-              CurrencyHelper.formatCurrency(totalAmount, 'TRY'),
-              Icons.attach_money,
-              AppColors.success,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildStatCard(
-              'Bekleyen Ödeme',
-              pendingPayments.toString(),
-              Icons.pending,
-              AppColors.warning,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: _buildStatCard(
-              'Vadesi Geçmiş',
-              overduePayments.toString(),
-              Icons.warning,
-              AppColors.error,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: AppColors.textSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildSalesList(List<Sale> sales, String searchQuery) {
     List<Sale> filteredSales = _applyFilters(sales, searchQuery);
