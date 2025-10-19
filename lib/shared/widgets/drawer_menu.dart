@@ -335,6 +335,22 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           isActive: false,
           comingSoon: true,
         ),
+        DrawerMenuItem(
+          id: 'banking',
+          title: 'Banka',
+          icon: Icons.account_balance_outlined,
+          route: '',
+          isActive: false,
+          comingSoon: true,
+        ),
+        DrawerMenuItem(
+          id: 'tools',
+          title: 'Araçlar',
+          icon: Icons.build_outlined,
+          route: '',
+          isActive: false,
+          comingSoon: true,
+        ),
       ],
     ),
 
