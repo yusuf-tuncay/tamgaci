@@ -192,26 +192,44 @@ class _EnhancedCustomersListPageState
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Flexible(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildHeaderStatCard('Aktif', activeCustomers.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard('Bakiye',
-                            CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard('Kredi',
-                            CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
-                      ],
-                    ),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _buildHeaderStatCard('Aktif', activeCustomers.toString()),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard('Bakiye',
+                          CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard('Kredi',
+                          CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
+                    ],
                   ),
                 ),
             ],
           ),
+          // Mobil için istatistikler
+          if (MediaQuery.of(context).size.width <= 768) ...[
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildHeaderStatCard('Aktif', activeCustomers.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Bakiye',
+                      CurrencyHelper.formatCurrency(totalBalance, 'TRY')),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Kredi',
+                      CurrencyHelper.formatCurrency(totalCreditLimit, 'TRY')),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Riskli', riskyCustomers.toString()),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Container(
             height: 1,

@@ -164,25 +164,42 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Flexible(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        _buildHeaderStatCard('Toplam', totalProducts.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard('Aktif', activeProducts.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard('Kategori', categories.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard(
-                            'Düşük Stok', lowStockProducts.toString()),
-                      ],
-                    ),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _buildHeaderStatCard('Toplam', totalProducts.toString()),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard('Aktif', activeProducts.toString()),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard('Kategori', categories.toString()),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard(
+                          'Düşük Stok', lowStockProducts.toString()),
+                    ],
                   ),
                 ),
             ],
           ),
+          // Mobil için istatistikler
+          if (MediaQuery.of(context).size.width <= 768) ...[
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildHeaderStatCard('Toplam', totalProducts.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Aktif', activeProducts.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Kategori', categories.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard(
+                      'Düşük Stok', lowStockProducts.toString()),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Container(
             height: 1,
