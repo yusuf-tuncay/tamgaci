@@ -34,7 +34,11 @@ mixin DisposedErrorSuppressorMixin<T extends StatefulWidget> on State<T> {
             errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
             errorString.contains('!_debugDoingThisLayout') ||
             errorString.contains('RenderPadding') ||
-            errorString.contains('RenderRepaintBoundary')) {
+            errorString.contains('RenderRepaintBoundary') ||
+            errorString.contains('LegacyJavaScriptObject') ||
+            errorString.contains('is not a subtype of type') ||
+            errorString.contains('RenderObject') ||
+            errorString.contains('a[$keys] is not iterable')) {
           // Bu hataları tamamen sessizce geç
           return;
         }
@@ -116,7 +120,11 @@ mixin ConsumerDisposedErrorSuppressorMixin<T extends ConsumerStatefulWidget>
             errorString.contains('NEEDS-COMPOSITING-BITS-UPDATE') ||
             errorString.contains('!_debugDoingThisLayout') ||
             errorString.contains('RenderPadding') ||
-            errorString.contains('RenderRepaintBoundary')) {
+            errorString.contains('RenderRepaintBoundary') ||
+            errorString.contains('LegacyJavaScriptObject') ||
+            errorString.contains('is not a subtype of type') ||
+            errorString.contains('RenderObject') ||
+            errorString.contains('a[$keys] is not iterable')) {
           // Bu hataları tamamen sessizce geç
           return;
         }
