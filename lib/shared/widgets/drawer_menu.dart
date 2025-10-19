@@ -214,13 +214,6 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           isActive: true,
         ),
         DrawerMenuItem(
-          id: 'production',
-          title: 'Üretim',
-          icon: Icons.precision_manufacturing_outlined,
-          route: '',
-          isActive: false,
-        ),
-        DrawerMenuItem(
           id: 'price-lists',
           title: 'Özel Fiyat Listeleri',
           icon: Icons.price_check_outlined,
@@ -354,12 +347,22 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       ],
     ),
 
-    // Eklentiler (tek öğe)
+    // Eklentiler (Açılır Menü)
     const DrawerMenuItem(
       id: 'plugins',
       title: 'Eklentiler',
       icon: Icons.extension_outlined,
-      route: 'plugins-overview',
+      route: '', // Alt menü olduğu için boş
+      subItems: [
+        DrawerMenuItem(
+          id: 'production',
+          title: 'Üretim',
+          icon: Icons.precision_manufacturing_outlined,
+          route: '',
+          isActive: false,
+          comingSoon: true,
+        ),
+      ],
     ),
   ];
 });
