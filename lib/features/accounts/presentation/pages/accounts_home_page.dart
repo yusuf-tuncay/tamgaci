@@ -203,6 +203,25 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                 ),
             ],
           ),
+          // Mobil için istatistikler
+          if (MediaQuery.of(context).size.width <= 768) ...[
+            const SizedBox(height: 16),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildHeaderStatCard('Toplam', totalAccounts.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Aktif', activeAccounts.toString()),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard(
+                      'Bakiye', _formatCurrency(totalBalance)),
+                  const SizedBox(width: 8),
+                  _buildHeaderStatCard('Kredi', _formatCurrency(totalCredit)),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 8),
           Container(
             height: 1,
