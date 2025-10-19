@@ -740,7 +740,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   }
 
   List<Sale> _applyFilters(List<Sale> sales, String searchQuery) {
-    List<Sale> filtered = sales;
+    List<Sale> filtered = List.from(sales);
 
     // Arama filtresi
     if (searchQuery.isNotEmpty) {
