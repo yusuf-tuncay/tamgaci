@@ -339,7 +339,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
         DrawerMenuItem(
           id: 'tools',
           title: 'Araçlar',
-          icon: Icons.build_outlined,
+          icon: Icons.directions_car_outlined,
           route: '',
           isActive: false,
           comingSoon: true,
@@ -1207,7 +1207,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               )
             : subItem.comingSoon
                 ? Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: Colors.orange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
