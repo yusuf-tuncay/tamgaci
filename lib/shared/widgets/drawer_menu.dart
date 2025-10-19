@@ -362,6 +362,22 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           isActive: false,
           comingSoon: true,
         ),
+        DrawerMenuItem(
+          id: 'planning',
+          title: 'Planlama',
+          icon: Icons.schedule_outlined,
+          route: '',
+          isActive: false,
+          comingSoon: true,
+        ),
+        DrawerMenuItem(
+          id: 'sectoral',
+          title: 'Sektörel',
+          icon: Icons.business_outlined,
+          route: '',
+          isActive: false,
+          comingSoon: true,
+        ),
       ],
     ),
   ];
