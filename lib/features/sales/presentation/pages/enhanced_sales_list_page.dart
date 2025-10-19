@@ -149,26 +149,20 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
                 Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Container(
-                      width: double.infinity,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          _buildHeaderStatCard('Toplam Satış',
-                              CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
-                          const SizedBox(width: 8),
-                          _buildHeaderStatCard(
-                              'Satış Sayısı', totalSales.toString()),
-                          const SizedBox(width: 8),
-                          _buildHeaderStatCard('Ödenen', paidSales.toString()),
-                          const SizedBox(width: 8),
-                          _buildHeaderStatCard(
-                              'Bekleyen', pendingSales.toString()),
-                        ],
-                      ),
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _buildHeaderStatCard('Toplam Satış',
+                          CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard(
+                          'Satış Sayısı', totalSales.toString()),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                      const SizedBox(width: 8),
+                      _buildHeaderStatCard(
+                          'Bekleyen', pendingSales.toString()),
+                    ],
                   ),
                 ),
             ],
