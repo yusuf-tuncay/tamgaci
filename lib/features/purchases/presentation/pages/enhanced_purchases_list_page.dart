@@ -159,21 +159,24 @@ class _EnhancedPurchasesListPageState
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _buildHeaderStatCard('Toplam Alış',
-                            CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard(
-                            'Alış Sayısı', totalPurchases.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard(
-                            'Ödenen', paidPurchases.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard(
-                            'Bekleyen', pendingPurchases.toString()),
-                      ],
+                    child: Container(
+                      width: double.infinity,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          _buildHeaderStatCard('Toplam Alış',
+                              CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                          const SizedBox(width: 8),
+                          _buildHeaderStatCard(
+                              'Alış Sayısı', totalPurchases.toString()),
+                          const SizedBox(width: 8),
+                          _buildHeaderStatCard(
+                              'Ödenen', paidPurchases.toString()),
+                          const SizedBox(width: 8),
+                          _buildHeaderStatCard(
+                              'Bekleyen', pendingPurchases.toString()),
+                        ],
+                      ),
                     ),
                   ),
                 ),

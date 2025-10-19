@@ -151,20 +151,23 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        _buildHeaderStatCard('Toplam Satış',
-                            CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard(
-                            'Satış Sayısı', totalSales.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard('Ödenen', paidSales.toString()),
-                        const SizedBox(width: 8),
-                        _buildHeaderStatCard(
-                            'Bekleyen', pendingSales.toString()),
-                      ],
+                    child: Container(
+                      width: double.infinity,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          _buildHeaderStatCard('Toplam Satış',
+                              CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                          const SizedBox(width: 8),
+                          _buildHeaderStatCard(
+                              'Satış Sayısı', totalSales.toString()),
+                          const SizedBox(width: 8),
+                          _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                          const SizedBox(width: 8),
+                          _buildHeaderStatCard(
+                              'Bekleyen', pendingSales.toString()),
+                        ],
+                      ),
                     ),
                   ),
                 ),
