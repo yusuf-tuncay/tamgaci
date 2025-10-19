@@ -112,18 +112,7 @@ class _CustomAppBarState extends State<CustomAppBar>
     final isDark = theme.brightness == Brightness.dark;
 
     return AppBar(
-      title: widget.title == 'Dashboard'
-          ? _buildUltraPremiumTamgaciTitle(isDark)
-          : Text(
-              widget.title,
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark
-                    ? TamgaciConstants.textPrimaryDark
-                    : TamgaciConstants.textPrimary,
-              ),
-            ),
+      title: _buildUltraPremiumTamgaciTitle(isDark),
       backgroundColor:
           widget.backgroundColor ?? theme.appBarTheme.backgroundColor,
       foregroundColor: isDark
