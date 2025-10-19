@@ -13,6 +13,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../../core/services/excel_service.dart';
 import '../../domain/entities/purchase.dart';
+import '../providers/purchase_providers.dart';
 
 /// Gelişmiş alışlar listesi sayfası
 class EnhancedPurchasesListPage extends ConsumerStatefulWidget {
@@ -166,8 +167,7 @@ class _EnhancedPurchasesListPageState
                       _buildHeaderStatCard(
                           'Alış Sayısı', totalPurchases.toString()),
                       const SizedBox(width: 8),
-                      _buildHeaderStatCard(
-                          'Ödenen', paidPurchases.toString()),
+                      _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
                       const SizedBox(width: 8),
                       _buildHeaderStatCard(
                           'Bekleyen', pendingPurchases.toString()),
@@ -253,7 +253,7 @@ class _EnhancedPurchasesListPageState
   @override
   Widget build(BuildContext context) {
     final searchQuery = _searchController.text;
-    final purchases = _getMockPurchases();
+    final purchases = ref.watch(purchaseNotifierProvider).purchases;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ResponsiveScaffold(
@@ -853,7 +853,7 @@ class _EnhancedPurchasesListPageState
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Alış bilgileri
               Expanded(
                 flex: 2,
@@ -879,7 +879,7 @@ class _EnhancedPurchasesListPageState
                   ],
                 ),
               ),
-              
+
               // Tarih
               Expanded(
                 child: Text(
@@ -891,11 +891,12 @@ class _EnhancedPurchasesListPageState
                   textAlign: TextAlign.center,
                 ),
               ),
-              
+
               // Tutar
               Expanded(
                 child: Text(
-                  CurrencyHelper.formatCurrency(purchase.totalAmount, purchase.currency),
+                  CurrencyHelper.formatCurrency(
+                      purchase.totalAmount, purchase.currency),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -904,7 +905,7 @@ class _EnhancedPurchasesListPageState
                   textAlign: TextAlign.center,
                 ),
               ),
-              
+
               // Durum
               _buildStatusChip(purchase.status, statusColor),
             ],
@@ -933,7 +934,6 @@ class _EnhancedPurchasesListPageState
     }
   }
 
-
   Color _getStatusColor(PurchaseStatus status) {
     switch (status) {
       case PurchaseStatus.draft:
@@ -953,7 +953,6 @@ class _EnhancedPurchasesListPageState
     }
   }
 
-
   Widget _buildStatusChip(PurchaseStatus status, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -972,75 +971,6 @@ class _EnhancedPurchasesListPageState
     );
   }
 
-
-  List<Purchase> _getMockPurchases() {
-    return [
-      Purchase(
-        id: '1',
-        tenantId: 'mock-tenant',
-        purchaseNumber: 'ALI-2024-001',
-        type: PurchaseType.invoice,
-        status: PurchaseStatus.received,
-        paymentStatus: PurchasePaymentStatus.paid,
-        supplierId: '1',
-        supplierName: 'ABC Tedarik A.Ş.',
-        purchaseDate: DateTime.now().subtract(const Duration(days: 7)),
-        dueDate: DateTime.now().subtract(const Duration(days: 4)),
-        receivedDate: DateTime.now().subtract(const Duration(days: 5)),
-        subtotal: 2000.0,
-        taxRate: 18.0,
-        taxAmount: 360.0,
-        discountAmount: 100.0,
-        totalAmount: 2260.0,
-        currency: 'TRY',
-        items: [],
-        createdAt: DateTime.now().subtract(const Duration(days: 7)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 4)),
-      ),
-      Purchase(
-        id: '2',
-        tenantId: 'mock-tenant',
-        purchaseNumber: 'ALI-2024-002',
-        type: PurchaseType.purchase,
-        status: PurchaseStatus.confirmed,
-        paymentStatus: PurchasePaymentStatus.pending,
-        supplierId: '2',
-        supplierName: 'XYZ Malzeme Ltd.',
-        purchaseDate: DateTime.now().subtract(const Duration(days: 4)),
-        dueDate: DateTime.now().add(const Duration(days: 10)),
-        subtotal: 1500.0,
-        taxRate: 18.0,
-        taxAmount: 270.0,
-        discountAmount: 0.0,
-        totalAmount: 1770.0,
-        currency: 'TRY',
-        items: [],
-        createdAt: DateTime.now().subtract(const Duration(days: 4)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 4)),
-      ),
-      Purchase(
-        id: '3',
-        tenantId: 'mock-tenant',
-        purchaseNumber: 'ALI-2024-003',
-        type: PurchaseType.waybill,
-        status: PurchaseStatus.confirmed,
-        paymentStatus: PurchasePaymentStatus.partial,
-        supplierId: '3',
-        supplierName: 'DEF Hammadde A.Ş.',
-        purchaseDate: DateTime.now().subtract(const Duration(days: 2)),
-        dueDate: DateTime.now().add(const Duration(days: 20)),
-        subtotal: 3000.0,
-        taxRate: 18.0,
-        taxAmount: 540.0,
-        discountAmount: 150.0,
-        totalAmount: 3390.0,
-        currency: 'TRY',
-        items: [],
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        updatedAt: DateTime.now(),
-      ),
-    ];
-  }
 
   void _showFilterDialog() {
     showDialog(

@@ -13,6 +13,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../../core/services/excel_service.dart';
 import '../../domain/entities/sale.dart';
+import '../providers/sale_providers.dart';
 
 /// Gelişmiş satış listesi sayfası
 class EnhancedSalesListPage extends ConsumerStatefulWidget {
@@ -160,8 +161,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                       const SizedBox(width: 8),
                       _buildHeaderStatCard('Ödenen', paidSales.toString()),
                       const SizedBox(width: 8),
-                      _buildHeaderStatCard(
-                          'Bekleyen', pendingSales.toString()),
+                      _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
                     ],
                   ),
                 ),
@@ -243,7 +243,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   @override
   Widget build(BuildContext context) {
     final searchQuery = _searchController.text;
-    final sales = _getMockSales();
+    final sales = ref.watch(saleNotifierProvider).sales;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ResponsiveScaffold(
@@ -841,7 +841,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              
+
               // Satış bilgileri
               Expanded(
                 flex: 2,
@@ -867,7 +867,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                   ],
                 ),
               ),
-              
+
               // Tarih
               Expanded(
                 child: Text(
@@ -879,11 +879,12 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              
+
               // Tutar
               Expanded(
                 child: Text(
-                  CurrencyHelper.formatCurrency(sale.totalAmount, sale.currency),
+                  CurrencyHelper.formatCurrency(
+                      sale.totalAmount, sale.currency),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -892,7 +893,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              
+
               // Durum
               _buildStatusChip(sale.status, statusColor),
             ],
@@ -919,7 +920,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     }
   }
 
-
   Color _getStatusColor(SaleStatus status) {
     switch (status) {
       case SaleStatus.draft:
@@ -941,7 +941,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     }
   }
 
-
   Widget _buildStatusChip(SaleStatus status, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -960,77 +959,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     );
   }
 
-
-  List<Sale> _getMockSales() {
-    return [
-      Sale(
-        id: '1',
-        tenantId: 'mock-tenant',
-        saleNumber: 'SAT-2024-001',
-        type: SaleType.invoice,
-        status: SaleStatus.delivered,
-        paymentStatus: PaymentStatus.paid,
-        isPaid: true,
-        customerId: '1',
-        customerName: 'ABC Şirketi',
-        saleDate: DateTime.now().subtract(const Duration(days: 5)),
-        dueDate: DateTime.now().subtract(const Duration(days: 2)),
-        subtotal: 1000.0,
-        taxRate: 18.0,
-        taxAmount: 180.0,
-        discountAmount: 50.0,
-        totalAmount: 1130.0,
-        currency: 'TRY',
-        items: [],
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
-      Sale(
-        id: '2',
-        tenantId: 'mock-tenant',
-        saleNumber: 'SAT-2024-002',
-        type: SaleType.proforma,
-        status: SaleStatus.pending,
-        isPaid: false,
-        paymentStatus: PaymentStatus.pending,
-        customerId: '2',
-        customerName: 'XYZ Ltd.',
-        saleDate: DateTime.now().subtract(const Duration(days: 3)),
-        dueDate: DateTime.now().add(const Duration(days: 7)),
-        subtotal: 2500.0,
-        taxRate: 18.0,
-        taxAmount: 450.0,
-        discountAmount: 0.0,
-        totalAmount: 2950.0,
-        currency: 'TRY',
-        items: [],
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      Sale(
-        id: '3',
-        tenantId: 'mock-tenant',
-        saleNumber: 'SAT-2024-003',
-        type: SaleType.waybill,
-        status: SaleStatus.shipped,
-        paymentStatus: PaymentStatus.partial,
-        isPaid: false,
-        customerId: '3',
-        customerName: 'DEF A.Ş.',
-        saleDate: DateTime.now().subtract(const Duration(days: 1)),
-        dueDate: DateTime.now().add(const Duration(days: 14)),
-        subtotal: 750.0,
-        taxRate: 18.0,
-        taxAmount: 135.0,
-        discountAmount: 25.0,
-        totalAmount: 860.0,
-        currency: 'TRY',
-        items: [],
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        updatedAt: DateTime.now(),
-      ),
-    ];
-  }
 
   void _showFilterDialog() {
     showDialog(
