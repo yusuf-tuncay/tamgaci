@@ -732,7 +732,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
           final sale = filteredSales[index];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildSaleCard(sale),
+            child: _buildSaleRow(sale),
           );
         },
       ),
@@ -810,9 +810,8 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     return filtered;
   }
 
-  Widget _buildSaleCard(Sale sale) {
+  Widget _buildSaleRow(Sale sale) {
     final statusColor = _getStatusColor(sale.status);
-    final paymentColor = _getPaymentStatusColor(sale.paymentStatus);
 
     return Card(
       elevation: 2,
@@ -824,138 +823,78 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
         onTap: () => _navigateToDetail(sale.id),
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         child: Padding(
-          padding: TamgaciConstants.cardPadding(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
             children: [
-              // Üst kısım - Satış numarası ve durum
-              Row(
-                children: [
-                  // Satış türü ikonu
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
-                      borderRadius:
-                          BorderRadius.circular(TamgaciConstants.radiusSM),
-                    ),
-                    child: Icon(
-                      _getSaleTypeIcon(sale.type),
-                      color: statusColor,
-                      size: 24,
-                    ),
-                  ),
-
-                  const SizedBox(width: TamgaciConstants.spaceMD),
-
-                  // Satış bilgileri
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                sale.saleNumber,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: statusColor.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                sale.type.displayName,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w500,
-                                  color: statusColor,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          sale.customerName ?? 'Müşteri Bilgisi Yok',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        Text(
-                          _formatDate(sale.saleDate),
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: TamgaciConstants.spaceSM),
-
-                  // Durum
-                  _buildStatusChip(sale.status, statusColor),
-                ],
+              // Satış türü ikonu
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  _getSaleTypeIcon(sale.type),
+                  color: statusColor,
+                  size: 20,
+                ),
               ),
-
-              const SizedBox(height: TamgaciConstants.spaceMD),
-
-              // Alt kısım - Tutar ve ödeme bilgileri
-              Row(
-                children: [
-                  // Toplam tutar
-                  Expanded(
-                    child: _buildInfoCard(
-                      label: 'Toplam Tutar',
-                      value: CurrencyHelper.formatCurrency(
-                          sale.totalAmount, sale.currency),
-                      color: AppColors.primary,
-                      icon: Icons.attach_money,
-                    ),
-                  ),
-
-                  const SizedBox(width: TamgaciConstants.spaceMD),
-
-                  // Ödeme durumu
-                  Expanded(
-                    child: _buildInfoCard(
-                      label: 'Ödeme Durumu',
-                      value: sale.paymentStatus.displayName,
-                      color: paymentColor,
-                      icon: _getPaymentStatusIcon(sale.paymentStatus),
-                    ),
-                  ),
-
-                  const SizedBox(width: TamgaciConstants.spaceMD),
-
-                  // Vade tarihi
-                  if (sale.dueDate != null)
-                    Expanded(
-                      child: _buildInfoCard(
-                        label: 'Vade Tarihi',
-                        value: _formatDate(sale.dueDate!),
-                        color:
-                            sale.isOverdue ? AppColors.error : AppColors.info,
-                        icon: Icons.calendar_today,
+              const SizedBox(width: 12),
+              
+              // Satış bilgileri
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sale.saleNumber,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      sale.customerName ?? 'Müşteri Yok',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              
+              // Tarih
+              Expanded(
+                child: Text(
+                  _formatDate(sale.saleDate),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              // Tutar
+              Expanded(
+                child: Text(
+                  CurrencyHelper.formatCurrency(sale.totalAmount, sale.currency),
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              // Durum
+              _buildStatusChip(sale.status, statusColor),
             ],
           ),
         ),
@@ -980,20 +919,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     }
   }
 
-  IconData _getPaymentStatusIcon(PaymentStatus status) {
-    switch (status) {
-      case PaymentStatus.pending:
-        return Icons.pending;
-      case PaymentStatus.partial:
-        return Icons.payment;
-      case PaymentStatus.paid:
-        return Icons.check_circle;
-      case PaymentStatus.overdue:
-        return Icons.warning;
-      case PaymentStatus.refunded:
-        return Icons.keyboard_return;
-    }
-  }
 
   Color _getStatusColor(SaleStatus status) {
     switch (status) {
@@ -1016,20 +941,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     }
   }
 
-  Color _getPaymentStatusColor(PaymentStatus status) {
-    switch (status) {
-      case PaymentStatus.pending:
-        return AppColors.warning;
-      case PaymentStatus.partial:
-        return AppColors.info;
-      case PaymentStatus.paid:
-        return AppColors.success;
-      case PaymentStatus.overdue:
-        return AppColors.error;
-      case PaymentStatus.refunded:
-        return AppColors.warning;
-    }
-  }
 
   Widget _buildStatusChip(SaleStatus status, Color color) {
     return Container(
@@ -1049,43 +960,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
     );
   }
 
-  Widget _buildInfoCard({
-    required String label,
-    required String value,
-    required Color color,
-    required IconData icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 8,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
 
   List<Sale> _getMockSales() {
     return [
