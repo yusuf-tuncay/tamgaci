@@ -305,6 +305,22 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
       icon: Icons.assessment_outlined,
       route: 'reports-overview',
     ),
+
+    // Entegrasyonlar (tek öğe)
+    const DrawerMenuItem(
+      id: 'integrations',
+      title: 'Entegrasyonlar',
+      icon: Icons.integration_instructions_outlined,
+      route: 'integrations-overview',
+    ),
+
+    // Eklentiler (tek öğe)
+    const DrawerMenuItem(
+      id: 'plugins',
+      title: 'Eklentiler',
+      icon: Icons.extension_outlined,
+      route: 'plugins-overview',
+    ),
   ];
 });
 
