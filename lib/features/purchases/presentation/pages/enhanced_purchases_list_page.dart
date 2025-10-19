@@ -156,10 +156,11 @@ class _EnhancedPurchasesListPageState
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Flexible(
+                Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         _buildHeaderStatCard('Toplam Alış',
                             CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
@@ -167,7 +168,8 @@ class _EnhancedPurchasesListPageState
                         _buildHeaderStatCard(
                             'Alış Sayısı', totalPurchases.toString()),
                         const SizedBox(width: 8),
-                        _buildHeaderStatCard('Ödenen', paidPurchases.toString()),
+                        _buildHeaderStatCard(
+                            'Ödenen', paidPurchases.toString()),
                         const SizedBox(width: 8),
                         _buildHeaderStatCard(
                             'Bekleyen', pendingPurchases.toString()),
@@ -598,7 +600,9 @@ class _EnhancedPurchasesListPageState
                         });
                       },
                       icon: Icon(
-                        _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                        _sortAscending
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
                       ),
                       tooltip: _sortAscending ? 'Artan' : 'Azalan',
                     ),
@@ -614,7 +618,8 @@ class _EnhancedPurchasesListPageState
                             icon: const Icon(Icons.table_chart),
                             tooltip: 'Excel\'e Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.green.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.green.withValues(alpha: 0.1),
                               foregroundColor: Colors.green,
                             ),
                           ),
@@ -624,7 +629,8 @@ class _EnhancedPurchasesListPageState
                             icon: const Icon(Icons.description),
                             tooltip: 'CSV\'ye Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.blue.withValues(alpha: 0.1),
                               foregroundColor: Colors.blue,
                             ),
                           ),
@@ -634,7 +640,8 @@ class _EnhancedPurchasesListPageState
                             icon: const Icon(Icons.picture_as_pdf),
                             tooltip: 'PDF\'ye Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.red.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.red.withValues(alpha: 0.1),
                               foregroundColor: Colors.red,
                             ),
                           ),
@@ -644,7 +651,8 @@ class _EnhancedPurchasesListPageState
                             icon: const Icon(Icons.upload_file),
                             tooltip: 'Dosya İçe Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.orange.withValues(alpha: 0.1),
                               foregroundColor: Colors.orange,
                             ),
                           ),
@@ -698,7 +706,6 @@ class _EnhancedPurchasesListPageState
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-
 
   Widget _buildPurchasesList(List<Purchase> purchases, String searchQuery) {
     List<Purchase> filteredPurchases = _applyFilters(purchases, searchQuery);
@@ -1209,7 +1216,6 @@ class _EnhancedPurchasesListPageState
         ),
       );
 
-
       final fileName = await ExcelService.exportCustomersToExcel([]);
 
       // Loading'i kapat
@@ -1247,7 +1253,6 @@ class _EnhancedPurchasesListPageState
         ),
       );
 
-
       final fileName = await ExcelService.exportCustomersToCSV([]);
 
       // Loading'i kapat
@@ -1284,7 +1289,6 @@ class _EnhancedPurchasesListPageState
           child: CircularProgressIndicator(),
         ),
       );
-
 
       final fileName = await ExcelService.exportCustomersToPDF([]);
 

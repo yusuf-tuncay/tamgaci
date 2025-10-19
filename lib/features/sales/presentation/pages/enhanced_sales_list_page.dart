@@ -148,19 +148,22 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
               ),
               // Özet istatistikler - sadece masaüstünde göster
               if (MediaQuery.of(context).size.width > 768)
-                Flexible(
+                Expanded(
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         _buildHeaderStatCard('Toplam Satış',
                             CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
                         const SizedBox(width: 8),
-                        _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
+                        _buildHeaderStatCard(
+                            'Satış Sayısı', totalSales.toString()),
                         const SizedBox(width: 8),
                         _buildHeaderStatCard('Ödenen', paidSales.toString()),
                         const SizedBox(width: 8),
-                        _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
+                        _buildHeaderStatCard(
+                            'Bekleyen', pendingSales.toString()),
                       ],
                     ),
                   ),
@@ -587,7 +590,9 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                         });
                       },
                       icon: Icon(
-                        _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                        _sortAscending
+                            ? Icons.arrow_upward
+                            : Icons.arrow_downward,
                       ),
                       tooltip: _sortAscending ? 'Artan' : 'Azalan',
                     ),
@@ -603,7 +608,8 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                             icon: const Icon(Icons.table_chart),
                             tooltip: 'Excel\'e Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.green.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.green.withValues(alpha: 0.1),
                               foregroundColor: Colors.green,
                             ),
                           ),
@@ -613,7 +619,8 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                             icon: const Icon(Icons.description),
                             tooltip: 'CSV\'ye Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.blue.withValues(alpha: 0.1),
                               foregroundColor: Colors.blue,
                             ),
                           ),
@@ -623,7 +630,8 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                             icon: const Icon(Icons.picture_as_pdf),
                             tooltip: 'PDF\'ye Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.red.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.red.withValues(alpha: 0.1),
                               foregroundColor: Colors.red,
                             ),
                           ),
@@ -633,7 +641,8 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                             icon: const Icon(Icons.upload_file),
                             tooltip: 'Dosya İçe Aktar',
                             style: IconButton.styleFrom(
-                              backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                              backgroundColor:
+                                  Colors.orange.withValues(alpha: 0.1),
                               foregroundColor: Colors.orange,
                             ),
                           ),
@@ -687,7 +696,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-
 
   Widget _buildSalesList(List<Sale> sales, String searchQuery) {
     List<Sale> filteredSales = _applyFilters(sales, searchQuery);
@@ -1197,7 +1205,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
         ),
       );
 
-
       final fileName = await ExcelService.exportCustomersToExcel([]);
 
       // Loading'i kapat
@@ -1235,7 +1242,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
         ),
       );
 
-
       final fileName = await ExcelService.exportCustomersToCSV([]);
 
       // Loading'i kapat
@@ -1272,7 +1278,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
           child: CircularProgressIndicator(),
         ),
       );
-
 
       final fileName = await ExcelService.exportCustomersToPDF([]);
 
