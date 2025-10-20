@@ -9,6 +9,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
+import 'dart:html' as html show AnchorElement, document;
 
 /// Kurumsal ve KOBİ odaklı landing page
 class LandingPage extends StatefulWidget {
@@ -1448,8 +1449,31 @@ class _LandingPageState extends State<LandingPage>
 
   Future<void> _launchWindowsApp() async {
     const url = 'https://tamgaci.web.app/download/tamgaci-setup-latest.exe';
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
+    
+    if (kIsWeb) {
+      // Web'de otomatik indirme için HTML5 download attribute kullan
+      try {
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', 'tamgaci-setup-latest.exe')
+          ..click();
+        // Anchor element'i DOM'a ekle ve sonra kaldır
+        html.document.body?.append(anchor);
+        anchor.click();
+        anchor.remove();
+      } catch (e) {
+        // Fallback: normal URL açma
+        if (await canLaunchUrl(Uri.parse(url))) {
+          await launchUrl(Uri.parse(url));
+        }
+      }
+    } else {
+      // Mobil/Desktop'ta normal URL açma
+      if (await canLaunchUrl(Uri.parse(url))) {
+        await launchUrl(
+          Uri.parse(url),
+          mode: LaunchMode.externalApplication,
+        );
+      }
     }
   }
 
