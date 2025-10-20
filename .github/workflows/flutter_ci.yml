@@ -119,42 +119,7 @@ jobs:
           name: web-release
           path: build/web
 
-  build_windows:
-    name: Build Windows (release) [optional]
-    needs: analyze
-    runs-on: windows-latest
-    continue-on-error: true
-    if: github.event_name != 'pull_request'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          flutter-version: '3.35.1'
-
-      - name: Enable Windows Desktop
-        run: flutter config --enable-windows-desktop
-
-      - name: Flutter Pub Get
-        run: flutter pub get
-
-      - name: Build Windows
-        run: flutter build windows --release
-
-      - name: Archive Windows Runner
-        shell: bash
-        run: |
-          cd build/windows/x64/runner/Release
-          7z a -tzip ../../../windows-release.zip .
-
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-release
-          path: build/windows/windows-release.zip
+  # Windows build moved to deploy.yml for better organization
 
   deploy:
     name: Deploy to Firebase Hosting
