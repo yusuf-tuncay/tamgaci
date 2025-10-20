@@ -29,7 +29,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   final ScrollController _scrollController = ScrollController();
   String _selectedType = 'Tümü';
   String _selectedStatus = 'Tümü';
-  String _selectedPaymentStatus = 'Tümü';
+  final String _selectedPaymentStatus = 'Tümü';
   String _sortBy = 'saleDate';
   bool _sortAscending = true;
   DateTimeRange? _dateRange;

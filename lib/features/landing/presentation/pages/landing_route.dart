@@ -63,8 +63,11 @@ class _LandingRouteState extends ConsumerState<LandingRoute> {
 
   @override
   Widget build(BuildContext context) {
-    // Sadece web'de göster
-    if (kIsWeb) {
+    // Web ve masaüstünde landing'i göster
+    if (kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
       return const LandingPage();
     } else {
       // Mobil uygulamada normal uygulamaya yönlendir

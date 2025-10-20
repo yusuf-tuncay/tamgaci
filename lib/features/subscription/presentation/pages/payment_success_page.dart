@@ -1,7 +1,8 @@
 // ========== PAYMENT SUCCESS PAGE ==========
 // lib/features/subscription/presentation/pages/payment_success_page.dart
 
-import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
+import 'package:tamgaci/shared/platform/html_compat.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -32,7 +33,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
         '🔍 PaymentSuccessPage: Route: ${ModalRoute.of(context)?.settings.name}');
 
     // Payment'tan geliyorsa parent window'a mesaj gönder ve sekmeyi kapat
-    if (widget.fromPayment) {
+    if (kIsWeb && widget.fromPayment) {
       _notifyParentAndClose();
     } else {
       // Normal kullanıcı için sadece bilgi göster
@@ -45,13 +46,11 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
     debugPrint('🔄 PaymentSuccessPage: Notifying parent window');
 
     try {
-      // Parent window'a ödeme başarılı mesajı gönder
-      html.window.opener?.postMessage('payment_success', '*');
+      htmlWindow.postMessage('payment_success');
       debugPrint('✅ PaymentSuccessPage: Success message sent to parent');
 
       // Parent window'u subscription sayfasına yönlendir
-      html.window.opener?.location.href =
-          'https://tamgaci.web.app/settings/subscription?payment=success';
+      htmlWindow.redirect('https://tamgaci.web.app/settings/subscription?payment=success');
       debugPrint(
           '✅ PaymentSuccessPage: Redirected parent to subscription page');
     } catch (e) {
@@ -62,7 +61,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
     Future.delayed(const Duration(seconds: 2), () {
       debugPrint('🔄 PaymentSuccessPage: Attempting to close window');
       try {
-        html.window.close();
+        htmlWindow.close();
       } catch (e) {
         debugPrint('❌ PaymentSuccessPage: Failed to close window: $e');
         // Kapatılamazsa kullanıcıya bilgi ver
@@ -153,10 +152,9 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                     onPressed: () {
                       // Parent window'a mesaj gönder, yönlendir ve sekmeyi kapat
                       try {
-                        html.window.opener?.postMessage('payment_success', '*');
-                        html.window.opener?.location.href =
-                            'https://tamgaci.web.app/settings/subscription?payment=success';
-                        html.window.close();
+                        htmlWindow.postMessage('payment_success');
+                        htmlWindow.redirect('https://tamgaci.web.app/settings/subscription?payment=success');
+                        htmlWindow.close();
                       } catch (e) {
                         debugPrint('❌ PaymentSuccessPage: Failed to close: $e');
                         _showCloseMessage();

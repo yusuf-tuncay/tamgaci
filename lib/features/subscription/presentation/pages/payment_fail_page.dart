@@ -1,7 +1,8 @@
 // ========== PAYMENT FAIL PAGE ==========
 // lib/features/subscription/presentation/pages/payment_fail_page.dart
 
-import 'dart:html' as html;
+import 'package:flutter/foundation.dart';
+import 'package:tamgaci/shared/platform/html_compat.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -23,7 +24,9 @@ class _PaymentFailPageState extends State<PaymentFailPage> {
         '🔍 PaymentFailPage: Route: ${ModalRoute.of(context)?.settings.name}');
 
     // Hemen kapanmayı dene
-    _closeTabImmediately();
+    if (kIsWeb) {
+      _closeTabImmediately();
+    }
   }
 
   /// Sekmeyi hemen kapat
@@ -31,18 +34,18 @@ class _PaymentFailPageState extends State<PaymentFailPage> {
     debugPrint('🔄 PaymentFailPage: Attempting immediate tab close');
 
     // Hemen kapatmayı dene
-    html.window.close();
+    htmlWindow.close();
 
     // 1 saniye sonra tekrar dene
     Future.delayed(const Duration(seconds: 1), () {
       debugPrint('🔄 PaymentFailPage: Second attempt to close window');
-      html.window.close();
+      htmlWindow.close();
     });
 
     // 3 saniye sonra son deneme
     Future.delayed(const Duration(seconds: 3), () {
       debugPrint('🔄 PaymentFailPage: Final attempt to close window');
-      html.window.close();
+      htmlWindow.close();
     });
   }
 
@@ -101,7 +104,7 @@ class _PaymentFailPageState extends State<PaymentFailPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       // Sadece sekmeyi kapat
-                      html.window.close();
+                      htmlWindow.close();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,

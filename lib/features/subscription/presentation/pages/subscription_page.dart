@@ -18,7 +18,7 @@ import '../../../../core/services/payment/paytr_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:html' as html;
+import 'package:tamgaci/shared/platform/html_compat.dart';
 
 /// Abonelik sayfası
 class SubscriptionPage extends ConsumerStatefulWidget {
@@ -79,9 +79,9 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     debugPrint('🔍 SubscriptionPage: Checking payment result: $paymentResult');
     debugPrint('🔍 SubscriptionPage: Current URL: $uri');
 
-    if (paymentResult == 'success') {
+    if (kIsWeb && paymentResult == 'success') {
       _showPaymentSuccessMessage();
-    } else if (paymentResult == 'fail') {
+    } else if (kIsWeb && paymentResult == 'fail') {
       _showPaymentFailMessage();
     }
   }
@@ -1490,7 +1490,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     debugPrint('🔍 Fail URL: https://tamgaci.web.app/#/payment/fail');
 
     // Web için yeni sekmede aç ama callback URL'leri subscription sayfasına yönlendir
-    html.window.open(paymentUrl, '_blank');
+    htmlWindow.open(paymentUrl, '_blank');
 
     // Kullanıcıya bilgi ver
     ScaffoldMessenger.of(context).showSnackBar(

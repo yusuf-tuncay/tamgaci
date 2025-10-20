@@ -30,7 +30,7 @@ class _EnhancedPurchasesListPageState
   final ScrollController _scrollController = ScrollController();
   String _selectedType = 'Tümü';
   String _selectedStatus = 'Tümü';
-  String _selectedPaymentStatus = 'Tümü';
+  final String _selectedPaymentStatus = 'Tümü';
   String _sortBy = 'purchaseDate';
   bool _sortAscending = true;
   DateTimeRange? _dateRange;

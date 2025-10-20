@@ -14,6 +14,17 @@ class FirebaseNotificationService {
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
 
+  bool get _isMessagingSupported {
+    if (kIsWeb) return true;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+      case TargetPlatform.iOS:
+        return true;
+      default:
+        return false; // Windows, macOS, Linux için FCM desteği yok
+    }
+  }
+
   /// Firebase bildirim servisini başlat
   static Future<void> initialize() async {
     try {
@@ -33,7 +44,13 @@ class FirebaseNotificationService {
         await _registerServiceWorker();
       }
 
-      // İzin iste (asenkron - beklemeden)
+      // Mobil/Web dışı platformlarda FCM'i atla
+      if (!_isMessagingSupported) {
+        AppLogger.info('Firebase Messaging not supported on this platform');
+        return;
+      }
+
+      // İzin iste (asenkron - beklemeden). Sadece desteklenen platformlarda
       _requestPermission();
 
       // Token al (asenkron)
@@ -50,6 +67,7 @@ class FirebaseNotificationService {
 
   /// Bildirim izni iste (asenkron)
   Future<void> _requestPermission() async {
+    if (!_isMessagingSupported) return;
     // Asenkron olarak arka planda çalıştır
     Future.microtask(() async {
       try {
@@ -94,6 +112,10 @@ class FirebaseNotificationService {
 
   /// FCM token al
   Future<String?> _getToken() async {
+    if (!_isMessagingSupported) {
+      AppLogger.info('Skipping FCM token on unsupported platform');
+      return null;
+    }
     try {
       String? token;
       // Tüm platformlar için normal token al
@@ -108,6 +130,7 @@ class FirebaseNotificationService {
 
   /// Mesaj dinleyicilerini ayarla
   void _setupMessageHandlers() {
+    if (!_isMessagingSupported) return;
     // Foreground mesajları
     FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
 
@@ -151,6 +174,7 @@ class FirebaseNotificationService {
 
   /// İlk mesaj işleme (uygulama kapalıyken gelen)
   Future<void> _handleInitialMessage() async {
+    if (!_isMessagingSupported) return;
     try {
       final initialMessage = await _messaging.getInitialMessage();
       if (initialMessage != null) {
@@ -164,6 +188,7 @@ class FirebaseNotificationService {
 
   /// Token yenileme dinleyicisi
   void listenToTokenRefresh() {
+    if (!_isMessagingSupported) return;
     _messaging.onTokenRefresh.listen((token) {
       AppLogger.info('FCM Token refreshed: $token');
       // Burada yeni token'ı sunucuya gönderebilirsiniz
@@ -172,6 +197,7 @@ class FirebaseNotificationService {
 
   /// Topic'e abone ol
   Future<void> subscribeToTopic(String topic) async {
+    if (!_isMessagingSupported) return;
     try {
       await _messaging.subscribeToTopic(topic);
       AppLogger.info('Subscribed to topic: $topic');
@@ -182,6 +208,7 @@ class FirebaseNotificationService {
 
   /// Topic'ten çık
   Future<void> unsubscribeFromTopic(String topic) async {
+    if (!_isMessagingSupported) return;
     try {
       await _messaging.unsubscribeFromTopic(topic);
       AppLogger.info('Unsubscribed from topic: $topic');
@@ -193,6 +220,7 @@ class FirebaseNotificationService {
   /// Mevcut token'ı al
   Future<String?> getCurrentToken() async {
     try {
+      if (!_isMessagingSupported) return null;
       if (kIsWeb) {
         // Web için VAPID key ile token al
         return await _messaging.getToken(
@@ -211,6 +239,23 @@ class FirebaseNotificationService {
   /// Bildirim ayarlarını al
   Future<NotificationSettings> getNotificationSettings() async {
     try {
+      if (!_isMessagingSupported) {
+        // Desteklenmeyen platformlarda varsayılan yetkiler
+        return const NotificationSettings(
+          authorizationStatus: AuthorizationStatus.denied,
+          alert: AppleNotificationSetting.notSupported,
+          announcement: AppleNotificationSetting.notSupported,
+          badge: AppleNotificationSetting.notSupported,
+          carPlay: AppleNotificationSetting.notSupported,
+          criticalAlert: AppleNotificationSetting.notSupported,
+          lockScreen: AppleNotificationSetting.notSupported,
+          notificationCenter: AppleNotificationSetting.notSupported,
+          showPreviews: AppleShowPreviewSetting.always,
+          sound: AppleNotificationSetting.notSupported,
+          timeSensitive: AppleNotificationSetting.notSupported,
+          providesAppNotificationSettings: AppleNotificationSetting.notSupported,
+        );
+      }
       return await _messaging.getNotificationSettings();
     } catch (e) {
       AppLogger.error('Error getting notification settings', e);

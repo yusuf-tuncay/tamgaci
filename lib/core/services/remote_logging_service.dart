@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'colorized_logger_service.dart';
@@ -13,12 +14,22 @@ class RemoteLoggingService {
     if (_isInitialized) return;
 
     try {
-      // Web platformunda Crashlytics'i devre dışı bırak
-      if (kIsWeb) {
+      // Web veya masaüstü platformlarda Crashlytics'i devre dışı bırak
+      if (kIsWeb ||
+          !(defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS)) {
         AppLogger.info('Remote logging disabled on web platform');
         ColorizedLoggerService.remote('Remote logging disabled on web platform',
             category: 'RemoteLogging');
         _isInitialized = true;
+        return;
+      }
+
+      // Firebase henüz başlatılmadıysa beklemeden çık (main içinde init sonrası tekrar çağrılabilir)
+      if (Firebase.apps.isEmpty) {
+        AppLogger.error(
+            'Failed to initialize remote logging: [core/no-app] Firebase not initialized yet.');
+        _isInitialized = true; // Bir daha çağrılırsa yeniden denenecekse main akışında çağrılır
         return;
       }
 
