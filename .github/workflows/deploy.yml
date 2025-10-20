@@ -1,0 +1,93 @@
+name: 🚀 Deploy TAMGACI Windows App
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Manual trigger için
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        
+      - name: 🎯 Setup Flutter (v3.35.6)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.6'
+          channel: 'stable'
+          cache: true
+          
+      - name: 📦 Get Dependencies
+        run: flutter pub get
+        
+      - name: 🔍 Extract Version from pubspec.yaml
+        id: version
+        run: |
+          $version = (Get-Content pubspec.yaml | Select-String "version:").Line.Split(":")[1].Trim()
+          $version = $version -replace "^v", ""  # Remove 'v' prefix if exists
+          Write-Host "Extracted version: $version"
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+          
+      - name: 🏗️ Build Windows App
+        run: |
+          flutter build windows --release
+          
+      - name: 📁 Create Public Directory Structure
+        run: |
+          if (!(Test-Path "public")) { New-Item -ItemType Directory -Path "public" }
+          if (!(Test-Path "public/download")) { New-Item -ItemType Directory -Path "public/download" }
+          
+      - name: 📦 Rename and Copy Installer
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $sourcePath = "build\windows\x64\runner\Release\tamgaci.exe"
+          $targetPath = "public\download\tamgaci-setup-$version.exe"
+          $latestPath = "public\download\tamgaci-setup-latest.exe"
+          
+          # Copy versioned file
+          Copy-Item $sourcePath $targetPath
+          Write-Host "Created: $targetPath"
+          
+          # Copy as latest version
+          Copy-Item $sourcePath $latestPath
+          Write-Host "Created: $latestPath"
+          
+      - name: 📄 Generate Release Info
+        run: |
+          $version = "${{ steps.version.outputs.VERSION }}"
+          $buildDate = (Get-Date).ToString("yyyy-MM-ddTHH:mm:ssZ")
+          $fileName = "tamgaci-setup-$version.exe"
+          
+          $releaseInfo = @{
+            version = $version
+            fileName = $fileName
+            buildDate = $buildDate
+            downloadUrl = "https://tamgaci.web.app/download/$fileName"
+            latestUrl = "https://tamgaci.web.app/download/tamgaci-setup-latest.exe"
+          } | ConvertTo-Json -Depth 3
+          
+          $releaseInfo | Out-File -FilePath "public\download\release.json" -Encoding UTF8
+          Write-Host "Generated release.json:"
+          Write-Host $releaseInfo
+          
+      - name: 🔥 Install Firebase CLI
+        run: |
+          npm install -g firebase-tools
+          
+      - name: 🚀 Deploy to Firebase Hosting
+        run: |
+          firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
+          
+      - name: ✅ Build Summary
+        run: |
+          Write-Host "🎉 Build completed successfully!"
+          Write-Host "📦 Version: ${{ steps.version.outputs.VERSION }}"
+          Write-Host "📁 Files created:"
+          Write-Host "  - tamgaci-setup-${{ steps.version.outputs.VERSION }}.exe"
+          Write-Host "  - tamgaci-setup-latest.exe"
+          Write-Host "  - release.json"
+          Write-Host "🌐 Deployed to Firebase Hosting"

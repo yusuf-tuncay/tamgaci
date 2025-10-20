@@ -1447,7 +1447,7 @@ class _LandingPageState extends State<LandingPage>
   }
 
   Future<void> _launchWindowsApp() async {
-    const url = 'https://github.com/seekitapps/tamgaci/releases';
+    const url = 'https://tamgaci.web.app/download/tamgaci-setup-latest.exe';
     if (await canLaunchUrl(Uri.parse(url))) {
       await launchUrl(Uri.parse(url));
     }
