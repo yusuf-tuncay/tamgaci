@@ -122,6 +122,11 @@ class _LandingPageState extends State<LandingPage>
         _isDesktop = webBrowserInfo.platform != 'Android' &&
             webBrowserInfo.platform != 'iOS';
       });
+    } else {
+      // Windows, macOS, Linux için desktop olarak kabul et
+      setState(() {
+        _isDesktop = true;
+      });
     }
   }
 

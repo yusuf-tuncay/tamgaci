@@ -19,9 +19,12 @@ class FirebaseNotificationService {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
       case TargetPlatform.iOS:
-        return true;
+      case TargetPlatform.windows:
+      case TargetPlatform.macOS:
+      case TargetPlatform.linux:
+        return true; // Tüm desktop platformları destekle
       default:
-        return false; // Windows, macOS, Linux için FCM desteği yok
+        return false;
     }
   }
 

@@ -14,10 +14,8 @@ class RemoteLoggingService {
     if (_isInitialized) return;
 
     try {
-      // Web veya masaüstü platformlarda Crashlytics'i devre dışı bırak
-      if (kIsWeb ||
-          !(defaultTargetPlatform == TargetPlatform.android ||
-              defaultTargetPlatform == TargetPlatform.iOS)) {
+      // Web platformunda Crashlytics'i devre dışı bırak (desktop platformları destekle)
+      if (kIsWeb) {
         AppLogger.info('Remote logging disabled on web platform');
         ColorizedLoggerService.remote('Remote logging disabled on web platform',
             category: 'RemoteLogging');
