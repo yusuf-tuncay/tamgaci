@@ -11,6 +11,11 @@ jobs:
   test-coverage:
     runs-on: ubuntu-latest
     
+    # Debug logging etkinleştir
+    env:
+      ACTIONS_STEP_DEBUG: true
+      ACTIONS_RUNNER_DEBUG: true
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -25,12 +30,26 @@ jobs:
       run: flutter pub get
       
     - name: Run tests with coverage
-      run: flutter test --coverage
-      
-    - name: Generate coverage report
       run: |
-        # Coverage raporunu HTML formatında oluştur
-        flutter test --coverage --coverage-path=coverage/lcov.info
+        # Testleri çalıştır ve coverage raporu oluştur
+        flutter test --coverage --reporter=expanded
+        
+    - name: Verify coverage file exists
+      run: |
+        # Coverage dosyasının oluştuğunu kontrol et
+        if [ ! -f "coverage/lcov.info" ]; then
+          echo "❌ Coverage dosyası oluşturulamadı!"
+          exit 1
+        fi
+        echo "✅ Coverage dosyası başarıyla oluşturuldu: $(ls -la coverage/lcov.info)"
+        
+    - name: Display coverage summary
+      run: |
+        # Coverage özetini göster
+        echo "📊 Coverage Dosyası Analizi:"
+        echo "Dosya boyutu: $(du -h coverage/lcov.info | cut -f1)"
+        echo "Test edilen dosya sayısı: $(grep -c '^SF:' coverage/lcov.info || echo '0')"
+        echo "Toplam satır sayısı: $(grep -c '^DA:' coverage/lcov.info || echo '0')"
         
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
@@ -38,6 +57,9 @@ jobs:
         file: ./coverage/lcov.info
         token: ${{ secrets.CODECOV_TOKEN }}
         fail_ci_if_error: false
+        verbose: true
+      continue-on-error: true
+      if: always()
         
     - name: Comment coverage on PR
       if: github.event_name == 'pull_request'
