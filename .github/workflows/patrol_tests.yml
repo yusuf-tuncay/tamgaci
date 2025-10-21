@@ -31,16 +31,11 @@ jobs:
     - name: Install dependencies
       run: flutter pub get
       
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      with:
-        api-level: 33
-        build-tools: 33.0.0
-        
-    - name: Accept Android licenses
+    - name: Setup Android SDK (Optional)
       run: |
-        # Android lisanslarını kabul et
-        flutter doctor --android-licenses || echo "Lisanslar zaten kabul edilmiş"
+        # Android SDK kurulumu (opsiyonel)
+        echo "📱 Android SDK kurulumu atlanıyor - Patrol testleri için gerekli değil"
+        echo "Patrol testleri Flutter test framework'ü ile çalışır"
         
     - name: Check if Patrol tests exist
       run: |
