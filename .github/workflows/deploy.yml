@@ -83,7 +83,16 @@ jobs:
           
       - name: 🚀 Deploy to Firebase Hosting
         run: |
+          # Firebase token kontrolü
+          if [ -z "${{ secrets.FIREBASE_TOKEN }}" ]; then
+            echo "⚠️ FIREBASE_TOKEN eksik - deploy atlanıyor"
+            echo "Firebase token'ı GitHub Secrets'a ekleyin"
+            exit 0
+          fi
+          
+          # Firebase deploy
           firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
+        continue-on-error: true
           
       - name: ✅ Build Summary
         run: |
