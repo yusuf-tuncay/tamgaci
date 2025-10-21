@@ -35,8 +35,7 @@ jobs:
       - name: 🏗️ Build Windows App
         run: |
           echo "🏗️ Windows uygulaması build ediliyor..."
-          flutter build windows --release || echo "⚠️ Windows build başarısız oldu, devam ediliyor..."
-        continue-on-error: true
+          flutter build windows --release
           
       - name: 📁 Create Public Directory Structure
         run: |

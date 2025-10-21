@@ -38,8 +38,7 @@ jobs:
       - name: Format Check
         run: |
           echo "🎨 Dart kod formatı kontrol ediliyor..."
-          dart format --set-exit-if-changed . || echo "⚠️ Format hatası tespit edildi, devam ediliyor..."
-        continue-on-error: true
+          dart format --set-exit-if-changed .
 
       - name: Analyze
         run: flutter analyze
@@ -47,8 +46,7 @@ jobs:
       - name: Run Tests with Coverage
         run: |
           echo "🧪 Testleri çalıştırıyor..."
-          flutter test --no-pub --coverage || echo "⚠️ Bazı testler başarısız oldu, devam ediliyor..."
-        continue-on-error: true
+          flutter test --no-pub --coverage
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -63,7 +61,6 @@ jobs:
           files: coverage/lcov.info
           fail_ci_if_error: false
           verbose: true
-        continue-on-error: true
 
       - name: Install lcov
         run: |
@@ -73,8 +70,7 @@ jobs:
       - name: Generate HTML coverage report
         run: |
           echo "📊 HTML coverage raporu oluşturuluyor..."
-          genhtml coverage/lcov.info -o coverage/html || echo "⚠️ HTML raporu oluşturulamadı, devam ediliyor..."
-        continue-on-error: true
+          genhtml coverage/lcov.info -o coverage/html
 
       - name: Upload HTML report artifact
         uses: actions/upload-artifact@v4
