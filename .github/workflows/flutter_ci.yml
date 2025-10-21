@@ -69,7 +69,9 @@ jobs:
           
       - name: Generate HTML coverage report
         run: |
-          genhtml coverage/lcov.info -o coverage/html
+          echo "📊 HTML coverage raporu oluşturuluyor..."
+          genhtml coverage/lcov.info -o coverage/html || echo "⚠️ HTML raporu oluşturulamadı, devam ediliyor..."
+        continue-on-error: true
 
       - name: Upload HTML report artifact
         uses: actions/upload-artifact@v4
