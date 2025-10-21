@@ -56,18 +56,15 @@ jobs:
         
         # Test dosyalarını kontrol et
         if [ -z "$(find test/patrol -name '*.dart' -type f)" ]; then
-          echo "⚠️ Patrol test dosyası bulunamadı, test atlanıyor"
-          exit 0
+          echo "❌ Patrol test dosyası bulunamadı - test başarısız!"
+          exit 1
         fi
         
         # Flutter testleri çalıştır
-        flutter test test/patrol/ --reporter=expanded || echo "Patrol testleri başarısız oldu"
-        
-      continue-on-error: true
+        flutter test test/patrol/ --reporter=expanded
         
     - name: Upload test results
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: patrol-test-results
         path: test/patrol/

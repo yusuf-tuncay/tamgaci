@@ -54,18 +54,15 @@ jobs:
         
         # Alchemist bağımlılığını kontrol et
         if ! flutter pub deps | grep -q "alchemist"; then
-          echo "⚠️ Alchemist bağımlılığı bulunamadı, golden testleri atlanıyor"
-          exit 0
+          echo "❌ Alchemist bağımlılığı bulunamadı - test başarısız!"
+          exit 1
         fi
         
         # Golden testleri çalıştır
-        flutter test test/golden/ --update-goldens --reporter=expanded || echo "Golden testleri başarısız oldu"
-        
-      continue-on-error: true
+        flutter test test/golden/ --update-goldens --reporter=expanded
         
     - name: Upload golden files
       uses: actions/upload-artifact@v4
-      if: always()
       with:
         name: golden-files
         path: test/golden/
