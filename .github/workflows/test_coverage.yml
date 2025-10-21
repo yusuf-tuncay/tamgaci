@@ -57,9 +57,8 @@ jobs:
       with:
         file: ./coverage/lcov.info
         token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
+        fail_ci_if_error: true
         verbose: true
-      if: always()
         
     - name: Comment coverage on PR
       if: github.event_name == 'pull_request'
