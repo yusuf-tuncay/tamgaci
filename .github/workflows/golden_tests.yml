@@ -1,0 +1,37 @@
+name: Golden Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  golden-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.6'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Run golden tests
+      run: |
+        # Golden testleri çalıştır
+        flutter test test/golden/ --update-goldens
+        
+    - name: Upload golden files
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: golden-files
+        path: test/golden/

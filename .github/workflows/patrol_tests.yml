@@ -1,0 +1,45 @@
+name: Patrol E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *'  # Her gün saat 02:00'da çalıştır
+  workflow_dispatch:
+
+jobs:
+  patrol-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.6'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+      
+    - name: Run Patrol tests
+      run: |
+        # Android emulator başlat
+        flutter emulators --launch android_emulator
+        
+        # Patrol testlerini çalıştır
+        flutter test test/patrol/
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: patrol-test-results
+        path: test/patrol/
