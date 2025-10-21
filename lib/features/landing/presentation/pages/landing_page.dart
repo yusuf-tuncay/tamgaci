@@ -9,7 +9,8 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
-import 'dart:html' as html show AnchorElement, document;
+import 'package:web/web.dart' as web;
+import '../../../../../shared/platform/web_asset_loader.dart';
 
 /// Kurumsal ve KOBİ odaklı landing page
 class LandingPage extends StatefulWidget {
@@ -405,13 +406,27 @@ class _LandingPageState extends State<LandingPage>
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    'assets/images/logos/140x140logo.png',
+                  // Web platformu için optimize edilmiş logo yükleme
+                  WebAssetLoader.buildAssetImage(
+                    assetPath: 'assets/images/logos/140x140logo.png',
                     width: 140,
                     height: 140,
                     fit: BoxFit.contain,
                     color: Colors.white,
                     colorBlendMode: BlendMode.srcIn,
+                    fallback: Container(
+                      width: 140,
+                      height: 140,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.business,
+                        size: 80,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                   // Subtle shine effect
                   Align(
@@ -1449,15 +1464,14 @@ class _LandingPageState extends State<LandingPage>
 
   Future<void> _launchWindowsApp() async {
     const url = 'https://tamgaci.web.app/download/tamgaci-setup-latest.exe';
-    
+
     if (kIsWeb) {
       // Web'de otomatik indirme için HTML5 download attribute kullan
       try {
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', 'tamgaci-setup-latest.exe')
-          ..click();
-        // Anchor element'i DOM'a ekle ve sonra kaldır
-        html.document.body?.append(anchor);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..setAttribute('download', 'tamgaci-setup-latest.exe');
+        web.document.body?.append(anchor);
         anchor.click();
         anchor.remove();
       } catch (e) {

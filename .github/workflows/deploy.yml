@@ -74,8 +74,11 @@ jobs:
           Write-Host "Generated release.json:"
           Write-Host $releaseInfo
           
-      - name: 🔥 Install Firebase CLI
+      - name: 🔥 Install Node.js and Firebase CLI
         run: |
+          # Install Node.js
+          choco install nodejs -y
+          # Install Firebase CLI
           npm install -g firebase-tools
           
       - name: 🚀 Deploy to Firebase Hosting

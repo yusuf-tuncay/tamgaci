@@ -1,14 +1,16 @@
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
 class HtmlWindow {
   const HtmlWindow();
 
-  void open(String url, String target) => html.window.open(url, target);
-  void postMessage(Object? message) => html.window.opener?.postMessage(message, '*');
-  void close() => html.window.close();
-  void redirect(String url) => html.window.location.href = url;
+  void open(String url, String target) => web.window.open(url, target);
+  void postMessage(Object? message) {
+    // Web platformu için postMessage desteği - şimdilik devre dışı
+    // TODO: Web interop ile düzeltilecek
+  }
+
+  void close() => web.window.close();
+  void redirect(String url) => web.window.location.href = url;
 }
 
 const htmlWindow = HtmlWindow();
-
-
