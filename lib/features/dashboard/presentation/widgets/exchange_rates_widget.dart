@@ -42,94 +42,201 @@ class ExchangeRatesWidget extends ConsumerWidget {
 
   /// Header oluşturur
   Widget _buildHeader(bool isDark) {
-    return Row(
-      children: [
-        const Icon(
-          Icons.currency_exchange,
-          color: TamgaciConstants.primaryColor,
-          size: 24,
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'Güncel Kurlar',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : TamgaciConstants.textPrimary,
-          ),
-        ),
-        const Spacer(),
-        Consumer(
-          builder: (context, ref, child) {
-            final lastUpdate = ref
-                .watch(currencyRefreshNotifierProvider)
-                .value
-                ?.first
-                .lastUpdated;
-            if (lastUpdate == null) return const SizedBox.shrink();
-
-            return Text(
-              'Son güncelleme: ${_formatTime(lastUpdate)}',
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                color: isDark
-                    ? TamgaciConstants.textSecondaryDark
-                    : TamgaciConstants.textSecondary,
-              ),
-            );
-          },
-        ),
-        const SizedBox(width: 8),
-        Consumer(
-          builder: (context, ref, child) {
-            final isLoading =
-                ref.watch(currencyRefreshNotifierProvider).isLoading;
-
-            return GestureDetector(
-              onTap: isLoading
-                  ? null
-                  : () async {
-                      // Kurları yenile
-                      await ref
-                          .read(currencyRefreshNotifierProvider.notifier)
-                          .refresh();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              'Kurlar yenilendi!',
-                              style: GoogleFonts.poppins(),
-                            ),
-                            duration: const Duration(seconds: 2),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                    },
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
-                      : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: AnimatedRotation(
-                  turns: isLoading ? 1 : 0,
-                  duration: const Duration(seconds: 1),
-                  child: Icon(
-                    Icons.refresh,
-                    size: 20,
-                    color: isLoading
-                        ? (isDark ? Colors.grey : Colors.grey.shade600)
-                        : TamgaciConstants.primaryColor,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tablet boyutunda (genişlik < 600) dikey düzen kullan
+        final isTablet = constraints.maxWidth < 600;
+        
+        if (isTablet) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Üst satır: Başlık ve yenile butonu
+              Row(
+                children: [
+                  const Icon(
+                    Icons.currency_exchange,
+                    color: TamgaciConstants.primaryColor,
+                    size: 24,
                   ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Güncel Kurlar',
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                    ),
+                  ),
+                  const Spacer(),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final isLoading =
+                          ref.watch(currencyRefreshNotifierProvider).isLoading;
+
+                      return GestureDetector(
+                        onTap: isLoading
+                            ? null
+                            : () async {
+                                // Kurları yenile
+                                await ref
+                                    .read(currencyRefreshNotifierProvider.notifier)
+                                    .refresh();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        'Kurlar yenilendi!',
+                                        style: GoogleFonts.poppins(),
+                                      ),
+                                      duration: const Duration(seconds: 2),
+                                      backgroundColor: Colors.green,
+                                    ),
+                                  );
+                                }
+                              },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
+                                : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: AnimatedRotation(
+                            turns: isLoading ? 1 : 0,
+                            duration: const Duration(seconds: 1),
+                            child: Icon(
+                              Icons.refresh,
+                              size: 20,
+                              color: isLoading
+                                  ? (isDark ? Colors.grey : Colors.grey.shade600)
+                                  : TamgaciConstants.primaryColor,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Alt satır: Son güncelleme bilgisi
+              Consumer(
+                builder: (context, ref, child) {
+                  final lastUpdate = ref
+                      .watch(currencyRefreshNotifierProvider)
+                      .value
+                      ?.first
+                      .lastUpdated;
+                  if (lastUpdate == null) return const SizedBox.shrink();
+
+                  return Text(
+                    'Son güncelleme: ${_formatTime(lastUpdate)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        } else {
+          // Desktop boyutunda yatay düzen kullan
+          return Row(
+            children: [
+              const Icon(
+                Icons.currency_exchange,
+                color: TamgaciConstants.primaryColor,
+                size: 24,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Güncel Kurlar',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
                 ),
               ),
-            );
-          },
-        ),
-      ],
+              const Spacer(),
+              Consumer(
+                builder: (context, ref, child) {
+                  final lastUpdate = ref
+                      .watch(currencyRefreshNotifierProvider)
+                      .value
+                      ?.first
+                      .lastUpdated;
+                  if (lastUpdate == null) return const SizedBox.shrink();
+
+                  return Text(
+                    'Son güncelleme: ${_formatTime(lastUpdate)}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 10,
+                      color: isDark
+                          ? TamgaciConstants.textSecondaryDark
+                          : TamgaciConstants.textSecondary,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              Consumer(
+                builder: (context, ref, child) {
+                  final isLoading =
+                      ref.watch(currencyRefreshNotifierProvider).isLoading;
+
+                  return GestureDetector(
+                    onTap: isLoading
+                        ? null
+                        : () async {
+                            // Kurları yenile
+                            await ref
+                                .read(currencyRefreshNotifierProvider.notifier)
+                                .refresh();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'Kurlar yenilendi!',
+                                    style: GoogleFonts.poppins(),
+                                  ),
+                                  duration: const Duration(seconds: 2),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          },
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
+                            : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: AnimatedRotation(
+                        turns: isLoading ? 1 : 0,
+                        duration: const Duration(seconds: 1),
+                        child: Icon(
+                          Icons.refresh,
+                          size: 20,
+                          color: isLoading
+                              ? (isDark ? Colors.grey : Colors.grey.shade600)
+                              : TamgaciConstants.primaryColor,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          );
+        }
+      },
     );
   }
 

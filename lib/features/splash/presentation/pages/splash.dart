@@ -430,9 +430,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+      backgroundColor: isDark ? Colors.black : Colors.white,
       body: SafeArea(
         child: Container(
           width: double.infinity,
@@ -447,20 +445,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   /// Arka plan dekorasyonunu oluşturan metod
   BoxDecoration _buildBackgroundDecoration(bool isDark) {
     return BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: isDark
-            ? [
-                TamgaciConstants.backgroundColorDark,
-                TamgaciConstants.surfaceColorDark,
-              ]
-            : [
-                TamgaciConstants.backgroundColor,
-                TamgaciConstants.surfaceColor,
-              ],
-        stops: const [0.0, 1.0],
-      ),
+      color: isDark ? Colors.black : Colors.white,
     );
   }
 
@@ -530,14 +515,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       wideDesktop: 180.0,
     );
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2563EB), Color(0xFF0EA5E9)],
+          colors: isDark
+              ? [const Color(0xFF60A5FA), const Color(0xFF3B82F6)]
+              : [const Color(0xFF2563EB), const Color(0xFF0EA5E9)],
         ),
         borderRadius: BorderRadius.circular(
           TamgaciConstants.getResponsiveValue(
@@ -550,7 +540,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF2563EB).withValues(alpha: 0.3),
+            color: (isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB)).withValues(alpha: 0.3),
             blurRadius: 20,
             spreadRadius: 2,
             offset: const Offset(0, 8),
@@ -583,8 +573,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Colors.white.withValues(alpha: 0.4),
-                      Colors.white.withValues(alpha: 0.1),
+                      Colors.white.withValues(alpha: isDark ? 0.2 : 0.4),
+                      Colors.white.withValues(alpha: isDark ? 0.05 : 0.1),
                       Colors.white.withValues(alpha: 0.0),
                     ],
                   ),
@@ -604,7 +594,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     end: Alignment.bottomRight,
                     colors: [
                       Colors.white.withValues(alpha: 0.0),
-                      Colors.white.withValues(alpha: 0.2),
+                      Colors.white.withValues(alpha: isDark ? 0.1 : 0.2),
                     ],
                   ),
                   shape: BoxShape.circle,
@@ -617,7 +607,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
   }
 
-  /// Logo widget'ını oluşturur (PNG logo kullanır)
+  /// Logo widget'ını oluşturur (app_icon.ico kullanır)
   Widget _buildLogoSvg() {
     final double size = TamgaciConstants.getResponsiveValue(
       context,
@@ -627,10 +617,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       wideDesktop: 180.0,
     );
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     // Responsive logo boyutuna göre uygun PNG dosyasını seç
     String logoPath;
     if (size <= 120) {
-      logoPath = 'assets/images/logos/140x140logo.png'; // 120 için en yakın
+      logoPath = 'assets/images/logos/140x140logo.png';
     } else if (size <= 140) {
       logoPath = 'assets/images/logos/140x140logo.png';
     } else if (size <= 160) {
@@ -644,24 +637,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       width: size,
       height: size,
       fit: BoxFit.contain,
-      color: Colors.white,
-      colorBlendMode: BlendMode.srcIn,
       errorBuilder: (context, error, stackTrace) {
-        // Fallback: sadece "T" harfi göster (hesap makinesi ikonu kaldırıldı)
+        // Fallback: sadece logo rengi ile uyumlu bir ikon göster
         return Container(
           width: size,
           height: size,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.2),
+            color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Text(
-            'T',
-            style: TextStyle(
-              fontSize: size * 0.6,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          child: Icon(
+            Icons.account_balance,
+            size: size * 0.6,
+            color: isDark ? Colors.white : Colors.black,
           ),
         );
       },
@@ -692,7 +680,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             wideDesktop: 46.0,
           ),
           fontWeight: FontWeight.w800,
-          color: Colors.white,
+          color: isDark ? Colors.white : Colors.black,
           letterSpacing: 1.5,
           height: 1.1,
         ),
@@ -717,9 +705,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 22.0,
         ),
         fontWeight: FontWeight.w400,
-        color: isDark
-            ? TamgaciConstants.textSecondaryDark
-            : TamgaciConstants.textSecondary,
+        color: isDark ? Colors.white70 : Colors.black87,
         letterSpacing: 0.5,
       ),
       textAlign: TextAlign.center,
@@ -874,9 +860,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
           wideDesktop: 17.0,
         ),
         fontWeight: FontWeight.w500,
-        color: isDark
-            ? TamgaciConstants.textSecondaryDark
-            : TamgaciConstants.textSecondary,
+        color: isDark ? Colors.white70 : Colors.black87,
       ),
       textAlign: TextAlign.center,
     );

@@ -12,9 +12,11 @@
   <meta name="theme-color" content="#0175C2" />
   <meta name="robots" content="index, follow" />
   <meta name="author" content="TAMGACI" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
+  <meta http-equiv="Last-Modified" content="0" />
+  <meta http-equiv="ETag" content="1.0.1+2" />
   <meta name="keywords"
     content="muhasebe yazılımı, ön muhasebe yazılımı, fatura yazılımı, e-fatura yazılımı, irsaliye yazılımı, otomatik fatura okuma, fatura OCR yazılımı, yapay zeka ile fatura okuma, çoklu para birimi muhasebe, dövizli fatura yazılımı, uluslararası fatura yazılımı, KOBİ muhasebe yazılımı, kurumsal muhasebe yazılımı, belge tarama muhasebe, irsaliye fotoğrafla girme, otomatik irsaliye tanıma, muhasebe entegrasyonu fatura okuma, fatura girişi otomasyonu, fatura ve irsaliye otomasyonu, muhasebe programı, AI ile fatura girişi, yapay zeka ile fatura girişi yapan yazılım, KOBİ'ler için otomatik fatura okuma yazılımı, çoklu para birimi destekli ön muhasebe programı, irsaliye fotoğrafla giren muhasebe uygulaması" />
 
@@ -67,79 +69,69 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #0175C2 0%, #0256A3 100%);
+      background: linear-gradient(135deg, #2563EB 0%, #4C6EF5 50%, #1D4ED8 100%);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       overflow: hidden;
+      position: relative;
     }
 
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      color: white;
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+      animation: backgroundShift 8s ease-in-out infinite;
     }
 
-    .loading-logo {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 20px;
-      animation: pulse 2s infinite;
+    @keyframes backgroundShift {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
     }
 
-    .loading-text {
-      font-size: 18px;
-      font-weight: 500;
-      margin-bottom: 10px;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top: 3px solid white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-      }
-
-      50% {
-        opacity: 0.7;
-      }
-    }
-
-    @keyframes spin {
-      0% {
-        transform: rotate(0deg);
-      }
-
-      100% {
-        transform: rotate(360deg);
-      }
-    }
   </style>
 </head>
 
 <body>
-  <!-- Loading screen -->
-  <div class="loading-container">
-    <img src="/assets/images/logos/192x192logo.png" alt="TAMGACI" class="loading-logo"
-      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-    <div class="fallback-logo" style="display:none; width: 80px; height: 80px; background: linear-gradient(135deg, #2563EB, #0EA5E9); border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
-      T
-    </div>
-    <div class="loading-text">AI Destekli Muhasebe Yazılımı Yükleniyor...</div>
-    <div class="loading-spinner"></div>
-  </div>
 
-  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // Cache busting script
+    const version = '1.0.1+2';
+    const timestamp = Date.now();
+    
+    // Force reload if version changed
+    const storedVersion = localStorage.getItem('app_version');
+    if (storedVersion !== version) {
+      localStorage.setItem('app_version', version);
+      localStorage.setItem('last_update', timestamp);
+      // Clear all caches
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          names.forEach(function(name) {
+            caches.delete(name);
+          });
+        });
+      }
+    }
+    
+    // Add version parameter to all asset requests
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options) {
+      if (typeof url === 'string' && (url.includes('.js') || url.includes('.css') || url.includes('.png') || url.includes('.jpg'))) {
+        const separator = url.includes('?') ? '&' : '?';
+        url = url + separator + 'v=' + version + '&t=' + timestamp;
+      }
+      return originalFetch(url, options);
+    };
+
+  </script>
+  
+  <script src="flutter_bootstrap.js?v=1.0.1+2&t=1734567890" async></script>
 </body>
 
 </html>
