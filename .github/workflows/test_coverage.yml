@@ -1,0 +1,69 @@
+name: Test Coverage
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test-coverage:
+    runs-on: ubuntu-latest
+    
+    # Debug logging etkinleştir
+    env:
+      ACTIONS_STEP_DEBUG: true
+      ACTIONS_RUNNER_DEBUG: true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.6'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Run tests with coverage
+      run: |
+        # Testleri çalıştır ve coverage raporu oluştur
+        echo "🧪 Testleri çalıştırıyor..."
+        flutter test --coverage --reporter=expanded
+        
+    - name: Verify coverage file exists
+      run: |
+        # Coverage dosyasının oluştuğunu kontrol et
+        if [ ! -f "coverage/lcov.info" ]; then
+          echo "❌ Coverage dosyası oluşturulamadı!"
+          exit 1
+        fi
+        echo "✅ Coverage dosyası başarıyla oluşturuldu: $(ls -la coverage/lcov.info)"
+        
+    - name: Display coverage summary
+      run: |
+        # Coverage özetini göster
+        echo "📊 Coverage Dosyası Analizi:"
+        echo "Dosya boyutu: $(du -h coverage/lcov.info | cut -f1)"
+        echo "Test edilen dosya sayısı: $(grep -c '^SF:' coverage/lcov.info || echo '0')"
+        echo "Toplam satır sayısı: $(grep -c '^DA:' coverage/lcov.info || echo '0')"
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage/lcov.info
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true
+        verbose: true
+        
+    - name: Comment coverage on PR
+      if: github.event_name == 'pull_request'
+      uses: romeovs/lcov-reporter-action@v0.3.1
+      with:
+        lcov-file: ./coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        delete-old-comments: true

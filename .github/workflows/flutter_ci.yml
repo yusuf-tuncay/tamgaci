@@ -19,7 +19,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.35.1'
+          flutter-version: '3.35.6'
 
       - name: Cache Flutter packages
         uses: actions/cache@v4
@@ -36,13 +36,17 @@ jobs:
         run: flutter gen-l10n
 
       - name: Format Check
-        run: dart format --set-exit-if-changed .
+        run: |
+          echo "🎨 Dart kod formatı kontrol ediliyor..."
+          dart format --set-exit-if-changed .
 
       - name: Analyze
         run: flutter analyze
 
       - name: Run Tests with Coverage
-        run: flutter test --no-pub --coverage
+        run: |
+          echo "🧪 Testleri çalıştırıyor..."
+          flutter test --no-pub --coverage
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -58,9 +62,14 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
+      - name: Install lcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+          
       - name: Generate HTML coverage report
         run: |
-          flutter pub global activate coverage
+          echo "📊 HTML coverage raporu oluşturuluyor..."
           genhtml coverage/lcov.info -o coverage/html
 
       - name: Upload HTML report artifact
@@ -99,7 +108,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.35.1'
+          flutter-version: '3.35.6'
 
       - name: Cache Flutter packages
         uses: actions/cache@v4
@@ -134,7 +143,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.35.1'
+          flutter-version: '3.35.6'
 
       - name: Download Web Artifact
         uses: actions/download-artifact@v4

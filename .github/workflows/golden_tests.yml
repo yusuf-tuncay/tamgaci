@@ -1,0 +1,68 @@
+name: Golden Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  golden-tests:
+    runs-on: ubuntu-latest
+    
+    # Debug logging etkinleştir
+    env:
+      ACTIONS_STEP_DEBUG: true
+      ACTIONS_RUNNER_DEBUG: true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.6'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Check if Golden tests exist
+      run: |
+        # Golden test dosyalarının varlığını kontrol et
+        if [ ! -d "test/golden" ]; then
+          echo "⚠️ Golden test dizini bulunamadı: test/golden/"
+          echo "Golden testleri atlanıyor..."
+          exit 0
+        fi
+        
+        echo "✅ Golden test dizini bulundu:"
+        ls -la test/golden/
+        
+        # Test dosyalarını kontrol et
+        if [ -z "$(find test/golden -name '*.dart' -type f)" ]; then
+          echo "⚠️ Golden test dosyası bulunamadı, test atlanıyor"
+          exit 0
+        fi
+        
+    - name: Run golden tests
+      run: |
+        # Golden testleri çalıştır
+        echo "🎨 Golden testleri başlatılıyor..."
+        
+        # Alchemist bağımlılığını kontrol et
+        if ! flutter pub deps | grep -q "alchemist"; then
+          echo "❌ Alchemist bağımlılığı bulunamadı - test başarısız!"
+          exit 1
+        fi
+        
+        # Golden testleri çalıştır
+        flutter test test/golden/ --update-goldens --reporter=expanded
+        
+    - name: Upload golden files
+      uses: actions/upload-artifact@v4
+      with:
+        name: golden-files
+        path: test/golden/

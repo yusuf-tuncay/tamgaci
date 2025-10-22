@@ -1,0 +1,30 @@
+workflows:
+  flutter-test-coverage:
+    name: Flutter Test Coverage
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      groups:
+        - codecov
+      vars:
+        CODECOV_TOKEN: Encrypted(...)  # Codecov token'ınızı buraya ekleyin
+    scripts:
+      - name: Install dependencies
+        script: |
+          flutter pub get
+      - name: Run tests with coverage
+        script: |
+          flutter test --coverage
+      - name: Upload coverage to Codecov
+        script: |
+          bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN -f ./coverage/lcov.info
+    artifacts:
+      - coverage/
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com
+        notify:
+          success: true
+          failure: true

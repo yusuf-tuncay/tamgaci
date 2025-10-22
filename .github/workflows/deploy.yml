@@ -34,6 +34,7 @@ jobs:
           
       - name: 🏗️ Build Windows App
         run: |
+          echo "🏗️ Windows uygulaması build ediliyor..."
           flutter build windows --release
           
       - name: 📁 Create Public Directory Structure
@@ -74,12 +75,23 @@ jobs:
           Write-Host "Generated release.json:"
           Write-Host $releaseInfo
           
-      - name: 🔥 Install Firebase CLI
+      - name: 🔥 Install Node.js and Firebase CLI
         run: |
+          # Install Node.js
+          choco install nodejs -y
+          # Install Firebase CLI
           npm install -g firebase-tools
           
       - name: 🚀 Deploy to Firebase Hosting
         run: |
+          # Firebase token kontrolü
+          if [ -z "${{ secrets.FIREBASE_TOKEN }}" ]; then
+            echo "❌ FIREBASE_TOKEN eksik - deploy başarısız!"
+            echo "Firebase token'ı GitHub Secrets'a ekleyin"
+            exit 1
+          fi
+          
+          # Firebase deploy
           firebase deploy --only hosting --token ${{ secrets.FIREBASE_TOKEN }}
           
       - name: ✅ Build Summary

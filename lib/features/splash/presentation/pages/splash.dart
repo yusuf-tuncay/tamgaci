@@ -570,7 +570,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            // Logo (asset), yoksa ikon fallback
+            // Logo (asset) - sadece ana logo göster
             _buildLogoSvg(),
             // Premium parıltı efekti
             Align(
@@ -646,6 +646,22 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       fit: BoxFit.contain,
       color: Colors.white,
       colorBlendMode: BlendMode.srcIn,
+      errorBuilder: (context, error, stackTrace) {
+        // Fallback: sadece basit bir hesap makinesi ikonu göster
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(
+            Icons.calculate_rounded,
+            size: 60,
+            color: Colors.white,
+          ),
+        );
+      },
     );
   }
 

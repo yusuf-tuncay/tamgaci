@@ -1,0 +1,70 @@
+name: Patrol E2E Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *'  # Her gün saat 02:00'da çalıştır
+  workflow_dispatch:
+
+jobs:
+  patrol-tests:
+    runs-on: ubuntu-latest
+    
+    # Debug logging etkinleştir
+    env:
+      ACTIONS_STEP_DEBUG: true
+      ACTIONS_RUNNER_DEBUG: true
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.35.6'
+        channel: 'stable'
+        
+    - name: Install dependencies
+      run: flutter pub get
+      
+    - name: Setup Android SDK (Optional)
+      run: |
+        # Android SDK kurulumu (opsiyonel)
+        echo "📱 Android SDK kurulumu atlanıyor - Patrol testleri için gerekli değil"
+        echo "Patrol testleri Flutter test framework'ü ile çalışır"
+        
+    - name: Check if Patrol tests exist
+      run: |
+        # Patrol test dosyalarının varlığını kontrol et
+        if [ ! -d "test/patrol" ]; then
+          echo "⚠️ Patrol test dizini bulunamadı: test/patrol/"
+          echo "Patrol testleri atlanıyor..."
+          exit 0
+        fi
+        
+        echo "✅ Patrol test dizini bulundu:"
+        ls -la test/patrol/
+        
+    - name: Run Patrol tests
+      run: |
+        # Patrol testlerini çalıştır
+        echo "🚀 Patrol E2E testleri başlatılıyor..."
+        
+        # Test dosyalarını kontrol et
+        if [ -z "$(find test/patrol -name '*.dart' -type f)" ]; then
+          echo "❌ Patrol test dosyası bulunamadı - test başarısız!"
+          exit 1
+        fi
+        
+        # Flutter testleri çalıştır
+        flutter test test/patrol/ --reporter=expanded
+        
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: patrol-test-results
+        path: test/patrol/
