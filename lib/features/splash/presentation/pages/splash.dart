@@ -647,7 +647,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       color: Colors.white,
       colorBlendMode: BlendMode.srcIn,
       errorBuilder: (context, error, stackTrace) {
-        // Fallback: sadece basit bir hesap makinesi ikonu göster
+        // Fallback: sadece "T" harfi göster (hesap makinesi ikonu kaldırıldı)
         return Container(
           width: size,
           height: size,
@@ -655,10 +655,13 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             color: Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(
-            Icons.calculate_rounded,
-            size: 60,
-            color: Colors.white,
+          child: Text(
+            'T',
+            style: TextStyle(
+              fontSize: size * 0.6,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
         );
       },

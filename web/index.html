@@ -48,8 +48,11 @@
   <link rel="canonical" href="https://tamgaci.web.app/" />
 
   <!-- Preload critical resources -->
-  <link rel="preload" href="assets/images/logos/192x192logo.png" as="image" />
-  <link rel="preload" href="assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin />
+  <link rel="preload" href="/assets/images/logos/192x192logo.png" as="image" />
+  <link rel="preload" href="/assets/images/logos/140x140logo.png" as="image" />
+  <link rel="preload" href="/assets/images/logos/160x160logo.png" as="image" />
+  <link rel="preload" href="/assets/images/logos/180x180logo.png" as="image" />
+  <link rel="preload" href="/assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin />
 
   <!-- DNS prefetch for external resources -->
   <link rel="dns-prefetch" href="//fonts.googleapis.com" />
@@ -127,11 +130,11 @@
 <body>
   <!-- Loading screen -->
   <div class="loading-container">
-    <img src="assets/images/logos/192x192logo.png" alt="TAMGACI" class="loading-logo"
-      onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" />
-    <div
-      style="display:none; width: 80px; height: 80px; background: linear-gradient(135deg, #2563EB, #0EA5E9); border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
-      T</div>
+    <img src="/assets/images/logos/192x192logo.png" alt="TAMGACI" class="loading-logo"
+      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+    <div class="fallback-logo" style="display:none; width: 80px; height: 80px; background: linear-gradient(135deg, #2563EB, #0EA5E9); border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold;">
+      T
+    </div>
     <div class="loading-text">AI Destekli Muhasebe Yazılımı Yükleniyor...</div>
     <div class="loading-spinner"></div>
   </div>
