@@ -7,6 +7,8 @@ import '../../domain/entities/payment_enums.dart';
 import '../../domain/entities/payment_transaction.dart';
 import '../providers/payment_collection_providers.dart';
 import '../widgets/transaction_form_fields.dart';
+import '../../../customers/presentation/providers/customer_providers.dart';
+import '../../../suppliers/presentation/providers/supplier_providers.dart';
 
 /// Tahsilat ve ödeme işlemi form ekranı
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -127,7 +129,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     // Temel alanları ayarla
     formNotifier.updateField('transactionDate', DateTime.now());
-    formNotifier.updateField('currency', 'TRY');
+
+    // Para birimini otomatik seç
+    _setDefaultCurrency();
 
     // Açıklama alanını otomatik doldur
     _setDefaultDescription();
@@ -148,6 +152,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     else {
       formNotifier.updateField('type', PaymentTransactionType.cash);
     }
+  }
+
+  /// Para birimini otomatik seç
+  void _setDefaultCurrency() {
+    final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
+
+    // Varsayılan olarak TRY kullan
+    String defaultCurrency = 'TRY';
+
+    // Müşteri/tedarikçi bilgilerine göre para birimi belirle
+    if (widget.customerId != null) {
+      // Müşteri bilgilerini al ve para birimini belirle
+      // Şimdilik varsayılan TRY kullan, ileride müşteri tercihine göre ayarlanabilir
+      defaultCurrency = 'TRY';
+    } else if (widget.supplierId != null) {
+      // Tedarikçi bilgilerini al ve para birimini belirle
+      // Şimdilik varsayılan TRY kullan, ileride tedarikçi tercihine göre ayarlanabilir
+      defaultCurrency = 'TRY';
+    }
+
+    formNotifier.updateField('currency', defaultCurrency);
   }
 
   void _setDefaultDescription() {
@@ -174,73 +199,243 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   /// Seçili müşteri bilgisi widget'ı
   Widget _buildSelectedCustomerInfo() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.person, color: Colors.blue),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Seçili Müşteri',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
+    return Consumer(
+      builder: (context, ref, child) {
+        final customerAsync = ref.watch(customerProvider(widget.customerId!));
+
+        return customerAsync.when(
+          data: (customer) {
+            if (customer == null) {
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 ),
-                Text(
-                  'Müşteri ID: ${widget.customerId}',
-                  style: const TextStyle(fontSize: 12),
+                child: const Row(
+                  children: [
+                    Icon(Icons.error, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text(
+                      'Müşteri bulunamadı',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.person, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Seçili Müşteri',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        Text(
+                          customer.name,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (customer.email != null)
+                          Text(
+                            customer.email!,
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                        if (customer.phone != null)
+                          Text(
+                            customer.phone!,
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 8),
+                Text('Müşteri bilgileri yükleniyor...'),
+              ],
+            ),
+          ),
+          error: (error, stack) => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.red),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Müşteri bilgileri yüklenemedi: $error',
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   /// Seçili tedarikçi bilgisi widget'ı
   Widget _buildSelectedSupplierInfo() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.orange.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.business, color: Colors.orange),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Seçili Tedarikçi',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
+    return Consumer(
+      builder: (context, ref, child) {
+        final supplierAsync = ref.watch(supplierProvider(widget.supplierId!));
+
+        return supplierAsync.when(
+          data: (supplier) {
+            if (supplier == null) {
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 ),
-                Text(
-                  'Tedarikçi ID: ${widget.supplierId}',
-                  style: const TextStyle(fontSize: 12),
+                child: const Row(
+                  children: [
+                    Icon(Icons.error, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text(
+                      'Tedarikçi bulunamadı',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.business, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Seçili Tedarikçi',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        Text(
+                          supplier.name,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (supplier.email != null)
+                          Text(
+                            supplier.email!,
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                        if (supplier.phone != null)
+                          Text(
+                            supplier.phone!,
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
+            ),
+            child: const Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 8),
+                Text('Tedarikçi bilgileri yükleniyor...'),
+              ],
+            ),
+          ),
+          error: (error, stack) => Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.red),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Tedarikçi bilgileri yüklenemedi: $error',
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
