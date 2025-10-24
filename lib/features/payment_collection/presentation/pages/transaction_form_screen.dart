@@ -484,6 +484,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Seçili müşteri/tedarikçi bilgisi göster - EN ÜSTTE
+              if (widget.customerId != null) _buildSelectedCustomerInfo(),
+
+              if (widget.supplierId != null) _buildSelectedSupplierInfo(),
+
               // İşlem türü ve yönü
               TransactionFormFields.buildTransactionTypeField(
                 formState: formState,
@@ -548,11 +553,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               ),
 
               const SizedBox(height: 16),
-
-              // Seçili müşteri/tedarikçi bilgisi göster - EN ÜSTTE
-              if (widget.customerId != null) _buildSelectedCustomerInfo(),
-
-              if (widget.supplierId != null) _buildSelectedSupplierInfo(),
 
               // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
               if (formState.isCustomerSelectionRequired &&

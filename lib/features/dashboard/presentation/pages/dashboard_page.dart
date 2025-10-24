@@ -75,7 +75,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   Future<void> _loadWeather() async {
     try {
-
       // Lightweight geolocation (best effort)
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
@@ -92,7 +91,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         lat = pos.latitude;
         lon = pos.longitude;
       }
-
 
       // Open-Meteo free API (no key) - weather data
       final weatherUri = Uri.parse(
@@ -1383,7 +1381,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   Widget _buildWeatherRow(bool isDark) {
-
     // Weather verisi yoksa loading göster
     if (_weather == null) {
       return Container(
@@ -1400,7 +1397,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ),
         child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.wb_sunny,
               color: Colors.white,
               size: 24,

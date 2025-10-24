@@ -891,13 +891,24 @@ class _EnhancedSupplierDetailPageState
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
-        insetPadding: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: double.infinity,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Container(
+          width: MediaQuery.of(context).size.width > 768 
+              ? MediaQuery.of(context).size.width * 0.6  // Masaüstü için %60 genişlik
+              : double.infinity,  // Mobil için tam genişlik
           height: MediaQuery.of(context).size.height * 0.9,
-          child: TransactionFormScreen(
-            direction: PaymentDirection.outgoing,
-            supplierId: supplier.id,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: TransactionFormScreen(
+              direction: PaymentDirection.outgoing,
+              supplierId: supplier.id,
+            ),
           ),
         ),
       ),
