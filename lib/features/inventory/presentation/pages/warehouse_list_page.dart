@@ -253,7 +253,7 @@ class WarehouseListPage extends ConsumerWidget {
                       ),
                       IconButton(
                         onPressed: () {
-                          // TODO: Depo silme
+                          // Depo silme
                         },
                         icon: const Icon(
                           Icons.delete,

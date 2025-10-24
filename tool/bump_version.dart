@@ -44,7 +44,7 @@ void main(List<String> args) async {
 
     // Replace flutter_bootstrap.js query param v=...
     indexContent = indexContent.replaceAll(
-      RegExp('flutter_bootstrap\\.js\\?v=[^&\"\']*'),
+      RegExp('flutter_bootstrap\\.js\\?v=[^&"\']*'),
       "flutter_bootstrap.js?v=$newVersion",
     );
 
@@ -71,7 +71,7 @@ void main(List<String> args) async {
 
 String _replaceOrInsertMeta(String html, String httpEquiv, String value) {
   final metaRegex = RegExp(
-      '<meta[^>]*http-equiv=\"$httpEquiv\"[^>]*content=\"[^\"]*\"[^>]*>',
+      '<meta[^>]*http-equiv="$httpEquiv"[^>]*content="[^"]*"[^>]*>',
       caseSensitive: false);
   if (metaRegex.hasMatch(html)) {
     return html.replaceAll(metaRegex,

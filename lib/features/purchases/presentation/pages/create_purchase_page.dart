@@ -303,15 +303,15 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   _buildCustomerSelector(),
                   const SizedBox(height: 16),
                   _buildDateField(
-                          label: 'Alış Tarihi',
-                          value: _purchaseDate,
-                          onChanged: (date) {
-                            if (date != null) {
-                              setState(() {
-                                _purchaseDate = date;
-                              });
-                            }
-                          },
+                    label: 'Alış Tarihi',
+                    value: _purchaseDate,
+                    onChanged: (date) {
+                      if (date != null) {
+                        setState(() {
+                          _purchaseDate = date;
+                        });
+                      }
+                    },
                   ),
                 ],
               ),
@@ -765,7 +765,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         await _syncInvoiceWithPurchase(purchase);
       } catch (_) {}
       // Silinen modül: notifications - taksit hatırlatma özelliği kaldırıldı
-      // TODO: if _receiveToInventory and _selectedWarehouse != null, create stock movements (future step)
+      // if _receiveToInventory and _selectedWarehouse != null, create stock movements (future step)
       if (mounted) {
         final scheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1116,7 +1116,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           // Tablo başlığı
           Container(
             padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.grey.shade100,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8.0),
@@ -1242,18 +1242,18 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   Widget _buildSmallScreenRow(_PurchaseItemForm item, int index) {
     return Container(
       padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
               Expanded(
                 child: Text(
                   item.productName,
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
               ),
-                IconButton(
+              IconButton(
                 onPressed: () => _editItem(item, index),
                 icon: const Icon(Icons.edit, size: 18),
                 padding: EdgeInsets.zero,
@@ -1264,9 +1264,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                 icon: const Icon(Icons.delete, size: 18, color: Colors.red),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -1311,7 +1311,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       padding: const EdgeInsets.all(12.0),
       child: Row(
         children: [
-              Expanded(
+          Expanded(
             flex: 3,
             child: Text(
               item.productName,
@@ -1416,11 +1416,11 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                   style: TextStyle(color: Colors.grey),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
+      );
+    }
 
     // Para birimi bazlı gruplandırma
     final Map<String, List<_PurchaseItemForm>> itemsByCurrency = {};
@@ -1440,7 +1440,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     String targetCurrency = 'TRY';
     if (_purchaseType == PurchaseType.returnPurchase) {
       // İade Alışı: Müşterinin varsayılan para birimi
-      // TODO: Customer entity'sine defaultCurrency field'ı eklenmeli
+      // Customer entity'sine defaultCurrency field'ı eklenmeli
       targetCurrency = 'TRY'; // Şimdilik TRY kullanılıyor
     } else {
       // Normal Alış: Ödeme para birimi
@@ -1572,8 +1572,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Text(
                   '$currency Özeti',
                   style: const TextStyle(

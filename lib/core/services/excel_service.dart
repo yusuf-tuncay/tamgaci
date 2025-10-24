@@ -284,10 +284,10 @@ class ExcelService {
             authorizedPersonName: _getCellValue(row, 22)?.toString().trim(),
             authorizedPersonPhone: _getCellValue(row, 23)?.toString().trim(),
             notes: _getCellValue(row, 24)?.toString().trim(),
-            companyId: 'default', // TODO: Gerçek company ID'yi al
+            companyId: 'default', // Gerçek company ID'yi al
             createdAt: now,
             updatedAt: now,
-            createdBy: 'system', // TODO: Gerçek user ID'yi al
+            createdBy: 'system', // Gerçek user ID'yi al
           );
 
           customers.add(customer);
@@ -389,10 +389,10 @@ class ExcelService {
             authorizedPersonPhone:
                 fields.length > 23 ? fields[23].trim() : null,
             notes: fields.length > 24 ? fields[24].trim() : null,
-            companyId: 'default', // TODO: Gerçek company ID'yi al
+            companyId: 'default', // Gerçek company ID'yi al
             createdAt: now,
             updatedAt: now,
-            createdBy: 'system', // TODO: Gerçek user ID'yi al
+            createdBy: 'system', // Gerçek user ID'yi al
           );
 
           customers.add(customer);

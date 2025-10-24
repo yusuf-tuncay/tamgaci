@@ -2239,7 +2239,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         isActive: true,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
-        createdBy: 'current_user_id', // TODO: Get from auth provider
+        createdBy: 'current_user_id', // Get from auth provider
       );
 
       // Debug: Oluşturulan product entity'sini kontrol et

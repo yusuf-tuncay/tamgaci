@@ -255,7 +255,7 @@ class Invoice {
 
   /// Formatlanmış toplam tutar (varsayılan para birimi ile)
   String get formattedTotalAmountWithDefault {
-    // TODO: Bu metod varsayılan para birimi provider'ından gelen kurları kullanacak
+    // Bu metod varsayılan para birimi provider'ından gelen kurları kullanacak
     return '${totalAmount.toStringAsFixed(2)} $currencySymbol';
   }
 

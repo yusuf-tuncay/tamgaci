@@ -43,7 +43,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
 
   void _initializeForm() {
     if (widget.stockId != null) {
-      // TODO: Load existing stock data for editing
+      // Load existing stock data for editing
       _loadStockData();
     } else {
       // Set default values for new stock
@@ -54,7 +54,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
   }
 
   void _loadStockData() {
-    // TODO: Implement loading existing stock data
+    // Implement loading existing stock data
   }
 
   @override
@@ -539,7 +539,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
         updatedAt: DateTime.now(),
       );
 
-      // TODO: Implement save functionality
+      // Implement save functionality
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

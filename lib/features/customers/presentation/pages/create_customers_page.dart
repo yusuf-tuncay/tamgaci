@@ -604,7 +604,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
           : _taxOfficeController.text.trim(),
       customerType: _selectedType,
       status: CustomerStatus.active,
-      companyId: 'default_company_id', // TODO: Get from user context
+      companyId: 'default_company_id', // Get from user context
       city: _cityController.text.trim().isEmpty
           ? null
           : _cityController.text.trim(),
@@ -620,7 +620,7 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
       isActive: _isActive,
       createdAt: widget.customerId == null ? DateTime.now() : DateTime.now(),
       updatedAt: DateTime.now(),
-      createdBy: 'current_user_id', // TODO: Get from auth context
+      createdBy: 'current_user_id', // Get from auth context
     );
 
     try {

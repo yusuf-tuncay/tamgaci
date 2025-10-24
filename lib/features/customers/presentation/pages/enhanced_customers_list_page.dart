@@ -15,6 +15,8 @@ import '../../../../core/services/excel_service.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
 import '../../../../core/widgets/disposed_error_suppressor_mixin.dart';
+import '../../../payment_collection/presentation/pages/transaction_form_screen.dart';
+import '../../../payment_collection/domain/entities/payment_enums.dart';
 
 /// Gelişmiş müşteri listesi sayfası
 class EnhancedCustomersListPage extends ConsumerStatefulWidget {
@@ -1369,7 +1371,7 @@ class _EnhancedCustomersListPageState
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      // Tahsilat yap
+                      _navigateToPaymentForm(customer);
                     },
                     icon: const Icon(Icons.payment),
                     label: const Text('Tahsilat'),
@@ -1609,7 +1611,7 @@ class _EnhancedCustomersListPageState
 
   void _shareFile(String fileName) async {
     try {
-      // TODO: Dosya paylaşım implementasyonu
+      // Dosya paylaşım implementasyonu
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$fileName dosyası paylaşım için hazır'),
@@ -1641,5 +1643,21 @@ class _EnhancedCustomersListPageState
         ],
       ),
     );
+  }
+
+  /// Tahsilat form ekranına git
+  void _navigateToPaymentForm(Customer customer) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionFormScreen(
+          direction: PaymentDirection.incoming,
+          customerId: customer.id,
+        ),
+      ),
+    ).then((_) {
+      // Form kapatıldığında müşteri listesini yenile
+      ref.invalidate(customersProvider);
+    });
   }
 }

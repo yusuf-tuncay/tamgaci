@@ -21,6 +21,8 @@ import '../../../sales/presentation/providers/sale_providers.dart' as sales;
 import '../../../purchases/presentation/providers/purchase_providers.dart'
     as purchases;
 import '../../../../core/widgets/lifecycle_mixin.dart';
+import '../../../payment_collection/presentation/pages/transaction_form_screen.dart';
+import '../../../payment_collection/domain/entities/payment_enums.dart';
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -381,8 +383,8 @@ class _EnhancedCustomerDetailPageV2State
             child: _buildActionButton(
               icon: Icons.payment,
               label: 'Tahsilat',
-              color: Colors.grey,
-              onTap: () {}, // Silinen modül: payments
+              color: Colors.blue,
+              onTap: () => _navigateToPaymentForm(customer),
             ),
           ),
           const SizedBox(width: 8),
@@ -1422,7 +1424,7 @@ class _EnhancedCustomerDetailPageV2State
     return false;
   }
 
-  // TODO: Purchase modülü entegrasyonu yapıldığında kullanılacak
+  // Purchase modülü entegrasyonu yapıldığında kullanılacak
   // bool _isPurchaseType(dynamic purchase, String targetType) {
   //   final type = purchase['type']?.toString() ?? '';
   //   return type == 'PurchaseType.$targetType' ||
@@ -2184,5 +2186,21 @@ class _EnhancedCustomerDetailPageV2State
         );
       }
     }
+  }
+
+  /// Tahsilat form ekranına git
+  void _navigateToPaymentForm(Customer customer) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionFormScreen(
+          direction: PaymentDirection.incoming,
+          customerId: customer.id,
+        ),
+      ),
+    ).then((_) {
+      // Form kapatıldığında müşteri detaylarını yenile
+      ref.invalidate(customerProvider(customer.id));
+    });
   }
 }

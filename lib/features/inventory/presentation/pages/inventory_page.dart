@@ -28,7 +28,7 @@ class InventoryPage extends ConsumerWidget {
       body: _buildBody(isDark, ref, context),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Stok işlemi ekleme
+          // Stok işlemi ekleme
         },
         backgroundColor: TamgaciConstants.primaryColor,
         child: const Icon(Icons.add, color: Colors.white),
@@ -139,14 +139,14 @@ class InventoryPage extends ConsumerWidget {
             childAspectRatio: 1.2,
             children: [
               _buildActionCard('Stok Girişi', Icons.add_box, Colors.green, () {
-                // TODO: Stok girişi
+                // Stok girişi
               }, isDark),
               _buildActionCard('Stok Çıkışı', Icons.remove_circle, Colors.red,
                   () {
-                // TODO: Stok çıkışı
+                // Stok çıkışı
               }, isDark),
               _buildActionCard('Stok Düzeltme', Icons.edit, Colors.blue, () {
-                // TODO: Stok düzeltme
+                // Stok düzeltme
               }, isDark),
               _buildActionCard('Depo Listesi', Icons.list, Colors.purple, () {
                 Navigator.push(

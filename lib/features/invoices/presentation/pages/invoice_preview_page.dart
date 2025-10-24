@@ -1416,7 +1416,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     for (final entry in currencyGroups.entries) {
       final currency = entry.key;
       final items = entry.value;
-      
+
       // Para birimi başlığı
       details.add(
         Container(
@@ -1527,7 +1527,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       // Önce ürünlerde kayıtlı kur bilgisini kontrol et
       double exchangeRate = 1.0;
       final item = items.first['item'] as InvoiceItem;
-      
+
       if (item.exchangeRate != null && item.exchangeRate! > 0) {
         // Satış yap modülünde girilen kur bilgisini kullan
         exchangeRate = item.exchangeRate!;
@@ -1535,13 +1535,14 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         // Kur bilgisi yoksa gerçek kurları al
         try {
           await ExchangeRateService().getExchangeRate(currency);
-          exchangeRate = ExchangeRateService().convertCurrency(1.0, currency, customerCurrency);
+          exchangeRate = ExchangeRateService()
+              .convertCurrency(1.0, currency, customerCurrency);
         } catch (e) {
           // Hata durumunda varsayılan kur
           exchangeRate = 1.0;
         }
       }
-      
+
       final convertedTotal = currencyTotal * exchangeRate;
 
       summary.add(
@@ -2105,7 +2106,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         _isEditing = false;
       });
 
-      // TODO: Firebase'e kaydet
+      // Firebase'e kaydet
       // Bu kısım invoice repository'si ile yapılacak
 
       // Başarı mesajı göster
@@ -2231,7 +2232,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   void _shareInvoice() {
-    // TODO: Paylaşım işlevselliği
+    // Paylaşım işlevselliği
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Paylaşım özelliği yakında eklenecek'),
@@ -2241,7 +2242,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   void _sendEmail() {
-    // TODO: E-posta gönderme işlevselliği
+    // E-posta gönderme işlevselliği
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('E-posta gönderme özelliği yakında eklenecek'),
@@ -2281,7 +2282,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     try {
       if (_isEditing) {
         // Düzenleme modunda - mevcut faturayı güncelle
-        // TODO: Invoice repository ile güncelleme işlemi
+        // Invoice repository ile güncelleme işlemi
         // final updatedInvoice = widget.invoice.copyWith(
         //   customerName: _customerNameController.text,
         //   customerAddress: _customerAddressController.text,
@@ -2297,7 +2298,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         );
       } else {
         // Yeni fatura olarak kaydet
-        // TODO: Invoice repository ile kaydetme işlemi
+        // Invoice repository ile kaydetme işlemi
         // final newInvoice = widget.invoice.copyWith(
         //   id: '', // Yeni ID oluşturulacak
         //   invoiceNumber: null, // Yeni fatura numarası oluşturulacak

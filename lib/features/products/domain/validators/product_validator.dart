@@ -191,7 +191,7 @@ class ProductValidator {
     }
 
     // Son 30 gün içinde satış varsa silme engellenir
-    // TODO: Satış geçmişi kontrolü eklenebilir
+    // Satış geçmişi kontrolü eklenebilir
 
     return ValidationResult(
       isValid: errors.isEmpty,

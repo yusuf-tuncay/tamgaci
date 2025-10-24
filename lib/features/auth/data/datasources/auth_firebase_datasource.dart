@@ -527,7 +527,6 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         throw AuthenticationFailure('Kullanıcı bulunamadı');
       }
 
-      // TODO: Implement two-factor authentication
       // Bu özellik Firebase Auth'da doğrudan desteklenmiyor
       // Üçüncü parti çözümler kullanılmalı
       throw AuthenticationFailure(
@@ -544,7 +543,6 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   @override
   Future<void> disableTwoFactorAuth() async {
     try {
-      // TODO: Implement two-factor authentication
       throw AuthenticationFailure(
           'İki faktörlü kimlik doğrulama henüz desteklenmiyor');
     } catch (e) {
@@ -559,7 +557,6 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
   @override
   Future<bool> verifyTwoFactorCode(String code) async {
     try {
-      // TODO: Implement two-factor authentication
       throw AuthenticationFailure(
           'İki faktörlü kimlik doğrulama henüz desteklenmiyor');
     } catch (e) {

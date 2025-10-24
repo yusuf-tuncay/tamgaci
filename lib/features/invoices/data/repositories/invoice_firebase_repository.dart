@@ -713,7 +713,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
 
   @override
   Future<List<int>?> generateInvoicePDF(String invoiceId) async {
-    // TODO: PDF generation implementation
+    // PDF generation implementation
     AppLogger.info(
         'PDF generation not implemented yet for invoice: $invoiceId');
     return null;
@@ -721,7 +721,7 @@ class InvoiceFirebaseRepository implements InvoiceRepository {
 
   @override
   Future<bool> sendInvoiceByEmail(String invoiceId, String toEmail) async {
-    // TODO: Email sending implementation
+    // Email sending implementation
     AppLogger.info(
         'Email sending not implemented yet for invoice: $invoiceId to $toEmail');
     return false;

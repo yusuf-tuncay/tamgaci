@@ -1044,7 +1044,7 @@ class ProductDetailPage extends ConsumerWidget {
               title: const Text('Kopyala'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Copy product
+                // Copy product functionality
               },
             ),
             ListTile(

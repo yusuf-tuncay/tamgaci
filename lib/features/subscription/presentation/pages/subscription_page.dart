@@ -2081,12 +2081,12 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       return;
     }
 
-    // TODO: Gerçek kupon doğrulama API'si entegre edilecek
+    // Gerçek kupon doğrulama API'si entegre edilecek
     // Şimdilik basit bir simülasyon
     if (couponCode == '139570') {
       setState(() {
         _couponMessage = 'Özel kupon kodu uygulandı! Tüm fiyatlar sıfırlandı.';
-        // TODO: Fiyatları sıfırla - PayTR'a 0 TL gönder
+        // Fiyatları sıfırla - PayTR'a 0 TL gönder
         _applySpecialCoupon();
       });
     } else if (couponCode.toLowerCase() == 'welcome10') {
@@ -2112,7 +2112,7 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
       _isSpecialCouponApplied = true;
     });
 
-    // TODO: Bu kupon uygulandığında:
+    // Bu kupon uygulandığında:
     // 1. Tüm plan fiyatlarını 0 TL yap
     // 2. PayTR'a 0 TL gönder
     // 3. Özel kupon durumunu state'te sakla

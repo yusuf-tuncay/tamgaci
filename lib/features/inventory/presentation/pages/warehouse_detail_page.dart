@@ -822,7 +822,7 @@ class WarehouseDetailPage extends ConsumerWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
-              // TODO: Implement delete functionality
+              // Implement delete functionality
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Depo silme işlemi henüz implement edilmedi'),

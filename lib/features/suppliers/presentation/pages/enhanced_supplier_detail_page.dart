@@ -14,6 +14,8 @@ import '../../domain/entities/supplier.dart';
 import '../../domain/entities/supplier_enums.dart';
 import '../../domain/entities/supplier_transaction.dart';
 import 'package:go_router/go_router.dart';
+import '../../../payment_collection/presentation/pages/transaction_form_screen.dart';
+import '../../../payment_collection/domain/entities/payment_enums.dart';
 
 /// Gelişmiş tedarikçi detay sayfası
 class EnhancedSupplierDetailPage extends ConsumerStatefulWidget {
@@ -290,7 +292,8 @@ class _EnhancedSupplierDetailPageState
             label: 'Alış Yap',
             color: Colors.orange,
             onTap: () {
-              context.go('/purchases/create?supplierId=${supplier.id}&supplierName=${Uri.encodeComponent(supplier.name)}');
+              context.go(
+                  '/purchases/create?supplierId=${supplier.id}&supplierName=${Uri.encodeComponent(supplier.name)}');
             },
           ),
         ),
@@ -301,7 +304,8 @@ class _EnhancedSupplierDetailPageState
             label: 'Fatura Al',
             color: Colors.blue,
             onTap: () {
-              context.go('/purchases/create?supplierId=${supplier.id}&supplierName=${Uri.encodeComponent(supplier.name)}');
+              context.go(
+                  '/purchases/create?supplierId=${supplier.id}&supplierName=${Uri.encodeComponent(supplier.name)}');
             },
           ),
         ),
@@ -311,9 +315,7 @@ class _EnhancedSupplierDetailPageState
             icon: Icons.payment,
             label: 'Ödeme Yap',
             color: Colors.green,
-            onTap: () {
-              // Ödeme yapma işlemi
-            },
+            onTap: () => _navigateToPaymentForm(supplier),
           ),
         ),
         const SizedBox(width: 8),
@@ -881,5 +883,21 @@ class _EnhancedSupplierDetailPageState
         ],
       ),
     );
+  }
+
+  /// Ödeme form ekranına git
+  void _navigateToPaymentForm(Supplier supplier) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TransactionFormScreen(
+          direction: PaymentDirection.outgoing,
+          supplierId: supplier.id,
+        ),
+      ),
+    ).then((_) {
+      // Form kapatıldığında tedarikçi detaylarını yenile
+      ref.invalidate(supplierProvider(supplier.id));
+    });
   }
 }
