@@ -42,12 +42,20 @@ class DashboardPage extends ConsumerStatefulWidget {
 class _DashboardPageState extends ConsumerState<DashboardPage> {
   // Backfill kaldırıldı: bazı projelerde kurallar nedeniyle uyarı üretiyordu
   Map<String, dynamic>? _weather;
+  String? _locationName;
 
   @override
   void initState() {
     super.initState();
     _loadWeather();
     _startRealTimeListener();
+
+    // Weather verilerini tekrar yükle
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        _loadWeather();
+      }
+    });
   }
 
   /// Real-time listener başlat
@@ -67,6 +75,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   Future<void> _loadWeather() async {
     try {
+
       // Lightweight geolocation (best effort)
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
@@ -74,6 +83,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       }
       double lat = 41.015137;
       double lon = 28.979530;
+      String defaultLocation = 'İstanbul';
+
       if (perm != LocationPermission.denied &&
           perm != LocationPermission.deniedForever) {
         final pos = await Geolocator.getCurrentPosition(
@@ -81,15 +92,46 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         lat = pos.latitude;
         lon = pos.longitude;
       }
-      // Open-Meteo free API (no key)
-      final uri = Uri.parse(
-          'https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true');
-      final res = await http.get(uri).timeout(const Duration(seconds: 6));
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body) as Map<String, dynamic>;
+
+
+      // Open-Meteo free API (no key) - weather data
+      final weatherUri = Uri.parse(
+          'https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true&timezone=auto');
+      final weatherRes =
+          await http.get(weatherUri).timeout(const Duration(seconds: 6));
+
+      // Get location name from reverse geocoding
+      String locationName = defaultLocation;
+      try {
+        final geocodingUri = Uri.parse(
+            'https://api.open-meteo.com/v1/geocoding/reverse?latitude=$lat&longitude=$lon&language=tr');
+        final geocodingRes =
+            await http.get(geocodingUri).timeout(const Duration(seconds: 4));
+        if (geocodingRes.statusCode == 200) {
+          final geocodingData =
+              json.decode(geocodingRes.body) as Map<String, dynamic>;
+          final results = geocodingData['results'] as List<dynamic>?;
+          if (results != null && results.isNotEmpty) {
+            final location = results.first as Map<String, dynamic>;
+            final name = location['name'] as String?;
+            final admin1 = location['admin1'] as String?;
+            if (name != null && admin1 != null) {
+              locationName = '$name, $admin1';
+            } else if (name != null) {
+              locationName = name;
+            }
+          }
+        }
+      } catch (_) {
+        // Use default location if geocoding fails
+      }
+
+      if (weatherRes.statusCode == 200) {
+        final data = json.decode(weatherRes.body) as Map<String, dynamic>;
         if (mounted) {
           setState(() {
             _weather = data['current_weather'] as Map<String, dynamic>?;
+            _locationName = locationName;
           });
         }
       }
@@ -98,40 +140,612 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     }
   }
 
-  Widget _buildWeatherPill() {
-    final w = _weather;
-    final temp = w != null ? (w['temperature']?.toString() ?? '') : '';
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: 6, vertical: 4), // Smaller padding
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16), // Smaller border radius
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center, // Center content
-        children: [
-          const Icon(Icons.wb_sunny,
-              color: Colors.white, size: 14), // Smaller icon
-          const SizedBox(width: 4), // Smaller spacing
-          Flexible(
-            // Added Flexible
-            child: Text(
-              w == null ? 'Hava' : '$temp°C', // Shorter text
-              style: GoogleFonts.poppins(
-                color: Colors.white,
-                fontSize: 10, // Smaller font size
-                fontWeight: FontWeight.w500,
-              ),
-              overflow: TextOverflow.ellipsis, // Added overflow handling
-              maxLines: 1, // Added maxLines
-            ),
-          ),
-        ],
-      ),
-    );
+  /// Weather code'larına göre uygun ikonu döndürür
+  IconData _getWeatherIcon(int? weatherCode) {
+    if (weatherCode == null) return Icons.wb_sunny;
+
+    // WMO Weather interpretation codes (WW)
+    switch (weatherCode) {
+      // Clear sky
+      case 0:
+        return Icons.wb_sunny;
+
+      // Mainly clear
+      case 1:
+      case 2:
+      case 3:
+        return Icons.wb_cloudy;
+
+      // Fog
+      case 45:
+      case 48:
+        return Icons.foggy;
+
+      // Drizzle
+      case 51:
+      case 53:
+      case 55:
+        return Icons.grain;
+
+      // Freezing drizzle
+      case 56:
+      case 57:
+        return Icons.ac_unit;
+
+      // Rain
+      case 61:
+      case 63:
+      case 65:
+        return Icons.grain;
+
+      // Freezing rain
+      case 66:
+      case 67:
+        return Icons.ac_unit;
+
+      // Snow fall
+      case 71:
+      case 73:
+      case 75:
+        return Icons.ac_unit;
+
+      // Snow grains
+      case 77:
+        return Icons.grain;
+
+      // Rain showers
+      case 80:
+      case 81:
+      case 82:
+        return Icons.grain;
+
+      // Snow showers
+      case 85:
+      case 86:
+        return Icons.ac_unit;
+
+      // Thunderstorm
+      case 95:
+        return Icons.flash_on;
+
+      // Thunderstorm with slight and heavy hail
+      case 96:
+      case 99:
+        return Icons.flash_on;
+
+      default:
+        return Icons.wb_sunny;
+    }
+  }
+
+  /// Weather code'larına göre hava durumu açıklamasını döndürür
+  String _getWeatherDescription(int? weatherCode) {
+    if (weatherCode == null) return 'Hava';
+
+    // WMO Weather interpretation codes (WW)
+    switch (weatherCode) {
+      // Clear sky
+      case 0:
+        return 'Açık';
+
+      // Mainly clear
+      case 1:
+        return 'Çoğunlukla açık';
+      case 2:
+        return 'Kısmen bulutlu';
+      case 3:
+        return 'Kapalı';
+
+      // Fog
+      case 45:
+        return 'Sis';
+      case 48:
+        return 'Don sisi';
+
+      // Drizzle
+      case 51:
+        return 'Hafif çiseleme';
+      case 53:
+        return 'Orta çiseleme';
+      case 55:
+        return 'Yoğun çiseleme';
+
+      // Freezing drizzle
+      case 56:
+        return 'Hafif don çiselemesi';
+      case 57:
+        return 'Yoğun don çiselemesi';
+
+      // Rain
+      case 61:
+        return 'Hafif yağmur';
+      case 63:
+        return 'Orta yağmur';
+      case 65:
+        return 'Yoğun yağmur';
+
+      // Freezing rain
+      case 66:
+        return 'Hafif don yağmuru';
+      case 67:
+        return 'Yoğun don yağmuru';
+
+      // Snow fall
+      case 71:
+        return 'Hafif kar';
+      case 73:
+        return 'Orta kar';
+      case 75:
+        return 'Yoğun kar';
+
+      // Snow grains
+      case 77:
+        return 'Kar taneleri';
+
+      // Rain showers
+      case 80:
+        return 'Hafif yağmur sağanağı';
+      case 81:
+        return 'Orta yağmur sağanağı';
+      case 82:
+        return 'Yoğun yağmur sağanağı';
+
+      // Snow showers
+      case 85:
+        return 'Hafif kar sağanağı';
+      case 86:
+        return 'Yoğun kar sağanağı';
+
+      // Thunderstorm
+      case 95:
+        return 'Fırtına';
+
+      // Thunderstorm with slight and heavy hail
+      case 96:
+        return 'Dolu ile fırtına';
+      case 99:
+        return 'Yoğun dolu ile fırtına';
+
+      default:
+        return 'Hava';
+    }
+  }
+
+  /// Sıcaklık bazlı ısı uyarısını döndürür
+  Map<String, dynamic>? _getHeatAlert(double? temperature) {
+    if (temperature == null) return null;
+
+    // Sıcaklık bazlı uyarı seviyeleri
+    if (temperature >= 40) {
+      return {
+        'message': 'Kritik: Aşırı sıcak! Güneş çarpması riski çok yüksek.',
+        'type': 'danger',
+        'icon': Icons.warning_amber,
+      };
+    } else if (temperature >= 35) {
+      return {
+        'message': 'Uyarı: Çok sıcak! Güneş çarpması riski yüksek.',
+        'type': 'warning',
+        'icon': Icons.wb_sunny,
+      };
+    } else if (temperature >= 30) {
+      return {
+        'message': 'Dikkat: Sıcak hava! Bol su içmeyi unutmayın.',
+        'type': 'info',
+        'icon': Icons.water_drop,
+      };
+    } else if (temperature <= -10) {
+      return {
+        'message': 'Kritik: Aşırı soğuk! Donma riski çok yüksek.',
+        'type': 'danger',
+        'icon': Icons.ac_unit,
+      };
+    } else if (temperature <= -5) {
+      return {
+        'message': 'Uyarı: Çok soğuk! Donma riski yüksek.',
+        'type': 'warning',
+        'icon': Icons.ac_unit,
+      };
+    } else if (temperature <= 0) {
+      return {
+        'message': 'Dikkat: Soğuk hava! Sıcak giyinmeyi unutmayın.',
+        'type': 'info',
+        'icon': Icons.ac_unit,
+      };
+    }
+
+    return null;
+  }
+
+  /// Weather code'larına göre uyarı mesajını döndürür
+  Map<String, dynamic>? _getWeatherAlert(int? weatherCode) {
+    if (weatherCode == null) return null;
+
+    // WMO Weather interpretation codes (WW)
+    switch (weatherCode) {
+      // Clear sky - No alert
+      case 0:
+        return null;
+
+      // Mainly clear - No alert
+      case 1:
+      case 2:
+      case 3:
+        return null;
+
+      // Fog - Visibility warning
+      case 45:
+      case 48:
+        return {
+          'message': 'Dikkat: Sisli hava! Görüş mesafesi düşük olabilir.',
+          'type': 'warning',
+          'icon': Icons.visibility_off,
+        };
+
+      // Drizzle - Light rain warning
+      case 51:
+      case 53:
+      case 55:
+        return {
+          'message': 'Hafif yağış: Şemsiye almayı unutmayın.',
+          'type': 'info',
+          'icon': Icons.water_drop,
+        };
+
+      // Freezing drizzle - Ice warning
+      case 56:
+      case 57:
+        return {
+          'message': 'Uyarı: Don çiselemesi! Yollar kaygan olabilir.',
+          'type': 'warning',
+          'icon': Icons.ac_unit,
+        };
+
+      // Rain - Rain warning
+      case 61:
+      case 63:
+      case 65:
+        return {
+          'message': 'Yağmur uyarısı: Dışarı çıkarken hazırlıklı olun.',
+          'type': 'warning',
+          'icon': Icons.grain,
+        };
+
+      // Freezing rain - Ice warning
+      case 66:
+      case 67:
+        return {
+          'message': 'Kritik: Don yağmuru! Yollar çok kaygan olabilir.',
+          'type': 'danger',
+          'icon': Icons.warning,
+        };
+
+      // Snow fall - Snow warning
+      case 71:
+      case 73:
+      case 75:
+        return {
+          'message':
+              'Kar uyarısı: Sürüş dikkatli olun, kar lastiği gerekebilir.',
+          'type': 'warning',
+          'icon': Icons.ac_unit,
+        };
+
+      // Snow grains - Light snow warning
+      case 77:
+        return {
+          'message': 'Hafif kar: Yollar kaygan olabilir.',
+          'type': 'info',
+          'icon': Icons.ac_unit,
+        };
+
+      // Rain showers - Heavy rain warning
+      case 80:
+      case 81:
+      case 82:
+        return {
+          'message': 'Yoğun yağmur sağanağı: Sel riski olabilir.',
+          'type': 'danger',
+          'icon': Icons.flood,
+        };
+
+      // Snow showers - Heavy snow warning
+      case 85:
+      case 86:
+        return {
+          'message': 'Yoğun kar sağanağı: Görüş mesafesi çok düşük.',
+          'type': 'danger',
+          'icon': Icons.snowing,
+        };
+
+      // Thunderstorm - Storm warning
+      case 95:
+        return {
+          'message': 'Fırtına uyarısı: Dışarı çıkmaktan kaçının.',
+          'type': 'danger',
+          'icon': Icons.flash_on,
+        };
+
+      // Thunderstorm with hail - Severe storm warning
+      case 96:
+      case 99:
+        return {
+          'message': 'Kritik: Dolu ile fırtına! Güvenli yerde kalın.',
+          'type': 'danger',
+          'icon': Icons.warning_amber,
+        };
+
+      default:
+        return null;
+    }
+  }
+
+  /// Weather code'larına göre gradient renklerini döndürür
+  List<Color> _getWeatherGradientColors(int? weatherCode) {
+    if (weatherCode == null) {
+      // Default sunny gradient
+      return [
+        Colors.orange.shade300,
+        Colors.orange.shade500,
+      ];
+    }
+
+    // WMO Weather interpretation codes (WW)
+    switch (weatherCode) {
+      // Clear sky - Sunny gradient
+      case 0:
+        return [
+          Colors.orange.shade300,
+          Colors.orange.shade500,
+        ];
+
+      // Mainly clear - Light blue gradient
+      case 1:
+      case 2:
+      case 3:
+        return [
+          Colors.lightBlue.shade300,
+          Colors.lightBlue.shade500,
+        ];
+
+      // Fog - Gray gradient
+      case 45:
+      case 48:
+        return [
+          Colors.grey.shade400,
+          Colors.grey.shade600,
+        ];
+
+      // Drizzle - Blue gradient
+      case 51:
+      case 53:
+      case 55:
+        return [
+          Colors.blue.shade300,
+          Colors.blue.shade500,
+        ];
+
+      // Freezing drizzle - Cyan gradient
+      case 56:
+      case 57:
+        return [
+          Colors.cyan.shade300,
+          Colors.cyan.shade500,
+        ];
+
+      // Rain - Dark blue gradient
+      case 61:
+      case 63:
+      case 65:
+        return [
+          Colors.blue.shade400,
+          Colors.blue.shade600,
+        ];
+
+      // Freezing rain - Cyan gradient
+      case 66:
+      case 67:
+        return [
+          Colors.cyan.shade400,
+          Colors.cyan.shade600,
+        ];
+
+      // Snow fall - White gradient
+      case 71:
+      case 73:
+      case 75:
+        return [
+          Colors.white.withValues(alpha: 0.8),
+          Colors.blue.shade100,
+        ];
+
+      // Snow grains - Light white gradient
+      case 77:
+        return [
+          Colors.white.withValues(alpha: 0.6),
+          Colors.blue.shade50,
+        ];
+
+      // Rain showers - Indigo gradient
+      case 80:
+      case 81:
+      case 82:
+        return [
+          Colors.indigo.shade400,
+          Colors.indigo.shade600,
+        ];
+
+      // Snow showers - Light white gradient
+      case 85:
+      case 86:
+        return [
+          Colors.white.withValues(alpha: 0.7),
+          Colors.blue.shade200,
+        ];
+
+      // Thunderstorm - Purple gradient
+      case 95:
+        return [
+          Colors.purple.shade400,
+          Colors.purple.shade600,
+        ];
+
+      // Thunderstorm with hail - Dark purple gradient
+      case 96:
+      case 99:
+        return [
+          Colors.deepPurple.shade500,
+          Colors.deepPurple.shade700,
+        ];
+
+      default:
+        // Default sunny gradient
+        return [
+          Colors.orange.shade300,
+          Colors.orange.shade500,
+        ];
+    }
+  }
+
+  /// Weather code'larına göre renk temasını döndürür
+  Map<String, Color> _getWeatherColors(int? weatherCode) {
+    if (weatherCode == null) {
+      // Default sunny theme
+      return {
+        'border': Colors.orange.withValues(alpha: 0.6),
+        'shadow': Colors.orange.withValues(alpha: 0.3),
+      };
+    }
+
+    // WMO Weather interpretation codes (WW)
+    switch (weatherCode) {
+      // Clear sky - Sunny theme
+      case 0:
+        return {
+          'border': Colors.orange.withValues(alpha: 0.6),
+          'shadow': Colors.orange.withValues(alpha: 0.3),
+        };
+
+      // Mainly clear - Light blue theme
+      case 1:
+      case 2:
+      case 3:
+        return {
+          'border': Colors.lightBlue.withValues(alpha: 0.6),
+          'shadow': Colors.lightBlue.withValues(alpha: 0.3),
+        };
+
+      // Fog - Gray theme
+      case 45:
+      case 48:
+        return {
+          'border': Colors.grey.withValues(alpha: 0.6),
+          'shadow': Colors.grey.withValues(alpha: 0.3),
+        };
+
+      // Drizzle - Light blue theme
+      case 51:
+      case 53:
+      case 55:
+        return {
+          'border': Colors.blue.withValues(alpha: 0.5),
+          'shadow': Colors.blue.withValues(alpha: 0.2),
+        };
+
+      // Freezing drizzle - Light cyan theme
+      case 56:
+      case 57:
+        return {
+          'border': Colors.cyan.withValues(alpha: 0.6),
+          'shadow': Colors.cyan.withValues(alpha: 0.3),
+        };
+
+      // Rain - Blue theme
+      case 61:
+      case 63:
+      case 65:
+        return {
+          'border': Colors.blue.withValues(alpha: 0.7),
+          'shadow': Colors.blue.withValues(alpha: 0.4),
+        };
+
+      // Freezing rain - Cyan theme
+      case 66:
+      case 67:
+        return {
+          'border': Colors.cyan.withValues(alpha: 0.7),
+          'shadow': Colors.cyan.withValues(alpha: 0.4),
+        };
+
+      // Snow fall - White theme
+      case 71:
+      case 73:
+      case 75:
+        return {
+          'border': Colors.white.withValues(alpha: 0.8),
+          'shadow': Colors.white.withValues(alpha: 0.5),
+        };
+
+      // Snow grains - Light white theme
+      case 77:
+        return {
+          'border': Colors.white.withValues(alpha: 0.7),
+          'shadow': Colors.white.withValues(alpha: 0.4),
+        };
+
+      // Rain showers - Dark blue theme
+      case 80:
+      case 81:
+      case 82:
+        return {
+          'border': Colors.indigo.withValues(alpha: 0.7),
+          'shadow': Colors.indigo.withValues(alpha: 0.4),
+        };
+
+      // Snow showers - Light white theme
+      case 85:
+      case 86:
+        return {
+          'border': Colors.white.withValues(alpha: 0.6),
+          'shadow': Colors.white.withValues(alpha: 0.3),
+        };
+
+      // Thunderstorm - Purple theme
+      case 95:
+        return {
+          'border': Colors.purple.withValues(alpha: 0.7),
+          'shadow': Colors.purple.withValues(alpha: 0.4),
+        };
+
+      // Thunderstorm with hail - Dark purple theme
+      case 96:
+      case 99:
+        return {
+          'border': Colors.deepPurple.withValues(alpha: 0.8),
+          'shadow': Colors.deepPurple.withValues(alpha: 0.5),
+        };
+
+      default:
+        // Default sunny theme
+        return {
+          'border': Colors.orange.withValues(alpha: 0.6),
+          'shadow': Colors.orange.withValues(alpha: 0.3),
+        };
+    }
+  }
+
+  /// Uyarı tipine göre renk döndürür
+  Color _getAlertColor(String alertType) {
+    switch (alertType) {
+      case 'info':
+        return Colors.blue;
+      case 'warning':
+        return Colors.orange;
+      case 'danger':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
   @override
@@ -499,6 +1113,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             if (banner != null) banner,
             _buildWelcomeCard(isDark),
             const SizedBox(height: 16),
+
+            // Weather Row (full width)
+            _buildWeatherRow(isDark),
+
+            const SizedBox(height: 16),
             _buildQuickActions(isDark),
             const SizedBox(height: 16),
             // Stats Grid (full width on mobile)
@@ -546,6 +1165,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
             // Üst satır: Welcome Card (full width)
             _buildWelcomeCard(isDark),
+
+            const SizedBox(height: 16),
+
+            // Weather Row (full width)
+            _buildWeatherRow(isDark),
 
             const SizedBox(height: 20),
 
@@ -611,6 +1235,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
             // Üst satır: Welcome Card (full width)
             _buildWelcomeCard(isDark),
+
+            const SizedBox(height: 16),
+
+            // Weather Row (full width)
+            _buildWeatherRow(isDark),
 
             const SizedBox(height: 24),
 
@@ -748,9 +1377,255 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWeatherRow(bool isDark) {
+
+    // Weather verisi yoksa loading göster
+    if (_weather == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.orange, Colors.orange],
+          ),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.6)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.wb_sunny,
+              color: Colors.white,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Hava durumu yükleniyor...',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'İstanbul',
+                    style: GoogleFonts.poppins(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: _getWeatherGradientColors(
+              _weather != null ? _weather!['weathercode'] as int? : null),
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _getWeatherColors(_weather != null
+              ? _weather!['weathercode'] as int?
+              : null)['border']!,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _getWeatherColors(_weather != null
+                ? _weather!['weathercode'] as int?
+                : null)['shadow']!,
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Weather Icon
+          Icon(
+            _getWeatherIcon(
+                _weather != null ? _weather!['weathercode'] as int? : null),
+            color: Colors.white,
+            size: 24,
+          ),
           const SizedBox(width: 12),
-          // Weather on the right
-          _buildWeatherPill(),
+          // Weather Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Temperature and Description
+                Row(
+                  children: [
+                    Text(
+                      _weather != null
+                          ? '${_weather!['temperature']}°C'
+                          : 'Hava',
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _getWeatherDescription(_weather != null
+                          ? _weather!['weathercode'] as int?
+                          : null),
+                      style: GoogleFonts.poppins(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                // Location
+                Text(
+                  _locationName ?? 'İstanbul',
+                  style: GoogleFonts.poppins(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Weather Alert (if exists)
+          if (_getWeatherAlert(_weather != null
+                      ? _weather!['weathercode'] as int?
+                      : null) !=
+                  null ||
+              _getHeatAlert(_weather != null
+                      ? (_weather!['temperature'] as num?)?.toDouble()
+                      : null) !=
+                  null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: _getAlertColor(_getWeatherAlert(_weather != null
+                                  ? _weather!['weathercode'] as int?
+                                  : null) !=
+                              null
+                          ? _getWeatherAlert(_weather != null
+                              ? _weather!['weathercode'] as int?
+                              : null)!['type']
+                          : _getHeatAlert(_weather != null
+                              ? (_weather!['temperature'] as num?)?.toDouble()
+                              : null)!['type'])
+                      .withValues(alpha: 0.8),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _getWeatherAlert(_weather != null
+                                ? _weather!['weathercode'] as int?
+                                : null) !=
+                            null
+                        ? _getWeatherAlert(_weather != null
+                            ? _weather!['weathercode'] as int?
+                            : null)!['icon']
+                        : _getHeatAlert(_weather != null
+                            ? (_weather!['temperature'] as num?)?.toDouble()
+                            : null)!['icon'],
+                    color: _getAlertColor(_getWeatherAlert(_weather != null
+                                ? _weather!['weathercode'] as int?
+                                : null) !=
+                            null
+                        ? _getWeatherAlert(_weather != null
+                            ? _weather!['weathercode'] as int?
+                            : null)!['type']
+                        : _getHeatAlert(_weather != null
+                            ? (_weather!['temperature'] as num?)?.toDouble()
+                            : null)!['type']),
+                    size: 16,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      _getWeatherAlert(_weather != null
+                                  ? _weather!['weathercode'] as int?
+                                  : null) !=
+                              null
+                          ? _getWeatherAlert(_weather != null
+                              ? _weather!['weathercode'] as int?
+                              : null)!['message']
+                          : _getHeatAlert(_weather != null
+                              ? (_weather!['temperature'] as num?)?.toDouble()
+                              : null)!['message'],
+                      style: GoogleFonts.poppins(
+                        color: _getAlertColor(_getWeatherAlert(_weather != null
+                                    ? _weather!['weathercode'] as int?
+                                    : null) !=
+                                null
+                            ? _getWeatherAlert(_weather != null
+                                ? _weather!['weathercode'] as int?
+                                : null)!['type']
+                            : _getHeatAlert(_weather != null
+                                ? (_weather!['temperature'] as num?)?.toDouble()
+                                : null)!['type']),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        shadows: [
+                          Shadow(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            blurRadius: 1,
+                            offset: const Offset(0, 0.5),
+                          ),
+                        ],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
