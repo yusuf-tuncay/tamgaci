@@ -885,14 +885,20 @@ class _EnhancedSupplierDetailPageState
     );
   }
 
-  /// Ödeme form ekranına git
+  /// Ödeme form dialog'unu aç
   void _navigateToPaymentForm(Supplier supplier) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TransactionFormScreen(
-          direction: PaymentDirection.outgoing,
-          supplierId: supplier.id,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: TransactionFormScreen(
+            direction: PaymentDirection.outgoing,
+            supplierId: supplier.id,
+          ),
         ),
       ),
     ).then((_) {

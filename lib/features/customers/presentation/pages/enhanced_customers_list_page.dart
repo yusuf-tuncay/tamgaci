@@ -1645,14 +1645,20 @@ class _EnhancedCustomersListPageState
     );
   }
 
-  /// Tahsilat form ekranına git
+  /// Tahsilat form dialog'unu aç
   void _navigateToPaymentForm(Customer customer) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TransactionFormScreen(
-          direction: PaymentDirection.incoming,
-          customerId: customer.id,
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(16),
+        child: SizedBox(
+          width: double.infinity,
+          height: MediaQuery.of(context).size.height * 0.9,
+          child: TransactionFormScreen(
+            direction: PaymentDirection.incoming,
+            customerId: customer.id,
+          ),
         ),
       ),
     ).then((_) {

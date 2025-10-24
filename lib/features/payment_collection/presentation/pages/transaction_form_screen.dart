@@ -549,6 +549,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
+              // Seçili müşteri/tedarikçi bilgisi göster - EN ÜSTTE
+              if (widget.customerId != null) _buildSelectedCustomerInfo(),
+
+              if (widget.supplierId != null) _buildSelectedSupplierInfo(),
+
               // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
               if (formState.isCustomerSelectionRequired &&
                   widget.customerId == null)
@@ -563,11 +568,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   formState: formState,
                   onChanged: (value) => _updateField('supplierId', value),
                 ),
-
-              // Seçili müşteri/tedarikçi bilgisi göster
-              if (widget.customerId != null) _buildSelectedCustomerInfo(),
-
-              if (widget.supplierId != null) _buildSelectedSupplierInfo(),
 
               const SizedBox(height: 16),
 
