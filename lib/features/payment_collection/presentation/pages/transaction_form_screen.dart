@@ -10,8 +10,6 @@ import '../providers/payment_collection_providers.dart';
 import '../widgets/transaction_form_fields.dart';
 import '../../../customers/presentation/providers/customer_providers.dart';
 import '../../../suppliers/presentation/providers/supplier_providers.dart';
-import '../../../accounts/presentation/providers/account_providers.dart';
-import '../../../accounts/domain/entities/account.dart';
 
 /// Tahsilat ve ödeme işlemi form ekranı
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -184,8 +182,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   /// Varsayılan hesap ayarla
   void _setDefaultAccount() {
     final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
-    // Basit varsayılan hesap ID'si
-    formNotifier.updateField('accountId', 'default_account_1');
+    // Basit varsayılan kasa ID'si
+    formNotifier.updateField('accountId', 'default_cash_account');
   }
 
   void _setDefaultDescription() {
@@ -595,117 +593,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Kasa seçimi - Dropdown
-              Consumer(
-                builder: (context, ref, child) {
-                  final cashAccountsAsync = ref.watch(activeAccountsProvider);
-                  return cashAccountsAsync.when(
-                    data: (accounts) {
-                      // Sadece kasa hesaplarını filtrele
-                      final cashAccounts = accounts
-                          .where((account) => account.type == AccountType.cash)
-                          .toList();
-
-                      if (cashAccounts.isEmpty) {
-                        return Container(
-                          height: 56,
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              'Kasa bulunamadı',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        );
-                      }
-
-                      // Seçili hesap ID'sinin listede olup olmadığını kontrol et
-                      String? selectedValue = formState.accountId;
-                      if (selectedValue != null &&
-                          !cashAccounts
-                              .any((account) => account.id == selectedValue)) {
-                        selectedValue = null; // Geçersiz ID ise null yap
-                      }
-
-                      return DropdownButtonFormField<String>(
-                        initialValue: selectedValue,
-                        decoration: const InputDecoration(
-                          labelText: 'Kasa',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.account_balance),
-                          hintText: 'Kasa seçin',
-                        ),
-                        items: cashAccounts.map((account) {
-                          return DropdownMenuItem<String>(
-                            value: account.id,
-                            child: Row(
-                              children: [
-                                Text(account.type.icon,
-                                    style: const TextStyle(fontSize: 16)),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        account.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w500),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        '${account.currency} - ${account.balance.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) => _updateField('accountId', value),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Kasa seçilmelidir';
-                          }
-                          return null;
-                        },
-                      );
-                    },
-                    loading: () => Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                    error: (error, stack) => Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.red),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Kasa yüklenemedi',
-                          style: TextStyle(color: Colors.red),
-                        ),
-                      ),
-                    ),
-                  );
+              // Kasa seçimi - Basit TextFormField
+              TextFormField(
+                initialValue: formState.accountId ?? 'default_cash_account',
+                decoration: const InputDecoration(
+                  labelText: 'Kasa',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.account_balance),
+                  hintText: 'Kasa ID girin',
+                ),
+                onChanged: (value) => _updateField('accountId', value),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Kasa seçilmelidir';
+                  }
+                  return null;
                 },
               ),
 
