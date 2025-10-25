@@ -183,7 +183,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   /// Varsayılan hesap ayarla
   void _setDefaultAccount() {
-    // Bu metod artık gerekli değil çünkü dropdown otomatik olarak ilk kasa hesabını seçiyor
+    // Bu metod artık gerekli değil çünkü dropdown otomatik olarak ilk hesabı seçiyor
     // Consumer widget'ı içinde otomatik seçim yapılıyor
   }
 
@@ -504,7 +504,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -594,34 +594,69 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Kasa seçimi - Gerçek hesaplar dropdown'ı
+              // Hesap seçimi - Güvenli dropdown implementasyonu
               Consumer(
                 builder: (context, ref, child) {
-                  final accountsAsync = ref.watch(activeAccountsProvider);
+                  // Önce activeAccountsProvider'ı dene, başarısız olursa accountsProvider'ı kullan
+                  final activeAccountsAsync = ref.watch(activeAccountsProvider);
+                  final allAccountsAsync = ref.watch(accountsProvider);
+
+                  // activeAccountsProvider başarısız olursa accountsProvider'ı kullan
+                  final accountsAsync = activeAccountsAsync.when(
+                    data: (accounts) => AsyncValue.data(accounts),
+                    loading: () => allAccountsAsync,
+                    error: (error, stack) => allAccountsAsync,
+                  );
 
                   return accountsAsync.when(
                     data: (accounts) {
-                      // Sadece kasa hesaplarını filtrele
-                      final cashAccounts = accounts
-                          .where((account) => account.type == AccountType.cash)
+                      // Debug: Hesap sayısını logla
+                      debugPrint('DEBUG: Loaded ${accounts.length} accounts');
+                      for (final account in accounts) {
+                        debugPrint(
+                            'DEBUG: Account - ${account.name}, Active: ${account.isActive}, Status: ${account.status}');
+                      }
+
+                      // Aktif hesapları filtrele (eğer activeAccountsProvider çalışmıyorsa)
+                      final activeAccounts = accounts
+                          .where((account) =>
+                              account.isActive &&
+                              account.status == AccountStatus.active)
                           .toList();
 
-                      if (cashAccounts.isEmpty) {
+                      debugPrint(
+                          'DEBUG: Filtered to ${activeAccounts.length} active accounts');
+
+                      // Tüm aktif hesapları göster
+                      if (activeAccounts.isEmpty) {
                         return Container(
                           height: 56,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 16),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.grey),
+                            border: Border.all(color: Colors.orange),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.account_balance, color: Colors.grey),
-                              SizedBox(width: 8),
-                              Text(
-                                'Kasa bulunamadı',
-                                style: TextStyle(color: Colors.grey),
+                              const Icon(Icons.warning, color: Colors.orange),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text(
+                                  'Hesap bulunamadı - Lütfen hesap oluşturun',
+                                  style: TextStyle(color: Colors.orange),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  // Hesaplar sayfasına yönlendir
+                                  Navigator.pushNamed(
+                                      context, '/accounts/create');
+                                },
+                                child: const Text(
+                                  'Hesap Oluştur',
+                                  style: TextStyle(fontSize: 12),
+                                ),
                               ),
                             ],
                           ),
@@ -631,46 +666,57 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       // Seçili hesap ID'sinin listede olup olmadığını kontrol et
                       String? selectedValue = formState.accountId;
                       if (selectedValue != null &&
-                          !cashAccounts
+                          !activeAccounts
                               .any((account) => account.id == selectedValue)) {
                         selectedValue = null;
                       }
 
-                      // Eğer hiç seçili değilse, ilk kasa hesabını seç
-                      if (selectedValue == null && cashAccounts.isNotEmpty) {
-                        selectedValue = cashAccounts.first.id;
+                      // Eğer hiç seçili değilse, ilk hesabı seç
+                      if (selectedValue == null && activeAccounts.isNotEmpty) {
+                        selectedValue = activeAccounts.first.id;
                       }
 
-                      return DropdownButtonFormField<String>(
-                        initialValue: selectedValue,
-                        decoration: const InputDecoration(
-                          labelText: 'Kasa',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.account_balance),
-                          hintText: 'Kasa seçin',
-                        ),
-                        items: cashAccounts.map((account) {
-                          return DropdownMenuItem<String>(
-                            value: account.id,
-                            child: Row(
-                              children: [
-                                Text(account.type.icon,
-                                    style: const TextStyle(fontSize: 16)),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        account.name,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w500),
-                                        overflow: TextOverflow.ellipsis,
+                      // Basit buton ile hesap seçimi (dropdown sorunları için alternatif)
+                      return GestureDetector(
+                        onTap: () => _showAccountSelectionDialog(
+                            context, activeAccounts, formState),
+                        child: Container(
+                          constraints: const BoxConstraints(minHeight: 56),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.account_balance,
+                                  color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      selectedValue != null
+                                          ? activeAccounts
+                                              .firstWhere(
+                                                  (a) => a.id == selectedValue)
+                                              .name
+                                          : 'Hesap seçin',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w500,
+                                        color: selectedValue != null
+                                            ? Colors.black
+                                            : Colors.grey,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (selectedValue != null) ...[
+                                      const SizedBox(height: 2),
                                       Text(
-                                        '${account.currency} - ${account.balance.toStringAsFixed(2)}',
+                                        '${activeAccounts.firstWhere((a) => a.id == selectedValue).type.displayName} - ${activeAccounts.firstWhere((a) => a.id == selectedValue).currency}',
                                         style: const TextStyle(
                                           fontSize: 12,
                                           color: Colors.grey,
@@ -678,19 +724,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) => _updateField('accountId', value),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Kasa seçilmelidir';
-                          }
-                          return null;
-                        },
+                              ),
+                              const Icon(Icons.arrow_drop_down,
+                                  color: Colors.grey),
+                            ],
+                          ),
+                        ),
                       );
                     },
                     loading: () => Container(
@@ -709,29 +750,38 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                           SizedBox(width: 8),
-                          Text('Kasa hesapları yükleniyor...'),
+                          Text('Hesaplar yükleniyor...'),
                         ],
                       ),
                     ),
-                    error: (error, stack) => Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.red),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.error, color: Colors.red),
-                          SizedBox(width: 8),
-                          Text(
-                            'Kasa hesapları yüklenemedi',
-                            style: TextStyle(color: Colors.red),
-                          ),
-                        ],
-                      ),
-                    ),
+                    error: (error, stack) {
+                      // Debug: Hata detaylarını logla
+                      debugPrint('DEBUG: Error loading accounts: $error');
+                      debugPrint('DEBUG: Stack trace: $stack');
+
+                      return Container(
+                        height: 56,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.red),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error, color: Colors.red),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Hesaplar yüklenemedi: ${error.toString()}',
+                                style: const TextStyle(
+                                    color: Colors.red, fontSize: 12),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -761,10 +811,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 onChanged: (value) => _updateField('description', value),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
 
               // Hata mesajları
-              if (formState.errors.isNotEmpty)
+              if (formState.errors.isNotEmpty) ...[
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -782,8 +832,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     }).toList(),
                   ),
                 ),
-
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
+              ],
 
               // Kaydet butonu
               SizedBox(
@@ -809,6 +859,88 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   void _updateField(String field, dynamic value) {
     ref.read(paymentTransactionFormProvider.notifier).updateField(field, value);
+  }
+
+  /// Hesap türüne göre ikon döndür
+  IconData _getAccountTypeIcon(AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return Icons.account_balance_wallet;
+      case AccountType.checking:
+        return Icons.account_balance;
+      case AccountType.savings:
+        return Icons.savings;
+      case AccountType.credit:
+        return Icons.credit_card;
+      case AccountType.investment:
+        return Icons.trending_up;
+      case AccountType.foreign:
+        return Icons.currency_exchange;
+      case AccountType.other:
+        return Icons.account_balance;
+    }
+  }
+
+  /// Hesap türüne göre renk döndür
+  Color _getAccountTypeColor(AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return Colors.green;
+      case AccountType.checking:
+        return Colors.blue;
+      case AccountType.savings:
+        return Colors.teal;
+      case AccountType.credit:
+        return Colors.orange;
+      case AccountType.investment:
+        return Colors.purple;
+      case AccountType.foreign:
+        return Colors.indigo;
+      case AccountType.other:
+        return Colors.grey;
+    }
+  }
+
+  /// Hesap seçim dialog'unu göster
+  void _showAccountSelectionDialog(
+      BuildContext context, List<Account> accounts, dynamic formState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Hesap Seçin'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: accounts.length,
+              itemBuilder: (context, index) {
+                final account = accounts[index];
+                return ListTile(
+                  leading: Icon(
+                    _getAccountTypeIcon(account.type),
+                    color: _getAccountTypeColor(account.type),
+                  ),
+                  title: Text(account.name),
+                  subtitle: Text(
+                      '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}'),
+                  onTap: () {
+                    _updateField('accountId', account.id);
+                    Navigator.of(context).pop();
+                  },
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('İptal'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> _saveTransaction() async {
