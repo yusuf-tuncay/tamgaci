@@ -1369,7 +1369,50 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           child: ElevatedButton.icon(
             onPressed: () => _showSimpleAccountTransferDialog(formState),
             icon: const Icon(Icons.people),
-            label: Text(_getSelectedEntityNameSimple(formState)),
+            label: Consumer(
+              builder: (context, ref, child) {
+                final selectedId = formState.customerId ?? formState.supplierId;
+                if (selectedId == null) {
+                  return const Text('Müşteri/Tedarikçi Seçin');
+                }
+                
+                // Müşteri ID'si varsa müşteri adını bul
+                if (formState.customerId != null) {
+                  final customersAsync = ref.watch(customersProvider);
+                  return customersAsync.when(
+                    data: (customers) {
+                      try {
+                        final customer = customers.firstWhere((c) => c.id == selectedId);
+                        return Text('Seçili: ${customer.name} (Müşteri)');
+                      } catch (e) {
+                        return Text('Seçili: $selectedId');
+                      }
+                    },
+                    loading: () => Text('Seçili: $selectedId'),
+                    error: (error, stack) => Text('Seçili: $selectedId'),
+                  );
+                }
+                
+                // Tedarikçi ID'si varsa tedarikçi adını bul
+                if (formState.supplierId != null) {
+                  final suppliersAsync = ref.watch(suppliersProvider);
+                  return suppliersAsync.when(
+                    data: (suppliers) {
+                      try {
+                        final supplier = suppliers.firstWhere((s) => s.id == selectedId);
+                        return Text('Seçili: ${supplier.name} (Tedarikçi)');
+                      } catch (e) {
+                        return Text('Seçili: $selectedId');
+                      }
+                    },
+                    loading: () => Text('Seçili: $selectedId'),
+                    error: (error, stack) => Text('Seçili: $selectedId'),
+                  );
+                }
+                
+                return const Text('Müşteri/Tedarikçi Seçin');
+              },
+            ),
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               alignment: Alignment.centerLeft,
@@ -1379,8 +1422,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ],
     );
   }
-
-
 
   /// Hesap transferi için özel işlem türü widget'ı
   Widget _buildTransactionTypeFieldForTransfer(dynamic formState) {
@@ -1455,12 +1496,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
-  /// Basit seçili entity adı
-  String _getSelectedEntityNameSimple(dynamic formState) {
-    final selectedId = formState.customerId ?? formState.supplierId;
-    if (selectedId == null) return 'Müşteri/Tedarikçi Seçin';
-    return 'Seçili: $selectedId';
-  }
 
   /// Basit hesap transferi dialog'u
   void _showSimpleAccountTransferDialog(dynamic formState) {
@@ -1480,7 +1515,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 data: (customers) => suppliersAsync.when(
                   data: (suppliers) {
                     final allEntities = <Map<String, dynamic>>[];
-                    
+
                     // Müşterileri ekle
                     for (final customer in customers) {
                       allEntities.add({
@@ -1489,7 +1524,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         'type': 'Müşteri',
                       });
                     }
-                    
+
                     // Tedarikçileri ekle
                     for (final supplier in suppliers) {
                       allEntities.add({
@@ -1508,8 +1543,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         final entity = allEntities[index];
                         return ListTile(
                           leading: Icon(
-                            entity['type'] == 'Müşteri' ? Icons.person : Icons.business,
-                            color: entity['type'] == 'Müşteri' ? Colors.blue : Colors.green,
+                            entity['type'] == 'Müşteri'
+                                ? Icons.person
+                                : Icons.business,
+                            color: entity['type'] == 'Müşteri'
+                                ? Colors.blue
+                                : Colors.green,
                           ),
                           title: Text(entity['name']),
                           subtitle: Text(entity['type']),
@@ -1527,8 +1566,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       },
                     );
                   },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) => Text('Tedarikçiler yüklenemedi: $error'),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) =>
+                      Text('Tedarikçiler yüklenemedi: $error'),
                 ),
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, stack) => Text('Müşteriler yüklenemedi: $error'),
