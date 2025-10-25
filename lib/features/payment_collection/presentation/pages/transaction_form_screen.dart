@@ -629,10 +629,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Hesap seçimi - Borç/Alacak fişleri ve Hesap Transferi için gizle
+              // Hesap seçimi - Borç/Alacak fişleri için gizle
               if (formState.type != PaymentTransactionType.debtReceipt &&
-                  formState.type != PaymentTransactionType.creditReceipt &&
-                  formState.type != PaymentTransactionType.accountTransfer)
+                  formState.type != PaymentTransactionType.creditReceipt)
                 Consumer(
                   builder: (context, ref, child) {
                     // Önce activeAccountsProvider'ı dene, başarısız olursa accountsProvider'ı kullan
@@ -1113,8 +1112,32 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // Hesap transferi için filtreleme - Hesap transferi için hesap seçimi gizli
+        // Hesap transferi için filtreleme
         List<Account> filteredAccounts = accounts;
+        if (formState.type == PaymentTransactionType.accountTransfer) {
+          // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
+          final selectedCustomerId = formState.customerId;
+          final selectedSupplierId = formState.supplierId;
+          
+          if (selectedCustomerId != null || selectedSupplierId != null) {
+            // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
+            filteredAccounts = accounts.where((account) {
+              // Seçili müşteri ile aynı hesap filtrelenmeli
+              if (selectedCustomerId != null && 
+                  account.name.toLowerCase().contains(selectedCustomerId.toLowerCase())) {
+                return false; // Aynı müşteri hesabı filtrelenir
+              }
+              
+              // Seçili tedarikçi ile aynı hesap filtrelenmeli
+              if (selectedSupplierId != null && 
+                  account.name.toLowerCase().contains(selectedSupplierId.toLowerCase())) {
+                return false; // Aynı tedarikçi hesabı filtrelenir
+              }
+              
+              return true; // Diğer hesaplar gösterilir
+            }).toList();
+          }
+        }
 
         return AlertDialog(
           title: const Text('Hesap Seçin'),
