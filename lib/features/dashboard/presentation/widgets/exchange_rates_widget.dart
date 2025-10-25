@@ -22,11 +22,23 @@ class ExchangeRatesWidget extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white, // Beyaz
+            Colors.grey.shade100, // Açık gri
+          ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade400,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -46,7 +58,7 @@ class ExchangeRatesWidget extends ConsumerWidget {
       builder: (context, constraints) {
         // Tablet boyutunda (genişlik < 600) dikey düzen kullan
         final isTablet = constraints.maxWidth < 600;
-        
+
         if (isTablet) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,7 +77,7 @@ class ExchangeRatesWidget extends ConsumerWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                      color: Colors.black,
                     ),
                   ),
                   const Spacer(),
@@ -80,7 +92,8 @@ class ExchangeRatesWidget extends ConsumerWidget {
                             : () async {
                                 // Kurları yenile
                                 await ref
-                                    .read(currencyRefreshNotifierProvider.notifier)
+                                    .read(currencyRefreshNotifierProvider
+                                        .notifier)
                                     .refresh();
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -99,8 +112,10 @@ class ExchangeRatesWidget extends ConsumerWidget {
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
                             color: isDark
-                                ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
-                                : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                                ? TamgaciConstants.primaryColor
+                                    .withValues(alpha: 0.1)
+                                : TamgaciConstants.primaryColor
+                                    .withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: AnimatedRotation(
@@ -110,7 +125,9 @@ class ExchangeRatesWidget extends ConsumerWidget {
                               Icons.refresh,
                               size: 20,
                               color: isLoading
-                                  ? (isDark ? Colors.grey : Colors.grey.shade600)
+                                  ? (isDark
+                                      ? Colors.grey
+                                      : Colors.grey.shade600)
                                   : TamgaciConstants.primaryColor,
                             ),
                           ),
@@ -214,8 +231,10 @@ class ExchangeRatesWidget extends ConsumerWidget {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: isDark
-                            ? TamgaciConstants.primaryColor.withValues(alpha: 0.1)
-                            : TamgaciConstants.primaryColor.withValues(alpha: 0.1),
+                            ? TamgaciConstants.primaryColor
+                                .withValues(alpha: 0.1)
+                            : TamgaciConstants.primaryColor
+                                .withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: AnimatedRotation(

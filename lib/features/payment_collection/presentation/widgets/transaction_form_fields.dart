@@ -6,6 +6,7 @@ import '../../domain/entities/payment_enums.dart';
 import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_source.dart';
 import '../models/payment_transaction_form_model.dart';
+import '../../../accounts/domain/entities/account.dart';
 
 /// İşlem form alanları widget'ı
 class TransactionFormFields {
@@ -243,21 +244,70 @@ class TransactionFormFields {
     );
   }
 
-  /// Hesap alanı
+  /// Hesap alanı - Dropdown
   static Widget buildAccountField({
     required PaymentTransactionFormModel formState,
     required Function(String?) onChanged,
+    required List<Account> accounts,
+    String? selectedCurrency,
   }) {
-    return TextFormField(
-      initialValue: formState.accountId,
+    // Para birimine göre hesapları filtrele
+    List<Account> filteredAccounts = accounts;
+    if (selectedCurrency != null) {
+      filteredAccounts = accounts
+          .where((account) => account.currency == selectedCurrency)
+          .toList();
+    }
+
+    // Aktif hesapları filtrele
+    filteredAccounts = filteredAccounts
+        .where((account) =>
+            account.isActive && account.status == AccountStatus.active)
+        .toList();
+
+    return DropdownButtonFormField<String>(
+      initialValue:
+          formState.accountId?.isNotEmpty == true ? formState.accountId : null,
       decoration: const InputDecoration(
         labelText: 'Hesap',
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.account_balance),
-        hintText: 'Hesap ID girin',
+        hintText: 'Hesap seçin',
       ),
+      items: filteredAccounts.map((account) {
+        return DropdownMenuItem<String>(
+          value: account.id,
+          child: Row(
+            children: [
+              Text(account.type.icon, style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      account.name,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '${account.bankName} - ${account.currency}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
       onChanged: (value) {
-        onChanged(value.isEmpty ? null : value);
+        onChanged(value);
       },
       validator: (value) {
         if (value == null || value.isEmpty) {
