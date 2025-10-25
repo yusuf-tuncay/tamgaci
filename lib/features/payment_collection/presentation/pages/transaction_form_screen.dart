@@ -958,9 +958,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _selectBestAccount(List<Account> accounts, dynamic formState) {
     final transactionType = formState.type;
     final currency = formState.currency ?? 'TRY';
+    final direction = formState.direction;
 
     debugPrint(
-        'DEBUG: Hesap seçimi - İşlem türü: $transactionType, Para birimi: $currency');
+        'DEBUG: Hesap seçimi - İşlem türü: $transactionType, Para birimi: $currency, Yön: $direction');
 
     // 1. Öncelik: İşlem türü ve para birimine uygun hesap
     if (transactionType == PaymentTransactionType.cash) {
@@ -975,16 +976,32 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return cashAccounts.first.id;
       }
     } else if (transactionType == PaymentTransactionType.creditCard) {
-      // Kredi kartı işlemi için: Kredi kartı hesabı + aynı para birimi
-      final creditAccounts = accounts
-          .where((account) =>
-              account.type == AccountType.credit &&
-              account.currency == currency)
-          .toList();
+      // Kredi kartı işlemi için yön kontrolü
+      if (direction == PaymentDirection.incoming) {
+        // Gelen kredi kartı ödemesi: POS hesabı
+        final posAccounts = accounts
+            .where((account) =>
+                account.type == AccountType.other && // POS hesabı için other türü
+                account.currency == currency &&
+                account.name.toLowerCase().contains('pos'))
+            .toList();
 
-      if (creditAccounts.isNotEmpty) {
-        debugPrint('DEBUG: Kredi kartı hesabı bulundu: ${creditAccounts.first.name}');
-        return creditAccounts.first.id;
+        if (posAccounts.isNotEmpty) {
+          debugPrint('DEBUG: POS hesabı bulundu: ${posAccounts.first.name}');
+          return posAccounts.first.id;
+        }
+      } else if (direction == PaymentDirection.outgoing) {
+        // Giden kredi kartı ödemesi: Kredi kartı hesabı
+        final creditAccounts = accounts
+            .where((account) =>
+                account.type == AccountType.credit &&
+                account.currency == currency)
+            .toList();
+
+        if (creditAccounts.isNotEmpty) {
+          debugPrint('DEBUG: Kredi kartı hesabı bulundu: ${creditAccounts.first.name}');
+          return creditAccounts.first.id;
+        }
       }
     } else if (transactionType == PaymentTransactionType.eftTransfer) {
       // EFT/Havale için: Banka hesabı + aynı para birimi
