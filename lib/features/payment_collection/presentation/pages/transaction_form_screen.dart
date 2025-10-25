@@ -545,15 +545,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 const SizedBox(height: 16),
 
               // İşlem türü ve yönü
-              TransactionFormFields.buildTransactionTypeField(
-                formState: formState,
-                onChanged: (value) {
-                  _updateField('type', value);
-                  // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
-                  _updateAccountSelection();
-                },
-                enabled: widget.transactionId == null,
-              ),
+              // İşlem türü - Hesap transferi için özel widget
+              if (formState.type == PaymentTransactionType.accountTransfer)
+                _buildTransactionTypeFieldForTransfer(formState)
+              else
+                TransactionFormFields.buildTransactionTypeField(
+                  formState: formState,
+                  onChanged: (value) {
+                    _updateField('type', value);
+                    // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
+                    _updateAccountSelection();
+                  },
+                  enabled: widget.transactionId == null,
+                ),
 
               const SizedBox(height: 16),
 
@@ -1424,7 +1428,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    _getSelectedEntityName(allEntities, formState),
+                                    _getSelectedEntityName(
+                                        allEntities, formState),
                                     style: const TextStyle(fontSize: 16),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -1509,6 +1514,79 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     _updateField('supplierId', entity['id']);
                     _updateField('customerId', null);
                   }
+                  Navigator.pop(context);
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Hesap transferi için özel işlem türü widget'ı
+  Widget _buildTransactionTypeFieldForTransfer(dynamic formState) {
+    return GestureDetector(
+      onTap: () => _showTransactionTypeDialog(formState),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 56),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.payment, color: Colors.grey, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                formState.type?.displayName ?? 'İşlem Türü Seçin',
+                style: const TextStyle(fontSize: 16),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.arrow_drop_down, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// İşlem türü dialog'unu göster
+  void _showTransactionTypeDialog(dynamic formState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('İşlem Türü Seçin'),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: PaymentTransactionType.values.length,
+            itemBuilder: (context, index) {
+              final type = PaymentTransactionType.values[index];
+              return ListTile(
+                leading: Icon(
+                  Icons.payment,
+                  color: Colors.blue,
+                ),
+                title: Text(
+                  type.displayName,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () {
+                  _updateField('type', type);
+                  _updateAccountSelection();
                   Navigator.pop(context);
                 },
               );
