@@ -1118,29 +1118,39 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
           final selectedCustomerId = formState.customerId;
           final selectedSupplierId = formState.supplierId;
-          
+
           if (selectedCustomerId != null || selectedSupplierId != null) {
             // Müşteri/tedarikçi hesaplarını filtrele
             filteredAccounts = accounts.where((account) {
-              // Müşteri hesabı ise ve seçili müşteri ile aynı ise filtrele
-              if (selectedCustomerId != null && 
-                  account.name.toLowerCase().contains('müşteri') &&
-                  account.name.toLowerCase().contains(selectedCustomerId.toLowerCase())) {
-                return false;
+              // Müşteri seçildiyse, müşteri hesaplarını filtrele
+              if (selectedCustomerId != null) {
+                // Müşteri hesabı türleri: credit, checking, savings
+                if (account.type == AccountType.credit || 
+                    account.type == AccountType.checking ||
+                    account.type == AccountType.savings ||
+                    account.name.toLowerCase().contains('müşteri') ||
+                    account.name.toLowerCase().contains('customer')) {
+                  return false; // Müşteri hesaplarını filtrele
+                }
               }
               
-              // Tedarikçi hesabı ise ve seçili tedarikçi ile aynı ise filtrele
-              if (selectedSupplierId != null && 
-                  account.name.toLowerCase().contains('tedarikçi') &&
-                  account.name.toLowerCase().contains(selectedSupplierId.toLowerCase())) {
-                return false;
+              // Tedarikçi seçildiyse, tedarikçi hesaplarını filtrele
+              if (selectedSupplierId != null) {
+                // Tedarikçi hesabı türleri: credit, checking, savings
+                if (account.type == AccountType.credit || 
+                    account.type == AccountType.checking ||
+                    account.type == AccountType.savings ||
+                    account.name.toLowerCase().contains('tedarikçi') ||
+                    account.name.toLowerCase().contains('supplier')) {
+                  return false; // Tedarikçi hesaplarını filtrele
+                }
               }
               
               return true;
             }).toList();
           }
         }
-        
+
         return AlertDialog(
           title: const Text('Hesap Seçin'),
           content: ConstrainedBox(
