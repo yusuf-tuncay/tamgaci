@@ -54,33 +54,27 @@ class DashboardStatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 16,
-            spreadRadius: 1,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: (isDark ? Colors.white12 : Colors.black12),
-          width: 1,
-        ),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  Colors.white.withValues(alpha: 0.04),
-                  Colors.white.withValues(alpha: 0.02),
-                ]
-              : [
-                  Colors.white,
-                  Colors.white,
-                ],
+          colors: [
+            backgroundColor,
+            backgroundColor.withValues(alpha: 0.7),
+          ],
         ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: backgroundColor.withValues(alpha: 0.9),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: backgroundColor.withValues(alpha: 0.8),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,12 +84,7 @@ class DashboardStatsCard extends StatelessWidget {
             height: 4,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(4),
-              gradient: LinearGradient(
-                colors: [
-                  backgroundColor.withValues(alpha: 0.9),
-                  iconColor.withValues(alpha: 0.9),
-                ],
-              ),
+              color: Colors.white.withValues(alpha: 0.3),
             ),
           ),
           const SizedBox(height: 12),
@@ -104,24 +93,14 @@ class DashboardStatsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      backgroundColor.withValues(alpha: 0.18),
-                      iconColor.withValues(alpha: 0.18),
-                    ],
-                  ),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
-                  boxShadow: [
-                    BoxShadow(
-                      color: iconColor.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
                 ),
-                child: Icon(icon, color: iconColor, size: 20),
+                child: Icon(icon, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -133,7 +112,7 @@ class DashboardStatsCard extends StatelessWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.grey[200] : Colors.grey[700],
+                        color: Colors.white,
                       ),
                     ),
                     if (subtitle != null) ...[

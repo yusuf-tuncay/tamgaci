@@ -1772,11 +1772,27 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white, // Beyaz
+            Colors.grey.shade100, // Açık gri
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          color: Colors.grey.shade300,
+          width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade400,
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1786,7 +1802,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 16),
@@ -1820,7 +1836,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     _buildActionCardHorizontal(
                         isMobile ? 'Stok' : 'Stok İşlemi',
                         Icons.warehouse,
-                        Colors.purple, () {
+                        Colors.green, () {
                       context.pushNamed('inventory');
                     }, isDark),
                     const SizedBox(width: 12),
@@ -1863,21 +1879,29 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.8), width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.6),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 20),
+            Icon(icon, color: Colors.white, size: 20),
             const SizedBox(width: 8),
             Text(
               title,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: Colors.white,
               ),
             ),
           ],
@@ -1891,11 +1915,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white, // Beyaz
+            Colors.grey.shade100, // Açık gri
+          ],
         ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade400,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1905,7 +1941,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+              color: Colors.black,
             ),
           ),
           const SizedBox(height: 12),
@@ -1931,7 +1967,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     () => context.pushNamed('create-customer'),
                     isDark),
                 const SizedBox(width: 8),
-                _buildActionCardHorizontal('Ürün', Icons.add_box, Colors.purple,
+                _buildActionCardHorizontal('Ürün', Icons.add_box, Colors.orange,
                     () => context.pushNamed('create-product'), isDark),
                 const SizedBox(width: 8),
                 _buildActionCardHorizontal('Stok', Icons.warehouse, Colors.teal,
@@ -1977,8 +2013,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             value: summary.totalPurchases,
             currency: 'TRY',
             icon: Icons.shopping_cart,
-            iconColor: Colors.orange,
-            backgroundColor: Colors.orange,
+            iconColor: Colors.amber,
+            backgroundColor: Colors.amber,
           ),
           DashboardStatsCard(
             title: 'Net Kar/Zarar',
@@ -1993,8 +2029,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             value: summary.totalBalance,
             currency: 'TRY',
             icon: Icons.account_balance,
-            iconColor: Colors.blue,
-            backgroundColor: Colors.blue,
+            iconColor: Colors.cyan,
+            backgroundColor: Colors.cyan,
           ),
           DashboardStatsCard(
             title: 'Kritik Stok',
@@ -2002,8 +2038,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             currency: '',
             subtitle: 'ürün',
             icon: Icons.warning,
-            iconColor: Colors.red,
-            backgroundColor: Colors.red,
+            iconColor: Colors.deepOrange,
+            backgroundColor: Colors.deepOrange,
           ),
           DashboardStatsCard(
             title: 'Toplam Müşteri',
@@ -2011,24 +2047,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             currency: '',
             subtitle: 'kişi',
             icon: Icons.people,
-            iconColor: Colors.purple,
-            backgroundColor: Colors.purple,
+            iconColor: Colors.deepPurple,
+            backgroundColor: Colors.deepPurple,
           ),
           DashboardStatsCard(
             title: 'Bekleyen Tahsilat',
             value: summary.pendingReceivables,
             currency: 'TRY',
             icon: Icons.download,
-            iconColor: Colors.teal,
-            backgroundColor: Colors.teal,
+            iconColor: Colors.lightGreen,
+            backgroundColor: Colors.lightGreen,
           ),
           DashboardStatsCard(
             title: 'Bekleyen Ödeme',
             value: summary.pendingPayables,
             currency: 'TRY',
             icon: Icons.upload,
-            iconColor: Colors.indigo,
-            backgroundColor: Colors.indigo,
+            iconColor: Colors.pink,
+            backgroundColor: Colors.pink,
           ),
         ];
 
