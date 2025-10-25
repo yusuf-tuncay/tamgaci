@@ -909,28 +909,43 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Hesap Seçin'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: accounts.length,
-              itemBuilder: (context, index) {
-                final account = accounts[index];
-                return ListTile(
-                  leading: Icon(
-                    _getAccountTypeIcon(account.type),
-                    color: _getAccountTypeColor(account.type),
-                  ),
-                  title: Text(account.name),
-                  subtitle: Text(
-                      '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}'),
-                  onTap: () {
-                    _updateField('accountId', account.id);
-                    Navigator.of(context).pop();
-                  },
-                );
-              },
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6, // Ekranın %60'ı
+              maxWidth: MediaQuery.of(context).size.width * 0.9,   // Ekranın %90'ı
             ),
+            child: accounts.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Hesap bulunamadı',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: accounts.length,
+                    itemBuilder: (context, index) {
+                      final account = accounts[index];
+                      return ListTile(
+                        leading: Icon(
+                          _getAccountTypeIcon(account.type),
+                          color: _getAccountTypeColor(account.type),
+                        ),
+                        title: Text(
+                          account.name,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () {
+                          _updateField('accountId', account.id);
+                          Navigator.of(context).pop();
+                        },
+                      );
+                    },
+                  ),
           ),
           actions: [
             TextButton(
