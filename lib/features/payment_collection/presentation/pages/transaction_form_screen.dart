@@ -1112,6 +1112,35 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
+        // Hesap transferi için filtreleme
+        List<Account> filteredAccounts = accounts;
+        if (formState.type == PaymentTransactionType.accountTransfer) {
+          // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
+          final selectedCustomerId = formState.customerId;
+          final selectedSupplierId = formState.supplierId;
+          
+          if (selectedCustomerId != null || selectedSupplierId != null) {
+            // Müşteri/tedarikçi hesaplarını filtrele
+            filteredAccounts = accounts.where((account) {
+              // Müşteri hesabı ise ve seçili müşteri ile aynı ise filtrele
+              if (selectedCustomerId != null && 
+                  account.name.toLowerCase().contains('müşteri') &&
+                  account.name.toLowerCase().contains(selectedCustomerId.toLowerCase())) {
+                return false;
+              }
+              
+              // Tedarikçi hesabı ise ve seçili tedarikçi ile aynı ise filtrele
+              if (selectedSupplierId != null && 
+                  account.name.toLowerCase().contains('tedarikçi') &&
+                  account.name.toLowerCase().contains(selectedSupplierId.toLowerCase())) {
+                return false;
+              }
+              
+              return true;
+            }).toList();
+          }
+        }
+        
         return AlertDialog(
           title: const Text('Hesap Seçin'),
           content: ConstrainedBox(
@@ -1121,7 +1150,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               maxWidth:
                   MediaQuery.of(context).size.width * 0.9, // Ekranın %90'ı
             ),
-            child: accounts.isEmpty
+            child: filteredAccounts.isEmpty
                 ? const Center(
                     child: Text(
                       'Hesap bulunamadı',
@@ -1130,9 +1159,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   )
                 : ListView.builder(
                     shrinkWrap: true,
-                    itemCount: accounts.length,
+                    itemCount: filteredAccounts.length,
                     itemBuilder: (context, index) {
-                      final account = accounts[index];
+                      final account = filteredAccounts[index];
                       return ListTile(
                         leading: Icon(
                           _getAccountTypeIcon(account.type),
@@ -1375,14 +1404,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 if (selectedId == null) {
                   return const Text('Müşteri/Tedarikçi Seçin');
                 }
-                
+
                 // Müşteri ID'si varsa müşteri adını bul
                 if (formState.customerId != null) {
                   final customersAsync = ref.watch(customersProvider);
                   return customersAsync.when(
                     data: (customers) {
                       try {
-                        final customer = customers.firstWhere((c) => c.id == selectedId);
+                        final customer =
+                            customers.firstWhere((c) => c.id == selectedId);
                         return Text('Seçili: ${customer.name} (Müşteri)');
                       } catch (e) {
                         return Text('Seçili: $selectedId');
@@ -1392,14 +1422,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     error: (error, stack) => Text('Seçili: $selectedId'),
                   );
                 }
-                
+
                 // Tedarikçi ID'si varsa tedarikçi adını bul
                 if (formState.supplierId != null) {
                   final suppliersAsync = ref.watch(suppliersProvider);
                   return suppliersAsync.when(
                     data: (suppliers) {
                       try {
-                        final supplier = suppliers.firstWhere((s) => s.id == selectedId);
+                        final supplier =
+                            suppliers.firstWhere((s) => s.id == selectedId);
                         return Text('Seçili: ${supplier.name} (Tedarikçi)');
                       } catch (e) {
                         return Text('Seçili: $selectedId');
@@ -1409,7 +1440,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     error: (error, stack) => Text('Seçili: $selectedId'),
                   );
                 }
-                
+
                 return const Text('Müşteri/Tedarikçi Seçin');
               },
             ),
@@ -1495,7 +1526,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ),
     );
   }
-
 
   /// Basit hesap transferi dialog'u
   void _showSimpleAccountTransferDialog(dynamic formState) {
