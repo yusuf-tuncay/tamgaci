@@ -182,8 +182,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   /// Varsayılan hesap ayarla
   void _setDefaultAccount() {
     final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
-    // Basit varsayılan kasa ID'si
-    formNotifier.updateField('accountId', 'default_cash_account');
+    // Basit varsayılan kasa adı
+    formNotifier.updateField('accountId', 'Ana Kasa');
   }
 
   void _setDefaultDescription() {
@@ -593,14 +593,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Kasa seçimi - Basit TextFormField
+              // Kasa seçimi - Basit ve stabil TextFormField
               TextFormField(
-                initialValue: formState.accountId ?? 'default_cash_account',
+                initialValue: formState.accountId ?? 'Ana Kasa',
                 decoration: const InputDecoration(
                   labelText: 'Kasa',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.account_balance),
-                  hintText: 'Kasa ID girin',
+                  hintText: 'Kasa adı girin',
                 ),
                 onChanged: (value) => _updateField('accountId', value),
                 validator: (value) {
