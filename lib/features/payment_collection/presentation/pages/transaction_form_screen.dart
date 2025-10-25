@@ -843,7 +843,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               // Hesap transferi için müşteri+tedarikçi karışık seçim
               if (formState.type == PaymentTransactionType.accountTransfer)
-                _buildAccountTransferField(formState)
+                _buildSimpleAccountTransferField(formState)
               else ...[
                 // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
                 if (formState.isCustomerSelectionRequired &&
@@ -1354,181 +1354,33 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
-  /// Hesap transferi için müşteri+tedarikçi karışık seçim widget'ı
-  Widget _buildAccountTransferField(dynamic formState) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final customersAsync = ref.watch(customersProvider);
-        final suppliersAsync = ref.watch(suppliersProvider);
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Müşteri/Tedarikçi Seçimi',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+  /// Basit hesap transferi widget'ı - sadece dialog
+  Widget _buildSimpleAccountTransferField(dynamic formState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Müşteri/Tedarikçi Seçimi',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _showSimpleAccountTransferDialog(formState),
+            icon: const Icon(Icons.people),
+            label: Text(_getSelectedEntityNameSimple(formState)),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              alignment: Alignment.centerLeft,
             ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                customersAsync.when(
-                  data: (customers) => suppliersAsync.when(
-                    data: (suppliers) {
-                      // Müşteri ve tedarikçileri birleştir
-                      final allEntities = <Map<String, dynamic>>[];
-
-                      // Müşterileri ekle
-                      for (final customer in customers) {
-                        allEntities.add({
-                          'id': customer.id,
-                          'name': customer.name,
-                          'type': 'Müşteri',
-                          'entity': customer,
-                        });
-                      }
-
-                      // Tedarikçileri ekle
-                      for (final supplier in suppliers) {
-                        allEntities.add({
-                          'id': supplier.id,
-                          'name': supplier.name,
-                          'type': 'Tedarikçi',
-                          'entity': supplier,
-                        });
-                      }
-
-                      // İsme göre sırala
-                      allEntities
-                          .sort((a, b) => a['name'].compareTo(b['name']));
-
-                      return Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            debugPrint('DEBUG: GestureDetector onTap çağrıldı');
-                            _showAccountTransferDialog(allEntities, formState);
-                          },
-                          child: Container(
-                            constraints: const BoxConstraints(minHeight: 56),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 12),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.people,
-                                  color: Colors.grey[600],
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _getSelectedEntityName(
-                                        allEntities, formState),
-                                    style: const TextStyle(fontSize: 16),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Icon(
-                                  Icons.arrow_drop_down,
-                                  color: Colors.grey[600],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                    loading: () => const CircularProgressIndicator(),
-                    error: (error, stack) =>
-                        Text('Tedarikçiler yüklenemedi: $error'),
-                  ),
-                  loading: () => const CircularProgressIndicator(),
-                  error: (error, stack) =>
-                      Text('Müşteriler yüklenemedi: $error'),
-                ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Seçili entity'nin adını döndür
-  String _getSelectedEntityName(
-      List<Map<String, dynamic>> allEntities, dynamic formState) {
-    final selectedId = formState.customerId ?? formState.supplierId;
-    if (selectedId == null) return 'Müşteri/Tedarikçi Seçin';
-
-    try {
-      final entity = allEntities.firstWhere((e) => e['id'] == selectedId);
-      return '${entity['name']} (${entity['type']})';
-    } catch (e) {
-      return 'Müşteri/Tedarikçi Seçin';
-    }
-  }
-
-  /// Hesap transferi dialog'unu göster
-  void _showAccountTransferDialog(
-      List<Map<String, dynamic>> allEntities, dynamic formState) {
-    debugPrint('DEBUG: Dialog açılıyor, entity sayısı: ${allEntities.length}');
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Müşteri/Tedarikçi Seçin'),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-            maxWidth: MediaQuery.of(context).size.width * 0.9,
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: allEntities.length,
-            itemBuilder: (context, index) {
-              final entity = allEntities[index];
-              return ListTile(
-                leading: Icon(
-                  entity['type'] == 'Müşteri' ? Icons.person : Icons.business,
-                  color:
-                      entity['type'] == 'Müşteri' ? Colors.blue : Colors.green,
-                ),
-                title: Text(
-                  entity['name'],
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  entity['type'],
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () {
-                  if (entity['type'] == 'Müşteri') {
-                    _updateField('customerId', entity['id']);
-                    _updateField('supplierId', null);
-                  } else {
-                    _updateField('supplierId', entity['id']);
-                    _updateField('customerId', null);
-                  }
-                  Navigator.pop(context);
-                },
-              );
-            },
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-        ],
-      ),
+      ],
     );
   }
+
+
 
   /// Hesap transferi için özel işlem türü widget'ı
   Widget _buildTransactionTypeFieldForTransfer(dynamic formState) {
@@ -1589,6 +1441,97 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   _updateAccountSelection();
                   Navigator.pop(context);
                 },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('İptal'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Basit seçili entity adı
+  String _getSelectedEntityNameSimple(dynamic formState) {
+    final selectedId = formState.customerId ?? formState.supplierId;
+    if (selectedId == null) return 'Müşteri/Tedarikçi Seçin';
+    return 'Seçili: $selectedId';
+  }
+
+  /// Basit hesap transferi dialog'u
+  void _showSimpleAccountTransferDialog(dynamic formState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Müşteri/Tedarikçi Seçin'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: Consumer(
+            builder: (context, ref, child) {
+              final customersAsync = ref.watch(customersProvider);
+              final suppliersAsync = ref.watch(suppliersProvider);
+
+              return customersAsync.when(
+                data: (customers) => suppliersAsync.when(
+                  data: (suppliers) {
+                    final allEntities = <Map<String, dynamic>>[];
+                    
+                    // Müşterileri ekle
+                    for (final customer in customers) {
+                      allEntities.add({
+                        'id': customer.id,
+                        'name': customer.name,
+                        'type': 'Müşteri',
+                      });
+                    }
+                    
+                    // Tedarikçileri ekle
+                    for (final supplier in suppliers) {
+                      allEntities.add({
+                        'id': supplier.id,
+                        'name': supplier.name,
+                        'type': 'Tedarikçi',
+                      });
+                    }
+
+                    // İsme göre sırala
+                    allEntities.sort((a, b) => a['name'].compareTo(b['name']));
+
+                    return ListView.builder(
+                      itemCount: allEntities.length,
+                      itemBuilder: (context, index) {
+                        final entity = allEntities[index];
+                        return ListTile(
+                          leading: Icon(
+                            entity['type'] == 'Müşteri' ? Icons.person : Icons.business,
+                            color: entity['type'] == 'Müşteri' ? Colors.blue : Colors.green,
+                          ),
+                          title: Text(entity['name']),
+                          subtitle: Text(entity['type']),
+                          onTap: () {
+                            if (entity['type'] == 'Müşteri') {
+                              _updateField('customerId', entity['id']);
+                              _updateField('supplierId', null);
+                            } else {
+                              _updateField('supplierId', entity['id']);
+                              _updateField('customerId', null);
+                            }
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) => Text('Tedarikçiler yüklenemedi: $error'),
+                ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (error, stack) => Text('Müşteriler yüklenemedi: $error'),
               );
             },
           ),
