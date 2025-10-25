@@ -1125,23 +1125,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               // Müşteri seçildiyse, o müşteri ile ilgili hesapları filtrele
               if (selectedCustomerId != null) {
                 // Hesap adında müşteri ID'si veya 'müşteri' kelimesi varsa filtrele
-                if (account.name.toLowerCase().contains(selectedCustomerId.toLowerCase()) ||
+                if (account.name
+                        .toLowerCase()
+                        .contains(selectedCustomerId.toLowerCase()) ||
                     account.name.toLowerCase().contains('müşteri') ||
                     account.name.toLowerCase().contains('customer')) {
                   return false; // Bu müşteri hesaplarını filtrele
                 }
               }
-              
+
               // Tedarikçi seçildiyse, o tedarikçi ile ilgili hesapları filtrele
               if (selectedSupplierId != null) {
                 // Hesap adında tedarikçi ID'si veya 'tedarikçi' kelimesi varsa filtrele
-                if (account.name.toLowerCase().contains(selectedSupplierId.toLowerCase()) ||
+                if (account.name
+                        .toLowerCase()
+                        .contains(selectedSupplierId.toLowerCase()) ||
                     account.name.toLowerCase().contains('tedarikçi') ||
                     account.name.toLowerCase().contains('supplier')) {
                   return false; // Bu tedarikçi hesaplarını filtrele
                 }
               }
-              
+
               return true;
             }).toList();
           }
@@ -1174,7 +1178,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           color: _getAccountTypeColor(account.type),
                         ),
                         title: Text(
-                          account.name,
+                          _cleanAccountName(account.name),
                           overflow: TextOverflow.ellipsis,
                         ),
                         subtitle: Text(
@@ -1621,5 +1625,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         ],
       ),
     );
+  }
+
+  /// Hesap adından ID'leri temizle
+  String _cleanAccountName(String accountName) {
+    // ID'leri temizle (genellikle _ ile başlayan veya uzun string'ler)
+    String cleaned = accountName;
+    
+    // Müşteri/tedarikçi ID'lerini temizle
+    // Örnek: "Ahmet Yılmaz_customer_123" -> "Ahmet Yılmaz"
+    cleaned = cleaned.replaceAll(RegExp(r'_[a-zA-Z0-9_]+$'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_]{20,}'), '');
+    
+    // Fazla boşlukları temizle
+    cleaned = cleaned.trim();
+    
+    return cleaned.isEmpty ? accountName : cleaned;
   }
 }
