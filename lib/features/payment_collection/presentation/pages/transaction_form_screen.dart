@@ -925,6 +925,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return Icons.savings;
       case AccountType.credit:
         return Icons.credit_card;
+      case AccountType.creditCard:
+        return Icons.credit_card;
       case AccountType.investment:
         return Icons.trending_up;
       case AccountType.foreign:
@@ -945,6 +947,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return Colors.teal;
       case AccountType.credit:
         return Colors.orange;
+      case AccountType.creditCard:
+        return Colors.red;
       case AccountType.investment:
         return Colors.purple;
       case AccountType.foreign:
@@ -995,11 +999,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         // Giden kredi kartı ödemesi: Kredi kartı hesabı
         final creditCardAccounts = accounts
             .where((account) =>
-                account.type == AccountType.credit &&
-                account.currency == currency &&
-                (account.name.toLowerCase().contains('kredi kartı') ||
-                 account.name.toLowerCase().contains('credit card') ||
-                 account.name.toLowerCase().contains('kart')))
+                account.type == AccountType.creditCard &&
+                account.currency == currency)
             .toList();
 
         if (creditCardAccounts.isNotEmpty) {

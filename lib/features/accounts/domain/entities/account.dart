@@ -192,6 +192,7 @@ enum AccountType {
   checking('Vadesiz'),
   savings('Vadeli'),
   credit('Kredi'),
+  creditCard('Kredi Kartı'),
   investment('Yatırım'),
   foreign('Döviz'),
   cash('Nakit'),
@@ -207,6 +208,8 @@ enum AccountType {
       case AccountType.savings:
         return '💰';
       case AccountType.credit:
+        return '💳';
+      case AccountType.creditCard:
         return '💳';
       case AccountType.investment:
         return '📈';
