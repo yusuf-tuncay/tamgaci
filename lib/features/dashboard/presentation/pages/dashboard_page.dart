@@ -744,16 +744,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
   /// Uyarı tipine göre renk döndürür
   Color _getAlertColor(String alertType) {
-    switch (alertType) {
-      case 'info':
-        return Colors.blue;
-      case 'warning':
-        return Colors.orange;
-      case 'danger':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
+    return Colors.white; // Tüm uyarı mesajları beyaz
   }
 
   @override

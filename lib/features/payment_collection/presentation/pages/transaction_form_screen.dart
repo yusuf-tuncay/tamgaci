@@ -253,33 +253,46 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Text(
                           'Seçili Müşteri',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.blue,
+                            fontSize: 12,
                           ),
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           customer.name,
                           style: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        if (customer.email != null)
+                        if (customer.email != null) ...[
+                          const SizedBox(height: 2),
                           Text(
                             customer.email!,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                                fontSize: 11, color: Colors.grey),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        if (customer.phone != null)
+                        ],
+                        if (customer.phone != null) ...[
+                          const SizedBox(height: 2),
                           Text(
                             customer.phone!,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                                fontSize: 11, color: Colors.grey),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -582,23 +595,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
-              if (formState.isCustomerSelectionRequired &&
-                  widget.customerId == null)
-                TransactionFormFields.buildCustomerField(
-                  formState: formState,
-                  onChanged: (value) => _updateField('customerId', value),
-                ),
-
-              if (formState.isSupplierSelectionRequired &&
-                  widget.supplierId == null)
-                TransactionFormFields.buildSupplierField(
-                  formState: formState,
-                  onChanged: (value) => _updateField('supplierId', value),
-                ),
-
-              const SizedBox(height: 16),
-
               // Kasa seçimi - Dropdown
               Consumer(
                 builder: (context, ref, child) {
@@ -635,7 +631,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       }
 
                       return DropdownButtonFormField<String>(
-                        value: selectedValue,
+                        initialValue: selectedValue,
                         decoration: const InputDecoration(
                           labelText: 'Kasa',
                           border: OutlineInputBorder(),
@@ -712,6 +708,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   );
                 },
               ),
+
+              const SizedBox(height: 16),
+
+              // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
+              if (formState.isCustomerSelectionRequired &&
+                  widget.customerId == null)
+                TransactionFormFields.buildCustomerField(
+                  formState: formState,
+                  onChanged: (value) => _updateField('customerId', value),
+                ),
+
+              if (formState.isSupplierSelectionRequired &&
+                  widget.supplierId == null)
+                TransactionFormFields.buildSupplierField(
+                  formState: formState,
+                  onChanged: (value) => _updateField('supplierId', value),
+                ),
 
               const SizedBox(height: 16),
 
