@@ -644,8 +644,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       // Debug: Hesap sayısını logla
                       debugPrint('DEBUG: Loaded ${accounts.length} accounts');
                       for (final account in accounts) {
-                        debugPrint(
-                            'DEBUG: Account - ${account.name}, Active: ${account.isActive}, Status: ${account.status}');
+        debugPrint(
+            'DEBUG: Account - ${account.name}, Type: ${account.type}, Active: ${account.isActive}, Status: ${account.status}');
                       }
 
                       // Aktif hesapları filtrele (eğer activeAccountsProvider çalışmıyorsa)
@@ -997,6 +997,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         }
       } else if (direction == PaymentDirection.outgoing) {
         // Giden kredi kartı ödemesi: Kredi kartı hesabı
+        // Önce AccountType.creditCard türündeki hesapları ara
         final creditCardAccounts = accounts
             .where((account) =>
                 account.type == AccountType.creditCard &&
@@ -1007,6 +1008,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           debugPrint(
               'DEBUG: Kredi kartı hesabı bulundu: ${creditCardAccounts.first.name}');
           return creditCardAccounts.first.id;
+        }
+
+        // Eğer AccountType.creditCard bulunamazsa, isim kontrolü yap
+        final creditCardByName = accounts
+            .where((account) =>
+                account.currency == currency &&
+                (account.name.toLowerCase().contains('kredi kartı') ||
+                 account.name.toLowerCase().contains('credit card') ||
+                 account.name.toLowerCase().contains('kart')))
+            .toList();
+
+        if (creditCardByName.isNotEmpty) {
+          debugPrint(
+              'DEBUG: Kredi kartı hesabı (isim kontrolü) bulundu: ${creditCardByName.first.name}');
+          return creditCardByName.first.id;
         }
       }
     } else if (transactionType == PaymentTransactionType.eftTransfer) {
