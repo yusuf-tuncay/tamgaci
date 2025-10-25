@@ -1402,10 +1402,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
                       return Expanded(
                         child: GestureDetector(
-                          onTap: () => _showAccountTransferDialog(allEntities, formState),
+                          onTap: () {
+                            debugPrint('DEBUG: GestureDetector onTap çağrıldı');
+                            _showAccountTransferDialog(allEntities, formState);
+                          },
                           child: Container(
                             constraints: const BoxConstraints(minHeight: 56),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.grey),
                               borderRadius: BorderRadius.circular(4),
@@ -1420,11 +1424,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
-                                        _getSelectedEntityName(allEntities, formState),
+                                        _getSelectedEntityName(
+                                            allEntities, formState),
                                         style: const TextStyle(fontSize: 16),
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -1467,10 +1473,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   /// Seçili entity'nin adını döndür
-  String _getSelectedEntityName(List<Map<String, dynamic>> allEntities, dynamic formState) {
+  String _getSelectedEntityName(
+      List<Map<String, dynamic>> allEntities, dynamic formState) {
     final selectedId = formState.customerId ?? formState.supplierId;
     if (selectedId == null) return 'Müşteri/Tedarikçi Seçin';
-    
+
     try {
       final entity = allEntities.firstWhere((e) => e['id'] == selectedId);
       return '${entity['name']} (${entity['type']})';
@@ -1480,7 +1487,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   /// Hesap transferi dialog'unu göster
-  void _showAccountTransferDialog(List<Map<String, dynamic>> allEntities, dynamic formState) {
+  void _showAccountTransferDialog(
+      List<Map<String, dynamic>> allEntities, dynamic formState) {
+    debugPrint('DEBUG: Dialog açılıyor, entity sayısı: ${allEntities.length}');
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1498,7 +1507,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               return ListTile(
                 leading: Icon(
                   entity['type'] == 'Müşteri' ? Icons.person : Icons.business,
-                  color: entity['type'] == 'Müşteri' ? Colors.blue : Colors.green,
+                  color:
+                      entity['type'] == 'Müşteri' ? Colors.blue : Colors.green,
                 ),
                 title: Text(
                   entity['name'],
