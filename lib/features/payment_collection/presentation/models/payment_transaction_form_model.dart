@@ -50,6 +50,9 @@ class PaymentTransactionFormModel {
   /// Hesap ID'si (zorunlu)
   String? accountId;
 
+  /// Kaynak hesap ID'si (cari virman için)
+  String? sourceAccountId;
+
   /// Hedef hesap ID'si
   String? targetAccountId;
 
@@ -189,6 +192,7 @@ class PaymentTransactionFormModel {
     revenueId = null;
     expenseId = null;
     accountId = null;
+    sourceAccountId = null;
     targetAccountId = null;
     paymentMethodId = null;
     paymentSourceId = null;
@@ -222,6 +226,7 @@ class PaymentTransactionFormModel {
       ..revenueId = revenueId
       ..expenseId = expenseId
       ..accountId = accountId
+      ..sourceAccountId = sourceAccountId
       ..targetAccountId = targetAccountId
       ..paymentMethodId = paymentMethodId
       ..paymentSourceId = paymentSourceId
@@ -249,6 +254,7 @@ class PaymentTransactionFormModel {
     String? revenueId,
     String? expenseId,
     String? accountId,
+    String? sourceAccountId,
     String? targetAccountId,
     String? paymentMethodId,
     String? paymentSourceId,
@@ -274,6 +280,7 @@ class PaymentTransactionFormModel {
       ..revenueId = revenueId ?? this.revenueId
       ..expenseId = expenseId ?? this.expenseId
       ..accountId = accountId ?? this.accountId
+      ..sourceAccountId = sourceAccountId ?? this.sourceAccountId
       ..targetAccountId = targetAccountId ?? this.targetAccountId
       ..paymentMethodId = paymentMethodId ?? this.paymentMethodId
       ..paymentSourceId = paymentSourceId ?? this.paymentSourceId
@@ -374,6 +381,7 @@ class PaymentTransactionFormModel {
       'revenueId': revenueId,
       'expenseId': expenseId,
       'accountId': accountId,
+      'sourceAccountId': sourceAccountId,
       'targetAccountId': targetAccountId,
       'paymentMethodId': paymentMethodId,
       'paymentSourceId': paymentSourceId,
