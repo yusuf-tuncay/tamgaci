@@ -1122,27 +1122,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           if (selectedCustomerId != null || selectedSupplierId != null) {
             // Müşteri/tedarikçi hesaplarını filtrele
             filteredAccounts = accounts.where((account) {
-              // Müşteri seçildiyse, müşteri hesaplarını filtrele
+              // Müşteri seçildiyse, o müşteri ile ilgili hesapları filtrele
               if (selectedCustomerId != null) {
-                // Müşteri hesabı türleri: credit, checking, savings
-                if (account.type == AccountType.credit || 
-                    account.type == AccountType.checking ||
-                    account.type == AccountType.savings ||
+                // Hesap adında müşteri ID'si veya 'müşteri' kelimesi varsa filtrele
+                if (account.name.toLowerCase().contains(selectedCustomerId.toLowerCase()) ||
                     account.name.toLowerCase().contains('müşteri') ||
                     account.name.toLowerCase().contains('customer')) {
-                  return false; // Müşteri hesaplarını filtrele
+                  return false; // Bu müşteri hesaplarını filtrele
                 }
               }
               
-              // Tedarikçi seçildiyse, tedarikçi hesaplarını filtrele
+              // Tedarikçi seçildiyse, o tedarikçi ile ilgili hesapları filtrele
               if (selectedSupplierId != null) {
-                // Tedarikçi hesabı türleri: credit, checking, savings
-                if (account.type == AccountType.credit || 
-                    account.type == AccountType.checking ||
-                    account.type == AccountType.savings ||
+                // Hesap adında tedarikçi ID'si veya 'tedarikçi' kelimesi varsa filtrele
+                if (account.name.toLowerCase().contains(selectedSupplierId.toLowerCase()) ||
                     account.name.toLowerCase().contains('tedarikçi') ||
                     account.name.toLowerCase().contains('supplier')) {
-                  return false; // Tedarikçi hesaplarını filtrele
+                  return false; // Bu tedarikçi hesaplarını filtrele
                 }
               }
               
