@@ -629,9 +629,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Hesap seçimi - Borç/Alacak fişleri için gizle
+              // Hesap seçimi - Borç/Alacak fişleri ve Hesap Transferi için gizle
               if (formState.type != PaymentTransactionType.debtReceipt &&
-                  formState.type != PaymentTransactionType.creditReceipt)
+                  formState.type != PaymentTransactionType.creditReceipt &&
+                  formState.type != PaymentTransactionType.accountTransfer)
                 Consumer(
                   builder: (context, ref, child) {
                     // Önce activeAccountsProvider'ı dene, başarısız olursa accountsProvider'ı kullan
@@ -1112,44 +1113,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // Hesap transferi için filtreleme
+        // Hesap transferi için filtreleme - Hesap transferi için hesap seçimi gizli
         List<Account> filteredAccounts = accounts;
-        if (formState.type == PaymentTransactionType.accountTransfer) {
-          // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
-          final selectedCustomerId = formState.customerId;
-          final selectedSupplierId = formState.supplierId;
-
-          if (selectedCustomerId != null || selectedSupplierId != null) {
-            // Müşteri/tedarikçi hesaplarını filtrele
-            filteredAccounts = accounts.where((account) {
-              // Müşteri seçildiyse, o müşteri ile ilgili hesapları filtrele
-              if (selectedCustomerId != null) {
-                // Hesap adında müşteri ID'si veya 'müşteri' kelimesi varsa filtrele
-                if (account.name
-                        .toLowerCase()
-                        .contains(selectedCustomerId.toLowerCase()) ||
-                    account.name.toLowerCase().contains('müşteri') ||
-                    account.name.toLowerCase().contains('customer')) {
-                  return false; // Bu müşteri hesaplarını filtrele
-                }
-              }
-
-              // Tedarikçi seçildiyse, o tedarikçi ile ilgili hesapları filtrele
-              if (selectedSupplierId != null) {
-                // Hesap adında tedarikçi ID'si veya 'tedarikçi' kelimesi varsa filtrele
-                if (account.name
-                        .toLowerCase()
-                        .contains(selectedSupplierId.toLowerCase()) ||
-                    account.name.toLowerCase().contains('tedarikçi') ||
-                    account.name.toLowerCase().contains('supplier')) {
-                  return false; // Bu tedarikçi hesaplarını filtrele
-                }
-              }
-
-              return true;
-            }).toList();
-          }
-        }
 
         return AlertDialog(
           title: const Text('Hesap Seçin'),
@@ -1631,15 +1596,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String _cleanAccountName(String accountName) {
     // ID'leri temizle (genellikle _ ile başlayan veya uzun string'ler)
     String cleaned = accountName;
-    
+
     // Müşteri/tedarikçi ID'lerini temizle
     // Örnek: "Ahmet Yılmaz_customer_123" -> "Ahmet Yılmaz"
     cleaned = cleaned.replaceAll(RegExp(r'_[a-zA-Z0-9_]+$'), '');
     cleaned = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_]{20,}'), '');
-    
+
     // Fazla boşlukları temizle
     cleaned = cleaned.trim();
-    
+
     return cleaned.isEmpty ? accountName : cleaned;
   }
 }
