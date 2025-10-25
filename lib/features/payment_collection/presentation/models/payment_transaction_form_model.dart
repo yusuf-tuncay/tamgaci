@@ -396,7 +396,6 @@ class PaymentTransactionFormModel {
     };
   }
 
-
   @override
   String toString() {
     return 'PaymentTransactionFormModel(type: $type, category: $category, direction: $direction, amount: $amount, currency: $currency, isValid: $isValid)';

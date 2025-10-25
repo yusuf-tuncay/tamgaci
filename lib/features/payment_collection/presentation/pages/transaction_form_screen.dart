@@ -1385,7 +1385,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
-
   /// Hesap transferi için özel işlem türü widget'ı
   Widget _buildTransactionTypeFieldForTransfer(dynamic formState) {
     return GestureDetector(
@@ -1432,7 +1431,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             itemBuilder: (context, index) {
               final type = PaymentTransactionType.values[index];
               return ListTile(
-                leading: Icon(
+                leading: const Icon(
                   Icons.payment,
                   color: Colors.blue,
                 ),
@@ -1459,20 +1458,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
-
   /// Hesap adından ID'leri temizle
   String _cleanAccountName(String accountName) {
     // ID'leri temizle (genellikle _ ile başlayan veya uzun string'ler)
     String cleaned = accountName;
-    
+
     // Müşteri/tedarikçi ID'lerini temizle
     // Örnek: "Ahmet Yılmaz_customer_123" -> "Ahmet Yılmaz"
     cleaned = cleaned.replaceAll(RegExp(r'_[a-zA-Z0-9_]+$'), '');
     cleaned = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_]{20,}'), '');
-    
+
     // Fazla boşlukları temizle
     cleaned = cleaned.trim();
-    
+
     return cleaned.isEmpty ? accountName : cleaned;
   }
 
@@ -1481,98 +1479,50 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Kaynak hesap seçimi
+        // Virman hesabı seçimi (gerçek müşteri/tedarikçi verilerinden)
         const Text(
-          'Kaynak Hesap',
+          'Virman Hesabı',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 8),
         Consumer(
           builder: (context, ref, child) {
-            final accountsAsync = ref.watch(accountsProvider);
-            return accountsAsync.when(
-              data: (accounts) {
-                final activeAccounts = accounts
-                    .where((account) => account.isActive && account.status == AccountStatus.active)
-                    .toList();
-                
-                return GestureDetector(
-                  onTap: () => _showSourceAccountDialog(context, activeAccounts, formState),
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 56),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.account_balance_wallet, color: Colors.grey, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _getSelectedSourceAccountName(formState),
-                            style: const TextStyle(fontSize: 16),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.arrow_drop_down, color: Colors.grey),
-                      ],
-                    ),
-                  ),
+            final customersAsync = ref.watch(customersProvider);
+            final suppliersAsync = ref.watch(suppliersProvider);
+
+            return customersAsync.when(
+              data: (customers) {
+                return suppliersAsync.when(
+                  data: (suppliers) {
+                    debugPrint('DEBUG: Müşteri sayısı: ${customers.length}');
+                    debugPrint('DEBUG: Tedarikçi sayısı: ${suppliers.length}');
+                    // Gerçek verilerden seçim
+                    final allEntities = [
+                      ...customers.map((c) =>
+                          {'id': c.id, 'name': c.name, 'type': 'Müşteri'}),
+                      ...suppliers.map((s) =>
+                          {'id': s.id, 'name': s.name, 'type': 'Tedarikçi'}),
+                    ];
+                    debugPrint(
+                        'DEBUG: Toplam entity sayısı: ${allEntities.length}');
+
+                    // Seçili müşteri filtrelenir
+                    final filteredEntities = allEntities.where((entity) {
+                      if (entity['id'] == formState.customerId) {
+                        return false; // Aynı müşteri filtrelenir
+                      }
+                      return true; // Diğer hesaplar gösterilir
+                    }).toList();
+
+                    return _buildVirmanAccountSelection(
+                        filteredEntities, formState);
+                  },
+                  loading: () => const CircularProgressIndicator(),
+                  error: (error, stack) => Text('Hata: $error'),
                 );
               },
               loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Hesaplar yüklenemedi: $error'),
-            );
-          },
-        ),
-        
-        const SizedBox(height: 16),
-        
-        // Hedef hesap seçimi
-        const Text(
-          'Hedef Hesap',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Consumer(
-          builder: (context, ref, child) {
-            final accountsAsync = ref.watch(accountsProvider);
-            return accountsAsync.when(
-              data: (accounts) {
-                final activeAccounts = accounts
-                    .where((account) => account.isActive && account.status == AccountStatus.active)
-                    .toList();
-                
-                return GestureDetector(
-                  onTap: () => _showTargetAccountDialog(context, activeAccounts, formState),
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: 56),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.account_balance, color: Colors.grey, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _getSelectedTargetAccountName(formState),
-                            style: const TextStyle(fontSize: 16),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const Icon(Icons.arrow_drop_down, color: Colors.grey),
-                      ],
-                    ),
-                  ),
-                );
-              },
-              loading: () => const CircularProgressIndicator(),
-              error: (error, stack) => Text('Hesaplar yüklenemedi: $error'),
+              error: (error, stack) => Text('Hata: $error'),
             );
           },
         ),
@@ -1580,111 +1530,142 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
-  /// Seçili kaynak hesap adı
-  String _getSelectedSourceAccountName(dynamic formState) {
-    final sourceAccountId = formState.sourceAccountId;
-    if (sourceAccountId == null) return 'Kaynak Hesap Seçin';
-    return 'Seçili: $sourceAccountId';
+  /// Virman Hesabı Seçim Widget'ı
+  Widget _buildVirmanAccountSelection(
+      List<Map<String, dynamic>> entities, dynamic formState) {
+    return ElevatedButton.icon(
+      onPressed: () {
+        debugPrint('DEBUG: Virman hesabı seçimi tıklandı');
+        _showVirmanAccountDialog(entities, formState);
+      },
+      icon: const Icon(Icons.account_balance, size: 20),
+      label: Consumer(
+        builder: (context, ref, child) {
+          final targetAccountId = formState.targetAccountId;
+          if (targetAccountId == null) {
+            return const Text(
+              'Virman hesabı seçin',
+              style: TextStyle(fontSize: 16),
+              overflow: TextOverflow.ellipsis,
+            );
+          }
+
+          final customersAsync = ref.watch(customersProvider);
+          final suppliersAsync = ref.watch(suppliersProvider);
+
+          return customersAsync.when(
+            data: (customers) {
+              return suppliersAsync.when(
+                data: (suppliers) {
+                  // Seçili hesabın adını bul
+                  final allEntities = [
+                    ...customers.map(
+                        (c) => {'id': c.id, 'name': c.name, 'type': 'Müşteri'}),
+                    ...suppliers.map((s) =>
+                        {'id': s.id, 'name': s.name, 'type': 'Tedarikçi'}),
+                  ];
+
+                  final selectedEntity = allEntities.firstWhere(
+                    (e) => e['id'] == targetAccountId,
+                    orElse: () => {'name': 'Bilinmeyen', 'type': ''},
+                  );
+
+                  return Text(
+                    '${selectedEntity['name']} (${selectedEntity['type']})',
+                    style: const TextStyle(fontSize: 16),
+                    overflow: TextOverflow.ellipsis,
+                  );
+                },
+                loading: () => const Text('Yükleniyor...'),
+                error: (error, stack) => const Text('Hata'),
+              );
+            },
+            loading: () => const Text('Yükleniyor...'),
+            error: (error, stack) => const Text('Hata'),
+          );
+        },
+      ),
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        minimumSize: const Size(double.infinity, 56),
+        alignment: Alignment.centerLeft,
+      ),
+    );
   }
 
-  /// Seçili hedef hesap adı
-  String _getSelectedTargetAccountName(dynamic formState) {
+  /// Virman Hesabı Dialog
+  void _showVirmanAccountDialog(
+      List<Map<String, dynamic>> entities, dynamic formState) {
+    debugPrint(
+        'DEBUG: Virman hesabı dialog açılıyor, entity sayısı: ${entities.length}');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Virman Hesabı Seçin'),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.6,
+          child: ListView.builder(
+            itemCount: entities.length,
+            itemBuilder: (context, index) {
+              final entity = entities[index];
+              return ListTile(
+                leading: Icon(
+                  entity['type'] == 'Müşteri' ? Icons.person : Icons.business,
+                  color:
+                      entity['type'] == 'Müşteri' ? Colors.blue : Colors.green,
+                ),
+                title: Text(
+                  entity['name'],
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  entity['type'],
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () {
+                  formState.targetAccountId = entity['id'];
+                  debugPrint(
+                      'DEBUG: Seçilen hesap: ${entity['name']} (${entity['type']})');
+                  Navigator.pop(context);
+                  // State'i yeniden tetiklemek için setState çağır
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('İptal'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Seçili Virman Hesabı Adı (Form'dan)
+  String _getSelectedVirmanAccountNameFromForm(dynamic formState) {
     final targetAccountId = formState.targetAccountId;
-    if (targetAccountId == null) return 'Hedef Hesap Seçin';
-    return 'Seçili: $targetAccountId';
+    if (targetAccountId == null) return 'Virman hesabı seçin';
+
+    // Seçili hesabın adını bulmak için müşteri/tedarikçi verilerini kullan
+    return 'Seçili Hesap: $targetAccountId';
   }
 
-  /// Kaynak hesap dialog'u
-  void _showSourceAccountDialog(BuildContext context, List<Account> accounts, dynamic formState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Kaynak Hesap Seçin'),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-            maxWidth: MediaQuery.of(context).size.width * 0.9,
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: accounts.length,
-            itemBuilder: (context, index) {
-              final account = accounts[index];
-              return ListTile(
-                leading: Icon(
-                  _getAccountTypeIcon(account.type),
-                  color: _getAccountTypeColor(account.type),
-                ),
-                title: Text(
-                  _cleanAccountName(account.name),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}',
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () {
-                  _updateField('sourceAccountId', account.id);
-                  Navigator.of(context).pop();
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('İptal'),
-          ),
-        ],
-      ),
-    );
-  }
+  /// Seçili Virman Hesabı Adı (Dialog için)
+  String _getSelectedVirmanAccountName(
+      String? accountId, List<Map<String, dynamic>> entities) {
+    if (accountId == null) return 'Virman hesabı seçin';
 
-  /// Hedef hesap dialog'u
-  void _showTargetAccountDialog(BuildContext context, List<Account> accounts, dynamic formState) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Hedef Hesap Seçin'),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-            maxWidth: MediaQuery.of(context).size.width * 0.9,
-          ),
-          child: ListView.builder(
-            shrinkWrap: true,
-            itemCount: accounts.length,
-            itemBuilder: (context, index) {
-              final account = accounts[index];
-              return ListTile(
-                leading: Icon(
-                  _getAccountTypeIcon(account.type),
-                  color: _getAccountTypeColor(account.type),
-                ),
-                title: Text(
-                  _cleanAccountName(account.name),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                subtitle: Text(
-                  '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}',
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () {
-                  _updateField('targetAccountId', account.id);
-                  Navigator.of(context).pop();
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('İptal'),
-          ),
-        ],
-      ),
+    final entity = entities.firstWhere(
+      (e) => e['id'] == accountId,
+      orElse: () => {'name': 'Bilinmeyen', 'type': ''},
     );
+
+    return '${entity['name']} (${entity['type']})';
   }
 }
