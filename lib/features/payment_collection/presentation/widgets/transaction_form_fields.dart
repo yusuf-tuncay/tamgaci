@@ -265,9 +265,32 @@ class TransactionFormFields {
             account.isActive && account.status == AccountStatus.active)
         .toList();
 
+    // Boş liste durumunu kontrol et
+    if (filteredAccounts.isEmpty) {
+      return Container(
+        height: 56,
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: const Center(
+          child: Text(
+            'Hesap bulunamadı',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ),
+      );
+    }
+
+    // Seçili hesap ID'sinin listede olup olmadığını kontrol et
+    String? selectedValue = formState.accountId;
+    if (selectedValue != null &&
+        !filteredAccounts.any((account) => account.id == selectedValue)) {
+      selectedValue = null; // Geçersiz ID ise null yap
+    }
+
     return DropdownButtonFormField<String>(
-      initialValue:
-          formState.accountId?.isNotEmpty == true ? formState.accountId : null,
+      initialValue: selectedValue,
       decoration: const InputDecoration(
         labelText: 'Hesap',
         border: OutlineInputBorder(),

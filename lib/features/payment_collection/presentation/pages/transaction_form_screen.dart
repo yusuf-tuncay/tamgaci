@@ -3,6 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../domain/entities/payment_enums.dart';
 import '../../domain/entities/payment_transaction.dart';
 import '../providers/payment_collection_providers.dart';
@@ -182,65 +183,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   /// Varsayılan hesap ayarla
   void _setDefaultAccount() {
-    // Hesap seçimini async olarak yap
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _selectDefaultAccount();
-    });
-  }
-
-  /// Para birimine göre varsayılan hesap seç
-  void _selectDefaultAccount() async {
-    try {
-      final accountsAsync = ref.read(activeAccountsProvider);
-
-      accountsAsync.when(
-        data: (accounts) {
-          if (accounts.isNotEmpty) {
-            // Para birimine göre hesap filtrele
-            String currency = ref.read(paymentTransactionFormProvider).currency;
-            List<Account> currencyAccounts = accounts
-                .where((account) => account.currency == currency)
-                .toList();
-
-            Account? selectedAccount;
-
-            if (currencyAccounts.isNotEmpty) {
-              // Önce varsayılan hesabı ara
-              selectedAccount = currencyAccounts.firstWhere(
-                (account) => account.isDefault,
-                orElse: () => currencyAccounts.first,
-              );
-            } else {
-              // Para birimi uygun hesap yoksa, varsayılan hesabı ara
-              selectedAccount = accounts.firstWhere(
-                (account) => account.isDefault,
-                orElse: () => accounts.first,
-              );
-            }
-
-            final formNotifier =
-                ref.read(paymentTransactionFormProvider.notifier);
-            formNotifier.updateField('accountId', selectedAccount.id);
-          }
-        },
-        loading: () {
-          // Yükleme durumunda varsayılan hesap ID'si kullan
-          final formNotifier =
-              ref.read(paymentTransactionFormProvider.notifier);
-          formNotifier.updateField('accountId', 'default_account_1');
-        },
-        error: (error, stack) {
-          // Hata durumunda varsayılan hesap ID'si kullan
-          final formNotifier =
-              ref.read(paymentTransactionFormProvider.notifier);
-          formNotifier.updateField('accountId', 'default_account_1');
-        },
-      );
-    } catch (e) {
-      // Hata durumunda varsayılan hesap ID'si kullan
-      final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
-      formNotifier.updateField('accountId', 'default_account_1');
-    }
+    final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
+    // Basit varsayılan hesap ID'si
+    formNotifier.updateField('accountId', 'default_account_1');
   }
 
   void _setDefaultDescription() {
@@ -531,7 +476,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   @override
   Widget build(BuildContext context) {
     final formState = ref.watch(paymentTransactionFormProvider);
-    final collectionState = ref.watch(paymentCollectionStateProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
@@ -600,10 +544,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Tarih alanları
+              // Tarih ve saat alanları
               Row(
                 children: [
                   Expanded(
+                    flex: 2,
                     child: TransactionFormFields.buildTransactionDateField(
                       formState: formState,
                       onChanged: (value) =>
@@ -611,16 +556,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       context: context,
                     ),
                   ),
-                  if (formState.isDueDateRequired) ...[
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TransactionFormFields.buildDueDateField(
-                        formState: formState,
-                        onChanged: (value) => _updateField('dueDate', value),
-                        context: context,
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.access_time, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Text(
+                            DateFormat('HH:mm').format(DateTime.now()),
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ],
               ),
 
@@ -643,43 +599,119 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Hesap seçimi
+              // Kasa seçimi - Dropdown
               Consumer(
                 builder: (context, ref, child) {
-                  final accountsAsync = ref.watch(activeAccountsProvider);
-                  return accountsAsync.when(
+                  final cashAccountsAsync = ref.watch(activeAccountsProvider);
+                  return cashAccountsAsync.when(
                     data: (accounts) {
-                      return TransactionFormFields.buildAccountField(
-                        formState: formState,
+                      // Sadece kasa hesaplarını filtrele
+                      final cashAccounts = accounts
+                          .where((account) => account.type == AccountType.cash)
+                          .toList();
+
+                      if (cashAccounts.isEmpty) {
+                        return Container(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Kasa bulunamadı',
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ),
+                        );
+                      }
+
+                      // Seçili hesap ID'sinin listede olup olmadığını kontrol et
+                      String? selectedValue = formState.accountId;
+                      if (selectedValue != null &&
+                          !cashAccounts
+                              .any((account) => account.id == selectedValue)) {
+                        selectedValue = null; // Geçersiz ID ise null yap
+                      }
+
+                      return DropdownButtonFormField<String>(
+                        value: selectedValue,
+                        decoration: const InputDecoration(
+                          labelText: 'Kasa',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.account_balance),
+                          hintText: 'Kasa seçin',
+                        ),
+                        items: cashAccounts.map((account) {
+                          return DropdownMenuItem<String>(
+                            value: account.id,
+                            child: Row(
+                              children: [
+                                Text(account.type.icon,
+                                    style: const TextStyle(fontSize: 16)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        account.name,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        '${account.currency} - ${account.balance.toStringAsFixed(2)}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                         onChanged: (value) => _updateField('accountId', value),
-                        accounts: accounts,
-                        selectedCurrency: formState.currency,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Kasa seçilmelidir';
+                          }
+                          return null;
+                        },
                       );
                     },
-                    loading: () => const CircularProgressIndicator(),
-                    error: (error, stack) => Text('Hesap yüklenemedi: $error'),
+                    loading: () => Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                    error: (error, stack) => Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.red),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          'Kasa yüklenemedi',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ),
                   );
                 },
               ),
-
-              const SizedBox(height: 16),
-
-              // Ödeme yöntemi
-              TransactionFormFields.buildPaymentMethodField(
-                formState: formState,
-                paymentMethods: collectionState.paymentMethods,
-                onChanged: (value) => _updateField('paymentMethodId', value),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Ödeme kaynağı
-              if (formState.isPaymentSourceRequired)
-                TransactionFormFields.buildPaymentSourceField(
-                  formState: formState,
-                  paymentSources: collectionState.paymentSources,
-                  onChanged: (value) => _updateField('paymentSourceId', value),
-                ),
 
               const SizedBox(height: 16),
 
@@ -687,22 +719,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               TransactionFormFields.buildDescriptionField(
                 formState: formState,
                 onChanged: (value) => _updateField('description', value),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Referans numarası
-              TransactionFormFields.buildReferenceNumberField(
-                formState: formState,
-                onChanged: (value) => _updateField('referenceNumber', value),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Notlar
-              TransactionFormFields.buildNotesField(
-                formState: formState,
-                onChanged: (value) => _updateField('notes', value),
               ),
 
               const SizedBox(height: 32),
