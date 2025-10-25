@@ -981,7 +981,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         // Gelen kredi kartı ödemesi: POS hesabı
         final posAccounts = accounts
             .where((account) =>
-                account.type == AccountType.other && // POS hesabı için other türü
+                account.type ==
+                    AccountType.other && // POS hesabı için other türü
                 account.currency == currency &&
                 account.name.toLowerCase().contains('pos'))
             .toList();
@@ -992,15 +993,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         }
       } else if (direction == PaymentDirection.outgoing) {
         // Giden kredi kartı ödemesi: Kredi kartı hesabı
-        final creditAccounts = accounts
+        final creditCardAccounts = accounts
             .where((account) =>
                 account.type == AccountType.credit &&
-                account.currency == currency)
+                account.currency == currency &&
+                (account.name.toLowerCase().contains('kredi kartı') ||
+                 account.name.toLowerCase().contains('credit card') ||
+                 account.name.toLowerCase().contains('kart')))
             .toList();
 
-        if (creditAccounts.isNotEmpty) {
-          debugPrint('DEBUG: Kredi kartı hesabı bulundu: ${creditAccounts.first.name}');
-          return creditAccounts.first.id;
+        if (creditCardAccounts.isNotEmpty) {
+          debugPrint(
+              'DEBUG: Kredi kartı hesabı bulundu: ${creditCardAccounts.first.name}');
+          return creditCardAccounts.first.id;
         }
       }
     } else if (transactionType == PaymentTransactionType.eftTransfer) {
