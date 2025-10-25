@@ -1037,17 +1037,37 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         debugPrint('DEBUG: Banka hesabı bulundu: ${bankAccounts.first.name}');
         return bankAccounts.first.id;
       }
+
+      // Eğer AccountType.checking bulunamazsa, isim kontrolü yap
+      final bankByName = accounts
+          .where((account) =>
+              account.currency == currency &&
+              (account.name.toLowerCase().contains('banka') ||
+               account.name.toLowerCase().contains('bank') ||
+               account.name.toLowerCase().contains('çek') ||
+               account.name.toLowerCase().contains('checking')))
+          .toList();
+
+      if (bankByName.isNotEmpty) {
+        debugPrint('DEBUG: Banka hesabı (isim kontrolü) bulundu: ${bankByName.first.name}');
+        return bankByName.first.id;
+      }
+
+      // Eğer banka hesabı hiç bulunamazsa, null döndür (hesap yok göster)
+      debugPrint('DEBUG: EFT için banka hesabı bulunamadı - hesap yok gösterilecek');
+      return null;
     } else if (transactionType == PaymentTransactionType.promissoryNote) {
       // Senet işlemi için: Senet hesabı + aynı para birimi
       final promissoryAccounts = accounts
           .where((account) =>
               account.currency == currency &&
               (account.name.toLowerCase().contains('senet') ||
-               account.name.toLowerCase().contains('promissory')))
+                  account.name.toLowerCase().contains('promissory')))
           .toList();
 
       if (promissoryAccounts.isNotEmpty) {
-        debugPrint('DEBUG: Senet hesabı bulundu: ${promissoryAccounts.first.name}');
+        debugPrint(
+            'DEBUG: Senet hesabı bulundu: ${promissoryAccounts.first.name}');
         return promissoryAccounts.first.id;
       }
     }
