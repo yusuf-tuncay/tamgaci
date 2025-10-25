@@ -504,7 +504,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -811,7 +811,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 onChanged: (value) => _updateField('description', value),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
 
               // Hata mesajları
               if (formState.errors.isNotEmpty) ...[
@@ -832,7 +832,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     }).toList(),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
               ],
 
               // Kaydet butonu
