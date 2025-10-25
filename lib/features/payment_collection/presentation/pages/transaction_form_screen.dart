@@ -167,24 +167,50 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     // Varsayılan olarak TRY kullan
     String defaultCurrency = 'TRY';
 
-    // Müşteri/tedarikçi bilgilerine göre para birimi belirle
+    // Müşteri bilgilerine göre para birimi belirle
     if (widget.customerId != null) {
-      // Müşteri bilgilerini al ve para birimini belirle
-      // Şimdilik varsayılan TRY kullan, ileride müşteri tercihine göre ayarlanabilir
-      defaultCurrency = 'TRY';
+      try {
+        final customerAsync = ref.read(customerProvider(widget.customerId!));
+        customerAsync.whenData((customer) {
+          if (customer != null && customer.customerCurrency != null) {
+            defaultCurrency = customer.customerCurrency!;
+            formNotifier.updateField('currency', defaultCurrency);
+            debugPrint('DEBUG: Müşteri para birimi seçildi: $defaultCurrency');
+          } else {
+            formNotifier.updateField('currency', defaultCurrency);
+          }
+        });
+      } catch (e) {
+        debugPrint('DEBUG: Müşteri para birimi alınamadı: $e');
+        formNotifier.updateField('currency', defaultCurrency);
+      }
     } else if (widget.supplierId != null) {
       // Tedarikçi bilgilerini al ve para birimini belirle
-      // Şimdilik varsayılan TRY kullan, ileride tedarikçi tercihine göre ayarlanabilir
-      defaultCurrency = 'TRY';
+      try {
+        final supplierAsync = ref.read(supplierProvider(widget.supplierId!));
+        supplierAsync.whenData((supplier) {
+          if (supplier != null) {
+            defaultCurrency = supplier.currency;
+            formNotifier.updateField('currency', defaultCurrency);
+            debugPrint('DEBUG: Tedarikçi para birimi seçildi: $defaultCurrency');
+          } else {
+            formNotifier.updateField('currency', defaultCurrency);
+          }
+        });
+      } catch (e) {
+        debugPrint('DEBUG: Tedarikçi para birimi alınamadı: $e');
+        formNotifier.updateField('currency', defaultCurrency);
+      }
+    } else {
+      formNotifier.updateField('currency', defaultCurrency);
     }
-
-    formNotifier.updateField('currency', defaultCurrency);
   }
 
   /// Varsayılan hesap ayarla
   void _setDefaultAccount() {
     // Bu metod artık gerekli değil çünkü dropdown otomatik olarak ilk hesabı seçiyor
     // Consumer widget'ı içinde otomatik seçim yapılıyor
+    // İşlem türü ve para birimine göre uygun kasa seçimi yapılacak
   }
 
   void _setDefaultDescription() {
@@ -671,9 +697,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         selectedValue = null;
                       }
 
-                      // Eğer hiç seçili değilse, ilk hesabı seç
+                      // Eğer hiç seçili değilse, işlem türü ve para birimine göre uygun hesabı seç
                       if (selectedValue == null && activeAccounts.isNotEmpty) {
-                        selectedValue = activeAccounts.first.id;
+                        selectedValue = _selectBestAccount(activeAccounts, formState);
+                        if (selectedValue != null) {
+                          // Seçilen hesabı form'a kaydet
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _updateField('accountId', selectedValue);
+                          });
+                        }
                       }
 
                       // Basit buton ile hesap seçimi (dropdown sorunları için alternatif)
@@ -901,6 +933,46 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
+  /// İşlem türü ve para birimine göre en uygun hesabı seç
+  String? _selectBestAccount(List<Account> accounts, dynamic formState) {
+    final transactionType = formState.type;
+    final currency = formState.currency ?? 'TRY';
+    
+    debugPrint('DEBUG: Hesap seçimi - İşlem türü: $transactionType, Para birimi: $currency');
+    
+    // 1. Öncelik: İşlem türü ve para birimine uygun hesap
+    if (transactionType == PaymentTransactionType.cash) {
+      // Nakit işlem için: Nakit hesabı + aynı para birimi
+      final cashAccounts = accounts.where((account) => 
+        account.type == AccountType.cash && 
+        account.currency == currency
+      ).toList();
+      
+      if (cashAccounts.isNotEmpty) {
+        debugPrint('DEBUG: Nakit hesabı bulundu: ${cashAccounts.first.name}');
+        return cashAccounts.first.id;
+      }
+    }
+    
+    // 2. İkinci öncelik: Aynı para birimindeki hesaplar
+    final sameCurrencyAccounts = accounts.where((account) => 
+      account.currency == currency
+    ).toList();
+    
+    if (sameCurrencyAccounts.isNotEmpty) {
+      debugPrint('DEBUG: Aynı para birimindeki hesap bulundu: ${sameCurrencyAccounts.first.name}');
+      return sameCurrencyAccounts.first.id;
+    }
+    
+    // 3. Son seçenek: İlk hesap
+    if (accounts.isNotEmpty) {
+      debugPrint('DEBUG: Varsayılan hesap seçildi: ${accounts.first.name}');
+      return accounts.first.id;
+    }
+    
+    return null;
+  }
+
   /// Hesap seçim dialog'unu göster
   void _showAccountSelectionDialog(
       BuildContext context, List<Account> accounts, dynamic formState) {
@@ -911,8 +983,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           title: const Text('Hesap Seçin'),
           content: ConstrainedBox(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.6, // Ekranın %60'ı
-              maxWidth: MediaQuery.of(context).size.width * 0.9,   // Ekranın %90'ı
+              maxHeight:
+                  MediaQuery.of(context).size.height * 0.6, // Ekranın %60'ı
+              maxWidth:
+                  MediaQuery.of(context).size.width * 0.9, // Ekranın %90'ı
             ),
             child: accounts.isEmpty
                 ? const Center(
