@@ -841,9 +841,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Hesap transferi için müşteri+tedarikçi karışık seçim
+              // Hesap transferi için hesap seçimi
               if (formState.type == PaymentTransactionType.accountTransfer)
-                _buildSimpleAccountTransferField(formState)
+                _buildAccountTransferFields(formState)
               else ...[
                 // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
                 if (formState.isCustomerSelectionRequired &&
@@ -1118,22 +1118,26 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
           final selectedCustomerId = formState.customerId;
           final selectedSupplierId = formState.supplierId;
-          
+
           if (selectedCustomerId != null || selectedSupplierId != null) {
             // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
             filteredAccounts = accounts.where((account) {
               // Seçili müşteri ile aynı hesap filtrelenmeli
-              if (selectedCustomerId != null && 
-                  account.name.toLowerCase().contains(selectedCustomerId.toLowerCase())) {
+              if (selectedCustomerId != null &&
+                  account.name
+                      .toLowerCase()
+                      .contains(selectedCustomerId.toLowerCase())) {
                 return false; // Aynı müşteri hesabı filtrelenir
               }
-              
+
               // Seçili tedarikçi ile aynı hesap filtrelenmeli
-              if (selectedSupplierId != null && 
-                  account.name.toLowerCase().contains(selectedSupplierId.toLowerCase())) {
+              if (selectedSupplierId != null &&
+                  account.name
+                      .toLowerCase()
+                      .contains(selectedSupplierId.toLowerCase())) {
                 return false; // Aynı tedarikçi hesabı filtrelenir
               }
-              
+
               return true; // Diğer hesaplar gösterilir
             }).toList();
           }
@@ -1381,76 +1385,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
-  /// Basit hesap transferi widget'ı - sadece dialog
-  Widget _buildSimpleAccountTransferField(dynamic formState) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Müşteri/Tedarikçi Seçimi',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () => _showSimpleAccountTransferDialog(formState),
-            icon: const Icon(Icons.people),
-            label: Consumer(
-              builder: (context, ref, child) {
-                final selectedId = formState.customerId ?? formState.supplierId;
-                if (selectedId == null) {
-                  return const Text('Müşteri/Tedarikçi Seçin');
-                }
-
-                // Müşteri ID'si varsa müşteri adını bul
-                if (formState.customerId != null) {
-                  final customersAsync = ref.watch(customersProvider);
-                  return customersAsync.when(
-                    data: (customers) {
-                      try {
-                        final customer =
-                            customers.firstWhere((c) => c.id == selectedId);
-                        return Text('Seçili: ${customer.name} (Müşteri)');
-                      } catch (e) {
-                        return Text('Seçili: $selectedId');
-                      }
-                    },
-                    loading: () => Text('Seçili: $selectedId'),
-                    error: (error, stack) => Text('Seçili: $selectedId'),
-                  );
-                }
-
-                // Tedarikçi ID'si varsa tedarikçi adını bul
-                if (formState.supplierId != null) {
-                  final suppliersAsync = ref.watch(suppliersProvider);
-                  return suppliersAsync.when(
-                    data: (suppliers) {
-                      try {
-                        final supplier =
-                            suppliers.firstWhere((s) => s.id == selectedId);
-                        return Text('Seçili: ${supplier.name} (Tedarikçi)');
-                      } catch (e) {
-                        return Text('Seçili: $selectedId');
-                      }
-                    },
-                    loading: () => Text('Seçili: $selectedId'),
-                    error: (error, stack) => Text('Seçili: $selectedId'),
-                  );
-                }
-
-                return const Text('Müşteri/Tedarikçi Seçin');
-              },
-            ),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              alignment: Alignment.centerLeft,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 
   /// Hesap transferi için özel işlem türü widget'ı
   Widget _buildTransactionTypeFieldForTransfer(dynamic formState) {
@@ -1525,89 +1459,181 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
-  /// Basit hesap transferi dialog'u
-  void _showSimpleAccountTransferDialog(dynamic formState) {
+
+  /// Hesap adından ID'leri temizle
+  String _cleanAccountName(String accountName) {
+    // ID'leri temizle (genellikle _ ile başlayan veya uzun string'ler)
+    String cleaned = accountName;
+    
+    // Müşteri/tedarikçi ID'lerini temizle
+    // Örnek: "Ahmet Yılmaz_customer_123" -> "Ahmet Yılmaz"
+    cleaned = cleaned.replaceAll(RegExp(r'_[a-zA-Z0-9_]+$'), '');
+    cleaned = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_]{20,}'), '');
+    
+    // Fazla boşlukları temizle
+    cleaned = cleaned.trim();
+    
+    return cleaned.isEmpty ? accountName : cleaned;
+  }
+
+  /// Cari virman için hesap seçimi alanları
+  Widget _buildAccountTransferFields(dynamic formState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Kaynak hesap seçimi
+        const Text(
+          'Kaynak Hesap',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Consumer(
+          builder: (context, ref, child) {
+            final accountsAsync = ref.watch(accountsProvider);
+            return accountsAsync.when(
+              data: (accounts) {
+                final activeAccounts = accounts
+                    .where((account) => account.isActive && account.status == AccountStatus.active)
+                    .toList();
+                
+                return GestureDetector(
+                  onTap: () => _showSourceAccountDialog(context, activeAccounts, formState),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 56),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.account_balance_wallet, color: Colors.grey, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _getSelectedSourceAccountName(formState),
+                            style: const TextStyle(fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              loading: () => const CircularProgressIndicator(),
+              error: (error, stack) => Text('Hesaplar yüklenemedi: $error'),
+            );
+          },
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Hedef hesap seçimi
+        const Text(
+          'Hedef Hesap',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Consumer(
+          builder: (context, ref, child) {
+            final accountsAsync = ref.watch(accountsProvider);
+            return accountsAsync.when(
+              data: (accounts) {
+                final activeAccounts = accounts
+                    .where((account) => account.isActive && account.status == AccountStatus.active)
+                    .toList();
+                
+                return GestureDetector(
+                  onTap: () => _showTargetAccountDialog(context, activeAccounts, formState),
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 56),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.account_balance, color: Colors.grey, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _getSelectedTargetAccountName(formState),
+                            style: const TextStyle(fontSize: 16),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                      ],
+                    ),
+                  ),
+                );
+              },
+              loading: () => const CircularProgressIndicator(),
+              error: (error, stack) => Text('Hesaplar yüklenemedi: $error'),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  /// Seçili kaynak hesap adı
+  String _getSelectedSourceAccountName(dynamic formState) {
+    final sourceAccountId = formState.sourceAccountId;
+    if (sourceAccountId == null) return 'Kaynak Hesap Seçin';
+    return 'Seçili: $sourceAccountId';
+  }
+
+  /// Seçili hedef hesap adı
+  String _getSelectedTargetAccountName(dynamic formState) {
+    final targetAccountId = formState.targetAccountId;
+    if (targetAccountId == null) return 'Hedef Hesap Seçin';
+    return 'Seçili: $targetAccountId';
+  }
+
+  /// Kaynak hesap dialog'u
+  void _showSourceAccountDialog(BuildContext context, List<Account> accounts, dynamic formState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Müşteri/Tedarikçi Seçin'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: Consumer(
-            builder: (context, ref, child) {
-              final customersAsync = ref.watch(customersProvider);
-              final suppliersAsync = ref.watch(suppliersProvider);
-
-              return customersAsync.when(
-                data: (customers) => suppliersAsync.when(
-                  data: (suppliers) {
-                    final allEntities = <Map<String, dynamic>>[];
-
-                    // Müşterileri ekle
-                    for (final customer in customers) {
-                      allEntities.add({
-                        'id': customer.id,
-                        'name': customer.name,
-                        'type': 'Müşteri',
-                      });
-                    }
-
-                    // Tedarikçileri ekle
-                    for (final supplier in suppliers) {
-                      allEntities.add({
-                        'id': supplier.id,
-                        'name': supplier.name,
-                        'type': 'Tedarikçi',
-                      });
-                    }
-
-                    // İsme göre sırala
-                    allEntities.sort((a, b) => a['name'].compareTo(b['name']));
-
-                    return ListView.builder(
-                      itemCount: allEntities.length,
-                      itemBuilder: (context, index) {
-                        final entity = allEntities[index];
-                        return ListTile(
-                          leading: Icon(
-                            entity['type'] == 'Müşteri'
-                                ? Icons.person
-                                : Icons.business,
-                            color: entity['type'] == 'Müşteri'
-                                ? Colors.blue
-                                : Colors.green,
-                          ),
-                          title: Text(entity['name']),
-                          subtitle: Text(entity['type']),
-                          onTap: () {
-                            if (entity['type'] == 'Müşteri') {
-                              _updateField('customerId', entity['id']);
-                              _updateField('supplierId', null);
-                            } else {
-                              _updateField('supplierId', entity['id']);
-                              _updateField('customerId', null);
-                            }
-                            Navigator.pop(context);
-                          },
-                        );
-                      },
-                    );
-                  },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) =>
-                      Text('Tedarikçiler yüklenemedi: $error'),
+        title: const Text('Kaynak Hesap Seçin'),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: accounts.length,
+            itemBuilder: (context, index) {
+              final account = accounts[index];
+              return ListTile(
+                leading: Icon(
+                  _getAccountTypeIcon(account.type),
+                  color: _getAccountTypeColor(account.type),
                 ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Text('Müşteriler yüklenemedi: $error'),
+                title: Text(
+                  _cleanAccountName(account.name),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () {
+                  _updateField('sourceAccountId', account.id);
+                  Navigator.of(context).pop();
+                },
               );
             },
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(context).pop(),
             child: const Text('İptal'),
           ),
         ],
@@ -1615,19 +1641,50 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
-  /// Hesap adından ID'leri temizle
-  String _cleanAccountName(String accountName) {
-    // ID'leri temizle (genellikle _ ile başlayan veya uzun string'ler)
-    String cleaned = accountName;
-
-    // Müşteri/tedarikçi ID'lerini temizle
-    // Örnek: "Ahmet Yılmaz_customer_123" -> "Ahmet Yılmaz"
-    cleaned = cleaned.replaceAll(RegExp(r'_[a-zA-Z0-9_]+$'), '');
-    cleaned = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_]{20,}'), '');
-
-    // Fazla boşlukları temizle
-    cleaned = cleaned.trim();
-
-    return cleaned.isEmpty ? accountName : cleaned;
+  /// Hedef hesap dialog'u
+  void _showTargetAccountDialog(BuildContext context, List<Account> accounts, dynamic formState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hedef Hesap Seçin'),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6,
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+          ),
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: accounts.length,
+            itemBuilder: (context, index) {
+              final account = accounts[index];
+              return ListTile(
+                leading: Icon(
+                  _getAccountTypeIcon(account.type),
+                  color: _getAccountTypeColor(account.type),
+                ),
+                title: Text(
+                  _cleanAccountName(account.name),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: Text(
+                  '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap: () {
+                  _updateField('targetAccountId', account.id);
+                  Navigator.of(context).pop();
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('İptal'),
+          ),
+        ],
+      ),
+    );
   }
 }
