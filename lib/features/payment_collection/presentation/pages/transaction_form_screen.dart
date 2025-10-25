@@ -835,20 +835,25 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
-              if (formState.isCustomerSelectionRequired &&
-                  widget.customerId == null)
-                TransactionFormFields.buildCustomerField(
-                  formState: formState,
-                  onChanged: (value) => _updateField('customerId', value),
-                ),
+              // Hesap transferi için müşteri+tedarikçi karışık seçim
+              if (formState.type == PaymentTransactionType.accountTransfer)
+                _buildAccountTransferField(formState)
+              else ...[
+                // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
+                if (formState.isCustomerSelectionRequired &&
+                    widget.customerId == null)
+                  TransactionFormFields.buildCustomerField(
+                    formState: formState,
+                    onChanged: (value) => _updateField('customerId', value),
+                  ),
 
-              if (formState.isSupplierSelectionRequired &&
-                  widget.supplierId == null)
-                TransactionFormFields.buildSupplierField(
-                  formState: formState,
-                  onChanged: (value) => _updateField('supplierId', value),
-                ),
+                if (formState.isSupplierSelectionRequired &&
+                    widget.supplierId == null)
+                  TransactionFormFields.buildSupplierField(
+                    formState: formState,
+                    onChanged: (value) => _updateField('supplierId', value),
+                  ),
+              ],
 
               const SizedBox(height: 16),
 
@@ -1339,5 +1344,118 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         Navigator.pop(context, true);
       }
     }
+  }
+
+  /// Hesap transferi için müşteri+tedarikçi karışık seçim widget'ı
+  Widget _buildAccountTransferField(dynamic formState) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final customersAsync = ref.watch(customersProvider);
+        final suppliersAsync = ref.watch(suppliersProvider);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Müşteri/Tedarikçi Seçimi',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                customersAsync.when(
+                  data: (customers) => suppliersAsync.when(
+                    data: (suppliers) {
+                      // Müşteri ve tedarikçileri birleştir
+                      final allEntities = <Map<String, dynamic>>[];
+                      
+                      // Müşterileri ekle
+                      for (final customer in customers) {
+                        allEntities.add({
+                          'id': customer.id,
+                          'name': customer.name,
+                          'type': 'Müşteri',
+                          'entity': customer,
+                        });
+                      }
+                      
+                      // Tedarikçileri ekle
+                      for (final supplier in suppliers) {
+                        allEntities.add({
+                          'id': supplier.id,
+                          'name': supplier.name,
+                          'type': 'Tedarikçi',
+                          'entity': supplier,
+                        });
+                      }
+
+                      // İsme göre sırala
+                      allEntities.sort((a, b) => a['name'].compareTo(b['name']));
+
+                      return Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: formState.customerId ?? formState.supplierId,
+                          decoration: const InputDecoration(
+                            labelText: 'Müşteri/Tedarikçi Seçin',
+                            border: OutlineInputBorder(),
+                          ),
+                          items: allEntities.map((entity) {
+                            return DropdownMenuItem<String>(
+                              value: entity['id'],
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    entity['type'] == 'Müşteri' 
+                                        ? Icons.person 
+                                        : Icons.business,
+                                    size: 16,
+                                    color: entity['type'] == 'Müşteri' 
+                                        ? Colors.blue 
+                                        : Colors.green,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      '${entity['name']} (${entity['type']})',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              final entity = allEntities.firstWhere(
+                                (e) => e['id'] == value,
+                              );
+                              
+                              if (entity['type'] == 'Müşteri') {
+                                _updateField('customerId', value);
+                                _updateField('supplierId', null);
+                              } else {
+                                _updateField('supplierId', value);
+                                _updateField('customerId', null);
+                              }
+                            }
+                          },
+                        ),
+                      );
+                    },
+                    loading: () => const CircularProgressIndicator(),
+                    error: (error, stack) => Text('Tedarikçiler yüklenemedi: $error'),
+                  ),
+                  loading: () => const CircularProgressIndicator(),
+                  error: (error, stack) => Text('Müşteriler yüklenemedi: $error'),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
   }
 }
