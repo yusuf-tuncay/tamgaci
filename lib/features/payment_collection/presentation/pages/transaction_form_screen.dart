@@ -1639,25 +1639,4 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
-  /// Seçili Virman Hesabı Adı (Form'dan)
-  String _getSelectedVirmanAccountNameFromForm(dynamic formState) {
-    final targetAccountId = formState.targetAccountId;
-    if (targetAccountId == null) return 'Virman hesabı seçin';
-
-    // Seçili hesabın adını bulmak için müşteri/tedarikçi verilerini kullan
-    return 'Seçili Hesap: $targetAccountId';
-  }
-
-  /// Seçili Virman Hesabı Adı (Dialog için)
-  String _getSelectedVirmanAccountName(
-      String? accountId, List<Map<String, dynamic>> entities) {
-    if (accountId == null) return 'Virman hesabı seçin';
-
-    final entity = entities.firstWhere(
-      (e) => e['id'] == accountId,
-      orElse: () => {'name': 'Bilinmeyen', 'type': ''},
-    );
-
-    return '${entity['name']} (${entity['type']})';
-  }
 }
