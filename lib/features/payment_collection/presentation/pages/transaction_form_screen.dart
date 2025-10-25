@@ -625,8 +625,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Hesap seçimi - Güvenli dropdown implementasyonu
-              Consumer(
+              // Hesap seçimi - Borç/Alacak fişleri için gizle
+              if (formState.type != PaymentTransactionType.debtReceipt &&
+                  formState.type != PaymentTransactionType.creditReceipt)
+                Consumer(
                 builder: (context, ref, child) {
                   // Önce activeAccountsProvider'ı dene, başarısız olursa accountsProvider'ı kullan
                   final activeAccountsAsync = ref.watch(activeAccountsProvider);
@@ -829,7 +831,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     },
                   );
                 },
-              ),
+                ),
 
               const SizedBox(height: 16),
 
