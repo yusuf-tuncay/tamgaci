@@ -703,14 +703,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       }
 
                       // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
-                      final newSelectedValue = _selectBestAccount(activeAccounts, formState);
-                      if (newSelectedValue != null && newSelectedValue != selectedValue) {
+                      final newSelectedValue =
+                          _selectBestAccount(activeAccounts, formState);
+                      if (newSelectedValue != null &&
+                          newSelectedValue != selectedValue) {
                         selectedValue = newSelectedValue;
                         // Seçilen hesabı form'a kaydet
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           _updateField('accountId', selectedValue);
                         });
-                      } else if (selectedValue == null && activeAccounts.isNotEmpty) {
+                      } else if (selectedValue == null &&
+                          activeAccounts.isNotEmpty) {
                         // Eğer hiç seçili değilse, ilk hesabı seç
                         selectedValue = activeAccounts.first.id;
                         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -972,21 +975,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return cashAccounts.first.id;
       }
     } else if (transactionType == PaymentTransactionType.creditCard) {
-      // Kredi kartı işlemi için: Banka hesabı + aynı para birimi
-      final bankAccounts = accounts
+      // Kredi kartı işlemi için: Kredi kartı hesabı + aynı para birimi
+      final creditAccounts = accounts
           .where((account) =>
-              account.type == AccountType.checking && account.currency == currency)
+              account.type == AccountType.credit &&
+              account.currency == currency)
           .toList();
 
-      if (bankAccounts.isNotEmpty) {
-        debugPrint('DEBUG: Banka hesabı bulundu: ${bankAccounts.first.name}');
-        return bankAccounts.first.id;
+      if (creditAccounts.isNotEmpty) {
+        debugPrint('DEBUG: Kredi kartı hesabı bulundu: ${creditAccounts.first.name}');
+        return creditAccounts.first.id;
       }
     } else if (transactionType == PaymentTransactionType.eftTransfer) {
       // EFT/Havale için: Banka hesabı + aynı para birimi
       final bankAccounts = accounts
           .where((account) =>
-              account.type == AccountType.checking && account.currency == currency)
+              account.type == AccountType.checking &&
+              account.currency == currency)
           .toList();
 
       if (bankAccounts.isNotEmpty) {
