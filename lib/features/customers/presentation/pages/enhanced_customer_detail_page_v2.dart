@@ -2199,9 +2199,10 @@ class _EnhancedCustomerDetailPageV2State
           borderRadius: BorderRadius.circular(16),
         ),
         child: Container(
-          width: MediaQuery.of(context).size.width > 768 
-              ? MediaQuery.of(context).size.width * 0.6  // Masaüstü için %60 genişlik
-              : double.infinity,  // Mobil için tam genişlik
+          width: MediaQuery.of(context).size.width > 768
+              ? MediaQuery.of(context).size.width *
+                  0.6 // Masaüstü için %60 genişlik
+              : double.infinity, // Mobil için tam genişlik
           height: MediaQuery.of(context).size.height * 0.9,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),

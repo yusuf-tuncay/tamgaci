@@ -135,6 +135,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
     // Açıklama alanını otomatik doldur
     _setDefaultDescription();
+
+    // Varsayılan hesap ayarla
+    _setDefaultAccount();
   }
 
   void _setDefaultTransactionType() {
@@ -173,6 +176,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
 
     formNotifier.updateField('currency', defaultCurrency);
+  }
+
+  /// Varsayılan hesap ayarla
+  void _setDefaultAccount() {
+    final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
+    // Varsayılan hesap ID'si - gerçek uygulamada kullanıcının varsayılan hesabı olabilir
+    String defaultAccountId = 'default_account_1'; // Varsayılan hesap ID'si
+    formNotifier.updateField('accountId', defaultAccountId);
   }
 
   void _setDefaultDescription() {
@@ -488,6 +499,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               if (widget.customerId != null) _buildSelectedCustomerInfo(),
 
               if (widget.supplierId != null) _buildSelectedSupplierInfo(),
+
+              // Müşteri/tedarikçi bilgisi ile form alanları arasında boşluk
+              if (widget.customerId != null || widget.supplierId != null)
+                const SizedBox(height: 16),
 
               // İşlem türü ve yönü
               TransactionFormFields.buildTransactionTypeField(
