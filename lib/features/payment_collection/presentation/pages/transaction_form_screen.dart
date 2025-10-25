@@ -545,19 +545,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 const SizedBox(height: 16),
 
               // İşlem türü ve yönü
-              // İşlem türü - Hesap transferi için özel widget
-              if (formState.type == PaymentTransactionType.accountTransfer)
-                _buildTransactionTypeFieldForTransfer(formState)
-              else
-                TransactionFormFields.buildTransactionTypeField(
-                  formState: formState,
-                  onChanged: (value) {
-                    _updateField('type', value);
-                    // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
-                    _updateAccountSelection();
-                  },
-                  enabled: widget.transactionId == null,
-                ),
+              // İşlem türü - Tüm durumlar için özel widget
+              _buildTransactionTypeFieldForTransfer(formState),
 
               const SizedBox(height: 16),
 
@@ -629,9 +618,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
-              // Hesap seçimi - Borç/Alacak fişleri için gizle
+              // Hesap seçimi - Borç/Alacak fişleri ve Cari Virman için gizle
               if (formState.type != PaymentTransactionType.debtReceipt &&
-                  formState.type != PaymentTransactionType.creditReceipt)
+                  formState.type != PaymentTransactionType.creditReceipt &&
+                  formState.type != PaymentTransactionType.accountTransfer)
                 Consumer(
                   builder: (context, ref, child) {
                     // Önce activeAccountsProvider'ı dene, başarısız olursa accountsProvider'ı kullan
@@ -1040,6 +1030,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       }
     } else if (transactionType == PaymentTransactionType.eftTransfer) {
       // EFT/Havale için: Banka hesabı + aynı para birimi
+      // Önce AccountType.checking türündeki hesapları ara
       final bankAccounts = accounts
           .where((account) =>
               account.type == AccountType.checking &&
@@ -1047,7 +1038,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           .toList();
 
       if (bankAccounts.isNotEmpty) {
-        debugPrint('DEBUG: Banka hesabı bulundu: ${bankAccounts.first.name}');
+        debugPrint(
+            'DEBUG: Banka hesabı (checking) bulundu: ${bankAccounts.first.name}');
         return bankAccounts.first.id;
       }
 
@@ -1057,7 +1049,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               account.currency == currency &&
               (account.name.toLowerCase().contains('banka') ||
                   account.name.toLowerCase().contains('bank') ||
-                  account.name.toLowerCase().contains('çek') ||
                   account.name.toLowerCase().contains('checking')))
           .toList();
 
@@ -1067,9 +1058,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return bankByName.first.id;
       }
 
-      // Eğer banka hesabı hiç bulunamazsa, null döndür (hesap yok göster)
+      // Eğer hiç banka hesabı bulunamazsa, null döndür
       debugPrint(
-          'DEBUG: EFT için banka hesabı bulunamadı - hesap yok gösterilecek');
+          'DEBUG: EFT/Havale için uygun banka hesabı bulunamadı - banka entegrasyonu gerekli');
       return null;
     } else if (transactionType == PaymentTransactionType.promissoryNote) {
       // Senet işlemi için: Senet hesabı + aynı para birimi
@@ -1420,13 +1411,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('İşlem Türü Seçin'),
-        content: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-            maxWidth: MediaQuery.of(context).size.width * 0.9,
-          ),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.9,
+          height: MediaQuery.of(context).size.height * 0.6,
           child: ListView.builder(
-            shrinkWrap: true,
             itemCount: PaymentTransactionType.values.length,
             itemBuilder: (context, index) {
               final type = PaymentTransactionType.values[index];
@@ -1443,6 +1431,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   _updateField('type', type);
                   _updateAccountSelection();
                   Navigator.pop(context);
+                  // State'i yeniden tetiklemek için setState çağır
+                  if (mounted) {
+                    setState(() {});
+                  }
                 },
               );
             },
