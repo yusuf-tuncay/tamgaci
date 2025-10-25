@@ -644,8 +644,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       // Debug: Hesap sayısını logla
                       debugPrint('DEBUG: Loaded ${accounts.length} accounts');
                       for (final account in accounts) {
-        debugPrint(
-            'DEBUG: Account - ${account.name}, Type: ${account.type}, Active: ${account.isActive}, Status: ${account.status}');
+                        debugPrint(
+                            'DEBUG: Account - ${account.name}, Type: ${account.type}, Active: ${account.isActive}, Status: ${account.status}');
                       }
 
                       // Aktif hesapları filtrele (eğer activeAccountsProvider çalışmıyorsa)
@@ -1015,8 +1015,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             .where((account) =>
                 account.currency == currency &&
                 (account.name.toLowerCase().contains('kredi kartı') ||
-                 account.name.toLowerCase().contains('credit card') ||
-                 account.name.toLowerCase().contains('kart')))
+                    account.name.toLowerCase().contains('credit card') ||
+                    account.name.toLowerCase().contains('kart')))
             .toList();
 
         if (creditCardByName.isNotEmpty) {
@@ -1036,6 +1036,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       if (bankAccounts.isNotEmpty) {
         debugPrint('DEBUG: Banka hesabı bulundu: ${bankAccounts.first.name}');
         return bankAccounts.first.id;
+      }
+    } else if (transactionType == PaymentTransactionType.promissoryNote) {
+      // Senet işlemi için: Senet hesabı + aynı para birimi
+      final promissoryAccounts = accounts
+          .where((account) =>
+              account.currency == currency &&
+              (account.name.toLowerCase().contains('senet') ||
+               account.name.toLowerCase().contains('promissory')))
+          .toList();
+
+      if (promissoryAccounts.isNotEmpty) {
+        debugPrint('DEBUG: Senet hesabı bulundu: ${promissoryAccounts.first.name}');
+        return promissoryAccounts.first.id;
       }
     }
 
