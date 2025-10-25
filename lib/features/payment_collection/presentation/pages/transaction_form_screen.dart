@@ -192,7 +192,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           if (supplier != null) {
             defaultCurrency = supplier.currency;
             formNotifier.updateField('currency', defaultCurrency);
-            debugPrint('DEBUG: Tedarikçi para birimi seçildi: $defaultCurrency');
+            debugPrint(
+                'DEBUG: Tedarikçi para birimi seçildi: $defaultCurrency');
           } else {
             formNotifier.updateField('currency', defaultCurrency);
           }
@@ -546,7 +547,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               // İşlem türü ve yönü
               TransactionFormFields.buildTransactionTypeField(
                 formState: formState,
-                onChanged: (value) => _updateField('type', value),
+                onChanged: (value) {
+                  _updateField('type', value);
+                  // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
+                  _updateAccountSelection();
+                },
                 enabled: widget.transactionId == null,
               ),
 
@@ -697,15 +702,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                         selectedValue = null;
                       }
 
-                      // Eğer hiç seçili değilse, işlem türü ve para birimine göre uygun hesabı seç
-                      if (selectedValue == null && activeAccounts.isNotEmpty) {
-                        selectedValue = _selectBestAccount(activeAccounts, formState);
-                        if (selectedValue != null) {
-                          // Seçilen hesabı form'a kaydet
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            _updateField('accountId', selectedValue);
-                          });
-                        }
+                      // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
+                      final newSelectedValue = _selectBestAccount(activeAccounts, formState);
+                      if (newSelectedValue != null && newSelectedValue != selectedValue) {
+                        selectedValue = newSelectedValue;
+                        // Seçilen hesabı form'a kaydet
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _updateField('accountId', selectedValue);
+                        });
+                      } else if (selectedValue == null && activeAccounts.isNotEmpty) {
+                        // Eğer hiç seçili değilse, ilk hesabı seç
+                        selectedValue = activeAccounts.first.id;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _updateField('accountId', selectedValue);
+                        });
                       }
 
                       // Basit buton ile hesap seçimi (dropdown sorunları için alternatif)
@@ -893,6 +903,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     ref.read(paymentTransactionFormProvider.notifier).updateField(field, value);
   }
 
+  /// İşlem türü değiştiğinde hesap seçimini güncelle
+  void _updateAccountSelection() {
+    // Hesap seçimini yeniden hesaplamak için state'i güncelle
+    setState(() {
+      // Bu, hesap seçimi widget'ının yeniden render edilmesini sağlar
+    });
+  }
+
   /// Hesap türüne göre ikon döndür
   IconData _getAccountTypeIcon(AccountType type) {
     switch (type) {
@@ -937,39 +955,62 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   String? _selectBestAccount(List<Account> accounts, dynamic formState) {
     final transactionType = formState.type;
     final currency = formState.currency ?? 'TRY';
-    
-    debugPrint('DEBUG: Hesap seçimi - İşlem türü: $transactionType, Para birimi: $currency');
-    
+
+    debugPrint(
+        'DEBUG: Hesap seçimi - İşlem türü: $transactionType, Para birimi: $currency');
+
     // 1. Öncelik: İşlem türü ve para birimine uygun hesap
     if (transactionType == PaymentTransactionType.cash) {
       // Nakit işlem için: Nakit hesabı + aynı para birimi
-      final cashAccounts = accounts.where((account) => 
-        account.type == AccountType.cash && 
-        account.currency == currency
-      ).toList();
-      
+      final cashAccounts = accounts
+          .where((account) =>
+              account.type == AccountType.cash && account.currency == currency)
+          .toList();
+
       if (cashAccounts.isNotEmpty) {
         debugPrint('DEBUG: Nakit hesabı bulundu: ${cashAccounts.first.name}');
         return cashAccounts.first.id;
       }
+    } else if (transactionType == PaymentTransactionType.creditCard) {
+      // Kredi kartı işlemi için: Banka hesabı + aynı para birimi
+      final bankAccounts = accounts
+          .where((account) =>
+              account.type == AccountType.checking && account.currency == currency)
+          .toList();
+
+      if (bankAccounts.isNotEmpty) {
+        debugPrint('DEBUG: Banka hesabı bulundu: ${bankAccounts.first.name}');
+        return bankAccounts.first.id;
+      }
+    } else if (transactionType == PaymentTransactionType.eftTransfer) {
+      // EFT/Havale için: Banka hesabı + aynı para birimi
+      final bankAccounts = accounts
+          .where((account) =>
+              account.type == AccountType.checking && account.currency == currency)
+          .toList();
+
+      if (bankAccounts.isNotEmpty) {
+        debugPrint('DEBUG: Banka hesabı bulundu: ${bankAccounts.first.name}');
+        return bankAccounts.first.id;
+      }
     }
-    
+
     // 2. İkinci öncelik: Aynı para birimindeki hesaplar
-    final sameCurrencyAccounts = accounts.where((account) => 
-      account.currency == currency
-    ).toList();
-    
+    final sameCurrencyAccounts =
+        accounts.where((account) => account.currency == currency).toList();
+
     if (sameCurrencyAccounts.isNotEmpty) {
-      debugPrint('DEBUG: Aynı para birimindeki hesap bulundu: ${sameCurrencyAccounts.first.name}');
+      debugPrint(
+          'DEBUG: Aynı para birimindeki hesap bulundu: ${sameCurrencyAccounts.first.name}');
       return sameCurrencyAccounts.first.id;
     }
-    
+
     // 3. Son seçenek: İlk hesap
     if (accounts.isNotEmpty) {
       debugPrint('DEBUG: Varsayılan hesap seçildi: ${accounts.first.name}');
       return accounts.first.id;
     }
-    
+
     return null;
   }
 
