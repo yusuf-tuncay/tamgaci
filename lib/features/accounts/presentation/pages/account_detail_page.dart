@@ -71,22 +71,43 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         final accountsAsync = ref.watch(accountsProvider);
         final account = accountsAsync.when(
           data: (accounts) {
+            debugPrint('AccountDetailPage build - Total accounts: ${accounts.length}');
+            debugPrint('AccountDetailPage build - Looking for account ID: ${widget.account.id}');
+            
+            // Tüm hesapları listele
+            for (var acc in accounts) {
+              debugPrint('AccountDetailPage build - Available account: ${acc.name} (ID: ${acc.id})');
+            }
+            
             // Güncel hesap verisini bul
             final updatedAccount = accounts.firstWhere(
               (acc) => acc.id == widget.account.id,
-              orElse: () => widget.account,
+              orElse: () {
+                debugPrint('AccountDetailPage build - Account not found, using widget.account');
+                return widget.account;
+              },
             );
-            debugPrint('AccountDetailPage build - Riverpod account: ${updatedAccount.name}');
-            debugPrint('AccountDetailPage build - Riverpod balance: ${updatedAccount.balance}');
+            
+            debugPrint('AccountDetailPage build - Found account: ${updatedAccount.name}');
+            debugPrint('AccountDetailPage build - Account balance: ${updatedAccount.balance}');
+            debugPrint('AccountDetailPage build - Account ID: ${updatedAccount.id}');
+            
             return updatedAccount;
           },
-          loading: () => widget.account,
-          error: (error, stack) => widget.account,
+          loading: () {
+            debugPrint('AccountDetailPage build - Provider loading, using widget.account');
+            return widget.account;
+          },
+          error: (error, stack) {
+            debugPrint('AccountDetailPage build - Provider error: $error, using widget.account');
+            return widget.account;
+          },
         );
-        
+
         debugPrint('AccountDetailPage build - final account: ${account.name}');
-        debugPrint('AccountDetailPage build - final balance: ${account.balance}');
-        
+        debugPrint(
+            'AccountDetailPage build - final balance: ${account.balance}');
+
         return Scaffold(
           backgroundColor: Colors.grey[50],
           body: CustomScrollView(
@@ -558,7 +579,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   void _editAccount() async {
     debugPrint('_editAccount - widget.account: ${widget.account.name}');
     debugPrint('_editAccount - widget.account.id: ${widget.account.id}');
-    
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -568,10 +589,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
 
     debugPrint('_editAccount - result: $result');
-    
+
     // Riverpod provider otomatik olarak güncelleyecek
     if (result == true) {
-      debugPrint('_editAccount - Account updated successfully, Riverpod will refresh automatically');
+      debugPrint(
+          '_editAccount - Account updated successfully, Riverpod will refresh automatically');
     } else {
       debugPrint('_editAccount - result is not true: $result');
     }
