@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
+import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 
 /// Hesap Detay Sayfası
 class AccountDetailPage extends ConsumerStatefulWidget {
@@ -1134,15 +1135,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     );
   }
 
-  void _updateExchangeRate() {
-    // Güncel kur oranları (Aralık 2024)
-    final exchangeRates = {
-      'TRY': {'USD': 0.033, 'EUR': 0.030, 'GBP': 0.026},
-      'USD': {'TRY': 30.50, 'EUR': 0.92, 'GBP': 0.79},
-      'EUR': {'TRY': 33.20, 'USD': 1.09, 'GBP': 0.86},
-      'GBP': {'TRY': 38.50, 'USD': 1.27, 'EUR': 1.16},
-    };
-
+  void _updateExchangeRate() async {
     final fromCurrency = widget.account.currency; // Hesap para birimi
     final toCurrency = _selectedCurrency; // Seçilen para birimi
 
@@ -1151,14 +1144,45 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
         if (fromCurrency == toCurrency) {
           _exchangeRateController.clear();
         } else {
-          final rate = exchangeRates[fromCurrency]?[toCurrency];
-          if (rate != null) {
-            _exchangeRateController.text = rate.toStringAsFixed(2);
-          } else {
-            _exchangeRateController.clear();
-          }
+          // Loading state
+          _exchangeRateController.text = 'Yükleniyor...';
         }
       });
+    }
+
+    if (fromCurrency != toCurrency) {
+      try {
+        final exchangeService = ExchangeRateService();
+        final fromRate = await exchangeService.getExchangeRate(fromCurrency);
+        final toRate = await exchangeService.getExchangeRate(toCurrency);
+
+        if (fromRate != null && toRate != null && mounted) {
+          // TRY'den diğer para birimlerine kur hesaplama
+          double rate;
+          if (fromCurrency == 'TRY') {
+            rate = toRate.rate; // TRY'den diğer para birimlerine
+          } else if (toCurrency == 'TRY') {
+            rate = 1.0 / fromRate.rate; // Diğer para birimlerinden TRY'ye
+          } else {
+            // İki yabancı para birimi arasında (TRY üzerinden)
+            rate = toRate.rate / fromRate.rate;
+          }
+
+          setState(() {
+            _exchangeRateController.text = rate.toStringAsFixed(4);
+          });
+        } else if (mounted) {
+          setState(() {
+            _exchangeRateController.text = 'Kur alınamadı';
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _exchangeRateController.text = 'Hata: ${e.toString()}';
+          });
+        }
+      }
     }
   }
 
