@@ -435,6 +435,13 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
+                      'Masraf Ekle',
+                      Icons.add_circle_outline,
+                      Colors.purple[600]!,
+                      _addExpense,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
                       'Hesap Sil',
                       Icons.delete,
                       Colors.red[600]!,
@@ -500,7 +507,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-
   void _editAccount() {
     context.pushNamed(
       'create-account',
@@ -526,7 +532,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 context.pop();
                 // Paylaşma işlemi
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Paylaşma özelliği yakında eklenecek')),
+                  const SnackBar(
+                      content: Text('Paylaşma özelliği yakında eklenecek')),
                 );
               },
             ),
@@ -548,7 +555,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 context.pop();
                 // Yazdırma işlemi
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Yazdırma özelliği yakında eklenecek')),
+                  const SnackBar(
+                      content: Text('Yazdırma özelliği yakında eklenecek')),
                 );
               },
             ),
@@ -567,7 +575,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       ),
     );
   }
-
 
   void _updateBalance() {
     showDialog(
@@ -602,12 +609,26 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
+  void _addExpense() {
+    showDialog(
+      context: context,
+      builder: (context) => _ExpenseDialog(
+        account: widget.account,
+        onExpenseAdded: () {
+          // Masraf eklendikten sonra sayfayı yenile
+          setState(() {});
+        },
+      ),
+    );
+  }
+
   void _deleteAccount() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hesap Sil'),
-        content: const Text('Bu hesabı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
+        content: const Text(
+            'Bu hesabı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
@@ -639,10 +660,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
       // Hesap silme işlemi burada yapılacak
       // TODO: Account service ile silme işlemi implement edilecek
-      
+
       // Loading'i kapat
       if (mounted) context.pop();
-      
+
       // Başarı mesajı
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -651,14 +672,14 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             backgroundColor: Colors.green,
           ),
         );
-        
+
         // Ana sayfaya dön
         context.goNamed('accounts-home');
       }
     } catch (e) {
       // Loading'i kapat
       if (mounted) context.pop();
-      
+
       // Hata mesajı
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -794,5 +815,280 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         ],
       ),
     );
+  }
+}
+
+/// Masraf Ekleme Dialog'u
+class _ExpenseDialog extends StatefulWidget {
+  final Account account;
+  final VoidCallback onExpenseAdded;
+
+  const _ExpenseDialog({
+    required this.account,
+    required this.onExpenseAdded,
+  });
+
+  @override
+  State<_ExpenseDialog> createState() => _ExpenseDialogState();
+}
+
+class _ExpenseDialogState extends State<_ExpenseDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _amountController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  
+  String _selectedCategory = 'Genel';
+  String _selectedCurrency = 'TRY';
+  bool _isLoading = false;
+
+  final List<String> _categories = [
+    'Genel',
+    'Ofis Malzemeleri',
+    'Ulaşım',
+    'Yemek',
+    'İletişim',
+    'Eğitim',
+    'Sağlık',
+    'Diğer',
+  ];
+
+  final List<String> _currencies = ['TRY', 'USD', 'EUR', 'GBP'];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCurrency = widget.account.currency;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.add_circle_outline, color: Colors.purple[600]),
+          const SizedBox(width: 8),
+          const Text('Masraf Ekle'),
+        ],
+      ),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Masraf Adı
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Masraf Adı *',
+                    hintText: 'Örn: Ofis malzemeleri',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.label_outline),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Masraf adı gerekli';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Kategori
+                DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: const InputDecoration(
+                    labelText: 'Kategori *',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.category_outlined),
+                  ),
+                  items: _categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCategory = value!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Para Birimi ve Miktar
+                Row(
+                  children: [
+                    // Para Birimi
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        value: _selectedCurrency,
+                        decoration: const InputDecoration(
+                          labelText: 'Para Birimi',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.attach_money),
+                        ),
+                        items: _currencies.map((currency) {
+                          return DropdownMenuItem(
+                            value: currency,
+                            child: Text(currency),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCurrency = value!;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Miktar
+                    Expanded(
+                      flex: 3,
+                      child: TextFormField(
+                        controller: _amountController,
+                        decoration: const InputDecoration(
+                          labelText: 'Miktar *',
+                          hintText: '0.00',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.money_outlined),
+                        ),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Miktar gerekli';
+                          }
+                          final amount = double.tryParse(value);
+                          if (amount == null || amount <= 0) {
+                            return 'Geçerli bir miktar girin';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Açıklama
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Açıklama',
+                    hintText: 'Masraf hakkında detaylar...',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.description_outlined),
+                  ),
+                  maxLines: 3,
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 16),
+
+                // Hesap Bilgisi
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.account_balance_wallet, 
+                           color: Colors.grey[600], size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Hesap: ${widget.account.name}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => context.pop(),
+          child: const Text('İptal'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _saveExpense,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.purple[600],
+            foregroundColor: Colors.white,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text('Masraf Ekle'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveExpense() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // TODO: Gerçek masraf ekleme işlemi burada yapılacak
+      // Şimdilik simüle ediyoruz
+      await Future.delayed(const Duration(seconds: 1));
+
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Masraf başarıyla eklendi: ${_nameController.text}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        widget.onExpenseAdded();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Masraf eklenirken hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 }
