@@ -38,11 +38,14 @@ class AccountsRoutes {
           path: '/accounts/create',
           name: 'create-account',
           builder: (context, state) {
+            debugPrint('Route - state.extra: ${state.extra}');
             final existingAccount = state.extra as Account?;
+            debugPrint('Route - existingAccount: ${existingAccount?.name}');
             return SubscriptionGuard(
               allowTrial: true,
               allowExpired: false,
-              child: accounts.CreateAccountPage(existingAccount: existingAccount),
+              child:
+                  accounts.CreateAccountPage(existingAccount: existingAccount),
             );
           },
         ),
