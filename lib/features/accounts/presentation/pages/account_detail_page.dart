@@ -278,7 +278,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 120,
+            width: 150,
             child: Text(
               label,
               style: GoogleFonts.poppins(
@@ -287,9 +287,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               ),
             ),
           ),
+          const SizedBox(width: 20),
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.end,
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
