@@ -1016,8 +1016,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                         onChanged: (value) {
                           _formatAmount(value);
                           _calculateConvertedAmount();
@@ -1026,7 +1026,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                           if (value == null || value.trim().isEmpty) {
                             return 'Miktar gerekli';
                           }
-                          final cleanValue = value.replaceAll('.', '').replaceAll(',', '.');
+                          final cleanValue =
+                              value.replaceAll('.', '').replaceAll(',', '.');
                           final amount = double.tryParse(cleanValue);
                           if (amount == null || amount <= 0) {
                             return 'Geçerli bir miktar girin';
@@ -1060,7 +1061,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                _formatCurrency(_convertedAmount, widget.account.currency),
+                                _formatCurrency(
+                                    _convertedAmount, widget.account.currency),
                                 style: GoogleFonts.poppins(
                                   fontSize: 14,
                                   color: Colors.blue[700],
@@ -1263,27 +1265,28 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   // Miktarı Türkçe formatla
   void _formatAmount(String value) {
     if (value.isEmpty) return;
-    
+
     // Sadece rakam ve virgül içeren değerleri işle
     final cleanValue = value.replaceAll(RegExp(r'[^\d,]'), '');
     if (cleanValue.isEmpty) return;
-    
+
     // Virgülü nokta ile değiştir
     final doubleValue = cleanValue.replaceAll(',', '.');
     final amount = double.tryParse(doubleValue);
-    
+
     if (amount != null) {
       // Türkçe formatla (1.000,00)
       final formatter = NumberFormat('#,##0.00', 'tr_TR');
       final formatted = formatter.format(amount);
-      
+
       // Cursor pozisyonunu koru
       final cursorPosition = _amountController.selection.baseOffset;
       _amountController.text = formatted;
-      
+
       // Cursor pozisyonunu ayarla
       if (cursorPosition <= formatted.length) {
-        _amountController.selection = TextSelection.collapsed(offset: cursorPosition);
+        _amountController.selection =
+            TextSelection.collapsed(offset: cursorPosition);
       }
     }
   }
@@ -1296,53 +1299,68 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   }
 
   // Dönüştürülmüş miktarı hesapla
-  void _calculateConvertedAmount() async {
+  void _calculateConvertedAmount() {
     if (_amountController.text.isEmpty) {
-      setState(() {
-        _convertedAmount = 0.0;
-      });
+      if (mounted) {
+        setState(() {
+          _convertedAmount = 0.0;
+        });
+      }
       return;
     }
 
     try {
       // Miktarı temizle ve parse et
-      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final cleanValue =
+          _amountController.text.replaceAll('.', '').replaceAll(',', '.');
       final amount = double.tryParse(cleanValue);
-      
+
       if (amount == null || amount <= 0) {
-        setState(() {
-          _convertedAmount = 0.0;
-        });
+        if (mounted) {
+          setState(() {
+            _convertedAmount = 0.0;
+          });
+        }
         return;
       }
 
       // Kur bilgisini al
       final exchangeRateText = _exchangeRateController.text;
-      if (exchangeRateText.isEmpty || exchangeRateText == 'Yükleniyor...' || exchangeRateText.contains('Hata')) {
-        setState(() {
-          _convertedAmount = 0.0;
-        });
+      if (exchangeRateText.isEmpty ||
+          exchangeRateText == 'Yükleniyor...' ||
+          exchangeRateText.contains('Hata')) {
+        if (mounted) {
+          setState(() {
+            _convertedAmount = 0.0;
+          });
+        }
         return;
       }
 
       final exchangeRate = double.tryParse(exchangeRateText);
       if (exchangeRate == null || exchangeRate <= 0) {
-        setState(() {
-          _convertedAmount = 0.0;
-        });
+        if (mounted) {
+          setState(() {
+            _convertedAmount = 0.0;
+          });
+        }
         return;
       }
 
       // Dönüştürülmüş miktarı hesapla
       final converted = amount * exchangeRate;
-      
-      setState(() {
-        _convertedAmount = converted;
-      });
+
+      if (mounted) {
+        setState(() {
+          _convertedAmount = converted;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _convertedAmount = 0.0;
-      });
+      if (mounted) {
+        setState(() {
+          _convertedAmount = 0.0;
+        });
+      }
     }
   }
 
