@@ -1203,7 +1203,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 100,
+            width: 140,
             child: Text(
               '$label:',
               style: GoogleFonts.poppins(
