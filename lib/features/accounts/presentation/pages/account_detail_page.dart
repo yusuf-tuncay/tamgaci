@@ -1146,20 +1146,19 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     final fromCurrency = _selectedCurrency;
     final toCurrency = widget.account.currency;
     
-    if (fromCurrency == toCurrency) {
-      _exchangeRateController.clear();
-    } else {
-      final rate = exchangeRates[fromCurrency]?[toCurrency];
-      if (rate != null) {
-        _exchangeRateController.text = rate.toStringAsFixed(2);
-      } else {
-        _exchangeRateController.clear();
-      }
-    }
-    
-    // UI'yi güncelle
     if (mounted) {
-      setState(() {});
+      setState(() {
+        if (fromCurrency == toCurrency) {
+          _exchangeRateController.clear();
+        } else {
+          final rate = exchangeRates[fromCurrency]?[toCurrency];
+          if (rate != null) {
+            _exchangeRateController.text = rate.toStringAsFixed(2);
+          } else {
+            _exchangeRateController.clear();
+          }
+        }
+      });
     }
   }
 
