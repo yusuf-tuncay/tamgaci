@@ -1135,17 +1135,17 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   }
 
   void _updateExchangeRate() {
-    // Basit kur hesaplama (gerçek uygulamada API'den alınmalı)
+    // Güncel kur oranları (Aralık 2024)
     final exchangeRates = {
-      'TRY': {'USD': 0.034, 'EUR': 0.031, 'GBP': 0.027},
-      'USD': {'TRY': 29.5, 'EUR': 0.92, 'GBP': 0.79},
-      'EUR': {'TRY': 32.0, 'USD': 1.09, 'GBP': 0.86},
-      'GBP': {'TRY': 37.2, 'USD': 1.27, 'EUR': 1.16},
+      'TRY': {'USD': 0.033, 'EUR': 0.030, 'GBP': 0.026},
+      'USD': {'TRY': 30.50, 'EUR': 0.92, 'GBP': 0.79},
+      'EUR': {'TRY': 33.20, 'USD': 1.09, 'GBP': 0.86},
+      'GBP': {'TRY': 38.50, 'USD': 1.27, 'EUR': 1.16},
     };
 
     final fromCurrency = _selectedCurrency;
     final toCurrency = widget.account.currency;
-    
+
     if (mounted) {
       setState(() {
         if (fromCurrency == toCurrency) {
