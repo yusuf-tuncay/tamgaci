@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/entities/account.dart';
 import '../providers/account_providers.dart';
 
@@ -135,7 +136,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
       elevation: 1,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => context.pop(),
       ),
       title: Text(
         widget.existingAccount != null ? 'Hesap Düzenle' : 'Yeni Hesap',
@@ -614,7 +615,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
       }
 
       if (mounted) {
-        Navigator.pop(context);
+        context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -666,7 +667,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                 style: GoogleFonts.poppins(),
               ),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 // Taslak kaydetme işlemi
               },
             ),
@@ -677,7 +678,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                 style: GoogleFonts.poppins(),
               ),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 _clearForm();
               },
             ),
@@ -691,7 +692,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                   style: GoogleFonts.poppins(color: Colors.red),
                 ),
                 onTap: () {
-                  Navigator.pop(context);
+                  context.pop();
                   _showDeleteConfirmation();
                 },
               ),
@@ -702,7 +703,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                 style: GoogleFonts.poppins(),
               ),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 // Yardım sayfasına git
               },
             ),
@@ -726,7 +727,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: Text(
               'İptal',
               style: GoogleFonts.poppins(color: Colors.grey[600]),
@@ -734,7 +735,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              context.pop();
               await _deleteAccount();
             },
             child: Text(
@@ -759,7 +760,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
 
       if (mounted) {
         // Ana liste sayfasına dön (hesaplar ana sayfası)
-        Navigator.popUntil(context, (route) => route.isFirst);
+        context.goNamed('accounts-home');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
