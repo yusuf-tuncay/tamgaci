@@ -1052,7 +1052,6 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                         child: TextFormField(
                           readOnly: true,
                           decoration: InputDecoration(
-                            labelText: 'Hesap Para Biriminde',
                             border: OutlineInputBorder(
                               borderSide: BorderSide(color: Colors.blue[300]!),
                             ),
@@ -1060,11 +1059,13 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                               borderSide: BorderSide(color: Colors.blue[300]!),
                             ),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue[500]!, width: 2),
+                              borderSide: BorderSide(
+                                  color: Colors.blue[500]!, width: 2),
                             ),
                             filled: true,
                             fillColor: Colors.blue[50],
-                            prefixIcon: Icon(Icons.swap_horiz, size: 20, color: Colors.blue[600]),
+                            prefixIcon: Icon(Icons.swap_horiz,
+                                size: 20, color: Colors.blue[600]),
                             suffixText:
                                 _getCurrencySymbol(widget.account.currency),
                             suffixStyle: GoogleFonts.poppins(
