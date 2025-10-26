@@ -29,11 +29,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  bool _shouldRefresh = false;
+  Account? _currentAccount;
 
   @override
   void initState() {
     super.initState();
+    _currentAccount = widget.account;
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -66,46 +67,19 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final accountRepository = ref.read(accountRepositoryProvider);
-
-        return FutureBuilder<Account?>(
-          future: _shouldRefresh 
-              ? accountRepository.getAccountById(widget.account.id)
-              : Future.value(widget.account),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            
-            if (snapshot.hasError) {
-              return Scaffold(
-                body: Center(
-                  child: Text('Hata: ${snapshot.error}'),
-                ),
-              );
-            }
-            
-            final account = snapshot.data ?? widget.account;
-            
-            return Scaffold(
-              backgroundColor: Colors.grey[50],
-              body: CustomScrollView(
-                slivers: [
-                  _buildAppBar(account),
-                  _buildAccountCard(account),
-                  _buildDetailsSection(account),
-                  _buildTransactionsSection(account),
-                  _buildActionsSection(account),
-                ],
-              ),
-            );
-          },
-        );
-      },
+    final account = _currentAccount ?? widget.account;
+    
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(account),
+          _buildAccountCard(account),
+          _buildDetailsSection(account),
+          _buildTransactionsSection(account),
+          _buildActionsSection(account),
+        ],
+      ),
     );
   }
 
@@ -571,11 +545,20 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       ),
     );
     
-    // Hesap düzenleme sonrası sayfayı yenile
+    // Hesap düzenleme sonrası Firebase'den güncel veriyi al
     if (result == true) {
-      setState(() {
-        _shouldRefresh = true;
-      });
+      try {
+        final accountRepository = ref.read(accountRepositoryProvider);
+        final updatedAccount = await accountRepository.getAccountById(widget.account.id);
+        
+        if (updatedAccount != null && mounted) {
+          setState(() {
+            _currentAccount = updatedAccount;
+          });
+        }
+      } catch (e) {
+        debugPrint('Hesap güncelleme hatası: $e');
+      }
     }
   }
 
