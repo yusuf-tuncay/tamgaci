@@ -976,7 +976,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
                               return 'Kur gerekli';
@@ -1144,17 +1145,16 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
 
     final fromCurrency = _selectedCurrency;
     final toCurrency = widget.account.currency;
-
+    
     if (fromCurrency == toCurrency) {
       _exchangeRateController.clear();
-      return;
-    }
-
-    final rate = exchangeRates[fromCurrency]?[toCurrency];
-    if (rate != null) {
-      _exchangeRateController.text = rate.toStringAsFixed(2);
     } else {
-      _exchangeRateController.clear();
+      final rate = exchangeRates[fromCurrency]?[toCurrency];
+      if (rate != null) {
+        _exchangeRateController.text = rate.toStringAsFixed(2);
+      } else {
+        _exchangeRateController.clear();
+      }
     }
   }
 
