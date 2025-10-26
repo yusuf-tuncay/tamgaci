@@ -84,6 +84,16 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       pinned: true,
       backgroundColor: Colors.white,
       elevation: 1,
+      title: Text(
+        'TAMGACI',
+        style: GoogleFonts.poppins(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: TamgaciConstants.primaryColor,
+          letterSpacing: 1.2,
+        ),
+      ),
+      centerTitle: true,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
         onPressed: () => context.pop(),
@@ -131,7 +141,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   boxShadow: [
                     BoxShadow(
-                      color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+                      color:
+                          TamgaciConstants.primaryColor.withValues(alpha: 0.25),
                       blurRadius: 18,
                       spreadRadius: 1,
                       offset: const Offset(0, 10),
