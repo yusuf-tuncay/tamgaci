@@ -180,6 +180,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                               color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1200,6 +1209,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.end,
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 color: Colors.grey[800],
