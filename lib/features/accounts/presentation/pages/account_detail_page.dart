@@ -1018,8 +1018,12 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
-                        onChanged: (value) {
-                          _formatAmount(value);
+                        onTapOutside: (event) {
+                          _formatAmount(_amountController.text);
+                          _calculateConvertedAmount();
+                        },
+                        onEditingComplete: () {
+                          _formatAmount(_amountController.text);
                           _calculateConvertedAmount();
                         },
                         validator: (value) {
@@ -1274,20 +1278,13 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     final doubleValue = cleanValue.replaceAll(',', '.');
     final amount = double.tryParse(doubleValue);
 
-    if (amount != null) {
+    if (amount != null && amount > 0) {
       // Türkçe formatla (1.000,00)
       final formatter = NumberFormat('#,##0.00', 'tr_TR');
       final formatted = formatter.format(amount);
 
-      // Cursor pozisyonunu koru
-      final cursorPosition = _amountController.selection.baseOffset;
+      // Sadece formatlama yap, cursor pozisyonu korunmaz
       _amountController.text = formatted;
-
-      // Cursor pozisyonunu ayarla
-      if (cursorPosition <= formatted.length) {
-        _amountController.selection =
-            TextSelection.collapsed(offset: cursorPosition);
-      }
     }
   }
 
