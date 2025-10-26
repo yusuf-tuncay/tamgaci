@@ -837,7 +837,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   String _selectedCategory = 'Genel';
   String _selectedCurrency = 'TRY';
   bool _isLoading = false;
@@ -907,7 +907,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
 
                 // Kategori
                 DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: const InputDecoration(
                     labelText: 'Kategori *',
                     border: OutlineInputBorder(),
@@ -934,7 +934,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                     Expanded(
                       flex: 2,
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCurrency,
+                        initialValue: _selectedCurrency,
                         decoration: const InputDecoration(
                           labelText: 'Para Birimi',
                           border: OutlineInputBorder(),
@@ -965,7 +965,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.money_outlined),
                         ),
-                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Miktar gerekli';
@@ -998,26 +999,38 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
 
                 // Hesap Bilgisi
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey[300]!),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.account_balance_wallet, 
-                           color: Colors.grey[600], size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Hesap: ${widget.account.name}',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[700],
+                      Row(
+                        children: [
+                          Icon(Icons.account_balance_wallet,
+                               color: Colors.blue[600], size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Masraf Eklenecek Hesap',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[800],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
+                      const SizedBox(height: 12),
+                      _buildAccountInfoRow('Hesap Adı', widget.account.name),
+                      _buildAccountInfoRow('Banka', widget.account.bankName),
+                      _buildAccountInfoRow('Hesap No', widget.account.accountNumber),
+                      _buildAccountInfoRow('Para Birimi', widget.account.currency),
+                      _buildAccountInfoRow('Hesap Türü', widget.account.type.displayName),
+                      _buildAccountInfoRow('Mevcut Bakiye', 
+                        '${widget.account.balance.toStringAsFixed(2)} ${widget.account.currency}'),
                     ],
                   ),
                 ),
@@ -1049,6 +1062,38 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
               : const Text('Masraf Ekle'),
         ),
       ],
+    );
+  }
+
+  Widget _buildAccountInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
