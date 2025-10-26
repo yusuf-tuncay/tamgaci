@@ -865,7 +865,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     super.initState();
     _selectedCurrency = widget.account.currency;
     _updateExchangeRate();
-    
+
     // Miktar alanı focus değişikliklerini dinle
     _amountFocusNode.addListener(() {
       if (!_amountFocusNode.hasFocus) {
@@ -1062,19 +1062,19 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                               Text(
                                 'Hesap Para Biriminde:',
                                 style: GoogleFonts.poppins(
-                                  fontSize: 10,
+                                  fontSize: 9,
                                   color: Colors.grey[600],
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 1),
                               Text(
                                 _formatCurrency(
                                     _convertedAmount, widget.account.currency),
                                 style: GoogleFonts.poppins(
-                                  fontSize: 14,
+                                  fontSize: 12,
                                   color: Colors.blue[700],
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],
