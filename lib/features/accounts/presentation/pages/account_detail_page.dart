@@ -1053,12 +1053,23 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                           readOnly: true,
                           decoration: InputDecoration(
                             labelText: 'Hesap Para Biriminde',
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.swap_horiz, size: 20),
-                            suffixText: _getCurrencySymbol(widget.account.currency),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.blue[300]!),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.blue[300]!),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.blue[500]!, width: 2),
+                            ),
+                            filled: true,
+                            fillColor: Colors.blue[50],
+                            prefixIcon: Icon(Icons.swap_horiz, size: 20, color: Colors.blue[600]),
+                            suffixText:
+                                _getCurrencySymbol(widget.account.currency),
                             suffixStyle: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: Colors.blue[600],
                               fontWeight: FontWeight.w500,
                             ),
                             contentPadding: const EdgeInsets.symmetric(
@@ -1072,14 +1083,16 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                             fontWeight: FontWeight.w500,
                           ),
                           controller: TextEditingController(
-                            text: _convertedAmount > 0 
-                                ? NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)
+                            text: _convertedAmount > 0
+                                ? NumberFormat('#,##0.00', 'tr_TR')
+                                    .format(_convertedAmount)
                                 : '',
                           ),
                         ),
                       ),
                   ],
                 ),
+                const SizedBox(height: 8),
 
                 // Açıklama
                 TextFormField(
@@ -1288,7 +1301,6 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
       _amountController.text = formatted;
     }
   }
-
 
   // Dönüştürülmüş miktarı hesapla
   void _calculateConvertedAmount() {
