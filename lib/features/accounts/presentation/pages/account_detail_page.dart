@@ -1188,50 +1188,51 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   }
 
   Widget _buildAccountInfoTable() {
-    return Table(
-      columnWidths: const {
-        0: FixedColumnWidth(120),
-        1: FlexColumnWidth(),
-      },
+    return Column(
       children: [
-        _buildTableRow('Hesap Adı', widget.account.name),
-        _buildTableRow('Banka', widget.account.bankName),
-        _buildTableRow('Hesap No', widget.account.accountNumber),
-        _buildTableRow('Para Birimi', widget.account.currency),
-        _buildTableRow('Hesap Türü', widget.account.type.displayName),
-        _buildTableRow('Mevcut Bakiye', 
+        _buildInfoRow('Hesap Adı', widget.account.name),
+        _buildInfoRow('Banka', widget.account.bankName),
+        _buildInfoRow('Hesap No', widget.account.accountNumber),
+        _buildInfoRow('Para Birimi', widget.account.currency),
+        _buildInfoRow('Hesap Türü', widget.account.type.displayName),
+        _buildInfoRow('Mevcut Bakiye', 
             '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}'),
       ],
     );
   }
 
-  TableRow _buildTableRow(String label, String value) {
-    return TableRow(
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Text(
-            '$label:',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+  Widget _buildInfoRow(String label, String value) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 140,
+            child: Text(
+              '$label:',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w500,
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: Colors.grey[800],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
