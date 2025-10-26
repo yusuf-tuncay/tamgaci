@@ -1195,7 +1195,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
         _buildInfoRow('Hesap No', widget.account.accountNumber),
         _buildInfoRow('Para Birimi', widget.account.currency),
         _buildInfoRow('Hesap Türü', widget.account.type.displayName),
-        _buildInfoRow('Mevcut Bakiye', 
+        _buildInfoRow('Mevcut Bakiye',
             '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}'),
       ],
     );
@@ -1207,8 +1207,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
       margin: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Container(
-            width: 140,
+          SizedBox(
+            width: 150,
             child: Text(
               '$label:',
               style: GoogleFonts.poppins(
@@ -1218,16 +1218,15 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
               ),
             ),
           ),
+          const SizedBox(width: 20),
           Expanded(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  color: Colors.grey[800],
-                  fontWeight: FontWeight.w500,
-                ),
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.grey[800],
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
