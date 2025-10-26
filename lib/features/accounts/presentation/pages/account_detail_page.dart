@@ -96,7 +96,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       centerTitle: true,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
-        onPressed: () => context.pop(),
+        onPressed: () => context.goNamed('accounts-home'),
       ),
       actions: [
         IconButton(
@@ -1203,7 +1203,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 140,
+            width: 180,
             child: Text(
               '$label:',
               style: GoogleFonts.poppins(
