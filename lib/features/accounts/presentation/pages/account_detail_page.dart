@@ -392,6 +392,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     return Container(
       padding: const EdgeInsets.all(32),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(
             Icons.receipt_long_outlined,
