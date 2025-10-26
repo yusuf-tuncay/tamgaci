@@ -100,11 +100,6 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.edit, color: Colors.black87, size: 24),
-          onPressed: _editAccount,
-          tooltip: 'Düzenle',
-        ),
-        IconButton(
           icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
           onPressed: _showMoreOptions,
           tooltip: 'Daha fazla seçenek',
