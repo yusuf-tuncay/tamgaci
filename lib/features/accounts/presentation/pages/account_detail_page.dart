@@ -65,62 +65,68 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        // Riverpod provider'dan güncel hesap verisini al
-        final accountsAsync = ref.watch(accountsProvider);
-        final account = accountsAsync.when(
-          data: (accounts) {
-            debugPrint('AccountDetailPage build - Total accounts: ${accounts.length}');
-            debugPrint('AccountDetailPage build - Looking for account ID: ${widget.account.id}');
-            
-            // Tüm hesapları listele
-            for (var acc in accounts) {
-              debugPrint('AccountDetailPage build - Available account: ${acc.name} (ID: ${acc.id})');
-            }
-            
-            // Güncel hesap verisini bul
-            final updatedAccount = accounts.firstWhere(
-              (acc) => acc.id == widget.account.id,
-              orElse: () {
-                debugPrint('AccountDetailPage build - Account not found, using widget.account');
-                return widget.account;
-              },
-            );
-            
-            debugPrint('AccountDetailPage build - Found account: ${updatedAccount.name}');
-            debugPrint('AccountDetailPage build - Account balance: ${updatedAccount.balance}');
-            debugPrint('AccountDetailPage build - Account ID: ${updatedAccount.id}');
-            
-            return updatedAccount;
-          },
-          loading: () {
-            debugPrint('AccountDetailPage build - Provider loading, using widget.account');
-            return widget.account;
-          },
-          error: (error, stack) {
-            debugPrint('AccountDetailPage build - Provider error: $error, using widget.account');
-            return widget.account;
-          },
-        );
-
-        debugPrint('AccountDetailPage build - final account: ${account.name}');
+    // Riverpod provider'dan güncel hesap verisini al
+    final accountsAsync = ref.watch(accountsProvider);
+    final account = accountsAsync.when(
+      data: (accounts) {
         debugPrint(
-            'AccountDetailPage build - final balance: ${account.balance}');
+            'AccountDetailPage build - Total accounts: ${accounts.length}');
+        debugPrint(
+            'AccountDetailPage build - Looking for account ID: ${widget.account.id}');
 
-        return Scaffold(
-          backgroundColor: Colors.grey[50],
-          body: CustomScrollView(
-            slivers: [
-              _buildAppBar(account),
-              _buildAccountCard(account),
-              _buildDetailsSection(account),
-              _buildTransactionsSection(account),
-              _buildActionsSection(account),
-            ],
-          ),
-        );
+        // Tüm hesapları listele
+        for (var acc in accounts) {
+          debugPrint(
+              'AccountDetailPage build - Available account: ${acc.name} (ID: ${acc.id})');
+        }
+
+        // Güncel hesap verisini bul
+        try {
+          final updatedAccount = accounts.firstWhere(
+            (acc) => acc.id == widget.account.id,
+          );
+          
+          debugPrint(
+              'AccountDetailPage build - Found account: ${updatedAccount.name}');
+          debugPrint(
+              'AccountDetailPage build - Account balance: ${updatedAccount.balance}');
+          debugPrint(
+              'AccountDetailPage build - Account ID: ${updatedAccount.id}');
+          
+          return updatedAccount;
+        } catch (e) {
+          debugPrint('AccountDetailPage build - Account not found: $e');
+          debugPrint('AccountDetailPage build - Using widget.account as fallback');
+          return widget.account;
+        }
       },
+      loading: () {
+        debugPrint(
+            'AccountDetailPage build - Provider loading, using widget.account');
+        return widget.account;
+      },
+      error: (error, stack) {
+        debugPrint(
+            'AccountDetailPage build - Provider error: $error, using widget.account');
+        return widget.account;
+      },
+    );
+
+    debugPrint('AccountDetailPage build - final account: ${account.name}');
+    debugPrint(
+        'AccountDetailPage build - final balance: ${account.balance}');
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(account),
+          _buildAccountCard(account),
+          _buildDetailsSection(account),
+          _buildTransactionsSection(account),
+          _buildActionsSection(account),
+        ],
+      ),
     );
   }
 
