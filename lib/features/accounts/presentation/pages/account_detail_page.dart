@@ -29,12 +29,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
-  Account? _currentAccount;
 
   @override
   void initState() {
     super.initState();
-    _currentAccount = widget.account;
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -67,22 +65,41 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final account = _currentAccount ?? widget.account;
-    debugPrint('AccountDetailPage build - using account: ${account.name}');
-    debugPrint('AccountDetailPage build - account balance: ${account.balance}');
-    debugPrint('AccountDetailPage build - _currentAccount: ${_currentAccount?.name}');
-    
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(account),
-          _buildAccountCard(account),
-          _buildDetailsSection(account),
-          _buildTransactionsSection(account),
-          _buildActionsSection(account),
-        ],
-      ),
+    return Consumer(
+      builder: (context, ref, child) {
+        // Riverpod provider'dan güncel hesap verisini al
+        final accountsAsync = ref.watch(accountsProvider);
+        final account = accountsAsync.when(
+          data: (accounts) {
+            // Güncel hesap verisini bul
+            final updatedAccount = accounts.firstWhere(
+              (acc) => acc.id == widget.account.id,
+              orElse: () => widget.account,
+            );
+            debugPrint('AccountDetailPage build - Riverpod account: ${updatedAccount.name}');
+            debugPrint('AccountDetailPage build - Riverpod balance: ${updatedAccount.balance}');
+            return updatedAccount;
+          },
+          loading: () => widget.account,
+          error: (error, stack) => widget.account,
+        );
+        
+        debugPrint('AccountDetailPage build - final account: ${account.name}');
+        debugPrint('AccountDetailPage build - final balance: ${account.balance}');
+        
+        return Scaffold(
+          backgroundColor: Colors.grey[50],
+          body: CustomScrollView(
+            slivers: [
+              _buildAppBar(account),
+              _buildAccountCard(account),
+              _buildDetailsSection(account),
+              _buildTransactionsSection(account),
+              _buildActionsSection(account),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -552,31 +569,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
     debugPrint('_editAccount - result: $result');
     
-    // Hesap düzenleme sonrası Firebase'den güncel veriyi al
+    // Riverpod provider otomatik olarak güncelleyecek
     if (result == true) {
-      debugPrint('_editAccount - result is true, fetching updated account...');
-      try {
-        final accountRepository = ref.read(accountRepositoryProvider);
-        debugPrint('_editAccount - calling getAccountById with id: ${widget.account.id}');
-        
-        final updatedAccount =
-            await accountRepository.getAccountById(widget.account.id);
-
-        debugPrint('_editAccount - updatedAccount: ${updatedAccount?.name}');
-        debugPrint('_editAccount - updatedAccount balance: ${updatedAccount?.balance}');
-        
-        if (updatedAccount != null && mounted) {
-          debugPrint('_editAccount - updating _currentAccount state...');
-          setState(() {
-            _currentAccount = updatedAccount;
-          });
-          debugPrint('_editAccount - _currentAccount updated: ${_currentAccount?.name}');
-        } else {
-          debugPrint('_editAccount - updatedAccount is null or widget not mounted');
-        }
-      } catch (e) {
-        debugPrint('Hesap güncelleme hatası: $e');
-      }
+      debugPrint('_editAccount - Account updated successfully, Riverpod will refresh automatically');
     } else {
       debugPrint('_editAccount - result is not true: $result');
     }
