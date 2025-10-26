@@ -29,6 +29,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _shouldRefresh = false;
 
   @override
   void initState() {
@@ -68,9 +69,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     return Consumer(
       builder: (context, ref, child) {
         final accountRepository = ref.read(accountRepositoryProvider);
-        
+
         return FutureBuilder<Account?>(
-          future: accountRepository.getAccountById(widget.account.id),
+          future: _shouldRefresh 
+              ? accountRepository.getAccountById(widget.account.id)
+              : Future.value(widget.account),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
@@ -558,15 +561,22 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  void _editAccount() {
+  void _editAccount() async {
     debugPrint('_editAccount - widget.account: ${widget.account.name}');
-    Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) =>
             CreateAccountPage(existingAccount: widget.account),
       ),
     );
+    
+    // Hesap düzenleme sonrası sayfayı yenile
+    if (result == true) {
+      setState(() {
+        _shouldRefresh = true;
+      });
+    }
   }
 
   void _showMoreOptions() {

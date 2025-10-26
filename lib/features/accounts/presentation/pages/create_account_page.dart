@@ -67,7 +67,8 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
       curve: Curves.easeOutCubic,
     ));
 
-    debugPrint('CreateAccountPage - existingAccount: ${widget.existingAccount?.name}');
+    debugPrint(
+        'CreateAccountPage - existingAccount: ${widget.existingAccount?.name}');
     if (widget.existingAccount != null) {
       _populateFields(widget.existingAccount!);
     }
@@ -615,7 +616,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
       }
 
       if (mounted) {
-        context.pop();
+        Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
