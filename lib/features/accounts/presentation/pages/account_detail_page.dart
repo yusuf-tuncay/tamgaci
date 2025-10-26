@@ -530,10 +530,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   void _editAccount() {
+    debugPrint('_editAccount - widget.account: ${widget.account.name}');
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateAccountPage(existingAccount: widget.account),
+        builder: (context) =>
+            CreateAccountPage(existingAccount: widget.account),
       ),
     );
   }
