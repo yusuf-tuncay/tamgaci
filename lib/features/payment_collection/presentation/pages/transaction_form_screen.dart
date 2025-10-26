@@ -1029,7 +1029,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         }
       }
     } else if (transactionType == PaymentTransactionType.eftTransfer) {
-      // EFT/Havale için: Banka hesabı + aynı para birimi
+      // EFT/Havale için: Sadece banka hesabı + aynı para birimi
       // Önce AccountType.checking türündeki hesapları ara
       final bankAccounts = accounts
           .where((account) =>
@@ -1058,7 +1058,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return bankByName.first.id;
       }
 
-      // Eğer hiç banka hesabı bulunamazsa, null döndür
+      // EFT/Havale için sadece banka hesabı kabul edilir, başka hesap türleri seçilmez
       debugPrint(
           'DEBUG: EFT/Havale için uygun banka hesabı bulunamadı - banka entegrasyonu gerekli');
       return null;
@@ -1078,18 +1078,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       }
     }
 
-    // 2. İkinci öncelik: Aynı para birimindeki hesaplar
-    final sameCurrencyAccounts =
-        accounts.where((account) => account.currency == currency).toList();
+    // 2. İkinci öncelik: Aynı para birimindeki hesaplar (EFT/Havale hariç)
+    if (transactionType != PaymentTransactionType.eftTransfer) {
+      final sameCurrencyAccounts =
+          accounts.where((account) => account.currency == currency).toList();
 
-    if (sameCurrencyAccounts.isNotEmpty) {
-      debugPrint(
-          'DEBUG: Aynı para birimindeki hesap bulundu: ${sameCurrencyAccounts.first.name}');
-      return sameCurrencyAccounts.first.id;
+      if (sameCurrencyAccounts.isNotEmpty) {
+        debugPrint(
+            'DEBUG: Aynı para birimindeki hesap bulundu: ${sameCurrencyAccounts.first.name}');
+        return sameCurrencyAccounts.first.id;
+      }
     }
 
-    // 3. Son seçenek: İlk hesap
-    if (accounts.isNotEmpty) {
+    // 3. Son seçenek: İlk hesap (EFT/Havale hariç)
+    if (transactionType != PaymentTransactionType.eftTransfer && accounts.isNotEmpty) {
       debugPrint('DEBUG: Varsayılan hesap seçildi: ${accounts.first.name}');
       return accounts.first.id;
     }
@@ -1638,5 +1640,4 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       ),
     );
   }
-
 }
