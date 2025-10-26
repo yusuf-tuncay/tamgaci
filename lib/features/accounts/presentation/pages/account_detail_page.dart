@@ -85,18 +85,19 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           final updatedAccount = accounts.firstWhere(
             (acc) => acc.id == widget.account.id,
           );
-          
+
           debugPrint(
               'AccountDetailPage build - Found account: ${updatedAccount.name}');
           debugPrint(
               'AccountDetailPage build - Account balance: ${updatedAccount.balance}');
           debugPrint(
               'AccountDetailPage build - Account ID: ${updatedAccount.id}');
-          
+
           return updatedAccount;
         } catch (e) {
           debugPrint('AccountDetailPage build - Account not found: $e');
-          debugPrint('AccountDetailPage build - Using widget.account as fallback');
+          debugPrint(
+              'AccountDetailPage build - Using widget.account as fallback');
           return widget.account;
         }
       },
@@ -113,8 +114,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
 
     debugPrint('AccountDetailPage build - final account: ${account.name}');
-    debugPrint(
-        'AccountDetailPage build - final balance: ${account.balance}');
+    debugPrint('AccountDetailPage build - final balance: ${account.balance}');
 
     return Scaffold(
       backgroundColor: Colors.grey[50],

@@ -1091,7 +1091,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
 
     // 3. Son seçenek: İlk hesap (EFT/Havale hariç)
-    if (transactionType != PaymentTransactionType.eftTransfer && accounts.isNotEmpty) {
+    if (transactionType != PaymentTransactionType.eftTransfer &&
+        accounts.isNotEmpty) {
       debugPrint('DEBUG: Varsayılan hesap seçildi: ${accounts.first.name}');
       return accounts.first.id;
     }

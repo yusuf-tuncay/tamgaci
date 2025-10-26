@@ -303,6 +303,8 @@ class AccountCard extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [Colors.grey[600]!, Colors.grey[800]!],
         );
+      case AccountType.creditCard:  
+        throw UnimplementedError();
     }
   }
 
