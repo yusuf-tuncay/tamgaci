@@ -1152,16 +1152,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _buildAccountInfoRow('Hesap Adı', widget.account.name),
-                      _buildAccountInfoRow('Banka', widget.account.bankName),
-                      _buildAccountInfoRow(
-                          'Hesap No', widget.account.accountNumber),
-                      _buildAccountInfoRow(
-                          'Para Birimi', widget.account.currency),
-                      _buildAccountInfoRow(
-                          'Hesap Türü', widget.account.type.displayName),
-                      _buildAccountInfoRow('Mevcut Bakiye',
-                          '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}'),
+                      _buildAccountInfoTable(),
                     ],
                   ),
                 ),
@@ -1196,37 +1187,51 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     );
   }
 
-  Widget _buildAccountInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              '$label:',
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
+  Widget _buildAccountInfoTable() {
+    return Table(
+      columnWidths: const {
+        0: FixedColumnWidth(120),
+        1: FlexColumnWidth(),
+      },
+      children: [
+        _buildTableRow('Hesap Adı', widget.account.name),
+        _buildTableRow('Banka', widget.account.bankName),
+        _buildTableRow('Hesap No', widget.account.accountNumber),
+        _buildTableRow('Para Birimi', widget.account.currency),
+        _buildTableRow('Hesap Türü', widget.account.type.displayName),
+        _buildTableRow('Mevcut Bakiye', 
+            '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}'),
+      ],
+    );
+  }
+
+  TableRow _buildTableRow(String label, String value) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(
+            '$label:',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: GoogleFonts.poppins(
-                fontSize: 13,
-                color: Colors.grey[800],
-                fontWeight: FontWeight.w500,
-              ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(
+            value,
+            textAlign: TextAlign.end,
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: Colors.grey[800],
+              fontWeight: FontWeight.w500,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
