@@ -838,7 +838,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _exchangeRateController = TextEditingController();
- 
+
   String _selectedCategory = 'Genel';
   String _selectedCurrency = 'TRY';
   bool _isLoading = false;
@@ -930,26 +930,66 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Para Birimi
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedCurrency,
-                  decoration: const InputDecoration(
-                    labelText: 'Para Birimi',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.attach_money),
-                  ),
-                  items: _currencies.map((currency) {
-                    return DropdownMenuItem(
-                      value: currency,
-                      child: Text(currency),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCurrency = value!;
-                      _updateExchangeRate();
-                    });
-                  },
+                // Para Birimi ve Kur
+                Row(
+                  children: [
+                    // Para Birimi
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedCurrency,
+                        decoration: const InputDecoration(
+                          labelText: 'Para Birimi',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.attach_money),
+                        ),
+                        items: _currencies.map((currency) {
+                          return DropdownMenuItem(
+                            value: currency,
+                            child: Text(currency),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _selectedCurrency = value!;
+                            _updateExchangeRate();
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Kur Bilgisi (sadece farklı para birimi seçildiğinde)
+                    if (_selectedCurrency != widget.account.currency)
+                      Expanded(
+                        flex: 3,
+                        child: TextFormField(
+                          controller: _exchangeRateController,
+                          decoration: InputDecoration(
+                            labelText: 'Kur',
+                            hintText: '29.50',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.swap_horiz),
+                            suffixText: widget.account.currency,
+                            suffixStyle: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Kur gerekli';
+                            }
+                            final rate = double.tryParse(value);
+                            if (rate == null || rate <= 0) {
+                              return 'Geçerli kur girin';
+                            }
+                            return null;
+                          },
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 
@@ -975,38 +1015,6 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 16),
-
-                // Kur Bilgisi (sadece para birimi farklıysa göster)
-                if (_selectedCurrency != widget.account.currency) ...[
-                  TextFormField(
-                    controller: _exchangeRateController,
-                    decoration: InputDecoration(
-                      labelText: 'Kur (1 ${_selectedCurrency} = ? ${widget.account.currency})',
-                      hintText: 'Örn: 29.50',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.swap_horiz),
-                      suffixText: widget.account.currency,
-                      suffixStyle: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Kur bilgisi gerekli';
-                      }
-                      final rate = double.tryParse(value);
-                      if (rate == null || rate <= 0) {
-                        return 'Geçerli bir kur girin';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                ],
 
                 // Açıklama
                 TextFormField(
@@ -1136,12 +1144,12 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
 
     final fromCurrency = _selectedCurrency;
     final toCurrency = widget.account.currency;
-    
+
     if (fromCurrency == toCurrency) {
       _exchangeRateController.clear();
       return;
     }
-    
+
     final rate = exchangeRates[fromCurrency]?[toCurrency];
     if (rate != null) {
       _exchangeRateController.text = rate.toStringAsFixed(2);
@@ -1149,7 +1157,6 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
       _exchangeRateController.clear();
     }
   }
-
 
   Future<void> _saveExpense() async {
     if (!_formKey.currentState!.validate()) return;
