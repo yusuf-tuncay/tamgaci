@@ -364,7 +364,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                         return transactionsAsync.when(
                           data: (transactions) {
                             if (transactions.isEmpty) {
-                              return _buildEmptyTransactions();
+                              return Center(child: _buildEmptyTransactions());
                             }
                             return Column(
                               children: transactions.take(5).map((transaction) {
