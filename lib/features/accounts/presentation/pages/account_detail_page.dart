@@ -87,10 +87,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       title: Text(
         'TAMGACI',
         style: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
           color: TamgaciConstants.primaryColor,
-          letterSpacing: 1.2,
+          letterSpacing: 1.5,
         ),
       ),
       centerTitle: true,
