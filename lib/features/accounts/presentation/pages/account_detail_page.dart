@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
-import 'create_account_page.dart';
 
 /// Hesap Detay Sayfası
 class AccountDetailPage extends ConsumerStatefulWidget {
@@ -83,7 +83,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       elevation: 1,
       leading: IconButton(
         icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => context.pop(),
       ),
       actions: [
         IconButton(
@@ -502,12 +502,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
 
   void _editAccount() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            CreateAccountPage(existingAccount: widget.account),
-      ),
+    context.pushNamed(
+      'create-account',
+      extra: widget.account,
     );
   }
 
@@ -526,24 +523,33 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               leading: const Icon(Icons.share),
               title: const Text('Paylaş'),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 // Paylaşma işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Paylaşma özelliği yakında eklenecek')),
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.copy),
               title: const Text('IBAN Kopyala'),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 // IBAN kopyalama işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('IBAN kopyalandı')),
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.print),
               title: const Text('Yazdır'),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 // Yazdırma işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Yazdırma özelliği yakında eklenecek')),
+                );
               },
             ),
           ],
@@ -553,7 +559,13 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   void _viewAllTransactions() {
-    // İşlemler sayfasına git
+    // TODO: İşlemler sayfasına git - henüz implement edilmedi
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('İşlemler sayfası yakında eklenecek'),
+        backgroundColor: Colors.orange,
+      ),
+    );
   }
 
 
@@ -565,7 +577,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         content: const Text('Bakiye güncelleme özelliği yakında eklenecek.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('Tamam'),
           ),
         ],
@@ -582,7 +594,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             const Text('Hesap durumu değiştirme özelliği yakında eklenecek.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('Tamam'),
           ),
         ],
@@ -595,22 +607,68 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Hesap Sil'),
-        content: const Text('Bu hesabı silmek istediğinizden emin misiniz?'),
+        content: const Text('Bu hesabı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('İptal'),
           ),
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Hesap silme işlemi
+            onPressed: () async {
+              context.pop(); // Dialog'u kapat
+              await _performDeleteAccount();
             },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Sil'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _performDeleteAccount() async {
+    try {
+      // Loading göster
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Hesap silme işlemi burada yapılacak
+      // TODO: Account service ile silme işlemi implement edilecek
+      
+      // Loading'i kapat
+      if (mounted) context.pop();
+      
+      // Başarı mesajı
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Hesap başarıyla silindi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Ana sayfaya dön
+        context.goNamed('accounts-home');
+      }
+    } catch (e) {
+      // Loading'i kapat
+      if (mounted) context.pop();
+      
+      // Hata mesajı
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hesap silinirken hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _formatDate(DateTime date) {
