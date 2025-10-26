@@ -68,6 +68,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   @override
   Widget build(BuildContext context) {
     final account = _currentAccount ?? widget.account;
+    debugPrint('AccountDetailPage build - using account: ${account.name}');
+    debugPrint('AccountDetailPage build - account balance: ${account.balance}');
+    debugPrint('AccountDetailPage build - _currentAccount: ${_currentAccount?.name}');
     
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -537,6 +540,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   void _editAccount() async {
     debugPrint('_editAccount - widget.account: ${widget.account.name}');
+    debugPrint('_editAccount - widget.account.id: ${widget.account.id}');
+    
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -544,21 +549,36 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             CreateAccountPage(existingAccount: widget.account),
       ),
     );
+
+    debugPrint('_editAccount - result: $result');
     
     // Hesap düzenleme sonrası Firebase'den güncel veriyi al
     if (result == true) {
+      debugPrint('_editAccount - result is true, fetching updated account...');
       try {
         final accountRepository = ref.read(accountRepositoryProvider);
-        final updatedAccount = await accountRepository.getAccountById(widget.account.id);
+        debugPrint('_editAccount - calling getAccountById with id: ${widget.account.id}');
+        
+        final updatedAccount =
+            await accountRepository.getAccountById(widget.account.id);
+
+        debugPrint('_editAccount - updatedAccount: ${updatedAccount?.name}');
+        debugPrint('_editAccount - updatedAccount balance: ${updatedAccount?.balance}');
         
         if (updatedAccount != null && mounted) {
+          debugPrint('_editAccount - updating _currentAccount state...');
           setState(() {
             _currentAccount = updatedAccount;
           });
+          debugPrint('_editAccount - _currentAccount updated: ${_currentAccount?.name}');
+        } else {
+          debugPrint('_editAccount - updatedAccount is null or widget not mounted');
         }
       } catch (e) {
         debugPrint('Hesap güncelleme hatası: $e');
       }
+    } else {
+      debugPrint('_editAccount - result is not true: $result');
     }
   }
 

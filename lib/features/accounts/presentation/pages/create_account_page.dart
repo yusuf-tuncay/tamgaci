@@ -616,6 +616,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
       }
 
       if (mounted) {
+        debugPrint('CreateAccountPage - Navigator.pop(context, true) called');
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
