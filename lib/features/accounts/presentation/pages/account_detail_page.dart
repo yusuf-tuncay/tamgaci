@@ -1049,35 +1049,32 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                     if (_selectedCurrency != widget.account.currency)
                       Expanded(
                         flex: 2,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue[50],
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.blue[200]!),
+                        child: TextFormField(
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: 'Hesap Para Biriminde',
+                            border: const OutlineInputBorder(),
+                            prefixIcon: const Icon(Icons.swap_horiz, size: 20),
+                            suffixText: _getCurrencySymbol(widget.account.currency),
+                            suffixStyle: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 16,
+                            ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Hesap Para Biriminde:',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 9,
-                                  color: Colors.grey[600],
-                                  fontWeight: FontWeight.w400,
-                                ),
-                              ),
-                              const SizedBox(height: 1),
-                              Text(
-                                _formatCurrency(
-                                    _convertedAmount, widget.account.currency),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.blue[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w500,
+                          ),
+                          controller: TextEditingController(
+                            text: _convertedAmount > 0 
+                                ? NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)
+                                : '',
                           ),
                         ),
                       ),
@@ -1292,12 +1289,6 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     }
   }
 
-  // Para birimi formatla
-  String _formatCurrency(double amount, String currency) {
-    final formatter = NumberFormat('#,##0.00', 'tr_TR');
-    final symbol = _getCurrencySymbol(currency);
-    return '${formatter.format(amount)} $symbol';
-  }
 
   // Dönüştürülmüş miktarı hesapla
   void _calculateConvertedAmount() {
