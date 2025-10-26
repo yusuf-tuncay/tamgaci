@@ -7,6 +7,7 @@ import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
+import 'package:tamgaci/core/theme/constants.dart';
 
 /// Hesap Detay Sayfası
 class AccountDetailPage extends ConsumerStatefulWidget {
@@ -120,9 +121,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      Color(0xFF6366F1), // Indigo-500
-                      Color(0xFF8B5CF6), // Violet-500
-                      Color(0xFF7C3AED), // Violet-600
+                      TamgaciConstants.primaryColor,
+                      Color(0xFF4C6EF5),
+                      TamgaciConstants.primaryColorDark,
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
@@ -130,7 +131,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       Border.all(color: Colors.white.withValues(alpha: 0.08)),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+                      color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
                       blurRadius: 18,
                       spreadRadius: 1,
                       offset: const Offset(0, 10),
