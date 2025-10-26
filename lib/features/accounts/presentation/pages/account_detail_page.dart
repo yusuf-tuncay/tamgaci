@@ -8,6 +8,7 @@ import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 import 'package:tamgaci/core/theme/constants.dart';
+import 'create_account_page.dart';
 
 /// Hesap Detay Sayfası
 class AccountDetailPage extends ConsumerStatefulWidget {
@@ -531,9 +532,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   void _editAccount() {
     debugPrint('_editAccount - widget.account: ${widget.account.name}');
-    context.pushNamed(
-      'create-account',
-      extra: widget.account,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CreateAccountPage(existingAccount: widget.account),
+      ),
     );
   }
 
