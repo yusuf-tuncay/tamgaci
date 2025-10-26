@@ -1145,7 +1145,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                       _buildAccountInfoRow(
                           'Hesap Türü', widget.account.type.displayName),
                       _buildAccountInfoRow('Mevcut Bakiye',
-                          '${widget.account.balance.toStringAsFixed(2)} ${widget.account.currency}'),
+                          '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}'),
                     ],
                   ),
                 ),
