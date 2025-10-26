@@ -611,8 +611,14 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
 
       if (widget.existingAccount != null) {
         await ref.read(accountNotifierProvider.notifier).updateAccount(account);
+        // Provider'ı refresh et
+        ref.invalidate(accountsProvider);
+        debugPrint('CreateAccountPage - accountsProvider invalidated after update');
       } else {
         await ref.read(accountNotifierProvider.notifier).createAccount(account);
+        // Provider'ı refresh et
+        ref.invalidate(accountsProvider);
+        debugPrint('CreateAccountPage - accountsProvider invalidated after create');
       }
 
       if (mounted) {
