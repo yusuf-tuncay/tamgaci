@@ -927,59 +927,57 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                 ),
                 const SizedBox(height: 16),
 
-                // Para Birimi ve Miktar
-                Row(
-                  children: [
-                    // Para Birimi
-                    Expanded(
-                      flex: 2,
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _selectedCurrency,
-                        decoration: const InputDecoration(
-                          labelText: 'Para Birimi',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.attach_money),
-                        ),
-                        items: _currencies.map((currency) {
-                          return DropdownMenuItem(
-                            value: currency,
-                            child: Text(currency),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedCurrency = value!;
-                          });
-                        },
-                      ),
+                // Para Birimi
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedCurrency,
+                  decoration: const InputDecoration(
+                    labelText: 'Para Birimi',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.attach_money),
+                  ),
+                  items: _currencies.map((currency) {
+                    return DropdownMenuItem(
+                      value: currency,
+                      child: Text(currency),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedCurrency = value!;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Miktar
+                TextFormField(
+                  controller: _amountController,
+                  decoration: InputDecoration(
+                    labelText: 'Miktar *',
+                    hintText: '0.00',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.money_outlined),
+                    suffixText: _selectedCurrency != widget.account.currency 
+                        ? '(${_getExchangeRateText()})' 
+                        : null,
+                    suffixStyle: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
                     ),
-                    const SizedBox(width: 16),
-                    // Miktar
-                    Expanded(
-                      flex: 3,
-                      child: TextFormField(
-                        controller: _amountController,
-                        decoration: const InputDecoration(
-                          labelText: 'Miktar *',
-                          hintText: '0.00',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.money_outlined),
-                        ),
-                        keyboardType:
-                            const TextInputType.numberWithOptions(decimal: true),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Miktar gerekli';
-                          }
-                          final amount = double.tryParse(value);
-                          if (amount == null || amount <= 0) {
-                            return 'Geçerli bir miktar girin';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                  ],
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Miktar gerekli';
+                    }
+                    final amount = double.tryParse(value);
+                    if (amount == null || amount <= 0) {
+                      return 'Geçerli bir miktar girin';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -1011,7 +1009,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                       Row(
                         children: [
                           Icon(Icons.account_balance_wallet,
-                               color: Colors.blue[600], size: 20),
+                              color: Colors.blue[600], size: 20),
                           const SizedBox(width: 8),
                           Text(
                             'Masraf Eklenecek Hesap',
@@ -1026,11 +1024,14 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                       const SizedBox(height: 12),
                       _buildAccountInfoRow('Hesap Adı', widget.account.name),
                       _buildAccountInfoRow('Banka', widget.account.bankName),
-                      _buildAccountInfoRow('Hesap No', widget.account.accountNumber),
-                      _buildAccountInfoRow('Para Birimi', widget.account.currency),
-                      _buildAccountInfoRow('Hesap Türü', widget.account.type.displayName),
-                      _buildAccountInfoRow('Mevcut Bakiye', 
-                        '${widget.account.balance.toStringAsFixed(2)} ${widget.account.currency}'),
+                      _buildAccountInfoRow(
+                          'Hesap No', widget.account.accountNumber),
+                      _buildAccountInfoRow(
+                          'Para Birimi', widget.account.currency),
+                      _buildAccountInfoRow(
+                          'Hesap Türü', widget.account.type.displayName),
+                      _buildAccountInfoRow('Mevcut Bakiye',
+                          '${widget.account.balance.toStringAsFixed(2)} ${widget.account.currency}'),
                     ],
                   ),
                 ),
@@ -1095,6 +1096,26 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
         ],
       ),
     );
+  }
+
+  String _getExchangeRateText() {
+    // Basit kur hesaplama (gerçek uygulamada API'den alınmalı)
+    final exchangeRates = {
+      'TRY': {'USD': 0.034, 'EUR': 0.031, 'GBP': 0.027},
+      'USD': {'TRY': 29.5, 'EUR': 0.92, 'GBP': 0.79},
+      'EUR': {'TRY': 32.0, 'USD': 1.09, 'GBP': 0.86},
+      'GBP': {'TRY': 37.2, 'USD': 1.27, 'EUR': 1.16},
+    };
+
+    final fromCurrency = _selectedCurrency;
+    final toCurrency = widget.account.currency;
+    
+    if (fromCurrency == toCurrency) return '';
+    
+    final rate = exchangeRates[fromCurrency]?[toCurrency];
+    if (rate == null) return 'Kur bilinmiyor';
+    
+    return '1 $fromCurrency = ${rate.toStringAsFixed(2)} $toCurrency';
   }
 
   Future<void> _saveExpense() async {
