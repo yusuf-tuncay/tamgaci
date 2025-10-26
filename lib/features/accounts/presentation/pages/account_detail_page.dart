@@ -1143,8 +1143,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
       'GBP': {'TRY': 38.50, 'USD': 1.27, 'EUR': 1.16},
     };
 
-    final fromCurrency = _selectedCurrency;
-    final toCurrency = widget.account.currency;
+    final fromCurrency = widget.account.currency; // Hesap para birimi
+    final toCurrency = _selectedCurrency; // Seçilen para birimi
 
     if (mounted) {
       setState(() {
