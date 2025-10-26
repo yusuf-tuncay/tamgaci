@@ -1201,17 +1201,20 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            '$label:',
-            style: GoogleFonts.poppins(
-              fontSize: 13,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
+          SizedBox(
+            width: 120,
+            child: Text(
+              '$label:',
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
-          Flexible(
+          const SizedBox(width: 16),
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
