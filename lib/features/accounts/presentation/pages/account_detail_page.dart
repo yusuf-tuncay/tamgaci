@@ -930,10 +930,18 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                 // Para Birimi
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCurrency,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Para Birimi',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.attach_money),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.attach_money),
+                    suffixText: _selectedCurrency != widget.account.currency 
+                        ? _getExchangeRateText() 
+                        : null,
+                    suffixStyle: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
                   ),
                   items: _currencies.map((currency) {
                     return DropdownMenuItem(
@@ -952,22 +960,14 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                 // Miktar
                 TextFormField(
                   controller: _amountController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     labelText: 'Miktar *',
                     hintText: '0.00',
-                    border: const OutlineInputBorder(),
-                    prefixIcon: const Icon(Icons.money_outlined),
-                    suffixText: _selectedCurrency != widget.account.currency 
-                        ? '(${_getExchangeRateText()})' 
-                        : null,
-                    suffixStyle: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                      fontStyle: FontStyle.italic,
-                    ),
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.money_outlined),
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
                       return 'Miktar gerekli';
@@ -1109,12 +1109,12 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
 
     final fromCurrency = _selectedCurrency;
     final toCurrency = widget.account.currency;
-    
+
     if (fromCurrency == toCurrency) return '';
-    
+
     final rate = exchangeRates[fromCurrency]?[toCurrency];
     if (rate == null) return 'Kur bilinmiyor';
-    
+
     return '1 $fromCurrency = ${rate.toStringAsFixed(2)} $toCurrency';
   }
 
