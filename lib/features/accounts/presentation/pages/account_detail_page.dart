@@ -840,6 +840,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _exchangeRateController = TextEditingController();
+  final _amountFocusNode = FocusNode();
 
   String _selectedCategory = 'Genel';
   String _selectedCurrency = 'TRY';
@@ -864,6 +865,15 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     super.initState();
     _selectedCurrency = widget.account.currency;
     _updateExchangeRate();
+    
+    // Miktar alanı focus değişikliklerini dinle
+    _amountFocusNode.addListener(() {
+      if (!_amountFocusNode.hasFocus) {
+        // Focus kaybedildiğinde formatla
+        _formatAmount(_amountController.text);
+        _calculateConvertedAmount();
+      }
+    });
   }
 
   @override
@@ -872,6 +882,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     _amountController.dispose();
     _descriptionController.dispose();
     _exchangeRateController.dispose();
+    _amountFocusNode.dispose();
     super.dispose();
   }
 
@@ -1004,6 +1015,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                       flex: 2,
                       child: TextFormField(
                         controller: _amountController,
+                        focusNode: _amountFocusNode,
                         decoration: InputDecoration(
                           labelText: 'Miktar *',
                           hintText: '1.000,00',
@@ -1018,14 +1030,6 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
-                        onTapOutside: (event) {
-                          _formatAmount(_amountController.text);
-                          _calculateConvertedAmount();
-                        },
-                        onEditingComplete: () {
-                          _formatAmount(_amountController.text);
-                          _calculateConvertedAmount();
-                        },
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
                             return 'Miktar gerekli';
