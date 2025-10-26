@@ -952,8 +952,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                         onChanged: (value) {
                           setState(() {
                             _selectedCurrency = value!;
-                            _updateExchangeRate();
                           });
+                          _updateExchangeRate();
                         },
                       ),
                     ),
@@ -1155,6 +1155,11 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
       } else {
         _exchangeRateController.clear();
       }
+    }
+    
+    // UI'yi güncelle
+    if (mounted) {
+      setState(() {});
     }
   }
 
