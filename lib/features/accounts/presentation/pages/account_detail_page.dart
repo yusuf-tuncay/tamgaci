@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
+import '../providers/account_providers.dart';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 import 'package:tamgaci/core/theme/constants.dart';
 import 'create_account_page.dart';
@@ -64,21 +65,48 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          _buildAccountCard(),
-          _buildDetailsSection(),
-          _buildTransactionsSection(),
-          _buildActionsSection(),
-        ],
-      ),
+    return Consumer(
+      builder: (context, ref, child) {
+        final accountRepository = ref.read(accountRepositoryProvider);
+        
+        return FutureBuilder<Account?>(
+          future: accountRepository.getAccountById(widget.account.id),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            
+            if (snapshot.hasError) {
+              return Scaffold(
+                body: Center(
+                  child: Text('Hata: ${snapshot.error}'),
+                ),
+              );
+            }
+            
+            final account = snapshot.data ?? widget.account;
+            
+            return Scaffold(
+              backgroundColor: Colors.grey[50],
+              body: CustomScrollView(
+                slivers: [
+                  _buildAppBar(account),
+                  _buildAccountCard(account),
+                  _buildDetailsSection(account),
+                  _buildTransactionsSection(account),
+                  _buildActionsSection(account),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(Account account) {
     return SliverAppBar(
       expandedHeight: 60,
       floating: false,
@@ -109,7 +137,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  Widget _buildAccountCard() {
+  Widget _buildAccountCard(Account account) {
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -210,7 +238,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  Widget _buildDetailsSection() {
+  Widget _buildDetailsSection(Account account) {
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -305,7 +333,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  Widget _buildTransactionsSection() {
+  Widget _buildTransactionsSection(Account account) {
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -423,7 +451,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  Widget _buildActionsSection() {
+  Widget _buildActionsSection(Account account) {
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -535,7 +563,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreateAccountPage(existingAccount: widget.account),
+        builder: (context) =>
+            CreateAccountPage(existingAccount: widget.account),
       ),
     );
   }
