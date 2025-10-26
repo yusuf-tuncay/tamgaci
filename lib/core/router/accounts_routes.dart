@@ -1,6 +1,7 @@
 // ========== ACCOUNTS ROUTES ==========
 // lib/core/router/accounts_routes.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/guards/subscription_guard.dart';
 import '../../features/accounts/presentation/pages/accounts_home_page.dart';
