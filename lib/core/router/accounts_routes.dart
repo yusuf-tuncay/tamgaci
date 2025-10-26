@@ -7,6 +7,7 @@ import '../../features/accounts/presentation/pages/accounts_home_page.dart';
 import '../../features/accounts/presentation/pages/create_account_page.dart'
     as accounts;
 import '../../features/accounts/presentation/pages/account_detail_page_wrapper.dart';
+import '../../features/accounts/domain/entities/account.dart';
 
 /// Accounts routes
 class AccountsRoutes {
@@ -36,11 +37,14 @@ class AccountsRoutes {
         GoRoute(
           path: '/accounts/create',
           name: 'create-account',
-          builder: (context, state) => const SubscriptionGuard(
-            allowTrial: true,
-            allowExpired: false,
-            child: accounts.CreateAccountPage(),
-          ),
+          builder: (context, state) {
+            final existingAccount = state.extra as Account?;
+            return SubscriptionGuard(
+              allowTrial: true,
+              allowExpired: false,
+              child: accounts.CreateAccountPage(existingAccount: existingAccount),
+            );
+          },
         ),
 
         GoRoute(
