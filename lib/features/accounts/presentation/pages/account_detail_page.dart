@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
@@ -843,6 +844,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   String _selectedCategory = 'Genel';
   String _selectedCurrency = 'TRY';
   bool _isLoading = false;
+  double _convertedAmount = 0.0;
 
   final List<String> _categories = [
     'Genel',
@@ -996,26 +998,80 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                 const SizedBox(height: 16),
 
                 // Miktar
-                TextFormField(
-                  controller: _amountController,
-                  decoration: const InputDecoration(
-                    labelText: 'Miktar *',
-                    hintText: '0.00',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.money_outlined),
-                  ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Miktar gerekli';
-                    }
-                    final amount = double.tryParse(value);
-                    if (amount == null || amount <= 0) {
-                      return 'Geçerli bir miktar girin';
-                    }
-                    return null;
-                  },
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: _amountController,
+                        decoration: InputDecoration(
+                          labelText: 'Miktar *',
+                          hintText: '1.000,00',
+                          border: const OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.money_outlined),
+                          suffixText: _getCurrencySymbol(_selectedCurrency),
+                          suffixStyle: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        onChanged: (value) {
+                          _formatAmount(value);
+                          _calculateConvertedAmount();
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Miktar gerekli';
+                          }
+                          final cleanValue = value.replaceAll('.', '').replaceAll(',', '.');
+                          final amount = double.tryParse(cleanValue);
+                          if (amount == null || amount <= 0) {
+                            return 'Geçerli bir miktar girin';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Dönüştürülmüş miktar
+                    if (_selectedCurrency != widget.account.currency)
+                      Expanded(
+                        flex: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue[200]!),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Hesap Para Biriminde:',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _formatCurrency(_convertedAmount, widget.account.currency),
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: Colors.blue[700],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
 
                 // Açıklama
@@ -1171,6 +1227,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
           setState(() {
             _exchangeRateController.text = rate.toStringAsFixed(4);
           });
+          // Kur güncellendiğinde dönüştürülmüş miktarı yeniden hesapla
+          _calculateConvertedAmount();
         } else if (mounted) {
           setState(() {
             _exchangeRateController.text = 'Kur alınamadı';
@@ -1183,6 +1241,108 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
           });
         }
       }
+    }
+  }
+
+  // Para birimi sembolü al
+  String _getCurrencySymbol(String currency) {
+    switch (currency) {
+      case 'TRY':
+        return '₺';
+      case 'USD':
+        return '\$';
+      case 'EUR':
+        return '€';
+      case 'GBP':
+        return '£';
+      default:
+        return currency;
+    }
+  }
+
+  // Miktarı Türkçe formatla
+  void _formatAmount(String value) {
+    if (value.isEmpty) return;
+    
+    // Sadece rakam ve virgül içeren değerleri işle
+    final cleanValue = value.replaceAll(RegExp(r'[^\d,]'), '');
+    if (cleanValue.isEmpty) return;
+    
+    // Virgülü nokta ile değiştir
+    final doubleValue = cleanValue.replaceAll(',', '.');
+    final amount = double.tryParse(doubleValue);
+    
+    if (amount != null) {
+      // Türkçe formatla (1.000,00)
+      final formatter = NumberFormat('#,##0.00', 'tr_TR');
+      final formatted = formatter.format(amount);
+      
+      // Cursor pozisyonunu koru
+      final cursorPosition = _amountController.selection.baseOffset;
+      _amountController.text = formatted;
+      
+      // Cursor pozisyonunu ayarla
+      if (cursorPosition <= formatted.length) {
+        _amountController.selection = TextSelection.collapsed(offset: cursorPosition);
+      }
+    }
+  }
+
+  // Para birimi formatla
+  String _formatCurrency(double amount, String currency) {
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    final symbol = _getCurrencySymbol(currency);
+    return '${formatter.format(amount)} $symbol';
+  }
+
+  // Dönüştürülmüş miktarı hesapla
+  void _calculateConvertedAmount() async {
+    if (_amountController.text.isEmpty) {
+      setState(() {
+        _convertedAmount = 0.0;
+      });
+      return;
+    }
+
+    try {
+      // Miktarı temizle ve parse et
+      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.tryParse(cleanValue);
+      
+      if (amount == null || amount <= 0) {
+        setState(() {
+          _convertedAmount = 0.0;
+        });
+        return;
+      }
+
+      // Kur bilgisini al
+      final exchangeRateText = _exchangeRateController.text;
+      if (exchangeRateText.isEmpty || exchangeRateText == 'Yükleniyor...' || exchangeRateText.contains('Hata')) {
+        setState(() {
+          _convertedAmount = 0.0;
+        });
+        return;
+      }
+
+      final exchangeRate = double.tryParse(exchangeRateText);
+      if (exchangeRate == null || exchangeRate <= 0) {
+        setState(() {
+          _convertedAmount = 0.0;
+        });
+        return;
+      }
+
+      // Dönüştürülmüş miktarı hesapla
+      final converted = amount * exchangeRate;
+      
+      setState(() {
+        _convertedAmount = converted;
+      });
+    } catch (e) {
+      setState(() {
+        _convertedAmount = 0.0;
+      });
     }
   }
 
