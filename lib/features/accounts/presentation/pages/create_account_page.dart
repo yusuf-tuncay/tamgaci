@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/account.dart';
+import '../../domain/entities/account_transaction.dart';
 import '../providers/account_providers.dart';
+import '../providers/account_transaction_providers.dart';
 
 /// Hesap Oluşturma Sayfası
 class CreateAccountPage extends ConsumerStatefulWidget {
@@ -616,9 +620,18 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
         debugPrint(
             'CreateAccountPage - accountsProvider invalidated after update');
       } else {
+        // Yeni hesap oluştur
         await ref.read(accountNotifierProvider.notifier).createAccount(account);
-        // Provider'ı refresh et
+        
+        // Açılış bakiyesi için transaction oluştur (sadece yeni hesap için)
+        final openingBalance = double.parse(_balanceController.text);
+        if (openingBalance > 0) {
+          await _createOpeningBalanceTransaction(account.id, openingBalance, account.currency);
+        }
+        
+        // Provider'ları refresh et
         ref.invalidate(accountsProvider);
+        ref.invalidate(transactionsByAccountIdProvider(account.id));
         debugPrint(
             'CreateAccountPage - accountsProvider invalidated after create');
       }
@@ -840,6 +853,49 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
               ),
       ),
     );
+  }
+
+  Future<void> _createOpeningBalanceTransaction(String accountId, double openingBalance, String currency) async {
+    try {
+      // Firebase'den tenantId ve userId'yi al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          final tenantId = userData['tenantId'] as String? ?? '';
+
+          final transaction = AccountTransaction(
+            id: '',
+            accountId: accountId,
+            tenantId: tenantId,
+            type: TransactionType.opening,
+            amount: openingBalance,
+            balanceAfter: openingBalance,
+            description: 'Hesap açılış bakiyesi',
+            category: TransactionCategory.bank,
+            transactionDate: DateTime.now(),
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+            createdBy: user.uid,
+            updatedBy: user.uid,
+            userId: user.uid,
+          );
+
+          await ref
+              .read(accountTransactionNotifierProvider.notifier)
+              .createTransaction(transaction);
+          
+          debugPrint('Opening balance transaction created: $openingBalance $currency');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error creating opening balance transaction: $e');
+    }
   }
 
   void _clearForm() {

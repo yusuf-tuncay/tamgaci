@@ -6,6 +6,7 @@ enum TransactionType {
   withdrawal, // Para çıkışı
   transfer, // Transfer
   adjustment, // Düzeltme
+  opening, // Açılış bakiyesi
 }
 
 /// Hesap hareketi kategorileri

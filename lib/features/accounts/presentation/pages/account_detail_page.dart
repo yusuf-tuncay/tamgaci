@@ -69,6 +69,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   Widget build(BuildContext context) {
     // Hesaplar listesi ile aynı mantık - accountNotifierProvider kullan
     final accountsAsync = ref.watch(accountNotifierProvider);
+    final transactionsAsync = ref.watch(transactionsByAccountIdProvider(widget.account.id));
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -85,14 +86,29 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           debugPrint(
               'AccountDetailPage - accountNotifier balance: ${updatedAccount.balance}');
 
-          return CustomScrollView(
-            slivers: [
-              _buildAppBar(updatedAccount),
-              _buildAccountCard(updatedAccount),
-              _buildDetailsSection(updatedAccount),
-              _buildTransactionsSection(updatedAccount),
-              _buildActionsSection(updatedAccount),
-            ],
+          return transactionsAsync.when(
+            data: (transactions) {
+              // Hesap hareketlerinden bakiye hesapla
+              final calculatedBalance = _calculateBalanceFromTransactions(transactions);
+              final accountWithCalculatedBalance = updatedAccount.copyWith(balance: calculatedBalance);
+              
+              debugPrint('AccountDetailPage - calculated balance: $calculatedBalance');
+              debugPrint('AccountDetailPage - original balance: ${updatedAccount.balance}');
+
+              return CustomScrollView(
+                slivers: [
+                  _buildAppBar(accountWithCalculatedBalance),
+                  _buildAccountCard(accountWithCalculatedBalance),
+                  _buildDetailsSection(accountWithCalculatedBalance),
+                  _buildTransactionsSection(accountWithCalculatedBalance),
+                  _buildActionsSection(accountWithCalculatedBalance),
+                ],
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, stack) => Center(
+              child: Text('Transaction hatası: $error'),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -101,6 +117,21 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         ),
       ),
     );
+  }
+
+  /// Hesap hareketlerinden bakiye hesapla
+  double _calculateBalanceFromTransactions(List<AccountTransaction> transactions) {
+    double balance = 0.0;
+    
+    // İşlemleri tarih sırasına göre sırala (en eski önce)
+    final sortedTransactions = List<AccountTransaction>.from(transactions)
+      ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
+    
+    for (final transaction in sortedTransactions) {
+      balance += transaction.amount;
+    }
+    
+    return balance;
   }
 
   Widget _buildAppBar(Account account) {
