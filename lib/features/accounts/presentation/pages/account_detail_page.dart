@@ -3052,77 +3052,42 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 2,
-                              child: TextFormField(
-                                controller: _exchangeRateController,
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                        decimal: true),
-                                decoration: InputDecoration(
-                                  hintText: 'Kuru Gerekli',
-                                  labelText: 'Döviz Kuru',
-                                  helperText: 'TCMB\'den otomatik çekilir',
-                                  prefixIcon: const Icon(Icons.swap_horiz),
-                                  suffixText: widget.currentAccount.currency,
-                                  border: const OutlineInputBorder(),
-                                  suffixStyle: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Kur gerekli';
-                                  }
-                                  final rate = double.tryParse(value);
-                                  if (rate == null || rate <= 0) {
-                                    return 'Geçerli kur girin';
-                                  }
-                                  return null;
-                                },
-                              ),
+                        // Kur alanı
+                        TextFormField(
+                          controller: _exchangeRateController,
+                          keyboardType:
+                              const TextInputType.numberWithOptions(
+                                  decimal: true),
+                          decoration: InputDecoration(
+                            hintText: 'Kuru Gerekli',
+                            labelText: 'Döviz Kuru',
+                            helperText: _convertedAmount > 0 
+                                ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
+                                : 'TCMB\'den otomatik çekilir',
+                            helperStyle: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: _convertedAmount > 0 ? Colors.blue[700] : Colors.grey[600],
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 1,
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[50],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.blue[200]!),
-                                ),
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      'Dönüştürülen',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 10,
-                                        color: Colors.blue[700],
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _convertedAmount > 0
-                                          ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
-                                          : '0,00 ${_selectedAccount!.currency}',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: Colors.blue[800],
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                            prefixIcon: const Icon(Icons.swap_horiz),
+                            suffixText: widget.currentAccount.currency,
+                            border: const OutlineInputBorder(),
+                            suffixStyle: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Kur gerekli';
+                            }
+                            final rate = double.tryParse(value);
+                            if (rate == null || rate <= 0) {
+                              return 'Geçerli kur girin';
+                            }
+                            return null;
+                          },
                         ),
                       ],
                     ),
@@ -3701,17 +3666,20 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
           // TRY'den diğer para birimlerine: 1 TRY = 1/kur EUR
           // Örnek: 1 EUR = 33.20 TRY ise, 1 TRY = 1/33.20 EUR
           rate = 1.0 / toRate.rate;
-          debugPrint('TRY to $toCurrency: 1 TRY = ${1.0 / toRate.rate} $toCurrency');
+          debugPrint(
+              'TRY to $toCurrency: 1 TRY = ${1.0 / toRate.rate} $toCurrency');
         } else if (toCurrency == 'TRY') {
           // Diğer para birimlerinden TRY'ye: 1 EUR = kur TRY
           // Örnek: 1 EUR = 33.20 TRY
           rate = fromRate.rate;
-          debugPrint('$fromCurrency to TRY: 1 $fromCurrency = ${fromRate.rate} TRY');
+          debugPrint(
+              '$fromCurrency to TRY: 1 $fromCurrency = ${fromRate.rate} TRY');
         } else {
           // İki yabancı para birimi arasında (TRY üzerinden)
           // Örnek: EUR → USD: (1 EUR = 33.20 TRY) / (1 USD = 30.50 TRY) = 1.088 EUR/USD
           rate = fromRate.rate / toRate.rate;
-          debugPrint('$fromCurrency to $toCurrency: ${fromRate.rate} / ${toRate.rate} = ${fromRate.rate / toRate.rate}');
+          debugPrint(
+              '$fromCurrency to $toCurrency: ${fromRate.rate} / ${toRate.rate} = ${fromRate.rate / toRate.rate}');
         }
 
         debugPrint('Final calculated rate: $rate');
