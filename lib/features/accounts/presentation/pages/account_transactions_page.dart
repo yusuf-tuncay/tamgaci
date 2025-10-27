@@ -38,6 +38,9 @@ class _AccountTransactionsPageState
   DateTime? _startDate;
   DateTime? _endDate;
   bool _sortAscending = false; // En yeni önce
+  
+  // Excel export debounce
+  bool _isExporting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -1011,6 +1014,13 @@ class _AccountTransactionsPageState
   }
 
   Future<void> _exportToExcel() async {
+    // Debounce kontrolü - çift tıklama engelleme
+    if (_isExporting) {
+      debugPrint('Excel export zaten çalışıyor, çift tıklama engellendi');
+      return;
+    }
+    
+    _isExporting = true;
     debugPrint('=== EXCEL EXPORT BAŞLADI ===');
     debugPrint('Çağrı zamanı: ${DateTime.now()}');
     
@@ -1110,6 +1120,10 @@ class _AccountTransactionsPageState
           ),
         );
       }
+    } finally {
+      // Debounce'u sıfırla
+      _isExporting = false;
+      debugPrint('Excel export tamamlandı, debounce sıfırlandı');
     }
   }
 }
