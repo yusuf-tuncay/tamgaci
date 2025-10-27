@@ -1491,7 +1491,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
   final _amountController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _amountFocusNode = FocusNode();
-  
+
   BalanceUpdateType _updateType = BalanceUpdateType.setDirect;
   bool _isLoading = false;
 
@@ -1499,7 +1499,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
   void initState() {
     super.initState();
     _amountController.text = widget.account.balance.toString();
-    
+
     // Miktar alanı focus değişikliklerini dinle
     _amountFocusNode.addListener(() {
       if (!_amountFocusNode.hasFocus) {
@@ -1542,6 +1542,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
             children: [
               // Hesap Bilgileri
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
@@ -1585,11 +1586,11 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                     child: RadioListTile<BalanceUpdateType>(
                       title: Text(
                         'Doğrudan Gir',
-                        style: GoogleFonts.poppins(fontSize: 12),
+                        style: GoogleFonts.poppins(fontSize: 11),
                       ),
                       subtitle: Text(
                         'Yeni bakiye',
-                        style: GoogleFonts.poppins(fontSize: 10),
+                        style: GoogleFonts.poppins(fontSize: 9),
                       ),
                       value: BalanceUpdateType.setDirect,
                       groupValue: _updateType,
@@ -1600,17 +1601,18 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                         });
                       },
                       dense: true,
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                   Expanded(
                     child: RadioListTile<BalanceUpdateType>(
                       title: Text(
                         'Para Ekle',
-                        style: GoogleFonts.poppins(fontSize: 12),
+                        style: GoogleFonts.poppins(fontSize: 11),
                       ),
                       subtitle: Text(
                         'Mevcut + ekle',
-                        style: GoogleFonts.poppins(fontSize: 10),
+                        style: GoogleFonts.poppins(fontSize: 9),
                       ),
                       value: BalanceUpdateType.add,
                       groupValue: _updateType,
@@ -1621,17 +1623,18 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                         });
                       },
                       dense: true,
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                   Expanded(
                     child: RadioListTile<BalanceUpdateType>(
                       title: Text(
                         'Para Çıkar',
-                        style: GoogleFonts.poppins(fontSize: 12),
+                        style: GoogleFonts.poppins(fontSize: 11),
                       ),
                       subtitle: Text(
                         'Mevcut - çıkar',
-                        style: GoogleFonts.poppins(fontSize: 10),
+                        style: GoogleFonts.poppins(fontSize: 9),
                       ),
                       value: BalanceUpdateType.subtract,
                       groupValue: _updateType,
@@ -1642,6 +1645,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                         });
                       },
                       dense: true,
+                      contentPadding: EdgeInsets.zero,
                     ),
                   ),
                 ],
@@ -1676,7 +1680,8 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                     return 'Miktar giriniz';
                   }
                   // Formatlanmış değeri parse etmek için virgülü noktaya çevir
-                  final cleanValue = value.replaceAll('.', '').replaceAll(',', '.');
+                  final cleanValue =
+                      value.replaceAll('.', '').replaceAll(',', '.');
                   final amount = double.tryParse(cleanValue);
                   if (amount == null) {
                     return 'Geçerli bir miktar giriniz';
@@ -1688,7 +1693,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 },
               ),
               const SizedBox(height: 16),
-              
+
               // Açıklama Alanı
               Text(
                 'Açıklama (Opsiyonel)',
@@ -1702,16 +1707,17 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 controller: _descriptionController,
                 maxLines: 2,
                 decoration: InputDecoration(
-                  hintText: 'İşlem açıklaması giriniz...',
+                  hintText: _getDescriptionHint(),
                   prefixIcon: const Icon(Icons.description),
                   border: const OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Sonuç Önizleme
               if (_amountController.text.isNotEmpty)
                 Container(
+                  width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.blue[50],
@@ -1787,9 +1793,21 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
     }
   }
 
+  String _getDescriptionHint() {
+    switch (_updateType) {
+      case BalanceUpdateType.setDirect:
+        return 'Bakiye düzeltme açıklaması...';
+      case BalanceUpdateType.add:
+        return 'Para girişi açıklaması...';
+      case BalanceUpdateType.subtract:
+        return 'Para çıkışı açıklaması...';
+    }
+  }
+
   String _getPreviewText() {
     // Formatlanmış değeri parse etmek için virgülü noktaya çevir
-    final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+    final cleanValue =
+        _amountController.text.replaceAll('.', '').replaceAll(',', '.');
     final amount = double.tryParse(cleanValue);
     if (amount == null) return '';
 
@@ -1824,7 +1842,8 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
       final cleanValue = text.replaceAll('.', '').replaceAll(',', '.');
       final amount = double.tryParse(cleanValue);
       if (amount != null) {
-        _amountController.text = NumberFormat('#,##0.00', 'tr_TR').format(amount);
+        _amountController.text =
+            NumberFormat('#,##0.00', 'tr_TR').format(amount);
       }
     }
   }
@@ -1838,7 +1857,8 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
 
     try {
       // Formatlanmış değeri parse etmek için virgülü noktaya çevir
-      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final cleanValue =
+          _amountController.text.replaceAll('.', '').replaceAll(',', '.');
       final amount = double.parse(cleanValue);
       double newBalance;
 
@@ -1856,9 +1876,9 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
 
       // Firebase'e güncelle
       await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
-        widget.account.id,
-        newBalance,
-      );
+            widget.account.id,
+            newBalance,
+          );
 
       // Provider'ı refresh et
       ref.invalidate(accountsProvider);
@@ -1866,13 +1886,13 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
       if (mounted) {
         Navigator.pop(context);
         widget.onBalanceUpdated();
-        
+
         // Açıklama varsa göster
         final description = _descriptionController.text.trim();
-        final message = description.isNotEmpty 
+        final message = description.isNotEmpty
             ? 'Bakiye güncellendi: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}\nAçıklama: $description'
             : 'Bakiye başarıyla güncellendi: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
-            
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
