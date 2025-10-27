@@ -67,6 +67,14 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   Widget build(BuildContext context) {
     // Riverpod provider'dan güncel hesap verisini al
     final accountsAsync = ref.watch(accountsProvider);
+    
+    // Provider değişikliklerini dinle
+    ref.listen(accountsProvider, (previous, next) {
+      debugPrint('AccountDetailPage - Provider changed!');
+      debugPrint('AccountDetailPage - Previous: ${previous?.value?.length ?? 0} accounts');
+      debugPrint('AccountDetailPage - Next: ${next.value?.length ?? 0} accounts');
+    });
+    
     final account = accountsAsync.when(
       data: (accounts) {
         debugPrint(
