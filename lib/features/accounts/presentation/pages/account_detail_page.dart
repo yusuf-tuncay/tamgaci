@@ -1568,6 +1568,13 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
         _formatAmount();
       }
     });
+
+    // Miktar değişikliklerini dinle - Sonuç Önizleme için
+    _amountController.addListener(() {
+      setState(() {
+        // Sonuç önizleme güncellensin
+      });
+    });
   }
 
   @override
@@ -1809,37 +1816,36 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
               const SizedBox(height: 16),
 
               // Sonuç Önizleme
-              if (_amountController.text.isNotEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.blue[50],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.blue[200]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Sonuç Önizleme',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue[800],
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _getPreviewText(),
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: Colors.blue[700],
-                        ),
-                      ),
-                    ],
-                  ),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sonuç Önizleme',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _getPreviewText(),
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -1898,29 +1904,67 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
     }
   }
 
+  /// Hesap hareketlerinden bakiye hesapla
+  double _calculateBalanceFromTransactions(
+      List<AccountTransaction> transactions) {
+    double balance = 0.0;
+
+    // İşlemleri tarih sırasına göre sırala (en eski önce)
+    final sortedTransactions = List<AccountTransaction>.from(transactions)
+      ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
+
+    for (final transaction in sortedTransactions) {
+      balance += transaction.amount;
+    }
+
+    return balance;
+  }
+
   String _getPreviewText() {
     // Formatlanmış değeri parse etmek için virgülü noktaya çevir
     final cleanValue =
         _amountController.text.replaceAll('.', '').replaceAll(',', '.');
     final amount = double.tryParse(cleanValue);
-    if (amount == null) return '';
+
+    // Hesap hareketlerinden güncel bakiyeyi al
+    final transactionsAsync =
+        ref.read(transactionsByAccountIdProvider(widget.account.id));
+    double currentBalance = widget.account.balance;
+
+    transactionsAsync.whenData((transactions) {
+      currentBalance = _calculateBalanceFromTransactions(transactions);
+    });
+
+    if (amount == null) {
+      // Miktar girilmemişse sadece mevcut bakiyeyi göster
+      return 'Mevcut bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(currentBalance)} ${widget.account.currency}';
+    }
 
     switch (_updateType) {
       case BalanceUpdateType.setDirect:
         return 'Yeni bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.account.currency}';
       case BalanceUpdateType.add:
-        final newBalance = widget.account.balance + amount;
-        return 'Mevcut: ${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} + ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} = ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
+        final newBalance = currentBalance + amount;
+        return 'Mevcut: ${NumberFormat('#,##0.00', 'tr_TR').format(currentBalance)} + ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} = ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
       case BalanceUpdateType.subtract:
-        final newBalance = widget.account.balance - amount;
-        return 'Mevcut: ${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} - ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} = ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
+        final newBalance = currentBalance - amount;
+        return 'Mevcut: ${NumberFormat('#,##0.00', 'tr_TR').format(currentBalance)} - ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} = ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
     }
   }
 
   void _updateAmountController() {
+    // Hesap hareketlerinden güncel bakiyeyi al
+    final transactionsAsync =
+        ref.read(transactionsByAccountIdProvider(widget.account.id));
+    double currentBalance = widget.account.balance;
+
+    transactionsAsync.whenData((transactions) {
+      currentBalance = _calculateBalanceFromTransactions(transactions);
+    });
+
     switch (_updateType) {
       case BalanceUpdateType.setDirect:
-        _amountController.text = widget.account.balance.toString();
+        _amountController.text = currentBalance.toString();
         _descriptionController.text = 'Bakiye düzeltme';
         break;
       case BalanceUpdateType.add:
