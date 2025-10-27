@@ -253,8 +253,11 @@ class _AccountTransactionsPageState
         const SizedBox(width: 8),
         // Tarih filtresi
         Expanded(
-          child: InkWell(
-            onTap: _selectDateRange,
+          child: GestureDetector(
+            onTap: () {
+              debugPrint('Tarih aralığı InkWell tıklandı');
+              _selectDateRange();
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               decoration: BoxDecoration(
@@ -438,8 +441,11 @@ class _AccountTransactionsPageState
         Row(
           children: [
             Expanded(
-              child: InkWell(
-                onTap: _selectDateRange,
+              child: GestureDetector(
+                onTap: () {
+                  debugPrint('Tarih aralığı InkWell tıklandı (mobil)');
+                  _selectDateRange();
+                },
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -458,11 +464,11 @@ class _AccountTransactionsPageState
                               : 'Tarih Aralığı Seç',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: _startDate != null && _endDate != null 
-                                ? Colors.blue[700] 
+                            color: _startDate != null && _endDate != null
+                                ? Colors.blue[700]
                                 : Colors.grey[600],
-                            fontWeight: _startDate != null && _endDate != null 
-                                ? FontWeight.w600 
+                            fontWeight: _startDate != null && _endDate != null
+                                ? FontWeight.w600
                                 : FontWeight.normal,
                           ),
                         ),
@@ -659,37 +665,66 @@ class _AccountTransactionsPageState
 
   List<AccountTransaction> _filterTransactions(
       List<AccountTransaction> transactions) {
+    debugPrint('=== FİLTRELEME BAŞLADI ===');
+    debugPrint('Toplam işlem sayısı: ${transactions.length}');
+    debugPrint('Arama sorgusu: "$_searchQuery"');
+    debugPrint('Seçili tür: $_selectedType');
+    debugPrint('Seçili kategori: $_selectedCategory');
+    debugPrint('Başlangıç tarihi: $_startDate');
+    debugPrint('Bitiş tarihi: $_endDate');
+    debugPrint('Sıralama: ${_sortAscending ? "Artan" : "Azalan"}');
+
     var filtered = transactions.where((transaction) {
+      debugPrint('İşlem kontrol ediliyor: ${transaction.description} - ${transaction.transactionDate}');
+      
       // Arama filtresi
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
         if (!transaction.description.toLowerCase().contains(query)) {
+          debugPrint('  ❌ Arama filtresi: "${transaction.description}" sorgu "$query" içermiyor');
           return false;
         }
+        debugPrint('  ✅ Arama filtresi geçti');
       }
 
       // İşlem türü filtresi
       if (_selectedType != null && transaction.type != _selectedType) {
+        debugPrint('  ❌ Tür filtresi: ${transaction.type} != $_selectedType');
         return false;
       }
+      debugPrint('  ✅ Tür filtresi geçti');
 
       // Kategori filtresi
       if (_selectedCategory != null &&
           transaction.category != _selectedCategory) {
+        debugPrint('  ❌ Kategori filtresi: ${transaction.category} != $_selectedCategory');
         return false;
       }
+      debugPrint('  ✅ Kategori filtresi geçti');
 
       // Tarih filtresi
-      if (_startDate != null &&
-          transaction.transactionDate.isBefore(_startDate!)) {
-        return false;
+      if (_startDate != null) {
+        // Başlangıç tarihinden önceki günleri filtrele (başlangıç dahil)
+        if (transaction.transactionDate.isBefore(_startDate!)) {
+          debugPrint('  ❌ Başlangıç tarihi filtresi: ${transaction.transactionDate} < $_startDate');
+          return false;
+        }
+        debugPrint('  ✅ Başlangıç tarihi filtresi geçti');
       }
-      if (_endDate != null && transaction.transactionDate.isAfter(_endDate!)) {
-        return false;
+      if (_endDate != null) {
+        // Bitiş tarihinden sonraki günleri filtrele (bitiş dahil)
+        if (transaction.transactionDate.isAfter(_endDate!)) {
+          debugPrint('  ❌ Bitiş tarihi filtresi: ${transaction.transactionDate} > $_endDate');
+          return false;
+        }
+        debugPrint('  ✅ Bitiş tarihi filtresi geçti');
       }
 
+      debugPrint('  ✅ Tüm filtreler geçti - işlem dahil ediliyor');
       return true;
     }).toList();
+
+    debugPrint('Filtreleme sonucu: ${filtered.length} işlem');
 
     // Sıralama
     filtered.sort((a, b) {
@@ -700,6 +735,7 @@ class _AccountTransactionsPageState
       }
     });
 
+    debugPrint('=== FİLTRELEME BİTTİ ===');
     return filtered;
   }
 
@@ -728,14 +764,14 @@ class _AccountTransactionsPageState
     if (picked != null) {
       debugPrint('Yeni başlangıç tarihi: ${picked.start}');
       debugPrint('Yeni bitiş tarihi: ${picked.end}');
-      
+
       setState(() {
         _startDate = picked.start;
         _endDate = picked.end;
       });
 
       debugPrint('Tarih aralığı güncellendi');
-      
+
       // Kullanıcıya bilgi ver
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -760,7 +796,7 @@ class _AccountTransactionsPageState
     debugPrint('Önceki kategori: $_selectedCategory');
     debugPrint('Önceki başlangıç tarihi: $_startDate');
     debugPrint('Önceki bitiş tarihi: $_endDate');
-    
+
     setState(() {
       _searchQuery = '';
       _selectedType = null;
@@ -771,7 +807,7 @@ class _AccountTransactionsPageState
     });
 
     debugPrint('Filtreler temizlendi');
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
