@@ -2796,22 +2796,30 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     segments: [
                       ButtonSegment<TransferType>(
                         value: TransferType.send,
-                        label: Text(
-                          'Gönder',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                        label: SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            'Gönder',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                         tooltip: 'Bu hesaptan başka hesaba para gönder',
                       ),
                       ButtonSegment<TransferType>(
                         value: TransferType.receive,
-                        label: Text(
-                          'Al',
-                          style: GoogleFonts.poppins(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                        label: SizedBox(
+                          width: double.infinity,
+                          child: Text(
+                            'Al',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                         tooltip: 'Başka hesaptan bu hesaba para al',
