@@ -92,17 +92,24 @@ class FirebaseAccountRepository implements AccountRepository {
   }
 
   /// Tek bir hesabı realtime olarak dinle
-  Stream<Account?> getAccountStream(String id) {
-    return _firestore
-        .collection('tenants')
-        .doc(_tenantId().toString())
-        .collection('accounts')
-        .doc(id)
-        .snapshots()
-        .map((doc) {
-      if (!doc.exists) return null;
-      return FirebaseAccountEntity.fromFirestore(doc).toDomain();
-    });
+  @override
+  Stream<Account?> getAccountStream(String id) async* {
+    try {
+      final tenantId = await _tenantId();
+      yield* _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('accounts')
+          .doc(id)
+          .snapshots()
+          .map((doc) {
+        if (!doc.exists) return null;
+        return FirebaseAccountEntity.fromFirestore(doc).toDomain();
+      });
+    } catch (e) {
+      AppLogger.error('Error getting account stream', e);
+      yield null;
+    }
   }
 
   @override
