@@ -19,9 +19,8 @@ class ExcelExportService {
       // Excel dosyası oluştur
       final excel = Excel.createExcel();
 
-      // Varsayılan sheet'i sil ve yeni sheet oluştur
-      excel.delete('Sheet1');
-      final sheet = excel['Hesap Hareketleri'];
+      // Varsayılan sheet'i kullan
+      final sheet = excel['Sheet1'];
 
       // Başlık satırı
       final headerRow = [
@@ -82,7 +81,7 @@ class ExcelExportService {
           ..setAttribute('download', finalFileName)
           ..click();
         html.Url.revokeObjectUrl(url);
-        
+
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {
