@@ -517,10 +517,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
-                      'Hesap Durumu',
-                      Icons.settings,
+                      'Para Transferi',
+                      Icons.swap_horiz,
                       Colors.orange[600]!,
-                      _changeStatus,
+                      _transferMoney,
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
@@ -693,19 +693,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  void _changeStatus() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Durum Değiştir'),
-        content:
-            const Text('Hesap durumu değiştirme özelliği yakında eklenecek.'),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: const Text('Tamam'),
-          ),
-        ],
+  void _transferMoney() {
+    // TODO: Para transferi dialog'u implement edilecek
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Para transferi özelliği yakında eklenecek'),
+        backgroundColor: Colors.orange,
       ),
     );
   }
@@ -1492,17 +1485,18 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
   }
 
   /// Hesap hareketlerinden bakiye hesapla
-  double _calculateBalanceFromTransactions(List<AccountTransaction> transactions) {
+  double _calculateBalanceFromTransactions(
+      List<AccountTransaction> transactions) {
     double balance = 0.0;
-    
+
     // İşlemleri tarih sırasına göre sırala (en eski önce)
     final sortedTransactions = List<AccountTransaction>.from(transactions)
       ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
-    
+
     for (final transaction in sortedTransactions) {
       balance += transaction.amount;
     }
-    
+
     return balance;
   }
 
@@ -1515,7 +1509,8 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
 
     try {
       // Miktarı parse et
-      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final cleanValue =
+          _amountController.text.replaceAll('.', '').replaceAll(',', '.');
       final amount = double.tryParse(cleanValue);
       if (amount == null) {
         throw Exception('Geçersiz miktar');
@@ -1540,9 +1535,10 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
       final tenantId = userData['tenantId'] as String? ?? '';
 
       // Hesap hareketlerinden güncel bakiyeyi hesapla
-      final transactionsAsync = ref.read(transactionsByAccountIdProvider(widget.account.id));
+      final transactionsAsync =
+          ref.read(transactionsByAccountIdProvider(widget.account.id));
       double currentBalance = widget.account.balance;
-      
+
       transactionsAsync.whenData((transactions) {
         currentBalance = _calculateBalanceFromTransactions(transactions);
       });
