@@ -3273,12 +3273,28 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
     if (_transferType == TransferType.send) {
       // Gönder: Bu hesaptan başka hesaba
-      return '${widget.currentAccount.name} → ${_selectedAccount?.name}\n'
-          '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}';
+      // Miktar bu hesabın para biriminde giriliyor
+      if (_convertedAmount > 0) {
+        // Dönüştürülen miktar varsa onu göster
+        return '${widget.currentAccount.name} → ${_selectedAccount?.name}\n'
+            '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency} = '
+            '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount?.currency}';
+      } else {
+        return '${widget.currentAccount.name} → ${_selectedAccount?.name}\n'
+            '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}';
+      }
     } else {
       // Al: Başka hesaptan bu hesaba
-      return '${_selectedAccount?.name} → ${widget.currentAccount.name}\n'
-          '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${_selectedAccount?.currency ?? ''}';
+      // Miktar kaynak hesabın para biriminde giriliyor
+      if (_convertedAmount > 0) {
+        // Dönüştürülen miktar varsa onu göster
+        return '${_selectedAccount?.name} → ${widget.currentAccount.name}\n'
+            '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${_selectedAccount?.currency ?? ''} = '
+            '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${widget.currentAccount.currency}';
+      } else {
+        return '${_selectedAccount?.name} → ${widget.currentAccount.name}\n'
+            '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${_selectedAccount?.currency ?? ''}';
+      }
     }
   }
 
@@ -3692,7 +3708,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         debugPrint('Final calculated rate: $rate');
 
         setState(() {
-          _exchangeRateController.text = '${rate.toStringAsFixed(4)}';
+          _exchangeRateController.text = rate.toStringAsFixed(4);
           _isLoadingExchangeRate = false;
           _isAutoExchangeRate = true; // Otomatik kur çekildi
         });
