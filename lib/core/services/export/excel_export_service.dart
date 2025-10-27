@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:excel/excel.dart';
+import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
 import '../../../features/accounts/domain/entities/account.dart';
 import '../../../features/accounts/domain/entities/account_transaction.dart';
+import 'package:flutter/foundation.dart';
 
 class ExcelExportService {
   static Future<String?> exportTransactionsToExcel({
@@ -13,6 +15,11 @@ class ExcelExportService {
     String? fileName,
   }) async {
     try {
+      // Platform kontrolü
+      if (kIsWeb) {
+        throw Exception('Excel export web platformunda desteklenmiyor. Lütfen mobil uygulamayı kullanın.');
+      }
+
       // Excel dosyası oluştur
       final excel = Excel.createExcel();
 
@@ -35,10 +42,10 @@ class ExcelExportService {
       sheet.appendRow(headerRow);
 
       // İşlemleri ekle
-      print('Excel export: ${transactions.length} işlem ekleniyor');
+      debugPrint('Excel export: ${transactions.length} işlem ekleniyor');
       for (int i = 0; i < transactions.length; i++) {
         final transaction = transactions[i];
-        
+
         final row = [
           DateFormat('dd.MM.yyyy').format(transaction.transactionDate),
           DateFormat('HH:mm').format(transaction.transactionDate),
@@ -49,12 +56,12 @@ class ExcelExportService {
           account.currency,
           transaction.balanceAfter,
         ];
-        
-        print('Excel export: Satır ${i + 1} - ${row.join(', ')}');
+
+        debugPrint('Excel export: Satır ${i + 1} - ${row.join(', ')}');
         sheet.appendRow(row);
       }
-      
-      print('Excel export: Toplam ${sheet.maxRows} satır eklendi');
+
+      debugPrint('Excel export: Toplam ${sheet.maxRows} satır eklendi');
 
       // Dosya adı oluştur
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
@@ -63,26 +70,26 @@ class ExcelExportService {
       final finalFileName = fileName ?? defaultFileName;
 
       // Dosyayı kaydet
-      final bytes = excel.encode();
+      final bytes = excel.save();
       if (bytes == null) {
         throw Exception('Excel dosyası oluşturulamadı');
       }
-      
-      print('Excel export: ${bytes.length} byte veri oluşturuldu');
-      
+
+      debugPrint('Excel export: ${bytes.length} byte veri oluşturuldu');
+
       // Downloads klasörüne kaydet
       final directory = await getDownloadsDirectory();
       if (directory == null) {
         throw Exception('Downloads klasörü bulunamadı');
       }
-      
+
       final filePath = path.join(directory.path, finalFileName);
       final file = File(filePath);
       await file.writeAsBytes(bytes);
-      
-      print('Excel export: Dosya kaydedildi - $filePath');
-      print('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
-      
+
+      debugPrint('Excel export: Dosya kaydedildi - $filePath');
+      debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
+
       return filePath;
     } catch (e) {
       throw Exception('Excel export hatası: $e');
