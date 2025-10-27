@@ -694,11 +694,14 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   void _transferMoney() {
-    // TODO: Para transferi dialog'u implement edilecek
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Para transferi özelliği yakında eklenecek'),
-        backgroundColor: Colors.orange,
+    showDialog(
+      context: context,
+      builder: (context) => _TransferDialog(
+        currentAccount: widget.account,
+        onTransferCompleted: () {
+          // Transfer tamamlandıktan sonra sayfayı yenile
+          setState(() {});
+        },
       ),
     );
   }
@@ -2677,4 +2680,639 @@ enum BalanceUpdateType {
   setDirect, // Doğrudan gir
   add, // Para ekle
   subtract, // Para çıkar
+}
+
+/// Para Transferi Dialog'u
+class _TransferDialog extends ConsumerStatefulWidget {
+  final Account currentAccount;
+  final VoidCallback onTransferCompleted;
+
+  const _TransferDialog({
+    required this.currentAccount,
+    required this.onTransferCompleted,
+  });
+
+  @override
+  ConsumerState<_TransferDialog> createState() => _TransferDialogState();
+}
+
+class _TransferDialogState extends ConsumerState<_TransferDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _amountFocusNode = FocusNode();
+
+  TransferType _transferType = TransferType.send;
+  Account? _selectedAccount;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _descriptionController.text = 'Para transferi';
+
+    // Miktar alanı focus değişikliklerini dinle
+    _amountFocusNode.addListener(() {
+      if (!_amountFocusNode.hasFocus) {
+        _formatAmount();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _descriptionController.dispose();
+    _amountFocusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accountsAsync = ref.watch(accountsProvider);
+
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.swap_horiz, color: Colors.orange[600]),
+          const SizedBox(width: 8),
+          const Text('Para Transferi'),
+        ],
+      ),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Transfer Türü Seçimi
+                Text(
+                  'Transfer Türü',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<TransferType>(
+                  segments: [
+                    ButtonSegment<TransferType>(
+                      value: TransferType.send,
+                      label: SizedBox(
+                        width: 90,
+                        height: 50,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Gönder',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'Bu hesaptan',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      tooltip: 'Bu hesaptan başka hesaba para gönder',
+                    ),
+                    ButtonSegment<TransferType>(
+                      value: TransferType.receive,
+                      label: SizedBox(
+                        width: 90,
+                        height: 50,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Al',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              'Bu hesaba',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      tooltip: 'Başka hesaptan bu hesaba para al',
+                    ),
+                  ],
+                  selected: {_transferType},
+                  onSelectionChanged: (Set<TransferType> newSelection) {
+                    setState(() {
+                      _transferType = newSelection.first;
+                      _selectedAccount = null; // Hesap seçimini sıfırla
+                    });
+                  },
+                  style: ButtonStyle(
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                    ),
+                    textStyle: WidgetStateProperty.all(
+                      GoogleFonts.poppins(fontSize: 10),
+                    ),
+                    minimumSize: WidgetStateProperty.all(const Size(90, 50)),
+                    maximumSize: WidgetStateProperty.all(const Size(90, 50)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Hesap Seçimi
+                Text(
+                  _transferType == TransferType.send
+                      ? 'Hedef Hesap'
+                      : 'Kaynak Hesap',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                accountsAsync.when(
+                  data: (accounts) {
+                    // Mevcut hesabı listeden çıkar
+                    final otherAccounts = accounts
+                        .where(
+                            (account) => account.id != widget.currentAccount.id)
+                        .toList();
+
+                    if (otherAccounts.isEmpty) {
+                      return Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Transfer edilecek başka hesap bulunamadı',
+                          style: GoogleFonts.poppins(color: Colors.grey[600]),
+                        ),
+                      );
+                    }
+
+                    return DropdownButtonFormField<Account>(
+                      initialValue: _selectedAccount,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.account_balance),
+                      ),
+                      hint: Text(_transferType == TransferType.send
+                          ? 'Hedef hesabı seçin'
+                          : 'Kaynak hesabı seçin'),
+                      items: otherAccounts.map((account) {
+                        return DropdownMenuItem<Account>(
+                          value: account,
+                          child: Row(
+                            children: [
+                              Icon(
+                                _getAccountIcon(account.type),
+                                size: 20,
+                                color: Colors.blue[600],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      account.name,
+                                      style: GoogleFonts.poppins(fontSize: 12),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 10,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (Account? account) {
+                        setState(() {
+                          _selectedAccount = account;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Hesap seçimi gerekli';
+                        }
+                        return null;
+                      },
+                    );
+                  },
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) =>
+                      Text('Hesap listesi yüklenemedi: $error'),
+                ),
+                const SizedBox(height: 16),
+
+                // Miktar Girişi
+                Text(
+                  'Transfer Miktarı',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  controller: _amountController,
+                  focusNode: _amountFocusNode,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: '0,00',
+                    prefixIcon: const Icon(Icons.attach_money),
+                    suffixText: widget.currentAccount.currency,
+                    border: const OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Miktar gerekli';
+                    }
+                    final cleanValue =
+                        value.replaceAll('.', '').replaceAll(',', '.');
+                    final amount = double.tryParse(cleanValue);
+                    if (amount == null || amount <= 0) {
+                      return 'Geçerli bir miktar girin';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Açıklama
+                TextFormField(
+                  controller: _descriptionController,
+                  decoration: const InputDecoration(
+                    labelText: 'Açıklama',
+                    hintText: 'Transfer açıklaması...',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.description_outlined),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+
+                // Transfer Önizleme
+                if (_selectedAccount != null &&
+                    _amountController.text.isNotEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Transfer Önizleme',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange[800],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _getTransferPreview(),
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.orange[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: const Text('İptal'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _executeTransfer,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.orange[600],
+            foregroundColor: Colors.white,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : const Text('Transfer Et'),
+        ),
+      ],
+    );
+  }
+
+  IconData _getAccountIcon(AccountType type) {
+    switch (type) {
+      case AccountType.checking:
+        return Icons.account_balance;
+      case AccountType.savings:
+        return Icons.savings;
+      case AccountType.credit:
+        return Icons.account_balance_wallet;
+      case AccountType.creditCard:
+        return Icons.credit_card;
+      case AccountType.investment:
+        return Icons.trending_up;
+      case AccountType.cash:
+        return Icons.payments;
+      case AccountType.foreign:
+        return Icons.public;
+      case AccountType.other:
+        return Icons.category;
+    }
+  }
+
+  String _getTransferPreview() {
+    final cleanValue =
+        _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+    final amount = double.tryParse(cleanValue);
+    if (amount == null) return '';
+
+    if (_transferType == TransferType.send) {
+      return '${widget.currentAccount.name} → ${_selectedAccount?.name}\n'
+          '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}';
+    } else {
+      return '${_selectedAccount?.name} → ${widget.currentAccount.name}\n'
+          '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}';
+    }
+  }
+
+  void _formatAmount() {
+    final text = _amountController.text;
+    if (text.isNotEmpty) {
+      final cleanValue = text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.tryParse(cleanValue);
+      if (amount != null) {
+        _amountController.text =
+            NumberFormat('#,##0.00', 'tr_TR').format(amount);
+      }
+    }
+  }
+
+  Future<void> _executeTransfer() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (_selectedAccount == null) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Miktarı parse et
+      final cleanValue =
+          _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.tryParse(cleanValue);
+      if (amount == null) {
+        throw Exception('Geçersiz miktar');
+      }
+
+      // Firebase'den tenantId ve userId'yi al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('Kullanıcı oturumu bulunamadı');
+      }
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        throw Exception('Kullanıcı bilgileri bulunamadı');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String? ?? '';
+
+      // Hesap hareketlerinden güncel bakiyeleri hesapla
+      final currentAccountTransactions =
+          ref.read(transactionsByAccountIdProvider(widget.currentAccount.id));
+      final selectedAccountTransactions =
+          ref.read(transactionsByAccountIdProvider(_selectedAccount!.id));
+
+      double currentAccountBalance = widget.currentAccount.balance;
+      double selectedAccountBalance = _selectedAccount!.balance;
+
+      currentAccountTransactions.whenData((transactions) {
+        currentAccountBalance = _calculateBalanceFromTransactions(transactions);
+      });
+
+      selectedAccountTransactions.whenData((transactions) {
+        selectedAccountBalance =
+            _calculateBalanceFromTransactions(transactions);
+      });
+
+      if (_transferType == TransferType.send) {
+        // Bu hesaptan başka hesaba gönder
+        final currentAccountNewBalance = currentAccountBalance - amount;
+        final selectedAccountNewBalance = selectedAccountBalance + amount;
+
+        // Bu hesap için transaction (çıkış)
+        final currentAccountTransaction = AccountTransaction(
+          id: '',
+          accountId: widget.currentAccount.id,
+          tenantId: tenantId,
+          type: TransactionType.transfer,
+          amount: -amount,
+          balanceAfter: currentAccountNewBalance,
+          description:
+              '${_descriptionController.text} → ${_selectedAccount!.name}',
+          category: TransactionCategory.bank,
+          transactionDate: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          createdBy: user.uid,
+          updatedBy: user.uid,
+          userId: user.uid,
+        );
+
+        // Hedef hesap için transaction (giriş)
+        final selectedAccountTransaction = AccountTransaction(
+          id: '',
+          accountId: _selectedAccount!.id,
+          tenantId: tenantId,
+          type: TransactionType.transfer,
+          amount: amount,
+          balanceAfter: selectedAccountNewBalance,
+          description:
+              '${_descriptionController.text} ← ${widget.currentAccount.name}',
+          category: TransactionCategory.bank,
+          transactionDate: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          createdBy: user.uid,
+          updatedBy: user.uid,
+          userId: user.uid,
+        );
+
+        // Transaction'ları kaydet
+        await ref
+            .read(accountTransactionNotifierProvider.notifier)
+            .createTransaction(currentAccountTransaction);
+
+        await ref
+            .read(accountTransactionNotifierProvider.notifier)
+            .createTransaction(selectedAccountTransaction);
+
+        // Hesap bakiyelerini güncelle
+        await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
+            widget.currentAccount.id, currentAccountNewBalance);
+
+        await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
+            _selectedAccount!.id, selectedAccountNewBalance);
+      } else {
+        // Başka hesaptan bu hesaba al
+        final currentAccountNewBalance = currentAccountBalance + amount;
+        final selectedAccountNewBalance = selectedAccountBalance - amount;
+
+        // Kaynak hesap için transaction (çıkış)
+        final selectedAccountTransaction = AccountTransaction(
+          id: '',
+          accountId: _selectedAccount!.id,
+          tenantId: tenantId,
+          type: TransactionType.transfer,
+          amount: -amount,
+          balanceAfter: selectedAccountNewBalance,
+          description:
+              '${_descriptionController.text} → ${widget.currentAccount.name}',
+          category: TransactionCategory.bank,
+          transactionDate: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          createdBy: user.uid,
+          updatedBy: user.uid,
+          userId: user.uid,
+        );
+
+        // Bu hesap için transaction (giriş)
+        final currentAccountTransaction = AccountTransaction(
+          id: '',
+          accountId: widget.currentAccount.id,
+          tenantId: tenantId,
+          type: TransactionType.transfer,
+          amount: amount,
+          balanceAfter: currentAccountNewBalance,
+          description:
+              '${_descriptionController.text} ← ${_selectedAccount!.name}',
+          category: TransactionCategory.bank,
+          transactionDate: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          createdBy: user.uid,
+          updatedBy: user.uid,
+          userId: user.uid,
+        );
+
+        // Transaction'ları kaydet
+        await ref
+            .read(accountTransactionNotifierProvider.notifier)
+            .createTransaction(selectedAccountTransaction);
+
+        await ref
+            .read(accountTransactionNotifierProvider.notifier)
+            .createTransaction(currentAccountTransaction);
+
+        // Hesap bakiyelerini güncelle
+        await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
+            _selectedAccount!.id, selectedAccountNewBalance);
+
+        await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
+            widget.currentAccount.id, currentAccountNewBalance);
+      }
+
+      // Provider'ları refresh et
+      ref.invalidate(accountsProvider);
+      ref.invalidate(transactionsByAccountIdProvider(widget.currentAccount.id));
+      ref.invalidate(transactionsByAccountIdProvider(_selectedAccount!.id));
+
+      if (mounted) {
+        context.pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Transfer başarıyla tamamlandı: ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        widget.onTransferCompleted();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Transfer sırasında hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Hesap hareketlerinden bakiye hesapla
+  double _calculateBalanceFromTransactions(
+      List<AccountTransaction> transactions) {
+    double balance = 0.0;
+
+    // İşlemleri tarih sırasına göre sırala (en eski önce)
+    final sortedTransactions = List<AccountTransaction>.from(transactions)
+      ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
+
+    for (final transaction in sortedTransactions) {
+      balance += transaction.amount;
+    }
+
+    return balance;
+  }
+}
+
+/// Transfer türleri
+enum TransferType {
+  send, // Bu hesaptan başka hesaba gönder
+  receive, // Başka hesaptan bu hesaba al
 }
