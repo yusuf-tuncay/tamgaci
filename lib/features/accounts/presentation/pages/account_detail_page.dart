@@ -2705,6 +2705,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   TransferType _transferType = TransferType.send;
   Account? _selectedAccount;
   bool _isLoading = false;
+  
+  // Kur bilgileri
+  final _exchangeRateController = TextEditingController();
+  double _convertedAmount = 0.0;
+  bool _isLoadingExchangeRate = false;
 
   @override
   void initState() {
@@ -2717,6 +2722,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         _formatAmount();
       }
     });
+    
+    // Miktar değişikliklerini dinle (kur hesaplama için)
+    _amountController.addListener(() {
+      _calculateConvertedAmount();
+    });
   }
 
   @override
@@ -2724,6 +2734,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     _amountController.dispose();
     _descriptionController.dispose();
     _amountFocusNode.dispose();
+    _exchangeRateController.dispose();
     super.dispose();
   }
 
@@ -2820,6 +2831,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                       _transferType = newSelection.first;
                       _selectedAccount = null; // Hesap seçimini sıfırla
                     });
+                    // Kur bilgisini güncelle
+                    _updateExchangeRate();
                   },
                   style: ButtonStyle(
                     padding: WidgetStateProperty.all(
@@ -2849,7 +2862,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   data: (accounts) {
                     // Mevcut hesabı listeden çıkar ve transfer edilemeyen hesapları filtrele
                     final otherAccounts = accounts
-                        .where((account) => 
+                        .where((account) =>
                             account.id != widget.currentAccount.id &&
                             _isTransferableAccount(account))
                         .toList();
@@ -2939,6 +2952,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                             setState(() {
                               _selectedAccount = account;
                             });
+                            // Kur bilgisini güncelle
+                            _updateExchangeRate();
                           },
                           isExpanded: true,
                         ),
@@ -2984,6 +2999,91 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     return null;
                   },
                 ),
+                const SizedBox(height: 16),
+
+                // Kur Bilgisi (farklı para birimlerinde)
+                if (_selectedAccount != null && 
+                    _selectedAccount!.currency != widget.currentAccount.currency)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Kur Bilgisi',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            flex: 2,
+                            child: TextFormField(
+                              controller: _exchangeRateController,
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              decoration: InputDecoration(
+                                hintText: '29.50',
+                                prefixIcon: const Icon(Icons.swap_horiz),
+                                suffixText: widget.currentAccount.currency,
+                                border: const OutlineInputBorder(),
+                                suffixStyle: GoogleFonts.poppins(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Kur gerekli';
+                                }
+                                final rate = double.tryParse(value);
+                                if (rate == null || rate <= 0) {
+                                  return 'Geçerli kur girin';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 1,
+                            child: Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.blue[50],
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.blue[200]!),
+                              ),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'Dönüştürülen',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10,
+                                      color: Colors.blue[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _convertedAmount > 0 
+                                        ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
+                                        : '0,00 ${_selectedAccount!.currency}',
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: Colors.blue[800],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 16),
 
                 // Açıklama
@@ -3033,13 +3133,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                         if (_selectedAccount != null)
                           Builder(
                             builder: (context) {
-                              final currencyWarning = _getCurrencyConversionWarning(
-                                _transferType == TransferType.send 
-                                  ? widget.currentAccount 
-                                  : _selectedAccount!,
-                                _transferType == TransferType.send 
-                                  ? _selectedAccount! 
-                                  : widget.currentAccount,
+                              final currencyWarning =
+                                  _getCurrencyConversionWarning(
+                                _transferType == TransferType.send
+                                    ? widget.currentAccount
+                                    : _selectedAccount!,
+                                _transferType == TransferType.send
+                                    ? _selectedAccount!
+                                    : widget.currentAccount,
                               );
                               if (currencyWarning != null) {
                                 return Padding(
@@ -3049,13 +3150,13 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                     decoration: BoxDecoration(
                                       color: Colors.red[50],
                                       borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(color: Colors.red[200]!),
+                                      border:
+                                          Border.all(color: Colors.red[200]!),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.warning, 
-                                          color: Colors.red[600], 
-                                          size: 16),
+                                        Icon(Icons.warning,
+                                            color: Colors.red[600], size: 16),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
@@ -3182,7 +3283,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     if (!_isTransferableAccount(widget.currentAccount)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${widget.currentAccount.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
+          content: Text(
+              '${widget.currentAccount.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
           backgroundColor: Colors.red,
         ),
       );
@@ -3192,7 +3294,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     if (!_isTransferableAccount(_selectedAccount!)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_selectedAccount!.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
+          content: Text(
+              '${_selectedAccount!.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
           backgroundColor: Colors.red,
         ),
       );
@@ -3201,10 +3304,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
     // Para birimi uyarısı
     final currencyWarning = _getCurrencyConversionWarning(
-      _transferType == TransferType.send ? widget.currentAccount : _selectedAccount!,
-      _transferType == TransferType.send ? _selectedAccount! : widget.currentAccount,
+      _transferType == TransferType.send
+          ? widget.currentAccount
+          : _selectedAccount!,
+      _transferType == TransferType.send
+          ? _selectedAccount!
+          : widget.currentAccount,
     );
-    
+
     if (currencyWarning != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -3448,32 +3555,137 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   bool _isTransferableAccount(Account account) {
     // Senet, Çek ve Pos hesaplarına transfer yapılamaz
     // Bu hesaplar muhtemelen "other" türünde veya özel isimlerle tanımlanmış
-    final nonTransferableTypes = ['senet', 'çek', 'pos', 'promissory', 'check', 'pos'];
+    final nonTransferableTypes = [
+      'senet',
+      'çek',
+      'pos',
+      'promissory',
+      'check',
+      'pos'
+    ];
     final accountNameLower = account.name.toLowerCase();
     final accountTypeLower = account.type.name.toLowerCase();
-    
+
     // Hesap türü kontrolü
     if (nonTransferableTypes.contains(accountTypeLower)) {
       return false;
     }
-    
+
     // Hesap adı kontrolü (senet, çek, pos içeren hesaplar)
     for (final type in nonTransferableTypes) {
       if (accountNameLower.contains(type)) {
         return false;
       }
     }
-    
+
     return true;
   }
 
   /// Para birimi farklılığında döviz dönüşümü uyarısı
-  String? _getCurrencyConversionWarning(Account fromAccount, Account toAccount) {
+  String? _getCurrencyConversionWarning(
+      Account fromAccount, Account toAccount) {
     if (fromAccount.currency != toAccount.currency) {
       return 'Dikkat: ${fromAccount.currency} → ${toAccount.currency} transferi yapıyorsunuz. '
-             'Döviz dönüşümü gerekebilir. Güncel kur oranlarını kontrol edin.';
+          'Döviz dönüşümü gerekebilir. Güncel kur oranlarını kontrol edin.';
     }
     return null;
+  }
+
+  /// Kur bilgisini güncelle
+  void _updateExchangeRate() async {
+    if (_selectedAccount == null) return;
+    
+    final fromAccount = _transferType == TransferType.send 
+        ? widget.currentAccount 
+        : _selectedAccount!;
+    final toAccount = _transferType == TransferType.send 
+        ? _selectedAccount! 
+        : widget.currentAccount;
+    
+    final fromCurrency = fromAccount.currency;
+    final toCurrency = toAccount.currency;
+
+    if (fromCurrency == toCurrency) {
+      setState(() {
+        _exchangeRateController.clear();
+        _convertedAmount = 0.0;
+        _isLoadingExchangeRate = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingExchangeRate = true;
+      _exchangeRateController.text = 'Yükleniyor...';
+    });
+
+    try {
+      final exchangeService = ExchangeRateService();
+      final fromRate = await exchangeService.getExchangeRate(fromCurrency);
+      final toRate = await exchangeService.getExchangeRate(toCurrency);
+
+      if (fromRate != null && toRate != null && mounted) {
+        // Kur hesaplama
+        double rate;
+        if (fromCurrency == 'TRY') {
+          rate = toRate.rate; // TRY'den diğer para birimlerine
+        } else if (toCurrency == 'TRY') {
+          rate = 1.0 / fromRate.rate; // Diğer para birimlerinden TRY'ye
+        } else {
+          // İki yabancı para birimi arasında (TRY üzerinden)
+          rate = toRate.rate / fromRate.rate;
+        }
+
+        setState(() {
+          _exchangeRateController.text = rate.toStringAsFixed(4);
+          _isLoadingExchangeRate = false;
+        });
+        _calculateConvertedAmount();
+      } else if (mounted) {
+        setState(() {
+          _exchangeRateController.text = 'Kur alınamadı';
+          _isLoadingExchangeRate = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _exchangeRateController.text = 'Hata: ${e.toString()}';
+          _isLoadingExchangeRate = false;
+        });
+      }
+    }
+  }
+
+  /// Dönüştürülmüş miktarı hesapla
+  void _calculateConvertedAmount() {
+    if (_amountController.text.isEmpty || _exchangeRateController.text.isEmpty) {
+      setState(() {
+        _convertedAmount = 0.0;
+      });
+      return;
+    }
+
+    try {
+      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.tryParse(cleanValue);
+      final exchangeRate = double.tryParse(_exchangeRateController.text);
+
+      if (amount != null && exchangeRate != null && amount > 0 && exchangeRate > 0) {
+        final converted = amount * exchangeRate;
+        setState(() {
+          _convertedAmount = converted;
+        });
+      } else {
+        setState(() {
+          _convertedAmount = 0.0;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _convertedAmount = 0.0;
+      });
+    }
   }
 }
 
