@@ -2847,10 +2847,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 const SizedBox(height: 8),
                 accountsAsync.when(
                   data: (accounts) {
-                    // Mevcut hesabı listeden çıkar
+                    // Mevcut hesabı listeden çıkar ve transfer edilemeyen hesapları filtrele
                     final otherAccounts = accounts
-                        .where(
-                            (account) => account.id != widget.currentAccount.id)
+                        .where((account) => 
+                            account.id != widget.currentAccount.id &&
+                            _isTransferableAccount(account))
                         .toList();
 
                     if (otherAccounts.isEmpty) {
@@ -2861,8 +2862,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          'Transfer edilecek başka hesap bulunamadı',
+                          'Transfer edilebilecek başka hesap bulunmuyor\n(Senet/Çek/Pos hesapları transfer edilemez)',
                           style: GoogleFonts.poppins(color: Colors.grey[600]),
+                          textAlign: TextAlign.center,
                         ),
                       );
                     }
@@ -3027,6 +3029,51 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                             color: Colors.orange[700],
                           ),
                         ),
+                        // Para birimi uyarısı
+                        if (_selectedAccount != null)
+                          Builder(
+                            builder: (context) {
+                              final currencyWarning = _getCurrencyConversionWarning(
+                                _transferType == TransferType.send 
+                                  ? widget.currentAccount 
+                                  : _selectedAccount!,
+                                _transferType == TransferType.send 
+                                  ? _selectedAccount! 
+                                  : widget.currentAccount,
+                              );
+                              if (currencyWarning != null) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red[50],
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(color: Colors.red[200]!),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.warning, 
+                                          color: Colors.red[600], 
+                                          size: 16),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            currencyWarning,
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 12,
+                                              color: Colors.red[700],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
+                          ),
                       ],
                     ),
                   ),
@@ -3130,6 +3177,43 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
     debugPrint('Seçilen hesap: ${_selectedAccount!.name}');
     debugPrint('Transfer türü: $_transferType');
+
+    // Transfer validasyonları
+    if (!_isTransferableAccount(widget.currentAccount)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${widget.currentAccount.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!_isTransferableAccount(_selectedAccount!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${_selectedAccount!.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Para birimi uyarısı
+    final currencyWarning = _getCurrencyConversionWarning(
+      _transferType == TransferType.send ? widget.currentAccount : _selectedAccount!,
+      _transferType == TransferType.send ? _selectedAccount! : widget.currentAccount,
+    );
+    
+    if (currencyWarning != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(currencyWarning),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
 
     setState(() {
       _isLoading = true;
@@ -3358,6 +3442,38 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     }
 
     return balance;
+  }
+
+  /// Transfer edilemeyen hesap türlerini kontrol et
+  bool _isTransferableAccount(Account account) {
+    // Senet, Çek ve Pos hesaplarına transfer yapılamaz
+    // Bu hesaplar muhtemelen "other" türünde veya özel isimlerle tanımlanmış
+    final nonTransferableTypes = ['senet', 'çek', 'pos', 'promissory', 'check', 'pos'];
+    final accountNameLower = account.name.toLowerCase();
+    final accountTypeLower = account.type.name.toLowerCase();
+    
+    // Hesap türü kontrolü
+    if (nonTransferableTypes.contains(accountTypeLower)) {
+      return false;
+    }
+    
+    // Hesap adı kontrolü (senet, çek, pos içeren hesaplar)
+    for (final type in nonTransferableTypes) {
+      if (accountNameLower.contains(type)) {
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
+  /// Para birimi farklılığında döviz dönüşümü uyarısı
+  String? _getCurrencyConversionWarning(Account fromAccount, Account toAccount) {
+    if (fromAccount.currency != toAccount.currency) {
+      return 'Dikkat: ${fromAccount.currency} → ${toAccount.currency} transferi yapıyorsunuz. '
+             'Döviz dönüşümü gerekebilir. Güncel kur oranlarını kontrol edin.';
+    }
+    return null;
   }
 }
 
