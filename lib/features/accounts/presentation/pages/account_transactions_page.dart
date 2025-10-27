@@ -268,9 +268,17 @@ class _AccountTransactionsPageState
                   Expanded(
                     child: Text(
                       _startDate != null && _endDate != null
-                          ? '${DateFormat('dd.MM').format(_startDate!)} - ${DateFormat('dd.MM.yyyy').format(_endDate!)}'
-                          : 'Tarih Aralığı',
-                      style: GoogleFonts.poppins(fontSize: 14),
+                          ? '${DateFormat('dd.MM.yyyy').format(_startDate!)} - ${DateFormat('dd.MM.yyyy').format(_endDate!)}'
+                          : 'Tarih Aralığı Seç',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: _startDate != null && _endDate != null 
+                            ? Colors.blue[700] 
+                            : Colors.grey[600],
+                        fontWeight: _startDate != null && _endDate != null 
+                            ? FontWeight.w600 
+                            : FontWeight.normal,
+                      ),
                     ),
                   ),
                 ],
@@ -446,9 +454,17 @@ class _AccountTransactionsPageState
                       Expanded(
                         child: Text(
                           _startDate != null && _endDate != null
-                              ? '${DateFormat('dd.MM').format(_startDate!)} - ${DateFormat('dd.MM.yyyy').format(_endDate!)}'
-                              : 'Tarih Aralığı',
-                          style: GoogleFonts.poppins(fontSize: 14),
+                              ? '${DateFormat('dd.MM.yyyy').format(_startDate!)} - ${DateFormat('dd.MM.yyyy').format(_endDate!)}'
+                              : 'Tarih Aralığı Seç',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: _startDate != null && _endDate != null 
+                                ? Colors.blue[700] 
+                                : Colors.grey[600],
+                            fontWeight: _startDate != null && _endDate != null 
+                                ? FontWeight.w600 
+                                : FontWeight.normal,
+                          ),
                         ),
                       ),
                     ],
@@ -688,6 +704,10 @@ class _AccountTransactionsPageState
   }
 
   Future<void> _selectDateRange() async {
+    debugPrint('Tarih aralığı seçimi başlatılıyor...');
+    debugPrint('Mevcut başlangıç tarihi: $_startDate');
+    debugPrint('Mevcut bitiş tarihi: $_endDate');
+
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -695,17 +715,52 @@ class _AccountTransactionsPageState
       initialDateRange: _startDate != null && _endDate != null
           ? DateTimeRange(start: _startDate!, end: _endDate!)
           : null,
+      helpText: 'Tarih aralığı seçin',
+      cancelText: 'İptal',
+      confirmText: 'Tamam',
+      saveText: 'Kaydet',
+      fieldStartLabelText: 'Başlangıç tarihi',
+      fieldEndLabelText: 'Bitiş tarihi',
     );
 
+    debugPrint('Seçilen tarih aralığı: $picked');
+
     if (picked != null) {
+      debugPrint('Yeni başlangıç tarihi: ${picked.start}');
+      debugPrint('Yeni bitiş tarihi: ${picked.end}');
+      
       setState(() {
         _startDate = picked.start;
         _endDate = picked.end;
       });
+
+      debugPrint('Tarih aralığı güncellendi');
+      
+      // Kullanıcıya bilgi ver
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Tarih aralığı: ${DateFormat('dd.MM.yyyy').format(picked.start)} - ${DateFormat('dd.MM.yyyy').format(picked.end)}',
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: Colors.blue[600],
+          ),
+        );
+      }
+    } else {
+      debugPrint('Tarih aralığı seçimi iptal edildi');
     }
   }
 
   void _clearFilters() {
+    debugPrint('Filtreler temizleniyor...');
+    debugPrint('Önceki arama: $_searchQuery');
+    debugPrint('Önceki tür: $_selectedType');
+    debugPrint('Önceki kategori: $_selectedCategory');
+    debugPrint('Önceki başlangıç tarihi: $_startDate');
+    debugPrint('Önceki bitiş tarihi: $_endDate');
+    
     setState(() {
       _searchQuery = '';
       _selectedType = null;
@@ -714,6 +769,18 @@ class _AccountTransactionsPageState
       _endDate = null;
       _sortAscending = false;
     });
+
+    debugPrint('Filtreler temizlendi');
+    
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Filtreler temizlendi'),
+          duration: Duration(seconds: 1),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   Color _getTypeColor(TransactionType type) {
