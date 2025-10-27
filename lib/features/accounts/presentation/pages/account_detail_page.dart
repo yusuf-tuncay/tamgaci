@@ -936,7 +936,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 }
 
 /// Masraf Ekleme Dialog'u
-class _ExpenseDialog extends StatefulWidget {
+class _ExpenseDialog extends ConsumerStatefulWidget {
   final Account account;
   final VoidCallback onExpenseAdded;
 
@@ -946,10 +946,10 @@ class _ExpenseDialog extends StatefulWidget {
   });
 
   @override
-  State<_ExpenseDialog> createState() => _ExpenseDialogState();
+  ConsumerState<_ExpenseDialog> createState() => _ExpenseDialogState();
 }
 
-class _ExpenseDialogState extends State<_ExpenseDialog> {
+class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _amountController = TextEditingController();
@@ -1491,6 +1491,21 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     }
   }
 
+  /// Hesap hareketlerinden bakiye hesapla
+  double _calculateBalanceFromTransactions(List<AccountTransaction> transactions) {
+    double balance = 0.0;
+    
+    // İşlemleri tarih sırasına göre sırala (en eski önce)
+    final sortedTransactions = List<AccountTransaction>.from(transactions)
+      ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
+    
+    for (final transaction in sortedTransactions) {
+      balance += transaction.amount;
+    }
+    
+    return balance;
+  }
+
   Future<void> _saveExpense() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -1499,9 +1514,73 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     });
 
     try {
-      // TODO: Gerçek masraf ekleme işlemi burada yapılacak
-      // Şimdilik simüle ediyoruz
-      await Future.delayed(const Duration(seconds: 1));
+      // Miktarı parse et
+      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.tryParse(cleanValue);
+      if (amount == null) {
+        throw Exception('Geçersiz miktar');
+      }
+
+      // Firebase'den tenantId ve userId'yi al
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('Kullanıcı oturumu bulunamadı');
+      }
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!userDoc.exists) {
+        throw Exception('Kullanıcı bilgileri bulunamadı');
+      }
+
+      final userData = userDoc.data() as Map<String, dynamic>;
+      final tenantId = userData['tenantId'] as String? ?? '';
+
+      // Hesap hareketlerinden güncel bakiyeyi hesapla
+      final transactionsAsync = ref.read(transactionsByAccountIdProvider(widget.account.id));
+      double currentBalance = widget.account.balance;
+      
+      transactionsAsync.whenData((transactions) {
+        currentBalance = _calculateBalanceFromTransactions(transactions);
+      });
+
+      // Masraf transaction'ı oluştur (negatif miktar)
+      final expenseAmount = -amount; // Masraf negatif olarak kaydedilir
+      final newBalance = currentBalance + expenseAmount;
+
+      final transaction = AccountTransaction(
+        id: '',
+        accountId: widget.account.id,
+        tenantId: tenantId,
+        type: TransactionType.withdrawal,
+        amount: expenseAmount,
+        balanceAfter: newBalance,
+        description: '${_nameController.text} - ${_descriptionController.text}',
+        category: TransactionCategory.expense,
+        transactionDate: DateTime.now(),
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        createdBy: user.uid,
+        updatedBy: user.uid,
+        userId: user.uid,
+      );
+
+      // Transaction'ı kaydet
+      await ref
+          .read(accountTransactionNotifierProvider.notifier)
+          .createTransaction(transaction);
+
+      // Hesap bakiyesini güncelle
+      await ref
+          .read(accountNotifierProvider.notifier)
+          .updateAccountBalance(widget.account.id, newBalance);
+
+      // Provider'ları refresh et
+      ref.invalidate(accountsProvider);
+      ref.invalidate(transactionsByAccountIdProvider(widget.account.id));
 
       if (mounted) {
         context.pop();

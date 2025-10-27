@@ -15,6 +15,7 @@ enum TransactionCategory {
   bank, // Banka
   credit, // Kredi
   investment, // Yatırım
+  expense, // Masraf
   other, // Diğer
 }
 
