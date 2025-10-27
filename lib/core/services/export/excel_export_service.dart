@@ -22,13 +22,31 @@ class ExcelExportService {
       // Varsayılan sheet'i kullan
       final sheet = excel['Sheet1'];
 
+      // Kurumsal başlık
+      sheet.appendRow(['TAMGACI']);
+      sheet.appendRow(['Muhasebe ve Finans Yönetim Sistemi']);
+      sheet.appendRow(['']);
+      sheet.appendRow(['Şirket:', 'TAMGACI Yazılım']);
+      sheet.appendRow(['Web:', 'www.tamgaci.com']);
+      sheet.appendRow(['E-posta:', 'info@tamgaci.com']);
+      sheet.appendRow(['']);
+      sheet.appendRow(['Rapor Tarihi:', DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())]);
+      sheet.appendRow(['Rapor Türü:', 'Hesap Hareketleri Raporu']);
+      sheet.appendRow(['']);
+
       // Kasa bilgileri başlığı
       sheet.appendRow(['HESAP BİLGİLERİ']);
       sheet.appendRow(['Hesap Adı', account.name]);
       sheet.appendRow(['Hesap Türü', _getAccountTypeText(account.type)]);
       sheet.appendRow(['Para Birimi', account.currency]);
-      sheet.appendRow(['Mevcut Bakiye', '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}']);
-      sheet.appendRow(['Oluşturulma Tarihi', DateFormat('dd.MM.yyyy HH:mm').format(account.createdAt)]);
+      sheet.appendRow([
+        'Mevcut Bakiye',
+        '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'
+      ]);
+      sheet.appendRow([
+        'Oluşturulma Tarihi',
+        DateFormat('dd.MM.yyyy HH:mm').format(account.createdAt)
+      ]);
       sheet.appendRow(['']); // Boş satır
 
       // İşlemler başlığı
