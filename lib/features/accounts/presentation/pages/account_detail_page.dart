@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
@@ -390,10 +392,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                             }
                             // En yeni işlemler üstte olacak şekilde sırala
                             final sortedTransactions = transactions.toList()
-                              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-                            
+                              ..sort(
+                                  (a, b) => b.createdAt.compareTo(a.createdAt));
+
                             return Column(
-                              children: sortedTransactions.take(5).map((transaction) {
+                              children:
+                                  sortedTransactions.take(5).map((transaction) {
                                 return _buildTransactionItem(transaction);
                               }).toList(),
                             );
@@ -1886,33 +1890,49 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
 
       // Firebase'e güncelle
       await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
-        widget.account.id,
-        newBalance,
-      );
+            widget.account.id,
+            newBalance,
+          );
 
       // Transaction oluştur
       try {
         final description = _descriptionController.text.trim();
-        
-        final transaction = AccountTransaction(
-          id: '',
-          accountId: widget.account.id,
-          tenantId: '',
-          type: TransactionType.adjustment,
-          amount: amount,
-          balanceAfter: newBalance,
-          description: description,
-          category: TransactionCategory.other,
-          transactionDate: DateTime.now(),
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-          createdBy: 'current_user',
-          updatedBy: 'current_user',
-          userId: 'current_user',
-        );
 
-        await ref.read(accountTransactionNotifierProvider.notifier).createTransaction(transaction);
-        debugPrint('Balance transaction created: $description');
+        // Firebase'den tenantId ve userId'yi al
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          if (userDoc.exists) {
+            final userData = userDoc.data() as Map<String, dynamic>;
+            final tenantId = userData['tenantId'] as String? ?? '';
+
+            final transaction = AccountTransaction(
+              id: '',
+              accountId: widget.account.id,
+              tenantId: tenantId,
+              type: TransactionType.adjustment,
+              amount: amount,
+              balanceAfter: newBalance,
+              description: description,
+              category: TransactionCategory.other,
+              transactionDate: DateTime.now(),
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              createdBy: user.uid,
+              updatedBy: user.uid,
+              userId: user.uid,
+            );
+
+            await ref
+                .read(accountTransactionNotifierProvider.notifier)
+                .createTransaction(transaction);
+            debugPrint('Balance transaction created: $description');
+          }
+        }
       } catch (e) {
         debugPrint('Error creating transaction: $e');
       }
