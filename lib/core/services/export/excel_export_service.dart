@@ -15,11 +15,11 @@ class ExcelExportService {
     try {
       // Excel dosyası oluştur
       final excel = Excel.createExcel();
-      
+
       // Varsayılan sheet'i sil ve yeni sheet oluştur
       excel.delete('Sheet1');
       final sheet = excel['Hesap Hareketleri'];
-      
+
       // Başlık satırı
       final headerRow = [
         'Tarih',
@@ -31,10 +31,11 @@ class ExcelExportService {
         'Para Birimi',
         'Bakiye Sonrası',
       ];
-      
+
       sheet.appendRow(headerRow);
-      
+
       // İşlemleri ekle
+      print('Excel export: ${transactions.length} işlem ekleniyor');
       for (int i = 0; i < transactions.length; i++) {
         final transaction = transactions[i];
         
@@ -49,19 +50,25 @@ class ExcelExportService {
           transaction.balanceAfter,
         ];
         
+        print('Excel export: Satır ${i + 1} - ${row.join(', ')}');
         sheet.appendRow(row);
       }
       
+      print('Excel export: Toplam ${sheet.maxRows} satır eklendi');
+
       // Dosya adı oluştur
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final defaultFileName = '${account.name}_HesapHareketleri_$timestamp.xlsx';
+      final defaultFileName =
+          '${account.name}_HesapHareketleri_$timestamp.xlsx';
       final finalFileName = fileName ?? defaultFileName;
-      
+
       // Dosyayı kaydet
-      final bytes = excel.save();
+      final bytes = excel.encode();
       if (bytes == null) {
         throw Exception('Excel dosyası oluşturulamadı');
       }
+      
+      print('Excel export: ${bytes.length} byte veri oluşturuldu');
       
       // Downloads klasörüne kaydet
       final directory = await getDownloadsDirectory();
@@ -73,12 +80,15 @@ class ExcelExportService {
       final file = File(filePath);
       await file.writeAsBytes(bytes);
       
+      print('Excel export: Dosya kaydedildi - $filePath');
+      print('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
+      
       return filePath;
     } catch (e) {
       throw Exception('Excel export hatası: $e');
     }
   }
-  
+
   static String _getTransactionTypeText(TransactionType type) {
     switch (type) {
       case TransactionType.deposit:
@@ -93,7 +103,7 @@ class ExcelExportService {
         return 'Açılış Bakiyesi';
     }
   }
-  
+
   static String _getTransactionCategoryText(TransactionCategory category) {
     switch (category) {
       case TransactionCategory.cash:
