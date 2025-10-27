@@ -2726,14 +2726,16 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
     // Miktar değişikliklerini dinle (kur hesaplama için)
     _amountController.addListener(() {
+      debugPrint('Amount changed: ${_amountController.text}');
       _calculateConvertedAmount();
     });
 
     // Kur değişikliklerini dinle (dönüştürme için)
     _exchangeRateController.addListener(() {
+      debugPrint('Exchange rate changed: ${_exchangeRateController.text}');
       _calculateConvertedAmount();
       // Kullanıcı manuel kur girerse TCMB etiketini gizle
-      if (_exchangeRateController.text.isNotEmpty && 
+      if (_exchangeRateController.text.isNotEmpty &&
           !_exchangeRateController.text.contains('TCMB') &&
           !_exchangeRateController.text.contains('Yükleniyor') &&
           !_exchangeRateController.text.contains('Hata')) {
@@ -3061,7 +3063,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                     const TextInputType.numberWithOptions(
                                         decimal: true),
                                 decoration: InputDecoration(
-                                  hintText: 'Döviz Kuru Giriniz',
+                                  hintText: 'Kuru Gerekli',
                                   labelText: 'Döviz Kuru',
                                   helperText: 'TCMB\'den otomatik çekilir',
                                   prefixIcon: const Icon(Icons.swap_horiz),
@@ -3107,7 +3109,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      _convertedAmount > 0 
+                                      _convertedAmount > 0
                                           ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
                                           : '0,00 ${_selectedAccount!.currency}',
                                       style: GoogleFonts.poppins(
@@ -3723,8 +3725,13 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
   /// Dönüştürülmüş miktarı hesapla
   void _calculateConvertedAmount() {
+    debugPrint('_calculateConvertedAmount called');
+    debugPrint('Amount: ${_amountController.text}');
+    debugPrint('Exchange rate: ${_exchangeRateController.text}');
+    
     if (_amountController.text.isEmpty ||
         _exchangeRateController.text.isEmpty) {
+      debugPrint('Empty amount or exchange rate, setting converted to 0');
       setState(() {
         _convertedAmount = 0.0;
       });
@@ -3744,20 +3751,26 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
           .replaceAll('Hata:', '');
       final exchangeRate = double.tryParse(rateText);
 
+      debugPrint('Clean amount: $amount');
+      debugPrint('Clean exchange rate: $exchangeRate');
+
       if (amount != null &&
           exchangeRate != null &&
           amount > 0 &&
           exchangeRate > 0) {
         final converted = amount * exchangeRate;
+        debugPrint('Converted amount: $converted');
         setState(() {
           _convertedAmount = converted;
         });
       } else {
+        debugPrint('Invalid amount or exchange rate');
         setState(() {
           _convertedAmount = 0.0;
         });
       }
     } catch (e) {
+      debugPrint('Error in _calculateConvertedAmount: $e');
       setState(() {
         _convertedAmount = 0.0;
       });
