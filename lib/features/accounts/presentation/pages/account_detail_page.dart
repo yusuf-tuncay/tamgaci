@@ -2740,7 +2740,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         ],
       ),
       content: SizedBox(
-        width: MediaQuery.of(context).size.width * 0.9,
+        width: MediaQuery.of(context).size.width * 0.8,
+        height: MediaQuery.of(context).size.height * 0.7,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -2867,7 +2868,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     }
 
                     return DropdownButtonFormField<Account>(
-                      initialValue: _selectedAccount,
+                      value: _selectedAccount,
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.account_balance),
