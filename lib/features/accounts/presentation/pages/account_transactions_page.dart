@@ -309,7 +309,7 @@ class _AccountTransactionsPageState
           icon: const Icon(Icons.clear_all),
           tooltip: 'Filtreleri Temizle',
           style: IconButton.styleFrom(
-            backgroundColor: Colors.grey.withValues(alpha:0.1),
+            backgroundColor: Colors.grey.withValues(alpha: 0.1),
             foregroundColor: Colors.grey[600],
           ),
         ),
@@ -495,7 +495,7 @@ class _AccountTransactionsPageState
               icon: const Icon(Icons.clear_all),
               tooltip: 'Filtreleri Temizle',
               style: IconButton.styleFrom(
-                backgroundColor: Colors.grey.withValues(alpha:0.1),
+                backgroundColor: Colors.grey.withValues(alpha: 0.1),
                 foregroundColor: Colors.grey[600],
               ),
             ),
@@ -566,7 +566,7 @@ class _AccountTransactionsPageState
           border: Border.all(color: Colors.grey[200]!),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withValues(alpha:0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 1),
@@ -578,7 +578,7 @@ class _AccountTransactionsPageState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: amountColor?.withValues(alpha:0.1),
+                color: amountColor?.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -618,8 +618,8 @@ class _AccountTransactionsPageState
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color:
-                              _getTypeColor(transaction.type).withValues(alpha:0.1),
+                          color: _getTypeColor(transaction.type)
+                              .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -749,63 +749,112 @@ class _AccountTransactionsPageState
     debugPrint('Mevcut başlangıç tarihi: $_startDate');
     debugPrint('Mevcut bitiş tarihi: $_endDate');
 
-    final DateTimeRange? picked = await showDateRangePicker(
+    // Önce başlangıç tarihi seç
+    final DateTime? startDate = await showDatePicker(
       context: context,
+      initialDate: _startDate ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
-      initialDateRange: _startDate != null && _endDate != null
-          ? DateTimeRange(start: _startDate!, end: _endDate!)
-          : null,
-      helpText: 'Tarih aralığı seçin',
+      helpText: 'Başlangıç tarihi seçin',
       cancelText: 'İptal',
       confirmText: 'Tamam',
-      saveText: 'Kaydet',
-      fieldStartLabelText: 'Başlangıç tarihi',
-      fieldEndLabelText: 'Bitiş tarihi',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue[600]!,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
+
+    if (startDate == null) {
+      debugPrint('Başlangıç tarihi seçimi iptal edildi');
+      return;
+    }
+
+    debugPrint('Seçilen başlangıç tarihi: $startDate');
+
+    // Sonra bitiş tarihi seç
+    final DateTime? endDate = await showDatePicker(
+      context: context,
+      initialDate: _endDate ?? startDate,
+      firstDate: startDate,
+      lastDate: DateTime.now(),
+      helpText: 'Bitiş tarihi seçin',
+      cancelText: 'İptal',
+      confirmText: 'Tamam',
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue[600]!,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (endDate == null) {
+      debugPrint('Bitiş tarihi seçimi iptal edildi');
+      return;
+    }
+
+    debugPrint('Seçilen bitiş tarihi: $endDate');
+
+    // DateTimeRange oluştur
+    final picked = DateTimeRange(start: startDate, end: endDate);
 
     debugPrint('Seçilen tarih aralığı: $picked');
 
-    if (picked != null) {
-      // Başlangıç tarihini günün başına ayarla (00:00:00.000)
-      final startDate = DateTime(
-        picked.start.year,
-        picked.start.month,
-        picked.start.day,
-      );
-      
-      // Bitiş tarihini günün sonuna ayarla (23:59:59.999)
-      final endDate = DateTime(
-        picked.end.year,
-        picked.end.month,
-        picked.end.day,
-        23, 59, 59, 999,
-      );
-      
-      debugPrint('Yeni başlangıç tarihi: $startDate');
-      debugPrint('Yeni bitiş tarihi: $endDate');
-      
-      setState(() {
-        _startDate = startDate;
-        _endDate = endDate;
-      });
+    // Başlangıç tarihini günün başına ayarla (00:00:00.000)
+    final adjustedStartDate = DateTime(
+      picked.start.year,
+      picked.start.month,
+      picked.start.day,
+    );
 
-      debugPrint('Tarih aralığı güncellendi');
+    // Bitiş tarihini günün sonuna ayarla (23:59:59.999)
+    final adjustedEndDate = DateTime(
+      picked.end.year,
+      picked.end.month,
+      picked.end.day,
+      23,
+      59,
+      59,
+      999,
+    );
 
-      // Kullanıcıya bilgi ver
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Tarih aralığı: ${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}',
-            ),
-            duration: const Duration(seconds: 2),
-            backgroundColor: Colors.blue[600],
+    debugPrint('Yeni başlangıç tarihi: $adjustedStartDate');
+    debugPrint('Yeni bitiş tarihi: $adjustedEndDate');
+
+    setState(() {
+      _startDate = adjustedStartDate;
+      _endDate = adjustedEndDate;
+    });
+
+    debugPrint('Tarih aralığı güncellendi');
+
+    // Kullanıcıya bilgi ver
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tarih aralığı: ${DateFormat('dd.MM.yyyy').format(adjustedStartDate)} - ${DateFormat('dd.MM.yyyy').format(adjustedEndDate)}',
           ),
-        );
-      }
-    } else {
-      debugPrint('Tarih aralığı seçimi iptal edildi');
+          duration: const Duration(seconds: 2),
+          backgroundColor: Colors.blue[600],
+        ),
+      );
     }
   }
 
