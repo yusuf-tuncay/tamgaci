@@ -1897,12 +1897,13 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
       // Transaction oluştur
       try {
         final description = _descriptionController.text.trim();
-        
+
         // Transaction'da gösterilecek miktar: bakiye değişikliği
         double transactionAmount;
         switch (_updateType) {
           case BalanceUpdateType.setDirect:
-            transactionAmount = newBalance - widget.account.balance; // Bakiye farkı
+            transactionAmount =
+                newBalance - widget.account.balance; // Bakiye farkı
             break;
           case BalanceUpdateType.add:
             transactionAmount = amount; // Eklenen miktar
@@ -1911,6 +1912,14 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
             transactionAmount = -amount; // Çıkarılan miktar (negatif)
             break;
         }
+
+        debugPrint('=== TRANSACTION DEBUG ===');
+        debugPrint('Update Type: $_updateType');
+        debugPrint('Old Balance: ${widget.account.balance}');
+        debugPrint('New Balance: $newBalance');
+        debugPrint('Amount: $amount');
+        debugPrint('Transaction Amount: $transactionAmount');
+        debugPrint('Description: $description');
 
         // Firebase'den tenantId ve userId'yi al
         final user = FirebaseAuth.instance.currentUser;
@@ -1941,10 +1950,13 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
               userId: user.uid,
             );
 
+            debugPrint('Transaction created with amount: ${transaction.amount}');
+
             await ref
                 .read(accountTransactionNotifierProvider.notifier)
                 .createTransaction(transaction);
-            debugPrint('Balance transaction created: $description - Amount: $transactionAmount');
+            debugPrint(
+                'Balance transaction created: $description - Amount: $transactionAmount');
           }
         }
       } catch (e) {
