@@ -38,9 +38,12 @@ class _AccountTransactionsPageState
   DateTime? _startDate;
   DateTime? _endDate;
   bool _sortAscending = false; // En yeni önce
-  
+
   // Excel export debounce
   bool _isExporting = false;
+  
+  // Filtreleme debounce
+  bool _isFiltering = false;
 
   @override
   Widget build(BuildContext context) {
@@ -679,6 +682,13 @@ class _AccountTransactionsPageState
 
   List<AccountTransaction> _filterTransactions(
       List<AccountTransaction> transactions) {
+    // Debounce kontrolü - çift filtreleme engelleme
+    if (_isFiltering) {
+      debugPrint('Filtreleme zaten çalışıyor, çift filtreleme engellendi');
+      return transactions; // Mevcut listeyi döndür
+    }
+    
+    _isFiltering = true;
     debugPrint('=== FİLTRELEME BAŞLADI ===');
     debugPrint('Toplam işlem sayısı: ${transactions.length}');
     debugPrint('Arama sorgusu: "$_searchQuery"');
@@ -755,6 +765,11 @@ class _AccountTransactionsPageState
     });
 
     debugPrint('=== FİLTRELEME BİTTİ ===');
+    
+    // Debounce'u sıfırla
+    _isFiltering = false;
+    debugPrint('Filtreleme tamamlandı, debounce sıfırlandı');
+    
     return filtered;
   }
 
@@ -1019,11 +1034,11 @@ class _AccountTransactionsPageState
       debugPrint('Excel export zaten çalışıyor, çift tıklama engellendi');
       return;
     }
-    
+
     _isExporting = true;
     debugPrint('=== EXCEL EXPORT BAŞLADI ===');
     debugPrint('Çağrı zamanı: ${DateTime.now()}');
-    
+
     try {
       // Loading göster
       if (mounted) {
