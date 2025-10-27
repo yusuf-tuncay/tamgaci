@@ -152,6 +152,8 @@ service cloud.firestore {
                        request.resource.data.createdBy == userId();
       allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
       allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      // Realtime listener için gerekli izinler
+      allow read: if isSignedIn() && isTenantMember(tenantId);
     }
 
     match /tenants/{tenantId}/accountTransactions/{id} {
