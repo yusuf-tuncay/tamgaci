@@ -766,78 +766,78 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     final isNegative = amount < 0;
 
     return GestureDetector(
-      onTap: () => _showTransactionEditDialog(transaction),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isNegative ? Colors.red[100] : Colors.green[100],
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              isNegative ? Icons.arrow_downward : Icons.arrow_upward,
-              color: isNegative ? Colors.red[600] : Colors.green[600],
-              size: 20,
-            ),
+        onTap: () => _showTransactionEditDialog(transaction),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction.description,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${transaction.transactionDate.day}/${transaction.transactionDate.month}/${transaction.transactionDate.year} ${transaction.transactionDate.hour}:${transaction.transactionDate.minute.toString().padLeft(2, '0')}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Row(
             children: [
-              Text(
-                '${isNegative ? '' : '+'}${NumberFormat('#,##0.00', 'tr_TR').format(amount.abs())} ${widget.account.currency}',
-                style: GoogleFonts.poppins(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isNegative ? Colors.red[100] : Colors.green[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  isNegative ? Icons.arrow_downward : Icons.arrow_upward,
                   color: isNegative ? Colors.red[600] : Colors.green[600],
+                  size: 20,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)} ${widget.account.currency}',
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.description,
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${transaction.transactionDate.day}/${transaction.transactionDate.month}/${transaction.transactionDate.year} ${transaction.transactionDate.hour}:${transaction.transactionDate.minute.toString().padLeft(2, '0')}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${isNegative ? '' : '+'}${NumberFormat('#,##0.00', 'tr_TR').format(amount.abs())} ${widget.account.currency}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: isNegative ? Colors.red[600] : Colors.green[600],
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)} ${widget.account.currency}',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
-      ),
-    );
+        ));
   }
 
   Widget _buildLoadingTransactions() {
@@ -878,6 +878,21 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+
+  /// Transaction Düzenleme Dialog'u
+  void _showTransactionEditDialog(AccountTransaction transaction) {
+    showDialog(
+      context: context,
+      builder: (context) => _TransactionEditDialog(
+        transaction: transaction,
+        account: widget.account,
+        onTransactionUpdated: () {
+          ref.invalidate(transactionsByAccountIdProvider(widget.account.id));
+          ref.invalidate(accountsProvider);
+        },
       ),
     );
   }
@@ -1593,69 +1608,120 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
               Row(
                 children: [
                   Expanded(
-                    child: RadioListTile<BalanceUpdateType>(
-                      title: Text(
-                        'Doğrudan Gir',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      subtitle: Text(
-                        'Yeni bakiye',
-                        style: GoogleFonts.poppins(fontSize: 9),
-                      ),
-                      value: BalanceUpdateType.setDirect,
-                      groupValue: _updateType,
-                      onChanged: (value) {
+                    child: InkWell(
+                      onTap: () {
                         setState(() {
-                          _updateType = value!;
+                          _updateType = BalanceUpdateType.setDirect;
                           _updateAmountController();
                         });
                       },
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
+                      child: Row(
+                        children: [
+                          Radio<BalanceUpdateType>(
+                            value: BalanceUpdateType.setDirect,
+                            groupValue: _updateType,
+                            onChanged: (value) {
+                              setState(() {
+                                _updateType = value!;
+                                _updateAmountController();
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Doğrudan Gir',
+                                  style: GoogleFonts.poppins(fontSize: 11),
+                                ),
+                                Text(
+                                  'Yeni bakiye',
+                                  style: GoogleFonts.poppins(fontSize: 9),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Expanded(
-                    child: RadioListTile<BalanceUpdateType>(
-                      title: Text(
-                        'Para Ekle',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      subtitle: Text(
-                        'Mevcut + ekle',
-                        style: GoogleFonts.poppins(fontSize: 9),
-                      ),
-                      value: BalanceUpdateType.add,
-                      groupValue: _updateType,
-                      onChanged: (value) {
+                    child: InkWell(
+                      onTap: () {
                         setState(() {
-                          _updateType = value!;
+                          _updateType = BalanceUpdateType.add;
                           _updateAmountController();
                         });
                       },
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
+                      child: Row(
+                        children: [
+                          Radio<BalanceUpdateType>(
+                            value: BalanceUpdateType.add,
+                            groupValue: _updateType,
+                            onChanged: (value) {
+                              setState(() {
+                                _updateType = value!;
+                                _updateAmountController();
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Para Ekle',
+                                  style: GoogleFonts.poppins(fontSize: 11),
+                                ),
+                                Text(
+                                  'Mevcut + ekle',
+                                  style: GoogleFonts.poppins(fontSize: 9),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Expanded(
-                    child: RadioListTile<BalanceUpdateType>(
-                      title: Text(
-                        'Para Çıkar',
-                        style: GoogleFonts.poppins(fontSize: 11),
-                      ),
-                      subtitle: Text(
-                        'Mevcut - çıkar',
-                        style: GoogleFonts.poppins(fontSize: 9),
-                      ),
-                      value: BalanceUpdateType.subtract,
-                      groupValue: _updateType,
-                      onChanged: (value) {
+                    child: InkWell(
+                      onTap: () {
                         setState(() {
-                          _updateType = value!;
+                          _updateType = BalanceUpdateType.subtract;
                           _updateAmountController();
                         });
                       },
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
+                      child: Row(
+                        children: [
+                          Radio<BalanceUpdateType>(
+                            value: BalanceUpdateType.subtract,
+                            groupValue: _updateType,
+                            onChanged: (value) {
+                              setState(() {
+                                _updateType = value!;
+                                _updateAmountController();
+                              });
+                            },
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Para Çıkar',
+                                  style: GoogleFonts.poppins(fontSize: 11),
+                                ),
+                                Text(
+                                  'Mevcut - çıkar',
+                                  style: GoogleFonts.poppins(fontSize: 9),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -2010,21 +2076,6 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
       }
     }
   }
-
-  /// Transaction Düzenleme Dialog'u
-  void _showTransactionEditDialog(AccountTransaction transaction) {
-    showDialog(
-      context: context,
-      builder: (context) => _TransactionEditDialog(
-        transaction: transaction,
-        account: widget.account,
-        onTransactionUpdated: () {
-          ref.invalidate(transactionsByAccountIdProvider(widget.account.id));
-          ref.invalidate(accountsProvider);
-        },
-      ),
-    );
-  }
 }
 
 /// Transaction Düzenleme Dialog'u
@@ -2040,16 +2091,18 @@ class _TransactionEditDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_TransactionEditDialog> createState() => _TransactionEditDialogState();
+  ConsumerState<_TransactionEditDialog> createState() =>
+      _TransactionEditDialogState();
 }
 
-class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> {
+class _TransactionEditDialogState
+    extends ConsumerState<_TransactionEditDialog> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _amountController = TextEditingController();
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
-  
+
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
   bool _isLoading = false;
@@ -2062,15 +2115,18 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
 
   void _initializeFields() {
     _descriptionController.text = widget.transaction.description;
-    _amountController.text = NumberFormat('#,##0.00', 'tr_TR').format(widget.transaction.amount.abs());
+    _amountController.text = NumberFormat('#,##0.00', 'tr_TR')
+        .format(widget.transaction.amount.abs());
     _selectedDate = widget.transaction.transactionDate;
     _selectedTime = TimeOfDay.fromDateTime(widget.transaction.transactionDate);
     _updateDateTimeControllers();
   }
 
   void _updateDateTimeControllers() {
-    _dateController.text = '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
-    _timeController.text = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+    _dateController.text =
+        '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+    _timeController.text =
+        '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -2151,7 +2207,8 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
                   if (value == null || value.isEmpty) {
                     return 'Miktar gerekli';
                   }
-                  final cleanValue = value.replaceAll('.', '').replaceAll(',', '.');
+                  final cleanValue =
+                      value.replaceAll('.', '').replaceAll(',', '.');
                   final amount = double.tryParse(cleanValue);
                   if (amount == null) {
                     return 'Geçerli bir miktar girin';
@@ -2334,12 +2391,13 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
     });
 
     try {
-      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final cleanValue =
+          _amountController.text.replaceAll('.', '').replaceAll(',', '.');
       final amount = double.parse(cleanValue);
-      
+
       // Orijinal amount'un işaretini koru
       final finalAmount = widget.transaction.amount < 0 ? -amount : amount;
-      
+
       final transactionDate = DateTime(
         _selectedDate.year,
         _selectedDate.month,
@@ -2356,12 +2414,14 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
         updatedBy: FirebaseAuth.instance.currentUser?.uid ?? 'system',
       );
 
-      await ref.read(accountTransactionNotifierProvider.notifier).updateTransaction(updatedTransaction);
-      
+      await ref
+          .read(accountTransactionNotifierProvider.notifier)
+          .updateTransaction(updatedTransaction);
+
       if (mounted) {
         Navigator.pop(context);
         widget.onTransactionUpdated();
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -2434,12 +2494,14 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
       });
 
       try {
-        await ref.read(accountTransactionNotifierProvider.notifier).deleteTransaction(widget.transaction.id);
-        
+        await ref
+            .read(accountTransactionNotifierProvider.notifier)
+            .deleteTransaction(widget.transaction.id);
+
         if (mounted) {
           Navigator.pop(context);
           widget.onTransactionUpdated();
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
