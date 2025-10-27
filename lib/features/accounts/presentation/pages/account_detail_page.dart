@@ -2792,55 +2792,50 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.grey[200]!),
                   ),
-                  child: SegmentedButton<TransferType>(
-                    segments: [
-                      ButtonSegment<TransferType>(
-                        value: TransferType.send,
-                        label: SizedBox(
-                          width: double.infinity,
-                          child: Text(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<TransferType>(
+                      segments: [
+                        ButtonSegment<TransferType>(
+                          value: TransferType.send,
+                          label: Text(
                             'Gönder',
-                            textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          tooltip: 'Bu hesaptan başka hesaba para gönder',
                         ),
-                        tooltip: 'Bu hesaptan başka hesaba para gönder',
-                      ),
-                      ButtonSegment<TransferType>(
-                        value: TransferType.receive,
-                        label: SizedBox(
-                          width: double.infinity,
-                          child: Text(
+                        ButtonSegment<TransferType>(
+                          value: TransferType.receive,
+                          label: Text(
                             'Al',
-                            textAlign: TextAlign.center,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                          tooltip: 'Başka hesaptan bu hesaba para al',
                         ),
-                        tooltip: 'Başka hesaptan bu hesaba para al',
-                      ),
-                    ],
-                    selected: {_transferType},
-                    onSelectionChanged: (Set<TransferType> newSelection) {
-                      setState(() {
-                        _transferType = newSelection.first;
-                        _selectedAccount = null; // Hesap seçimini sıfırla
-                      });
-                      // Kur bilgisini güncelle
-                      _updateExchangeRate();
-                    },
-                    style: ButtonStyle(
-                      padding: WidgetStateProperty.all(
-                        const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                      ),
-                      textStyle: WidgetStateProperty.all(
-                        GoogleFonts.poppins(fontSize: 12),
+                      ],
+                      selected: {_transferType},
+                      onSelectionChanged: (Set<TransferType> newSelection) {
+                        setState(() {
+                          _transferType = newSelection.first;
+                          _selectedAccount = null; // Hesap seçimini sıfırla
+                        });
+                        // Kur bilgisini güncelle
+                        _updateExchangeRate();
+                      },
+                      style: ButtonStyle(
+                        padding: WidgetStateProperty.all(
+                          const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                        ),
+                        textStyle: WidgetStateProperty.all(
+                          GoogleFonts.poppins(fontSize: 12),
+                        ),
+                        minimumSize: WidgetStateProperty.all(const Size(0, 40)),
                       ),
                     ),
                   ),
