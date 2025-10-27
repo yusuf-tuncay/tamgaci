@@ -765,15 +765,17 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     final amount = transaction.amount;
     final isNegative = amount < 0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
+    return GestureDetector(
+      onTap: () => _showTransactionEditDialog(transaction),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
         children: [
           Container(
             width: 40,
@@ -2005,6 +2007,467 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
         setState(() {
           _isLoading = false;
         });
+      }
+    }
+  }
+
+  /// Transaction Düzenleme Dialog'u
+  void _showTransactionEditDialog(AccountTransaction transaction) {
+    showDialog(
+      context: context,
+      builder: (context) => _TransactionEditDialog(
+        transaction: transaction,
+        account: widget.account,
+        onTransactionUpdated: () {
+          ref.invalidate(transactionsByAccountIdProvider(widget.account.id));
+          ref.invalidate(accountsProvider);
+        },
+      ),
+    );
+  }
+}
+
+/// Transaction Düzenleme Dialog'u
+class _TransactionEditDialog extends ConsumerStatefulWidget {
+  final AccountTransaction transaction;
+  final Account account;
+  final VoidCallback onTransactionUpdated;
+
+  const _TransactionEditDialog({
+    required this.transaction,
+    required this.account,
+    required this.onTransactionUpdated,
+  });
+
+  @override
+  ConsumerState<_TransactionEditDialog> createState() => _TransactionEditDialogState();
+}
+
+class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _descriptionController = TextEditingController();
+  final _amountController = TextEditingController();
+  final _dateController = TextEditingController();
+  final _timeController = TextEditingController();
+  
+  DateTime _selectedDate = DateTime.now();
+  TimeOfDay _selectedTime = TimeOfDay.now();
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFields();
+  }
+
+  void _initializeFields() {
+    _descriptionController.text = widget.transaction.description;
+    _amountController.text = NumberFormat('#,##0.00', 'tr_TR').format(widget.transaction.amount.abs());
+    _selectedDate = widget.transaction.transactionDate;
+    _selectedTime = TimeOfDay.fromDateTime(widget.transaction.transactionDate);
+    _updateDateTimeControllers();
+  }
+
+  void _updateDateTimeControllers() {
+    _dateController.text = '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}';
+    _timeController.text = '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    _amountController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.edit, color: Colors.blue[600]),
+          const SizedBox(width: 8),
+          Text(
+            'İşlem Düzenle',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 500,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Açıklama
+              Text(
+                'Açıklama',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  hintText: 'İşlem açıklaması...',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Açıklama gerekli';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Miktar
+              Text(
+                'Miktar',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: '0.00',
+                  suffixText: widget.account.currency,
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Miktar gerekli';
+                  }
+                  final cleanValue = value.replaceAll('.', '').replaceAll(',', '.');
+                  final amount = double.tryParse(cleanValue);
+                  if (amount == null) {
+                    return 'Geçerli bir miktar girin';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Tarih ve Saat
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Tarih',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _dateController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            hintText: 'GG/AA/YYYY',
+                            border: OutlineInputBorder(),
+                            suffixIcon: Icon(Icons.calendar_today),
+                          ),
+                          onTap: _selectDate,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Saat',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _timeController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            hintText: 'SS:DD',
+                            border: OutlineInputBorder(),
+                            suffixIcon: Icon(Icons.access_time),
+                          ),
+                          onTap: _selectTime,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Bakiye Bilgisi
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Mevcut Bakiye',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[800],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${NumberFormat('#,##0.00', 'tr_TR').format(widget.transaction.balanceAfter)} ${widget.account.currency}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        // Silme Butonu
+        TextButton.icon(
+          onPressed: _isLoading ? null : _deleteTransaction,
+          icon: Icon(Icons.delete, color: Colors.red[600]),
+          label: Text(
+            'Sil',
+            style: GoogleFonts.poppins(color: Colors.red[600]),
+          ),
+        ),
+        const Spacer(),
+        // İptal Butonu
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: Text(
+            'İptal',
+            style: GoogleFonts.poppins(),
+          ),
+        ),
+        // Kaydet Butonu
+        ElevatedButton(
+          onPressed: _isLoading ? null : _updateTransaction,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue[600],
+            foregroundColor: Colors.white,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  'Kaydet',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+        _updateDateTimeControllers();
+      });
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime,
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+        _updateDateTimeControllers();
+      });
+    }
+  }
+
+  Future<void> _updateTransaction() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.parse(cleanValue);
+      
+      // Orijinal amount'un işaretini koru
+      final finalAmount = widget.transaction.amount < 0 ? -amount : amount;
+      
+      final transactionDate = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+        _selectedTime.hour,
+        _selectedTime.minute,
+      );
+
+      final updatedTransaction = widget.transaction.copyWith(
+        description: _descriptionController.text.trim(),
+        amount: finalAmount,
+        transactionDate: transactionDate,
+        updatedAt: DateTime.now(),
+        updatedBy: FirebaseAuth.instance.currentUser?.uid ?? 'system',
+      );
+
+      await ref.read(accountTransactionNotifierProvider.notifier).updateTransaction(updatedTransaction);
+      
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onTransactionUpdated();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'İşlem başarıyla güncellendi',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.green[600],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'İşlem güncellenemedi: $e',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red[600],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _deleteTransaction() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'İşlemi Sil',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        content: Text(
+          'Bu işlemi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              'İptal',
+              style: GoogleFonts.poppins(),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              foregroundColor: Colors.white,
+            ),
+            child: Text(
+              'Sil',
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        await ref.read(accountTransactionNotifierProvider.notifier).deleteTransaction(widget.transaction.id);
+        
+        if (mounted) {
+          Navigator.pop(context);
+          widget.onTransactionUpdated();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'İşlem başarıyla silindi',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: Colors.green[600],
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'İşlem silinemedi: $e',
+                style: GoogleFonts.poppins(),
+              ),
+              backgroundColor: Colors.red[600],
+            ),
+          );
+        }
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
