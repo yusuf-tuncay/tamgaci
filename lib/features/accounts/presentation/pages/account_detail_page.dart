@@ -1482,12 +1482,15 @@ class _BalanceUpdateDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_BalanceUpdateDialog> createState() => _BalanceUpdateDialogState();
+  ConsumerState<_BalanceUpdateDialog> createState() =>
+      _BalanceUpdateDialogState();
 }
 
 class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _amountFocusNode = FocusNode();
   
   BalanceUpdateType _updateType = BalanceUpdateType.setDirect;
   bool _isLoading = false;
@@ -1496,11 +1499,20 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
   void initState() {
     super.initState();
     _amountController.text = widget.account.balance.toString();
+    
+    // Miktar alanı focus değişikliklerini dinle
+    _amountFocusNode.addListener(() {
+      if (!_amountFocusNode.hasFocus) {
+        _formatAmount();
+      }
+    });
   }
 
   @override
   void dispose() {
     _amountController.dispose();
+    _descriptionController.dispose();
+    _amountFocusNode.dispose();
     super.dispose();
   }
 
@@ -1557,7 +1569,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Güncelleme Türü
               Text(
                 'Güncelleme Türü',
@@ -1635,7 +1647,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 ],
               ),
               const SizedBox(height: 20),
-              
+
               // Miktar Girişi
               Text(
                 _getAmountLabel(),
@@ -1647,6 +1659,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _amountController,
+                focusNode: _amountFocusNode,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   hintText: '0.00',
@@ -1662,7 +1675,9 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                   if (value == null || value.isEmpty) {
                     return 'Miktar giriniz';
                   }
-                  final amount = double.tryParse(value);
+                  // Formatlanmış değeri parse etmek için virgülü noktaya çevir
+                  final cleanValue = value.replaceAll('.', '').replaceAll(',', '.');
+                  final amount = double.tryParse(cleanValue);
                   if (amount == null) {
                     return 'Geçerli bir miktar giriniz';
                   }
@@ -1671,6 +1686,26 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                   }
                   return null;
                 },
+              ),
+              const SizedBox(height: 16),
+              
+              // Açıklama Alanı
+              Text(
+                'Açıklama (Opsiyonel)',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'İşlem açıklaması giriniz...',
+                  prefixIcon: const Icon(Icons.description),
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
               
@@ -1753,7 +1788,9 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
   }
 
   String _getPreviewText() {
-    final amount = double.tryParse(_amountController.text);
+    // Formatlanmış değeri parse etmek için virgülü noktaya çevir
+    final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+    final amount = double.tryParse(cleanValue);
     if (amount == null) return '';
 
     switch (_updateType) {
@@ -1780,6 +1817,18 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
     }
   }
 
+  void _formatAmount() {
+    final text = _amountController.text;
+    if (text.isNotEmpty) {
+      // Formatlanmış değeri parse etmek için virgülü noktaya çevir
+      final cleanValue = text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.tryParse(cleanValue);
+      if (amount != null) {
+        _amountController.text = NumberFormat('#,##0.00', 'tr_TR').format(amount);
+      }
+    }
+  }
+
   Future<void> _updateBalance() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -1788,7 +1837,9 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
     });
 
     try {
-      final amount = double.parse(_amountController.text);
+      // Formatlanmış değeri parse etmek için virgülü noktaya çevir
+      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.parse(cleanValue);
       double newBalance;
 
       switch (_updateType) {
@@ -1815,13 +1866,21 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
       if (mounted) {
         Navigator.pop(context);
         widget.onBalanceUpdated();
+        
+        // Açıklama varsa göster
+        final description = _descriptionController.text.trim();
+        final message = description.isNotEmpty 
+            ? 'Bakiye güncellendi: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}\nAçıklama: $description'
+            : 'Bakiye başarıyla güncellendi: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
+            
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Bakiye başarıyla güncellendi: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}',
+              message,
               style: GoogleFonts.poppins(),
             ),
             backgroundColor: Colors.green[600],
+            duration: const Duration(seconds: 4),
           ),
         );
       }
@@ -1849,7 +1908,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
 
 /// Bakiye Güncelleme Türleri
 enum BalanceUpdateType {
-  setDirect,  // Doğrudan gir
-  add,         // Para ekle
-  subtract,    // Para çıkar
+  setDirect, // Doğrudan gir
+  add, // Para ekle
+  subtract, // Para çıkar
 }
