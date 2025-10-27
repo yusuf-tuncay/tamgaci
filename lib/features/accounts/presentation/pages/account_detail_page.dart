@@ -67,7 +67,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   Widget build(BuildContext context) {
     // Hesaplar listesi ile aynı mantık - accountNotifierProvider kullan
     final accountsAsync = ref.watch(accountNotifierProvider);
-    
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: accountsAsync.when(
@@ -77,10 +77,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             (acc) => acc.id == widget.account.id,
             orElse: () => widget.account,
           );
-          
-          debugPrint('AccountDetailPage - accountNotifier account: ${updatedAccount.name}');
-          debugPrint('AccountDetailPage - accountNotifier balance: ${updatedAccount.balance}');
-          
+
+          debugPrint(
+              'AccountDetailPage - accountNotifier account: ${updatedAccount.name}');
+          debugPrint(
+              'AccountDetailPage - accountNotifier balance: ${updatedAccount.balance}');
+
           return CustomScrollView(
             slivers: [
               _buildAppBar(updatedAccount),
@@ -194,7 +196,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.account.name,
+                            account.name,
                             style: GoogleFonts.poppins(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -203,7 +205,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.account.bankName,
+                            account.bankName,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               color: Colors.white.withValues(alpha: 0.9),
@@ -211,7 +213,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}',
+                            '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}',
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
@@ -267,22 +269,22 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     ),
                     const SizedBox(height: 16),
                     _buildDetailRow(
-                        'Hesap Numarası', widget.account.accountNumber),
-                    _buildDetailRow('IBAN', widget.account.iban),
-                    _buildDetailRow('SWIFT Kodu', widget.account.swiftCode),
-                    _buildDetailRow('Şube', widget.account.branchName),
-                    _buildDetailRow('Para Birimi', widget.account.currency),
+                        'Hesap Numarası', account.accountNumber),
+                    _buildDetailRow('IBAN', account.iban),
+                    _buildDetailRow('SWIFT Kodu', account.swiftCode),
+                    _buildDetailRow('Şube', account.branchName),
+                    _buildDetailRow('Para Birimi', account.currency),
                     _buildDetailRow(
-                        'Hesap Türü', widget.account.type.displayName),
-                    _buildDetailRow('Durum', widget.account.status.displayName),
-                    if (widget.account.description != null)
-                      _buildDetailRow('Açıklama', widget.account.description!),
-                    if (widget.account.notes != null)
-                      _buildDetailRow('Notlar', widget.account.notes!),
+                        'Hesap Türü', account.type.displayName),
+                    _buildDetailRow('Durum', account.status.displayName),
+                    if (account.description != null)
+                      _buildDetailRow('Açıklama', account.description!),
+                    if (account.notes != null)
+                      _buildDetailRow('Notlar', account.notes!),
                     _buildDetailRow(
-                        'Oluşturulma', _formatDate(widget.account.createdAt)),
+                        'Oluşturulma', _formatDate(account.createdAt)),
                     _buildDetailRow('Son Güncelleme',
-                        _formatDate(widget.account.updatedAt)),
+                        _formatDate(account.updatedAt)),
                   ],
                 ),
               ),
@@ -380,7 +382,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     Consumer(
                       builder: (context, ref, child) {
                         final transactionsAsync = ref.watch(
-                          transactionsByAccountIdProvider(widget.account.id),
+                          transactionsByAccountIdProvider(account.id),
                         );
 
                         return transactionsAsync.when(
@@ -461,7 +463,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       'Hesap Düzenle',
                       Icons.edit,
                       Colors.blue[600]!,
-                      _editAccount,
+                      () => _editAccount(account),
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
@@ -482,7 +484,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       'Masraf Ekle',
                       Icons.add_circle_outline,
                       Colors.purple[600]!,
-                      _addExpense,
+                      () => _addExpense(account),
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
@@ -551,15 +553,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  void _editAccount() async {
-    debugPrint('_editAccount - widget.account: ${widget.account.name}');
-    debugPrint('_editAccount - widget.account.id: ${widget.account.id}');
+  void _editAccount(Account account) async {
+    debugPrint('_editAccount - account: ${account.name}');
+    debugPrint('_editAccount - account.id: ${account.id}');
 
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) =>
-            CreateAccountPage(existingAccount: widget.account),
+            CreateAccountPage(existingAccount: account),
       ),
     );
 
@@ -669,11 +671,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  void _addExpense() {
+  void _addExpense(Account account) {
     showDialog(
       context: context,
       builder: (context) => _ExpenseDialog(
-        account: widget.account,
+        account: account,
         onExpenseAdded: () {
           // Masraf eklendikten sonra sayfayı yenile
           setState(() {});
@@ -922,7 +924,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
   void initState() {
     super.initState();
     _selectedCurrency = widget.account.currency;
-    _updateExchangeRate();
+    _updateExchangeRate(widget.account);
 
     // Miktar alanı focus değişikliklerini dinle
     _amountFocusNode.addListener(() {
@@ -1025,7 +1027,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                           setState(() {
                             _selectedCurrency = value!;
                           });
-                          _updateExchangeRate();
+                          _updateExchangeRate(widget.account);
                         },
                       ),
                     ),
@@ -1194,7 +1196,7 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _buildAccountInfoTable(),
+                      _buildAccountInfoTable(widget.account),
                     ],
                   ),
                 ),
@@ -1229,16 +1231,16 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     );
   }
 
-  Widget _buildAccountInfoTable() {
+  Widget _buildAccountInfoTable(Account account) {
     return Column(
       children: [
-        _buildInfoRow('Hesap Adı', widget.account.name),
-        _buildInfoRow('Banka', widget.account.bankName),
-        _buildInfoRow('Hesap No', widget.account.accountNumber),
-        _buildInfoRow('Para Birimi', widget.account.currency),
-        _buildInfoRow('Hesap Türü', widget.account.type.displayName),
+        _buildInfoRow('Hesap Adı', account.name),
+        _buildInfoRow('Banka', account.bankName),
+        _buildInfoRow('Hesap No', account.accountNumber),
+        _buildInfoRow('Para Birimi', account.currency),
+        _buildInfoRow('Hesap Türü', account.type.displayName),
         _buildInfoRow('Mevcut Bakiye',
-            '${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}'),
+            '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'),
       ],
     );
   }
@@ -1277,8 +1279,8 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
     );
   }
 
-  void _updateExchangeRate() async {
-    final fromCurrency = widget.account.currency; // Hesap para birimi
+  void _updateExchangeRate(Account account) async {
+    final fromCurrency = account.currency; // Hesap para birimi
     final toCurrency = _selectedCurrency; // Seçilen para birimi
 
     if (mounted) {
