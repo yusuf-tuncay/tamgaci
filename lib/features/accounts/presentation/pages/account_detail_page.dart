@@ -1499,7 +1499,8 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
   void initState() {
     super.initState();
     _amountController.text = widget.account.balance.toString();
-
+    _descriptionController.text = 'Bakiye düzeltme'; // Başlangıç açıklaması
+    
     // Miktar alanı focus değişikliklerini dinle
     _amountFocusNode.addListener(() {
       if (!_amountFocusNode.hasFocus) {
@@ -1827,10 +1828,15 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
     switch (_updateType) {
       case BalanceUpdateType.setDirect:
         _amountController.text = widget.account.balance.toString();
+        _descriptionController.text = 'Bakiye düzeltme';
         break;
       case BalanceUpdateType.add:
+        _amountController.clear();
+        _descriptionController.text = 'Para girişi';
+        break;
       case BalanceUpdateType.subtract:
         _amountController.clear();
+        _descriptionController.text = 'Para çıkışı';
         break;
     }
   }
