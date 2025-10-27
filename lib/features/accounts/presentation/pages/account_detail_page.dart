@@ -2727,6 +2727,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     _amountController.addListener(() {
       _calculateConvertedAmount();
     });
+    
+    // Kur değişikliklerini dinle (dönüştürme için)
+    _exchangeRateController.addListener(() {
+      _calculateConvertedAmount();
+    });
   }
 
   @override
@@ -3019,14 +3024,15 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                           ),
                           const SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.green[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: Colors.green[300]!),
                             ),
                             child: Text(
-                              'Otomatik Kur',
+                              'TCMB Kur',
                               style: GoogleFonts.poppins(
                                 fontSize: 10,
                                 color: Colors.green[700],
@@ -3041,7 +3047,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.blue[600]!),
                               ),
                             ),
                           ],
@@ -3057,11 +3064,10 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                               keyboardType:
                                   const TextInputType.numberWithOptions(
                                       decimal: true),
-                              readOnly: true, // Kur otomatik gelir, manuel değiştirilemez
                               decoration: InputDecoration(
                                 hintText: '29.50',
                                 labelText: 'Döviz Kuru',
-                                helperText: 'TCMB\'den otomatik çekilir',
+                                helperText: 'TCMB\'den otomatik çekilir (değiştirilebilir)',
                                 prefixIcon: const Icon(Icons.swap_horiz),
                                 suffixText: widget.currentAccount.currency,
                                 border: const OutlineInputBorder(),
@@ -3070,11 +3076,17 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                   color: Colors.grey[600],
                                   fontWeight: FontWeight.w500,
                                 ),
-                                // Read-only görünümü için arka plan rengi
-                                filled: true,
-                                fillColor: Colors.grey[50],
                               ),
-                              // Read-only olduğu için validator'a gerek yok
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Kur gerekli';
+                                }
+                                final rate = double.tryParse(value);
+                                if (rate == null || rate <= 0) {
+                                  return 'Geçerli kur girin';
+                                }
+                                return null;
+                              },
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -3703,9 +3715,13 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       final cleanValue =
           _amountController.text.replaceAll('.', '').replaceAll(',', '.');
       final amount = double.tryParse(cleanValue);
-      
+
       // Kur metninden sadece sayısal kısmı çıkar (TCMB) etiketini kaldır
-      final rateText = _exchangeRateController.text.replaceAll(' (TCMB)', '');
+      final rateText = _exchangeRateController.text
+          .replaceAll(' (TCMB)', '')
+          .replaceAll('TCMB\'den kur çekiliyor...', '')
+          .replaceAll('TCMB\'den kur alınamadı', '')
+          .replaceAll('Hata:', '');
       final exchangeRate = double.tryParse(rateText);
 
       if (amount != null &&
