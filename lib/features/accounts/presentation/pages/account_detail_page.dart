@@ -761,10 +761,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildTransactionItem(AccountTransaction transaction) {
-    final isDebit = transaction.type == TransactionType.withdrawal ||
-        transaction.type == TransactionType.transfer;
-    final amount =
-        isDebit ? transaction.debitAmount ?? 0 : transaction.creditAmount ?? 0;
+    // Transaction amount'unu doğru şekilde al
+    final amount = transaction.amount;
+    final isNegative = amount < 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -780,12 +779,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isDebit ? Colors.red[100] : Colors.green[100],
+              color: isNegative ? Colors.red[100] : Colors.green[100],
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
-              isDebit ? Icons.arrow_downward : Icons.arrow_upward,
-              color: isDebit ? Colors.red[600] : Colors.green[600],
+              isNegative ? Icons.arrow_downward : Icons.arrow_upward,
+              color: isNegative ? Colors.red[600] : Colors.green[600],
               size: 20,
             ),
           ),
@@ -817,16 +816,16 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${isDebit ? '-' : '+'}${amount.toStringAsFixed(2)} ${widget.account.currency}',
+                '${isNegative ? '' : '+'}${NumberFormat('#,##0.00', 'tr_TR').format(amount.abs())} ${widget.account.currency}',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: isDebit ? Colors.red[600] : Colors.green[600],
+                  color: isNegative ? Colors.red[600] : Colors.green[600],
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                'Bakiye: ${transaction.balanceAfter.toStringAsFixed(2)} ${widget.account.currency}',
+                'Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)} ${widget.account.currency}',
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -1950,7 +1949,8 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
               userId: user.uid,
             );
 
-            debugPrint('Transaction created with amount: ${transaction.amount}');
+            debugPrint(
+                'Transaction created with amount: ${transaction.amount}');
 
             await ref
                 .read(accountTransactionNotifierProvider.notifier)
