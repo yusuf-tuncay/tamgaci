@@ -27,6 +27,13 @@ final accountByIdProvider =
   return await repository.getAccountById(id);
 });
 
+/// Account Stream Provider (Realtime)
+final accountStreamProvider =
+    StreamProvider.family<Account?, String>((ref, id) {
+  final repository = ref.read(accountRepositoryProvider);
+  return repository.getAccountStream(id);
+});
+
 /// Accounts by Currency Provider
 final accountsByCurrencyProvider =
     FutureProvider.family<List<Account>, String>((ref, currency) async {

@@ -8,6 +8,9 @@ abstract class AccountRepository {
   /// ID'ye göre hesap getir
   Future<Account?> getAccountById(String id);
 
+  /// ID'ye göre hesabı realtime olarak dinle
+  Stream<Account?> getAccountStream(String id);
+
   /// Hesap oluştur
   Future<String> createAccount(Account account);
 
