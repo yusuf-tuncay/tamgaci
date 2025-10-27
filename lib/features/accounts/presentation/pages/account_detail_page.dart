@@ -2974,8 +2974,12 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: '0,00',
-                    prefixIcon: const Icon(Icons.attach_money),
-                    suffixText: widget.currentAccount.currency,
+                    prefixIcon: Icon(_transferType == TransferType.send
+                        ? Icons.arrow_upward
+                        : Icons.arrow_downward),
+                    suffixText: _transferType == TransferType.send
+                        ? widget.currentAccount.currency
+                        : (_selectedAccount?.currency ?? ''),
                     border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
@@ -3055,18 +3059,19 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                         // Kur alanı
                         TextFormField(
                           controller: _exchangeRateController,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                                  decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
                           decoration: InputDecoration(
                             hintText: 'Kuru Gerekli',
                             labelText: 'Döviz Kuru',
-                            helperText: _convertedAmount > 0 
-                                ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
+                            helperText: _convertedAmount > 0
+                                ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_transferType == TransferType.send ? _selectedAccount?.currency : widget.currentAccount.currency}'
                                 : 'TCMB\'den otomatik çekilir',
                             helperStyle: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: _convertedAmount > 0 ? Colors.blue[700] : Colors.grey[600],
+                              color: _convertedAmount > 0
+                                  ? Colors.blue[700]
+                                  : Colors.grey[600],
                               fontWeight: FontWeight.w500,
                             ),
                             prefixIcon: const Icon(Icons.swap_horiz),
@@ -3267,11 +3272,13 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     if (amount == null) return '';
 
     if (_transferType == TransferType.send) {
+      // Gönder: Bu hesaptan başka hesaba
       return '${widget.currentAccount.name} → ${_selectedAccount?.name}\n'
           '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}';
     } else {
+      // Al: Başka hesaptan bu hesaba
       return '${_selectedAccount?.name} → ${widget.currentAccount.name}\n'
-          '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}';
+          '${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${_selectedAccount?.currency ?? ''}';
     }
   }
 
