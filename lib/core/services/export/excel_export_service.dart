@@ -8,11 +8,15 @@ import 'package:intl/intl.dart';
 import '../../../features/accounts/domain/entities/account.dart';
 import '../../../features/accounts/domain/entities/account_transaction.dart';
 import 'package:flutter/foundation.dart';
+import '../../../features/auth/domain/entities/user.dart';
+import '../../entities/company.dart';
 
 class ExcelExportService {
   static Future<String?> exportTransactionsToExcel({
     required Account account,
     required List<AccountTransaction> transactions,
+    User? user,
+    Company? company,
     String? fileName,
   }) async {
     try {
@@ -22,32 +26,51 @@ class ExcelExportService {
       // Varsayılan sheet'i kullan
       final sheet = excel['Sheet1'];
 
-      // Kurumsal başlık
+      // Excel dosyası hazırlanıyor...
+
+      // Kurumsal başlık - TAMGACI logosu
       sheet.appendRow(['TAMGACI']);
       sheet.appendRow(['Muhasebe ve Finans Yönetim Sistemi']);
       sheet.appendRow(['']);
-      sheet.appendRow(['Şirket:', 'TAMGACI Yazılım']);
-      sheet.appendRow(['Web:', 'www.tamgaci.com']);
-      sheet.appendRow(['E-posta:', 'info@tamgaci.com']);
-      sheet.appendRow(['']);
-      sheet.appendRow([
-        'Rapor Tarihi:',
-        DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())
-      ]);
+
+      // Şirket bilgileri
+      if (company != null) {
+        sheet.appendRow(['Şirket Bilgileri']);
+        sheet.appendRow(['Şirket Adı:', company.name]);
+        sheet.appendRow(['Vergi No:', 'Belirtilmemiş']);
+        sheet.appendRow(['Adres:', 'Belirtilmemiş']);
+        sheet.appendRow(['Telefon:', 'Belirtilmemiş']);
+        sheet.appendRow(['E-posta:', 'Belirtilmemiş']);
+        sheet.appendRow(['']);
+      }
+
+      // Kullanıcı bilgileri
+      if (user != null) {
+        sheet.appendRow(['Kullanıcı Bilgileri']);
+        sheet.appendRow(['Kullanıcı Adı:', 'Belirtilmemiş']);
+        sheet.appendRow(['E-posta:', user.email]);
+        sheet.appendRow(['Kayıt Tarihi:', DateFormat('dd.MM.yyyy').format(user.createdAt)]);
+        sheet.appendRow(['']);
+      }
+
+      // Rapor bilgileri
+      sheet.appendRow(['Rapor Bilgileri']);
+      sheet.appendRow(['Rapor Tarihi:', DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())]);
       sheet.appendRow(['Rapor Türü:', 'Hesap Hareketleri Raporu']);
+      sheet.appendRow(['Toplam İşlem:', '${transactions.length} adet']);
       sheet.appendRow(['']);
 
-      // Kasa bilgileri başlığı
+      // Hesap bilgileri başlığı
       sheet.appendRow(['HESAP BİLGİLERİ']);
-      sheet.appendRow(['Hesap Adı', account.name]);
-      sheet.appendRow(['Hesap Türü', _getAccountTypeText(account.type)]);
-      sheet.appendRow(['Para Birimi', account.currency]);
+      sheet.appendRow(['Hesap Adı:', account.name]);
+      sheet.appendRow(['Hesap Türü:', _getAccountTypeText(account.type)]);
+      sheet.appendRow(['Para Birimi:', account.currency]);
       sheet.appendRow([
-        'Mevcut Bakiye',
+        'Mevcut Bakiye:',
         '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'
       ]);
       sheet.appendRow([
-        'Oluşturulma Tarihi',
+        'Oluşturulma Tarihi:',
         DateFormat('dd.MM.yyyy HH:mm').format(account.createdAt)
       ]);
       sheet.appendRow(['']); // Boş satır
@@ -111,19 +134,19 @@ class ExcelExportService {
         // Web'de dosyayı direkt indirme olarak ayarla
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-        
+
         // Anchor element oluştur ve DOM'a ekle
         final anchor = html.AnchorElement(href: url)
           ..setAttribute('download', finalFileName)
           ..style.display = 'none';
-        
+
         html.document.body?.append(anchor);
         anchor.click();
         anchor.remove();
-        
+
         // URL'yi temizle
         html.Url.revokeObjectUrl(url);
-        
+
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {

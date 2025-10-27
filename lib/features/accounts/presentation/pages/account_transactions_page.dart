@@ -10,6 +10,8 @@ import '../providers/account_transaction_providers.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/export/excel_export_service.dart';
+import '../../../../features/auth/presentation/providers/auth_providers.dart';
+import '../../../../core/providers/company_provider.dart';
 
 // Export iconları - diğer modüllerdeki gibi
 export 'package:flutter/material.dart' show Icons;
@@ -1038,14 +1040,14 @@ class _AccountTransactionsPageState
       final transactionsAsync = ref.read(
         transactionsByAccountIdProvider(widget.account.id),
       );
-      
+
       if (!transactionsAsync.hasValue) {
         throw Exception('İşlemler yüklenemedi');
       }
-      
+
       final allTransactions = transactionsAsync.value!;
       final filteredTransactions = _filterTransactions(allTransactions);
-      
+
       if (filteredTransactions.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1058,10 +1060,19 @@ class _AccountTransactionsPageState
         return;
       }
 
+      // Kullanıcı ve şirket bilgilerini al
+      final userAsync = ref.read(currentUserProvider);
+      final companyAsync = ref.read(currentCompanyProvider);
+      
+      final user = userAsync.value;
+      final company = companyAsync.value;
+
       // Excel dosyası oluştur
       final filePath = await ExcelExportService.exportTransactionsToExcel(
         account: widget.account,
         transactions: filteredTransactions,
+        user: user,
+        company: company,
       );
 
       if (mounted) {
