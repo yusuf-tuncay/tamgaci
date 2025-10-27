@@ -1642,126 +1642,107 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _updateType = BalanceUpdateType.setDirect;
-                          _updateAmountController();
-                        });
-                      },
-                      child: Row(
+              SegmentedButton<BalanceUpdateType>(
+                segments: [
+                  ButtonSegment<BalanceUpdateType>(
+                    value: BalanceUpdateType.setDirect,
+                    label: SizedBox(
+                      width: 90,
+                      height: 50,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Radio<BalanceUpdateType>(
-                            value: BalanceUpdateType.setDirect,
-                            groupValue: _updateType,
-                            onChanged: (value) {
-                              setState(() {
-                                _updateType = value!;
-                                _updateAmountController();
-                              });
-                            },
+                          Text(
+                            'Doğrudan',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Doğrudan Gir',
-                                  style: GoogleFonts.poppins(fontSize: 11),
-                                ),
-                                Text(
-                                  'Yeni bakiye',
-                                  style: GoogleFonts.poppins(fontSize: 9),
-                                ),
-                              ],
+                          Text(
+                            'Gir',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    tooltip: 'Yeni bakiye',
                   ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _updateType = BalanceUpdateType.add;
-                          _updateAmountController();
-                        });
-                      },
-                      child: Row(
+                  ButtonSegment<BalanceUpdateType>(
+                    value: BalanceUpdateType.add,
+                    label: SizedBox(
+                      width: 90,
+                      height: 50,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Radio<BalanceUpdateType>(
-                            value: BalanceUpdateType.add,
-                            groupValue: _updateType,
-                            onChanged: (value) {
-                              setState(() {
-                                _updateType = value!;
-                                _updateAmountController();
-                              });
-                            },
+                          Text(
+                            'Para',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Para Ekle',
-                                  style: GoogleFonts.poppins(fontSize: 11),
-                                ),
-                                Text(
-                                  'Mevcut + ekle',
-                                  style: GoogleFonts.poppins(fontSize: 9),
-                                ),
-                              ],
+                          Text(
+                            'Ekle',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    tooltip: 'Mevcut + ekle',
                   ),
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        setState(() {
-                          _updateType = BalanceUpdateType.subtract;
-                          _updateAmountController();
-                        });
-                      },
-                      child: Row(
+                  ButtonSegment<BalanceUpdateType>(
+                    value: BalanceUpdateType.subtract,
+                    label: SizedBox(
+                      width: 90,
+                      height: 50,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Radio<BalanceUpdateType>(
-                            value: BalanceUpdateType.subtract,
-                            groupValue: _updateType,
-                            onChanged: (value) {
-                              setState(() {
-                                _updateType = value!;
-                                _updateAmountController();
-                              });
-                            },
+                          Text(
+                            'Para',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Para Çıkar',
-                                  style: GoogleFonts.poppins(fontSize: 11),
-                                ),
-                                Text(
-                                  'Mevcut - çıkar',
-                                  style: GoogleFonts.poppins(fontSize: 9),
-                                ),
-                              ],
+                          Text(
+                            'Çıkar',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    tooltip: 'Mevcut - çıkar',
                   ),
                 ],
+                selected: {_updateType},
+                onSelectionChanged: (Set<BalanceUpdateType> newSelection) {
+                  setState(() {
+                    _updateType = newSelection.first;
+                    _updateAmountController();
+                  });
+                },
+                style: ButtonStyle(
+                  padding: WidgetStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                  ),
+                  textStyle: WidgetStateProperty.all(
+                    GoogleFonts.poppins(fontSize: 10),
+                  ),
+                  minimumSize: WidgetStateProperty.all(const Size(90, 50)),
+                  maximumSize: WidgetStateProperty.all(const Size(90, 50)),
+                ),
               ),
               const SizedBox(height: 20),
 
