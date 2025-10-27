@@ -1011,6 +1011,9 @@ class _AccountTransactionsPageState
   }
 
   Future<void> _exportToExcel() async {
+    debugPrint('=== EXCEL EXPORT BAŞLADI ===');
+    debugPrint('Çağrı zamanı: ${DateTime.now()}');
+    
     try {
       // Loading göster
       if (mounted) {

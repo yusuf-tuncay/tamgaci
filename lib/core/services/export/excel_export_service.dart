@@ -24,6 +24,11 @@ class ExcelExportService {
     TransactionCategory? transactionCategory,
     String? searchQuery,
   }) async {
+    debugPrint('=== EXCEL EXPORT SERVİSİ BAŞLADI ===');
+    debugPrint('Servis çağrı zamanı: ${DateTime.now()}');
+    debugPrint('Account: ${account.name}');
+    debugPrint('Transactions count: ${transactions.length}');
+    
     try {
       // Excel dosyası oluştur
       final excel = Excel.createExcel();
@@ -43,9 +48,12 @@ class ExcelExportService {
         sheet.appendRow(['Şirket Bilgileri']);
         sheet.appendRow(['Şirket Adı:', company.name]);
         sheet.appendRow(['Vergi No:', user?.taxId ?? 'Belirtilmemiş']);
-        sheet.appendRow(['Adres:', company.address ?? user?.address ?? 'Belirtilmemiş']);
-        sheet.appendRow(['Telefon:', company.phone ?? user?.phone ?? 'Belirtilmemiş']);
-        sheet.appendRow(['E-posta:', company.email ?? user?.email ?? 'Belirtilmemiş']);
+        sheet.appendRow(
+            ['Adres:', company.address ?? user?.address ?? 'Belirtilmemiş']);
+        sheet.appendRow(
+            ['Telefon:', company.phone ?? user?.phone ?? 'Belirtilmemiş']);
+        sheet.appendRow(
+            ['E-posta:', company.email ?? user?.email ?? 'Belirtilmemiş']);
         sheet.appendRow(['Web Sitesi:', company.website ?? 'Belirtilmemiş']);
         sheet.appendRow(['']);
       }
@@ -186,13 +194,20 @@ class ExcelExportService {
         // Web'de dosyayı direkt indirme olarak ayarla
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-
-        // window.open ile indirme
-        html.window.open(url, '_blank');
-
+        
+        // Direkt indirme için anchor element kullan
+        final anchor = html.AnchorElement(href: url)
+          ..setAttribute('download', finalFileName)
+          ..style.display = 'none';
+        
+        // DOM'a ekle, tıkla ve kaldır
+        html.document.body?.append(anchor);
+        anchor.click();
+        anchor.remove();
+        
         // URL'yi temizle
         html.Url.revokeObjectUrl(url);
-
+        
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {
