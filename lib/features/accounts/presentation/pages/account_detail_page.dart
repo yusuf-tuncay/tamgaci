@@ -2727,7 +2727,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     _amountController.addListener(() {
       _calculateConvertedAmount();
     });
-    
+
     // Kur değişikliklerini dinle (dönüştürme için)
     _exchangeRateController.addListener(() {
       _calculateConvertedAmount();
@@ -2773,81 +2773,55 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                SegmentedButton<TransferType>(
-                  segments: [
-                    ButtonSegment<TransferType>(
-                      value: TransferType.send,
-                      label: SizedBox(
-                        width: 90,
-                        height: 50,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Gönder',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              'Bu hesaptan',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[200]!),
+                  ),
+                  child: SegmentedButton<TransferType>(
+                    segments: [
+                      ButtonSegment<TransferType>(
+                        value: TransferType.send,
+                        label: Text(
+                          'Gönder',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
+                        tooltip: 'Bu hesaptan başka hesaba para gönder',
                       ),
-                      tooltip: 'Bu hesaptan başka hesaba para gönder',
-                    ),
-                    ButtonSegment<TransferType>(
-                      value: TransferType.receive,
-                      label: SizedBox(
-                        width: 90,
-                        height: 50,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Al',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              'Bu hesaba',
-                              style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                      ButtonSegment<TransferType>(
+                        value: TransferType.receive,
+                        label: Text(
+                          'Al',
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
+                        tooltip: 'Başka hesaptan bu hesaba para al',
                       ),
-                      tooltip: 'Başka hesaptan bu hesaba para al',
+                    ],
+                    selected: {_transferType},
+                    onSelectionChanged: (Set<TransferType> newSelection) {
+                      setState(() {
+                        _transferType = newSelection.first;
+                        _selectedAccount = null; // Hesap seçimini sıfırla
+                      });
+                      // Kur bilgisini güncelle
+                      _updateExchangeRate();
+                    },
+                    style: ButtonStyle(
+                      padding: WidgetStateProperty.all(
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      textStyle: WidgetStateProperty.all(
+                        GoogleFonts.poppins(fontSize: 12),
+                      ),
                     ),
-                  ],
-                  selected: {_transferType},
-                  onSelectionChanged: (Set<TransferType> newSelection) {
-                    setState(() {
-                      _transferType = newSelection.first;
-                      _selectedAccount = null; // Hesap seçimini sıfırla
-                    });
-                    // Kur bilgisini güncelle
-                    _updateExchangeRate();
-                  },
-                  style: ButtonStyle(
-                    padding: WidgetStateProperty.all(
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                    ),
-                    textStyle: WidgetStateProperty.all(
-                      GoogleFonts.poppins(fontSize: 10),
-                    ),
-                    minimumSize: WidgetStateProperty.all(const Size(90, 50)),
-                    maximumSize: WidgetStateProperty.all(const Size(90, 50)),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -3010,136 +2984,167 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 if (_selectedAccount != null &&
                     _selectedAccount!.currency !=
                         widget.currentAccount.currency)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Kur Bilgisi',
-                            style: GoogleFonts.poppins(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green[100],
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.green[300]!),
-                            ),
-                            child: Text(
-                              'TCMB Kur',
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[200]!),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Kur Bilgisi',
                               style: GoogleFonts.poppins(
-                                fontSize: 10,
-                                color: Colors.green[700],
-                                fontWeight: FontWeight.w500,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey[800],
                               ),
                             ),
-                          ),
-                          if (_isLoadingExchangeRate) ...[
                             const SizedBox(width: 8),
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.blue[600]!),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green[100],
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.green[300]!),
                               ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: TextFormField(
-                              controller: _exchangeRateController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              decoration: InputDecoration(
-                                hintText: '29.50',
-                                labelText: 'Döviz Kuru',
-                                helperText: 'TCMB\'den otomatik çekilir (değiştirilebilir)',
-                                prefixIcon: const Icon(Icons.swap_horiz),
-                                suffixText: widget.currentAccount.currency,
-                                border: const OutlineInputBorder(),
-                                suffixStyle: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
+                              child: Text(
+                                'TCMB Kur',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 10,
+                                  color: Colors.green[700],
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Kur gerekli';
-                                }
-                                final rate = double.tryParse(value);
-                                if (rate == null || rate <= 0) {
-                                  return 'Geçerli kur girin';
-                                }
-                                return null;
-                              },
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 1,
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.blue[50],
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.blue[200]!),
+                            if (_isLoadingExchangeRate) ...[
+                              const SizedBox(width: 8),
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.blue[600]!),
+                                ),
                               ),
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'Dönüştürülen',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 10,
-                                      color: Colors.blue[700],
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: TextFormField(
+                                controller: _exchangeRateController,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
+                                decoration: InputDecoration(
+                                  hintText: 'Döviz Kuru Giriniz',
+                                  labelText: 'Döviz Kuru',
+                                  helperText: 'TCMB\'den otomatik çekilir',
+                                  prefixIcon: const Icon(Icons.swap_horiz),
+                                  suffixText: widget.currentAccount.currency,
+                                  border: const OutlineInputBorder(),
+                                  suffixStyle: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                    fontWeight: FontWeight.w500,
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _convertedAmount > 0
-                                        ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
-                                        : '0,00 ${_selectedAccount!.currency}',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 12,
-                                      color: Colors.blue[800],
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Kur gerekli';
+                                  }
+                                  final rate = double.tryParse(value);
+                                  if (rate == null || rate <= 0) {
+                                    return 'Geçerli kur girin';
+                                  }
+                                  return null;
+                                },
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
+                            const SizedBox(width: 12),
+                            Expanded(
+                              flex: 1,
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue[50],
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: Colors.blue[200]!),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Dönüştürülen',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 10,
+                                        color: Colors.blue[700],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _convertedAmount > 0 
+                                          ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
+                                          : '0,00 ${_selectedAccount!.currency}',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: Colors.blue[800],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 const SizedBox(height: 16),
 
                 // Açıklama
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Açıklama',
-                    hintText: 'Transfer açıklaması...',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.description_outlined),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[50],
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[200]!),
                   ),
-                  maxLines: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Açıklama',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _descriptionController,
+                        decoration: const InputDecoration(
+                          labelText: 'Açıklama',
+                          hintText: 'Transfer açıklaması...',
+                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.description_outlined),
+                        ),
+                        maxLines: 2,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 16),
 
