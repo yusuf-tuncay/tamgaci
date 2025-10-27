@@ -69,7 +69,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   Widget build(BuildContext context) {
     // Hesaplar listesi ile aynı mantık - accountNotifierProvider kullan
     final accountsAsync = ref.watch(accountNotifierProvider);
-    final transactionsAsync = ref.watch(transactionsByAccountIdProvider(widget.account.id));
+    final transactionsAsync =
+        ref.watch(transactionsByAccountIdProvider(widget.account.id));
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -89,11 +90,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           return transactionsAsync.when(
             data: (transactions) {
               // Hesap hareketlerinden bakiye hesapla
-              final calculatedBalance = _calculateBalanceFromTransactions(transactions);
-              final accountWithCalculatedBalance = updatedAccount.copyWith(balance: calculatedBalance);
-              
-              debugPrint('AccountDetailPage - calculated balance: $calculatedBalance');
-              debugPrint('AccountDetailPage - original balance: ${updatedAccount.balance}');
+              final calculatedBalance =
+                  _calculateBalanceFromTransactions(transactions);
+              final accountWithCalculatedBalance =
+                  updatedAccount.copyWith(balance: calculatedBalance);
+
+              debugPrint(
+                  'AccountDetailPage - calculated balance: $calculatedBalance');
+              debugPrint(
+                  'AccountDetailPage - original balance: ${updatedAccount.balance}');
 
               return CustomScrollView(
                 slivers: [
@@ -120,17 +125,18 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   /// Hesap hareketlerinden bakiye hesapla
-  double _calculateBalanceFromTransactions(List<AccountTransaction> transactions) {
+  double _calculateBalanceFromTransactions(
+      List<AccountTransaction> transactions) {
     double balance = 0.0;
-    
+
     // İşlemleri tarih sırasına göre sırala (en eski önce)
     final sortedTransactions = List<AccountTransaction>.from(transactions)
       ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
-    
+
     for (final transaction in sortedTransactions) {
       balance += transaction.amount;
     }
-    
+
     return balance;
   }
 
@@ -2352,7 +2358,7 @@ class _TransactionEditDialogState
             style: GoogleFonts.poppins(color: Colors.red[600]),
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: 16),
         // İptal Butonu
         TextButton(
           onPressed: _isLoading ? null : () => Navigator.pop(context),
