@@ -65,35 +65,36 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   @override
   Widget build(BuildContext context) {
+    // Hesaplar listesi ile aynı mantık - accountNotifierProvider kullan
+    final accountsAsync = ref.watch(accountNotifierProvider);
+    
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: StreamBuilder<Account?>(
-        stream: ref.read(accountRepositoryProvider).getAccountStream(widget.account.id),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
+      body: accountsAsync.when(
+        data: (accounts) {
+          // Güncel hesap verisini bul
+          final updatedAccount = accounts.firstWhere(
+            (acc) => acc.id == widget.account.id,
+            orElse: () => widget.account,
+          );
           
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Hata: ${snapshot.error}'),
-            );
-          }
-          
-          final account = snapshot.data ?? widget.account;
-          debugPrint('AccountDetailPage - StreamBuilder account: ${account.name}');
-          debugPrint('AccountDetailPage - StreamBuilder balance: ${account.balance}');
+          debugPrint('AccountDetailPage - accountNotifier account: ${updatedAccount.name}');
+          debugPrint('AccountDetailPage - accountNotifier balance: ${updatedAccount.balance}');
           
           return CustomScrollView(
             slivers: [
-              _buildAppBar(account),
-              _buildAccountCard(account),
-              _buildDetailsSection(account),
-              _buildTransactionsSection(account),
-              _buildActionsSection(account),
+              _buildAppBar(updatedAccount),
+              _buildAccountCard(updatedAccount),
+              _buildDetailsSection(updatedAccount),
+              _buildTransactionsSection(updatedAccount),
+              _buildActionsSection(updatedAccount),
             ],
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Text('Hata: $error'),
+        ),
       ),
     );
   }
