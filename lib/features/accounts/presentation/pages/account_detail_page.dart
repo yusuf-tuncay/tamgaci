@@ -12,6 +12,7 @@ import '../providers/account_providers.dart';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 import 'package:tamgaci/core/theme/constants.dart';
 import 'create_account_page.dart';
+import 'account_transactions_page.dart';
 
 /// Hesap Detay Sayfası
 class AccountDetailPage extends ConsumerStatefulWidget {
@@ -671,9 +672,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   void _viewAllTransactions() {
-    showDialog(
-      context: context,
-      builder: (context) => _AllTransactionsDialog(account: widget.account),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AccountTransactionsPage(account: widget.account),
+      ),
     );
   }
 
@@ -3799,220 +3802,6 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         _convertedAmount = 0.0;
       });
     }
-  }
-}
-
-/// Tüm işlemleri gösteren dialog
-class _AllTransactionsDialog extends ConsumerWidget {
-  final Account account;
-
-  const _AllTransactionsDialog({required this.account});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final transactionsAsync = ref.watch(
-      transactionsByAccountIdProvider(account.id),
-    );
-
-    return AlertDialog(
-      title: Row(
-        children: [
-          Icon(Icons.history, color: Colors.blue[600]),
-          const SizedBox(width: 8),
-          Text(
-            'Tüm İşlemler',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-      content: SizedBox(
-        width: double.maxFinite,
-        height: 400,
-        child: transactionsAsync.when(
-          data: (transactions) {
-            if (transactions.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.receipt_long,
-                      size: 64,
-                      color: Colors.grey[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Henüz işlem bulunmuyor',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            // En yeni işlemler üstte olacak şekilde sırala
-            final sortedTransactions = transactions.toList()
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-            return ListView.builder(
-              itemCount: sortedTransactions.length,
-              itemBuilder: (context, index) {
-                final transaction = sortedTransactions[index];
-                return _buildTransactionItem(transaction, context, ref);
-              },
-            );
-          },
-          loading: () => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          error: (error, stackTrace) => Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'İşlemler yüklenirken hata oluştu',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    color: Colors.red[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  error.toString(),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text(
-            'Kapat',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.blue[600],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTransactionItem(AccountTransaction transaction, BuildContext context, WidgetRef ref) {
-    final isNegative = transaction.amount < 0;
-    final amountColor = isNegative ? Colors.red[600] : Colors.green[600];
-    final amountIcon = isNegative ? Icons.arrow_downward : Icons.arrow_upward;
-
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context); // Dialog'u kapat
-        // Transaction edit dialog'unu aç
-        showDialog(
-          context: context,
-          builder: (context) => _TransactionEditDialog(
-            transaction: transaction,
-            account: account,
-            onTransactionUpdated: () {
-              // Provider'ları refresh et
-              ref.invalidate(transactionsByAccountIdProvider(account.id));
-              ref.invalidate(accountsProvider);
-            },
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: amountColor?.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                amountIcon,
-                color: amountColor,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    transaction.description,
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    DateFormat('dd.MM.yyyy HH:mm').format(transaction.transactionDate),
-                    style: GoogleFonts.poppins(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '${isNegative ? '-' : '+'}${NumberFormat('#,##0.00', 'tr_TR').format(transaction.amount.abs())} ${account.currency}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: amountColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)} ${account.currency}',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 
