@@ -3690,16 +3690,45 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       final toRate = await exchangeService.getExchangeRate(toCurrency);
 
       if (fromRate != null && toRate != null && mounted) {
-        // Kur hesaplama
+        // Transfer türüne göre kur yönü hesapla
         double rate;
-        if (fromCurrency == 'TRY') {
-          rate = toRate.rate; // TRY'den diğer para birimlerine
-        } else if (toCurrency == 'TRY') {
-          rate = 1.0 / fromRate.rate; // Diğer para birimlerinden TRY'ye
+        debugPrint('Transfer type: $_transferType');
+        debugPrint('From currency: $fromCurrency, To currency: $toCurrency');
+        debugPrint('From rate: ${fromRate.rate}, To rate: ${toRate.rate}');
+        
+        if (_transferType == TransferType.send) {
+          // Gönder: Kaynak hesaptan hedef hesaba
+          if (fromCurrency == 'TRY') {
+            // TRY'den diğer para birimlerine (satış kuru)
+            rate = toRate.rate;
+            debugPrint('Send: TRY to $toCurrency, rate = ${toRate.rate}');
+          } else if (toCurrency == 'TRY') {
+            // Diğer para birimlerinden TRY'ye (alış kuru)
+            rate = 1.0 / fromRate.rate;
+            debugPrint('Send: $fromCurrency to TRY, rate = ${1.0 / fromRate.rate}');
+          } else {
+            // İki yabancı para birimi arasında (TRY üzerinden)
+            rate = toRate.rate / fromRate.rate;
+            debugPrint('Send: $fromCurrency to $toCurrency, rate = ${toRate.rate / fromRate.rate}');
+          }
         } else {
-          // İki yabancı para birimi arasında (TRY üzerinden)
-          rate = toRate.rate / fromRate.rate;
+          // Al: Hedef hesaptan kaynak hesaba (ters yön)
+          if (fromCurrency == 'TRY') {
+            // TRY'den diğer para birimlerine (alış kuru - ters)
+            rate = 1.0 / toRate.rate;
+            debugPrint('Receive: TRY to $toCurrency, rate = ${1.0 / toRate.rate}');
+          } else if (toCurrency == 'TRY') {
+            // Diğer para birimlerinden TRY'ye (satış kuru - ters)
+            rate = fromRate.rate;
+            debugPrint('Receive: $fromCurrency to TRY, rate = ${fromRate.rate}');
+          } else {
+            // İki yabancı para birimi arasında (ters yön)
+            rate = fromRate.rate / toRate.rate;
+            debugPrint('Receive: $fromCurrency to $toCurrency, rate = ${fromRate.rate / toRate.rate}');
+          }
         }
+        
+        debugPrint('Final calculated rate: $rate');
 
         setState(() {
           _exchangeRateController.text = '${rate.toStringAsFixed(4)} (TCMB)';
@@ -3728,7 +3757,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     debugPrint('_calculateConvertedAmount called');
     debugPrint('Amount: ${_amountController.text}');
     debugPrint('Exchange rate: ${_exchangeRateController.text}');
-    
+
     if (_amountController.text.isEmpty ||
         _exchangeRateController.text.isEmpty) {
       debugPrint('Empty amount or exchange rate, setting converted to 0');
