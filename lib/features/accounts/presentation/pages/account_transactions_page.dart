@@ -9,6 +9,7 @@ import '../providers/account_providers.dart';
 import '../providers/account_transaction_providers.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../core/services/export/excel_export_service.dart';
 
 // Export iconları - diğer modüllerdeki gibi
 export 'package:flutter/material.dart' show Icons;
@@ -956,13 +957,7 @@ class _AccountTransactionsPageState
               title: const Text('Excel Olarak İndir'),
               onTap: () {
                 context.pop();
-                // Excel indirme işlemi
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Excel indirme özelliği yakında eklenecek'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                _exportToExcel();
               },
             ),
             ListTile(
@@ -1011,6 +1006,92 @@ class _AccountTransactionsPageState
         ),
       ),
     );
+  }
+
+  Future<void> _exportToExcel() async {
+    try {
+      // Loading göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Excel dosyası oluşturuluyor...'),
+              ],
+            ),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Filtrelenmiş işlemleri al
+      final transactionsAsync = ref.read(
+        transactionsByAccountIdProvider(widget.account.id),
+      );
+      
+      if (!transactionsAsync.hasValue) {
+        throw Exception('İşlemler yüklenemedi');
+      }
+      
+      final allTransactions = transactionsAsync.value!;
+      final filteredTransactions = _filterTransactions(allTransactions);
+      
+      if (filteredTransactions.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export edilecek işlem bulunamadı'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Excel dosyası oluştur
+      final filePath = await ExcelExportService.exportTransactionsToExcel(
+        account: widget.account,
+        transactions: filteredTransactions,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel dosyası başarıyla oluşturuldu!\n$filePath'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Klasörü Aç',
+              textColor: Colors.white,
+              onPressed: () {
+                // TODO: Dosya yöneticisini aç
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Excel export hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel export hatası: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 }
 
