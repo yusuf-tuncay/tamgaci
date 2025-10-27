@@ -2867,61 +2867,80 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                       );
                     }
 
-                    return DropdownButtonFormField<Account>(
-                      value: _selectedAccount,
-                      decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.account_balance),
+                    return Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      hint: Text(_transferType == TransferType.send
-                          ? 'Hedef hesabı seçin'
-                          : 'Kaynak hesabı seçin'),
-                      items: otherAccounts.map((account) {
-                        return DropdownMenuItem<Account>(
-                          value: account,
-                          child: Row(
-                            children: [
-                              Icon(
-                                _getAccountIcon(account.type),
-                                size: 20,
-                                color: Colors.blue[600],
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<Account>(
+                          value: _selectedAccount,
+                          hint: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Row(
+                              children: [
+                                Icon(Icons.account_balance,
+                                    color: Colors.grey[600]),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _transferType == TransferType.send
+                                      ? 'Hedef hesabı seçin'
+                                      : 'Kaynak hesabı seçin',
+                                  style: GoogleFonts.poppins(
+                                      color: Colors.grey[600]),
+                                ),
+                              ],
+                            ),
+                          ),
+                          items: otherAccounts.map((account) {
+                            return DropdownMenuItem<Account>(
+                              value: account,
+                              child: Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                                child: Row(
                                   children: [
-                                    Text(
-                                      account.name,
-                                      style: GoogleFonts.poppins(fontSize: 12),
-                                      overflow: TextOverflow.ellipsis,
+                                    Icon(
+                                      _getAccountIcon(account.type),
+                                      size: 20,
+                                      color: Colors.blue[600],
                                     ),
-                                    Text(
-                                      '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 10,
-                                        color: Colors.grey[600],
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            account.name,
+                                            style: GoogleFonts.poppins(
+                                                fontSize: 12),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          Text(
+                                            '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 10,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (Account? account) {
-                        setState(() {
-                          _selectedAccount = account;
-                        });
-                      },
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Hesap seçimi gerekli';
-                        }
-                        return null;
-                      },
+                            );
+                          }).toList(),
+                          onChanged: (Account? account) {
+                            setState(() {
+                              _selectedAccount = account;
+                            });
+                          },
+                          isExpanded: true,
+                        ),
+                      ),
                     );
                   },
                   loading: () =>
@@ -3091,8 +3110,26 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   }
 
   Future<void> _executeTransfer() async {
-    if (!_formKey.currentState!.validate()) return;
-    if (_selectedAccount == null) return;
+    debugPrint('Transfer başlatılıyor...');
+
+    if (!_formKey.currentState!.validate()) {
+      debugPrint('Form validasyonu başarısız');
+      return;
+    }
+
+    if (_selectedAccount == null) {
+      debugPrint('Hesap seçilmedi');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen bir hesap seçin'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    debugPrint('Seçilen hesap: ${_selectedAccount!.name}');
+    debugPrint('Transfer türü: $_transferType');
 
     setState(() {
       _isLoading = true;
@@ -3126,22 +3163,24 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       final tenantId = userData['tenantId'] as String? ?? '';
 
       // Hesap hareketlerinden güncel bakiyeleri hesapla
-      final currentAccountTransactions =
+      final currentAccountTransactionsAsync =
           ref.read(transactionsByAccountIdProvider(widget.currentAccount.id));
-      final selectedAccountTransactions =
+      final selectedAccountTransactionsAsync =
           ref.read(transactionsByAccountIdProvider(_selectedAccount!.id));
 
       double currentAccountBalance = widget.currentAccount.balance;
       double selectedAccountBalance = _selectedAccount!.balance;
 
-      currentAccountTransactions.whenData((transactions) {
-        currentAccountBalance = _calculateBalanceFromTransactions(transactions);
-      });
+      // AsyncValue'dan veriyi al
+      if (currentAccountTransactionsAsync.hasValue) {
+        currentAccountBalance = _calculateBalanceFromTransactions(
+            currentAccountTransactionsAsync.value!);
+      }
 
-      selectedAccountTransactions.whenData((transactions) {
-        selectedAccountBalance =
-            _calculateBalanceFromTransactions(transactions);
-      });
+      if (selectedAccountTransactionsAsync.hasValue) {
+        selectedAccountBalance = _calculateBalanceFromTransactions(
+            selectedAccountTransactionsAsync.value!);
+      }
 
       if (_transferType == TransferType.send) {
         // Bu hesaptan başka hesaba gönder
@@ -3187,10 +3226,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         );
 
         // Transaction'ları kaydet
+        debugPrint(
+            'Transaction oluşturuluyor - Mevcut hesap: ${currentAccountTransaction.amount}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(currentAccountTransaction);
 
+        debugPrint(
+            'Transaction oluşturuluyor - Hedef hesap: ${selectedAccountTransaction.amount}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(selectedAccountTransaction);
@@ -3245,10 +3288,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         );
 
         // Transaction'ları kaydet
+        debugPrint(
+            'Transaction oluşturuluyor - Kaynak hesap: ${selectedAccountTransaction.amount}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(selectedAccountTransaction);
 
+        debugPrint(
+            'Transaction oluşturuluyor - Mevcut hesap: ${currentAccountTransaction.amount}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(currentAccountTransaction);
@@ -3266,6 +3313,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       ref.invalidate(transactionsByAccountIdProvider(widget.currentAccount.id));
       ref.invalidate(transactionsByAccountIdProvider(_selectedAccount!.id));
 
+      debugPrint('Transfer başarıyla tamamlandı');
       if (mounted) {
         context.pop();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3278,6 +3326,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         widget.onTransferCompleted();
       }
     } catch (e) {
+      debugPrint('Transfer hatası: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
