@@ -45,6 +45,7 @@ dependencies:
   http: ^1.2.2
   dio: ^5.4.0
   web: ^1.1.0
+  js_interop: ^0.0.1
   webview_flutter: ^4.4.2
   webview_flutter_web: ^0.2.2+4
   crypto: ^3.0.3
