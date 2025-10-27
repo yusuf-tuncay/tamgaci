@@ -3696,19 +3696,22 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         debugPrint('From currency: $fromCurrency, To currency: $toCurrency');
         debugPrint('From rate: ${fromRate.rate}, To rate: ${toRate.rate}');
 
-        // Basit kur hesaplama - transfer türüne bakmaksızın
+        // Doğru kur hesaplama mantığı
         if (fromCurrency == 'TRY') {
-          // TRY'den diğer para birimlerine
-          rate = toRate.rate;
-          debugPrint('TRY to $toCurrency, rate = ${toRate.rate}');
+          // TRY'den diğer para birimlerine: 1 TRY = 1/kur EUR
+          // Örnek: 1 EUR = 33.20 TRY ise, 1 TRY = 1/33.20 EUR
+          rate = 1.0 / toRate.rate;
+          debugPrint('TRY to $toCurrency: 1 TRY = ${1.0 / toRate.rate} $toCurrency');
         } else if (toCurrency == 'TRY') {
-          // Diğer para birimlerinden TRY'ye
-          rate = 1.0 / fromRate.rate;
-          debugPrint('$fromCurrency to TRY, rate = ${1.0 / fromRate.rate}');
+          // Diğer para birimlerinden TRY'ye: 1 EUR = kur TRY
+          // Örnek: 1 EUR = 33.20 TRY
+          rate = fromRate.rate;
+          debugPrint('$fromCurrency to TRY: 1 $fromCurrency = ${fromRate.rate} TRY');
         } else {
           // İki yabancı para birimi arasında (TRY üzerinden)
-          rate = toRate.rate / fromRate.rate;
-          debugPrint('$fromCurrency to $toCurrency, rate = ${toRate.rate / fromRate.rate}');
+          // Örnek: EUR → USD: (1 EUR = 33.20 TRY) / (1 USD = 30.50 TRY) = 1.088 EUR/USD
+          rate = fromRate.rate / toRate.rate;
+          debugPrint('$fromCurrency to $toCurrency: ${fromRate.rate} / ${toRate.rate} = ${fromRate.rate / toRate.rate}');
         }
 
         debugPrint('Final calculated rate: $rate');
