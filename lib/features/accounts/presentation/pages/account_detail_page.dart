@@ -3695,43 +3695,26 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         debugPrint('Transfer type: $_transferType');
         debugPrint('From currency: $fromCurrency, To currency: $toCurrency');
         debugPrint('From rate: ${fromRate.rate}, To rate: ${toRate.rate}');
-        
-        if (_transferType == TransferType.send) {
-          // Gönder: Kaynak hesaptan hedef hesaba
-          if (fromCurrency == 'TRY') {
-            // TRY'den diğer para birimlerine (satış kuru)
-            rate = toRate.rate;
-            debugPrint('Send: TRY to $toCurrency, rate = ${toRate.rate}');
-          } else if (toCurrency == 'TRY') {
-            // Diğer para birimlerinden TRY'ye (alış kuru)
-            rate = 1.0 / fromRate.rate;
-            debugPrint('Send: $fromCurrency to TRY, rate = ${1.0 / fromRate.rate}');
-          } else {
-            // İki yabancı para birimi arasında (TRY üzerinden)
-            rate = toRate.rate / fromRate.rate;
-            debugPrint('Send: $fromCurrency to $toCurrency, rate = ${toRate.rate / fromRate.rate}');
-          }
+
+        // Basit kur hesaplama - transfer türüne bakmaksızın
+        if (fromCurrency == 'TRY') {
+          // TRY'den diğer para birimlerine
+          rate = toRate.rate;
+          debugPrint('TRY to $toCurrency, rate = ${toRate.rate}');
+        } else if (toCurrency == 'TRY') {
+          // Diğer para birimlerinden TRY'ye
+          rate = 1.0 / fromRate.rate;
+          debugPrint('$fromCurrency to TRY, rate = ${1.0 / fromRate.rate}');
         } else {
-          // Al: Hedef hesaptan kaynak hesaba (ters yön)
-          if (fromCurrency == 'TRY') {
-            // TRY'den diğer para birimlerine (alış kuru - ters)
-            rate = 1.0 / toRate.rate;
-            debugPrint('Receive: TRY to $toCurrency, rate = ${1.0 / toRate.rate}');
-          } else if (toCurrency == 'TRY') {
-            // Diğer para birimlerinden TRY'ye (satış kuru - ters)
-            rate = fromRate.rate;
-            debugPrint('Receive: $fromCurrency to TRY, rate = ${fromRate.rate}');
-          } else {
-            // İki yabancı para birimi arasında (ters yön)
-            rate = fromRate.rate / toRate.rate;
-            debugPrint('Receive: $fromCurrency to $toCurrency, rate = ${fromRate.rate / toRate.rate}');
-          }
+          // İki yabancı para birimi arasında (TRY üzerinden)
+          rate = toRate.rate / fromRate.rate;
+          debugPrint('$fromCurrency to $toCurrency, rate = ${toRate.rate / fromRate.rate}');
         }
-        
+
         debugPrint('Final calculated rate: $rate');
 
         setState(() {
-          _exchangeRateController.text = '${rate.toStringAsFixed(4)} (TCMB)';
+          _exchangeRateController.text = '${rate.toStringAsFixed(4)}';
           _isLoadingExchangeRate = false;
           _isAutoExchangeRate = true; // Otomatik kur çekildi
         });
