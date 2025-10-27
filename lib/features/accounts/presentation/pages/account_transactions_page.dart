@@ -275,11 +275,11 @@ class _AccountTransactionsPageState
                           : 'Tarih Aralığı Seç',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: _startDate != null && _endDate != null 
-                            ? Colors.blue[700] 
+                        color: _startDate != null && _endDate != null
+                            ? Colors.blue[700]
                             : Colors.grey[600],
-                        fontWeight: _startDate != null && _endDate != null 
-                            ? FontWeight.w600 
+                        fontWeight: _startDate != null && _endDate != null
+                            ? FontWeight.w600
                             : FontWeight.normal,
                       ),
                     ),
@@ -309,7 +309,7 @@ class _AccountTransactionsPageState
           icon: const Icon(Icons.clear_all),
           tooltip: 'Filtreleri Temizle',
           style: IconButton.styleFrom(
-            backgroundColor: Colors.grey.withOpacity(0.1),
+            backgroundColor: Colors.grey.withValues(alpha:0.1),
             foregroundColor: Colors.grey[600],
           ),
         ),
@@ -495,7 +495,7 @@ class _AccountTransactionsPageState
               icon: const Icon(Icons.clear_all),
               tooltip: 'Filtreleri Temizle',
               style: IconButton.styleFrom(
-                backgroundColor: Colors.grey.withOpacity(0.1),
+                backgroundColor: Colors.grey.withValues(alpha:0.1),
                 foregroundColor: Colors.grey[600],
               ),
             ),
@@ -566,7 +566,7 @@ class _AccountTransactionsPageState
           border: Border.all(color: Colors.grey[200]!),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha:0.1),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 1),
@@ -578,7 +578,7 @@ class _AccountTransactionsPageState
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: amountColor?.withOpacity(0.1),
+                color: amountColor?.withValues(alpha:0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
@@ -619,7 +619,7 @@ class _AccountTransactionsPageState
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color:
-                              _getTypeColor(transaction.type).withOpacity(0.1),
+                              _getTypeColor(transaction.type).withValues(alpha:0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -675,13 +675,15 @@ class _AccountTransactionsPageState
     debugPrint('Sıralama: ${_sortAscending ? "Artan" : "Azalan"}');
 
     var filtered = transactions.where((transaction) {
-      debugPrint('İşlem kontrol ediliyor: ${transaction.description} - ${transaction.transactionDate}');
-      
+      debugPrint(
+          'İşlem kontrol ediliyor: ${transaction.description} - ${transaction.transactionDate}');
+
       // Arama filtresi
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
         if (!transaction.description.toLowerCase().contains(query)) {
-          debugPrint('  ❌ Arama filtresi: "${transaction.description}" sorgu "$query" içermiyor');
+          debugPrint(
+              '  ❌ Arama filtresi: "${transaction.description}" sorgu "$query" içermiyor');
           return false;
         }
         debugPrint('  ✅ Arama filtresi geçti');
@@ -697,7 +699,8 @@ class _AccountTransactionsPageState
       // Kategori filtresi
       if (_selectedCategory != null &&
           transaction.category != _selectedCategory) {
-        debugPrint('  ❌ Kategori filtresi: ${transaction.category} != $_selectedCategory');
+        debugPrint(
+            '  ❌ Kategori filtresi: ${transaction.category} != $_selectedCategory');
         return false;
       }
       debugPrint('  ✅ Kategori filtresi geçti');
@@ -706,7 +709,8 @@ class _AccountTransactionsPageState
       if (_startDate != null) {
         // Başlangıç tarihinden önceki günleri filtrele (başlangıç dahil)
         if (transaction.transactionDate.isBefore(_startDate!)) {
-          debugPrint('  ❌ Başlangıç tarihi filtresi: ${transaction.transactionDate} < $_startDate');
+          debugPrint(
+              '  ❌ Başlangıç tarihi filtresi: ${transaction.transactionDate} < $_startDate');
           return false;
         }
         debugPrint('  ✅ Başlangıç tarihi filtresi geçti');
@@ -714,7 +718,8 @@ class _AccountTransactionsPageState
       if (_endDate != null) {
         // Bitiş tarihinden sonraki günleri filtrele (bitiş dahil)
         if (transaction.transactionDate.isAfter(_endDate!)) {
-          debugPrint('  ❌ Bitiş tarihi filtresi: ${transaction.transactionDate} > $_endDate');
+          debugPrint(
+              '  ❌ Bitiş tarihi filtresi: ${transaction.transactionDate} > $_endDate');
           return false;
         }
         debugPrint('  ✅ Bitiş tarihi filtresi geçti');
@@ -762,12 +767,27 @@ class _AccountTransactionsPageState
     debugPrint('Seçilen tarih aralığı: $picked');
 
     if (picked != null) {
-      debugPrint('Yeni başlangıç tarihi: ${picked.start}');
-      debugPrint('Yeni bitiş tarihi: ${picked.end}');
-
+      // Başlangıç tarihini günün başına ayarla (00:00:00.000)
+      final startDate = DateTime(
+        picked.start.year,
+        picked.start.month,
+        picked.start.day,
+      );
+      
+      // Bitiş tarihini günün sonuna ayarla (23:59:59.999)
+      final endDate = DateTime(
+        picked.end.year,
+        picked.end.month,
+        picked.end.day,
+        23, 59, 59, 999,
+      );
+      
+      debugPrint('Yeni başlangıç tarihi: $startDate');
+      debugPrint('Yeni bitiş tarihi: $endDate');
+      
       setState(() {
-        _startDate = picked.start;
-        _endDate = picked.end;
+        _startDate = startDate;
+        _endDate = endDate;
       });
 
       debugPrint('Tarih aralığı güncellendi');
@@ -777,7 +797,7 @@ class _AccountTransactionsPageState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Tarih aralığı: ${DateFormat('dd.MM.yyyy').format(picked.start)} - ${DateFormat('dd.MM.yyyy').format(picked.end)}',
+              'Tarih aralığı: ${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}',
             ),
             duration: const Duration(seconds: 2),
             backgroundColor: Colors.blue[600],
@@ -916,10 +936,10 @@ class _TransactionEditDialogState
           children: [
             TextFormField(
               controller: _descriptionController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Açıklama',
-                prefixIcon: const Icon(Icons.description),
-                border: const OutlineInputBorder(),
+                prefixIcon: Icon(Icons.description),
+                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 16),
