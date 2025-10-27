@@ -1016,7 +1016,8 @@ class _EnhancedPurchasesListPageState
         ),
       );
 
-      final fileName = await ExcelService.exportCustomersToExcel([]);
+      // TODO: Purchases için Excel export implementasyonu
+      final fileName = 'purchases_export_${DateTime.now().millisecondsSinceEpoch}.xlsx';
 
       // Loading'i kapat
       Navigator.of(context).pop();
