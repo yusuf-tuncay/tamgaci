@@ -58,43 +58,53 @@ class ExcelExportService {
         sheet.appendRow(['Adres:', user.address ?? 'Belirtilmemiş']);
         sheet.appendRow(['Vergi No:', user.taxId ?? 'Belirtilmemiş']);
         sheet.appendRow(['Vergi Dairesi:', user.taxOffice ?? 'Belirtilmemiş']);
-        sheet.appendRow(['Fatura Adresi:', user.billingAddress ?? 'Belirtilmemiş']);
-        sheet.appendRow(['Kayıt Tarihi:', DateFormat('dd.MM.yyyy').format(user.createdAt)]);
+        sheet.appendRow(
+            ['Fatura Adresi:', user.billingAddress ?? 'Belirtilmemiş']);
+        sheet.appendRow(
+            ['Kayıt Tarihi:', DateFormat('dd.MM.yyyy').format(user.createdAt)]);
         sheet.appendRow(['']);
       }
 
       // Rapor bilgileri
       sheet.appendRow(['Rapor Bilgileri']);
-      sheet.appendRow(['Rapor Tarihi:', DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())]);
+      sheet.appendRow([
+        'Rapor Tarihi:',
+        DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())
+      ]);
       sheet.appendRow(['Rapor Türü:', 'Hesap Hareketleri Raporu']);
       sheet.appendRow(['Toplam İşlem:', '${transactions.length} adet']);
-      
+
       // Filtreleme bilgileri
       sheet.appendRow(['Filtreleme Bilgileri']);
       if (startDate != null && endDate != null) {
-        sheet.appendRow(['Tarih Aralığı:', '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}']);
+        sheet.appendRow([
+          'Tarih Aralığı:',
+          '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}'
+        ]);
       } else {
         sheet.appendRow(['Tarih Aralığı:', 'Tüm tarihler']);
       }
-      
+
       if (transactionType != null) {
-        sheet.appendRow(['İşlem Türü:', _getTransactionTypeText(transactionType)]);
+        sheet.appendRow(
+            ['İşlem Türü:', _getTransactionTypeText(transactionType)]);
       } else {
         sheet.appendRow(['İşlem Türü:', 'Tüm işlem türleri']);
       }
-      
+
       if (transactionCategory != null) {
-        sheet.appendRow(['Kategori:', _getTransactionCategoryText(transactionCategory)]);
+        sheet.appendRow(
+            ['Kategori:', _getTransactionCategoryText(transactionCategory)]);
       } else {
         sheet.appendRow(['Kategori:', 'Tüm kategoriler']);
       }
-      
+
       if (searchQuery != null && searchQuery.isNotEmpty) {
         sheet.appendRow(['Arama:', searchQuery]);
       } else {
         sheet.appendRow(['Arama:', 'Arama yapılmadı']);
       }
-      
+
       sheet.appendRow(['']);
 
       // Hesap bilgileri başlığı
@@ -175,19 +185,13 @@ class ExcelExportService {
         // Web'de dosyayı direkt indirme olarak ayarla
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-
-        // Anchor element oluştur ve DOM'a ekle
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', finalFileName)
-          ..style.display = 'none';
-
-        html.document.body?.append(anchor);
-        anchor.click();
-        anchor.remove();
-
+        
+        // window.open ile indirme
+        html.window.open(url, '_blank');
+        
         // URL'yi temizle
         html.Url.revokeObjectUrl(url);
-
+        
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {
