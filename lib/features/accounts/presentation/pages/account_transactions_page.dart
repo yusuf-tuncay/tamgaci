@@ -20,10 +20,12 @@ class AccountTransactionsPage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AccountTransactionsPage> createState() => _AccountTransactionsPageState();
+  ConsumerState<AccountTransactionsPage> createState() =>
+      _AccountTransactionsPageState();
 }
 
-class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPage> {
+class _AccountTransactionsPageState
+    extends ConsumerState<AccountTransactionsPage> {
   String _searchQuery = '';
   TransactionType? _selectedType;
   TransactionCategory? _selectedCategory;
@@ -57,7 +59,7 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
             child: transactionsAsync.when(
               data: (transactions) {
                 final filteredTransactions = _filterTransactions(transactions);
-                
+
                 if (filteredTransactions.isEmpty) {
                   return _buildEmptyState();
                 }
@@ -158,7 +160,7 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
         // İşlem türü filtresi
         Expanded(
           child: DropdownButtonFormField<TransactionType?>(
-            value: _selectedType,
+            initialValue: _selectedType,
             decoration: InputDecoration(
               labelText: 'Tür',
               border: OutlineInputBorder(
@@ -203,7 +205,7 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
         // Kategori filtresi
         Expanded(
           child: DropdownButtonFormField<TransactionCategory?>(
-            value: _selectedCategory,
+            initialValue: _selectedCategory,
             decoration: InputDecoration(
               labelText: 'Kategori',
               border: OutlineInputBorder(
@@ -332,7 +334,7 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
           children: [
             Expanded(
               child: DropdownButtonFormField<TransactionType?>(
-                value: _selectedType,
+                initialValue: _selectedType,
                 decoration: InputDecoration(
                   labelText: 'Tür',
                   border: OutlineInputBorder(
@@ -376,7 +378,7 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
             const SizedBox(width: 8),
             Expanded(
               child: DropdownButtonFormField<TransactionCategory?>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: InputDecoration(
                   labelText: 'Kategori',
                   border: OutlineInputBorder(
@@ -431,7 +433,8 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
               child: InkWell(
                 onTap: _selectDateRange,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                   decoration: BoxDecoration(
                     border: Border.all(color: Colors.grey[400]!),
                     borderRadius: BorderRadius.circular(8),
@@ -525,7 +528,8 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
             transaction: transaction,
             account: widget.account,
             onTransactionUpdated: () {
-              ref.invalidate(transactionsByAccountIdProvider(widget.account.id));
+              ref.invalidate(
+                  transactionsByAccountIdProvider(widget.account.id));
               ref.invalidate(accountsProvider);
             },
           ),
@@ -580,7 +584,8 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
                   Row(
                     children: [
                       Text(
-                        DateFormat('dd.MM.yyyy HH:mm').format(transaction.transactionDate),
+                        DateFormat('dd.MM.yyyy HH:mm')
+                            .format(transaction.transactionDate),
                         style: GoogleFonts.poppins(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -588,9 +593,11 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: _getTypeColor(transaction.type).withOpacity(0.1),
+                          color:
+                              _getTypeColor(transaction.type).withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
@@ -634,7 +641,8 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
     );
   }
 
-  List<AccountTransaction> _filterTransactions(List<AccountTransaction> transactions) {
+  List<AccountTransaction> _filterTransactions(
+      List<AccountTransaction> transactions) {
     var filtered = transactions.where((transaction) {
       // Arama filtresi
       if (_searchQuery.isNotEmpty) {
@@ -650,12 +658,14 @@ class _AccountTransactionsPageState extends ConsumerState<AccountTransactionsPag
       }
 
       // Kategori filtresi
-      if (_selectedCategory != null && transaction.category != _selectedCategory) {
+      if (_selectedCategory != null &&
+          transaction.category != _selectedCategory) {
         return false;
       }
 
       // Tarih filtresi
-      if (_startDate != null && transaction.transactionDate.isBefore(_startDate!)) {
+      if (_startDate != null &&
+          transaction.transactionDate.isBefore(_startDate!)) {
         return false;
       }
       if (_endDate != null && transaction.transactionDate.isAfter(_endDate!)) {
@@ -750,10 +760,12 @@ class _TransactionEditDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_TransactionEditDialog> createState() => _TransactionEditDialogState();
+  ConsumerState<_TransactionEditDialog> createState() =>
+      _TransactionEditDialogState();
 }
 
-class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> {
+class _TransactionEditDialogState
+    extends ConsumerState<_TransactionEditDialog> {
   late TextEditingController _descriptionController;
   late TextEditingController _amountController;
   late DateTime _selectedDate;
@@ -763,8 +775,10 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
   @override
   void initState() {
     super.initState();
-    _descriptionController = TextEditingController(text: widget.transaction.description);
-    _amountController = TextEditingController(text: widget.transaction.amount.abs().toString());
+    _descriptionController =
+        TextEditingController(text: widget.transaction.description);
+    _amountController =
+        TextEditingController(text: widget.transaction.amount.abs().toString());
     _selectedDate = widget.transaction.transactionDate;
     _selectedTime = TimeOfDay.fromDateTime(widget.transaction.transactionDate);
   }
@@ -808,7 +822,8 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
             const SizedBox(height: 16),
             TextFormField(
               controller: _amountController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Miktar',
                 prefixIcon: const Icon(Icons.attach_money),
@@ -969,7 +984,8 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('İşlem güncellendi. Yeni bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}'),
+            content: Text(
+                'İşlem güncellendi. Yeni bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}'),
             backgroundColor: Colors.green,
           ),
         );
@@ -1036,7 +1052,8 @@ class _TransactionEditDialogState extends ConsumerState<_TransactionEditDialog> 
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('İşlem silindi. Yeni bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}'),
+            content: Text(
+                'İşlem silindi. Yeni bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}'),
             backgroundColor: Colors.green,
           ),
         );
