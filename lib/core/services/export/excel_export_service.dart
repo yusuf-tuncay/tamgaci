@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:html' as html;
 import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
@@ -15,11 +16,6 @@ class ExcelExportService {
     String? fileName,
   }) async {
     try {
-      // Platform kontrolü
-      if (kIsWeb) {
-        throw Exception('Excel export web platformunda desteklenmiyor. Lütfen mobil uygulamayı kullanın.');
-      }
-
       // Excel dosyası oluştur
       final excel = Excel.createExcel();
 
@@ -77,20 +73,34 @@ class ExcelExportService {
 
       debugPrint('Excel export: ${bytes.length} byte veri oluşturuldu');
 
-      // Downloads klasörüne kaydet
-      final directory = await getDownloadsDirectory();
-      if (directory == null) {
-        throw Exception('Downloads klasörü bulunamadı');
+      // Platform kontrolü - Web ve Mobil için farklı yaklaşım
+      if (kIsWeb) {
+        // Web'de dosyayı direkt indirme olarak ayarla
+        final blob = html.Blob([bytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        html.AnchorElement(href: url)
+          ..setAttribute('download', finalFileName)
+          ..click();
+        html.Url.revokeObjectUrl(url);
+        
+        debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
+        return 'Web indirme başlatıldı: $finalFileName';
+      } else {
+        // Mobil'de Downloads klasörüne kaydet
+        final directory = await getDownloadsDirectory();
+        if (directory == null) {
+          throw Exception('Downloads klasörü bulunamadı');
+        }
+
+        final filePath = path.join(directory.path, finalFileName);
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
+
+        debugPrint('Excel export: Dosya kaydedildi - $filePath');
+        debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
+
+        return filePath;
       }
-
-      final filePath = path.join(directory.path, finalFileName);
-      final file = File(filePath);
-      await file.writeAsBytes(bytes);
-
-      debugPrint('Excel export: Dosya kaydedildi - $filePath');
-      debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
-
-      return filePath;
     } catch (e) {
       throw Exception('Excel export hatası: $e');
     }
