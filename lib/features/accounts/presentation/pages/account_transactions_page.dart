@@ -48,6 +48,11 @@ class _AccountTransactionsPageState
         showDrawer: false,
         actions: [
           IconButton(
+            onPressed: _showExportOptions,
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Export Seçenekleri',
+          ),
+          IconButton(
             onPressed: () => context.pop(),
             icon: const Icon(Icons.close),
             tooltip: 'Kapat',
@@ -1249,5 +1254,92 @@ class _TransactionEditDialogState
         });
       }
     }
+  }
+
+  void _showExportOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.share),
+              title: const Text('Paylaş'),
+              onTap: () {
+                context.pop();
+                // Paylaşma işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Paylaşma özelliği yakında eklenecek'),
+                    backgroundColor: Colors.blue,
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_download),
+              title: const Text('Excel Olarak İndir'),
+              onTap: () {
+                context.pop();
+                // Excel indirme işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Excel indirme özelliği yakında eklenecek'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('PDF Olarak İndir'),
+              onTap: () {
+                context.pop();
+                // PDF indirme işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('PDF indirme özelliği yakında eklenecek'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.print),
+              title: const Text('Yazdır'),
+              onTap: () {
+                context.pop();
+                // Yazdırma işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Yazdırma özelliği yakında eklenecek'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Listeyi Kopyala'),
+              onTap: () {
+                context.pop();
+                // Liste kopyalama işlemi
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('İşlem listesi kopyalandı'),
+                    backgroundColor: Colors.purple,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
