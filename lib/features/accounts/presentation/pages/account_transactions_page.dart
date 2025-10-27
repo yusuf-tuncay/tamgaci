@@ -10,6 +10,9 @@ import '../providers/account_transaction_providers.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 
+// Export iconları - diğer modüllerdeki gibi
+export 'package:flutter/material.dart' show Icons;
+
 /// Hesap İşlemleri Sayfası - Filtreleme ve Arama ile
 class AccountTransactionsPage extends ConsumerStatefulWidget {
   final Account account;
