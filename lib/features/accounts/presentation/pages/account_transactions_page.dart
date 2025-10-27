@@ -1063,7 +1063,7 @@ class _AccountTransactionsPageState
       // Kullanıcı ve şirket bilgilerini al
       final userAsync = ref.read(currentUserProvider);
       final companyAsync = ref.read(currentCompanyProvider);
-      
+
       final user = userAsync.value;
       final company = companyAsync.value;
 
@@ -1073,6 +1073,11 @@ class _AccountTransactionsPageState
         transactions: filteredTransactions,
         user: user,
         company: company,
+        startDate: _startDate,
+        endDate: _endDate,
+        transactionType: _selectedType,
+        transactionCategory: _selectedCategory,
+        searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
       );
 
       if (mounted) {

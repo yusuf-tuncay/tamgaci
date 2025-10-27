@@ -18,6 +18,11 @@ class ExcelExportService {
     User? user,
     Company? company,
     String? fileName,
+    DateTime? startDate,
+    DateTime? endDate,
+    TransactionType? transactionType,
+    TransactionCategory? transactionCategory,
+    String? searchQuery,
   }) async {
     try {
       // Excel dosyası oluştur
@@ -47,8 +52,13 @@ class ExcelExportService {
       // Kullanıcı bilgileri
       if (user != null) {
         sheet.appendRow(['Kullanıcı Bilgileri']);
-        sheet.appendRow(['Kullanıcı Adı:', 'Belirtilmemiş']);
+        sheet.appendRow(['Kullanıcı Adı:', '${user.name} ${user.surname}']);
         sheet.appendRow(['E-posta:', user.email]);
+        sheet.appendRow(['Telefon:', user.phone ?? 'Belirtilmemiş']);
+        sheet.appendRow(['Adres:', user.address ?? 'Belirtilmemiş']);
+        sheet.appendRow(['Vergi No:', user.taxId ?? 'Belirtilmemiş']);
+        sheet.appendRow(['Vergi Dairesi:', user.taxOffice ?? 'Belirtilmemiş']);
+        sheet.appendRow(['Fatura Adresi:', user.billingAddress ?? 'Belirtilmemiş']);
         sheet.appendRow(['Kayıt Tarihi:', DateFormat('dd.MM.yyyy').format(user.createdAt)]);
         sheet.appendRow(['']);
       }
@@ -58,6 +68,33 @@ class ExcelExportService {
       sheet.appendRow(['Rapor Tarihi:', DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())]);
       sheet.appendRow(['Rapor Türü:', 'Hesap Hareketleri Raporu']);
       sheet.appendRow(['Toplam İşlem:', '${transactions.length} adet']);
+      
+      // Filtreleme bilgileri
+      sheet.appendRow(['Filtreleme Bilgileri']);
+      if (startDate != null && endDate != null) {
+        sheet.appendRow(['Tarih Aralığı:', '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}']);
+      } else {
+        sheet.appendRow(['Tarih Aralığı:', 'Tüm tarihler']);
+      }
+      
+      if (transactionType != null) {
+        sheet.appendRow(['İşlem Türü:', _getTransactionTypeText(transactionType)]);
+      } else {
+        sheet.appendRow(['İşlem Türü:', 'Tüm işlem türleri']);
+      }
+      
+      if (transactionCategory != null) {
+        sheet.appendRow(['Kategori:', _getTransactionCategoryText(transactionCategory)]);
+      } else {
+        sheet.appendRow(['Kategori:', 'Tüm kategoriler']);
+      }
+      
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        sheet.appendRow(['Arama:', searchQuery]);
+      } else {
+        sheet.appendRow(['Arama:', 'Arama yapılmadı']);
+      }
+      
       sheet.appendRow(['']);
 
       // Hesap bilgileri başlığı
@@ -93,10 +130,14 @@ class ExcelExportService {
 
       sheet.appendRow(headerRow);
 
+      // İşlemleri en yeni olan en alta gelecek şekilde sırala
+      final sortedTransactions = List<AccountTransaction>.from(transactions)
+        ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
+
       // İşlemleri ekle
-      debugPrint('Excel export: ${transactions.length} işlem ekleniyor');
-      for (int i = 0; i < transactions.length; i++) {
-        final transaction = transactions[i];
+      debugPrint('Excel export: ${sortedTransactions.length} işlem ekleniyor');
+      for (int i = 0; i < sortedTransactions.length; i++) {
+        final transaction = sortedTransactions[i];
 
         final row = [
           DateFormat('dd.MM.yyyy').format(transaction.transactionDate),
