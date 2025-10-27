@@ -22,7 +22,20 @@ class ExcelExportService {
       // Varsayılan sheet'i kullan
       final sheet = excel['Sheet1'];
 
-      // Başlık satırı
+      // Kasa bilgileri başlığı
+      sheet.appendRow(['HESAP BİLGİLERİ']);
+      sheet.appendRow(['Hesap Adı', account.name]);
+      sheet.appendRow(['Hesap Türü', _getAccountTypeText(account.type)]);
+      sheet.appendRow(['Para Birimi', account.currency]);
+      sheet.appendRow(['Mevcut Bakiye', '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}']);
+      sheet.appendRow(['Oluşturulma Tarihi', DateFormat('dd.MM.yyyy HH:mm').format(account.createdAt)]);
+      sheet.appendRow(['']); // Boş satır
+
+      // İşlemler başlığı
+      sheet.appendRow(['HESAP HAREKETLERİ']);
+      sheet.appendRow(['']); // Boş satır
+
+      // İşlemler başlık satırı
       final headerRow = [
         'Tarih',
         'Saat',
@@ -102,6 +115,27 @@ class ExcelExportService {
       }
     } catch (e) {
       throw Exception('Excel export hatası: $e');
+    }
+  }
+
+  static String _getAccountTypeText(AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return 'Nakit Kasa';
+      case AccountType.checking:
+        return 'Vadesiz Hesap';
+      case AccountType.savings:
+        return 'Vadeli Hesap';
+      case AccountType.creditCard:
+        return 'Kredi Kartı';
+      case AccountType.credit:
+        return 'Kredi Hesabı';
+      case AccountType.investment:
+        return 'Yatırım Hesabı';
+      case AccountType.foreign:
+        return 'Döviz Hesabı';
+      case AccountType.other:
+        return 'Diğer';
     }
   }
 
