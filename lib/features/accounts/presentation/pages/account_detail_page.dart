@@ -2830,7 +2830,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                       },
                       style: ButtonStyle(
                         padding: WidgetStateProperty.all(
-                          const EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                          const EdgeInsets.symmetric(
+                              horizontal: 0, vertical: 0),
                         ),
                         textStyle: WidgetStateProperty.all(
                           GoogleFonts.poppins(fontSize: 12),
@@ -3431,8 +3432,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
       if (_transferType == TransferType.send) {
         // Bu hesaptan başka hesaba gönder
-        final currentAccountNewBalance = currentAccountBalance - amount;
-        final selectedAccountNewBalance = selectedAccountBalance + amount;
+        // Girilen miktar bu hesabın para biriminde
+        // Hedef hesaba dönüştürülen miktar eklenmeli
+        
+        double amountToDeduct = amount; // Bu hesaptan çıkarılacak miktar
+        double amountToAdd = _convertedAmount > 0 ? _convertedAmount : amount; // Hedef hesaba eklenecek miktar
+        
+        final currentAccountNewBalance = currentAccountBalance - amountToDeduct;
+        final selectedAccountNewBalance = selectedAccountBalance + amountToAdd;
 
         // Bu hesap için transaction (çıkış)
         final currentAccountTransaction = AccountTransaction(
@@ -3440,7 +3447,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
           accountId: widget.currentAccount.id,
           tenantId: tenantId,
           type: TransactionType.transfer,
-          amount: -amount,
+          amount: -amountToDeduct,
           balanceAfter: currentAccountNewBalance,
           description:
               '${_descriptionController.text} → ${_selectedAccount!.name}',
@@ -3459,7 +3466,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
           accountId: _selectedAccount!.id,
           tenantId: tenantId,
           type: TransactionType.transfer,
-          amount: amount,
+          amount: amountToAdd,
           balanceAfter: selectedAccountNewBalance,
           description:
               '${_descriptionController.text} ← ${widget.currentAccount.name}',
@@ -3474,13 +3481,13 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
         // Transaction'ları kaydet
         debugPrint(
-            'Transaction oluşturuluyor - Mevcut hesap: ${currentAccountTransaction.amount}');
+            'Transaction oluşturuluyor - Mevcut hesap: -$amountToDeduct ${widget.currentAccount.currency}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(currentAccountTransaction);
 
         debugPrint(
-            'Transaction oluşturuluyor - Hedef hesap: ${selectedAccountTransaction.amount}');
+            'Transaction oluşturuluyor - Hedef hesap: +$amountToAdd ${_selectedAccount!.currency}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(selectedAccountTransaction);
@@ -3493,8 +3500,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
             _selectedAccount!.id, selectedAccountNewBalance);
       } else {
         // Başka hesaptan bu hesaba al
-        final currentAccountNewBalance = currentAccountBalance + amount;
-        final selectedAccountNewBalance = selectedAccountBalance - amount;
+        // Girilen miktar kaynak hesabın para biriminde
+        // Bu hesaba dönüştürülen miktar eklenmeli
+        
+        double amountToDeduct = amount; // Kaynak hesaptan çıkarılacak miktar
+        double amountToAdd = _convertedAmount > 0 ? _convertedAmount : amount; // Bu hesaba eklenecek miktar
+        
+        final currentAccountNewBalance = currentAccountBalance + amountToAdd;
+        final selectedAccountNewBalance = selectedAccountBalance - amountToDeduct;
 
         // Kaynak hesap için transaction (çıkış)
         final selectedAccountTransaction = AccountTransaction(
@@ -3502,7 +3515,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
           accountId: _selectedAccount!.id,
           tenantId: tenantId,
           type: TransactionType.transfer,
-          amount: -amount,
+          amount: -amountToDeduct,
           balanceAfter: selectedAccountNewBalance,
           description:
               '${_descriptionController.text} → ${widget.currentAccount.name}',
@@ -3521,7 +3534,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
           accountId: widget.currentAccount.id,
           tenantId: tenantId,
           type: TransactionType.transfer,
-          amount: amount,
+          amount: amountToAdd,
           balanceAfter: currentAccountNewBalance,
           description:
               '${_descriptionController.text} ← ${_selectedAccount!.name}',
@@ -3536,13 +3549,13 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
         // Transaction'ları kaydet
         debugPrint(
-            'Transaction oluşturuluyor - Kaynak hesap: ${selectedAccountTransaction.amount}');
+            'Transaction oluşturuluyor - Kaynak hesap: -$amountToDeduct ${_selectedAccount!.currency}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(selectedAccountTransaction);
 
         debugPrint(
-            'Transaction oluşturuluyor - Mevcut hesap: ${currentAccountTransaction.amount}');
+            'Transaction oluşturuluyor - Mevcut hesap: +$amountToAdd ${widget.currentAccount.currency}');
         await ref
             .read(accountTransactionNotifierProvider.notifier)
             .createTransaction(currentAccountTransaction);
