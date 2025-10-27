@@ -268,14 +268,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildDetailRow(
-                        'Hesap Numarası', account.accountNumber),
+                    _buildDetailRow('Hesap Numarası', account.accountNumber),
                     _buildDetailRow('IBAN', account.iban),
                     _buildDetailRow('SWIFT Kodu', account.swiftCode),
                     _buildDetailRow('Şube', account.branchName),
                     _buildDetailRow('Para Birimi', account.currency),
-                    _buildDetailRow(
-                        'Hesap Türü', account.type.displayName),
+                    _buildDetailRow('Hesap Türü', account.type.displayName),
                     _buildDetailRow('Durum', account.status.displayName),
                     if (account.description != null)
                       _buildDetailRow('Açıklama', account.description!),
@@ -283,8 +281,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       _buildDetailRow('Notlar', account.notes!),
                     _buildDetailRow(
                         'Oluşturulma', _formatDate(account.createdAt)),
-                    _buildDetailRow('Son Güncelleme',
-                        _formatDate(account.updatedAt)),
+                    _buildDetailRow(
+                        'Son Güncelleme', _formatDate(account.updatedAt)),
                   ],
                 ),
               ),
@@ -470,7 +468,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       'Bakiye Güncelle',
                       Icons.update,
                       Colors.green[600]!,
-                      _updateBalance,
+                      () => _updateBalance(account),
                     ),
                     const SizedBox(height: 12),
                     _buildActionButton(
@@ -560,8 +558,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) =>
-            CreateAccountPage(existingAccount: account),
+        builder: (context) => CreateAccountPage(existingAccount: account),
       ),
     );
 
@@ -638,18 +635,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  void _updateBalance() {
+  void _updateBalance(Account account) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Bakiye Güncelle'),
-        content: const Text('Bakiye güncelleme özelliği yakında eklenecek.'),
-        actions: [
-          TextButton(
-            onPressed: () => context.pop(),
-            child: const Text('Tamam'),
-          ),
-        ],
+      builder: (context) => _BalanceUpdateDialog(
+        account: account,
+        onBalanceUpdated: () {
+          // Bakiye güncellendikten sonra sayfayı yenile
+          setState(() {});
+        },
       ),
     );
   }
@@ -1475,4 +1469,387 @@ class _ExpenseDialogState extends State<_ExpenseDialog> {
       }
     }
   }
+}
+
+/// Bakiye Güncelleme Dialog'u
+class _BalanceUpdateDialog extends ConsumerStatefulWidget {
+  final Account account;
+  final VoidCallback onBalanceUpdated;
+
+  const _BalanceUpdateDialog({
+    required this.account,
+    required this.onBalanceUpdated,
+  });
+
+  @override
+  ConsumerState<_BalanceUpdateDialog> createState() => _BalanceUpdateDialogState();
+}
+
+class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _amountController = TextEditingController();
+  
+  BalanceUpdateType _updateType = BalanceUpdateType.setDirect;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController.text = widget.account.balance.toString();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Row(
+        children: [
+          Icon(Icons.update, color: Colors.green[600]),
+          const SizedBox(width: 8),
+          Text(
+            'Bakiye Güncelle',
+            style: GoogleFonts.poppins(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 400,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Hesap Bilgileri
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hesap: ${widget.account.name}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Mevcut Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Güncelleme Türü
+              Text(
+                'Güncelleme Türü',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: RadioListTile<BalanceUpdateType>(
+                      title: Text(
+                        'Doğrudan Gir',
+                        style: GoogleFonts.poppins(fontSize: 12),
+                      ),
+                      subtitle: Text(
+                        'Yeni bakiye',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                      ),
+                      value: BalanceUpdateType.setDirect,
+                      groupValue: _updateType,
+                      onChanged: (value) {
+                        setState(() {
+                          _updateType = value!;
+                          _updateAmountController();
+                        });
+                      },
+                      dense: true,
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<BalanceUpdateType>(
+                      title: Text(
+                        'Para Ekle',
+                        style: GoogleFonts.poppins(fontSize: 12),
+                      ),
+                      subtitle: Text(
+                        'Mevcut + ekle',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                      ),
+                      value: BalanceUpdateType.add,
+                      groupValue: _updateType,
+                      onChanged: (value) {
+                        setState(() {
+                          _updateType = value!;
+                          _updateAmountController();
+                        });
+                      },
+                      dense: true,
+                    ),
+                  ),
+                  Expanded(
+                    child: RadioListTile<BalanceUpdateType>(
+                      title: Text(
+                        'Para Çıkar',
+                        style: GoogleFonts.poppins(fontSize: 12),
+                      ),
+                      subtitle: Text(
+                        'Mevcut - çıkar',
+                        style: GoogleFonts.poppins(fontSize: 10),
+                      ),
+                      value: BalanceUpdateType.subtract,
+                      groupValue: _updateType,
+                      onChanged: (value) {
+                        setState(() {
+                          _updateType = value!;
+                          _updateAmountController();
+                        });
+                      },
+                      dense: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              // Miktar Girişi
+              Text(
+                _getAmountLabel(),
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: '0.00',
+                  prefixIcon: const Icon(Icons.attach_money),
+                  suffixText: widget.account.currency,
+                  suffixStyle: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Miktar giriniz';
+                  }
+                  final amount = double.tryParse(value);
+                  if (amount == null) {
+                    return 'Geçerli bir miktar giriniz';
+                  }
+                  if (amount < 0) {
+                    return 'Miktar negatif olamaz';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              
+              // Sonuç Önizleme
+              if (_amountController.text.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue[200]!),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sonuç Önizleme',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[800],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getPreviewText(),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          child: Text(
+            'İptal',
+            style: GoogleFonts.poppins(),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _updateBalance,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[600],
+            foregroundColor: Colors.white,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  'Güncelle',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+        ),
+      ],
+    );
+  }
+
+  String _getAmountLabel() {
+    switch (_updateType) {
+      case BalanceUpdateType.setDirect:
+        return 'Yeni Bakiye';
+      case BalanceUpdateType.add:
+        return 'Eklenecek Miktar';
+      case BalanceUpdateType.subtract:
+        return 'Çıkarılacak Miktar';
+    }
+  }
+
+  String _getPreviewText() {
+    final amount = double.tryParse(_amountController.text);
+    if (amount == null) return '';
+
+    switch (_updateType) {
+      case BalanceUpdateType.setDirect:
+        return 'Yeni bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.account.currency}';
+      case BalanceUpdateType.add:
+        final newBalance = widget.account.balance + amount;
+        return 'Mevcut: ${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} + ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} = ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
+      case BalanceUpdateType.subtract:
+        final newBalance = widget.account.balance - amount;
+        return 'Mevcut: ${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} - ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} = ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}';
+    }
+  }
+
+  void _updateAmountController() {
+    switch (_updateType) {
+      case BalanceUpdateType.setDirect:
+        _amountController.text = widget.account.balance.toString();
+        break;
+      case BalanceUpdateType.add:
+      case BalanceUpdateType.subtract:
+        _amountController.clear();
+        break;
+    }
+  }
+
+  Future<void> _updateBalance() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final amount = double.parse(_amountController.text);
+      double newBalance;
+
+      switch (_updateType) {
+        case BalanceUpdateType.setDirect:
+          newBalance = amount;
+          break;
+        case BalanceUpdateType.add:
+          newBalance = widget.account.balance + amount;
+          break;
+        case BalanceUpdateType.subtract:
+          newBalance = widget.account.balance - amount;
+          break;
+      }
+
+      // Firebase'e güncelle
+      await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
+        widget.account.id,
+        newBalance,
+      );
+
+      // Provider'ı refresh et
+      ref.invalidate(accountsProvider);
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onBalanceUpdated();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Bakiye başarıyla güncellendi: ${NumberFormat('#,##0.00', 'tr_TR').format(newBalance)} ${widget.account.currency}',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.green[600],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Bakiye güncellenemedi: $e',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red[600],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+}
+
+/// Bakiye Güncelleme Türleri
+enum BalanceUpdateType {
+  setDirect,  // Doğrudan gir
+  add,         // Para ekle
+  subtract,    // Para çıkar
 }
