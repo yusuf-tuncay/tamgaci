@@ -2710,6 +2710,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   final _exchangeRateController = TextEditingController();
   double _convertedAmount = 0.0;
   bool _isLoadingExchangeRate = false;
+  bool _isAutoExchangeRate = true; // Otomatik kur çekildi mi?
 
   @override
   void initState() {
@@ -2731,6 +2732,15 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     // Kur değişikliklerini dinle (dönüştürme için)
     _exchangeRateController.addListener(() {
       _calculateConvertedAmount();
+      // Kullanıcı manuel kur girerse TCMB etiketini gizle
+      if (_exchangeRateController.text.isNotEmpty && 
+          !_exchangeRateController.text.contains('TCMB') &&
+          !_exchangeRateController.text.contains('Yükleniyor') &&
+          !_exchangeRateController.text.contains('Hata')) {
+        setState(() {
+          _isAutoExchangeRate = false;
+        });
+      }
     });
   }
 
@@ -2816,7 +2826,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     },
                     style: ButtonStyle(
                       padding: WidgetStateProperty.all(
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
                       ),
                       textStyle: WidgetStateProperty.all(
                         GoogleFonts.poppins(fontSize: 12),
@@ -3005,23 +3016,25 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.green[100],
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.green[300]!),
-                              ),
-                              child: Text(
-                                'TCMB Kur',
-                                style: GoogleFonts.poppins(
-                                  fontSize: 10,
-                                  color: Colors.green[700],
-                                  fontWeight: FontWeight.w500,
+                            // TCMB Kur etiketi sadece otomatik kur çekildiğinde göster
+                            if (_isAutoExchangeRate)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green[100],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.green[300]!),
+                                ),
+                                child: Text(
+                                  'TCMB Kur',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 10,
+                                    color: Colors.green[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
-                            ),
                             if (_isLoadingExchangeRate) ...[
                               const SizedBox(width: 8),
                               SizedBox(
@@ -3038,6 +3051,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                         ),
                         const SizedBox(height: 12),
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               flex: 2,
@@ -3688,6 +3702,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         setState(() {
           _exchangeRateController.text = '${rate.toStringAsFixed(4)} (TCMB)';
           _isLoadingExchangeRate = false;
+          _isAutoExchangeRate = true; // Otomatik kur çekildi
         });
         _calculateConvertedAmount();
       } else if (mounted) {
