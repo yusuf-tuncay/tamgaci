@@ -42,10 +42,11 @@ class ExcelExportService {
       if (company != null) {
         sheet.appendRow(['Şirket Bilgileri']);
         sheet.appendRow(['Şirket Adı:', company.name]);
-        sheet.appendRow(['Vergi No:', 'Belirtilmemiş']);
-        sheet.appendRow(['Adres:', 'Belirtilmemiş']);
-        sheet.appendRow(['Telefon:', 'Belirtilmemiş']);
-        sheet.appendRow(['E-posta:', 'Belirtilmemiş']);
+        sheet.appendRow(['Vergi No:', user?.taxId ?? 'Belirtilmemiş']);
+        sheet.appendRow(['Adres:', company.address ?? user?.address ?? 'Belirtilmemiş']);
+        sheet.appendRow(['Telefon:', company.phone ?? user?.phone ?? 'Belirtilmemiş']);
+        sheet.appendRow(['E-posta:', company.email ?? user?.email ?? 'Belirtilmemiş']);
+        sheet.appendRow(['Web Sitesi:', company.website ?? 'Belirtilmemiş']);
         sheet.appendRow(['']);
       }
 
@@ -185,13 +186,13 @@ class ExcelExportService {
         // Web'de dosyayı direkt indirme olarak ayarla
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-        
+
         // window.open ile indirme
         html.window.open(url, '_blank');
-        
+
         // URL'yi temizle
         html.Url.revokeObjectUrl(url);
-        
+
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {
