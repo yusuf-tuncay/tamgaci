@@ -2705,7 +2705,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   TransferType _transferType = TransferType.send;
   Account? _selectedAccount;
   bool _isLoading = false;
-  
+
   // Kur bilgileri
   final _exchangeRateController = TextEditingController();
   double _convertedAmount = 0.0;
@@ -2722,7 +2722,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         _formatAmount();
       }
     });
-    
+
     // Miktar değişikliklerini dinle (kur hesaplama için)
     _amountController.addListener(() {
       _calculateConvertedAmount();
@@ -3002,17 +3002,50 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 const SizedBox(height: 16),
 
                 // Kur Bilgisi (farklı para birimlerinde)
-                if (_selectedAccount != null && 
-                    _selectedAccount!.currency != widget.currentAccount.currency)
+                if (_selectedAccount != null &&
+                    _selectedAccount!.currency !=
+                        widget.currentAccount.currency)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Kur Bilgisi',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            'Kur Bilgisi',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green[100],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green[300]!),
+                            ),
+                            child: Text(
+                              'Otomatik Kur',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          if (_isLoadingExchangeRate) ...[
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -3021,9 +3054,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                             flex: 2,
                             child: TextFormField(
                               controller: _exchangeRateController,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                              readOnly: true, // Kur otomatik gelir, manuel değiştirilemez
                               decoration: InputDecoration(
                                 hintText: '29.50',
+                                labelText: 'Döviz Kuru',
+                                helperText: 'TCMB\'den otomatik çekilir',
                                 prefixIcon: const Icon(Icons.swap_horiz),
                                 suffixText: widget.currentAccount.currency,
                                 border: const OutlineInputBorder(),
@@ -3032,17 +3070,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                   color: Colors.grey[600],
                                   fontWeight: FontWeight.w500,
                                 ),
+                                // Read-only görünümü için arka plan rengi
+                                filled: true,
+                                fillColor: Colors.grey[50],
                               ),
-                              validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Kur gerekli';
-                                }
-                                final rate = double.tryParse(value);
-                                if (rate == null || rate <= 0) {
-                                  return 'Geçerli kur girin';
-                                }
-                                return null;
-                              },
+                              // Read-only olduğu için validator'a gerek yok
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -3067,7 +3099,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    _convertedAmount > 0 
+                                    _convertedAmount > 0
                                         ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_selectedAccount!.currency}'
                                         : '0,00 ${_selectedAccount!.currency}',
                                     style: GoogleFonts.poppins(
@@ -3594,14 +3626,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   /// Kur bilgisini güncelle
   void _updateExchangeRate() async {
     if (_selectedAccount == null) return;
-    
-    final fromAccount = _transferType == TransferType.send 
-        ? widget.currentAccount 
+
+    final fromAccount = _transferType == TransferType.send
+        ? widget.currentAccount
         : _selectedAccount!;
-    final toAccount = _transferType == TransferType.send 
-        ? _selectedAccount! 
+    final toAccount = _transferType == TransferType.send
+        ? _selectedAccount!
         : widget.currentAccount;
-    
+
     final fromCurrency = fromAccount.currency;
     final toCurrency = toAccount.currency;
 
@@ -3616,7 +3648,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
     setState(() {
       _isLoadingExchangeRate = true;
-      _exchangeRateController.text = 'Yükleniyor...';
+      _exchangeRateController.text = 'TCMB\'den kur çekiliyor...';
     });
 
     try {
@@ -3637,13 +3669,13 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         }
 
         setState(() {
-          _exchangeRateController.text = rate.toStringAsFixed(4);
+          _exchangeRateController.text = '${rate.toStringAsFixed(4)} (TCMB)';
           _isLoadingExchangeRate = false;
         });
         _calculateConvertedAmount();
       } else if (mounted) {
         setState(() {
-          _exchangeRateController.text = 'Kur alınamadı';
+          _exchangeRateController.text = 'TCMB\'den kur alınamadı';
           _isLoadingExchangeRate = false;
         });
       }
@@ -3659,7 +3691,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
   /// Dönüştürülmüş miktarı hesapla
   void _calculateConvertedAmount() {
-    if (_amountController.text.isEmpty || _exchangeRateController.text.isEmpty) {
+    if (_amountController.text.isEmpty ||
+        _exchangeRateController.text.isEmpty) {
       setState(() {
         _convertedAmount = 0.0;
       });
@@ -3667,11 +3700,18 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     }
 
     try {
-      final cleanValue = _amountController.text.replaceAll('.', '').replaceAll(',', '.');
+      final cleanValue =
+          _amountController.text.replaceAll('.', '').replaceAll(',', '.');
       final amount = double.tryParse(cleanValue);
-      final exchangeRate = double.tryParse(_exchangeRateController.text);
+      
+      // Kur metninden sadece sayısal kısmı çıkar (TCMB) etiketini kaldır
+      final rateText = _exchangeRateController.text.replaceAll(' (TCMB)', '');
+      final exchangeRate = double.tryParse(rateText);
 
-      if (amount != null && exchangeRate != null && amount > 0 && exchangeRate > 0) {
+      if (amount != null &&
+          exchangeRate != null &&
+          amount > 0 &&
+          exchangeRate > 0) {
         final converted = amount * exchangeRate;
         setState(() {
           _convertedAmount = converted;
