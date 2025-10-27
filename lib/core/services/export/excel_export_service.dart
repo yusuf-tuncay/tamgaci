@@ -30,7 +30,10 @@ class ExcelExportService {
       sheet.appendRow(['Web:', 'www.tamgaci.com']);
       sheet.appendRow(['E-posta:', 'info@tamgaci.com']);
       sheet.appendRow(['']);
-      sheet.appendRow(['Rapor Tarihi:', DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())]);
+      sheet.appendRow([
+        'Rapor Tarihi:',
+        DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())
+      ]);
       sheet.appendRow(['Rapor Türü:', 'Hesap Hareketleri Raporu']);
       sheet.appendRow(['']);
 
@@ -108,11 +111,19 @@ class ExcelExportService {
         // Web'de dosyayı direkt indirme olarak ayarla
         final blob = html.Blob([bytes]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-        html.AnchorElement(href: url)
+        
+        // Anchor element oluştur ve DOM'a ekle
+        final anchor = html.AnchorElement(href: url)
           ..setAttribute('download', finalFileName)
-          ..click();
+          ..style.display = 'none';
+        
+        html.document.body?.append(anchor);
+        anchor.click();
+        anchor.remove();
+        
+        // URL'yi temizle
         html.Url.revokeObjectUrl(url);
-
+        
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {
