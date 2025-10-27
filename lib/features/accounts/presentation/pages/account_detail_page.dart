@@ -388,8 +388,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                             if (transactions.isEmpty) {
                               return Center(child: _buildEmptyTransactions());
                             }
+                            // En yeni işlemler üstte olacak şekilde sırala
+                            final sortedTransactions = transactions.toList()
+                              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                            
                             return Column(
-                              children: transactions.take(5).map((transaction) {
+                              children: sortedTransactions.take(5).map((transaction) {
                                 return _buildTransactionItem(transaction);
                               }).toList(),
                             );
@@ -1500,7 +1504,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
     super.initState();
     _amountController.text = widget.account.balance.toString();
     _descriptionController.text = 'Bakiye düzeltme'; // Başlangıç açıklaması
-    
+
     // Miktar alanı focus değişikliklerini dinle
     _amountFocusNode.addListener(() {
       if (!_amountFocusNode.hasFocus) {
@@ -1882,12 +1886,40 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
 
       // Firebase'e güncelle
       await ref.read(accountNotifierProvider.notifier).updateAccountBalance(
-            widget.account.id,
-            newBalance,
-          );
+        widget.account.id,
+        newBalance,
+      );
+
+      // Transaction oluştur
+      try {
+        final description = _descriptionController.text.trim();
+        
+        final transaction = AccountTransaction(
+          id: '',
+          accountId: widget.account.id,
+          tenantId: '',
+          type: TransactionType.adjustment,
+          amount: amount,
+          balanceAfter: newBalance,
+          description: description,
+          category: TransactionCategory.other,
+          transactionDate: DateTime.now(),
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          createdBy: 'current_user',
+          updatedBy: 'current_user',
+          userId: 'current_user',
+        );
+
+        await ref.read(accountTransactionNotifierProvider.notifier).createTransaction(transaction);
+        debugPrint('Balance transaction created: $description');
+      } catch (e) {
+        debugPrint('Error creating transaction: $e');
+      }
 
       // Provider'ı refresh et
       ref.invalidate(accountsProvider);
+      ref.invalidate(transactionsByAccountIdProvider(widget.account.id));
 
       if (mounted) {
         Navigator.pop(context);
