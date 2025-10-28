@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
@@ -45,8 +44,18 @@ class ExcelExportService {
       _buildHeader(sheet, company, user);
 
       // Bilgiler bölümü (PDF'deki gibi iki sütunlu)
-      _buildInfoSection(sheet, account, company, companyInfo, user, transactions, startDate,
-          endDate, transactionType, transactionCategory, searchQuery);
+      _buildInfoSection(
+          sheet,
+          account,
+          company,
+          companyInfo,
+          user,
+          transactions,
+          startDate,
+          endDate,
+          transactionType,
+          transactionCategory,
+          searchQuery);
 
       // Ekstre tablosu
       _buildStatementTable(sheet, account, transactions);
@@ -176,18 +185,7 @@ class ExcelExportService {
       '🟢 Alacak',
       '⚫ Bakiye'
     ];
-    final headerRowObj = sheet.appendRow(headerRow);
-
-    // Başlık satırı renklendirmesi
-    final headerStyle = CellStyle(
-      backgroundColorHex: '#4472C4', // Mavi arka plan
-      fontColorHex: '#FFFFFF', // Beyaz yazı
-      bold: true,
-    );
-
-    for (int i = 0; i < headerRow.length; i++) {
-      headerRowObj.cells[i].cellStyle = headerStyle;
-    }
+    sheet.appendRow(headerRow);
 
     // İşlemleri en yeni olan en alta gelecek şekilde sırala
     final sortedTransactions = List<AccountTransaction>.from(transactions)
@@ -237,30 +235,7 @@ class ExcelExportService {
         NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter),
       ];
 
-      final rowObj = sheet.appendRow(row);
-
-      // Hücre renklendirmesi
-      if (debitAmount != 0) {
-        // Borç sütunu - kırmızı arka plan
-        rowObj.cells[4].cellStyle = CellStyle(
-          backgroundColorHex: '#FFE6E6', // Açık kırmızı
-          bold: true,
-        );
-      }
-
-      if (creditAmount != 0) {
-        // Alacak sütunu - yeşil arka plan
-        rowObj.cells[5].cellStyle = CellStyle(
-          backgroundColorHex: '#E6FFE6', // Açık yeşil
-          bold: true,
-        );
-      }
-
-      // Bakiye sütunu - gri arka plan
-      rowObj.cells[6].cellStyle = CellStyle(
-        backgroundColorHex: '#F5F5F5', // Açık gri
-        bold: true,
-      );
+      sheet.appendRow(row);
     }
   }
 
@@ -275,39 +250,39 @@ class ExcelExportService {
   }
 
   static String _saveForWeb(Uint8List bytes, String fileName) {
-        final uint8List = Uint8List.fromList(bytes);
-        final blob = web.Blob([uint8List.buffer.toJS].toJS);
-        final url = web.URL.createObjectURL(blob);
+    final uint8List = Uint8List.fromList(bytes);
+    final blob = web.Blob([uint8List.buffer.toJS].toJS);
+    final url = web.URL.createObjectURL(blob);
 
-        final anchor = web.HTMLAnchorElement()
-          ..href = url
+    final anchor = web.HTMLAnchorElement()
+      ..href = url
       ..download = fileName
-          ..style.display = 'none';
+      ..style.display = 'none';
 
-        web.document.body?.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
+    web.document.body?.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
 
-        web.URL.revokeObjectURL(url);
+    web.URL.revokeObjectURL(url);
 
     debugPrint('Excel export: Web indirme başlatıldı - $fileName');
     return 'Web indirme başlatıldı: $fileName';
   }
 
   static Future<String> _saveForMobile(Uint8List bytes, String fileName) async {
-        final directory = await getDownloadsDirectory();
-        if (directory == null) {
-          throw Exception('Downloads klasörü bulunamadı');
-        }
+    final directory = await getDownloadsDirectory();
+    if (directory == null) {
+      throw Exception('Downloads klasörü bulunamadı');
+    }
 
     final filePath = path.join(directory.path, fileName);
-        final file = File(filePath);
-        await file.writeAsBytes(bytes);
+    final file = File(filePath);
+    await file.writeAsBytes(bytes);
 
-        debugPrint('Excel export: Dosya kaydedildi - $filePath');
-        debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
+    debugPrint('Excel export: Dosya kaydedildi - $filePath');
+    debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
 
-        return filePath;
+    return filePath;
   }
 
   static String _getAccountTypeText(AccountType type) {
