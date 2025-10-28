@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -30,7 +29,7 @@ class PdfExportService {
     debugPrint('Servis çağrı zamanı: ${DateTime.now()}');
     debugPrint('Account: ${account.name}');
     debugPrint('Transactions count: ${transactions.length}');
-    
+
     try {
       // PDF dosyası oluştur
       final pdf = pw.Document();
@@ -63,7 +62,7 @@ class PdfExportService {
                     pw.SizedBox(height: 5),
                     pw.Text(
                       'Muhasebe ve Finans Yönetim Sistemi',
-                      style: pw.TextStyle(
+                      style: const pw.TextStyle(
                         fontSize: 14,
                         color: PdfColors.grey700,
                       ),
@@ -95,11 +94,16 @@ class PdfExportService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       _buildInfoRow('Şirket Adı:', company.name),
-                      _buildInfoRow('Vergi No:', user?.taxId ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Adres:', company.address ?? user?.address ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Telefon:', company.phone ?? user?.phone ?? 'Belirtilmemiş'),
-                      _buildInfoRow('E-posta:', company.email ?? user?.email ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Web Sitesi:', company.website ?? 'Belirtilmemiş'),
+                      _buildInfoRow(
+                          'Vergi No:', user?.taxId ?? 'Belirtilmemiş'),
+                      _buildInfoRow('Adres:',
+                          company.address ?? user?.address ?? 'Belirtilmemiş'),
+                      _buildInfoRow('Telefon:',
+                          company.phone ?? user?.phone ?? 'Belirtilmemiş'),
+                      _buildInfoRow('E-posta:',
+                          company.email ?? user?.email ?? 'Belirtilmemiş'),
+                      _buildInfoRow(
+                          'Web Sitesi:', company.website ?? 'Belirtilmemiş'),
                     ],
                   ),
                 ),
@@ -127,14 +131,18 @@ class PdfExportService {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Kullanıcı Adı:', '${user.name} ${user.surname}'),
+                      _buildInfoRow(
+                          'Kullanıcı Adı:', '${user.name} ${user.surname}'),
                       _buildInfoRow('E-posta:', user.email),
                       _buildInfoRow('Telefon:', user.phone ?? 'Belirtilmemiş'),
                       _buildInfoRow('Adres:', user.address ?? 'Belirtilmemiş'),
                       _buildInfoRow('Vergi No:', user.taxId ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Vergi Dairesi:', user.taxOffice ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Fatura Adresi:', user.billingAddress ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Kayıt Tarihi:', DateFormat('dd.MM.yyyy').format(user.createdAt)),
+                      _buildInfoRow(
+                          'Vergi Dairesi:', user.taxOffice ?? 'Belirtilmemiş'),
+                      _buildInfoRow('Fatura Adresi:',
+                          user.billingAddress ?? 'Belirtilmemiş'),
+                      _buildInfoRow('Kayıt Tarihi:',
+                          DateFormat('dd.MM.yyyy').format(user.createdAt)),
                     ],
                   ),
                 ),
@@ -161,9 +169,11 @@ class PdfExportService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow('Rapor Tarihi:', DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())),
+                    _buildInfoRow('Rapor Tarihi:',
+                        DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())),
                     _buildInfoRow('Rapor Türü:', 'Hesap Hareketleri Raporu'),
-                    _buildInfoRow('Toplam İşlem:', '${transactions.length} adet'),
+                    _buildInfoRow(
+                        'Toplam İşlem:', '${transactions.length} adet'),
                   ],
                 ),
               ),
@@ -190,20 +200,20 @@ class PdfExportService {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     if (startDate != null && endDate != null)
-                      _buildInfoRow('Tarih Aralığı:', '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}')
+                      _buildInfoRow('Tarih Aralığı:',
+                          '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}')
                     else
                       _buildInfoRow('Tarih Aralığı:', 'Tüm tarihler'),
-                    
                     if (transactionType != null)
-                      _buildInfoRow('İşlem Türü:', _getTransactionTypeText(transactionType))
+                      _buildInfoRow('İşlem Türü:',
+                          _getTransactionTypeText(transactionType))
                     else
                       _buildInfoRow('İşlem Türü:', 'Tüm işlem türleri'),
-                    
                     if (transactionCategory != null)
-                      _buildInfoRow('Kategori:', _getTransactionCategoryText(transactionCategory))
+                      _buildInfoRow('Kategori:',
+                          _getTransactionCategoryText(transactionCategory))
                     else
                       _buildInfoRow('Kategori:', 'Tüm kategoriler'),
-                    
                     if (searchQuery != null && searchQuery.isNotEmpty)
                       _buildInfoRow('Arama:', searchQuery)
                     else
@@ -234,10 +244,15 @@ class PdfExportService {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     _buildInfoRow('Hesap Adı:', account.name),
-                    _buildInfoRow('Hesap Türü:', _getAccountTypeText(account.type)),
+                    _buildInfoRow(
+                        'Hesap Türü:', _getAccountTypeText(account.type)),
                     _buildInfoRow('Para Birimi:', account.currency),
-                    _buildInfoRow('Mevcut Bakiye:', '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'),
-                    _buildInfoRow('Oluşturulma Tarihi:', DateFormat('dd.MM.yyyy HH:mm').format(account.createdAt)),
+                    _buildInfoRow('Mevcut Bakiye:',
+                        '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'),
+                    _buildInfoRow(
+                        'Oluşturulma Tarihi:',
+                        DateFormat('dd.MM.yyyy HH:mm')
+                            .format(account.createdAt)),
                   ],
                 ),
               ),
@@ -272,7 +287,8 @@ class PdfExportService {
                 children: [
                   // Başlık satırı
                   pw.TableRow(
-                    decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                    decoration:
+                        const pw.BoxDecoration(color: PdfColors.grey200),
                     children: [
                       _buildTableCell('Tarih', isHeader: true),
                       _buildTableCell('Saat', isHeader: true),
@@ -285,18 +301,24 @@ class PdfExportService {
                     ],
                   ),
                   // İşlemler
-                  ...sortedTransactions.map((transaction) => pw.TableRow(
-                    children: [
-                      _buildTableCell(DateFormat('dd.MM.yyyy').format(transaction.transactionDate)),
-                      _buildTableCell(DateFormat('HH:mm').format(transaction.transactionDate)),
-                      _buildTableCell(_getTransactionTypeText(transaction.type)),
-                      _buildTableCell(_getTransactionCategoryText(transaction.category)),
-                      _buildTableCell(transaction.description),
-                      _buildTableCell(transaction.amount.toString()),
-                      _buildTableCell(account.currency),
-                      _buildTableCell(transaction.balanceAfter.toString()),
-                    ],
-                  )).toList(),
+                  ...sortedTransactions
+                      .map((transaction) => pw.TableRow(
+                            children: [
+                              _buildTableCell(DateFormat('dd.MM.yyyy')
+                                  .format(transaction.transactionDate)),
+                              _buildTableCell(DateFormat('HH:mm')
+                                  .format(transaction.transactionDate)),
+                              _buildTableCell(
+                                  _getTransactionTypeText(transaction.type)),
+                              _buildTableCell(_getTransactionCategoryText(
+                                  transaction.category)),
+                              _buildTableCell(transaction.description),
+                              _buildTableCell(transaction.amount.toString()),
+                              _buildTableCell(account.currency),
+                              _buildTableCell(
+                                  transaction.balanceAfter.toString()),
+                            ],
+                          )),
                 ],
               ),
             ];
@@ -319,21 +341,21 @@ class PdfExportService {
         final uint8List = Uint8List.fromList(bytes);
         final blob = web.Blob([uint8List.buffer.toJS].toJS);
         final url = web.URL.createObjectURL(blob);
-        
+
         // Direkt indirme için anchor element kullan
         final anchor = web.HTMLAnchorElement()
           ..href = url
           ..download = finalFileName
           ..style.display = 'none';
-        
+
         // DOM'a ekle, tıkla ve kaldır
         web.document.body?.appendChild(anchor);
         anchor.click();
         anchor.remove();
-        
+
         // URL'yi temizle
         web.URL.revokeObjectURL(url);
-        
+
         debugPrint('PDF export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {
