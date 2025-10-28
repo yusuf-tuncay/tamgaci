@@ -27,11 +27,11 @@ class PdfExportService {
 
     // Logo dosya yolları - öncelik sırasına göre
     final List<String> logoPaths = [
-      'assets/images/logos/180x180logo.png',  // Ana logo
-      'assets/images/logos/160x160logo.png',  // Alternatif 1
-      'assets/images/logos/140x140logo.png',  // Alternatif 2
-      'assets/images/logos/192x192logo.png', // Alternatif 3
-      'assets/images/logos/512x512logo.png', // Alternatif 4
+      'assets/images/logos/TAMGACI256X256.png', // Ana logo - 256x256
+      'assets/images/logos/512x512logo.png',    // Alternatif 1
+      'assets/images/logos/192x192logo.png',    // Alternatif 2
+      'assets/images/logos/180x180logo.png',    // Alternatif 3
+      'assets/images/logos/160x160logo.png',    // Alternatif 4
     ];
 
     for (String logoPath in logoPaths) {
@@ -42,10 +42,12 @@ class PdfExportService {
         final logoData = await rootBundle.load(logoPath);
         final logoBytes = logoData.buffer.asUint8List();
 
-        debugPrint('TAMGACI logo dosyası yüklendi: $logoPath, boyut: ${logoBytes.length} byte');
+        debugPrint(
+            'TAMGACI logo dosyası yüklendi: $logoPath, boyut: ${logoBytes.length} byte');
 
         _cachedLogo = pw.MemoryImage(logoBytes);
-        debugPrint('TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü: $logoPath');
+        debugPrint(
+            'TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü: $logoPath');
         return; // Başarılı yükleme, döngüden çık
       } catch (e) {
         debugPrint('TAMGACI logo yükleme hatası ($logoPath): $e');
