@@ -35,11 +35,11 @@ class PdfExportService {
 
     // Logo dosya yolları - öncelik sırasına göre
     final List<String> logoPaths = [
-      'assets/images/logos/512x512logo.png', // Ana logo - 512x512 (Web'de çalışıyor)
+      'assets/images/logos/180x180logo.png', // Ana logo - 180x180 (hesap makinesi logosu)
       'assets/images/logos/192x192logo.png', // Alternatif 1
-      'assets/images/logos/180x180logo.png', // Alternatif 2
-      'assets/images/logos/160x160logo.png', // Alternatif 3
-      'assets/images/logos/140x140logo.png', // Alternatif 4
+      'assets/images/logos/160x160logo.png', // Alternatif 2
+      'assets/images/logos/140x140logo.png', // Alternatif 3
+      'assets/images/logos/512x512logo.png', // Alternatif 4
     ];
 
     for (String logoPath in logoPaths) {
