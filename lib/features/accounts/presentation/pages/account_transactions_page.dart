@@ -742,13 +742,15 @@ class _AccountTransactionsPageState
         if (_selectedType == TransactionType.income) {
           // Gelir: sadece pozitif değerler
           if (transaction.amount <= 0) {
-            debugPrint('  ❌ Tür filtresi: Gelir filtresi - amount ${transaction.amount} <= 0');
+            debugPrint(
+                '  ❌ Tür filtresi: Gelir filtresi - amount ${transaction.amount} <= 0');
             return false;
           }
         } else if (_selectedType == TransactionType.expense) {
           // Gider: sadece negatif değerler
           if (transaction.amount >= 0) {
-            debugPrint('  ❌ Tür filtresi: Gider filtresi - amount ${transaction.amount} >= 0');
+            debugPrint(
+                '  ❌ Tür filtresi: Gider filtresi - amount ${transaction.amount} >= 0');
             return false;
           }
         } else {
@@ -762,7 +764,8 @@ class _AccountTransactionsPageState
               return false;
             }
           } else if (transaction.type != _selectedType) {
-            debugPrint('  ❌ Tür filtresi: ${transaction.type} != $_selectedType');
+            debugPrint(
+                '  ❌ Tür filtresi: ${transaction.type} != $_selectedType');
             return false;
           }
         }
@@ -1138,12 +1141,17 @@ class _AccountTransactionsPageState
       final user = userAsync.value;
       final company = companyAsync.value;
 
+      // CompanyInfo'yu al (PDF ile aynı mantık)
+      final companyInfoAsync = ref.read(companyInfoStreamProvider);
+      final companyInfo = companyInfoAsync.value;
+
       // Excel dosyası oluştur
       final filePath = await ExcelExportService.exportTransactionsToExcel(
         account: widget.account,
         transactions: filteredTransactions,
         user: user,
         company: company,
+        companyInfo: companyInfo,
         startDate: _startDate,
         endDate: _endDate,
         transactionType: _selectedType,
