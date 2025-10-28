@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -11,7 +12,28 @@ import '../../../features/auth/domain/entities/user.dart';
 import '../../entities/company.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
+import 'package:flutter/services.dart';
+
 class PdfExportService {
+  static pw.MemoryImage? _cachedLogo;
+
+  // Logo yükleme fonksiyonu
+  static Future<void> _ensureLogoLoaded() async {
+    if (_cachedLogo != null) return;
+
+    try {
+      // Logo dosyasını yükle
+      final logoData = await rootBundle.load('assets/images/logos/180x180logo.png');
+      final logoBytes = logoData.buffer.asUint8List();
+      
+      _cachedLogo = pw.MemoryImage(logoBytes);
+      debugPrint('Logo başarıyla yüklendi');
+    } catch (e) {
+      debugPrint('Logo yükleme hatası: $e');
+      _cachedLogo = null;
+    }
+  }
+
   // Türkçe karakterleri ASCII karakterlerle değiştir
   static String _convertTurkishChars(String text) {
     return text
@@ -47,6 +69,9 @@ class PdfExportService {
     debugPrint('Transactions count: ${transactions.length}');
 
     try {
+      // Logo yükle
+      await _ensureLogoLoaded();
+
       // PDF dosyası oluştur (varsayılan font kullan)
       final pdf = pw.Document();
 
@@ -67,22 +92,41 @@ class PdfExportService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
-                    pw.Text(
-                      _convertTurkishChars('TAMGACI'),
-                      style: pw.TextStyle(
-                        fontSize: 24,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.blue800,
-                      ),
-                    ),
-                    pw.SizedBox(height: 5),
-                    pw.Text(
-                      _convertTurkishChars(
-                          'Muhasebe ve Finans Yonetim Sistemi'),
-                      style: const pw.TextStyle(
-                        fontSize: 14,
-                        color: PdfColors.grey700,
-                      ),
+                    // Logo ve başlık
+                    pw.Row(
+                      mainAxisAlignment: pw.MainAxisAlignment.center,
+                      children: [
+                        if (_cachedLogo != null) ...[
+                          pw.Container(
+                            width: 60,
+                            height: 60,
+                            child: pw.Image(_cachedLogo!),
+                          ),
+                          pw.SizedBox(width: 15),
+                        ],
+                        pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.center,
+                          children: [
+                            pw.Text(
+                              _convertTurkishChars('TAMGACI'),
+                              style: pw.TextStyle(
+                                fontSize: 24,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.blue800,
+                              ),
+                            ),
+                            pw.SizedBox(height: 5),
+                            pw.Text(
+                              _convertTurkishChars(
+                                  'Muhasebe ve Finans Yonetim Sistemi'),
+                              style: const pw.TextStyle(
+                                fontSize: 14,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     pw.SizedBox(height: 20),
                   ],
