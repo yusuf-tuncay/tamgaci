@@ -256,7 +256,7 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           id: 'expenses',
           title: 'Masraflar',
           icon: Icons.money_off_outlined,
-          route: '/expenses',
+          route: 'expenses',
           isActive: true,
         ),
         DrawerMenuItem(
