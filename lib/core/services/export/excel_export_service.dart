@@ -68,18 +68,31 @@ class ExcelExportService {
       final defaultFileName = '${account.name}_Ekstre_$timestamp.xlsx';
       final finalFileName = fileName ?? defaultFileName;
 
-      // Dosyayı kaydet
-      final bytes = excel.save();
-      if (bytes == null) {
-        throw Exception('Excel dosyası oluşturulamadı');
-      }
-
-      debugPrint('Excel export: ${bytes.length} byte veri oluşturuldu');
-
       // Platform kontrolü - Web ve Mobil için farklı yaklaşım
       if (kIsWeb) {
-        return _saveForWeb(Uint8List.fromList(bytes), finalFileName);
+        // Web'de kütüphanenin kendi indirme mekanizmasını kullan
+        // Not: excel.save(fileName: ...) web'de doğrudan indirme başlatır
+        // ve ek bir blob/anchor oluşturmayı gerektirmez. Çift indirmeyi önler.
+        try {
+          // ignore: deprecated_member_use
+          excel.save(fileName: finalFileName);
+        } catch (_) {
+          // Bazı sürümlerde fileName parametresi olmayabilir; bu durumda
+          // geri dönüş olarak elde edilen byte'ları tek seferde indir.
+          final bytes = excel.save();
+          if (bytes == null) {
+            throw Exception('Excel dosyası oluşturulamadı');
+          }
+          return _saveForWeb(Uint8List.fromList(bytes), finalFileName);
+        }
+        return 'Web indirme başlatıldı: $finalFileName';
       } else {
+        // Mobil/desktop için byte'ları alıp dosyaya yaz
+        final bytes = excel.save();
+        if (bytes == null) {
+          throw Exception('Excel dosyası oluşturulamadı');
+        }
+        debugPrint('Excel export: ${bytes.length} byte veri oluşturuldu');
         return await _saveForMobile(Uint8List.fromList(bytes), finalFileName);
       }
     } catch (e) {
