@@ -10,6 +10,7 @@ import '../../../features/accounts/domain/entities/account_transaction.dart';
 import 'package:flutter/foundation.dart';
 import '../../../features/auth/domain/entities/user.dart';
 import '../../entities/company.dart';
+import '../../../features/company/domain/entities/company_info.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 
@@ -19,6 +20,7 @@ class ExcelExportService {
     required List<AccountTransaction> transactions,
     User? user,
     Company? company,
+    CompanyInfo? companyInfo,
     String? fileName,
     DateTime? startDate,
     DateTime? endDate,
@@ -43,7 +45,7 @@ class ExcelExportService {
       _buildHeader(sheet, company, user);
 
       // Bilgiler bölümü (PDF'deki gibi iki sütunlu)
-      _buildInfoSection(sheet, account, company, user, transactions, startDate,
+      _buildInfoSection(sheet, account, company, companyInfo, user, transactions, startDate,
           endDate, transactionType, transactionCategory, searchQuery);
 
       // Ekstre tablosu
@@ -93,6 +95,7 @@ class ExcelExportService {
       Sheet sheet,
       Account account,
       Company? company,
+      CompanyInfo? companyInfo,
       User? user,
       List<AccountTransaction> transactions,
       DateTime? startDate,
@@ -104,13 +107,14 @@ class ExcelExportService {
     final leftColumn = <String>[];
 
     // Şirket bilgileri
-    if (company != null) {
+    if (companyInfo != null || company != null) {
       leftColumn.addAll([
-        'Şirket Adı: ${company.name}',
-        if (company.address != null && company.address!.isNotEmpty) 'Adres: ${company.address}',
-        if (company.phone != null && company.phone!.isNotEmpty) 'Telefon: ${company.phone}',
-        if (company.email != null && company.email!.isNotEmpty) 'E-posta: ${company.email}',
-        if (company.website != null && company.website!.isNotEmpty) 'Web Sitesi: ${company.website}',
+        'Şirket Adı: ${companyInfo?.name ?? company?.name ?? ''}',
+        'Vergi No: ${companyInfo?.taxNumber ?? user?.taxId ?? 'Belirtilmemis'}${(companyInfo?.taxOffice ?? user?.taxOffice) != null && (companyInfo?.taxOffice ?? user?.taxOffice)!.isNotEmpty ? ' (${companyInfo?.taxOffice ?? user?.taxOffice})' : ''}',
+        'Adres: ${(companyInfo != null && companyInfo.fullAddress.isNotEmpty) ? companyInfo.fullAddress : (company?.address ?? 'Belirtilmemis')}',
+        'Telefon: ${companyInfo?.phone ?? company?.phone ?? 'Belirtilmemis'}',
+        'E-posta: ${companyInfo?.email ?? company?.email ?? 'Belirtilmemis'}',
+        'Web Sitesi: ${companyInfo?.website ?? company?.website ?? 'Belirtilmemis'}',
         '', // Boş satır
       ]);
     }
@@ -173,14 +177,14 @@ class ExcelExportService {
       '⚫ Bakiye'
     ];
     final headerRowObj = sheet.appendRow(headerRow);
-    
+
     // Başlık satırı renklendirmesi
     final headerStyle = CellStyle(
       backgroundColorHex: '#4472C4', // Mavi arka plan
       fontColorHex: '#FFFFFF', // Beyaz yazı
       bold: true,
     );
-    
+
     for (int i = 0; i < headerRow.length; i++) {
       headerRowObj.cells[i].cellStyle = headerStyle;
     }
@@ -234,7 +238,7 @@ class ExcelExportService {
       ];
 
       final rowObj = sheet.appendRow(row);
-      
+
       // Hücre renklendirmesi
       if (debitAmount != 0) {
         // Borç sütunu - kırmızı arka plan
@@ -243,7 +247,7 @@ class ExcelExportService {
           bold: true,
         );
       }
-      
+
       if (creditAmount != 0) {
         // Alacak sütunu - yeşil arka plan
         rowObj.cells[5].cellStyle = CellStyle(
@@ -251,7 +255,7 @@ class ExcelExportService {
           bold: true,
         );
       }
-      
+
       // Bakiye sütunu - gri arka plan
       rowObj.cells[6].cellStyle = CellStyle(
         backgroundColorHex: '#F5F5F5', // Açık gri
