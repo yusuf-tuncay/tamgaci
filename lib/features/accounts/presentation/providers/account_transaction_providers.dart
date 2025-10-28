@@ -16,6 +16,9 @@ final transactionsProvider =
   return await repository.getTransactions();
 });
 
+/// All Account Transactions Provider (for expenses module)
+final allAccountTransactionsProvider = transactionsProvider;
+
 /// Transaction by ID Provider
 final transactionByIdProvider =
     FutureProvider.family<AccountTransaction?, String>((ref, id) async {

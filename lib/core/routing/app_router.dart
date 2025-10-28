@@ -26,6 +26,7 @@ import '../router/inventory_routes.dart';
 import '../router/purchases_routes.dart';
 import '../router/suppliers_routes.dart';
 import '../router/accounts_routes.dart';
+import '../router/expenses_routes.dart';
 import '../router/reports_routes.dart';
 import '../router/test_routes.dart';
 
@@ -62,6 +63,7 @@ class AppRouter {
       ...PurchasesRoutes.routes,
       ...SuppliersRoutes.routes,
       ...AccountsRoutes.routes,
+      ...ExpensesRoutes.routes,
       ...ReportsRoutes.routes,
       ...TestRoutes.routes,
 
