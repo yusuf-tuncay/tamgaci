@@ -1134,7 +1134,21 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                   Navigator.of(context).pop();
                 }
                 // Go Router ile navigation
-                context.goNamed(item.route);
+                print('🔍 DrawerMenu: Navigating to route: ${item.route}');
+                try {
+                  // Try goNamed first
+                  context.goNamed(item.route);
+                  print('🔍 DrawerMenu: goNamed successful');
+                } catch (e) {
+                  print('🔍 DrawerMenu: goNamed error: $e');
+                  try {
+                    // Fallback to go with path
+                    context.go('/${item.route}');
+                    print('🔍 DrawerMenu: go successful');
+                  } catch (e2) {
+                    print('🔍 DrawerMenu: go error: $e2');
+                  }
+                }
               }
             },
           ),
