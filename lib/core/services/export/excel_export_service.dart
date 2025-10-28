@@ -1,7 +1,6 @@
 import 'dart:io';
-import 'dart:html' as html;
+import 'dart:typed_data';
 import 'package:excel/excel.dart';
-import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
@@ -10,6 +9,8 @@ import '../../../features/accounts/domain/entities/account_transaction.dart';
 import 'package:flutter/foundation.dart';
 import '../../../features/auth/domain/entities/user.dart';
 import '../../entities/company.dart';
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
 
 class ExcelExportService {
   static Future<String?> exportTransactionsToExcel({
@@ -192,21 +193,23 @@ class ExcelExportService {
       // Platform kontrolü - Web ve Mobil için farklı yaklaşım
       if (kIsWeb) {
         // Web'de dosyayı direkt indirme olarak ayarla
-        final blob = html.Blob([bytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
+        final uint8List = Uint8List.fromList(bytes);
+        final blob = web.Blob([uint8List.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
         
         // Direkt indirme için anchor element kullan
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', finalFileName)
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = finalFileName
           ..style.display = 'none';
         
         // DOM'a ekle, tıkla ve kaldır
-        html.document.body?.append(anchor);
+        web.document.body?.appendChild(anchor);
         anchor.click();
         anchor.remove();
         
         // URL'yi temizle
-        html.Url.revokeObjectUrl(url);
+        web.URL.revokeObjectURL(url);
         
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
