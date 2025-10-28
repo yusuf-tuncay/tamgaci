@@ -20,29 +20,9 @@ class PdfExportService {
 
   // TAMGACI logosu yükleme fonksiyonu
   static Future<void> _ensureLogoLoaded() async {
-    if (_cachedLogo != null) {
-      debugPrint('TAMGACI logosu zaten yüklü');
-      return;
-    }
-
-    try {
-      debugPrint('TAMGACI logosu yükleniyor...');
-
-      // Basit test logosu - küçük PNG base64
-      const String logoBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
-
-      // Base64 string'i Uint8List'e çevir
-      final logoBytes = Uint8List.fromList(base64Decode(logoBase64));
-
-      debugPrint(
-          'TAMGACI logo base64\'den yüklendi, boyut: ${logoBytes.length} byte');
-
-      _cachedLogo = pw.MemoryImage(logoBytes);
-      debugPrint('TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü');
-    } catch (e) {
-      debugPrint('TAMGACI logo yükleme hatası: $e');
-      _cachedLogo = null;
-    }
+    // Logo yükleme geçici olarak devre dışı - IDAT checksum hatası nedeniyle
+    debugPrint('Logo yükleme geçici olarak devre dışı bırakıldı');
+    _cachedLogo = null;
   }
 
   // Şirket logosu yükleme fonksiyonu
