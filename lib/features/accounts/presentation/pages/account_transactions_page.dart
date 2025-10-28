@@ -11,6 +11,7 @@ import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/export/excel_export_service.dart';
 import '../../../../core/services/export/pdf_export_service.dart';
+import '../../../company/presentation/providers/company_providers.dart';
 import '../../../../features/auth/presentation/providers/auth_providers.dart';
 import '../../../../core/providers/company_provider.dart';
 
@@ -42,10 +43,10 @@ class _AccountTransactionsPageState
 
   // Excel export debounce
   bool _isExporting = false;
-  
+
   // Filtreleme debounce
   bool _isFiltering = false;
-  
+
   // Cache değişkenleri
   List<AccountTransaction>? _cachedTransactions;
   List<AccountTransaction>? _cachedFilteredTransactions;
@@ -692,7 +693,7 @@ class _AccountTransactionsPageState
       debugPrint('Filtreleme zaten çalışıyor, çift filtreleme engellendi');
       return transactions; // Mevcut listeyi döndür
     }
-    
+
     _isFiltering = true;
     debugPrint('=== FİLTRELEME BAŞLADI ===');
     debugPrint('Toplam işlem sayısı: ${transactions.length}');
@@ -770,11 +771,11 @@ class _AccountTransactionsPageState
     });
 
     debugPrint('=== FİLTRELEME BİTTİ ===');
-    
+
     // Debounce'u sıfırla
     _isFiltering = false;
     debugPrint('Filtreleme tamamlandı, debounce sıfırlandı');
-    
+
     return filtered;
   }
 
@@ -1180,13 +1181,13 @@ class _AccountTransactionsPageState
       // Kullanıcı ve şirket bilgilerini al
       final userAsync = ref.read(currentUserProvider);
       final companyAsync = ref.read(currentCompanyProvider);
-      
+
       final user = userAsync.when(
         data: (data) => data,
         loading: () => null,
         error: (_, __) => null,
       );
-      
+
       final company = companyAsync.when(
         data: (data) => data,
         loading: () => null,
@@ -1195,11 +1196,13 @@ class _AccountTransactionsPageState
 
       // Filtrelenmiş işlemleri al
       List<AccountTransaction> filteredTransactions;
-      if (_cachedFilteredTransactions != null && _cachedTransactions == _cachedTransactions) {
+      if (_cachedFilteredTransactions != null &&
+          _cachedTransactions == _cachedTransactions) {
         filteredTransactions = _cachedFilteredTransactions!;
         debugPrint('PDF export: Cache\'den filtrelenmiş işlemler kullanılıyor');
       } else {
-        final transactionsAsync = ref.read(transactionsByAccountIdProvider(widget.account.id));
+        final transactionsAsync =
+            ref.read(transactionsByAccountIdProvider(widget.account.id));
         final transactions = transactionsAsync.when(
           data: (data) => data,
           loading: () => <AccountTransaction>[],
@@ -1210,14 +1213,19 @@ class _AccountTransactionsPageState
         debugPrint('PDF export: Yeni filtreleme yapıldı');
       }
 
-      debugPrint('PDF export: ${filteredTransactions.length} işlem export edilecek');
+      debugPrint(
+          'PDF export: ${filteredTransactions.length} işlem export edilecek');
 
+      // CompanyInfo'yu al
+      final companyInfo = ref.read(companyInfoStreamProvider).value;
+      
       // PDF export servisini çağır
       final filePath = await PdfExportService.exportTransactionsToPdf(
         account: widget.account,
         transactions: filteredTransactions,
         user: user,
         company: company,
+        companyInfo: companyInfo,
         startDate: _startDate,
         endDate: _endDate,
         transactionType: _selectedType,

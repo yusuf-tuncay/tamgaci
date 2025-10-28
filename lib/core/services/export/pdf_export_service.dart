@@ -10,6 +10,7 @@ import '../../../features/accounts/domain/entities/account_transaction.dart';
 import 'package:flutter/foundation.dart';
 import '../../../features/auth/domain/entities/user.dart';
 import '../../entities/company.dart';
+import '../../../features/company/domain/entities/company_info.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import 'package:flutter/services.dart';
@@ -73,7 +74,7 @@ class PdfExportService {
   static Future<void> _ensureCompanyLogoLoaded(String? logoUrl) async {
     debugPrint('=== FİRMA LOGOSU YÜKLEME BAŞLADI ===');
     debugPrint('Logo URL: $logoUrl');
-    
+
     if (logoUrl == null || logoUrl.isEmpty) {
       debugPrint('Firma logosu URL\'si boş - logo yüklenmeyecek');
       _cachedCompanyLogo = null;
@@ -85,7 +86,7 @@ class PdfExportService {
       // HTTP ile şirket logosunu yükle
       final response = await http.get(Uri.parse(logoUrl));
       debugPrint('Firma logosu HTTP yanıtı: ${response.statusCode}');
-      
+
       if (response.statusCode == 200) {
         final logoBytes = response.bodyBytes;
         debugPrint('Firma logosu yüklendi, boyut: ${logoBytes.length} byte');
@@ -124,6 +125,7 @@ class PdfExportService {
     required List<AccountTransaction> transactions,
     User? user,
     Company? company,
+    CompanyInfo? companyInfo,
     String? fileName,
     DateTime? startDate,
     DateTime? endDate,
@@ -135,7 +137,7 @@ class PdfExportService {
     debugPrint('Servis çağrı zamanı: ${DateTime.now()}');
     debugPrint('Account: ${account.name}');
     debugPrint('Transactions count: ${transactions.length}');
-    
+
     // Company ve User verilerini debug et
     debugPrint('=== VERİ KONTROLÜ ===');
     debugPrint('Company: ${company?.name ?? 'NULL'}');
@@ -144,6 +146,12 @@ class PdfExportService {
     debugPrint('Company phone: ${company?.phone ?? 'NULL'}');
     debugPrint('Company email: ${company?.email ?? 'NULL'}');
     debugPrint('Company website: ${company?.website ?? 'NULL'}');
+    debugPrint('CompanyInfo: ${companyInfo?.name ?? 'NULL'}');
+    debugPrint('CompanyInfo logoUrl: ${companyInfo?.logoUrl ?? 'NULL'}');
+    debugPrint('CompanyInfo address: ${companyInfo?.address ?? 'NULL'}');
+    debugPrint('CompanyInfo phone: ${companyInfo?.phone ?? 'NULL'}');
+    debugPrint('CompanyInfo email: ${companyInfo?.email ?? 'NULL'}');
+    debugPrint('CompanyInfo website: ${companyInfo?.website ?? 'NULL'}');
     debugPrint('User: ${user?.name ?? 'NULL'} ${user?.surname ?? ''}');
     debugPrint('User phone: ${user?.phone ?? 'NULL'}');
     debugPrint('User address: ${user?.address ?? 'NULL'}');
@@ -156,7 +164,7 @@ class PdfExportService {
       // Cache'i temizle ve logoları yeniden yükle
       clearCache();
       await _ensureLogoLoaded();
-      await _ensureCompanyLogoLoaded(company?.logoUrl);
+      await _ensureCompanyLogoLoaded(companyInfo?.logoUrl ?? company?.logoUrl);
 
       // PDF dosyası oluştur (varsayılan font kullan)
       final pdf = pw.Document();
@@ -238,7 +246,7 @@ class PdfExportService {
               ),
 
               // Şirket bilgileri
-              if (company != null) ...[
+              if (companyInfo != null || company != null) ...[
                 pw.Header(
                   level: 1,
                   child: pw.Row(
@@ -271,25 +279,25 @@ class PdfExportService {
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       _buildInfoRow(_convertTurkishChars('Sirket Adi:'),
-                          _convertTurkishChars(company.name)),
+                          _convertTurkishChars(companyInfo?.name ?? company?.name ?? 'Belirtilmemis')),
                       _buildInfoRow(_convertTurkishChars('Vergi No:'),
-                          _convertTurkishChars(user?.taxId ?? 'Belirtilmemis')),
+                          _convertTurkishChars(companyInfo?.taxNumber ?? user?.taxId ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Adres:'),
                           _convertTurkishChars(
-                              company.address ?? 'Belirtilmemis')),
+                              companyInfo?.address ?? company?.address ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Telefon:'),
                           _convertTurkishChars(
-                              company.phone ?? 'Belirtilmemis')),
+                              companyInfo?.phone ?? company?.phone ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('E-posta:'),
                           _convertTurkishChars(
-                              company.email ?? 'Belirtilmemis')),
+                              companyInfo?.email ?? company?.email ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Web Sitesi:'),
                           _convertTurkishChars(
-                              company.website ?? 'Belirtilmemis')),
+                              companyInfo?.website ?? company?.website ?? 'Belirtilmemis')),
                     ],
                   ),
                 ),
