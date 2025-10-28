@@ -907,6 +907,14 @@ class PdfExportService {
                     double creditAmount = 0.0;
 
                     switch (transaction.type) {
+                      case TransactionType.income:
+                        // Gelir: Alacak (pozitif değer)
+                        creditAmount = transaction.amount;
+                        break;
+                      case TransactionType.expense:
+                        // Gider: Borç (negatif değer)
+                        debitAmount = transaction.amount;
+                        break;
                       case TransactionType.withdrawal:
                         // Para çıkışı: Borç (transaction.amount zaten negatif)
                         debitAmount = transaction.amount;
@@ -1099,6 +1107,10 @@ class PdfExportService {
 
   static String _getTransactionTypeText(TransactionType type) {
     switch (type) {
+      case TransactionType.income:
+        return 'Gelir';
+      case TransactionType.expense:
+        return 'Gider';
       case TransactionType.deposit:
         return 'Para Girişi';
       case TransactionType.withdrawal:

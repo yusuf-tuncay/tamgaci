@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
@@ -29,7 +28,7 @@ class ExcelExportService {
     debugPrint('Servis çağrı zamanı: ${DateTime.now()}');
     debugPrint('Account: ${account.name}');
     debugPrint('Transactions count: ${transactions.length}');
-    
+
     try {
       // Excel dosyası oluştur
       final excel = Excel.createExcel();
@@ -196,21 +195,21 @@ class ExcelExportService {
         final uint8List = Uint8List.fromList(bytes);
         final blob = web.Blob([uint8List.buffer.toJS].toJS);
         final url = web.URL.createObjectURL(blob);
-        
+
         // Direkt indirme için anchor element kullan
         final anchor = web.HTMLAnchorElement()
           ..href = url
           ..download = finalFileName
           ..style.display = 'none';
-        
+
         // DOM'a ekle, tıkla ve kaldır
         web.document.body?.appendChild(anchor);
         anchor.click();
         anchor.remove();
-        
+
         // URL'yi temizle
         web.URL.revokeObjectURL(url);
-        
+
         debugPrint('Excel export: Web indirme başlatıldı - $finalFileName');
         return 'Web indirme başlatıldı: $finalFileName';
       } else {
@@ -257,6 +256,10 @@ class ExcelExportService {
 
   static String _getTransactionTypeText(TransactionType type) {
     switch (type) {
+      case TransactionType.income:
+        return 'Gelir';
+      case TransactionType.expense:
+        return 'Gider';
       case TransactionType.deposit:
         return 'Para Girişi';
       case TransactionType.withdrawal:
