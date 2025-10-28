@@ -117,7 +117,372 @@ class PdfExportService {
         .replaceAll('ş', 's')
         .replaceAll('Ş', 'S')
         .replaceAll('ü', 'u')
-        .replaceAll('Ü', 'U');
+        .replaceAll('Ü', 'U')
+        .replaceAll('→', '->')
+        .replaceAll('–', '-')
+        .replaceAll('—', '-')
+        .replaceAll('"', '"')
+        .replaceAll('"', '"')
+        .replaceAll(''', "'")
+        .replaceAll(''', "'")
+        .replaceAll('•', '*')
+        .replaceAll('·', '*')
+        .replaceAll('…', '...')
+        .replaceAll('€', 'EUR')
+        .replaceAll('\$', 'USD')
+        .replaceAll('£', 'GBP')
+        .replaceAll('¥', 'JPY')
+        .replaceAll('₺', 'TL')
+        .replaceAll('°', 'deg')
+        .replaceAll('×', 'x')
+        .replaceAll('÷', '/')
+        .replaceAll('±', '+/-')
+        .replaceAll('≤', '<=')
+        .replaceAll('≥', '>=')
+        .replaceAll('≠', '!=')
+        .replaceAll('≈', '~')
+        .replaceAll('∞', 'inf')
+        .replaceAll('√', 'sqrt')
+        .replaceAll('∑', 'sum')
+        .replaceAll('∏', 'prod')
+        .replaceAll('∆', 'delta')
+        .replaceAll('α', 'alpha')
+        .replaceAll('β', 'beta')
+        .replaceAll('γ', 'gamma')
+        .replaceAll('δ', 'delta')
+        .replaceAll('ε', 'epsilon')
+        .replaceAll('ζ', 'zeta')
+        .replaceAll('η', 'eta')
+        .replaceAll('θ', 'theta')
+        .replaceAll('ι', 'iota')
+        .replaceAll('κ', 'kappa')
+        .replaceAll('λ', 'lambda')
+        .replaceAll('μ', 'mu')
+        .replaceAll('ν', 'nu')
+        .replaceAll('ξ', 'xi')
+        .replaceAll('ο', 'omicron')
+        .replaceAll('π', 'pi')
+        .replaceAll('ρ', 'rho')
+        .replaceAll('σ', 'sigma')
+        .replaceAll('τ', 'tau')
+        .replaceAll('υ', 'upsilon')
+        .replaceAll('φ', 'phi')
+        .replaceAll('χ', 'chi')
+        .replaceAll('ψ', 'psi')
+        .replaceAll('ω', 'omega')
+        .replaceAll('→', '->')
+        .replaceAll('←', '<-')
+        .replaceAll('↑', '^')
+        .replaceAll('↓', 'v')
+        .replaceAll('↔', '<->')
+        .replaceAll('↕', '^v')
+        .replaceAll('↗', '^>')
+        .replaceAll('↘', 'v>')
+        .replaceAll('↙', 'v<')
+        .replaceAll('↖', '^<')
+        .replaceAll('↩', '<-')
+        .replaceAll('↪', '->')
+        .replaceAll('↶', '^<')
+        .replaceAll('↷', '^>')
+        .replaceAll('↺', 'o<')
+        .replaceAll('↻', 'o>')
+        .replaceAll('⇐', '<=')
+        .replaceAll('⇒', '=>')
+        .replaceAll('⇔', '<=>')
+        .replaceAll('⇕', '^v')
+        .replaceAll('⇖', '^<')
+        .replaceAll('⇗', '^>')
+        .replaceAll('⇘', 'v>')
+        .replaceAll('⇙', 'v<')
+        .replaceAll('⇚', '<<=')
+        .replaceAll('⇛', '=>>')
+        .replaceAll('⇜', '<<<')
+        .replaceAll('⇝', '>>>')
+        .replaceAll('⇞', '^^')
+        .replaceAll('⇟', 'vv')
+        .replaceAll('⇠', '<<')
+        .replaceAll('⇡', '^^')
+        .replaceAll('⇢', '>>')
+        .replaceAll('⇣', 'vv')
+        .replaceAll('⇤', '<<')
+        .replaceAll('⇥', '>>')
+        .replaceAll('⇦', '<<')
+        .replaceAll('⇧', '^^')
+        .replaceAll('⇨', '>>')
+        .replaceAll('⇩', 'vv')
+        .replaceAll('⇪', '^^')
+        .replaceAll('⇫', 'vv')
+        .replaceAll('⇬', '^^')
+        .replaceAll('⇭', 'vv')
+        .replaceAll('⇮', '^^')
+        .replaceAll('⇯', 'vv')
+        .replaceAll('⇰', '=>')
+        .replaceAll('⇱', '<=')
+        .replaceAll('⇲', '=>')
+        .replaceAll('⇳', '<=')
+        .replaceAll('⇴', '=>')
+        .replaceAll('⇵', '<=')
+        .replaceAll('⇶', '=>')
+        .replaceAll('⇷', '<=')
+        .replaceAll('⇸', '=>')
+        .replaceAll('⇹', '<=')
+        .replaceAll('⇺', '=>')
+        .replaceAll('⇻', '<=')
+        .replaceAll('⇼', '=>')
+        .replaceAll('⇽', '<=')
+        .replaceAll('⇾', '=>')
+        .replaceAll('⇿', '<=')
+        .replaceAll('∀', 'for all')
+        .replaceAll('∁', 'complement')
+        .replaceAll('∂', 'partial')
+        .replaceAll('∃', 'exists')
+        .replaceAll('∄', 'not exists')
+        .replaceAll('∅', 'empty')
+        .replaceAll('∆', 'delta')
+        .replaceAll('∇', 'nabla')
+        .replaceAll('∈', 'in')
+        .replaceAll('∉', 'not in')
+        .replaceAll('∋', 'contains')
+        .replaceAll('∌', 'not contains')
+        .replaceAll('∏', 'product')
+        .replaceAll('∑', 'sum')
+        .replaceAll('−', '-')
+        .replaceAll('∓', '-/+')
+        .replaceAll('∕', '/')
+        .replaceAll('∖', '\\')
+        .replaceAll('∗', '*')
+        .replaceAll('∘', 'o')
+        .replaceAll('∙', '*')
+        .replaceAll('√', 'sqrt')
+        .replaceAll('∛', 'cbrt')
+        .replaceAll('∜', '4th root')
+        .replaceAll('∝', 'proportional')
+        .replaceAll('∞', 'infinity')
+        .replaceAll('∟', 'right angle')
+        .replaceAll('∠', 'angle')
+        .replaceAll('∡', 'angle')
+        .replaceAll('∢', 'angle')
+        .replaceAll('∣', 'divides')
+        .replaceAll('∤', 'not divides')
+        .replaceAll('∥', 'parallel')
+        .replaceAll('∦', 'not parallel')
+        .replaceAll('∧', 'and')
+        .replaceAll('∨', 'or')
+        .replaceAll('∩', 'intersection')
+        .replaceAll('∪', 'union')
+        .replaceAll('∫', 'integral')
+        .replaceAll('∬', 'double integral')
+        .replaceAll('∭', 'triple integral')
+        .replaceAll('∮', 'contour integral')
+        .replaceAll('∯', 'surface integral')
+        .replaceAll('∰', 'volume integral')
+        .replaceAll('∱', 'integral')
+        .replaceAll('∲', 'integral')
+        .replaceAll('∳', 'integral')
+        .replaceAll('∴', 'therefore')
+        .replaceAll('∵', 'because')
+        .replaceAll('∶', 'ratio')
+        .replaceAll('∷', 'proportion')
+        .replaceAll('∸', 'minus')
+        .replaceAll('∹', 'plus')
+        .replaceAll('∺', 'plus')
+        .replaceAll('∻', 'plus')
+        .replaceAll('∼', 'similar')
+        .replaceAll('∽', 'similar')
+        .replaceAll('∾', 'similar')
+        .replaceAll('∿', 'similar')
+        .replaceAll('≀', 'wreath')
+        .replaceAll('≁', 'not similar')
+        .replaceAll('≂', 'equal')
+        .replaceAll('≃', 'equal')
+        .replaceAll('≄', 'not equal')
+        .replaceAll('≅', 'congruent')
+        .replaceAll('≆', 'not congruent')
+        .replaceAll('≇', 'not congruent')
+        .replaceAll('≈', 'approximately')
+        .replaceAll('≉', 'not approximately')
+        .replaceAll('≊', 'approximately')
+        .replaceAll('≋', 'approximately')
+        .replaceAll('≌', 'congruent')
+        .replaceAll('≍', 'equivalent')
+        .replaceAll('≎', 'equivalent')
+        .replaceAll('≏', 'equivalent')
+        .replaceAll('≐', 'equal')
+        .replaceAll('≑', 'equal')
+        .replaceAll('≒', 'equal')
+        .replaceAll('≓', 'equal')
+        .replaceAll('≔', 'defined as')
+        .replaceAll('≕', 'defined as')
+        .replaceAll('≖', 'equal')
+        .replaceAll('≗', 'equal')
+        .replaceAll('≘', 'equal')
+        .replaceAll('≙', 'equal')
+        .replaceAll('≚', 'equal')
+        .replaceAll('≛', 'equal')
+        .replaceAll('≜', 'defined as')
+        .replaceAll('≝', 'defined as')
+        .replaceAll('≞', 'defined as')
+        .replaceAll('≟', 'defined as')
+        .replaceAll('≠', 'not equal')
+        .replaceAll('≡', 'identical')
+        .replaceAll('≢', 'not identical')
+        .replaceAll('≣', 'identical')
+        .replaceAll('≤', 'less than or equal')
+        .replaceAll('≥', 'greater than or equal')
+        .replaceAll('≦', 'less than or equal')
+        .replaceAll('≧', 'greater than or equal')
+        .replaceAll('≨', 'less than')
+        .replaceAll('≩', 'greater than')
+        .replaceAll('≪', 'much less than')
+        .replaceAll('≫', 'much greater than')
+        .replaceAll('≬', 'between')
+        .replaceAll('≭', 'not between')
+        .replaceAll('≮', 'not less than')
+        .replaceAll('≯', 'not greater than')
+        .replaceAll('≰', 'not less than or equal')
+        .replaceAll('≱', 'not greater than or equal')
+        .replaceAll('≲', 'less than or similar')
+        .replaceAll('≳', 'greater than or similar')
+        .replaceAll('≴', 'not less than or similar')
+        .replaceAll('≵', 'not greater than or similar')
+        .replaceAll('≶', 'less than or greater than')
+        .replaceAll('≷', 'greater than or less than')
+        .replaceAll('≸', 'not less than or greater than')
+        .replaceAll('≹', 'not greater than or less than')
+        .replaceAll('≺', 'precedes')
+        .replaceAll('≻', 'succeeds')
+        .replaceAll('≼', 'precedes or equal')
+        .replaceAll('≽', 'succeeds or equal')
+        .replaceAll('≾', 'precedes or similar')
+        .replaceAll('≿', 'succeeds or similar')
+        .replaceAll('⊀', 'not precedes')
+        .replaceAll('⊁', 'not succeeds')
+        .replaceAll('⊂', 'subset')
+        .replaceAll('⊃', 'superset')
+        .replaceAll('⊄', 'not subset')
+        .replaceAll('⊅', 'not superset')
+        .replaceAll('⊆', 'subset or equal')
+        .replaceAll('⊇', 'superset or equal')
+        .replaceAll('⊈', 'not subset or equal')
+        .replaceAll('⊉', 'not superset or equal')
+        .replaceAll('⊊', 'subset')
+        .replaceAll('⊋', 'superset')
+        .replaceAll('⊌', 'subset')
+        .replaceAll('⊍', 'superset')
+        .replaceAll('⊎', 'union')
+        .replaceAll('⊏', 'precedes')
+        .replaceAll('⊐', 'succeeds')
+        .replaceAll('⊑', 'precedes or equal')
+        .replaceAll('⊒', 'succeeds or equal')
+        .replaceAll('⊓', 'meet')
+        .replaceAll('⊔', 'join')
+        .replaceAll('⊕', 'plus')
+        .replaceAll('⊖', 'minus')
+        .replaceAll('⊗', 'times')
+        .replaceAll('⊘', 'divide')
+        .replaceAll('⊙', 'odot')
+        .replaceAll('⊚', 'odot')
+        .replaceAll('⊛', 'otimes')
+        .replaceAll('⊜', 'equal')
+        .replaceAll('⊝', 'minus')
+        .replaceAll('⊞', 'plus')
+        .replaceAll('⊟', 'minus')
+        .replaceAll('⊠', 'times')
+        .replaceAll('⊡', 'times')
+        .replaceAll('⊢', 'proves')
+        .replaceAll('⊣', 'proves')
+        .replaceAll('⊤', 'top')
+        .replaceAll('⊥', 'bottom')
+        .replaceAll('⊦', 'proves')
+        .replaceAll('⊧', 'models')
+        .replaceAll('⊨', 'models')
+        .replaceAll('⊩', 'forces')
+        .replaceAll('⊪', 'forces')
+        .replaceAll('⊫', 'forces')
+        .replaceAll('⊬', 'not proves')
+        .replaceAll('⊭', 'not models')
+        .replaceAll('⊮', 'not forces')
+        .replaceAll('⊯', 'not forces')
+        .replaceAll('⊰', 'precedes')
+        .replaceAll('⊱', 'succeeds')
+        .replaceAll('⊲', 'precedes')
+        .replaceAll('⊳', 'succeeds')
+        .replaceAll('⊴', 'precedes or equal')
+        .replaceAll('⊵', 'succeeds or equal')
+        .replaceAll('⊶', 'precedes')
+        .replaceAll('⊷', 'succeeds')
+        .replaceAll('⊸', 'precedes')
+        .replaceAll('⊹', 'succeeds')
+        .replaceAll('⊺', 'precedes')
+        .replaceAll('⊻', 'succeeds')
+        .replaceAll('⊼', 'precedes')
+        .replaceAll('⊽', 'succeeds')
+        .replaceAll('⊾', 'precedes')
+        .replaceAll('⊿', 'succeeds')
+        .replaceAll('⋀', 'big and')
+        .replaceAll('⋁', 'big or')
+        .replaceAll('⋂', 'big intersection')
+        .replaceAll('⋃', 'big union')
+        .replaceAll('⋄', 'diamond')
+        .replaceAll('⋅', 'dot')
+        .replaceAll('⋆', 'star')
+        .replaceAll('⋇', 'star')
+        .replaceAll('⋈', 'bowtie')
+        .replaceAll('⋉', 'left normal factor')
+        .replaceAll('⋊', 'right normal factor')
+        .replaceAll('⋋', 'left semidirect product')
+        .replaceAll('⋌', 'right semidirect product')
+        .replaceAll('⋍', 'similar')
+        .replaceAll('⋎', 'curly logical or')
+        .replaceAll('⋏', 'curly logical and')
+        .replaceAll('⋐', 'subset')
+        .replaceAll('⋑', 'superset')
+        .replaceAll('⋒', 'intersection')
+        .replaceAll('⋓', 'union')
+        .replaceAll('⋔', 'pitchfork')
+        .replaceAll('⋕', 'equal')
+        .replaceAll('⋖', 'less than')
+        .replaceAll('⋗', 'greater than')
+        .replaceAll('⋘', 'much less than')
+        .replaceAll('⋙', 'much greater than')
+        .replaceAll('⋚', 'less than or equal')
+        .replaceAll('⋛', 'greater than or equal')
+        .replaceAll('⋜', 'less than or equal')
+        .replaceAll('⋝', 'greater than or equal')
+        .replaceAll('⋞', 'less than or equal')
+        .replaceAll('⋟', 'greater than or equal')
+        .replaceAll('⋠', 'not less than or equal')
+        .replaceAll('⋡', 'not greater than or equal')
+        .replaceAll('⋢', 'not subset or equal')
+        .replaceAll('⋣', 'not superset or equal')
+        .replaceAll('⋤', 'subset')
+        .replaceAll('⋥', 'superset')
+        .replaceAll('⋦', 'less than')
+        .replaceAll('⋧', 'greater than')
+        .replaceAll('⋨', 'less than')
+        .replaceAll('⋩', 'greater than')
+        .replaceAll('⋪', 'not precedes')
+        .replaceAll('⋫', 'not succeeds')
+        .replaceAll('⋬', 'not precedes or equal')
+        .replaceAll('⋭', 'not succeeds or equal')
+        .replaceAll('⋮', 'vdots')
+        .replaceAll('⋯', 'cdots')
+        .replaceAll('⋰', 'ddots')
+        .replaceAll('⋱', 'ddots')
+        .replaceAll('⋲', 'element of')
+        .replaceAll('⋳', 'not element of')
+        .replaceAll('⋴', 'element of')
+        .replaceAll('⋵', 'not element of')
+        .replaceAll('⋶', 'element of')
+        .replaceAll('⋷', 'not element of')
+        .replaceAll('⋸', 'element of')
+        .replaceAll('⋹', 'not element of')
+        .replaceAll('⋺', 'element of')
+        .replaceAll('⋻', 'not element of')
+        .replaceAll('⋼', 'element of')
+        .replaceAll('⋽', 'not element of')
+        .replaceAll('⋾', 'element of')
+        .replaceAll('⋿', 'not element of');
   }
 
   static Future<String?> exportTransactionsToPdf({
@@ -166,7 +531,7 @@ class PdfExportService {
       await _ensureLogoLoaded();
       await _ensureCompanyLogoLoaded(companyInfo?.logoUrl ?? company?.logoUrl);
 
-      // PDF dosyası oluştur (varsayılan font kullan)
+      // PDF dosyası oluştur
       final pdf = pw.Document();
       final sortedTransactions = List<AccountTransaction>.from(transactions)
         ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
@@ -360,6 +725,13 @@ class PdfExportService {
                                           companyInfo?.website ??
                                               company?.website ??
                                               'Belirtilmemis')),
+                                  // Kullanıcı adı
+                                  if (user != null) ...[
+                                    _buildInfoRow(
+                                        _convertTurkishChars('Kullanici Adi:'),
+                                        _convertTurkishChars(
+                                            '${user.name} ${user.surname}')),
+                                  ],
                                 ],
                                 // Rapor bilgileri
                                 pw.SizedBox(height: 10),
@@ -383,23 +755,6 @@ class PdfExportService {
                                 _buildInfoRow(
                                     _convertTurkishChars('Toplam Islem:'),
                                     '${transactions.length} adet'),
-                                // Kullanıcı adı
-                                if (user != null) ...[
-                                  pw.SizedBox(height: 10),
-                                  pw.Text(
-                                    _convertTurkishChars('Kullanici Bilgileri'),
-                                    style: pw.TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: pw.FontWeight.bold,
-                                      color: PdfColors.blue700,
-                                    ),
-                                  ),
-                                  pw.SizedBox(height: 5),
-                                  _buildInfoRow(
-                                      _convertTurkishChars('Kullanici Adi:'),
-                                      _convertTurkishChars(
-                                          '${user.name} ${user.surname}')),
-                                ],
                               ],
                             ),
                           ),
@@ -508,18 +863,18 @@ class PdfExportService {
               ),
               pw.SizedBox(height: 10),
 
-              // İşlemler tablosu
+              // İşlemler tablosu (Ekstre formatı)
               pw.Table(
                 border: pw.TableBorder.all(color: PdfColors.grey300),
                 columnWidths: {
-                  0: const pw.FixedColumnWidth(80), // Tarih
-                  1: const pw.FixedColumnWidth(60), // Saat
-                  2: const pw.FixedColumnWidth(100), // İşlem Türü
-                  3: const pw.FixedColumnWidth(80), // Kategori
-                  4: const pw.FlexColumnWidth(2), // Açıklama
-                  5: const pw.FixedColumnWidth(80), // Miktar
-                  6: const pw.FixedColumnWidth(60), // Para Birimi
-                  7: const pw.FixedColumnWidth(100), // Bakiye Sonrası
+                  0: const pw.FixedColumnWidth(60), // Tarih
+                  1: const pw.FixedColumnWidth(40), // Saat
+                  2: const pw.FixedColumnWidth(70), // İşlem Türü
+                  3: const pw.FixedColumnWidth(60), // Kategori
+                  4: const pw.FlexColumnWidth(1), // Açıklama
+                  5: const pw.FixedColumnWidth(80), // Borç
+                  6: const pw.FixedColumnWidth(80), // Alacak
+                  7: const pw.FixedColumnWidth(90), // Bakiye
                 },
                 children: [
                   // Başlık satırı
@@ -537,33 +892,76 @@ class PdfExportService {
                           isHeader: true),
                       _buildTableCell(_convertTurkishChars('Aciklama'),
                           isHeader: true),
-                      _buildTableCell(_convertTurkishChars('Miktar'),
+                      _buildTableCell(_convertTurkishChars('Borç'),
                           isHeader: true),
-                      _buildTableCell(_convertTurkishChars('Para Birimi'),
+                      _buildTableCell(_convertTurkishChars('Alacak'),
                           isHeader: true),
-                      _buildTableCell(_convertTurkishChars('Bakiye Sonrasi'),
+                      _buildTableCell(_convertTurkishChars('Bakiye'),
                           isHeader: true),
                     ],
                   ),
                   // İşlemler
-                  ...sortedTransactions.map((transaction) => pw.TableRow(
-                        children: [
-                          _buildTableCell(DateFormat('dd.MM.yyyy')
-                              .format(transaction.transactionDate)),
-                          _buildTableCell(DateFormat('HH:mm')
-                              .format(transaction.transactionDate)),
-                          _buildTableCell(_convertTurkishChars(
-                              _getTransactionTypeText(transaction.type))),
-                          _buildTableCell(_convertTurkishChars(
-                              _getTransactionCategoryText(
-                                  transaction.category))),
-                          _buildTableCell(
-                              _convertTurkishChars(transaction.description)),
-                          _buildTableCell(transaction.amount.toString()),
-                          _buildTableCell(account.currency),
-                          _buildTableCell(transaction.balanceAfter.toString()),
-                        ],
-                      )),
+                  ...sortedTransactions.map((transaction) {
+                    // Borç/Alacak mantığı: Para çıkışı borç (negatif), para girişi alacak (pozitif)
+                    double debitAmount = 0.0;
+                    double creditAmount = 0.0;
+
+                    switch (transaction.type) {
+                      case TransactionType.withdrawal:
+                        // Para çıkışı: Borç (transaction.amount zaten negatif)
+                        debitAmount = transaction.amount;
+                        break;
+                      case TransactionType.deposit:
+                        // Para girişi: Alacak (pozitif değer)
+                        creditAmount = transaction.amount;
+                        break;
+                      case TransactionType.transfer:
+                      case TransactionType.adjustment:
+                      case TransactionType.opening:
+                        // Transfer, düzeltme ve açılış: Amount pozitifse alacak, negatifse borç
+                        if (transaction.amount > 0) {
+                          creditAmount = transaction.amount;
+                        } else if (transaction.amount < 0) {
+                          debitAmount =
+                              transaction.amount; // Negatif değer olarak bırak
+                        }
+                        break;
+                    }
+
+                    return pw.TableRow(
+                      children: [
+                        _buildTableCell(DateFormat('dd.MM.yyyy')
+                            .format(transaction.transactionDate)),
+                        _buildTableCell(DateFormat('HH:mm')
+                            .format(transaction.transactionDate)),
+                        _buildTableCell(_convertTurkishChars(
+                            _getTransactionTypeText(transaction.type))),
+                        _buildTableCell(_convertTurkishChars(
+                            _getTransactionCategoryText(transaction.category))),
+                        _buildTableCell(
+                            _convertTurkishChars(transaction.description)),
+                        _buildTableCellWithColor(
+                            debitAmount != 0
+                                ? NumberFormat('#,##0.00', 'tr_TR')
+                                    .format(debitAmount)
+                                : '',
+                            PdfColors.red,
+                            isBold: true),
+                        _buildTableCellWithColor(
+                            creditAmount != 0
+                                ? NumberFormat('#,##0.00', 'tr_TR')
+                                    .format(creditAmount)
+                                : '',
+                            PdfColors.green,
+                            isBold: true),
+                        _buildTableCellWithColor(
+                            NumberFormat('#,##0.00', 'tr_TR')
+                                .format(transaction.balanceAfter),
+                            PdfColors.black,
+                            isBold: true),
+                      ],
+                    );
+                  }),
                 ],
               ),
             ];
@@ -658,6 +1056,21 @@ class PdfExportService {
         style: pw.TextStyle(
           fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
           fontSize: isHeader ? 10 : 9,
+        ),
+      ),
+    );
+  }
+
+  static pw.Widget _buildTableCellWithColor(String text, PdfColor color,
+      {bool isBold = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(5),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          fontSize: 9,
+          color: color,
+          fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
         ),
       ),
     );
