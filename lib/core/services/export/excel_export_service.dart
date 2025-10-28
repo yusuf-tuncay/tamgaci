@@ -43,8 +43,8 @@ class ExcelExportService {
       _buildHeader(sheet, company, user);
 
       // Bilgiler bölümü (PDF'deki gibi iki sütunlu)
-      _buildInfoSection(sheet, account, company, user, transactions, 
-          startDate, endDate, transactionType, transactionCategory, searchQuery);
+      _buildInfoSection(sheet, account, company, user, transactions, startDate,
+          endDate, transactionType, transactionCategory, searchQuery);
 
       // Ekstre tablosu
       _buildStatementTable(sheet, account, transactions);
@@ -89,14 +89,20 @@ class ExcelExportService {
     sheet.appendRow(['']);
   }
 
-  static void _buildInfoSection(Sheet sheet, Account account, Company? company, 
-      User? user, List<AccountTransaction> transactions, DateTime? startDate, 
-      DateTime? endDate, TransactionType? transactionType, 
-      TransactionCategory? transactionCategory, String? searchQuery) {
-    
+  static void _buildInfoSection(
+      Sheet sheet,
+      Account account,
+      Company? company,
+      User? user,
+      List<AccountTransaction> transactions,
+      DateTime? startDate,
+      DateTime? endDate,
+      TransactionType? transactionType,
+      TransactionCategory? transactionCategory,
+      String? searchQuery) {
     // Sol sütun - Şirket bilgileri + Rapor bilgileri + Kullanıcı adı
     final leftColumn = <String>[];
-    
+
     // Şirket bilgileri
     if (company != null) {
       leftColumn.addAll([
@@ -108,23 +114,23 @@ class ExcelExportService {
         '', // Boş satır
       ]);
     }
-    
+
     // Kullanıcı adı (Web Sitesi altına)
     if (user != null) {
       leftColumn.add('Kullanıcı: ${user.name} ${user.surname}');
       leftColumn.add(''); // Boş satır
     }
-    
+
     // Rapor bilgileri
     leftColumn.addAll([
       'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}',
       'Rapor Türü: Hesap Ekstresi',
       'Toplam İşlem: ${transactions.length} adet',
     ]);
-    
+
     // Sağ sütun - Filtreleme bilgileri + Hesap bilgileri
     final rightColumn = <String>[];
-    
+
     // Filtreleme bilgileri
     rightColumn.addAll([
       'Tarih Aralığı: ${startDate != null && endDate != null ? '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}' : 'Tüm tarihler'}',
@@ -133,7 +139,7 @@ class ExcelExportService {
       'Arama: ${searchQuery != null && searchQuery.isNotEmpty ? searchQuery : 'Arama yapılmadı'}',
       '', // Boş satır
     ]);
-    
+
     // Hesap bilgileri
     rightColumn.addAll([
       'Hesap Adı: ${account.name}',
@@ -141,7 +147,7 @@ class ExcelExportService {
       'Para Birimi: ${account.currency}',
       'Mevcut Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}',
     ]);
-    
+
     // İki sütunlu düzenleme
     final maxRows = math.max(leftColumn.length, rightColumn.length);
     for (int i = 0; i < maxRows; i++) {
@@ -149,36 +155,35 @@ class ExcelExportService {
       final rightValue = i < rightColumn.length ? rightColumn[i] : '';
       sheet.appendRow([leftValue, '', '', rightValue]);
     }
-    
+
     // Boş satır
     sheet.appendRow(['']);
   }
 
-  static void _buildStatementTable(Sheet sheet, Account account, List<AccountTransaction> transactions) {
+  static void _buildStatementTable(
+      Sheet sheet, Account account, List<AccountTransaction> transactions) {
     // Başlık satırı
     final headerRow = [
-      'Tarih',
-      'Saat', 
-      'Kategori',
-      'Açıklama',
-      'Borç',
-      'Alacak',
-      'Bakiye'
+      '📅 Tarih',
+      '🕐 Saat', 
+      '📂 Kategori',
+      '📝 Açıklama',
+      '🔴 Borç',
+      '🟢 Alacak',
+      '⚫ Bakiye'
     ];
     sheet.appendRow(headerRow);
-    
-    // Başlık satırı eklendi, stil ayarları Excel kütüphanesi tarafından desteklenmiyor
-    
+
     // İşlemleri en yeni olan en alta gelecek şekilde sırala
     final sortedTransactions = List<AccountTransaction>.from(transactions)
       ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
-    
+
     // İşlemleri ekle
     for (final transaction in sortedTransactions) {
       // Borç/Alacak hesaplama
       double debitAmount = 0.0;
       double creditAmount = 0.0;
-      
+
       switch (transaction.type) {
         case TransactionType.income:
           creditAmount = transaction.amount;
@@ -202,17 +207,22 @@ class ExcelExportService {
           }
           break;
       }
+
+      // Renk kodları ile birlikte değerler
+      final debitText = debitAmount != 0 ? '🔴 ${NumberFormat('#,##0.00', 'tr_TR').format(debitAmount)}' : '';
+      final creditText = creditAmount != 0 ? '🟢 ${NumberFormat('#,##0.00', 'tr_TR').format(creditAmount)}' : '';
+      final balanceText = '⚫ ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)}';
       
       final row = [
         DateFormat('dd.MM.yyyy').format(transaction.transactionDate),
         DateFormat('HH:mm').format(transaction.transactionDate),
         _getTransactionCategoryText(transaction.category),
         transaction.description,
-        debitAmount != 0 ? NumberFormat('#,##0.00', 'tr_TR').format(debitAmount) : '',
-        creditAmount != 0 ? NumberFormat('#,##0.00', 'tr_TR').format(creditAmount) : '',
-        NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter),
+        debitText,
+        creditText,
+        balanceText,
       ];
-      
+
       sheet.appendRow(row);
     }
   }
@@ -221,45 +231,46 @@ class ExcelExportService {
     // Boş satırlar
     sheet.appendRow(['']);
     sheet.appendRow(['']);
-    
+
     // Footer - TAMGACI branding
-    sheet.appendRow(['TAMGACI', 'Muhasebe ve İş Yönetim Sistemi', '', '', '', '', '1/1']);
+    sheet.appendRow(
+        ['TAMGACI', 'Muhasebe ve İş Yönetim Sistemi', '', '', '', '', '1/1']);
   }
 
   static String _saveForWeb(Uint8List bytes, String fileName) {
-    final uint8List = Uint8List.fromList(bytes);
-    final blob = web.Blob([uint8List.buffer.toJS].toJS);
-    final url = web.URL.createObjectURL(blob);
+        final uint8List = Uint8List.fromList(bytes);
+        final blob = web.Blob([uint8List.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
 
-    final anchor = web.HTMLAnchorElement()
-      ..href = url
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
       ..download = fileName
-      ..style.display = 'none';
+          ..style.display = 'none';
 
-    web.document.body?.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
 
-    web.URL.revokeObjectURL(url);
+        web.URL.revokeObjectURL(url);
 
     debugPrint('Excel export: Web indirme başlatıldı - $fileName');
     return 'Web indirme başlatıldı: $fileName';
   }
 
   static Future<String> _saveForMobile(Uint8List bytes, String fileName) async {
-    final directory = await getDownloadsDirectory();
-    if (directory == null) {
-      throw Exception('Downloads klasörü bulunamadı');
-    }
+        final directory = await getDownloadsDirectory();
+        if (directory == null) {
+          throw Exception('Downloads klasörü bulunamadı');
+        }
 
     final filePath = path.join(directory.path, fileName);
-    final file = File(filePath);
-    await file.writeAsBytes(bytes);
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
 
-    debugPrint('Excel export: Dosya kaydedildi - $filePath');
-    debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
+        debugPrint('Excel export: Dosya kaydedildi - $filePath');
+        debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
 
-    return filePath;
+        return filePath;
   }
 
   static String _getAccountTypeText(AccountType type) {
