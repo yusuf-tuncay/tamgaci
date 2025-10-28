@@ -18,20 +18,27 @@ class PdfExportService {
   static pw.MemoryImage? _cachedLogo;
   static pw.MemoryImage? _cachedCompanyLogo;
 
+  // Cache temizleme fonksiyonu
+  static void clearCache() {
+    _cachedLogo = null;
+    _cachedCompanyLogo = null;
+    debugPrint('PDF logo cache temizlendi');
+  }
+
   // TAMGACI logosu yükleme fonksiyonu - fallback mekanizması ile
   static Future<void> _ensureLogoLoaded() async {
     if (_cachedLogo != null) {
-      debugPrint('TAMGACI logosu zaten yüklü');
+      debugPrint('TAMGACI logosu zaten yüklü - tip: ${_cachedLogo!.runtimeType}');
       return;
     }
 
     // Logo dosya yolları - öncelik sırasına göre
     final List<String> logoPaths = [
       'assets/images/logos/TAMGACI256X256.png', // Ana logo - 256x256
-      'assets/images/logos/512x512logo.png',    // Alternatif 1
-      'assets/images/logos/192x192logo.png',    // Alternatif 2
-      'assets/images/logos/180x180logo.png',    // Alternatif 3
-      'assets/images/logos/160x160logo.png',    // Alternatif 4
+      'assets/images/logos/512x512logo.png', // Alternatif 1
+      'assets/images/logos/192x192logo.png', // Alternatif 2
+      'assets/images/logos/180x180logo.png', // Alternatif 3
+      'assets/images/logos/160x160logo.png', // Alternatif 4
     ];
 
     for (String logoPath in logoPaths) {
@@ -118,7 +125,8 @@ class PdfExportService {
     debugPrint('Transactions count: ${transactions.length}');
 
     try {
-      // Logoları yükle
+      // Cache'i temizle ve logoları yeniden yükle
+      clearCache();
       await _ensureLogoLoaded();
       await _ensureCompanyLogoLoaded(company?.logoUrl);
 
@@ -150,6 +158,22 @@ class PdfExportService {
                             width: 80,
                             height: 80,
                             child: pw.Image(_cachedLogo!),
+                          ),
+                          pw.SizedBox(width: 20),
+                        ] else ...[
+                          pw.Container(
+                            width: 80,
+                            height: 80,
+                            decoration: pw.BoxDecoration(
+                              color: PdfColors.red100,
+                              border: pw.Border.all(color: PdfColors.red),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                'LOGO YOK',
+                                style: pw.TextStyle(fontSize: 8, color: PdfColors.red),
+                              ),
+                            ),
                           ),
                           pw.SizedBox(width: 20),
                         ],
