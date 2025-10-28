@@ -1053,11 +1053,13 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               style: GoogleFonts.poppins(
                 fontSize: 15,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive
-                    ? TamgaciConstants.primaryColor
-                    : (isDark
-                        ? TamgaciConstants.textPrimaryDark
-                        : TamgaciConstants.textPrimary),
+                color: !item.isActive
+                    ? Colors.grey
+                    : (isActive
+                        ? TamgaciConstants.primaryColor
+                        : (isDark
+                            ? TamgaciConstants.textPrimaryDark
+                            : TamgaciConstants.textPrimary)),
               ),
             ),
             trailing: hasSubItems
