@@ -168,8 +168,6 @@ class PdfExportService {
 
       // PDF dosyası oluştur (varsayılan font kullan)
       final pdf = pw.Document();
-
-      // İşlemleri en yeni olan en alta gelecek şekilde sırala
       final sortedTransactions = List<AccountTransaction>.from(transactions)
         ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
 
@@ -249,55 +247,88 @@ class PdfExportService {
               if (companyInfo != null || company != null) ...[
                 pw.Header(
                   level: 1,
-                  child: pw.Row(
-                    children: [
-                      pw.Text(
-                        _convertTurkishChars('Sirket Bilgileri'),
-                        style: pw.TextStyle(
-                          fontSize: 16,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
-                      ),
-                      pw.Spacer(),
-                      if (_cachedCompanyLogo != null) ...[
-                        pw.Container(
-                          width: 50,
-                          height: 50,
-                          child: pw.Image(_cachedCompanyLogo!),
-                        ),
-                      ],
-                    ],
+                  child: pw.Text(
+                    _convertTurkishChars('Sirket Bilgileri'),
+                    style: pw.TextStyle(
+                      fontSize: 16,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
                   ),
                 ),
                 pw.Container(
-                  padding: const pw.EdgeInsets.all(10),
+                  padding: const pw.EdgeInsets.all(15),
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(color: PdfColors.grey300),
-                    borderRadius: pw.BorderRadius.circular(5),
+                    borderRadius: pw.BorderRadius.circular(8),
+                    color: PdfColors.grey50,
                   ),
-                  child: pw.Column(
+                  child: pw.Row(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow(_convertTurkishChars('Sirket Adi:'),
-                          _convertTurkishChars(companyInfo?.name ?? company?.name ?? 'Belirtilmemis')),
-                      _buildInfoRow(_convertTurkishChars('Vergi No:'),
-                          _convertTurkishChars(companyInfo?.taxNumber ?? user?.taxId ?? 'Belirtilmemis')),
-                      _buildInfoRow(
-                          _convertTurkishChars('Adres:'),
-                          _convertTurkishChars(
-                              companyInfo?.address ?? company?.address ?? 'Belirtilmemis')),
-                      _buildInfoRow(
-                          _convertTurkishChars('Telefon:'),
-                          _convertTurkishChars(
-                              companyInfo?.phone ?? company?.phone ?? 'Belirtilmemis')),
-                      _buildInfoRow(
-                          _convertTurkishChars('E-posta:'),
-                          _convertTurkishChars(
-                              companyInfo?.email ?? company?.email ?? 'Belirtilmemis')),
-                      _buildInfoRow(
-                          _convertTurkishChars('Web Sitesi:'),
-                          _convertTurkishChars(
-                              companyInfo?.website ?? company?.website ?? 'Belirtilmemis')),
+                      // Sol taraf - Şirket bilgileri
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            _buildInfoRow(
+                                _convertTurkishChars('Sirket Adi:'),
+                                _convertTurkishChars(companyInfo?.name ??
+                                    company?.name ??
+                                    'Belirtilmemis')),
+                            _buildInfoRow(
+                                _convertTurkishChars('Vergi No:'),
+                                _convertTurkishChars(companyInfo?.taxNumber ??
+                                    user?.taxId ??
+                                    'Belirtilmemis')),
+                            _buildInfoRow(
+                                _convertTurkishChars('Adres:'),
+                                _convertTurkishChars(companyInfo?.address ??
+                                    company?.address ??
+                                    'Belirtilmemis')),
+                            _buildInfoRow(
+                                _convertTurkishChars('Telefon:'),
+                                _convertTurkishChars(companyInfo?.phone ??
+                                    company?.phone ??
+                                    'Belirtilmemis')),
+                            _buildInfoRow(
+                                _convertTurkishChars('E-posta:'),
+                                _convertTurkishChars(companyInfo?.email ??
+                                    company?.email ??
+                                    'Belirtilmemis')),
+                            _buildInfoRow(
+                                _convertTurkishChars('Web Sitesi:'),
+                                _convertTurkishChars(companyInfo?.website ??
+                                    company?.website ??
+                                    'Belirtilmemis')),
+                          ],
+                        ),
+                      ),
+                      // Sağ taraf - Firma logosu
+                      pw.SizedBox(width: 20),
+                      pw.Container(
+                        width: 80,
+                        height: 80,
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.grey300),
+                          borderRadius: pw.BorderRadius.circular(8),
+                          color: PdfColors.white,
+                        ),
+                        child: _cachedCompanyLogo != null
+                            ? pw.Image(
+                                _cachedCompanyLogo!,
+                                fit: pw.BoxFit.contain,
+                              )
+                            : pw.Center(
+                                child: pw.Text(
+                                  _convertTurkishChars('LOGO'),
+                                  style: pw.TextStyle(
+                                    fontSize: 10,
+                                    color: PdfColors.grey500,
+                                  ),
+                                ),
+                              ),
+                      ),
                     ],
                   ),
                 ),
