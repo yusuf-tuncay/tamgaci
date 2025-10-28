@@ -21,16 +21,23 @@ class PdfExportService {
 
   // TAMGACI logosu yükleme fonksiyonu
   static Future<void> _ensureLogoLoaded() async {
-    if (_cachedLogo != null) return;
+    if (_cachedLogo != null) {
+      debugPrint('TAMGACI logosu zaten yüklü');
+      return;
+    }
 
     try {
+      debugPrint('TAMGACI logosu yükleniyor...');
       // Logo dosyasını yükle
       final logoData =
           await rootBundle.load('assets/images/logos/180x180logo.png');
       final logoBytes = logoData.buffer.asUint8List();
 
+      debugPrint(
+          'TAMGACI logo dosyası yüklendi, boyut: ${logoBytes.length} byte');
+
       _cachedLogo = pw.MemoryImage(logoBytes);
-      debugPrint('TAMGACI logosu başarıyla yüklendi');
+      debugPrint('TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü');
     } catch (e) {
       debugPrint('TAMGACI logo yükleme hatası: $e');
       _cachedLogo = null;
@@ -128,6 +135,23 @@ class PdfExportService {
                             width: 60,
                             height: 60,
                             child: pw.Image(_cachedLogo!),
+                          ),
+                          pw.SizedBox(width: 15),
+                        ] else ...[
+                          // Debug için logo yoksa placeholder göster
+                          pw.Container(
+                            width: 60,
+                            height: 60,
+                            decoration: pw.BoxDecoration(
+                              color: PdfColors.red100,
+                              border: pw.Border.all(color: PdfColors.red),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                'LOGO YOK',
+                                style: const pw.TextStyle(fontSize: 8),
+                              ),
+                            ),
                           ),
                           pw.SizedBox(width: 15),
                         ],
