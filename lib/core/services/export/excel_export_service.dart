@@ -84,7 +84,7 @@ class ExcelExportService {
   static void _buildHeader(Sheet sheet, Company? company, User? user) {
     // TAMGACI başlığı (küçük ve üstte)
     sheet.appendRow(['TAMGACI', 'Muhasebe ve İş Yönetim Sistemi']);
-    
+
     // Boş satır
     sheet.appendRow(['']);
   }
@@ -107,10 +107,10 @@ class ExcelExportService {
     if (company != null) {
       leftColumn.addAll([
         'Şirket Adı: ${company.name}',
-        'Adres: ${company.address ?? 'Belirtilmemiş'}',
-        'Telefon: ${company.phone ?? 'Belirtilmemiş'}',
-        'E-posta: ${company.email ?? 'Belirtilmemiş'}',
-        'Web Sitesi: ${company.website ?? 'Belirtilmemiş'}',
+        if (company.address != null && company.address!.isNotEmpty) 'Adres: ${company.address}',
+        if (company.phone != null && company.phone!.isNotEmpty) 'Telefon: ${company.phone}',
+        if (company.email != null && company.email!.isNotEmpty) 'E-posta: ${company.email}',
+        if (company.website != null && company.website!.isNotEmpty) 'Web Sitesi: ${company.website}',
         '', // Boş satır
       ]);
     }
@@ -165,14 +165,25 @@ class ExcelExportService {
     // Başlık satırı
     final headerRow = [
       '📅 Tarih',
-      '🕐 Saat', 
+      '🕐 Saat',
       '📂 Kategori',
       '📝 Açıklama',
       '🔴 Borç',
       '🟢 Alacak',
       '⚫ Bakiye'
     ];
-    sheet.appendRow(headerRow);
+    final headerRowObj = sheet.appendRow(headerRow);
+    
+    // Başlık satırı renklendirmesi
+    final headerStyle = CellStyle(
+      backgroundColorHex: '#4472C4', // Mavi arka plan
+      fontColorHex: '#FFFFFF', // Beyaz yazı
+      bold: true,
+    );
+    
+    for (int i = 0; i < headerRow.length; i++) {
+      headerRowObj.cells[i].cellStyle = headerStyle;
+    }
 
     // İşlemleri en yeni olan en alta gelecek şekilde sırala
     final sortedTransactions = List<AccountTransaction>.from(transactions)
@@ -208,22 +219,44 @@ class ExcelExportService {
           break;
       }
 
-      // Renk kodları ile birlikte değerler
-      final debitText = debitAmount != 0 ? '🔴 ${NumberFormat('#,##0.00', 'tr_TR').format(debitAmount)}' : '';
-      final creditText = creditAmount != 0 ? '🟢 ${NumberFormat('#,##0.00', 'tr_TR').format(creditAmount)}' : '';
-      final balanceText = '⚫ ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)}';
-      
       final row = [
         DateFormat('dd.MM.yyyy').format(transaction.transactionDate),
         DateFormat('HH:mm').format(transaction.transactionDate),
         _getTransactionCategoryText(transaction.category),
         transaction.description,
-        debitText,
-        creditText,
-        balanceText,
+        debitAmount != 0
+            ? NumberFormat('#,##0.00', 'tr_TR').format(debitAmount)
+            : '',
+        creditAmount != 0
+            ? NumberFormat('#,##0.00', 'tr_TR').format(creditAmount)
+            : '',
+        NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter),
       ];
 
-      sheet.appendRow(row);
+      final rowObj = sheet.appendRow(row);
+      
+      // Hücre renklendirmesi
+      if (debitAmount != 0) {
+        // Borç sütunu - kırmızı arka plan
+        rowObj.cells[4].cellStyle = CellStyle(
+          backgroundColorHex: '#FFE6E6', // Açık kırmızı
+          bold: true,
+        );
+      }
+      
+      if (creditAmount != 0) {
+        // Alacak sütunu - yeşil arka plan
+        rowObj.cells[5].cellStyle = CellStyle(
+          backgroundColorHex: '#E6FFE6', // Açık yeşil
+          bold: true,
+        );
+      }
+      
+      // Bakiye sütunu - gri arka plan
+      rowObj.cells[6].cellStyle = CellStyle(
+        backgroundColorHex: '#F5F5F5', // Açık gri
+        bold: true,
+      );
     }
   }
 
