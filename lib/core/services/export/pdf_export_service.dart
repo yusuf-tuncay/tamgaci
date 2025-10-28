@@ -176,336 +176,324 @@ class PdfExportService {
         pw.MultiPage(
           pageFormat: PdfPageFormat.a4,
           margin: const pw.EdgeInsets.all(20),
-          build: (pw.Context context) {
-            return [
-              // Kurumsal başlık
-              pw.Header(
-                level: 0,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    // TAMGACI logosu sol üst köşede
-                    pw.Row(
-                      children: [
-                        if (_cachedLogo != null) ...[
-                          pw.Container(
-                            width: 80,
-                            height: 80,
-                            child: pw.Image(_cachedLogo!),
+          footer: (pw.Context context) {
+            return pw.Container(
+              padding: const pw.EdgeInsets.all(10),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  // Sol taraf: TAMGACI branding
+                  pw.Row(
+                    children: [
+                      if (_cachedLogo != null) ...[
+                        pw.Container(
+                          width: 20,
+                          height: 20,
+                          child: pw.Image(_cachedLogo!),
+                        ),
+                        pw.SizedBox(width: 8),
+                      ] else ...[
+                        pw.Container(
+                          width: 20,
+                          height: 20,
+                          decoration: pw.BoxDecoration(
+                            color: PdfColors.red100,
+                            border: pw.Border.all(color: PdfColors.red),
                           ),
-                          pw.SizedBox(width: 20),
-                        ] else ...[
-                          pw.Container(
-                            width: 80,
-                            height: 80,
-                            decoration: pw.BoxDecoration(
-                              color: PdfColors.red100,
-                              border: pw.Border.all(color: PdfColors.red),
+                          child: pw.Center(
+                            child: pw.Text(
+                              'LOGO YOK',
+                              style: const pw.TextStyle(
+                                  fontSize: 5, color: PdfColors.red),
                             ),
-                            child: pw.Center(
-                              child: pw.Text(
-                                'LOGO YOK',
-                                style: const pw.TextStyle(
-                                    fontSize: 8, color: PdfColors.red),
-                              ),
-                            ),
-                          ),
-                          pw.SizedBox(width: 20),
-                        ],
-                        pw.Expanded(
-                          child: pw.Column(
-                            crossAxisAlignment: pw.CrossAxisAlignment.start,
-                            children: [
-                              pw.Text(
-                                _convertTurkishChars('TAMGACI'),
-                                style: pw.TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: pw.FontWeight.bold,
-                                  color: PdfColors.blue800,
-                                ),
-                              ),
-                              pw.SizedBox(height: 8),
-                              pw.Text(
-                                _convertTurkishChars(
-                                    'Muhasebe ve Finans Yonetim Sistemi'),
-                                style: const pw.TextStyle(
-                                  fontSize: 16,
-                                  color: PdfColors.grey700,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
+                        pw.SizedBox(width: 8),
                       ],
-                    ),
-                    pw.SizedBox(height: 25),
-                  ],
-                ),
-              ),
-
-              // Şirket bilgileri
-              if (companyInfo != null || company != null) ...[
-                pw.Header(
-                  level: 1,
-                  child: pw.Text(
-                    _convertTurkishChars('Sirket Bilgileri'),
-                    style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
+                      pw.Text(
+                        _convertTurkishChars('TAMGACI'),
+                        style: pw.TextStyle(
+                          fontSize: 8,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blue800,
+                        ),
+                      ),
+                      pw.SizedBox(width: 6),
+                      pw.Text(
+                        _convertTurkishChars('Muhasebe ve İş Yönetim Sistemi'),
+                        style: const pw.TextStyle(
+                          fontSize: 6,
+                          color: PdfColors.grey600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  // Sağ taraf: Sayfa numarası
+                  pw.Text(
+                    '${context.pageNumber}/${context.pagesCount}',
+                    style: const pw.TextStyle(
+                      fontSize: 8,
+                      color: PdfColors.grey600,
                     ),
                   ),
-                ),
+                ],
+              ),
+            );
+          },
+          build: (pw.Context context) {
+            return [
+              // Birleştirilmiş Şirket ve Kullanıcı bilgileri
+              if (companyInfo != null || company != null || user != null) ...[
                 pw.Container(
-                  padding: const pw.EdgeInsets.all(15),
+                  padding: const pw.EdgeInsets.all(12),
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(color: PdfColors.grey300),
                     borderRadius: pw.BorderRadius.circular(8),
                     color: PdfColors.grey50,
                   ),
-                  child: pw.Row(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      // Sol taraf - Şirket bilgileri
-                      pw.Expanded(
-                        flex: 2,
-                        child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            _buildInfoRow(
-                                _convertTurkishChars('Sirket Adi:'),
-                                _convertTurkishChars(companyInfo?.name ??
-                                    company?.name ??
-                                    'Belirtilmemis')),
-                            _buildInfoRow(
-                                _convertTurkishChars('Vergi No:'),
-                                _convertTurkishChars(companyInfo?.taxNumber ??
-                                    user?.taxId ??
-                                    'Belirtilmemis')),
-                            _buildInfoRow(
-                                _convertTurkishChars('Adres:'),
-                                _convertTurkishChars(companyInfo?.address ??
-                                    company?.address ??
-                                    'Belirtilmemis')),
-                            _buildInfoRow(
-                                _convertTurkishChars('Telefon:'),
-                                _convertTurkishChars(companyInfo?.phone ??
-                                    company?.phone ??
-                                    'Belirtilmemis')),
-                            _buildInfoRow(
-                                _convertTurkishChars('E-posta:'),
-                                _convertTurkishChars(companyInfo?.email ??
-                                    company?.email ??
-                                    'Belirtilmemis')),
-                            _buildInfoRow(
-                                _convertTurkishChars('Web Sitesi:'),
-                                _convertTurkishChars(companyInfo?.website ??
-                                    company?.website ??
-                                    'Belirtilmemis')),
-                          ],
-                        ),
-                      ),
-                      // Sağ taraf - Firma logosu
-                      pw.SizedBox(width: 20),
-                      pw.Container(
-                        width: 80,
-                        height: 80,
-                        decoration: pw.BoxDecoration(
-                          border: pw.Border.all(color: PdfColors.grey300),
-                          borderRadius: pw.BorderRadius.circular(8),
-                          color: PdfColors.white,
-                        ),
-                        child: _cachedCompanyLogo != null
-                            ? pw.Image(
-                                _cachedCompanyLogo!,
-                                fit: pw.BoxFit.contain,
-                              )
-                            : pw.Center(
-                                child: pw.Text(
-                                  _convertTurkishChars('LOGO'),
-                                  style: pw.TextStyle(
-                                    fontSize: 10,
-                                    color: PdfColors.grey500,
-                                  ),
-                                ),
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
-                pw.SizedBox(height: 15),
-              ],
-
-              // Kullanıcı bilgileri
-              if (user != null) ...[
-                pw.Header(
-                  level: 1,
-                  child: pw.Text(
-                    _convertTurkishChars('Kullanici Bilgileri'),
-                    style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                ),
-                pw.Container(
-                  padding: const pw.EdgeInsets.all(10),
-                  decoration: pw.BoxDecoration(
-                    border: pw.Border.all(color: PdfColors.grey300),
-                    borderRadius: pw.BorderRadius.circular(5),
-                  ),
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow(_convertTurkishChars('Kullanici Adi:'),
-                          _convertTurkishChars('${user.name} ${user.surname}')),
-                      _buildInfoRow(_convertTurkishChars('E-posta:'),
-                          _convertTurkishChars(user.email)),
-                      _buildInfoRow(_convertTurkishChars('Telefon:'),
-                          _convertTurkishChars(user.phone ?? 'Belirtilmemis')),
-                      _buildInfoRow(
-                          _convertTurkishChars('Adres:'),
-                          _convertTurkishChars(
-                              user.address ?? 'Belirtilmemis')),
-                      _buildInfoRow(_convertTurkishChars('Vergi No:'),
-                          _convertTurkishChars(user.taxId ?? 'Belirtilmemis')),
-                      _buildInfoRow(
-                          _convertTurkishChars('Vergi Dairesi:'),
-                          _convertTurkishChars(
-                              user.taxOffice ?? 'Belirtilmemis')),
-                      _buildInfoRow(
-                          _convertTurkishChars('Fatura Adresi:'),
-                          _convertTurkishChars(
-                              user.billingAddress ?? 'Belirtilmemis')),
-                      _buildInfoRow(_convertTurkishChars('Kayit Tarihi:'),
-                          DateFormat('dd.MM.yyyy').format(user.createdAt)),
+                      // Üst kısım: Firma logosu ve adı
+                      if (companyInfo != null || company != null) ...[
+                        pw.Row(
+                          children: [
+                            // Firma logosu (küçük)
+                            if (_cachedCompanyLogo != null)
+                              pw.Container(
+                                width: 40,
+                                height: 40,
+                                decoration: pw.BoxDecoration(
+                                  border:
+                                      pw.Border.all(color: PdfColors.grey300),
+                                  borderRadius: pw.BorderRadius.circular(6),
+                                  color: PdfColors.white,
+                                ),
+                                child: pw.Image(
+                                  _cachedCompanyLogo!,
+                                  fit: pw.BoxFit.contain,
+                                ),
+                              )
+                            else
+                              pw.Container(
+                                width: 40,
+                                height: 40,
+                                decoration: pw.BoxDecoration(
+                                  border:
+                                      pw.Border.all(color: PdfColors.grey300),
+                                  borderRadius: pw.BorderRadius.circular(6),
+                                  color: PdfColors.grey100,
+                                ),
+                                child: pw.Center(
+                                  child: pw.Text(
+                                    _convertTurkishChars('LOGO'),
+                                    style: const pw.TextStyle(
+                                      fontSize: 8,
+                                      color: PdfColors.grey500,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            pw.SizedBox(width: 10),
+                            // Firma adı
+                            pw.Text(
+                              _convertTurkishChars(
+                                  companyInfo?.name ?? company?.name ?? ''),
+                              style: pw.TextStyle(
+                                fontSize: 14,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.blue800,
+                              ),
+                            ),
+                          ],
+                        ),
+                        pw.SizedBox(height: 15),
+                      ],
+                      // Alt kısım: İki sütunlu bilgiler
+                      pw.Row(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          // Sol sütun: Şirket bilgileri + Rapor bilgileri + Kullanıcı adı
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                // Şirket bilgileri
+                                if (companyInfo != null || company != null) ...[
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Vergi No:'),
+                                      _convertTurkishChars([
+                                        (companyInfo?.taxNumber ??
+                                            user?.taxId ??
+                                            'Belirtilmemis'),
+                                        if ((companyInfo?.taxOffice ??
+                                                    user?.taxOffice) !=
+                                                null &&
+                                            (companyInfo?.taxOffice ??
+                                                    user?.taxOffice)!
+                                                .isNotEmpty)
+                                          '(${(companyInfo?.taxOffice ?? user?.taxOffice)})',
+                                      ].join(' '))),
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Adres:'),
+                                      _convertTurkishChars(
+                                          (companyInfo != null &&
+                                                  companyInfo
+                                                      .fullAddress.isNotEmpty)
+                                              ? companyInfo.fullAddress
+                                              : (company?.address ??
+                                                  'Belirtilmemis'))),
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Telefon:'),
+                                      _convertTurkishChars(companyInfo?.phone ??
+                                          company?.phone ??
+                                          'Belirtilmemis')),
+                                  _buildInfoRow(
+                                      _convertTurkishChars('E-posta:'),
+                                      _convertTurkishChars(companyInfo?.email ??
+                                          company?.email ??
+                                          'Belirtilmemis')),
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Web Sitesi:'),
+                                      _convertTurkishChars(
+                                          companyInfo?.website ??
+                                              company?.website ??
+                                              'Belirtilmemis')),
+                                ],
+                                // Rapor bilgileri
+                                pw.SizedBox(height: 10),
+                                pw.Text(
+                                  _convertTurkishChars('Rapor Bilgileri'),
+                                  style: pw.TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: PdfColors.blue700,
+                                  ),
+                                ),
+                                pw.SizedBox(height: 5),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Rapor Tarihi:'),
+                                    DateFormat('dd.MM.yyyy HH:mm')
+                                        .format(DateTime.now())),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Rapor Turu:'),
+                                    _convertTurkishChars(
+                                        'Hesap Hareketleri Raporu')),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Toplam Islem:'),
+                                    '${transactions.length} adet'),
+                                // Kullanıcı adı
+                                if (user != null) ...[
+                                  pw.SizedBox(height: 10),
+                                  pw.Text(
+                                    _convertTurkishChars('Kullanici Bilgileri'),
+                                    style: pw.TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: PdfColors.blue700,
+                                    ),
+                                  ),
+                                  pw.SizedBox(height: 5),
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Kullanici Adi:'),
+                                      _convertTurkishChars(
+                                          '${user.name} ${user.surname}')),
+                                ],
+                              ],
+                            ),
+                          ),
+                          pw.SizedBox(width: 20),
+                          // Sağ sütun: Filtreleme + Hesap bilgileri
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                // Filtreleme bilgileri
+                                pw.Text(
+                                  _convertTurkishChars('Filtreleme Bilgileri'),
+                                  style: pw.TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: PdfColors.blue700,
+                                  ),
+                                ),
+                                pw.SizedBox(height: 5),
+                                if (startDate != null && endDate != null)
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Tarih Araligi:'),
+                                      '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}')
+                                else
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Tarih Araligi:'),
+                                      _convertTurkishChars('Tum tarihler')),
+                                if (transactionType != null)
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Islem Turu:'),
+                                      _convertTurkishChars(
+                                          _getTransactionTypeText(
+                                              transactionType)))
+                                else
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Islem Turu:'),
+                                      _convertTurkishChars(
+                                          'Tum islem turleri')),
+                                if (transactionCategory != null)
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Kategori:'),
+                                      _convertTurkishChars(
+                                          _getTransactionCategoryText(
+                                              transactionCategory)))
+                                else
+                                  _buildInfoRow(
+                                      _convertTurkishChars('Kategori:'),
+                                      _convertTurkishChars('Tum kategoriler')),
+                                if (searchQuery != null &&
+                                    searchQuery.isNotEmpty)
+                                  _buildInfoRow(_convertTurkishChars('Arama:'),
+                                      _convertTurkishChars(searchQuery))
+                                else
+                                  _buildInfoRow(_convertTurkishChars('Arama:'),
+                                      _convertTurkishChars('Arama yapilmadi')),
+                                // Hesap bilgileri
+                                pw.SizedBox(height: 10),
+                                pw.Text(
+                                  _convertTurkishChars('Hesap Bilgileri'),
+                                  style: pw.TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: PdfColors.blue700,
+                                  ),
+                                ),
+                                pw.SizedBox(height: 5),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Hesap Adi:'),
+                                    _convertTurkishChars(account.name)),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Hesap Turu:'),
+                                    _convertTurkishChars(
+                                        _getAccountTypeText(account.type))),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Para Birimi:'),
+                                    account.currency),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Mevcut Bakiye:'),
+                                    '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'),
+                                _buildInfoRow(
+                                    _convertTurkishChars('Olusturulma Tarihi:'),
+                                    DateFormat('dd.MM.yyyy HH:mm')
+                                        .format(account.createdAt)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
                 pw.SizedBox(height: 15),
               ],
-
-              // Rapor bilgileri
-              pw.Header(
-                level: 1,
-                child: pw.Text(
-                  _convertTurkishChars('Rapor Bilgileri'),
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.Container(
-                padding: const pw.EdgeInsets.all(10),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: pw.BorderRadius.circular(5),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoRow(_convertTurkishChars('Rapor Tarihi:'),
-                        DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())),
-                    _buildInfoRow(_convertTurkishChars('Rapor Turu:'),
-                        _convertTurkishChars('Hesap Hareketleri Raporu')),
-                    _buildInfoRow(_convertTurkishChars('Toplam Islem:'),
-                        '${transactions.length} adet'),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 15),
-
-              // Filtreleme bilgileri
-              pw.Header(
-                level: 1,
-                child: pw.Text(
-                  _convertTurkishChars('Filtreleme Bilgileri'),
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.Container(
-                padding: const pw.EdgeInsets.all(10),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: pw.BorderRadius.circular(5),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    if (startDate != null && endDate != null)
-                      _buildInfoRow(_convertTurkishChars('Tarih Araligi:'),
-                          '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}')
-                    else
-                      _buildInfoRow(_convertTurkishChars('Tarih Araligi:'),
-                          _convertTurkishChars('Tum tarihler')),
-                    if (transactionType != null)
-                      _buildInfoRow(
-                          _convertTurkishChars('Islem Turu:'),
-                          _convertTurkishChars(
-                              _getTransactionTypeText(transactionType)))
-                    else
-                      _buildInfoRow(_convertTurkishChars('Islem Turu:'),
-                          _convertTurkishChars('Tum islem turleri')),
-                    if (transactionCategory != null)
-                      _buildInfoRow(
-                          _convertTurkishChars('Kategori:'),
-                          _convertTurkishChars(
-                              _getTransactionCategoryText(transactionCategory)))
-                    else
-                      _buildInfoRow(_convertTurkishChars('Kategori:'),
-                          _convertTurkishChars('Tum kategoriler')),
-                    if (searchQuery != null && searchQuery.isNotEmpty)
-                      _buildInfoRow(_convertTurkishChars('Arama:'),
-                          _convertTurkishChars(searchQuery))
-                    else
-                      _buildInfoRow(_convertTurkishChars('Arama:'),
-                          _convertTurkishChars('Arama yapilmadi')),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 15),
-
-              // Hesap bilgileri
-              pw.Header(
-                level: 1,
-                child: pw.Text(
-                  _convertTurkishChars('Hesap Bilgileri'),
-                  style: pw.TextStyle(
-                    fontSize: 16,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
-                ),
-              ),
-              pw.Container(
-                padding: const pw.EdgeInsets.all(10),
-                decoration: pw.BoxDecoration(
-                  border: pw.Border.all(color: PdfColors.grey300),
-                  borderRadius: pw.BorderRadius.circular(5),
-                ),
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    _buildInfoRow(_convertTurkishChars('Hesap Adi:'),
-                        _convertTurkishChars(account.name)),
-                    _buildInfoRow(
-                        _convertTurkishChars('Hesap Turu:'),
-                        _convertTurkishChars(
-                            _getAccountTypeText(account.type))),
-                    _buildInfoRow(
-                        _convertTurkishChars('Para Birimi:'), account.currency),
-                    _buildInfoRow(_convertTurkishChars('Mevcut Bakiye:'),
-                        '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'),
-                    _buildInfoRow(
-                        _convertTurkishChars('Olusturulma Tarihi:'),
-                        DateFormat('dd.MM.yyyy HH:mm')
-                            .format(account.createdAt)),
-                  ],
-                ),
-              ),
-              pw.SizedBox(height: 20),
 
               // İşlemler başlığı
               pw.Header(
@@ -638,18 +626,24 @@ class PdfExportService {
 
   static pw.Widget _buildInfoRow(String label, String value) {
     return pw.Padding(
-      padding: const pw.EdgeInsets.only(bottom: 5),
+      padding: const pw.EdgeInsets.only(bottom: 3),
       child: pw.Row(
         children: [
           pw.SizedBox(
-            width: 120,
+            width: 100,
             child: pw.Text(
               label,
-              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+              style: pw.TextStyle(
+                fontWeight: pw.FontWeight.bold,
+                fontSize: 9,
+              ),
             ),
           ),
           pw.Expanded(
-            child: pw.Text(value),
+            child: pw.Text(
+              value,
+              style: const pw.TextStyle(fontSize: 9),
+            ),
           ),
         ],
       ),
