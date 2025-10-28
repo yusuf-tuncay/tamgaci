@@ -1217,8 +1217,19 @@ class _AccountTransactionsPageState
           'PDF export: ${filteredTransactions.length} işlem export edilecek');
 
       // CompanyInfo'yu al
-      final companyInfo = ref.read(companyInfoStreamProvider).value;
+      final companyInfoAsync = ref.read(companyInfoStreamProvider);
+      final companyInfo = companyInfoAsync.value;
       
+      debugPrint('=== COMPANYINFO DEBUG ===');
+      debugPrint('CompanyInfo async state: ${companyInfoAsync.runtimeType}');
+      debugPrint('CompanyInfo hasValue: ${companyInfoAsync.hasValue}');
+      debugPrint('CompanyInfo hasError: ${companyInfoAsync.hasError}');
+      if (companyInfoAsync.hasError) {
+        debugPrint('CompanyInfo error: ${companyInfoAsync.error}');
+      }
+      debugPrint('CompanyInfo value: ${companyInfo?.name ?? 'NULL'}');
+      debugPrint('=== COMPANYINFO DEBUG BİTTİ ===');
+
       // PDF export servisini çağır
       final filePath = await PdfExportService.exportTransactionsToPdf(
         account: widget.account,
