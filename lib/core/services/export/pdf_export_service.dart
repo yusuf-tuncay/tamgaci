@@ -27,13 +27,15 @@ class PdfExportService {
 
     try {
       debugPrint('TAMGACI logosu yükleniyor...');
-      
+
       // TAMGACI logosunu asset'ten yükle
-      final logoData = await rootBundle.load('assets/images/logos/180x180logo.png');
+      final logoData =
+          await rootBundle.load('assets/images/icons/app_icon.ico');
       final logoBytes = logoData.buffer.asUint8List();
-      
-      debugPrint('TAMGACI logo dosyası yüklendi, boyut: ${logoBytes.length} byte');
-      
+
+      debugPrint(
+          'TAMGACI logo dosyası yüklendi, boyut: ${logoBytes.length} byte');
+
       _cachedLogo = pw.MemoryImage(logoBytes);
       debugPrint('TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü');
     } catch (e) {
