@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -13,6 +12,7 @@ import '../../../features/auth/domain/entities/user.dart';
 import '../../entities/company.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
+import 'package:flutter/services.dart';
 
 class PdfExportService {
   static pw.MemoryImage? _cachedLogo;
@@ -20,9 +20,26 @@ class PdfExportService {
 
   // TAMGACI logosu yükleme fonksiyonu
   static Future<void> _ensureLogoLoaded() async {
-    // Logo yükleme geçici olarak devre dışı - IDAT checksum hatası nedeniyle
-    debugPrint('Logo yükleme geçici olarak devre dışı bırakıldı');
-    _cachedLogo = null;
+    if (_cachedLogo != null) {
+      debugPrint('TAMGACI logosu zaten yüklü');
+      return;
+    }
+
+    try {
+      debugPrint('TAMGACI logosu yükleniyor...');
+      
+      // TAMGACI logosunu asset'ten yükle
+      final logoData = await rootBundle.load('assets/images/logos/180x180logo.png');
+      final logoBytes = logoData.buffer.asUint8List();
+      
+      debugPrint('TAMGACI logo dosyası yüklendi, boyut: ${logoBytes.length} byte');
+      
+      _cachedLogo = pw.MemoryImage(logoBytes);
+      debugPrint('TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü');
+    } catch (e) {
+      debugPrint('TAMGACI logo yükleme hatası: $e');
+      _cachedLogo = null;
+    }
   }
 
   // Şirket logosu yükleme fonksiyonu
@@ -105,45 +122,46 @@ class PdfExportService {
               pw.Header(
                 level: 0,
                 child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    // Logo ve başlık
+                    // TAMGACI logosu sol üst köşede
                     pw.Row(
-                      mainAxisAlignment: pw.MainAxisAlignment.center,
                       children: [
                         if (_cachedLogo != null) ...[
                           pw.Container(
-                            width: 60,
-                            height: 60,
+                            width: 80,
+                            height: 80,
                             child: pw.Image(_cachedLogo!),
                           ),
-                          pw.SizedBox(width: 15),
+                          pw.SizedBox(width: 20),
                         ],
-                        pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.center,
-                          children: [
-                            pw.Text(
-                              _convertTurkishChars('TAMGACI'),
-                              style: pw.TextStyle(
-                                fontSize: 24,
-                                fontWeight: pw.FontWeight.bold,
-                                color: PdfColors.blue800,
+                        pw.Expanded(
+                          child: pw.Column(
+                            crossAxisAlignment: pw.CrossAxisAlignment.start,
+                            children: [
+                              pw.Text(
+                                _convertTurkishChars('TAMGACI'),
+                                style: pw.TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.blue800,
+                                ),
                               ),
-                            ),
-                            pw.SizedBox(height: 5),
-                            pw.Text(
-                              _convertTurkishChars(
-                                  'Muhasebe ve Finans Yonetim Sistemi'),
-                              style: const pw.TextStyle(
-                                fontSize: 14,
-                                color: PdfColors.grey700,
+                              pw.SizedBox(height: 8),
+                              pw.Text(
+                                _convertTurkishChars(
+                                    'Muhasebe ve Finans Yonetim Sistemi'),
+                                style: const pw.TextStyle(
+                                  fontSize: 16,
+                                  color: PdfColors.grey700,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                    pw.SizedBox(height: 20),
+                    pw.SizedBox(height: 25),
                   ],
                 ),
               ),
@@ -154,14 +172,6 @@ class PdfExportService {
                   level: 1,
                   child: pw.Row(
                     children: [
-                      if (_cachedCompanyLogo != null) ...[
-                        pw.Container(
-                          width: 30,
-                          height: 30,
-                          child: pw.Image(_cachedCompanyLogo!),
-                        ),
-                        pw.SizedBox(width: 10),
-                      ],
                       pw.Text(
                         _convertTurkishChars('Sirket Bilgileri'),
                         style: pw.TextStyle(
@@ -169,6 +179,14 @@ class PdfExportService {
                           fontWeight: pw.FontWeight.bold,
                         ),
                       ),
+                      pw.Spacer(),
+                      if (_cachedCompanyLogo != null) ...[
+                        pw.Container(
+                          width: 50,
+                          height: 50,
+                          child: pw.Image(_cachedCompanyLogo!),
+                        ),
+                      ],
                     ],
                   ),
                 ),
