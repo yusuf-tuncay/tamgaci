@@ -36,11 +36,11 @@ class PdfExportService {
     // Logo dosya yolları - öncelik sırasına göre
     final List<String> logoPaths = [
       'assets/images/logos/256x256logorenkli.png', // Ana logo - renkli
-      'assets/images/logos/512x512logo.png',       // Alternatif 1
-      'assets/images/logos/192x192logo.png',       // Alternatif 2
-      'assets/images/logos/180x180logo.png',       // Alternatif 3
-      'assets/images/logos/160x160logo.png',       // Alternatif 4
-      'assets/images/logos/140x140logo.png',       // Alternatif 5
+      'assets/images/logos/512x512logo.png', // Alternatif 1
+      'assets/images/logos/192x192logo.png', // Alternatif 2
+      'assets/images/logos/180x180logo.png', // Alternatif 3
+      'assets/images/logos/160x160logo.png', // Alternatif 4
+      'assets/images/logos/140x140logo.png', // Alternatif 5
     ];
 
     for (String logoPath in logoPaths) {
@@ -250,21 +250,16 @@ class PdfExportService {
                           _convertTurkishChars(user?.taxId ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Adres:'),
-                          _convertTurkishChars(company.address ??
-                              user?.address ??
-                              'Belirtilmemis')),
+                          _convertTurkishChars(company.address ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Telefon:'),
-                          _convertTurkishChars(
-                              company.phone ?? user?.phone ?? 'Belirtilmemis')),
+                          _convertTurkishChars(company.phone ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('E-posta:'),
-                          _convertTurkishChars(
-                              company.email ?? user?.email ?? 'Belirtilmemis')),
+                          _convertTurkishChars(company.email ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Web Sitesi:'),
-                          _convertTurkishChars(
-                              company.website ?? 'Belirtilmemis')),
+                          _convertTurkishChars(company.website ?? 'Belirtilmemis')),
                     ],
                   ),
                 ),
@@ -300,18 +295,15 @@ class PdfExportService {
                           _convertTurkishChars(user.phone ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Adres:'),
-                          _convertTurkishChars(
-                              user.address ?? 'Belirtilmemis')),
+                          _convertTurkishChars(user.address ?? 'Belirtilmemis')),
                       _buildInfoRow(_convertTurkishChars('Vergi No:'),
                           _convertTurkishChars(user.taxId ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Vergi Dairesi:'),
-                          _convertTurkishChars(
-                              user.taxOffice ?? 'Belirtilmemis')),
+                          _convertTurkishChars(user.taxOffice ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Fatura Adresi:'),
-                          _convertTurkishChars(
-                              user.billingAddress ?? 'Belirtilmemis')),
+                          _convertTurkishChars(user.billingAddress ?? 'Belirtilmemis')),
                       _buildInfoRow(_convertTurkishChars('Kayit Tarihi:'),
                           DateFormat('dd.MM.yyyy').format(user.createdAt)),
                     ],
