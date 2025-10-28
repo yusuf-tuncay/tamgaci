@@ -5,6 +5,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
 import '../../../features/accounts/domain/entities/account.dart';
 import '../../../features/accounts/domain/entities/account_transaction.dart';
 import 'package:flutter/foundation.dart';
@@ -16,21 +17,46 @@ import 'package:flutter/services.dart';
 
 class PdfExportService {
   static pw.MemoryImage? _cachedLogo;
+  static pw.MemoryImage? _cachedCompanyLogo;
 
-  // Logo yükleme fonksiyonu
+  // TAMGACI logosu yükleme fonksiyonu
   static Future<void> _ensureLogoLoaded() async {
     if (_cachedLogo != null) return;
 
     try {
       // Logo dosyasını yükle
-      final logoData = await rootBundle.load('assets/images/logos/180x180logo.png');
+      final logoData =
+          await rootBundle.load('assets/images/logos/180x180logo.png');
       final logoBytes = logoData.buffer.asUint8List();
-      
+
       _cachedLogo = pw.MemoryImage(logoBytes);
-      debugPrint('Logo başarıyla yüklendi');
+      debugPrint('TAMGACI logosu başarıyla yüklendi');
     } catch (e) {
-      debugPrint('Logo yükleme hatası: $e');
+      debugPrint('TAMGACI logo yükleme hatası: $e');
       _cachedLogo = null;
+    }
+  }
+
+  // Şirket logosu yükleme fonksiyonu
+  static Future<void> _ensureCompanyLogoLoaded(String? logoUrl) async {
+    if (logoUrl == null || logoUrl.isEmpty) {
+      _cachedCompanyLogo = null;
+      return;
+    }
+
+    try {
+      // HTTP ile şirket logosunu yükle
+      final response = await http.get(Uri.parse(logoUrl));
+      if (response.statusCode == 200) {
+        _cachedCompanyLogo = pw.MemoryImage(response.bodyBytes);
+        debugPrint('Şirket logosu başarıyla yüklendi: $logoUrl');
+      } else {
+        debugPrint('Şirket logosu yüklenemedi: ${response.statusCode}');
+        _cachedCompanyLogo = null;
+      }
+    } catch (e) {
+      debugPrint('Şirket logosu yükleme hatası: $e');
+      _cachedCompanyLogo = null;
     }
   }
 
@@ -69,8 +95,9 @@ class PdfExportService {
     debugPrint('Transactions count: ${transactions.length}');
 
     try {
-      // Logo yükle
+      // Logoları yükle
       await _ensureLogoLoaded();
+      await _ensureCompanyLogoLoaded(company?.logoUrl);
 
       // PDF dosyası oluştur (varsayılan font kullan)
       final pdf = pw.Document();
@@ -137,12 +164,24 @@ class PdfExportService {
               if (company != null) ...[
                 pw.Header(
                   level: 1,
-                  child: pw.Text(
-                    _convertTurkishChars('Sirket Bilgileri'),
-                    style: pw.TextStyle(
-                      fontSize: 16,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
+                  child: pw.Row(
+                    children: [
+                      if (_cachedCompanyLogo != null) ...[
+                        pw.Container(
+                          width: 30,
+                          height: 30,
+                          child: pw.Image(_cachedCompanyLogo!),
+                        ),
+                        pw.SizedBox(width: 10),
+                      ],
+                      pw.Text(
+                        _convertTurkishChars('Sirket Bilgileri'),
+                        style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 pw.Container(
