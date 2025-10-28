@@ -18,30 +18,44 @@ class PdfExportService {
   static pw.MemoryImage? _cachedLogo;
   static pw.MemoryImage? _cachedCompanyLogo;
 
-  // TAMGACI logosu yükleme fonksiyonu
+  // TAMGACI logosu yükleme fonksiyonu - fallback mekanizması ile
   static Future<void> _ensureLogoLoaded() async {
     if (_cachedLogo != null) {
       debugPrint('TAMGACI logosu zaten yüklü');
       return;
     }
 
-    try {
-      debugPrint('TAMGACI logosu yükleniyor...');
+    // Logo dosya yolları - öncelik sırasına göre
+    final List<String> logoPaths = [
+      'assets/images/logos/180x180logo.png',  // Ana logo
+      'assets/images/logos/160x160logo.png',  // Alternatif 1
+      'assets/images/logos/140x140logo.png',  // Alternatif 2
+      'assets/images/logos/192x192logo.png', // Alternatif 3
+      'assets/images/logos/512x512logo.png', // Alternatif 4
+    ];
 
-      // TAMGACI logosunu asset'ten yükle
-      final logoData =
-          await rootBundle.load('assets/images/icons/app_icon.ico');
-      final logoBytes = logoData.buffer.asUint8List();
+    for (String logoPath in logoPaths) {
+      try {
+        debugPrint('TAMGACI logosu yükleniyor: $logoPath');
 
-      debugPrint(
-          'TAMGACI logo dosyası yüklendi, boyut: ${logoBytes.length} byte');
+        // Logo dosyasını asset'ten yükle
+        final logoData = await rootBundle.load(logoPath);
+        final logoBytes = logoData.buffer.asUint8List();
 
-      _cachedLogo = pw.MemoryImage(logoBytes);
-      debugPrint('TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü');
-    } catch (e) {
-      debugPrint('TAMGACI logo yükleme hatası: $e');
-      _cachedLogo = null;
+        debugPrint('TAMGACI logo dosyası yüklendi: $logoPath, boyut: ${logoBytes.length} byte');
+
+        _cachedLogo = pw.MemoryImage(logoBytes);
+        debugPrint('TAMGACI logosu başarıyla MemoryImage\'a dönüştürüldü: $logoPath');
+        return; // Başarılı yükleme, döngüden çık
+      } catch (e) {
+        debugPrint('TAMGACI logo yükleme hatası ($logoPath): $e');
+        continue; // Sonraki dosyayı dene
+      }
     }
+
+    // Tüm dosyalar başarısız oldu
+    debugPrint('TAMGACI logosu hiçbir dosyadan yüklenemedi');
+    _cachedLogo = null;
   }
 
   // Şirket logosu yükleme fonksiyonu
