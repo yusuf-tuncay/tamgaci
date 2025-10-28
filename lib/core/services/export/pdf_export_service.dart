@@ -11,8 +11,24 @@ import '../../../features/auth/domain/entities/user.dart';
 import '../../entities/company.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
-
 class PdfExportService {
+  // Türkçe karakterleri ASCII karakterlerle değiştir
+  static String _convertTurkishChars(String text) {
+    return text
+        .replaceAll('ç', 'c')
+        .replaceAll('Ç', 'C')
+        .replaceAll('ğ', 'g')
+        .replaceAll('Ğ', 'G')
+        .replaceAll('ı', 'i')
+        .replaceAll('İ', 'I')
+        .replaceAll('ö', 'o')
+        .replaceAll('Ö', 'O')
+        .replaceAll('ş', 's')
+        .replaceAll('Ş', 'S')
+        .replaceAll('ü', 'u')
+        .replaceAll('Ü', 'U');
+  }
+
   static Future<String?> exportTransactionsToPdf({
     required Account account,
     required List<AccountTransaction> transactions,
@@ -52,7 +68,7 @@ class PdfExportService {
                   crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text(
-                      'TAMGACI',
+                      _convertTurkishChars('TAMGACI'),
                       style: pw.TextStyle(
                         fontSize: 24,
                         fontWeight: pw.FontWeight.bold,
@@ -61,7 +77,8 @@ class PdfExportService {
                     ),
                     pw.SizedBox(height: 5),
                     pw.Text(
-                      'Muhasebe ve Finans Yönetim Sistemi',
+                      _convertTurkishChars(
+                          'Muhasebe ve Finans Yonetim Sistemi'),
                       style: const pw.TextStyle(
                         fontSize: 14,
                         color: PdfColors.grey700,
@@ -77,7 +94,7 @@ class PdfExportService {
                 pw.Header(
                   level: 1,
                   child: pw.Text(
-                    'Şirket Bilgileri',
+                    _convertTurkishChars('Sirket Bilgileri'),
                     style: pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
@@ -93,17 +110,27 @@ class PdfExportService {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      _buildInfoRow('Şirket Adı:', company.name),
+                      _buildInfoRow(_convertTurkishChars('Sirket Adi:'),
+                          _convertTurkishChars(company.name)),
+                      _buildInfoRow(_convertTurkishChars('Vergi No:'),
+                          _convertTurkishChars(user?.taxId ?? 'Belirtilmemis')),
                       _buildInfoRow(
-                          'Vergi No:', user?.taxId ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Adres:',
-                          company.address ?? user?.address ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Telefon:',
-                          company.phone ?? user?.phone ?? 'Belirtilmemiş'),
-                      _buildInfoRow('E-posta:',
-                          company.email ?? user?.email ?? 'Belirtilmemiş'),
+                          _convertTurkishChars('Adres:'),
+                          _convertTurkishChars(company.address ??
+                              user?.address ??
+                              'Belirtilmemis')),
                       _buildInfoRow(
-                          'Web Sitesi:', company.website ?? 'Belirtilmemiş'),
+                          _convertTurkishChars('Telefon:'),
+                          _convertTurkishChars(
+                              company.phone ?? user?.phone ?? 'Belirtilmemis')),
+                      _buildInfoRow(
+                          _convertTurkishChars('E-posta:'),
+                          _convertTurkishChars(
+                              company.email ?? user?.email ?? 'Belirtilmemis')),
+                      _buildInfoRow(
+                          _convertTurkishChars('Web Sitesi:'),
+                          _convertTurkishChars(
+                              company.website ?? 'Belirtilmemis')),
                     ],
                   ),
                 ),
@@ -115,7 +142,7 @@ class PdfExportService {
                 pw.Header(
                   level: 1,
                   child: pw.Text(
-                    'Kullanıcı Bilgileri',
+                    _convertTurkishChars('Kullanici Bilgileri'),
                     style: pw.TextStyle(
                       fontSize: 16,
                       fontWeight: pw.FontWeight.bold,
@@ -131,17 +158,27 @@ class PdfExportService {
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
+                      _buildInfoRow(_convertTurkishChars('Kullanici Adi:'),
+                          _convertTurkishChars('${user.name} ${user.surname}')),
+                      _buildInfoRow(_convertTurkishChars('E-posta:'),
+                          _convertTurkishChars(user.email)),
+                      _buildInfoRow(_convertTurkishChars('Telefon:'),
+                          _convertTurkishChars(user.phone ?? 'Belirtilmemis')),
                       _buildInfoRow(
-                          'Kullanıcı Adı:', '${user.name} ${user.surname}'),
-                      _buildInfoRow('E-posta:', user.email),
-                      _buildInfoRow('Telefon:', user.phone ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Adres:', user.address ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Vergi No:', user.taxId ?? 'Belirtilmemiş'),
+                          _convertTurkishChars('Adres:'),
+                          _convertTurkishChars(
+                              user.address ?? 'Belirtilmemis')),
+                      _buildInfoRow(_convertTurkishChars('Vergi No:'),
+                          _convertTurkishChars(user.taxId ?? 'Belirtilmemis')),
                       _buildInfoRow(
-                          'Vergi Dairesi:', user.taxOffice ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Fatura Adresi:',
-                          user.billingAddress ?? 'Belirtilmemiş'),
-                      _buildInfoRow('Kayıt Tarihi:',
+                          _convertTurkishChars('Vergi Dairesi:'),
+                          _convertTurkishChars(
+                              user.taxOffice ?? 'Belirtilmemis')),
+                      _buildInfoRow(
+                          _convertTurkishChars('Fatura Adresi:'),
+                          _convertTurkishChars(
+                              user.billingAddress ?? 'Belirtilmemis')),
+                      _buildInfoRow(_convertTurkishChars('Kayit Tarihi:'),
                           DateFormat('dd.MM.yyyy').format(user.createdAt)),
                     ],
                   ),
@@ -153,7 +190,7 @@ class PdfExportService {
               pw.Header(
                 level: 1,
                 child: pw.Text(
-                  'Rapor Bilgileri',
+                  _convertTurkishChars('Rapor Bilgileri'),
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
@@ -169,11 +206,12 @@ class PdfExportService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow('Rapor Tarihi:',
+                    _buildInfoRow(_convertTurkishChars('Rapor Tarihi:'),
                         DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())),
-                    _buildInfoRow('Rapor Türü:', 'Hesap Hareketleri Raporu'),
-                    _buildInfoRow(
-                        'Toplam İşlem:', '${transactions.length} adet'),
+                    _buildInfoRow(_convertTurkishChars('Rapor Turu:'),
+                        _convertTurkishChars('Hesap Hareketleri Raporu')),
+                    _buildInfoRow(_convertTurkishChars('Toplam Islem:'),
+                        '${transactions.length} adet'),
                   ],
                 ),
               ),
@@ -183,7 +221,7 @@ class PdfExportService {
               pw.Header(
                 level: 1,
                 child: pw.Text(
-                  'Filtreleme Bilgileri',
+                  _convertTurkishChars('Filtreleme Bilgileri'),
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
@@ -200,24 +238,33 @@ class PdfExportService {
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     if (startDate != null && endDate != null)
-                      _buildInfoRow('Tarih Aralığı:',
+                      _buildInfoRow(_convertTurkishChars('Tarih Araligi:'),
                           '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}')
                     else
-                      _buildInfoRow('Tarih Aralığı:', 'Tüm tarihler'),
+                      _buildInfoRow(_convertTurkishChars('Tarih Araligi:'),
+                          _convertTurkishChars('Tum tarihler')),
                     if (transactionType != null)
-                      _buildInfoRow('İşlem Türü:',
-                          _getTransactionTypeText(transactionType))
+                      _buildInfoRow(
+                          _convertTurkishChars('Islem Turu:'),
+                          _convertTurkishChars(
+                              _getTransactionTypeText(transactionType)))
                     else
-                      _buildInfoRow('İşlem Türü:', 'Tüm işlem türleri'),
+                      _buildInfoRow(_convertTurkishChars('Islem Turu:'),
+                          _convertTurkishChars('Tum islem turleri')),
                     if (transactionCategory != null)
-                      _buildInfoRow('Kategori:',
-                          _getTransactionCategoryText(transactionCategory))
+                      _buildInfoRow(
+                          _convertTurkishChars('Kategori:'),
+                          _convertTurkishChars(
+                              _getTransactionCategoryText(transactionCategory)))
                     else
-                      _buildInfoRow('Kategori:', 'Tüm kategoriler'),
+                      _buildInfoRow(_convertTurkishChars('Kategori:'),
+                          _convertTurkishChars('Tum kategoriler')),
                     if (searchQuery != null && searchQuery.isNotEmpty)
-                      _buildInfoRow('Arama:', searchQuery)
+                      _buildInfoRow(_convertTurkishChars('Arama:'),
+                          _convertTurkishChars(searchQuery))
                     else
-                      _buildInfoRow('Arama:', 'Arama yapılmadı'),
+                      _buildInfoRow(_convertTurkishChars('Arama:'),
+                          _convertTurkishChars('Arama yapilmadi')),
                   ],
                 ),
               ),
@@ -227,7 +274,7 @@ class PdfExportService {
               pw.Header(
                 level: 1,
                 child: pw.Text(
-                  'Hesap Bilgileri',
+                  _convertTurkishChars('Hesap Bilgileri'),
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
@@ -243,14 +290,18 @@ class PdfExportService {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    _buildInfoRow('Hesap Adı:', account.name),
+                    _buildInfoRow(_convertTurkishChars('Hesap Adi:'),
+                        _convertTurkishChars(account.name)),
                     _buildInfoRow(
-                        'Hesap Türü:', _getAccountTypeText(account.type)),
-                    _buildInfoRow('Para Birimi:', account.currency),
-                    _buildInfoRow('Mevcut Bakiye:',
+                        _convertTurkishChars('Hesap Turu:'),
+                        _convertTurkishChars(
+                            _getAccountTypeText(account.type))),
+                    _buildInfoRow(
+                        _convertTurkishChars('Para Birimi:'), account.currency),
+                    _buildInfoRow(_convertTurkishChars('Mevcut Bakiye:'),
                         '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'),
                     _buildInfoRow(
-                        'Oluşturulma Tarihi:',
+                        _convertTurkishChars('Olusturulma Tarihi:'),
                         DateFormat('dd.MM.yyyy HH:mm')
                             .format(account.createdAt)),
                   ],
@@ -262,7 +313,7 @@ class PdfExportService {
               pw.Header(
                 level: 1,
                 child: pw.Text(
-                  'Hesap Hareketleri',
+                  _convertTurkishChars('Hesap Hareketleri'),
                   style: pw.TextStyle(
                     fontSize: 16,
                     fontWeight: pw.FontWeight.bold,
@@ -290,14 +341,22 @@ class PdfExportService {
                     decoration:
                         const pw.BoxDecoration(color: PdfColors.grey200),
                     children: [
-                      _buildTableCell('Tarih', isHeader: true),
-                      _buildTableCell('Saat', isHeader: true),
-                      _buildTableCell('İşlem Türü', isHeader: true),
-                      _buildTableCell('Kategori', isHeader: true),
-                      _buildTableCell('Açıklama', isHeader: true),
-                      _buildTableCell('Miktar', isHeader: true),
-                      _buildTableCell('Para Birimi', isHeader: true),
-                      _buildTableCell('Bakiye Sonrası', isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Tarih'),
+                          isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Saat'),
+                          isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Islem Turu'),
+                          isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Kategori'),
+                          isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Aciklama'),
+                          isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Miktar'),
+                          isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Para Birimi'),
+                          isHeader: true),
+                      _buildTableCell(_convertTurkishChars('Bakiye Sonrasi'),
+                          isHeader: true),
                     ],
                   ),
                   // İşlemler
@@ -307,11 +366,13 @@ class PdfExportService {
                               .format(transaction.transactionDate)),
                           _buildTableCell(DateFormat('HH:mm')
                               .format(transaction.transactionDate)),
+                          _buildTableCell(_convertTurkishChars(
+                              _getTransactionTypeText(transaction.type))),
+                          _buildTableCell(_convertTurkishChars(
+                              _getTransactionCategoryText(
+                                  transaction.category))),
                           _buildTableCell(
-                              _getTransactionTypeText(transaction.type)),
-                          _buildTableCell(_getTransactionCategoryText(
-                              transaction.category)),
-                          _buildTableCell(transaction.description),
+                              _convertTurkishChars(transaction.description)),
                           _buildTableCell(transaction.amount.toString()),
                           _buildTableCell(account.currency),
                           _buildTableCell(transaction.balanceAfter.toString()),
