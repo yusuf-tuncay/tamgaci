@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
@@ -13,6 +14,56 @@ import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 
 class PdfExportService {
+  static pw.Font? _cachedFontRegular;
+  static pw.Font? _cachedFontBold;
+
+  static const String _notoSansRegularUrl =
+      'https://fonts.gstatic.com/s/notosans/v35/o-0IIpQlx3QUlC5A4PNr5TR1.woff2';
+  static const String _notoSansBoldUrl =
+      'https://fonts.gstatic.com/s/notosans/v35/o-0IIpQlx3QUlC5A4PNr5TR1.woff2';
+
+  static Future<void> _ensureFontsLoaded() async {
+    if (_cachedFontRegular != null && _cachedFontBold != null) return;
+
+    try {
+      // Alternatif font URL'leri - daha güvenilir kaynaklar
+      final fontUrls = [
+        'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2',
+        'https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.woff2',
+        'https://fonts.gstatic.com/s/opensans/v40/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVIGxA.woff2',
+      ];
+
+      // İlk başarılı font'u kullan
+      for (final url in fontUrls) {
+        try {
+          final uri = Uri.parse(url);
+          final response = await http.get(uri).timeout(const Duration(seconds: 10));
+          
+          if (response.statusCode == 200) {
+            final ByteData fontData = ByteData.view(response.bodyBytes.buffer);
+            _cachedFontRegular = pw.Font.ttf(fontData);
+            _cachedFontBold = pw.Font.ttf(fontData); // Aynı font'u bold olarak da kullan
+            debugPrint('Font başarıyla yüklendi: $url');
+            return;
+          }
+        } catch (e) {
+          debugPrint('Font yükleme hatası ($url): $e');
+          continue;
+        }
+      }
+      
+      // Hiçbir font yüklenemezse varsayılan font kullan
+      debugPrint('Hiçbir font yüklenemedi, varsayılan font kullanılıyor');
+      _cachedFontRegular = null;
+      _cachedFontBold = null;
+      
+    } catch (e) {
+      debugPrint('Font yükleme genel hatası: $e');
+      _cachedFontRegular = null;
+      _cachedFontBold = null;
+    }
+  }
+
   static Future<String?> exportTransactionsToPdf({
     required Account account,
     required List<AccountTransaction> transactions,
@@ -31,8 +82,18 @@ class PdfExportService {
     debugPrint('Transactions count: ${transactions.length}');
 
     try {
-      // PDF dosyası oluştur
-      final pdf = pw.Document();
+      // Unicode (Türkçe) karakter desteği için gömülü TTF fontları yükle
+      await _ensureFontsLoaded();
+
+      // PDF dosyası oluştur (font varsa tema ile, yoksa varsayılan)
+      final pdf = pw.Document(
+        theme: _cachedFontRegular != null && _cachedFontBold != null
+            ? pw.ThemeData.withFont(
+                base: _cachedFontRegular!,
+                bold: _cachedFontBold!,
+              )
+            : null, // Varsayılan font kullan
+      );
 
       // İşlemleri en yeni olan en alta gelecek şekilde sırala
       final sortedTransactions = List<AccountTransaction>.from(transactions)
@@ -301,24 +362,22 @@ class PdfExportService {
                     ],
                   ),
                   // İşlemler
-                  ...sortedTransactions
-                      .map((transaction) => pw.TableRow(
-                            children: [
-                              _buildTableCell(DateFormat('dd.MM.yyyy')
-                                  .format(transaction.transactionDate)),
-                              _buildTableCell(DateFormat('HH:mm')
-                                  .format(transaction.transactionDate)),
-                              _buildTableCell(
-                                  _getTransactionTypeText(transaction.type)),
-                              _buildTableCell(_getTransactionCategoryText(
-                                  transaction.category)),
-                              _buildTableCell(transaction.description),
-                              _buildTableCell(transaction.amount.toString()),
-                              _buildTableCell(account.currency),
-                              _buildTableCell(
-                                  transaction.balanceAfter.toString()),
-                            ],
-                          )),
+                  ...sortedTransactions.map((transaction) => pw.TableRow(
+                        children: [
+                          _buildTableCell(DateFormat('dd.MM.yyyy')
+                              .format(transaction.transactionDate)),
+                          _buildTableCell(DateFormat('HH:mm')
+                              .format(transaction.transactionDate)),
+                          _buildTableCell(
+                              _getTransactionTypeText(transaction.type)),
+                          _buildTableCell(_getTransactionCategoryText(
+                              transaction.category)),
+                          _buildTableCell(transaction.description),
+                          _buildTableCell(transaction.amount.toString()),
+                          _buildTableCell(account.currency),
+                          _buildTableCell(transaction.balanceAfter.toString()),
+                        ],
+                      )),
                 ],
               ),
             ];
