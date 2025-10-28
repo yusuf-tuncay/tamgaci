@@ -10,6 +10,7 @@ import '../providers/account_transaction_providers.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/export/excel_export_service.dart';
+import '../../../../core/services/export/pdf_export_service.dart';
 import '../../../../features/auth/presentation/providers/auth_providers.dart';
 import '../../../../core/providers/company_provider.dart';
 
@@ -44,6 +45,10 @@ class _AccountTransactionsPageState
   
   // Filtreleme debounce
   bool _isFiltering = false;
+  
+  // Cache değişkenleri
+  List<AccountTransaction>? _cachedTransactions;
+  List<AccountTransaction>? _cachedFilteredTransactions;
 
   @override
   Widget build(BuildContext context) {
@@ -985,13 +990,7 @@ class _AccountTransactionsPageState
               title: const Text('PDF Olarak İndir'),
               onTap: () {
                 context.pop();
-                // PDF indirme işlemi
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('PDF indirme özelliği yakında eklenecek'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
+                _exportToPdf();
               },
             ),
             ListTile(
@@ -1139,6 +1138,124 @@ class _AccountTransactionsPageState
       // Debounce'u sıfırla
       _isExporting = false;
       debugPrint('Excel export tamamlandı, debounce sıfırlandı');
+    }
+  }
+
+  Future<void> _exportToPdf() async {
+    // Debounce kontrolü - çift tıklama engelleme
+    if (_isExporting) {
+      debugPrint('PDF export zaten çalışıyor, çift tıklama engellendi');
+      return;
+    }
+
+    _isExporting = true;
+    debugPrint('=== PDF EXPORT BAŞLADI ===');
+    debugPrint('Çağrı zamanı: ${DateTime.now()}');
+
+    try {
+      // Loading göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('PDF dosyası oluşturuluyor...'),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Kullanıcı ve şirket bilgilerini al
+      final userAsync = ref.read(currentUserProvider);
+      final companyAsync = ref.read(currentCompanyProvider);
+      
+      final user = userAsync.when(
+        data: (data) => data,
+        loading: () => null,
+        error: (_, __) => null,
+      );
+      
+      final company = companyAsync.when(
+        data: (data) => data,
+        loading: () => null,
+        error: (_, __) => null,
+      );
+
+      // Filtrelenmiş işlemleri al
+      List<AccountTransaction> filteredTransactions;
+      if (_cachedFilteredTransactions != null && _cachedTransactions == _cachedTransactions) {
+        filteredTransactions = _cachedFilteredTransactions!;
+        debugPrint('PDF export: Cache\'den filtrelenmiş işlemler kullanılıyor');
+      } else {
+        final transactionsAsync = ref.read(transactionsByAccountIdProvider(widget.account.id));
+        final transactions = transactionsAsync.when(
+          data: (data) => data,
+          loading: () => <AccountTransaction>[],
+          error: (_, __) => <AccountTransaction>[],
+        );
+        filteredTransactions = _filterTransactions(transactions);
+        _cachedFilteredTransactions = filteredTransactions;
+        debugPrint('PDF export: Yeni filtreleme yapıldı');
+      }
+
+      debugPrint('PDF export: ${filteredTransactions.length} işlem export edilecek');
+
+      // PDF export servisini çağır
+      final filePath = await PdfExportService.exportTransactionsToPdf(
+        account: widget.account,
+        transactions: filteredTransactions,
+        user: user,
+        company: company,
+        startDate: _startDate,
+        endDate: _endDate,
+        transactionType: _selectedType,
+        transactionCategory: _selectedCategory,
+        searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF dosyası başarıyla oluşturuldu!\n$filePath'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(
+              label: 'Klasörü Aç',
+              textColor: Colors.white,
+              onPressed: () {
+                // TODO: Dosya yöneticisini aç
+              },
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('PDF export hatası: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF export hatası: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    } finally {
+      // Debounce'u sıfırla
+      _isExporting = false;
+      debugPrint('PDF export tamamlandı, debounce sıfırlandı');
     }
   }
 }
