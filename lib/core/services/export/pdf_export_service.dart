@@ -71,25 +71,35 @@ class PdfExportService {
 
   // Şirket logosu yükleme fonksiyonu
   static Future<void> _ensureCompanyLogoLoaded(String? logoUrl) async {
+    debugPrint('=== FİRMA LOGOSU YÜKLEME BAŞLADI ===');
+    debugPrint('Logo URL: $logoUrl');
+    
     if (logoUrl == null || logoUrl.isEmpty) {
+      debugPrint('Firma logosu URL\'si boş - logo yüklenmeyecek');
       _cachedCompanyLogo = null;
       return;
     }
 
     try {
+      debugPrint('Firma logosu yükleniyor: $logoUrl');
       // HTTP ile şirket logosunu yükle
       final response = await http.get(Uri.parse(logoUrl));
+      debugPrint('Firma logosu HTTP yanıtı: ${response.statusCode}');
+      
       if (response.statusCode == 200) {
-        _cachedCompanyLogo = pw.MemoryImage(response.bodyBytes);
-        debugPrint('Şirket logosu başarıyla yüklendi: $logoUrl');
+        final logoBytes = response.bodyBytes;
+        debugPrint('Firma logosu yüklendi, boyut: ${logoBytes.length} byte');
+        _cachedCompanyLogo = pw.MemoryImage(logoBytes);
+        debugPrint('Firma logosu başarıyla MemoryImage\'a dönüştürüldü');
       } else {
-        debugPrint('Şirket logosu yüklenemedi: ${response.statusCode}');
+        debugPrint('Firma logosu yüklenemedi: HTTP ${response.statusCode}');
         _cachedCompanyLogo = null;
       }
     } catch (e) {
-      debugPrint('Şirket logosu yükleme hatası: $e');
+      debugPrint('Firma logosu yükleme hatası: $e');
       _cachedCompanyLogo = null;
     }
+    debugPrint('=== FİRMA LOGOSU YÜKLEME BİTTİ ===');
   }
 
   // Türkçe karakterleri ASCII karakterlerle değiştir
@@ -125,6 +135,22 @@ class PdfExportService {
     debugPrint('Servis çağrı zamanı: ${DateTime.now()}');
     debugPrint('Account: ${account.name}');
     debugPrint('Transactions count: ${transactions.length}');
+    
+    // Company ve User verilerini debug et
+    debugPrint('=== VERİ KONTROLÜ ===');
+    debugPrint('Company: ${company?.name ?? 'NULL'}');
+    debugPrint('Company logoUrl: ${company?.logoUrl ?? 'NULL'}');
+    debugPrint('Company address: ${company?.address ?? 'NULL'}');
+    debugPrint('Company phone: ${company?.phone ?? 'NULL'}');
+    debugPrint('Company email: ${company?.email ?? 'NULL'}');
+    debugPrint('Company website: ${company?.website ?? 'NULL'}');
+    debugPrint('User: ${user?.name ?? 'NULL'} ${user?.surname ?? ''}');
+    debugPrint('User phone: ${user?.phone ?? 'NULL'}');
+    debugPrint('User address: ${user?.address ?? 'NULL'}');
+    debugPrint('User taxId: ${user?.taxId ?? 'NULL'}');
+    debugPrint('User taxOffice: ${user?.taxOffice ?? 'NULL'}');
+    debugPrint('User billingAddress: ${user?.billingAddress ?? 'NULL'}');
+    debugPrint('=== VERİ KONTROLÜ BİTTİ ===');
 
     try {
       // Cache'i temizle ve logoları yeniden yükle
@@ -250,16 +276,20 @@ class PdfExportService {
                           _convertTurkishChars(user?.taxId ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Adres:'),
-                          _convertTurkishChars(company.address ?? 'Belirtilmemis')),
+                          _convertTurkishChars(
+                              company.address ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Telefon:'),
-                          _convertTurkishChars(company.phone ?? 'Belirtilmemis')),
+                          _convertTurkishChars(
+                              company.phone ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('E-posta:'),
-                          _convertTurkishChars(company.email ?? 'Belirtilmemis')),
+                          _convertTurkishChars(
+                              company.email ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Web Sitesi:'),
-                          _convertTurkishChars(company.website ?? 'Belirtilmemis')),
+                          _convertTurkishChars(
+                              company.website ?? 'Belirtilmemis')),
                     ],
                   ),
                 ),
@@ -295,15 +325,18 @@ class PdfExportService {
                           _convertTurkishChars(user.phone ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Adres:'),
-                          _convertTurkishChars(user.address ?? 'Belirtilmemis')),
+                          _convertTurkishChars(
+                              user.address ?? 'Belirtilmemis')),
                       _buildInfoRow(_convertTurkishChars('Vergi No:'),
                           _convertTurkishChars(user.taxId ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Vergi Dairesi:'),
-                          _convertTurkishChars(user.taxOffice ?? 'Belirtilmemis')),
+                          _convertTurkishChars(
+                              user.taxOffice ?? 'Belirtilmemis')),
                       _buildInfoRow(
                           _convertTurkishChars('Fatura Adresi:'),
-                          _convertTurkishChars(user.billingAddress ?? 'Belirtilmemis')),
+                          _convertTurkishChars(
+                              user.billingAddress ?? 'Belirtilmemis')),
                       _buildInfoRow(_convertTurkishChars('Kayit Tarihi:'),
                           DateFormat('dd.MM.yyyy').format(user.createdAt)),
                     ],
