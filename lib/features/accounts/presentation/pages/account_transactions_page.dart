@@ -197,12 +197,20 @@ class _AccountTransactionsPageState
             items: const [
               DropdownMenuItem(value: null, child: Text('Tümü')),
               DropdownMenuItem(
+                value: TransactionType.income,
+                child: Text('Gelir'),
+              ),
+              DropdownMenuItem(
+                value: TransactionType.expense,
+                child: Text('Gider'),
+              ),
+              DropdownMenuItem(
                 value: TransactionType.deposit,
-                child: Text('Para Girişi'),
+                child: Text('Kasaya Giriş'),
               ),
               DropdownMenuItem(
                 value: TransactionType.withdrawal,
-                child: Text('Para Çıkışı'),
+                child: Text('Kasadan Çıkış'),
               ),
               DropdownMenuItem(
                 value: TransactionType.transfer,
@@ -382,12 +390,20 @@ class _AccountTransactionsPageState
                 items: const [
                   DropdownMenuItem(value: null, child: Text('Tümü')),
                   DropdownMenuItem(
+                    value: TransactionType.income,
+                    child: Text('Gelir'),
+                  ),
+                  DropdownMenuItem(
+                    value: TransactionType.expense,
+                    child: Text('Gider'),
+                  ),
+                  DropdownMenuItem(
                     value: TransactionType.deposit,
-                    child: Text('Para Girişi'),
+                    child: Text('Kasaya Giriş'),
                   ),
                   DropdownMenuItem(
                     value: TransactionType.withdrawal,
-                    child: Text('Para Çıkışı'),
+                    child: Text('Kasadan Çıkış'),
                   ),
                   DropdownMenuItem(
                     value: TransactionType.transfer,
@@ -646,7 +662,8 @@ class _AccountTransactionsPageState
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
-                          _getTypeText(transaction.type),
+                          _getTypeText(transaction.type, transaction.category,
+                              transaction),
                           style: GoogleFonts.poppins(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
@@ -720,9 +737,35 @@ class _AccountTransactionsPageState
       }
 
       // İşlem türü filtresi
-      if (_selectedType != null && transaction.type != _selectedType) {
-        debugPrint('  ❌ Tür filtresi: ${transaction.type} != $_selectedType');
-        return false;
+      if (_selectedType != null) {
+        // Gelir/Gider filtresi için amount kontrolü
+        if (_selectedType == TransactionType.income) {
+          // Gelir: sadece pozitif değerler
+          if (transaction.amount <= 0) {
+            debugPrint('  ❌ Tür filtresi: Gelir filtresi - amount ${transaction.amount} <= 0');
+            return false;
+          }
+        } else if (_selectedType == TransactionType.expense) {
+          // Gider: sadece negatif değerler
+          if (transaction.amount >= 0) {
+            debugPrint('  ❌ Tür filtresi: Gider filtresi - amount ${transaction.amount} >= 0');
+            return false;
+          }
+        } else {
+          // Diğer türler için mevcut mantık
+          // Masraf kategorisindeki transaction'lar için özel kontrol
+          if (transaction.category == TransactionCategory.expense) {
+            // Masraf kategorisindeki transaction'lar withdrawal olarak filtrelenir
+            if (_selectedType != TransactionType.withdrawal) {
+              debugPrint(
+                  '  ❌ Tür filtresi: Masraf kategorisi withdrawal olarak filtrelenir');
+              return false;
+            }
+          } else if (transaction.type != _selectedType) {
+            debugPrint('  ❌ Tür filtresi: ${transaction.type} != $_selectedType');
+            return false;
+          }
+        }
       }
       debugPrint('  ✅ Tür filtresi geçti');
 
@@ -925,6 +968,10 @@ class _AccountTransactionsPageState
 
   Color _getTypeColor(TransactionType type) {
     switch (type) {
+      case TransactionType.income:
+        return Colors.green;
+      case TransactionType.expense:
+        return Colors.red;
       case TransactionType.deposit:
         return Colors.green;
       case TransactionType.withdrawal:
@@ -938,17 +985,55 @@ class _AccountTransactionsPageState
     }
   }
 
-  String _getTypeText(TransactionType type) {
+  String _getTypeText(TransactionType type, TransactionCategory category,
+      AccountTransaction transaction) {
+    // Debug bilgisi
+    debugPrint(
+        '_getTypeText: type=$type, category=$category, amount=${transaction.amount}');
+
+    // Masraf kategorisindeki transaction'lar "Masraf" olarak etiketlenir
+    if (category == TransactionCategory.expense) {
+      debugPrint('Masraf kategorisi tespit edildi');
+      return 'Masraf';
+    }
+
+    // Para çıkışları "Kasadan Çıkış" olarak etiketlenir
+    if (type == TransactionType.withdrawal) {
+      debugPrint('Withdrawal türü tespit edildi');
+      return 'Kasadan Çıkış';
+    }
+
+    // Transfer işlemleri için gelen/giden kontrolü
+    if (type == TransactionType.transfer) {
+      // Amount pozitifse gelen transfer, negatifse giden transfer
+      if (transaction.amount > 0) {
+        debugPrint('Gelen transfer tespit edildi');
+        return 'Gelen Transfer';
+      } else {
+        debugPrint('Giden transfer tespit edildi');
+        return 'Giden Transfer';
+      }
+    }
+
     switch (type) {
+      case TransactionType.income:
+        debugPrint('Income türü tespit edildi');
+        return 'Gelir';
+      case TransactionType.expense:
+        debugPrint('Expense türü tespit edildi');
+        return 'Gider';
       case TransactionType.deposit:
-        return 'Giriş';
+        debugPrint('Deposit türü tespit edildi');
+        return 'Kasaya Giriş';
       case TransactionType.withdrawal:
-        return 'Çıkış';
+        return 'Kasadan Çıkış'; // Bu durum yukarıda zaten kontrol ediliyor ama switch için gerekli
       case TransactionType.transfer:
-        return 'Transfer';
+        return 'Transfer'; // Bu durum yukarıda zaten kontrol ediliyor ama switch için gerekli
       case TransactionType.adjustment:
+        debugPrint('Adjustment türü tespit edildi');
         return 'Düzeltme';
       case TransactionType.opening:
+        debugPrint('Opening türü tespit edildi');
         return 'Açılış';
     }
   }
@@ -965,20 +1050,6 @@ class _AccountTransactionsPageState
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.share),
-              title: const Text('Paylaş'),
-              onTap: () {
-                context.pop();
-                // Paylaşma işlemi
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Paylaşma özelliği yakında eklenecek'),
-                    backgroundColor: Colors.blue,
-                  ),
-                );
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.file_download),
               title: const Text('Excel Olarak İndir'),
               onTap: () {
@@ -992,34 +1063,6 @@ class _AccountTransactionsPageState
               onTap: () {
                 context.pop();
                 _exportToPdf();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.print),
-              title: const Text('Yazdır'),
-              onTap: () {
-                context.pop();
-                // Yazdırma işlemi
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Yazdırma özelliği yakında eklenecek'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.copy),
-              title: const Text('Listeyi Kopyala'),
-              onTap: () {
-                context.pop();
-                // Liste kopyalama işlemi
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('İşlem listesi kopyalandı'),
-                    backgroundColor: Colors.purple,
-                  ),
-                );
               },
             ),
           ],
@@ -1219,7 +1262,7 @@ class _AccountTransactionsPageState
       // CompanyInfo'yu al
       final companyInfoAsync = ref.read(companyInfoStreamProvider);
       final companyInfo = companyInfoAsync.value;
-      
+
       debugPrint('=== COMPANYINFO DEBUG ===');
       debugPrint('CompanyInfo async state: ${companyInfoAsync.runtimeType}');
       debugPrint('CompanyInfo hasValue: ${companyInfoAsync.hasValue}');

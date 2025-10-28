@@ -7,6 +7,8 @@ enum TransactionType {
   transfer, // Transfer
   adjustment, // Düzeltme
   opening, // Açılış bakiyesi
+  income, // Gelir (pozitif değerler)
+  expense, // Gider (negatif değerler)
 }
 
 /// Hesap hareketi kategorileri
