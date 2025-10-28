@@ -28,17 +28,18 @@ class PdfExportService {
   // TAMGACI logosu yükleme fonksiyonu - fallback mekanizması ile
   static Future<void> _ensureLogoLoaded() async {
     if (_cachedLogo != null) {
-      debugPrint('TAMGACI logosu zaten yüklü - tip: ${_cachedLogo!.runtimeType}');
+      debugPrint(
+          'TAMGACI logosu zaten yüklü - tip: ${_cachedLogo!.runtimeType}');
       return;
     }
 
     // Logo dosya yolları - öncelik sırasına göre
     final List<String> logoPaths = [
-      'assets/images/logos/TAMGACI256X256.png', // Ana logo - 256x256
-      'assets/images/logos/512x512logo.png', // Alternatif 1
-      'assets/images/logos/192x192logo.png', // Alternatif 2
-      'assets/images/logos/180x180logo.png', // Alternatif 3
-      'assets/images/logos/160x160logo.png', // Alternatif 4
+      'assets/images/logos/512x512logo.png', // Ana logo - 512x512 (Web'de çalışıyor)
+      'assets/images/logos/192x192logo.png', // Alternatif 1
+      'assets/images/logos/180x180logo.png', // Alternatif 2
+      'assets/images/logos/160x160logo.png', // Alternatif 3
+      'assets/images/logos/140x140logo.png', // Alternatif 4
     ];
 
     for (String logoPath in logoPaths) {
@@ -171,7 +172,8 @@ class PdfExportService {
                             child: pw.Center(
                               child: pw.Text(
                                 'LOGO YOK',
-                                style: pw.TextStyle(fontSize: 8, color: PdfColors.red),
+                                style: pw.TextStyle(
+                                    fontSize: 8, color: PdfColors.red),
                               ),
                             ),
                           ),
