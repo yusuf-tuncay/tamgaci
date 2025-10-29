@@ -18,16 +18,16 @@ class SecureStorageService {
     if (kIsWeb) {
       if (PlatformSelector.isWasmSupported) {
         // WebAssembly için localStorage alternatifi
-        print('WebAssembly uyumlu storage başlatılıyor...');
+        debugPrint('WebAssembly uyumlu storage başlatılıyor...');
         await _initWebAssemblyStorage();
       } else {
         // Normal web storage
-        print('Web storage başlatılıyor...');
+        debugPrint('Web storage başlatılıyor...');
         await _initWebStorage();
       }
     } else {
       // Native storage
-      print('Native storage başlatılıyor...');
+      debugPrint('Native storage başlatılıyor...');
     }
   }
 
@@ -50,7 +50,7 @@ class SecureStorageService {
         try {
           return await _storage.read(key: key);
         } catch (e) {
-          print('Web storage okuma hatası: $e');
+          debugPrint('Web storage okuma hatası: $e');
           return null;
         }
       }
@@ -70,7 +70,7 @@ class SecureStorageService {
         try {
           await _storage.write(key: key, value: value);
         } catch (e) {
-          print('Web storage yazma hatası: $e');
+          debugPrint('Web storage yazma hatası: $e');
         }
       }
     } else {
@@ -89,7 +89,7 @@ class SecureStorageService {
         try {
           await _storage.delete(key: key);
         } catch (e) {
-          print('Web storage silme hatası: $e');
+          debugPrint('Web storage silme hatası: $e');
         }
       }
     } else {
@@ -108,7 +108,7 @@ class SecureStorageService {
         try {
           await _storage.deleteAll();
         } catch (e) {
-          print('Web storage tümünü silme hatası: $e');
+          debugPrint('Web storage tümünü silme hatası: $e');
         }
       }
     } else {
@@ -127,7 +127,7 @@ class SecureStorageService {
         try {
           return await _storage.readAll();
         } catch (e) {
-          print('Web storage tümünü okuma hatası: $e');
+          debugPrint('Web storage tümünü okuma hatası: $e');
           return {};
         }
       }

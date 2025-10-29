@@ -1,6 +1,7 @@
 // Web platformu için gerçek implementasyon
 // Bu dosya sadece web platformunda kullanılır
 
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:html' as html;
 
 class WebPlatformWeb {
@@ -24,10 +25,10 @@ class SecureStorageWebWeb {
     // WebAssembly uyumlu initialization
     if (WebPlatformWeb.isWasmSupported) {
       // Wasm için özel initialization
-      print('WebAssembly uyumlu secure storage başlatılıyor...');
+      // WebAssembly uyumlu secure storage başlatılıyor
     } else {
       // Normal web için initialization
-      print('Web secure storage başlatılıyor...');
+      // Web secure storage başlatılıyor
     }
   }
 
@@ -40,12 +41,12 @@ class SecureStorageWebWeb {
 class SharePlusWebWeb {
   static Future<void> init() async {
     if (WebPlatformWeb.isWasmSupported) {
-      print('WebAssembly uyumlu share plus başlatılıyor...');
+      // WebAssembly uyumlu share plus başlatılıyor
     } else {
-      print('Web share plus başlatılıyor...');
+      // Web share plus başlatılıyor
     }
   }
-
+  
   static Future<void> dispose() async {
     // Cleanup
   }
@@ -55,12 +56,12 @@ class SharePlusWebWeb {
 class ConnectivityWebWeb {
   static Future<void> init() async {
     if (WebPlatformWeb.isWasmSupported) {
-      print('WebAssembly uyumlu connectivity başlatılıyor...');
+      // WebAssembly uyumlu connectivity başlatılıyor
     } else {
-      print('Web connectivity başlatılıyor...');
+      // Web connectivity başlatılıyor
     }
   }
-
+  
   static Future<void> dispose() async {
     // Cleanup
   }

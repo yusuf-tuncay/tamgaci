@@ -11,16 +11,16 @@ class ConnectivityService {
     if (kIsWeb) {
       if (PlatformSelector.isWasmSupported) {
         // WebAssembly uyumlu connectivity initialization
-        print('WebAssembly uyumlu connectivity servisi başlatılıyor...');
+        debugPrint('WebAssembly uyumlu connectivity servisi başlatılıyor...');
         await _initWebAssemblyConnectivity();
       } else {
         // Normal web connectivity initialization
-        print('Web connectivity servisi başlatılıyor...');
+        debugPrint('Web connectivity servisi başlatılıyor...');
         await _initWebConnectivity();
       }
     } else {
       // Native connectivity initialization
-      print('Native connectivity servisi başlatılıyor...');
+      debugPrint('Native connectivity servisi başlatılıyor...');
       await _initNativeConnectivity();
     }
   }
@@ -36,7 +36,8 @@ class ConnectivityService {
 
   static Future<void> _initNativeConnectivity() async {
     // Native connectivity initialization
-    _connectivityStream = _connectivity.onConnectivityChanged.map((result) => [result]);
+    _connectivityStream =
+        _connectivity.onConnectivityChanged.map((result) => [result]);
   }
 
   static Future<List<ConnectivityResult>> checkConnectivity() async {
@@ -50,7 +51,7 @@ class ConnectivityService {
           final result = await _connectivity.checkConnectivity();
           return [result];
         } catch (e) {
-          print('Web connectivity kontrol hatası: $e');
+          debugPrint('Web connectivity kontrol hatası: $e');
           return [ConnectivityResult.none];
         }
       }
@@ -69,7 +70,7 @@ class ConnectivityService {
       // Bu implementasyon dart:html kullanmaz
       return [ConnectivityResult.wifi]; // Varsayılan olarak bağlı kabul et
     } catch (e) {
-      print('WebAssembly connectivity kontrol hatası: $e');
+      debugPrint('WebAssembly connectivity kontrol hatası: $e');
       return [ConnectivityResult.none];
     }
   }
@@ -84,7 +85,7 @@ class ConnectivityService {
         try {
           return _connectivity.onConnectivityChanged.map((result) => [result]);
         } catch (e) {
-          print('Web connectivity stream hatası: $e');
+          debugPrint('Web connectivity stream hatası: $e');
           return null;
         }
       }
@@ -125,14 +126,14 @@ class ConnectivityService {
     if (kIsWeb) {
       if (PlatformSelector.isWasmSupported) {
         // WebAssembly uyumlu cleanup
-        print('WebAssembly connectivity servisi kapatılıyor...');
+        debugPrint('WebAssembly connectivity servisi kapatılıyor...');
       } else {
         // Normal web cleanup
-        print('Web connectivity servisi kapatılıyor...');
+        debugPrint('Web connectivity servisi kapatılıyor...');
       }
     } else {
       // Native cleanup
-      print('Native connectivity servisi kapatılıyor...');
+      debugPrint('Native connectivity servisi kapatılıyor...');
     }
   }
 }

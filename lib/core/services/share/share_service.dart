@@ -8,16 +8,16 @@ class ShareService {
     if (kIsWeb) {
       if (PlatformSelector.isWasmSupported) {
         // WebAssembly uyumlu share initialization
-        print('WebAssembly uyumlu share servisi başlatılıyor...');
+        debugPrint('WebAssembly uyumlu share servisi başlatılıyor...');
         await _initWebAssemblyShare();
       } else {
         // Normal web share initialization
-        print('Web share servisi başlatılıyor...');
+        debugPrint('Web share servisi başlatılıyor...');
         await _initWebShare();
       }
     } else {
       // Native share initialization
-      print('Native share servisi başlatılıyor...');
+      debugPrint('Native share servisi başlatılıyor...');
     }
   }
 
@@ -40,7 +40,7 @@ class ShareService {
         try {
           await Share.share(text);
         } catch (e) {
-          print('Web share hatası: $e');
+          debugPrint('Web share hatası: $e');
           await _fallbackShare(text);
         }
       }
@@ -60,7 +60,7 @@ class ShareService {
         try {
           await Share.shareXFiles([XFile(filePath)], text: text);
         } catch (e) {
-          print('Web file share hatası: $e');
+          debugPrint('Web file share hatası: $e');
           await _fallbackShare(text ?? 'Dosya paylaşılamadı');
         }
       }
@@ -75,9 +75,9 @@ class ShareService {
     // Clipboard API kullanımı
     try {
       // WebAssembly uyumlu clipboard kullanımı
-      print('WebAssembly ile paylaşım: $text');
+      debugPrint('WebAssembly ile paylaşım: $text');
     } catch (e) {
-      print('WebAssembly share hatası: $e');
+      debugPrint('WebAssembly share hatası: $e');
       await _fallbackShare(text);
     }
   }
@@ -86,19 +86,19 @@ class ShareService {
       {String? text}) async {
     // WebAssembly uyumlu dosya paylaşımı
     try {
-      print('WebAssembly ile dosya paylaşımı: $filePath');
+      debugPrint('WebAssembly ile dosya paylaşımı: $filePath');
       if (text != null) {
-        print('Dosya açıklaması: $text');
+        debugPrint('Dosya açıklaması: $text');
       }
     } catch (e) {
-      print('WebAssembly file share hatası: $e');
+      debugPrint('WebAssembly file share hatası: $e');
       await _fallbackShare(text ?? 'Dosya paylaşılamadı');
     }
   }
 
   static Future<void> _fallbackShare(String text) async {
     // Fallback paylaşım yöntemi
-    print('Fallback paylaşım: $text');
+    debugPrint('Fallback paylaşım: $text');
     // Burada alternatif paylaşım yöntemleri implement edilebilir
   }
 }

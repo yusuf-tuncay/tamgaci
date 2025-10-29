@@ -8,16 +8,16 @@ class PlatformSelector {
   static Future<void> initializePlatformServices() async {
     if (kIsWeb) {
       // Web servisleri başlatma
-      print('Web servisleri başlatılıyor...');
+      debugPrint('Web servisleri başlatılıyor...');
     } else {
       // Mobil/desktop servisleri başlatma
-      print('Native servisler başlatılıyor...');
+      debugPrint('Native servisler başlatılıyor...');
     }
   }
   
   static Future<void> disposePlatformServices() async {
     if (kIsWeb) {
-      print('Web servisleri kapatılıyor...');
+      debugPrint('Web servisleri kapatılıyor...');
     }
   }
 }
