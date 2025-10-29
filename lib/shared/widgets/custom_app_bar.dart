@@ -217,7 +217,20 @@ class _CustomAppBarState extends State<CustomAppBar>
 
     if (widget.showBackButton) {
       return IconButton(
-        onPressed: widget.onBackPressed ?? () => context.pop(),
+        onPressed: widget.onBackPressed ?? () {
+          try {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // Fallback: Ana sayfaya git
+              context.go('/dashboard');
+            }
+          } catch (e) {
+            debugPrint('Navigation error: $e');
+            // Fallback navigation
+            context.go('/dashboard');
+          }
+        },
         icon: Icon(
           Icons.arrow_back_ios,
           color: iconColor,

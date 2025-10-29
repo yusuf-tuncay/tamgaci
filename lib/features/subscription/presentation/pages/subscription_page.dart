@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/services/subscription/pricing_config.dart';
 import '../../../../core/services/subscription/firestore_subscription_service.dart';
@@ -194,9 +195,23 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
 
     return ResponsiveScaffold(
       drawerContent: const SizedBox.shrink(),
-      appBar: const CustomAppBar(
+      appBar: CustomAppBar(
         title: 'Abonelik Planları',
         showBackButton: true,
+        onBackPressed: () {
+          try {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // Fallback: Ana sayfaya git
+              context.go('/dashboard');
+            }
+          } catch (e) {
+            debugPrint('Navigation error: $e');
+            // Fallback navigation
+            context.go('/dashboard');
+          }
+        },
       ),
       body: Container(
         decoration: BoxDecoration(

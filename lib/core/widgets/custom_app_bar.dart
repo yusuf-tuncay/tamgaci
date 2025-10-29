@@ -49,7 +49,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ? TamgaciConstants.textPrimaryDark
                     : TamgaciConstants.textPrimary,
               ),
-              onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
+              onPressed: onBackPressed ?? () {
+                try {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  } else {
+                    // Fallback: Ana sayfaya git
+                    Navigator.of(context).pushReplacementNamed('/dashboard');
+                  }
+                } catch (e) {
+                  debugPrint('Navigation error: $e');
+                  // Fallback navigation
+                  Navigator.of(context).pushReplacementNamed('/dashboard');
+                }
+              },
             )
           : showDrawer
               ? IconButton(

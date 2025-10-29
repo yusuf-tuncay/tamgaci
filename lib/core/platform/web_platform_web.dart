@@ -46,7 +46,7 @@ class SharePlusWebWeb {
       // Web share plus başlatılıyor
     }
   }
-  
+
   static Future<void> dispose() async {
     // Cleanup
   }
@@ -61,7 +61,7 @@ class ConnectivityWebWeb {
       // Web connectivity başlatılıyor
     }
   }
-  
+
   static Future<void> dispose() async {
     // Cleanup
   }
