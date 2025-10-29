@@ -56,17 +56,19 @@ class SubscriptionGuard extends ConsumerWidget {
         // ÖNCE: Kullanıcı entity'sindeki veriyi kullan (daha hızlı)
         final userCheck = _checkSubscriptionStatus(user);
 
-        // Eğer kullanıcı entity'sinde yeterli bilgi varsa, direkt kullan
-        if (userCheck.hasAccess ||
-            user.subscriptionStatus == SubscriptionStatus.none) {
-          if (userCheck.hasAccess) {
-            return child;
-          } else {
-            return _buildRedirectToSubscription(context, userCheck);
-          }
-        }
+        debugPrint(
+            '🔍 SubscriptionGuard: User subscription status: ${user.subscriptionStatus}');
+        debugPrint(
+            '🔍 SubscriptionGuard: User subscription end: ${user.subscriptionEndAt}');
+        debugPrint(
+            '🔍 SubscriptionGuard: UserCheck hasAccess: ${userCheck.hasAccess}');
+        debugPrint(
+            '🔍 SubscriptionGuard: UserCheck reason: ${userCheck.reason}');
 
-        // Sadece gerekli durumlarda subscription state provider'ı kullan
+        // Her zaman subscription state provider'ı dinle (real-time güncellemeler için)
+        debugPrint(
+            '🔍 SubscriptionGuard: Checking subscription state provider for real-time updates');
+
         SubscriptionState subscriptionState;
         try {
           subscriptionState = ref.watch(subscriptionStateProvider);
@@ -80,9 +82,14 @@ class SubscriptionGuard extends ConsumerWidget {
           }
         }
 
+        debugPrint(
+            '🔍 SubscriptionGuard: Subscription state - isLoading: ${subscriptionState.isLoading}, hasResult: ${subscriptionState.subscriptionResult != null}, hasError: ${subscriptionState.error != null}');
+
         // Real-time listener'dan gelen güncellemeleri UI'ya yansıt
         if (subscriptionState.subscriptionResult != null) {
           final subscriptionCheck = subscriptionState.subscriptionResult!;
+          debugPrint(
+              '🔍 SubscriptionGuard: Using subscription result - hasAccess: ${subscriptionCheck.hasAccess}');
           if (subscriptionCheck.hasAccess) {
             return child;
           } else {
@@ -90,13 +97,17 @@ class SubscriptionGuard extends ConsumerWidget {
           }
         }
 
-        // Sadece loading durumunda log yazdır
+        // Loading durumunda loading göster (real-time listener çalışıyor)
         if (subscriptionState.isLoading) {
+          debugPrint(
+              '🔍 SubscriptionGuard: Subscription state loading, showing loading screen');
           return loadingWidget ?? _buildLoadingWidget();
         }
 
         // Hata durumunda kullanıcı entity'sindeki veriyi kullan
         if (subscriptionState.error != null) {
+          debugPrint(
+              '🔍 SubscriptionGuard: Subscription state error, using user entity data as fallback');
           if (userCheck.hasAccess) {
             return child;
           } else {
@@ -104,17 +115,9 @@ class SubscriptionGuard extends ConsumerWidget {
           }
         }
 
-        // Cache'lenmiş sonucu kullan
-        if (subscriptionState.subscriptionResult != null) {
-          final subscriptionCheck = subscriptionState.subscriptionResult!;
-          if (subscriptionCheck.hasAccess) {
-            return child;
-          } else {
-            return _buildRedirectToSubscription(context, subscriptionCheck);
-          }
-        }
-
         // Son fallback: Kullanıcı entity'sindeki veriyi kullan
+        debugPrint(
+            '🔍 SubscriptionGuard: Using user entity data as final fallback');
         if (userCheck.hasAccess) {
           return child;
         } else {

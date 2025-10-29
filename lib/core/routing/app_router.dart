@@ -90,11 +90,15 @@ class AppRouter {
         '/forgot-password',
       ].contains(state.matchedLocation);
 
-      debugPrint('🔍 AppRouter: Redirect check - Location: ${state.matchedLocation}');
+      debugPrint(
+          '🔍 AppRouter: Redirect check - Location: ${state.matchedLocation}');
       debugPrint('🔍 AppRouter: Redirect check - Full location: ${state.uri}');
-      debugPrint('🔍 AppRouter: Redirect check - Is authenticated: $isAuthenticated');
-      debugPrint('🔍 AppRouter: Redirect check - Is payment page: $isOnPaymentPage');
-      debugPrint('🔍 AppRouter: Redirect check - Is public page: $isOnPublicPage');
+      debugPrint(
+          '🔍 AppRouter: Redirect check - Is authenticated: $isAuthenticated');
+      debugPrint(
+          '🔍 AppRouter: Redirect check - Is payment page: $isOnPaymentPage');
+      debugPrint(
+          '🔍 AppRouter: Redirect check - Is public page: $isOnPublicPage');
 
       // Payment sayfaları için hiçbir redirect yapma
       if (isOnPaymentPage) {

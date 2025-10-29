@@ -12,6 +12,10 @@ class TamgaciApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Provider'ları watch et ama hata durumunda varsayılan değerler kullan
+    final themeMode = ref.watch(themeProvider);
+    final locale = ref.watch(localeProvider);
+
     return MaterialApp.router(
       // ========== UYGULAMA AYARLARI ==========
 
@@ -30,10 +34,10 @@ class TamgaciApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
 
       /// Tema modu (provider'dan al)
-      themeMode: ref.watch(themeProvider),
+      themeMode: themeMode,
 
       /// Dil (provider'dan al)
-      locale: ref.watch(localeProvider),
+      locale: locale,
 
       // ========== GO ROUTER AYARLARI ==========
 

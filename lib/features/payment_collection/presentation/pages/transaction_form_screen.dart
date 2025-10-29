@@ -200,7 +200,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         });
       } catch (e) {
         debugPrint('DEBUG: Tedarikçi para birimi alınamadı: $e');
-        formNotifier.updateField('currency', defaultCurrency);
+    formNotifier.updateField('currency', defaultCurrency);
       }
     } else {
       formNotifier.updateField('currency', defaultCurrency);
@@ -622,8 +622,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               if (formState.type != PaymentTransactionType.debtReceipt &&
                   formState.type != PaymentTransactionType.creditReceipt &&
                   formState.type != PaymentTransactionType.accountTransfer)
-                Consumer(
-                  builder: (context, ref, child) {
+              Consumer(
+                builder: (context, ref, child) {
                     // Önce activeAccountsProvider'ı dene, başarısız olursa accountsProvider'ı kullan
                     final activeAccountsAsync =
                         ref.watch(activeAccountsProvider);
@@ -636,8 +636,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       error: (error, stack) => allAccountsAsync,
                     );
 
-                    return accountsAsync.when(
-                      data: (accounts) {
+                  return accountsAsync.when(
+                    data: (accounts) {
                         // Debug: Hesap sayısını logla
                         debugPrint('DEBUG: Loaded ${accounts.length} accounts');
                         for (final account in accounts) {
@@ -650,23 +650,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             .where((account) =>
                                 account.isActive &&
                                 account.status == AccountStatus.active)
-                            .toList();
+                          .toList();
 
                         debugPrint(
                             'DEBUG: Filtered to ${activeAccounts.length} active accounts');
 
                         // Tüm aktif hesapları göster
                         if (activeAccounts.isEmpty) {
-                          return Container(
-                            height: 56,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 16),
-                            decoration: BoxDecoration(
+                        return Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 16),
+                          decoration: BoxDecoration(
                               border: Border.all(color: Colors.orange),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                             child: Row(
-                              children: [
+                            children: [
                                 const Icon(Icons.warning, color: Colors.orange),
                                 const SizedBox(width: 8),
                                 const Expanded(
@@ -685,19 +685,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     'Hesap Oluştur',
                                     style: TextStyle(fontSize: 12),
                                   ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
+                              ),
+                            ],
+                          ),
+                        );
+                      }
 
-                        // Seçili hesap ID'sinin listede olup olmadığını kontrol et
-                        String? selectedValue = formState.accountId;
-                        if (selectedValue != null &&
+                      // Seçili hesap ID'sinin listede olup olmadığını kontrol et
+                      String? selectedValue = formState.accountId;
+                      if (selectedValue != null &&
                             !activeAccounts.any(
                                 (account) => account.id == selectedValue)) {
-                          selectedValue = null;
-                        }
+                        selectedValue = null;
+                      }
 
                         // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
                         final newSelectedValue =
@@ -758,14 +758,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       ),
                                       if (selectedValue != null) ...[
                                         const SizedBox(height: 2),
-                                        Text(
+                                      Text(
                                           '${activeAccounts.firstWhere((a) => a.id == selectedValue).type.displayName} - ${activeAccounts.firstWhere((a) => a.id == selectedValue).currency}',
-                                          style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey,
                                         ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                       ],
                                     ],
                                   ),
@@ -775,43 +775,43 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               ],
                             ),
                           ),
-                        );
-                      },
-                      loading: () => Container(
-                        height: 56,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Row(
-                          children: [
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                            SizedBox(width: 8),
-                            Text('Hesaplar yükleniyor...'),
-                          ],
-                        ),
+                      );
+                    },
+                    loading: () => Container(
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
                       ),
+                      child: const Row(
+                        children: [
+                          SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                          SizedBox(width: 8),
+                            Text('Hesaplar yükleniyor...'),
+                        ],
+                      ),
+                    ),
                       error: (error, stack) {
                         // Debug: Hata detaylarını logla
                         debugPrint('DEBUG: Error loading accounts: $error');
                         debugPrint('DEBUG: Stack trace: $stack');
 
                         return Container(
-                          height: 56,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 16),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.red),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                      height: 56,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 16),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.red),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
                           child: Row(
-                            children: [
+                        children: [
                               const Icon(Icons.error, color: Colors.red),
                               const SizedBox(width: 8),
                               Expanded(
@@ -825,9 +825,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           ),
                         );
                       },
-                    );
-                  },
-                ),
+                  );
+                },
+              ),
 
               const SizedBox(height: 16),
 
@@ -835,20 +835,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               if (formState.type == PaymentTransactionType.accountTransfer)
                 _buildAccountTransferFields(formState)
               else ...[
-                // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
-                if (formState.isCustomerSelectionRequired &&
-                    widget.customerId == null)
-                  TransactionFormFields.buildCustomerField(
-                    formState: formState,
-                    onChanged: (value) => _updateField('customerId', value),
-                  ),
+              // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
+              if (formState.isCustomerSelectionRequired &&
+                  widget.customerId == null)
+                TransactionFormFields.buildCustomerField(
+                  formState: formState,
+                  onChanged: (value) => _updateField('customerId', value),
+                ),
 
-                if (formState.isSupplierSelectionRequired &&
-                    widget.supplierId == null)
-                  TransactionFormFields.buildSupplierField(
-                    formState: formState,
-                    onChanged: (value) => _updateField('supplierId', value),
-                  ),
+              if (formState.isSupplierSelectionRequired &&
+                  widget.supplierId == null)
+                TransactionFormFields.buildSupplierField(
+                  formState: formState,
+                  onChanged: (value) => _updateField('supplierId', value),
+                ),
               ],
 
               const SizedBox(height: 16),

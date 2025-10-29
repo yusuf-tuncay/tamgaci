@@ -4,19 +4,35 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   static const String _themeKey = 'theme_mode';
+  bool _isInitialized = false;
 
   ThemeNotifier() : super(ThemeMode.system) {
-    _loadTheme();
+    // Constructor'da async işlem yapma - lazy initialization kullan
+    _initializeAsync();
+  }
+
+  // Async initialization - non-blocking
+  void _initializeAsync() {
+    Future.microtask(() async {
+      if (!_isInitialized) {
+        await _loadTheme();
+        _isInitialized = true;
+      }
+    });
   }
 
   Future<void> _loadTheme() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final themeIndex = prefs.getInt(_themeKey) ?? 0;
-      state = ThemeMode.values[themeIndex];
+      if (mounted) {
+        state = ThemeMode.values[themeIndex];
+      }
     } catch (e) {
-      // Varsayılan tema kullan
-      state = ThemeMode.system;
+      // Varsayılan tema kullan - hata logla ama state'i varsayılanda bırak
+      if (mounted) {
+        state = ThemeMode.system;
+      }
     }
   }
 

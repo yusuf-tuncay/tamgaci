@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/company_info.dart';
 import '../providers/company_providers.dart';
 import 'package:tamgaci/features/auth/presentation/providers/auth_providers.dart';
 import 'package:tamgaci/core/services/tenant_service.dart';
+import 'package:tamgaci/core/services/storage/company_logo_service.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
@@ -32,6 +36,9 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
   final _websiteController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isUploadingLogo = false;
+  String? _currentLogoUrl;
+  Uint8List? _localLogoBytes;
 
   @override
   void initState() {
@@ -51,6 +58,223 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
     _emailController.dispose();
     _websiteController.dispose();
     super.dispose();
+  }
+
+  /// Logo seç ve yükle
+  Future<void> _pickAndUploadLogo() async {
+    try {
+      final CompanyLogoService logoService = CompanyLogoService();
+      final ImagePicker picker = ImagePicker();
+
+      // Galeriden logo seç
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image != null) {
+        setState(() {
+          _isUploadingLogo = true;
+        });
+
+        try {
+          String logoUrl;
+
+          if (kIsWeb) {
+            // Web için bytes kullan
+            final bytes = await image.readAsBytes();
+            setState(() {
+              _localLogoBytes = bytes;
+            });
+            logoUrl = await logoService.uploadCompanyLogoBytes(bytes);
+          } else {
+            // Mobil için file kullan
+            final file = File(image.path);
+            logoUrl = await logoService.uploadCompanyLogo(file);
+          }
+
+          setState(() {
+            _currentLogoUrl = logoUrl;
+            _isUploadingLogo = false;
+          });
+
+          // Logo yüklendikten sonra hemen company bilgilerini güncelle
+          debugPrint('🔄 Logo URL Firebase\'e kaydediliyor: $logoUrl');
+          await _updateCompanyLogoInFirebase(logoUrl);
+          debugPrint('✅ Logo URL Firebase\'e kaydedildi');
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Logo başarıyla yüklendi ve kaydedildi'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } catch (e) {
+          setState(() {
+            _isUploadingLogo = false;
+          });
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Logo yüklenirken hata: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logo seçilirken hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Logo sil
+  Future<void> _deleteLogo() async {
+    if (_currentLogoUrl == null) return;
+
+    try {
+      final CompanyLogoService logoService = CompanyLogoService();
+      await logoService.deleteCompanyLogo(_currentLogoUrl!);
+
+      // Firebase'deki company bilgilerinden de logo URL'sini kaldır
+      await _updateCompanyLogoInFirebase('');
+
+      setState(() {
+        _currentLogoUrl = null;
+        _localLogoBytes = null;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Logo silindi'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logo silinirken hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Placeholder logo widget
+  Widget _buildPlaceholderLogo() {
+    return Container(
+      color: Colors.grey.shade100,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.business,
+            size: 48,
+            color: Colors.grey.shade400,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Logo Yok',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Logo URL'sini Firebase'deki company bilgilerine kaydet
+  Future<void> _updateCompanyLogoInFirebase(String logoUrl) async {
+    try {
+      debugPrint('🔄 Company info güncelleniyor...');
+      // Mevcut company bilgilerini al
+      final companyInfoAsync = ref.read(companyInfoWithRefreshProvider);
+
+      await companyInfoAsync.when(
+        data: (companyInfo) async {
+          if (companyInfo != null) {
+            debugPrint(
+                '📝 Mevcut company info güncelleniyor: ${companyInfo.name}');
+            // Mevcut company bilgilerini güncelle
+            final updatedCompanyInfo = companyInfo.copyWith(
+              logoUrl: logoUrl.isEmpty ? null : logoUrl,
+              updatedAt: DateTime.now(),
+            );
+
+            // Firebase'e kaydet
+            final useCase = ref.read(saveCompanyInfoUseCaseProvider);
+            await useCase.call(updatedCompanyInfo);
+            debugPrint('✅ Company info Firebase\'e kaydedildi');
+
+            // Provider'ı refresh et
+            ref.read(companyInfoRefreshProvider.notifier).state++;
+            debugPrint('🔄 Provider refresh edildi');
+          } else if (logoUrl.isNotEmpty) {
+            debugPrint('📝 Yeni company info oluşturuluyor...');
+            // Company info yoksa ve logo varsa yeni oluştur
+            final tenantService = TenantService();
+            final tenantId = await tenantService.getUserTenantId();
+            final user = ref.read(currentUserProvider);
+
+            final newCompanyInfo = CompanyInfo(
+              id: '',
+              tenantId: tenantId,
+              createdBy: user.value?.id,
+              name: _nameController.text.isNotEmpty
+                  ? _nameController.text
+                  : 'Firma Adı',
+              logoUrl: logoUrl,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+
+            final useCase = ref.read(saveCompanyInfoUseCaseProvider);
+            await useCase.call(newCompanyInfo);
+            debugPrint('✅ Yeni company info Firebase\'e kaydedildi');
+
+            // Provider'ı refresh et
+            ref.read(companyInfoRefreshProvider.notifier).state++;
+            debugPrint('🔄 Provider refresh edildi');
+          }
+        },
+        loading: () async {
+          debugPrint('⏳ Company info yükleniyor...');
+          // Loading durumunda bekle
+        },
+        error: (error, stack) async {
+          debugPrint('❌ Company info yüklenirken hata: $error');
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ Logo Firebase\'e kaydedilirken hata: $e');
+      // Hata olsa bile devam et, kullanıcıya bildir
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Logo kaydedilirken hata: $e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _saveCompanyInfo() async {
@@ -90,6 +314,7 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
         email: _emailController.text.isNotEmpty ? _emailController.text : null,
         website:
             _websiteController.text.isNotEmpty ? _websiteController.text : null,
+        logoUrl: _currentLogoUrl,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -151,6 +376,8 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
           if (_websiteController.text.isEmpty) {
             _websiteController.text = companyInfo.website ?? '';
           }
+          // Logo URL'yi set et
+          _currentLogoUrl = companyInfo.logoUrl;
         } else if (user.value != null && mounted) {
           // Company info yoksa user settings'ten register bilgilerini kullan
           final settings = user.value!.settings;
@@ -193,6 +420,135 @@ class _CompanySettingsPageState extends ConsumerState<CompanySettingsPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Firma Logosu',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: Column(
+                          children: [
+                            // Logo gösterimi
+                            Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.grey.shade300,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(6),
+                                child: _currentLogoUrl != null ||
+                                        _localLogoBytes != null
+                                    ? kIsWeb && _localLogoBytes != null
+                                        ? Image.memory(
+                                            _localLogoBytes!,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (context, error, stackTrace) {
+                                              return _buildPlaceholderLogo();
+                                            },
+                                          )
+                                        : _currentLogoUrl != null
+                                            ? Image.network(
+                                                _currentLogoUrl!,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error,
+                                                    stackTrace) {
+                                                  return _buildPlaceholderLogo();
+                                                },
+                                              )
+                                            : _buildPlaceholderLogo()
+                                    : _buildPlaceholderLogo(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Logo yükleme butonları
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                ElevatedButton.icon(
+                                  onPressed: _isUploadingLogo
+                                      ? null
+                                      : _pickAndUploadLogo,
+                                  icon: _isUploadingLogo
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            valueColor:
+                                                AlwaysStoppedAnimation<Color>(
+                                                    Colors.white),
+                                          ),
+                                        )
+                                      : const Icon(Icons.upload),
+                                  label: Text(
+                                    _isUploadingLogo
+                                        ? 'Yükleniyor...'
+                                        : 'Logo Yükle',
+                                    style: GoogleFonts.poppins(fontSize: 14),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                                if (_currentLogoUrl != null ||
+                                    _localLogoBytes != null) ...[
+                                  const SizedBox(width: 12),
+                                  ElevatedButton.icon(
+                                    onPressed: _deleteLogo,
+                                    icon: const Icon(Icons.delete),
+                                    label: Text(
+                                      'Sil',
+                                      style: GoogleFonts.poppins(fontSize: 14),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Önerilen boyut: 200x200 px\nDesteklenen formatlar: JPG, PNG',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),

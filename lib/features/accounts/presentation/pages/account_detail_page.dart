@@ -2140,12 +2140,26 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
             final userData = userDoc.data() as Map<String, dynamic>;
             final tenantId = userData['tenantId'] as String? ?? '';
 
+            // Transaction type'ını güncelleme türüne göre belirle
+            TransactionType transactionType;
+            switch (_updateType) {
+              case BalanceUpdateType.setDirect:
+                transactionType = TransactionType.adjustment; // Düzeltme
+                break;
+              case BalanceUpdateType.add:
+                transactionType = TransactionType.deposit; // Giriş
+                break;
+              case BalanceUpdateType.subtract:
+                transactionType = TransactionType.withdrawal; // Çıkış
+                break;
+            }
+
             final transaction = AccountTransaction(
               id: '',
               accountId: widget.account.id,
               tenantId: tenantId,
-              type: TransactionType.adjustment,
-              amount: transactionAmount, // ← Düzeltildi: bakiye değişikliği
+              type: transactionType,
+              amount: transactionAmount,
               balanceAfter: newBalance,
               description: description,
               category: TransactionCategory.other,

@@ -161,6 +161,7 @@ class _LandingPageState extends State<LandingPage>
   Widget _buildMainContent() {
     return SingleChildScrollView(
       controller: _scrollController,
+      physics: const BouncingScrollPhysics(),
       child: Column(
         children: [
           // Professional Hero Section
@@ -188,7 +189,9 @@ class _LandingPageState extends State<LandingPage>
   /// Professional Hero Section
   Widget _buildProfessionalHero() {
     return Container(
-      height: MediaQuery.of(context).size.height,
+      constraints: BoxConstraints(
+        minHeight: MediaQuery.of(context).size.height,
+      ),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -208,76 +211,90 @@ class _LandingPageState extends State<LandingPage>
 
           // Main content
           SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
-                  left: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
-                  right: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
-                  bottom: MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
-                ),
-                child: MediaQuery.of(context).size.width > 768
-                    ? Row(
-                        children: [
-                          // Sol taraf - Reklam görseli (Desktop)
-                          Expanded(
-                            flex: 1,
-                            child: Center(
-                              child: _buildAdvertisementImage(),
-                            ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final viewportHeight = MediaQuery.of(context).size.height;
+                return ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: viewportHeight,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      top:
+                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                      left:
+                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                      right:
+                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                      bottom:
+                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                    ),
+                    child: MediaQuery.of(context).size.width > 768
+                        ? Row(
+                            children: [
+                              // Sol taraf - Reklam görseli (Desktop)
+                              Expanded(
+                                flex: 1,
+                                child: Center(
+                                  child: _buildAdvertisementImage(),
+                                ),
+                              ),
+
+                              const SizedBox(width: 40),
+
+                              // Sağ taraf - Logo, metin ve butonlar (Desktop)
+                              Expanded(
+                                flex: 1,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Professional logo
+                                    _buildProfessionalLogo(),
+
+                                    const SizedBox(height: 40),
+
+                                    // Professional text
+                                    _buildProfessionalText(),
+
+                                    const SizedBox(height: 60),
+
+                                    // Professional buttons
+                                    _buildProfessionalButtons(),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Professional logo - üst ve alt margin ile
+                              Container(
+                                margin: const EdgeInsets.only(top: 80),
+                                child: _buildProfessionalLogo(),
+                              ),
+
+                              const SizedBox(height: 20),
+
+                              // Professional text
+                              _buildProfessionalText(),
+
+                              const SizedBox(height: 20),
+
+                              // Professional buttons
+                              _buildProfessionalButtons(),
+
+                              const SizedBox(height: 20),
+
+                              // Reklam görseli (Mobile - butonların altında)
+                              _buildAdvertisementImageMobile(),
+
+                              const SizedBox(height: 40),
+                            ],
                           ),
-
-                          const SizedBox(width: 40),
-
-                          // Sağ taraf - Logo, metin ve butonlar (Desktop)
-                          Expanded(
-                            flex: 1,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                // Professional logo
-                                _buildProfessionalLogo(),
-
-                                const SizedBox(height: 40),
-
-                                // Professional text
-                                _buildProfessionalText(),
-
-                                const SizedBox(height: 60),
-
-                                // Professional buttons
-                                _buildProfessionalButtons(),
-                              ],
-                            ),
-                          ),
-                        ],
-                      )
-                    : Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Professional logo - üst ve alt margin ile
-                          Container(
-                            margin: const EdgeInsets.only(top: 120),
-                            child: _buildProfessionalLogo(),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // Professional text
-                          _buildProfessionalText(),
-
-                          const SizedBox(height: 20),
-
-                          // Professional buttons
-                          _buildProfessionalButtons(),
-
-                          const SizedBox(height: 20),
-
-                          // Reklam görseli (Mobile - butonların altında)
-                          _buildAdvertisementImageMobile(),
-                        ],
-                      ),
-              ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -319,7 +336,8 @@ class _LandingPageState extends State<LandingPage>
           scale: _fadeAnimation.value,
           child: Container(
             width: 250,
-            height: 300, // Mobile için daha küçük boyut
+            height:
+                250, // Mobile için daha küçük boyut - overflow'u önlemek için
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -329,7 +347,7 @@ class _LandingPageState extends State<LandingPage>
               child: Image.asset(
                 'assets/images/ads/landingMainImage.png', // Ana görseli kullan
                 width: 250,
-                height: 300,
+                height: 250,
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.high,
                 isAntiAlias: true,
@@ -343,31 +361,46 @@ class _LandingPageState extends State<LandingPage>
 
   /// Background pattern
   Widget _buildBackgroundPattern() {
-    return AnimatedBuilder(
-      animation: _floatAnimation,
-      builder: (context, child) {
-        return Stack(
-          children: List.generate(8, (index) {
-            final angle = (index * 45.0) * (math.pi / 180);
-            final radius = 150 + (index * 30);
-            final x = MediaQuery.of(context).size.width / 2 +
-                radius * math.cos(angle + _floatAnimation.value * 2 * math.pi);
-            final y = MediaQuery.of(context).size.height / 2 +
-                radius * math.sin(angle + _floatAnimation.value * 2 * math.pi);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Eğer constraints infinite ise, pattern'ı gösterme
+        if (!constraints.hasBoundedHeight || !constraints.hasBoundedWidth) {
+          return const SizedBox.shrink();
+        }
 
-            return Positioned(
-              left: x,
-              top: y,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
+        return AnimatedBuilder(
+          animation: _floatAnimation,
+          builder: (context, child) {
+            return SizedBox(
+              width: constraints.maxWidth,
+              height: constraints.maxHeight,
+              child: Stack(
+                children: List.generate(8, (index) {
+                  final angle = (index * 45.0) * (math.pi / 180);
+                  final radius = 150 + (index * 30);
+                  final x = constraints.maxWidth / 2 +
+                      radius *
+                          math.cos(angle + _floatAnimation.value * 2 * math.pi);
+                  final y = constraints.maxHeight / 2 +
+                      radius *
+                          math.sin(angle + _floatAnimation.value * 2 * math.pi);
+
+                  return Positioned(
+                    left: x,
+                    top: y,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                    ),
+                  );
+                }),
               ),
             );
-          }),
+          },
         );
       },
     );

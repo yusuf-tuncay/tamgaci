@@ -110,8 +110,8 @@ class ExcelExportService {
     sheet.appendRow(['TAMGACI', 'Muhasebe ve İş Yönetim Sistemi']);
 
     // Boş satır
-    sheet.appendRow(['']);
-  }
+        sheet.appendRow(['']);
+      }
 
   static void _buildInfoSection(
       Sheet sheet,
@@ -142,12 +142,12 @@ class ExcelExportService {
     }
 
     // Kullanıcı adı (Web Sitesi altına)
-    if (user != null) {
+      if (user != null) {
       leftColumn.add('Kullanıcı: ${user.name} ${user.surname}');
       leftColumn.add(''); // Boş satır
-    }
+      }
 
-    // Rapor bilgileri
+      // Rapor bilgileri
     leftColumn.addAll([
       'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}',
       'Rapor Türü: Hesap Ekstresi',
@@ -157,7 +157,7 @@ class ExcelExportService {
     // Sağ sütun - Filtreleme bilgileri + Hesap bilgileri
     final rightColumn = <String>[];
 
-    // Filtreleme bilgileri
+      // Filtreleme bilgileri
     rightColumn.addAll([
       'Tarih Aralığı: ${startDate != null && endDate != null ? '${DateFormat('dd.MM.yyyy').format(startDate)} - ${DateFormat('dd.MM.yyyy').format(endDate)}' : 'Tüm tarihler'}',
       'İşlem Türü: ${transactionType != null ? _getTransactionTypeText(transactionType) : 'Tüm işlem türleri'}',
@@ -189,7 +189,7 @@ class ExcelExportService {
   static void _buildStatementTable(
       Sheet sheet, Account account, List<AccountTransaction> transactions) {
     // Başlık satırı
-    final headerRow = [
+      final headerRow = [
       '📅 Tarih',
       '🕐 Saat',
       '📂 Kategori',
@@ -198,13 +198,13 @@ class ExcelExportService {
       '🟢 Alacak',
       '⚫ Bakiye'
     ];
-    sheet.appendRow(headerRow);
+      sheet.appendRow(headerRow);
 
-    // İşlemleri en yeni olan en alta gelecek şekilde sırala
-    final sortedTransactions = List<AccountTransaction>.from(transactions)
-      ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
+      // İşlemleri en yeni olan en alta gelecek şekilde sırala
+      final sortedTransactions = List<AccountTransaction>.from(transactions)
+        ..sort((a, b) => a.transactionDate.compareTo(b.transactionDate));
 
-    // İşlemleri ekle
+      // İşlemleri ekle
     for (final transaction in sortedTransactions) {
       // Borç/Alacak hesaplama
       double debitAmount = 0.0;
@@ -234,11 +234,11 @@ class ExcelExportService {
           break;
       }
 
-      final row = [
-        DateFormat('dd.MM.yyyy').format(transaction.transactionDate),
-        DateFormat('HH:mm').format(transaction.transactionDate),
-        _getTransactionCategoryText(transaction.category),
-        transaction.description,
+        final row = [
+          DateFormat('dd.MM.yyyy').format(transaction.transactionDate),
+          DateFormat('HH:mm').format(transaction.transactionDate),
+          _getTransactionCategoryText(transaction.category),
+          transaction.description,
         debitAmount != 0
             ? NumberFormat('#,##0.00', 'tr_TR').format(debitAmount)
             : '',
@@ -248,7 +248,7 @@ class ExcelExportService {
         NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter),
       ];
 
-      sheet.appendRow(row);
+        sheet.appendRow(row);
     }
   }
 
@@ -263,39 +263,39 @@ class ExcelExportService {
   }
 
   static String _saveForWeb(Uint8List bytes, String fileName) {
-    final uint8List = Uint8List.fromList(bytes);
-    final blob = web.Blob([uint8List.buffer.toJS].toJS);
-    final url = web.URL.createObjectURL(blob);
+        final uint8List = Uint8List.fromList(bytes);
+        final blob = web.Blob([uint8List.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
 
-    final anchor = web.HTMLAnchorElement()
-      ..href = url
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
       ..download = fileName
-      ..style.display = 'none';
+          ..style.display = 'none';
 
-    web.document.body?.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
 
-    web.URL.revokeObjectURL(url);
+        web.URL.revokeObjectURL(url);
 
     debugPrint('Excel export: Web indirme başlatıldı - $fileName');
     return 'Web indirme başlatıldı: $fileName';
   }
 
   static Future<String> _saveForMobile(Uint8List bytes, String fileName) async {
-    final directory = await getDownloadsDirectory();
-    if (directory == null) {
-      throw Exception('Downloads klasörü bulunamadı');
-    }
+        final directory = await getDownloadsDirectory();
+        if (directory == null) {
+          throw Exception('Downloads klasörü bulunamadı');
+        }
 
     final filePath = path.join(directory.path, fileName);
-    final file = File(filePath);
-    await file.writeAsBytes(bytes);
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
 
-    debugPrint('Excel export: Dosya kaydedildi - $filePath');
-    debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
+        debugPrint('Excel export: Dosya kaydedildi - $filePath');
+        debugPrint('Excel export: Dosya boyutu - ${file.lengthSync()} byte');
 
-    return filePath;
+        return filePath;
   }
 
   static String _getAccountTypeText(AccountType type) {

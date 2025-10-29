@@ -5,16 +5,28 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocaleNotifier extends StateNotifier<Locale> {
   static const String _localeKey = 'app_locale';
   static const Locale _defaultLocale = Locale('tr', 'TR');
+  bool _isInitialized = false;
 
   LocaleNotifier() : super(_defaultLocale) {
-    _loadLocale();
+    // Constructor'da async işlem yapma - lazy initialization kullan
+    _initializeAsync();
+  }
+
+  // Async initialization - non-blocking
+  void _initializeAsync() {
+    Future.microtask(() async {
+      if (!_isInitialized) {
+        await _loadLocale();
+        _isInitialized = true;
+      }
+    });
   }
 
   Future<void> _loadLocale() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final localeCode = prefs.getString(_localeKey);
-      if (localeCode != null) {
+      if (localeCode != null && mounted) {
         final parts = localeCode.split('_');
         if (parts.length == 2) {
           state = Locale(parts[0], parts[1]);
@@ -23,8 +35,10 @@ class LocaleNotifier extends StateNotifier<Locale> {
         }
       }
     } catch (e) {
-      // Varsayılan dil kullan
-      state = _defaultLocale;
+      // Varsayılan dil kullan - hata durumunda sessizce devam et
+      if (mounted) {
+        state = _defaultLocale;
+      }
     }
   }
 

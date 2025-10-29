@@ -5,10 +5,11 @@ import 'package:tamgaci/features/accounts/presentation/providers/account_transac
 // Tüm masrafları getiren provider
 final allExpensesProvider = Provider<List<AccountTransaction>>((ref) {
   final allTransactions = ref.watch(allAccountTransactionsProvider);
-  
+
   return allTransactions.when(
     data: (transactions) => transactions
-        .where((transaction) => transaction.category == TransactionCategory.expense)
+        .where((transaction) =>
+            transaction.category == TransactionCategory.expense)
         .toList(),
     loading: () => [],
     error: (_, __) => [],
@@ -18,7 +19,7 @@ final allExpensesProvider = Provider<List<AccountTransaction>>((ref) {
 // Masraf istatistikleri provider'ı
 final expensesStatsProvider = Provider<Map<String, dynamic>>((ref) {
   final expenses = ref.watch(allExpensesProvider);
-  
+
   if (expenses.isEmpty) {
     return {
       'totalAmount': 0.0,
@@ -30,16 +31,19 @@ final expensesStatsProvider = Provider<Map<String, dynamic>>((ref) {
 
   final now = DateTime.now();
   final thisMonth = DateTime(now.year, now.month);
-  
-  final totalAmount = expenses.fold<double>(0.0, (sum, expense) => sum + expense.amount.abs());
+
+  final totalAmount =
+      expenses.fold<double>(0.0, (sum, expense) => sum + expense.amount.abs());
   final totalCount = expenses.length;
-  
+
   final thisMonthExpenses = expenses.where((expense) {
-    final expenseDate = DateTime.fromMillisecondsSinceEpoch(expense.createdAt.millisecondsSinceEpoch);
+    final expenseDate = DateTime.fromMillisecondsSinceEpoch(
+        expense.createdAt.millisecondsSinceEpoch);
     return expenseDate.isAfter(thisMonth.subtract(const Duration(days: 1)));
   }).toList();
-  
-  final thisMonthAmount = thisMonthExpenses.fold<double>(0.0, (sum, expense) => sum + expense.amount.abs());
+
+  final thisMonthAmount = thisMonthExpenses.fold<double>(
+      0.0, (sum, expense) => sum + expense.amount.abs());
   final thisMonthCount = thisMonthExpenses.length;
 
   return {
