@@ -15,6 +15,11 @@ import '../../../accounts/domain/entities/account_transaction.dart';
 import '../../../accounts/domain/entities/account.dart';
 import '../../../accounts/presentation/providers/account_providers.dart';
 import '../providers/expenses_providers.dart';
+import '../../../../core/services/export/excel_export_service.dart';
+import '../../../../core/services/export/pdf_export_service.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../../core/providers/company_provider.dart';
+import '../../../company/presentation/providers/company_providers.dart';
 
 /// Gelişmiş masraflar listesi sayfası
 class ExpensesPage extends ConsumerStatefulWidget {
@@ -54,6 +59,63 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  void _showExportOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.table_chart),
+              title: const Text('Excel Olarak İndir'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _exportToExcel();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('PDF Olarak İndir'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _exportToPDF();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Account _buildAllAccountsDummy() {
+    return Account(
+      id: 'all',
+      tenantId: 'unknown',
+      name: 'Tüm Hesaplar',
+      accountNumber: '0000000000',
+      bankName: '—',
+      branchName: '—',
+      iban: 'TR00000000000000000000000000',
+      swiftCode: '—',
+      currency: 'TRY',
+      balance: 0.0,
+      availableBalance: 0.0,
+      blockedAmount: 0.0,
+      type: AccountType.other,
+      status: AccountStatus.active,
+      isActive: true,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+      createdBy: 'system',
+      updatedBy: 'system',
+    );
   }
 
   String _formatDateRange(DateTimeRange range) {
@@ -196,7 +258,6 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
       },
     );
   }
-
 
   @override
   void dispose() {
@@ -597,21 +658,11 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
           tooltip: _sortAscending ? 'Artan' : 'Azalan',
         ),
         const SizedBox(width: 12),
-        // Export butonları
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              onPressed: _exportToExcel,
-              icon: const Icon(Icons.table_chart),
-              tooltip: 'Excel\'e Aktar',
-            ),
-            IconButton(
-              onPressed: _exportToPDF,
-              icon: const Icon(Icons.picture_as_pdf),
-              tooltip: 'PDF\'ye Aktar',
-            ),
-          ],
+        // Export seçenekleri (bottom sheet)
+        IconButton(
+          onPressed: _showExportOptions,
+          icon: const Icon(Icons.file_download),
+          tooltip: 'Dışa Aktar',
         ),
       ],
     );
@@ -821,14 +872,9 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               ),
               const SizedBox(width: 12),
               IconButton(
-                onPressed: _exportToExcel,
-                icon: const Icon(Icons.table_chart),
-                tooltip: 'Excel\'e Aktar',
-              ),
-              IconButton(
-                onPressed: _exportToPDF,
-                icon: const Icon(Icons.picture_as_pdf),
-                tooltip: 'PDF\'ye Aktar',
+                onPressed: _showExportOptions,
+                icon: const Icon(Icons.file_download),
+                tooltip: 'Dışa Aktar',
               ),
             ],
           ),
@@ -967,7 +1013,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
           // Hesap adlarını karşılaştırmak için accountsProvider'ı kullan
           final accountsAsync = ref.read(accountsProvider);
           final accounts = accountsAsync.valueOrNull ?? [];
-          
+
           final aAccount = accounts.firstWhere(
             (acc) => acc.id == a.accountId,
             orElse: () => Account(
@@ -992,7 +1038,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               updatedBy: 'system',
             ),
           );
-          
+
           final bAccount = accounts.firstWhere(
             (acc) => acc.id == b.accountId,
             orElse: () => Account(
@@ -1017,7 +1063,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               updatedBy: 'system',
             ),
           );
-          
+
           return _sortAscending
               ? aAccount.name.compareTo(bAccount.name)
               : bAccount.name.compareTo(aAccount.name);
@@ -1107,7 +1153,9 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                               'Hesap: ${account.name}',
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                               ),
                             );
                           },
@@ -1115,14 +1163,16 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                             'Hesap: Yükleniyor...',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
                             ),
                           ),
                           error: (error, stack) => Text(
                             'Hesap: Bulunamadı',
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
                             ),
                           ),
                         );
@@ -1226,38 +1276,189 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     );
   }
 
-  void _exportToExcel() {
-    Navigator.of(context).pop(); // Bottom sheet'i kapat
-    setState(() {
-      _isExporting = true;
-    });
+  Future<void> _exportToExcel() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
 
-    // TODO: Excel export implementasyonu
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isExporting = false;
-      });
+    // Progress snackbar
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Excel export başarılı!')),
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('Excel dosyası oluşturuluyor...'),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
+        ),
       );
-    });
+    }
+
+    try {
+      final allExpenses = ref.read(allExpensesProvider);
+      final filtered = _applyFilters(allExpenses);
+
+      if (filtered.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export edilecek masraf bulunamadı'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // User, company, companyInfo (opsiyonel)
+      final userAsync = ref.read(currentUserProvider);
+      final companyAsync = ref.read(currentCompanyProvider);
+      final companyInfoAsync = ref.read(companyInfoStreamProvider);
+
+      final user = userAsync.value;
+      final company = companyAsync.value;
+      final companyInfo = companyInfoAsync.value;
+
+      // Dummy account (tüm hesaplar)
+      final account = _buildAllAccountsDummy();
+
+      final filePath = await ExcelExportService.exportTransactionsToExcel(
+        account: account,
+        transactions: filtered,
+        user: user,
+        company: company,
+        companyInfo: companyInfo,
+        startDate: _dateRange?.start,
+        endDate: _dateRange?.end,
+        transactionType: null,
+        transactionCategory: null,
+        searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Excel dosyası başarıyla oluşturuldu!${filePath != null ? '\n$filePath' : ''}'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel export hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
   }
 
-  void _exportToPDF() {
-    Navigator.of(context).pop(); // Bottom sheet'i kapat
-    setState(() {
-      _isExporting = true;
-    });
+  Future<void> _exportToPDF() async {
+    if (_isExporting) return;
+    setState(() => _isExporting = true);
 
-    // TODO: PDF export implementasyonu
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isExporting = false;
-      });
+    // Progress snackbar
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('PDF export başarılı!')),
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              SizedBox(width: 16),
+              Text('PDF dosyası oluşturuluyor...'),
+            ],
+          ),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
       );
-    });
+    }
+
+    try {
+      final allExpenses = ref.read(allExpensesProvider);
+      final filtered = _applyFilters(allExpenses);
+
+      if (filtered.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export edilecek masraf bulunamadı'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // User, company, companyInfo (opsiyonel)
+      final userAsync = ref.read(currentUserProvider);
+      final companyAsync = ref.read(currentCompanyProvider);
+      final companyInfoAsync = ref.read(companyInfoStreamProvider);
+
+      final user = userAsync.value;
+      final company = companyAsync.value;
+      final companyInfo = companyInfoAsync.value;
+
+      // Dummy account (tüm hesaplar)
+      final account = _buildAllAccountsDummy();
+
+      await PdfExportService.exportTransactionsToPdf(
+        account: account,
+        transactions: filtered,
+        user: user,
+        company: company,
+        companyInfo: companyInfo,
+        startDate: _dateRange?.start,
+        endDate: _dateRange?.end,
+        transactionType: null,
+        transactionCategory: null,
+        searchQuery: _searchQuery.isNotEmpty ? _searchQuery : null,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('PDF dosyası başarıyla oluşturuldu!'),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF export hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isExporting = false);
+    }
   }
 
   void _navigateToCreate() {
