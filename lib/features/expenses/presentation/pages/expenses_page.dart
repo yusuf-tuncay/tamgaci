@@ -55,22 +55,6 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     _searchController.addListener(_onSearchChanged);
   }
 
-  Future<void> _selectDateRange() async {
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-      initialDateRange: _dateRange,
-      saveText: 'Uygula',
-    );
-    if (!mounted) return;
-    if (picked != null) {
-      setState(() {
-        _dateRange = picked;
-      });
-    }
-  }
-
   String _formatDateRange(DateTimeRange range) {
     final df = DateFormat('dd.MM.yyyy');
     return '${df.format(range.start)} - ${df.format(range.end)}';
@@ -242,7 +226,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ResponsiveScaffold(
-      appBar: CustomAppBar(
+      appBar: const CustomAppBar(
         title: 'Masraflar',
         showDrawer: true,
       ),
@@ -501,7 +485,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
             builder: (context, ref, child) {
               final accountsAsync = ref.watch(accountsProvider);
               return DropdownButtonFormField<String>(
-                value: accountsAsync.when(
+                initialValue: accountsAsync.when(
                   data: (_) => _selectedAccountId,
                   loading: () => null,
                   error: (_, __) => null,
@@ -522,12 +506,10 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                       value: 'all',
                       child: Text('Tüm Hesaplar'),
                     ),
-                    ...accounts
-                        .map((account) => DropdownMenuItem(
-                              value: account.id,
-                              child: Text(account.name),
-                            ))
-                        .toList(),
+                    ...accounts.map((account) => DropdownMenuItem(
+                          value: account.id,
+                          child: Text(account.name),
+                        )),
                   ],
                   loading: () => [
                     const DropdownMenuItem(
@@ -555,7 +537,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
         // Kategori filtresi
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _selectedCategory,
+            initialValue: _selectedCategory,
             decoration: InputDecoration(
               labelText: 'Kategori',
               border: OutlineInputBorder(
@@ -586,7 +568,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
         // Sıralama
         Expanded(
           child: DropdownButtonFormField<String>(
-            value: _getSortDisplayName(_sortBy),
+            initialValue: _getSortDisplayName(_sortBy),
             decoration: InputDecoration(
               labelText: 'Sırala',
               border: OutlineInputBorder(
@@ -689,53 +671,85 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                 child: Consumer(
                   builder: (context, ref, child) {
                     final accountsAsync = ref.watch(accountsProvider);
-                    return DropdownButtonFormField<String>(
-                      value: accountsAsync.when(
-                        data: (_) => _selectedAccountId,
-                        loading: () => null,
-                        error: (_, __) => null,
-                      ),
-                      decoration: InputDecoration(
-                        labelText: 'Hesap',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                      ),
-                      items: accountsAsync.when(
-                        data: (accounts) => [
-                          const DropdownMenuItem(
-                            value: 'all',
-                            child: Text('Tüm Hesaplar'),
+                    return accountsAsync.when(
+                      data: (accounts) {
+                        // Seçili hesap geçerli mi kontrol et
+                        final isValidSelection = accounts.any((account) =>
+                                account.id == _selectedAccountId) ||
+                            _selectedAccountId == 'all';
+                        return DropdownButtonFormField<String>(
+                          initialValue:
+                              isValidSelection ? _selectedAccountId : 'all',
+                          decoration: InputDecoration(
+                            labelText: 'Hesap',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                           ),
-                          ...accounts
-                              .map((account) => DropdownMenuItem(
-                                    value: account.id,
-                                    child: Text(account.name),
-                                  ))
-                              .toList(),
-                        ],
-                        loading: () => [
-                          const DropdownMenuItem(
-                            value: 'all',
-                            child: Text('Tüm Hesaplar'),
-                          ),
-                        ],
-                        error: (_, __) => [
-                          const DropdownMenuItem(
-                            value: 'all',
-                            child: Text('Tüm Hesaplar'),
-                          ),
-                        ],
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedAccountId = value ?? 'all';
-                        });
+                          items: [
+                            const DropdownMenuItem(
+                              value: 'all',
+                              child: Text('Tüm Hesaplar'),
+                            ),
+                            ...accounts.map((account) => DropdownMenuItem(
+                                  value: account.id,
+                                  child: Text(account.name),
+                                )),
+                          ],
+                          onChanged: (value) {
+                            if (value != null && mounted) {
+                              setState(() {
+                                _selectedAccountId = value;
+                              });
+                            }
+                          },
+                        );
                       },
+                      loading: () => DropdownButtonFormField<String>(
+                        initialValue: 'all',
+                        decoration: InputDecoration(
+                          labelText: 'Hesap',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'all',
+                            child: Text('Yükleniyor...'),
+                          ),
+                        ],
+                        onChanged: null,
+                      ),
+                      error: (error, stackTrace) =>
+                          DropdownButtonFormField<String>(
+                        initialValue: 'all',
+                        decoration: InputDecoration(
+                          labelText: 'Hesap',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'all',
+                            child: Text('Hata oluştu'),
+                          ),
+                        ],
+                        onChanged: null,
+                      ),
                     );
                   },
                 ),
@@ -743,7 +757,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedCategory,
+                  initialValue: _selectedCategory,
                   decoration: InputDecoration(
                     labelText: 'Kategori',
                     border: OutlineInputBorder(
@@ -778,7 +792,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _getSortDisplayName(_sortBy),
+                  initialValue: _getSortDisplayName(_sortBy),
                   decoration: InputDecoration(
                     labelText: 'Sırala',
                     border: OutlineInputBorder(
@@ -1118,71 +1132,6 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showFilterDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Filtreler',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-        ),
-        content: const Text('Filtre seçenekleri burada olacak'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Kapat'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showExportDialog() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Export Seçenekleri',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _exportToExcel,
-                    icon: const Icon(Icons.table_chart),
-                    label: const Text('Excel'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _exportToPDF,
-                    icon: const Icon(Icons.picture_as_pdf),
-                    label: const Text('PDF'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('İptal'),
-            ),
-          ],
-        ),
       ),
     );
   }
