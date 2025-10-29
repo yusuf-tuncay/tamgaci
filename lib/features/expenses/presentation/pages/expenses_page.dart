@@ -12,6 +12,7 @@ import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import '../../../accounts/domain/entities/account_transaction.dart';
+import '../../../accounts/domain/entities/account.dart';
 import '../../../accounts/presentation/providers/account_providers.dart';
 import '../providers/expenses_providers.dart';
 
@@ -196,16 +197,6 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     );
   }
 
-  String _getAccountNameById(String accountId) {
-    final accountsAsync = ref.read(accountsProvider);
-    return accountsAsync.maybeWhen(
-      data: (accounts) {
-        final match = accounts.where((a) => a.id == accountId);
-        return match.isNotEmpty ? match.first.name : accountId;
-      },
-      orElse: () => accountId,
-    );
-  }
 
   @override
   void dispose() {
@@ -973,11 +964,63 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               ? a.description.compareTo(b.description)
               : b.description.compareTo(a.description);
         case 'accountName':
-          final aName = _getAccountNameById(a.accountId);
-          final bName = _getAccountNameById(b.accountId);
+          // Hesap adlarını karşılaştırmak için accountsProvider'ı kullan
+          final accountsAsync = ref.read(accountsProvider);
+          final accounts = accountsAsync.valueOrNull ?? [];
+          
+          final aAccount = accounts.firstWhere(
+            (acc) => acc.id == a.accountId,
+            orElse: () => Account(
+              id: a.accountId,
+              tenantId: 'unknown',
+              name: a.accountId,
+              accountNumber: '0000000000',
+              bankName: 'Bilinmeyen Banka',
+              branchName: 'Bilinmeyen Şube',
+              iban: 'TR00000000000000000000000000',
+              swiftCode: 'UNKNOWN',
+              currency: 'TRY',
+              balance: 0.0,
+              availableBalance: 0.0,
+              blockedAmount: 0.0,
+              type: AccountType.other,
+              status: AccountStatus.active,
+              isActive: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              createdBy: 'system',
+              updatedBy: 'system',
+            ),
+          );
+          
+          final bAccount = accounts.firstWhere(
+            (acc) => acc.id == b.accountId,
+            orElse: () => Account(
+              id: b.accountId,
+              tenantId: 'unknown',
+              name: b.accountId,
+              accountNumber: '0000000000',
+              bankName: 'Bilinmeyen Banka',
+              branchName: 'Bilinmeyen Şube',
+              iban: 'TR00000000000000000000000000',
+              swiftCode: 'UNKNOWN',
+              currency: 'TRY',
+              balance: 0.0,
+              availableBalance: 0.0,
+              blockedAmount: 0.0,
+              type: AccountType.other,
+              status: AccountStatus.active,
+              isActive: true,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+              createdBy: 'system',
+              updatedBy: 'system',
+            ),
+          );
+          
           return _sortAscending
-              ? aName.compareTo(bName)
-              : bName.compareTo(aName);
+              ? aAccount.name.compareTo(bAccount.name)
+              : bAccount.name.compareTo(aAccount.name);
         default:
           return b.createdAt.compareTo(a.createdAt);
       }
@@ -1031,12 +1074,59 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      'Hesap: ${_getAccountNameById(expense.accountId)}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
-                      ),
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final accountsAsync = ref.watch(accountsProvider);
+                        return accountsAsync.when(
+                          data: (accounts) {
+                            final account = accounts.firstWhere(
+                              (a) => a.id == expense.accountId,
+                              orElse: () => Account(
+                                id: expense.accountId,
+                                tenantId: 'unknown',
+                                name: 'Bilinmeyen Hesap',
+                                accountNumber: '0000000000',
+                                bankName: 'Bilinmeyen Banka',
+                                branchName: 'Bilinmeyen Şube',
+                                iban: 'TR00000000000000000000000000',
+                                swiftCode: 'UNKNOWN',
+                                currency: 'TRY',
+                                balance: 0.0,
+                                availableBalance: 0.0,
+                                blockedAmount: 0.0,
+                                type: AccountType.other,
+                                status: AccountStatus.active,
+                                isActive: true,
+                                createdAt: DateTime.now(),
+                                updatedAt: DateTime.now(),
+                                createdBy: 'system',
+                                updatedBy: 'system',
+                              ),
+                            );
+                            return Text(
+                              'Hesap: ${account.name}',
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              ),
+                            );
+                          },
+                          loading: () => Text(
+                            'Hesap: Yükleniyor...',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                          error: (error, stack) => Text(
+                            'Hesap: Bulunamadı',
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              color: isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     Text(
                       DateFormat('dd.MM.yyyy HH:mm').format(expense.createdAt),
