@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "tamgaci"
-  }
+    "default": "tamgaci",
+    "tamgaci": "tamgaci"
+  },
+  "targets": {},
+  "etags": {}
 }

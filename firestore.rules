@@ -41,15 +41,9 @@ service cloud.firestore {
     function getUserTenantId() {
       return get(/databases/$(database)/documents/users/$(userId())).data.tenantId;
     }
-    function isSameTenant(resourceData) {
-      return resourceData.tenantId == getUserTenantId();
-    }
-    function isSameTenantOrAdmin(resourceData) {
-      return isAdmin() || isSameTenant(resourceData);
-    }
-    function isAuthenticatedUser() {
-      return isSignedIn() && exists(/databases/$(database)/documents/users/$(userId()));
-    }
+    // Removed unused helper to avoid warnings
+    // Removed unused helper to avoid warnings
+    // Removed unused helper to avoid warnings
     function isTenantOwner(tenantId) {
       // Basit kontrol: kullanıcının tenantId'si ile eşleşiyor mu?
       return getUserTenantId() == tenantId;
@@ -59,30 +53,7 @@ service cloud.firestore {
       return getUserTenantId() == tenantId;
     }
 
-    // Generic helpers - Multi-tenant aware
-    function allowRead(doc) {
-      return isSignedIn() && isSameTenantOrAdmin(doc.data);
-    }
-    function allowDelete(doc) {
-      return isSignedIn() && isSameTenantOrAdmin(doc.data) && isOwner(doc.data);
-    }
-    function isValidCreate() {
-      return isSignedIn() &&
-             request.resource.data.createdBy == userId() &&
-             request.resource.data.tenantId == getUserTenantId() &&
-             (request.resource.data.createdAt == null || request.resource.data.createdAt is timestamp) &&
-             (request.resource.data.updatedAt == null || request.resource.data.updatedAt is timestamp) &&
-             (request.resource.data.updatedBy == null || request.resource.data.updatedBy == userId()) &&
-             (request.resource.data.isActive == null || request.resource.data.isActive is bool);
-    }
-    function allowUpdate(doc) {
-      return isSignedIn() && isSameTenantOrAdmin(doc.data) && isOwner(doc.data) &&
-             request.resource.data.createdBy == doc.data.createdBy &&
-             request.resource.data.tenantId == doc.data.tenantId &&
-             request.resource.data.createdAt == doc.data.createdAt &&
-             (request.resource.data.updatedAt is timestamp) &&
-             (request.resource.data.isActive == null || request.resource.data.isActive is bool);
-    }
+    // Generic helpers removed (unused) to keep ruleset minimal and warning-free
 
     // Tenants
     match /tenants/{tenantId} {
@@ -93,6 +64,48 @@ service cloud.firestore {
     }
 
     // Tenant-based collections
+    // Employees module (tenant-scoped)
+    match /tenants/{tenantId}/employees/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) &&
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+    match /tenants/{tenantId}/departments/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) &&
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId);
+      allow delete: if isSignedIn() && isTenantMember(tenantId);
+    }
+    match /tenants/{tenantId}/positions/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) &&
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId);
+      allow delete: if isSignedIn() && isTenantMember(tenantId);
+    }
+    match /tenants/{tenantId}/employee_categories/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) &&
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId);
+      allow delete: if isSignedIn() && isTenantMember(tenantId);
+    }
+    match /tenants/{tenantId}/employee_transactions/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) &&
+                       request.resource.data.tenantId == tenantId &&
+                       request.resource.data.employeeId is string &&
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId);
+      allow delete: if isSignedIn() && isTenantMember(tenantId);
+    }
     match /tenants/{tenantId}/products/{id} {
       allow get, list: if isSignedIn() && isTenantMember(tenantId);
       allow create: if isSignedIn() && isTenantMember(tenantId) && 

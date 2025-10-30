@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:typed_data';
 import 'dart:async';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -39,13 +40,56 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   String _sortBy = 'Ad Soyad';
   bool _sortAscending = true;
 
+  // Multitenant
+  String? _tenantId;
+  StreamSubscription? _deptMetaSub;
+  StreamSubscription? _catMetaSub;
+  StreamSubscription? _posMetaSub;
+
+  CollectionReference<Map<String, dynamic>> _tenantCol(String name) {
+    if (_tenantId != null && _tenantId!.isNotEmpty) {
+      return FirebaseFirestore.instance
+          .collection('tenants')
+          .doc(_tenantId)
+          .collection(name);
+    }
+    return FirebaseFirestore.instance.collection(name);
+  }
+
+  Future<void> _loadTenantId() async {
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) return;
+      final userDoc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final tid = userDoc.data()?['tenantId'] as String?;
+      if (tid != null && tid.isNotEmpty && tid != _tenantId) {
+        setState(() {
+          _tenantId = tid;
+        });
+        // Yeniden meta koleksiyonları dinle (tenant değiştiyse)
+        _listenToMetaCollections(restart: true);
+      }
+    } catch (_) {
+      // Sessiz geç: tenantId yoksa üst seviye koleksiyonlara düşer
+    }
+  }
+
+  Future<bool> _ensureTenant() async {
+    if (_tenantId == null || _tenantId!.isEmpty) {
+      await _loadTenantId();
+    }
+    return _tenantId != null && _tenantId!.isNotEmpty;
+  }
+
   // Date range kaldırıldı (bu modülde kullanılmıyor)
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
-    // Firestore'dan departman ve kategori dinle
+    // TenantId yükle ve meta koleksiyonları dinle
+    _loadTenantId();
     _listenToMetaCollections();
   }
 
@@ -89,8 +133,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                         onPressed: () async {
                           final name = catCtrl.text.trim();
                           if (name.isEmpty) return;
-                          final exists = await FirebaseFirestore.instance
-                              .collection('employee_categories')
+                          final exists = await _tenantCol('employee_categories')
                               .where('name', isEqualTo: name)
                               .limit(1)
                               .get();
@@ -101,9 +144,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                             );
                             return;
                           }
-                          await FirebaseFirestore.instance
-                              .collection('employee_categories')
-                              .add({
+                          await _tenantCol('employee_categories').add({
                             'name': name,
                             'createdAt': FieldValue.serverTimestamp()
                           });
@@ -224,9 +265,13 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     );
   }
 
-  void _listenToMetaCollections() {
-    FirebaseFirestore.instance
-        .collection('departments')
+  void _listenToMetaCollections({bool restart = false}) {
+    if (restart) {
+      _deptMetaSub?.cancel();
+      _catMetaSub?.cancel();
+      _posMetaSub?.cancel();
+    }
+    _deptMetaSub = _tenantCol('departments')
         .orderBy('name')
         .snapshots()
         .listen((snapshot) {
@@ -243,8 +288,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       });
     });
 
-    FirebaseFirestore.instance
-        .collection('employee_categories')
+    _catMetaSub = _tenantCol('employee_categories')
         .orderBy('name')
         .snapshots()
         .listen((snapshot) {
@@ -261,11 +305,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       });
     });
 
-    FirebaseFirestore.instance
-        .collection('positions')
-        .orderBy('name')
-        .snapshots()
-        .listen((snapshot) {
+    _posMetaSub =
+        _tenantCol('positions').orderBy('name').snapshots().listen((snapshot) {
       final names = snapshot.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
@@ -315,8 +356,15 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                         onPressed: () async {
                           final name = controller.text.trim();
                           if (name.isEmpty) return;
-                          final exists = await FirebaseFirestore.instance
-                              .collection('positions')
+                          if (!await _ensureTenant()) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Tenant yüklenmedi. Lütfen tekrar deneyin.')),
+                            );
+                            return;
+                          }
+                          final exists = await _tenantCol('positions')
                               .where('name', isEqualTo: name)
                               .limit(1)
                               .get();
@@ -327,10 +375,10 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                             );
                             return;
                           }
-                          await FirebaseFirestore.instance
-                              .collection('positions')
-                              .add({
+                          await _tenantCol('positions').add({
                             'name': name,
+                            'tenantId': _tenantId,
+                            'createdBy': FirebaseAuth.instance.currentUser?.uid,
                             'createdAt': FieldValue.serverTimestamp(),
                           });
                           controller.clear();
@@ -341,10 +389,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                   ),
                   const SizedBox(height: 8),
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance
-                        .collection('positions')
-                        .orderBy('name')
-                        .snapshots(),
+                    stream: _tenantCol('positions').orderBy('name').snapshots(),
                     builder: (context, snap) {
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
@@ -469,8 +514,15 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                         onPressed: () async {
                           final name = categoryCtrl.text.trim();
                           if (name.isEmpty) return;
-                          final exists = await FirebaseFirestore.instance
-                              .collection('employee_categories')
+                          if (!await _ensureTenant()) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Tenant yüklenmedi. Lütfen tekrar deneyin.')),
+                            );
+                            return;
+                          }
+                          final exists = await _tenantCol('employee_categories')
                               .where('name', isEqualTo: name)
                               .limit(1)
                               .get();
@@ -481,10 +533,10 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                             );
                             return;
                           }
-                          await FirebaseFirestore.instance
-                              .collection('employee_categories')
-                              .add({
+                          await _tenantCol('employee_categories').add({
                             'name': name,
+                            'tenantId': _tenantId,
+                            'createdBy': FirebaseAuth.instance.currentUser?.uid,
                             'createdAt': FieldValue.serverTimestamp(),
                           });
                           categoryCtrl.clear();
@@ -495,8 +547,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                   ),
                   const SizedBox(height: 8),
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance
-                        .collection('employee_categories')
+                    stream: _tenantCol('employee_categories')
                         .orderBy('name')
                         .snapshots(),
                     builder: (context, snap) {
@@ -640,10 +691,18 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                         final name = controller.text.trim();
                         if (name.isEmpty) return;
                         try {
-                          await FirebaseFirestore.instance
-                              .collection('departments')
-                              .add({
+                          if (!await _ensureTenant()) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Tenant yüklenmedi. Lütfen tekrar deneyin.')),
+                            );
+                            return;
+                          }
+                          await _tenantCol('departments').add({
                             'name': name,
+                            'tenantId': _tenantId,
+                            'createdBy': FirebaseAuth.instance.currentUser?.uid,
                             'createdAt': FieldValue.serverTimestamp(),
                           });
                           controller.clear();
@@ -660,10 +719,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                 const SizedBox(height: 12),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance
-                        .collection('departments')
-                        .orderBy('name')
-                        .snapshots(),
+                    stream:
+                        _tenantCol('departments').orderBy('name').snapshots(),
                     builder: (context, snap) {
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
@@ -837,6 +894,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               positions: _positions,
               onManagePositions: _openManagePositions,
               scrollController: scrollController,
+              tenantId: _tenantId,
             );
           },
         );
@@ -1114,6 +1172,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                         _selectedCategory == 'Tümü' ? null : _selectedCategory,
                     sortBy: _sortBy,
                     ascending: _sortAscending,
+                    tenantId: _tenantId,
                   ),
                 ),
               ],
@@ -1222,17 +1281,24 @@ class _EmployeeList extends StatelessWidget {
   final String? selectedCategory;
   final String sortBy;
   final bool ascending;
+  final String? tenantId;
   const _EmployeeList({
     this.searchQuery = '',
     this.selectedDepartment,
     this.selectedCategory,
     this.sortBy = 'Ad Soyad',
     this.ascending = true,
+    this.tenantId,
   });
   @override
   Widget build(BuildContext context) {
     Query<Map<String, dynamic>> query =
-        FirebaseFirestore.instance.collection('employees');
+        (tenantId != null && tenantId!.isNotEmpty)
+            ? FirebaseFirestore.instance
+                .collection('tenants')
+                .doc(tenantId)
+                .collection('employees')
+            : FirebaseFirestore.instance.collection('employees');
 
     if (selectedDepartment != null && selectedDepartment!.isNotEmpty) {
       query = query.where('department', isEqualTo: selectedDepartment);
@@ -1347,8 +1413,8 @@ class _EmployeeList extends StatelessWidget {
               onTap: () => showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
-                builder: (ctx) =>
-                    _EmployeeDetailSheet(docId: snap.id, data: data),
+                builder: (ctx) => _EmployeeDetailSheet(
+                    tenantId: tenantId, docId: snap.id, data: data),
               ),
             );
           },
@@ -1371,9 +1437,11 @@ class _SectionEntry {
 }
 
 class _EmployeeDetailSheet extends StatelessWidget {
+  final String? tenantId;
   final String docId;
   final Map<String, dynamic> data;
-  const _EmployeeDetailSheet({required this.docId, required this.data});
+  const _EmployeeDetailSheet(
+      {required this.tenantId, required this.docId, required this.data});
 
   @override
   Widget build(BuildContext context) {
@@ -1524,11 +1592,12 @@ class _EmployeeDetailSheet extends StatelessWidget {
                             Text('Hareketler',
                                 style: Theme.of(context).textTheme.titleMedium),
                             const Spacer(),
-                            _EmployeeBalance(docId: docId),
+                            _EmployeeBalance(tenantId: tenantId, docId: docId),
                           ],
                         ),
                         const SizedBox(height: 8),
-                        _EmployeeTransactionsList(docId: docId),
+                        _EmployeeTransactionsList(
+                            tenantId: tenantId, docId: docId),
                       ],
                     ),
                   ),
@@ -1608,10 +1677,13 @@ class _EmployeeDetailSheet extends StatelessWidget {
           FilledButton(
             onPressed: () async {
               try {
-                await FirebaseFirestore.instance
-                    .collection('employees')
-                    .doc(docId)
-                    .update({
+                final col = (tenantId != null && tenantId!.isNotEmpty)
+                    ? FirebaseFirestore.instance
+                        .collection('tenants')
+                        .doc(tenantId)
+                        .collection('employees')
+                    : FirebaseFirestore.instance.collection('employees');
+                await col.doc(docId).update({
                   'name': nameCtrl.text.trim(),
                   'position': posCtrl.text.trim(),
                   'department': deptCtrl.text.trim(),
@@ -1669,14 +1741,20 @@ class _InfoTile extends StatelessWidget {
 }
 
 class _EmployeeBalance extends StatelessWidget {
+  final String? tenantId;
   final String docId;
-  const _EmployeeBalance({required this.docId});
+  const _EmployeeBalance({required this.tenantId, required this.docId});
 
   @override
   Widget build(BuildContext context) {
-    final query = FirebaseFirestore.instance
-        .collection('employee_transactions')
-        .where('employeeId', isEqualTo: docId);
+    final query = (tenantId != null && tenantId!.isNotEmpty)
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('employee_transactions')
+        : FirebaseFirestore.instance
+            .collection('employee_transactions')
+            .where('employeeId', isEqualTo: docId);
 
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: query.snapshots(),
@@ -1709,15 +1787,22 @@ class _EmployeeBalance extends StatelessWidget {
 }
 
 class _EmployeeTransactionsList extends StatelessWidget {
+  final String? tenantId;
   final String docId;
-  const _EmployeeTransactionsList({required this.docId});
+  const _EmployeeTransactionsList(
+      {required this.tenantId, required this.docId});
 
   @override
   Widget build(BuildContext context) {
-    final q = FirebaseFirestore.instance
-        .collection('employee_transactions')
-        .where('employeeId', isEqualTo: docId)
-        .limit(10);
+    final q = (tenantId != null && tenantId!.isNotEmpty)
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('employee_transactions')
+        : FirebaseFirestore.instance
+            .collection('employee_transactions')
+            .where('employeeId', isEqualTo: docId)
+            .limit(10);
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: q.snapshots(),
       builder: (context, snap) {
@@ -1799,12 +1884,14 @@ class _AddEmployeeForm extends StatefulWidget {
   final List<String> positions;
   final VoidCallback onManagePositions;
   final ScrollController scrollController;
+  final String? tenantId;
   const _AddEmployeeForm({
     required this.departments,
     required this.categories,
     required this.positions,
     required this.onManagePositions,
     required this.scrollController,
+    this.tenantId,
   });
 
   @override
@@ -1812,6 +1899,16 @@ class _AddEmployeeForm extends StatefulWidget {
 }
 
 class _AddEmployeeFormState extends State<_AddEmployeeForm> {
+  CollectionReference<Map<String, dynamic>> _col(String name) {
+    if (widget.tenantId != null && widget.tenantId!.isNotEmpty) {
+      return FirebaseFirestore.instance
+          .collection('tenants')
+          .doc(widget.tenantId)
+          .collection(name);
+    }
+    return FirebaseFirestore.instance.collection(name);
+  }
+
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   // Controllers
@@ -1860,11 +1957,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     _categoriesLive = List<String>.from(widget.categories);
     _departmentsLive = List<String>.from(widget.departments);
     // Listen to Firestore for runtime updates
-    _posSub = FirebaseFirestore.instance
-        .collection('positions')
-        .orderBy('name')
-        .snapshots()
-        .listen((s) {
+    _posSub = _col('positions').orderBy('name').snapshots().listen((s) {
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
@@ -1878,11 +1971,8 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         }
       });
     });
-    _catSub = FirebaseFirestore.instance
-        .collection('employee_categories')
-        .orderBy('name')
-        .snapshots()
-        .listen((s) {
+    _catSub =
+        _col('employee_categories').orderBy('name').snapshots().listen((s) {
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
@@ -1897,11 +1987,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       });
     });
 
-    _deptSub = FirebaseFirestore.instance
-        .collection('departments')
-        .orderBy('name')
-        .snapshots()
-        .listen((s) {
+    _deptSub = _col('departments').orderBy('name').snapshots().listen((s) {
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
@@ -2005,9 +2091,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                                     content: Text('Bu kategori zaten var')));
                             return;
                           }
-                          await FirebaseFirestore.instance
-                              .collection('employee_categories')
-                              .add({
+                          await _col('employee_categories').add({
                             'name': name,
                             'createdAt': FieldValue.serverTimestamp()
                           });
@@ -2017,10 +2101,8 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                   ]),
                   const SizedBox(height: 8),
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: FirebaseFirestore.instance
-                        .collection('employee_categories')
-                        .orderBy('name')
-                        .snapshots(),
+                    stream:
+                        _col('employee_categories').orderBy('name').snapshots(),
                     builder: (context, snap) {
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
@@ -2314,7 +2396,14 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         }
       }
 
-      final docRef = await firestore.collection('employees').add({
+      final employeesCol =
+          (widget.tenantId != null && widget.tenantId!.isNotEmpty)
+              ? FirebaseFirestore.instance
+                  .collection('tenants')
+                  .doc(widget.tenantId)
+                  .collection('employees')
+              : firestore.collection('employees');
+      final docRef = await employeesCol.add({
         'name': _nameController.text.trim(),
         'tc': _tcController.text.trim(),
         'birthDate': Timestamp.fromDate(_birthDate!),
@@ -2332,6 +2421,8 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         if (schedule.isNotEmpty) 'schedule': schedule,
         'photoUrl': null,
         'documents': [],
+        'tenantId': widget.tenantId,
+        'createdBy': FirebaseAuth.instance.currentUser?.uid,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
