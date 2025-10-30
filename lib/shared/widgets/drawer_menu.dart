@@ -246,12 +246,12 @@ final drawerMenuItemsProvider = Provider<List<DrawerMenuItem>>((ref) {
           route: 'accounts-list',
         ),
         DrawerMenuItem(
-          id: 'employees',
-          title: 'Personeller',
-          icon: Icons.person_outline,
-          route: '',
-          isActive: false,
-        ),
+  id: 'employees',
+  title: 'Personeller',
+  icon: Icons.person_outline,
+  route: 'employees-list',
+  isActive: true,
+),
         DrawerMenuItem(
           id: 'expenses',
           title: 'Masraflar',
