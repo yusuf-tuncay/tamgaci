@@ -17,6 +17,11 @@ service cloud.firestore {
       allow read, write: if isSignedIn();
     }
 
+    // Employee transactions for Employees module
+    match /employee_transactions/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
     // Public metadata for registration (cities/districts/tax offices)
     match /geo_cities/{docId} {
       allow read: if true;       // Public read for dropdowns before auth
