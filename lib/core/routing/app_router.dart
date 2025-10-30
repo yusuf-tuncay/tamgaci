@@ -28,6 +28,7 @@ import '../router/suppliers_routes.dart';
 import '../router/accounts_routes.dart';
 import '../router/expenses_routes.dart';
 import '../router/reports_routes.dart';
+import '../router/employees_routes.dart';
 import '../router/test_routes.dart';
 
 /// Go Router configuration
@@ -65,6 +66,7 @@ class AppRouter {
       ...AccountsRoutes.routes,
       ...ExpensesRoutes.routes,
       ...ReportsRoutes.routes,
+      ...EmployeesRoutes.routes,
       ...TestRoutes.routes,
 
       // ========== SHARED ROUTES ==========

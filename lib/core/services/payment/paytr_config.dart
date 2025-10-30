@@ -20,8 +20,7 @@ class PaytrConfig {
   static const String statusQueryUrl = '$apiBaseUrl/odeme/durum-sorgu';
 
   /// Test modu (development için)
-  static const bool testMode =
-      true; // Test modunda true (canlı moda geçiş bekleniyor)
+  static const bool testMode = false; // Canlı mod
 
   /// Callback URL'leri (Public payment result pages)
   /// PayTR için hash (#) karakteri sorun yaratabilir, URL'leri düzelt
@@ -43,7 +42,7 @@ class PaytrConfig {
   static const int timeout = 30;
 
   /// Debug modu
-  static const bool debugMode = true;
+  static const bool debugMode = false;
 
   /// Konfigürasyon geçerli mi?
   static bool get isConfigured =>

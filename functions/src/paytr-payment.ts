@@ -28,7 +28,7 @@ export const createPayTRPayment = onCall(async (request) => {
         const merchantId = process.env.PAYTR_MERCHANT_ID || '622887';
         const merchantKey = process.env.PAYTR_MERCHANT_KEY || 'uePB6f7AfxtAAyqZ';
         const merchantSalt = process.env.PAYTR_MERCHANT_SALT || 'ejdEC3ReZay7QxE8';
-        const isTestMode = process.env.PAYTR_TEST_MODE === '1' || true;
+        const isTestMode = process.env.PAYTR_TEST_MODE === '1';
 
         console.log('PayTR: merchantId:', merchantId);
         console.log('PayTR: isTestMode:', isTestMode);
@@ -48,10 +48,17 @@ export const createPayTRPayment = onCall(async (request) => {
         const userName = `${userData.name || ''} ${userData.surname || ''}`.trim();
         const userPhone = userData.phone || '5550000000';
 
+        // İstemci IP adresini tespit et (Cloud Functions proxy arkasında X-Forwarded-For kullanılır)
+        const rawReq: any = (request as any).rawRequest || {};
+        const xff = (rawReq.headers?.['x-forwarded-for'] as string | undefined) || '';
+        const forwardedIp = xff.split(',')[0]?.trim();
+        const remoteIp = rawReq.ip || rawReq.socket?.remoteAddress || undefined;
+        const userIp = forwardedIp || remoteIp || '127.0.0.1';
+
         // PayTR parametreleri
         const params = {
             merchant_id: merchantId,
-            user_ip: '127.0.0.1', // Test için
+            user_ip: userIp,
             merchant_oid: orderId,
             email: userEmail,
             payment_amount: Math.round(amount * 100), // TL'den kuruşa çevir

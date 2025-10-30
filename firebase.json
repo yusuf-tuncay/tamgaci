@@ -106,7 +106,7 @@
   },
   "functions": {
     "source": "functions",
-    "runtime": "nodejs18"
+    "runtime": "nodejs22"
   },
   "storage": {
     "rules": "storage.rules"
