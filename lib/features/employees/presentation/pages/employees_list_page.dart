@@ -60,6 +60,169 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     });
   }
 
+  void _openManageCategoriesPage() {
+    final TextEditingController catCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Kategoriler'),
+          content: SizedBox(
+            width: 480,
+            height: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: catCtrl,
+                          decoration: const InputDecoration(
+                            labelText: 'Yeni kategori adı',
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () async {
+                          final name = catCtrl.text.trim();
+                          if (name.isEmpty) return;
+                          final exists = await FirebaseFirestore.instance
+                              .collection('employee_categories')
+                              .where('name', isEqualTo: name)
+                              .limit(1)
+                              .get();
+                          if (exists.docs.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Bu kategori zaten var')),
+                            );
+                            return;
+                          }
+                          await FirebaseFirestore.instance
+                              .collection('employee_categories')
+                              .add({
+                            'name': name,
+                            'createdAt': FieldValue.serverTimestamp()
+                          });
+                          catCtrl.clear();
+                        },
+                        child: const Text('Ekle'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('employee_categories')
+                        .orderBy('name')
+                        .snapshots(),
+                    builder: (context, snap) {
+                      if (snap.hasError) {
+                        return Center(child: Text('Hata: ${snap.error}'));
+                      }
+                      if (!snap.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final docs = snap.data!.docs;
+                      if (docs.isEmpty) {
+                        return const Center(child: Text('Kayıt yok'));
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: docs.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final d = docs[i];
+                          final name = d.data()['name'] as String? ?? '-';
+                          return ListTile(
+                            title: Text(name),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'Düzenle',
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () async {
+                                    final editCtrl =
+                                        TextEditingController(text: name);
+                                    final ok = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Kategori Düzenle'),
+                                        content: TextField(
+                                            controller: editCtrl,
+                                            decoration: const InputDecoration(
+                                                labelText: 'Ad')),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(false),
+                                              child: const Text('İptal')),
+                                          FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(true),
+                                              child: const Text('Kaydet')),
+                                        ],
+                                      ),
+                                    );
+                                    if (ok == true) {
+                                      final newName = editCtrl.text.trim();
+                                      if (newName.isNotEmpty) {
+                                        await d.reference
+                                            .update({'name': newName});
+                                      }
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  tooltip: 'Sil',
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.redAccent),
+                                  onPressed: () async {
+                                    final ok = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        title: const Text('Kategori Sil'),
+                                        content: Text('"$name" silinsin mi?'),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(false),
+                                              child: const Text('Vazgeç')),
+                                          FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(true),
+                                              child: const Text('Sil')),
+                                        ],
+                                      ),
+                                    );
+                                    if (ok == true) await d.reference.delete();
+                                  },
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Kapat'))
+          ],
+        );
+      },
+    );
+  }
+
   void _listenToMetaCollections() {
     FirebaseFirestore.instance
         .collection('departments')
@@ -69,6 +232,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       final names = snapshot.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
+          .toSet()
           .toList();
       setState(() {
         _departments = ['Tümü', ...names];
@@ -86,6 +250,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       final names = snapshot.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
+          .toSet()
           .toList();
       setState(() {
         _categories = ['Tümü', ...names];
@@ -103,6 +268,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       final names = snapshot.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
+          .toSet()
           .toList();
       setState(() {
         _positions = names;
@@ -677,49 +843,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     );
   }
 
-  void _onAddDepartment() {
-    final TextEditingController nameCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Departman Ekle'),
-          content: TextField(
-            controller: nameCtrl,
-            decoration: const InputDecoration(
-              labelText: 'Departman Adı',
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Vazgeç'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final name = nameCtrl.text.trim();
-                if (name.isEmpty) return;
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('departments')
-                      .add({
-                    'name': name,
-                    'createdAt': FieldValue.serverTimestamp(),
-                  });
-                  if (mounted) Navigator.of(context).pop();
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Departman eklenemedi: $e')),
-                  );
-                }
-              },
-              child: const Text('Ekle'),
-            )
-          ],
-        );
-      },
-    );
-  }
+  // _onAddDepartment kaldırıldı; departman yönetimi form içinden açılan diyalogda yapılır
 
   Widget _buildSearchAndFilters() {
     final double width = MediaQuery.sizeOf(context).width;
@@ -765,9 +889,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               ),
               const SizedBox(width: 8),
               IconButton(
-                tooltip: 'Departmanları Yönet',
+                tooltip: 'Departman Ekle',
                 onPressed: _openManageDepartments,
-                icon: const Icon(Icons.settings),
+                icon: const Icon(Icons.add),
               ),
               const SizedBox(width: 4),
               Expanded(
@@ -788,6 +912,12 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                       .toList(),
                   onChanged: (v) => setState(() => _selectedCategory = v!),
                 ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                tooltip: 'Kategori Ekle',
+                onPressed: _openManageCategoriesPage,
+                icon: const Icon(Icons.add),
               ),
             ],
           ),
@@ -875,9 +1005,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
             ),
             const SizedBox(width: 8),
             IconButton(
-              tooltip: 'Departmanları Yönet',
+              tooltip: 'Departman Ekle',
               onPressed: _openManageDepartments,
-              icon: const Icon(Icons.settings),
+              icon: const Icon(Icons.add),
             ),
             const SizedBox(width: 4),
             Expanded(
@@ -898,6 +1028,12 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                     .toList(),
                 onChanged: (v) => setState(() => _selectedCategory = v!),
               ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              tooltip: 'Kategori Ekle',
+              onPressed: _openManageCategoriesPage,
+              icon: const Icon(Icons.add),
             ),
           ],
         ),
@@ -993,13 +1129,6 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                   onPressed: _onAddEmployee,
                   icon: const Icon(Icons.person_add),
                   label: const Text('Yeni Personel Ekle'),
-                ),
-                const SizedBox(height: 12),
-                FloatingActionButton.extended(
-                  heroTag: 'fab_add_department',
-                  onPressed: _onAddDepartment,
-                  icon: const Icon(Icons.apartment),
-                  label: const Text('Departman Ekle'),
                 ),
               ],
             ),
@@ -1237,8 +1366,10 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
   // Live option lists
   List<String> _positionsLive = [];
   List<String> _categoriesLive = [];
+  List<String> _departmentsLive = [];
   StreamSubscription? _posSub;
   StreamSubscription? _catSub;
+  StreamSubscription? _deptSub;
 
   @override
   void initState() {
@@ -1246,6 +1377,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     // Seed from parent
     _positionsLive = List<String>.from(widget.positions);
     _categoriesLive = List<String>.from(widget.categories);
+    _departmentsLive = List<String>.from(widget.departments);
     // Listen to Firestore for runtime updates
     _posSub = FirebaseFirestore.instance
         .collection('positions')
@@ -1255,8 +1387,15 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
+          .toSet()
           .toList();
-      setState(() => _positionsLive = names);
+      setState(() {
+        _positionsLive = names;
+        if (_selectedPosition != null &&
+            !_positionsLive.contains(_selectedPosition)) {
+          _selectedPosition = null;
+        }
+      });
     });
     _catSub = FirebaseFirestore.instance
         .collection('employee_categories')
@@ -1266,8 +1405,34 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
+          .toSet()
           .toList();
-      setState(() => _categoriesLive = names);
+      setState(() {
+        _categoriesLive = names;
+        if (_selectedCategory != null &&
+            !_categoriesLive.contains(_selectedCategory)) {
+          _selectedCategory = null;
+        }
+      });
+    });
+
+    _deptSub = FirebaseFirestore.instance
+        .collection('departments')
+        .orderBy('name')
+        .snapshots()
+        .listen((s) {
+      final names = s.docs
+          .map((d) => (d.data())['name'] as String)
+          .where((e) => e.trim().isNotEmpty)
+          .toSet()
+          .toList();
+      setState(() {
+        _departmentsLive = names;
+        if (_selectedDepartment != null &&
+            !_departmentsLive.contains(_selectedDepartment)) {
+          _selectedDepartment = null;
+        }
+      });
     });
   }
 
@@ -1317,7 +1482,170 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     _overtimeMultiplierController.dispose();
     _posSub?.cancel();
     _catSub?.cancel();
+    _deptSub?.cancel();
     super.dispose();
+  }
+
+  // Eski birleşik diyalog kaldırıldı (departman+kategori). Ayrı diyaloglar kullanılıyor.
+
+  void _openManageCategories() {
+    final catCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Kategoriler'),
+          content: SizedBox(
+            width: 520,
+            height: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(children: [
+                    Expanded(
+                        child: TextField(
+                            controller: catCtrl,
+                            decoration: const InputDecoration(
+                                labelText: 'Yeni kategori adı'))),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                        onPressed: () async {
+                          final name = catCtrl.text.trim();
+                          if (name.isEmpty) return;
+                          final exists = await FirebaseFirestore.instance
+                              .collection('employee_categories')
+                              .where('name', isEqualTo: name)
+                              .limit(1)
+                              .get();
+                          if (exists.docs.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Bu kategori zaten var')));
+                            return;
+                          }
+                          await FirebaseFirestore.instance
+                              .collection('employee_categories')
+                              .add({
+                            'name': name,
+                            'createdAt': FieldValue.serverTimestamp()
+                          });
+                          catCtrl.clear();
+                        },
+                        child: const Text('Ekle')),
+                  ]),
+                  const SizedBox(height: 8),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('employee_categories')
+                        .orderBy('name')
+                        .snapshots(),
+                    builder: (context, snap) {
+                      if (snap.hasError) {
+                        return Center(child: Text('Hata: ${snap.error}'));
+                      }
+                      if (!snap.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final docs = snap.data!.docs;
+                      if (docs.isEmpty) {
+                        return const Center(child: Text('Kayıt yok'));
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: docs.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final d = docs[i];
+                          final name = d.data()['name'] as String? ?? '-';
+                          return ListTile(
+                            title: Text(name),
+                            trailing:
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                              IconButton(
+                                  tooltip: 'Düzenle',
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () async {
+                                    final editCtrl =
+                                        TextEditingController(text: name);
+                                    final ok = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                                title: const Text(
+                                                    'Kategori Düzenle'),
+                                                content: TextField(
+                                                    controller: editCtrl,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                            labelText: 'Ad')),
+                                                actions: [
+                                                  TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(false),
+                                                      child:
+                                                          const Text('İptal')),
+                                                  FilledButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(true),
+                                                      child:
+                                                          const Text('Kaydet'))
+                                                ]));
+                                    if (ok == true) {
+                                      final newName = editCtrl.text.trim();
+                                      if (newName.isNotEmpty) {
+                                        await d.reference
+                                            .update({'name': newName});
+                                      }
+                                    }
+                                  }),
+                              IconButton(
+                                  tooltip: 'Sil',
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.redAccent),
+                                  onPressed: () async {
+                                    final ok = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                                title:
+                                                    const Text('Kategori Sil'),
+                                                content: Text(
+                                                    '"$name" silinsin mi?'),
+                                                actions: [
+                                                  TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(false),
+                                                      child:
+                                                          const Text('Vazgeç')),
+                                                  FilledButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(true),
+                                                      child: const Text('Sil'))
+                                                ]));
+                                    if (ok == true) await d.reference.delete();
+                                  }),
+                            ]),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Kapat'))
+          ],
+        );
+      },
+    );
   }
 
   String _formatTimeOfDay(TimeOfDay t) {
@@ -1850,8 +2178,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                         initialValue: _selectedDepartment,
                         decoration:
                             const InputDecoration(labelText: 'Departman'),
-                        items: widget.departments
-                            .where((d) => d != 'Tümü')
+                        items: _departmentsLive
                             .map((d) =>
                                 DropdownMenuItem(value: d, child: Text(d)))
                             .toList(),
@@ -1860,6 +2187,12 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                             : (v) => setState(() => _selectedDepartment = v),
                         validator: (v) => v == null ? 'Zorunlu alan' : null,
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Kategori Ekle',
+                      onPressed: _isSaving ? null : _openManageCategories,
+                      icon: const Icon(Icons.add),
                     ),
                   ],
                 ),
@@ -1914,9 +2247,9 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      tooltip: 'Pozisyonları Yönet',
+                      tooltip: 'Pozisyon Ekle',
                       onPressed: _isSaving ? null : widget.onManagePositions,
-                      icon: const Icon(Icons.settings),
+                      icon: const Icon(Icons.add),
                     ),
                     const SizedBox(width: 4),
                     Expanded(
