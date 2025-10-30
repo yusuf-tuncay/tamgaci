@@ -1,6 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // ===== Temporary top-level access for Employees module (development) =====
+    // Allows using top-level collections used by current UI until multi-tenant
+    // paths are wired. Requires authentication.
+    match /employees/{docId} {
+      allow read, write: if isSignedIn();
+    }
+    match /departments/{docId} {
+      allow read, write: if isSignedIn();
+    }
+    match /positions/{docId} {
+      allow read, write: if isSignedIn();
+    }
+    match /employee_categories/{docId} {
+      allow read, write: if isSignedIn();
+    }
+
     // Public metadata for registration (cities/districts/tax offices)
     match /geo_cities/{docId} {
       allow read: if true;       // Public read for dropdowns before auth
