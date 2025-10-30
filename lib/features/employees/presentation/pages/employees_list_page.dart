@@ -4,8 +4,306 @@ import 'package:tamgaci/shared/widgets/custom_app_bar.dart';
 import 'package:tamgaci/shared/widgets/responsive_scaffold.dart';
 import 'package:tamgaci/shared/widgets/drawer_menu.dart';
 
-class EmployeesListPage extends StatelessWidget {
+class EmployeesListPage extends StatefulWidget {
   const EmployeesListPage({super.key});
+
+  @override
+  State<EmployeesListPage> createState() => _EmployeesListPageState();
+}
+
+class _EmployeesListPageState extends State<EmployeesListPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  // Filters
+  final List<String> _departments = const [
+    'Tümü',
+    'Muhasebe',
+    'Operasyon',
+    'İK'
+  ];
+  final List<String> _categories = const [
+    'Tümü',
+    'Full-Time',
+    'Yarı-Zamanlı',
+    'Stajyer'
+  ];
+  String _selectedDepartment = 'Tümü';
+  String _selectedCategory = 'Tümü';
+
+  // Sorting
+  final List<String> _sortOptions = const [
+    'Ad Soyad',
+    'Departman',
+    'Kategori',
+    'Bakiye'
+  ];
+  String _sortBy = 'Ad Soyad';
+  bool _sortAscending = true;
+
+  // Date range kaldırıldı (bu modülde kullanılmıyor)
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text.toLowerCase();
+    });
+  }
+
+  void _showExportOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.table_chart),
+              title: const Text('Excel Olarak İndir'),
+              onTap: () {
+                Navigator.of(context).pop();
+                // TODO: Excel export implementation
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('PDF Olarak İndir'),
+              onTap: () {
+                Navigator.of(context).pop();
+                // TODO: PDF export implementation
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Tarih aralığı kaldırıldı
+
+  Widget _buildSearchAndFilters() {
+    final double width = MediaQuery.sizeOf(context).width;
+    final bool isNarrow = width < 900;
+
+    if (isNarrow) {
+      return Column(
+        children: [
+          TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Personel ara...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey[100],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _selectedDepartment,
+                  decoration: InputDecoration(
+                    labelText: 'Departman',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                  items: _departments
+                      .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedDepartment = v!),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _selectedCategory,
+                  decoration: InputDecoration(
+                    labelText: 'Kategori',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                  items: _categories
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _selectedCategory = v!),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _sortBy,
+                  decoration: InputDecoration(
+                    labelText: 'Sırala',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                  ),
+                  items: _sortOptions
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _sortBy = v!),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                onPressed: () =>
+                    setState(() => _sortAscending = !_sortAscending),
+                icon: Icon(
+                    _sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
+                tooltip: _sortAscending ? 'Artan' : 'Azalan',
+              ),
+              const SizedBox(width: 4),
+              IconButton(
+                onPressed: _showExportOptions,
+                icon: const Icon(Icons.file_download),
+                tooltip: 'Dışa Aktar',
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Personel ara...',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedDepartment,
+                decoration: InputDecoration(
+                  labelText: 'Departman',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                items: _departments
+                    .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedDepartment = v!),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                decoration: InputDecoration(
+                  labelText: 'Kategori',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                items: _categories
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
+                onChanged: (v) => setState(() => _selectedCategory = v!),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: _sortBy,
+                decoration: InputDecoration(
+                  labelText: 'Sırala',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                ),
+                items: _sortOptions
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (v) => setState(() => _sortBy = v!),
+              ),
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              onPressed: () => setState(() => _sortAscending = !_sortAscending),
+              icon: Icon(
+                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
+              tooltip: _sortAscending ? 'Artan' : 'Azalan',
+            ),
+            const SizedBox(width: 12),
+            IconButton(
+              onPressed: _showExportOptions,
+              icon: const Icon(Icons.file_download),
+              tooltip: 'Dışa Aktar',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +325,7 @@ class EmployeesListPage extends StatelessWidget {
             // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: _EmployeeFilterBar(),
+              child: _buildSearchAndFilters(),
             ),
             const SizedBox(height: 6),
             const Expanded(
@@ -70,7 +368,8 @@ class _EmployeesHeader extends StatelessWidget {
               ),
               Text(
                 'Şirket personellerinizi yönetin.',
-                style: GoogleFonts.poppins(fontSize: 14, color: Colors.white.withValues(alpha:0.9)),
+                style: GoogleFonts.poppins(
+                    fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
               ),
             ],
           ),
@@ -87,74 +386,33 @@ class _EmployeesHeader extends StatelessWidget {
 class _HeaderStatCard extends StatelessWidget {
   final String value;
   final String title;
-  const _HeaderStatCard(this.value, this.title, {super.key});
+  const _HeaderStatCard(this.value, this.title);
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha:0.24),
+        color: Colors.white.withValues(alpha: 0.24),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
         children: [
-          Text(value, style: GoogleFonts.poppins(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
-          Text(title, style: GoogleFonts.poppins(fontSize: 10, color: Colors.white.withValues(alpha:0.8))),
+          Text(value,
+              style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold)),
+          Text(title,
+              style: GoogleFonts.poppins(
+                  fontSize: 10, color: Colors.white.withValues(alpha: 0.8))),
         ],
       ),
     );
   }
 }
 
-class _EmployeeFilterBar extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Flexible(
-          flex: 3,
-          child: TextField(
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: 'Personel arayın...',
-              prefixIcon: const Icon(Icons.search),
-              filled: true,
-              fillColor: Colors.grey[100],
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.sort),
-            label: const Text('Sırala'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(80, 48)),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.filter_alt_outlined),
-            label: const Text('Filtrele'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(100, 48)),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Flexible(
-          child: OutlinedButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.file_download),
-            label: const Text('İçe/Dışa Aktar'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(120, 48)),
-          ),
-        ),
-      ],
-    );
-  }
-}
+// Eski basit filtre bileşeni kaldırıldı; Expenses modülüne uygun
+// gelişmiş filtre yapısı _buildSearchAndFilters içerisinde uygulanıyor.
 
 class _EmployeeList extends StatelessWidget {
   final List<Map<String, dynamic>> _employees = const [
@@ -180,7 +438,7 @@ class _EmployeeList extends StatelessWidget {
       'balance': 200,
     },
   ];
-  const _EmployeeList({super.key});
+  const _EmployeeList();
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
@@ -195,7 +453,9 @@ class _EmployeeList extends StatelessWidget {
           subtitle: Text('${e['department']} • ${e['category']}'),
           trailing: Text(
             '₺${e['balance']}',
-            style: TextStyle(color: e['balance'] < 0 ? Colors.red : Colors.green, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: e['balance'] < 0 ? Colors.red : Colors.green,
+                fontWeight: FontWeight.bold),
           ),
         );
       },
@@ -203,27 +463,4 @@ class _EmployeeList extends StatelessWidget {
   }
 }
 
-class _EmployeeFABs extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        FloatingActionButton.extended(
-          heroTag: 'addEmployee',
-          icon: const Icon(Icons.person_add_alt_1),
-          label: const Text('Yeni Personel Ekle'),
-          onPressed: () {},
-        ),
-        const SizedBox(height: 10),
-        FloatingActionButton.extended(
-          heroTag: 'addDepartment',
-          icon: const Icon(Icons.add_business),
-          label: const Text('Departman Ekle'),
-          onPressed: () {},
-        ),
-      ],
-    );
-  }
-}
+// FAB bileşeni şu an kullanılmıyor; ihtiyaç halinde tekrar eklenebilir.
