@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:typed_data';
 import 'dart:async';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,6 +11,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:tamgaci/shared/widgets/custom_app_bar.dart';
 import 'package:tamgaci/shared/widgets/responsive_scaffold.dart';
 import 'package:tamgaci/shared/widgets/drawer_menu.dart';
+import 'package:http/http.dart' as http;
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
 
 class EmployeesListPage extends StatefulWidget {
   const EmployeesListPage({super.key});
@@ -1305,6 +1312,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
     final department = data['department'] as String? ?? '-';
     final category = data['category'] as String? ?? '-';
     final position = data['position'] as String? ?? '-';
+    final tc = data['tc']?.toString() ?? '-';
+    final email = data['email']?.toString() ?? '-';
     final salary = (data['salary'] as Map?) ?? {};
     final salaryAmount = salary['amount']?.toString() ?? '-';
     final salaryCurrency = salary['currency']?.toString() ?? '';
@@ -1326,6 +1335,26 @@ class _EmployeeDetailSheet extends StatelessWidget {
     final birthDate = fmtTs(birthTs) ?? '-';
     final photoUrl = data['photoUrl'] as String?;
     final docs = (data['documents'] as List?) ?? const [];
+    final schedule = (data['schedule'] as Map?) ?? const {};
+    final workHours = (schedule['workHours'] as Map?);
+    final overtime = (schedule['overtime'] as Map?);
+
+    // Format salary amount in Turkish format
+    String formatSalary(String amountStr) {
+      if (amountStr == '-') return '-';
+      final amount = double.tryParse(amountStr);
+      if (amount == null) return amountStr;
+      final parts = amount.toStringAsFixed(2).split('.');
+      final intPart = parts[0];
+      final decPart = parts[1];
+      final formattedInt = intPart.replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+        (Match m) => '${m[1]}.',
+      );
+      return '$formattedInt,$decPart';
+    }
+
+    final formattedSalaryAmount = formatSalary(salaryAmount);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.8,
@@ -1333,71 +1362,158 @@ class _EmployeeDetailSheet extends StatelessWidget {
       maxChildSize: 0.95,
       expand: false,
       builder: (context, controller) {
-        return Material(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          child: SingleChildScrollView(
-            controller: controller,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundImage:
-                          photoUrl != null ? NetworkImage(photoUrl) : null,
-                      child: photoUrl == null
-                          ? const Icon(Icons.person, size: 28)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: Material(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            child: SingleChildScrollView(
+              controller: controller,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 28,
+                        backgroundImage:
+                            photoUrl != null ? NetworkImage(photoUrl) : null,
+                        child: photoUrl == null
+                            ? const Icon(Icons.person, size: 28)
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name,
+                                style: Theme.of(context).textTheme.titleLarge),
+                            const SizedBox(height: 4),
+                            Text('$department • $category'),
+                          ],
+                        ),
+                      ),
+                      Row(children: [
+                        IconButton(
+                          onPressed: () => _openEdit(context),
+                          icon: const Icon(Icons.edit),
+                          tooltip: 'Düzenle',
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Kapat',
+                        )
+                      ])
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => _handleOvertimeAction(context),
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                          icon: const Icon(Icons.access_time),
+                          label: const Text('Mesai'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => _handleAdvancePaymentAction(context),
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                          icon: const Icon(Icons.account_balance_wallet),
+                          label: const Text('Ödeme'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => _handleEntitlementAction(context),
+                          style: FilledButton.styleFrom(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            backgroundColor: Colors.purple,
+                          ),
+                          icon: const Icon(Icons.calendar_today),
+                          label: const Text('Hak Ediş'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
                         children: [
-                          Text(name,
-                              style: Theme.of(context).textTheme.titleLarge),
-                          const SizedBox(height: 4),
-                          Text('$department • $category'),
+                          Expanded(
+                            child: Text(
+                              'Personel Bilgileri',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                          FilledButton.icon(
+                            onPressed: () => _showEmployeeDetailsDialog(
+                              context,
+                              name: name,
+                              position: position,
+                              salary: '$formattedSalaryAmount $salaryCurrency',
+                              entitlementType: entitlementType,
+                              entitlement: entitlement,
+                              startDate: startDate,
+                              birthDate: birthDate,
+                              tc: tc,
+                              email: email,
+                              workHours: workHours,
+                              overtime: overtime,
+                            ),
+                            icon: const Icon(Icons.info_outline),
+                            label: const Text('Bilgileri Görüntüle'),
+                          ),
                         ],
                       ),
                     ),
-                    Row(children: [
-                      OutlinedButton.icon(
-                        onPressed: () => _openEdit(context),
-                        icon: const Icon(Icons.edit, size: 18),
-                        label: const Text('Düzenle'),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
-                        tooltip: 'Kapat',
-                      )
-                    ])
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Wrap(
-                      spacing: 16,
-                      runSpacing: 12,
-                      children: [
-                        _InfoTile(label: 'Pozisyon', value: position),
-                        _InfoTile(
-                            label: 'Maaş',
-                            value: '$salaryAmount $salaryCurrency'),
-                        _InfoTile(label: 'Hak Ediş', value: entitlementType),
-                        _InfoTile(label: 'İşe Başlama', value: startDate),
-                        _InfoTile(label: 'Doğum Tarihi', value: birthDate),
-                      ],
-                    ),
                   ),
-                ),
-                if (docs.isNotEmpty) ...[
+                  if (docs.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Dökümanlar (${docs.length})',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                            FilledButton.icon(
+                              onPressed: () => _showDocumentsDialog(
+                                context,
+                                docs: docs,
+                              ),
+                              icon: const Icon(Icons.attach_file),
+                              label: const Text('Dökümanları Görüntüle'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Card(
                     child: Padding(
@@ -1405,60 +1521,25 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Dökümanlar',
-                              style: Theme.of(context).textTheme.titleMedium),
-                          const SizedBox(height: 8),
-                          ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: docs.length,
-                            separatorBuilder: (_, __) =>
-                                const Divider(height: 1),
-                            itemBuilder: (context, i) {
-                              final raw = docs[i];
-                              final m = raw is Map ? raw : <String, dynamic>{};
-                              final fileName = m['name']?.toString() ?? 'dosya';
-                              final url = m['url']?.toString();
-                              return ListTile(
-                                dense: true,
-                                leading: const Icon(Icons.download),
-                                title: Text(fileName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis),
-                                trailing: const Icon(Icons.chevron_right),
-                                onTap:
-                                    url == null ? null : () => _launchUrl(url),
-                              );
-                            },
+                          Row(
+                            children: [
+                              Text('Hareketler',
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium),
+                              const Spacer(),
+                              _EmployeeBalance(
+                                  tenantId: tenantId, docId: docId),
+                            ],
                           ),
+                          const SizedBox(height: 8),
+                          _EmployeeTransactionsList(
+                              tenantId: tenantId, docId: docId),
                         ],
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text('Hareketler',
-                                style: Theme.of(context).textTheme.titleMedium),
-                            const Spacer(),
-                            _EmployeeBalance(tenantId: tenantId, docId: docId),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        _EmployeeTransactionsList(
-                            tenantId: tenantId, docId: docId),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         );
@@ -1474,6 +1555,401 @@ class _EmployeeDetailSheet extends StatelessWidget {
         // silently fail or show a snackbar if needed
       }
     } catch (_) {}
+  }
+
+  Future<void> _downloadDocument(
+      BuildContext context, String url, String fileName) async {
+    try {
+      if (kIsWeb) {
+        // Web için direkt indirme
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final bytes = response.bodyBytes;
+          final uint8List = Uint8List.fromList(bytes);
+          final blob = web.Blob([uint8List.buffer.toJS].toJS);
+          final downloadUrl = web.URL.createObjectURL(blob);
+
+          final anchor = web.HTMLAnchorElement()
+            ..href = downloadUrl
+            ..download = fileName
+            ..style.display = 'none';
+
+          web.document.body?.appendChild(anchor);
+          anchor.click();
+          anchor.remove();
+          web.URL.revokeObjectURL(downloadUrl);
+        }
+      } else {
+        // Mobil için Downloads klasörüne kaydet
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final bytes = response.bodyBytes;
+          final directory = await getDownloadsDirectory();
+          if (directory != null) {
+            final filePath = path.join(directory.path, fileName);
+            final file = File(filePath);
+            await file.writeAsBytes(bytes);
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Döküman indirildi: $fileName'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('İndirme hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _handleOvertimeAction(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Mesai yönetimi özelliği yakında eklenecek'),
+      ),
+    );
+  }
+
+  void _handleAdvancePaymentAction(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Avans/Ödeme özelliği yakında eklenecek'),
+      ),
+    );
+  }
+
+  void _handleEntitlementAction(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Hak ediş özelliği yakında eklenecek'),
+      ),
+    );
+  }
+
+  void _showDocumentsDialog(BuildContext context, {required List docs}) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) =>
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: (tenantId != null && tenantId!.isNotEmpty)
+            ? FirebaseFirestore.instance
+                .collection('tenants')
+                .doc(tenantId)
+                .collection('employees')
+                .doc(docId)
+                .snapshots()
+            : FirebaseFirestore.instance
+                .collection('employees')
+                .doc(docId)
+                .snapshots(),
+        builder: (streamContext, snapshot) {
+          List<dynamic> currentDocs = docs;
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final data = snapshot.data!.data() as Map<String, dynamic>;
+            currentDocs = data['documents'] as List? ?? [];
+          }
+
+          return StatefulBuilder(
+            builder: (stateContext, setState) => AlertDialog(
+              title: Text('Dökümanlar (${currentDocs.length})'),
+              content: SizedBox(
+                width: 500,
+                child: currentDocs.isEmpty
+                    ? const Text('Döküman bulunmamaktadır.')
+                    : ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: currentDocs.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final raw = currentDocs[i];
+                          final m = raw is Map ? raw : <String, dynamic>{};
+                          final fileName = m['name']?.toString() ?? 'dosya';
+                          final url = m['url']?.toString();
+                          return ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.download),
+                            title: Text(
+                              fileName,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, size: 18),
+                                  onPressed: () async {
+                                    await _renameDocument(
+                                      stateContext,
+                                      i,
+                                      fileName,
+                                      setState,
+                                    );
+                                  },
+                                  tooltip: 'Yeniden Adlandır',
+                                ),
+                                const Icon(Icons.chevron_right),
+                              ],
+                            ),
+                            onTap: url == null
+                                ? null
+                                : () => _downloadDocument(
+                                    dialogContext, url, fileName),
+                          );
+                        },
+                      ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Kapat'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _renameDocument(BuildContext context, int index,
+      String currentName, StateSetter setState) async {
+    final controller = TextEditingController(text: currentName);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Dökümanı Yeniden Adlandır'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'Yeni Ad',
+            hintText: 'Döküman adını girin',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Vazgeç'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.of(context).pop(true);
+              }
+            },
+            child: const Text('Kaydet'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && controller.text.trim().isNotEmpty) {
+      final newName = controller.text.trim();
+      try {
+        final employeesCol = (tenantId != null && tenantId!.isNotEmpty)
+            ? FirebaseFirestore.instance
+                .collection('tenants')
+                .doc(tenantId)
+                .collection('employees')
+            : FirebaseFirestore.instance.collection('employees');
+
+        final doc = await employeesCol.doc(docId).get();
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          final documents =
+              List<Map<String, dynamic>>.from(data['documents'] as List? ?? []);
+          if (index < documents.length) {
+            documents[index]['name'] = newName;
+            await employeesCol.doc(docId).update({
+              'documents': documents,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+
+            // Trigger rebuild to show updated name
+            setState(() {});
+
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Döküman adı güncellendi'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Hata: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+    controller.dispose();
+  }
+
+  void _showEmployeeDetailsDialog(
+    BuildContext context, {
+    required String name,
+    required String position,
+    required String salary,
+    required String entitlementType,
+    required Map entitlement,
+    required String startDate,
+    required String birthDate,
+    required String tc,
+    required String email,
+    Map? workHours,
+    Map? overtime,
+  }) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('$name - Detaylı Bilgiler'),
+        content: SizedBox(
+          width: 500,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    _InfoTile(label: 'Pozisyon', value: position),
+                    _InfoTile(label: 'Maaş', value: salary),
+                    _InfoTile(label: 'Hak Ediş', value: entitlementType),
+                    _InfoTile(label: 'İşe Başlama', value: startDate),
+                    _InfoTile(label: 'Doğum Tarihi', value: birthDate),
+                    _InfoTile(label: 'TC', value: tc),
+                    _InfoTile(label: 'E-posta', value: email),
+                    // Entitlement details based on type
+                    if (entitlementType == 'Aylık' &&
+                        entitlement['monthlyDayOfMonth'] != null)
+                      _InfoTile(
+                        label: 'Ödeme Günü',
+                        value: 'Ayın ${entitlement['monthlyDayOfMonth']}. günü',
+                      ),
+                    if (entitlementType == 'Aylık (İki Kere)' &&
+                        entitlement['semiMonthlyDays'] != null)
+                      Builder(builder: (context) {
+                        final days = entitlement['semiMonthlyDays'] as List?;
+                        if (days != null && days.length >= 2) {
+                          return _InfoTile(
+                            label: 'Ödeme Günleri',
+                            value: 'Ayın ${days[0]}. ve ${days[1]}. günü',
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
+                    if (entitlementType == 'Haftalık' &&
+                        entitlement['weeklyWeekday'] != null)
+                      _InfoTile(
+                        label: 'Ödeme Günü',
+                        value: entitlement['weeklyWeekday'].toString(),
+                      ),
+                    if (entitlementType == 'Günlük') ...[
+                      if (entitlement['daysPerWeek'] != null)
+                        _InfoTile(
+                          label: 'Haftada Çalışma Günü',
+                          value: '${entitlement['daysPerWeek']} gün',
+                        ),
+                      if (entitlement['weeklyDays'] != null)
+                        Builder(builder: (context) {
+                          final weeklyDays = entitlement['weeklyDays'] as List?;
+                          if (weeklyDays != null && weeklyDays.isNotEmpty) {
+                            return _InfoTile(
+                              label: 'Çalışma Günleri',
+                              value: weeklyDays.join(', '),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        }),
+                    ],
+                  ],
+                ),
+                if (workHours != null && workHours.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Çalışma Saatleri',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: workHours.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final day = workHours.keys.elementAt(index);
+                      final v = (workHours[day] as Map?) ?? const {};
+                      final start = v['start']?.toString() ?? '';
+                      final end = v['end']?.toString() ?? '';
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(Icons.schedule),
+                        title: Text('$day: $start - $end'),
+                      );
+                    },
+                  ),
+                ],
+                if (overtime != null && (overtime['enabled'] == true)) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Fazla Mesai',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    children: [
+                      _InfoTile(
+                        label: 'Durum',
+                        value:
+                            (overtime['enabled'] == true) ? 'Açık' : 'Kapalı',
+                      ),
+                      if (overtime['thresholdHoursPerDay'] != null)
+                        _InfoTile(
+                          label: 'Günlük Eşik (saat)',
+                          value: overtime['thresholdHoursPerDay'].toString(),
+                        ),
+                      if (overtime['multiplier'] != null)
+                        _InfoTile(
+                          label: 'Çarpan',
+                          value: overtime['multiplier'].toString(),
+                        ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _openEdit(BuildContext context) {
@@ -2543,31 +3019,49 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       }
     }
 
+    if (!mounted) return;
+
     setState(() => _isSaving = true);
 
     // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => WillPopScope(
-        onWillPop: () async => false,
-        child: const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text(
-                  'Personel ekleniyor...\nFotoğraf ve dökümanlar yükleniyor...'),
-            ],
-          ),
-        ),
-      ),
-    );
+    BuildContext? dialogContext;
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) {
+          dialogContext = dialogCtx;
+          return const PopScope(
+            canPop: false,
+            child: AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                      'Personel ekleniyor...\nFotoğraf ve dökümanlar yükleniyor...'),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    }
 
     try {
       final firestore = FirebaseFirestore.instance;
       final storage = FirebaseStorage.instance;
+
+      // Helper to add timeouts to awaits to prevent indefinite hangs
+      Future<T> withTimeout<T>(Future<T> future, String operation,
+          {Duration timeout = const Duration(seconds: 30)}) async {
+        try {
+          return await future.timeout(timeout);
+        } on TimeoutException {
+          throw Exception('$operation zaman aşımına uğradı');
+        }
+      }
 
       // Create doc first to get ID
       final entitlement = <String, dynamic>{
@@ -2626,31 +3120,34 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                   .doc(widget.tenantId)
                   .collection('employees')
               : firestore.collection('employees');
-      final docRef = await employeesCol.add({
-        'name': _nameController.text.trim(),
-        'tc': _tcController.text.trim(),
-        'email': _emailController.text.trim(),
-        'birthDate': Timestamp.fromDate(_birthDate!),
-        'startDate': Timestamp.fromDate(_startDate!),
-        'department': _selectedDepartment,
-        'position': (_selectedPosition ?? _positionController.text.trim()),
-        'category': _selectedCategory,
-        'salary': {
-          'amount': double.tryParse(_salaryAmountController.text
-                  .replaceAll('.', '') // Remove thousand separators
-                  .replaceAll(',', '.')) ??
-              0,
-          'currency': _salaryCurrency,
-        },
-        'entitlement': entitlement,
-        if (schedule.isNotEmpty) 'schedule': schedule,
-        'photoUrl': null,
-        'documents': [],
-        'tenantId': widget.tenantId,
-        'createdBy': FirebaseAuth.instance.currentUser?.uid,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final docRef = await withTimeout(
+        employeesCol.add({
+          'name': _nameController.text.trim(),
+          'tc': _tcController.text.trim(),
+          'email': _emailController.text.trim(),
+          'birthDate': Timestamp.fromDate(_birthDate!),
+          'startDate': Timestamp.fromDate(_startDate!),
+          'department': _selectedDepartment,
+          'position': (_selectedPosition ?? _positionController.text.trim()),
+          'category': _selectedCategory,
+          'salary': {
+            'amount': double.tryParse(_salaryAmountController.text
+                    .replaceAll('.', '') // Remove thousand separators
+                    .replaceAll(',', '.')) ??
+                0,
+            'currency': _salaryCurrency,
+          },
+          'entitlement': entitlement,
+          if (schedule.isNotEmpty) 'schedule': schedule,
+          'photoUrl': null,
+          'documents': [],
+          'tenantId': widget.tenantId,
+          'createdBy': FirebaseAuth.instance.currentUser?.uid,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }),
+        'Personel kaydı oluşturma',
+      );
 
       final String employeeId = docRef.id;
       String? photoUrl;
@@ -2665,11 +3162,17 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       // Upload photo
       if (_photoBytes != null && _photoName != null) {
         final ref = storage.ref().child('$storagePrefix/photo/$_photoName');
-        final snap = await ref.putData(
-          _photoBytes!,
-          SettableMetadata(contentType: 'image/jpeg'),
+        final snap = await withTimeout(
+          ref.putData(
+            _photoBytes!,
+            SettableMetadata(contentType: 'image/jpeg'),
+          ),
+          'Fotoğraf yükleme',
         );
-        photoUrl = await snap.ref.getDownloadURL();
+        photoUrl = await withTimeout(
+          snap.ref.getDownloadURL(),
+          'Fotoğraf linki alma',
+        );
       }
 
       // Upload documents
@@ -2678,24 +3181,38 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         final contentType = d.name.toLowerCase().endsWith('.pdf')
             ? 'application/pdf'
             : 'image/jpeg';
-        final snap = await ref.putData(
-          d.bytes,
-          SettableMetadata(contentType: contentType),
+        final snap = await withTimeout(
+          ref.putData(
+            d.bytes,
+            SettableMetadata(contentType: contentType),
+          ),
+          'Döküman yükleme (${d.name})',
         );
-        final url = await snap.ref.getDownloadURL();
+        final url = await withTimeout(
+          snap.ref.getDownloadURL(),
+          'Döküman linki alma (${d.name})',
+        );
         docUrls.add({'name': d.name, 'url': url});
       }
 
       // Update document with URLs
-      await docRef.update({
-        'photoUrl': photoUrl,
-        'documents': docUrls,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      await withTimeout(
+          docRef.update({
+            'photoUrl': photoUrl,
+            'documents': docUrls,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }),
+          'Kayıt güncelleme');
 
       if (mounted) {
-        // Close loading dialog
-        Navigator.of(context).pop();
+        // Close loading dialog if it's still open
+        if (dialogContext != null) {
+          try {
+            Navigator.of(dialogContext!).pop();
+          } catch (_) {
+            // Dialog might already be closed
+          }
+        }
         // Close form dialog
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -2705,8 +3222,14 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       }
     } catch (e) {
       if (mounted) {
-        // Close loading dialog
-        Navigator.of(context).pop();
+        // Close loading dialog if it's still open
+        if (dialogContext != null) {
+          try {
+            Navigator.of(dialogContext!).pop();
+          } catch (_) {
+            // Dialog might already be closed
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Kayıt sırasında hata: $e'),
@@ -2923,6 +3446,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                 Row(
                   children: [
                     Expanded(
+                      flex: 1,
                       child: TextFormField(
                         controller: _tcController,
                         decoration: const InputDecoration(
@@ -2944,6 +3468,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
+                      flex: 2,
                       child: TextFormField(
                         controller: _emailController,
                         decoration: const InputDecoration(labelText: 'E-posta'),
