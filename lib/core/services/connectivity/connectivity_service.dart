@@ -26,8 +26,9 @@ class ConnectivityService {
         _connectivity = ConnectivityWasm();
       } else {
         try {
-          _connectivity =
-              connectivity_impl.ConnectivityWeb() as ConnectivityInterface;
+          // Web build'de connectivity_impl ConnectivityWeb olacak
+          // ignore: avoid_dynamic_calls
+          _connectivity = (connectivity_impl as dynamic).ConnectivityWeb() as ConnectivityInterface;
         } catch (e) {
           debugPrint(
               'Web connectivity init hatası, WASM fallback kullanılıyor: $e');
@@ -35,8 +36,9 @@ class ConnectivityService {
         }
       }
     } else {
-      _connectivity =
-          connectivity_impl.ConnectivityNative() as ConnectivityInterface;
+      // Native build'de connectivity_impl ConnectivityNative olacak
+      // ignore: avoid_dynamic_calls
+      _connectivity = (connectivity_impl as dynamic).ConnectivityNative() as ConnectivityInterface;
     }
   }
 

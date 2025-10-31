@@ -29,8 +29,10 @@ class SecureStorageService {
         _storage = SecureStorageWasm();
       } else {
         // HTML renderer için normal web storage
+        // Web build'de storage_impl SecureStorageWeb olacak
         try {
-          _storage = storage_impl.SecureStorageWeb() as SecureStorageInterface;
+          // ignore: avoid_dynamic_calls
+          _storage = (storage_impl as dynamic).SecureStorageWeb() as SecureStorageInterface;
         } catch (e) {
           debugPrint('Web storage init hatası, WASM fallback kullanılıyor: $e');
           _storage = SecureStorageWasm();
@@ -38,7 +40,9 @@ class SecureStorageService {
       }
     } else {
       // Native platform (Android, iOS, Desktop)
-      _storage = storage_impl.SecureStorageNative() as SecureStorageInterface;
+      // Native build'de storage_impl SecureStorageNative olacak
+      // ignore: avoid_dynamic_calls
+      _storage = (storage_impl as dynamic).SecureStorageNative() as SecureStorageInterface;
     }
   }
 
