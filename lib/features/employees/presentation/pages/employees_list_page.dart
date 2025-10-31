@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
@@ -12,7 +11,6 @@ import 'package:tamgaci/shared/widgets/custom_app_bar.dart';
 import 'package:tamgaci/shared/widgets/responsive_scaffold.dart';
 import 'package:tamgaci/shared/widgets/drawer_menu.dart';
 import 'package:http/http.dart' as http;
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -53,6 +51,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   StreamSubscription? _deptMetaSub;
   StreamSubscription? _catMetaSub;
   StreamSubscription? _posMetaSub;
+  Timer? _transactionCheckTimer;
 
   CollectionReference<Map<String, dynamic>> _tenantCol(String name) {
     if (_tenantId != null && _tenantId!.isNotEmpty) {
@@ -97,13 +96,25 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     // TenantId yükle ve meta koleksiyonları dinle
-    _loadTenantId();
-    _listenToMetaCollections();
+    _loadTenantId().then((_) {
+      _listenToMetaCollections();
+      // Gerçek zamanlı otomatik alacaklandırma kontrolü
+      _checkAndCreatePendingTransactions();
+      // Her 6 saatte bir kontrol et (uygulama açıkken)
+      _transactionCheckTimer =
+          Timer.periodic(const Duration(hours: 6), (timer) {
+        _checkAndCreatePendingTransactions();
+      });
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _deptMetaSub?.cancel();
+    _catMetaSub?.cancel();
+    _posMetaSub?.cancel();
+    _transactionCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -111,6 +122,314 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     setState(() {
       _searchQuery = _searchController.text.toLowerCase();
     });
+  }
+
+  // Gerçek zamanlı otomatik alacaklandırma - eksik transaction'ları kontrol et ve oluştur
+  Future<void> _checkAndCreatePendingTransactions() async {
+    try {
+      if (_tenantId == null || _tenantId!.isEmpty) {
+        await _loadTenantId();
+      }
+      if (_tenantId == null || _tenantId!.isEmpty) return;
+
+      final employeesCol = _tenantCol('employees');
+      final employeesSnapshot = await employeesCol.get();
+
+      if (employeesSnapshot.docs.isEmpty) return;
+
+      final transactionsCol = _tenantCol('employee_transactions');
+      final now = DateTime.now();
+
+      for (final empDoc in employeesSnapshot.docs) {
+        final empData = empDoc.data();
+        final employeeId = empDoc.id;
+        final salary = empData['salary'] as Map<String, dynamic>?;
+        final entitlement = empData['entitlement'] as Map<String, dynamic>?;
+        final startDate = empData['startDate'];
+
+        if (salary == null || entitlement == null || startDate == null) {
+          continue;
+        }
+
+        final salaryAmount = (salary['amount'] as num?)?.toDouble() ?? 0;
+        if (salaryAmount <= 0) continue;
+
+        final entitlementType = entitlement['type'] as String?;
+        if (entitlementType == null) continue;
+
+        // Start date'i DateTime'a çevir
+        DateTime? startDateTime;
+        if (startDate is Timestamp) {
+          startDateTime = startDate.toDate();
+        } else if (startDate is DateTime) {
+          startDateTime = startDate;
+        }
+        if (startDateTime == null) continue;
+
+        // Son transaction tarihini bul - Index gerektirmeyen sorgu
+        final lastTransactionQuery = await transactionsCol
+            .where('employeeId', isEqualTo: employeeId)
+            .where('direction', isEqualTo: 'in')
+            .get();
+
+        // Client-side sıralama
+        DateTime? lastTransDate;
+        for (final doc in lastTransactionQuery.docs) {
+          final data = doc.data();
+          final date = data['date'];
+          DateTime? docDate;
+
+          if (date is Timestamp) {
+            docDate = date.toDate();
+          } else if (date is DateTime) {
+            docDate = date;
+          }
+
+          if (docDate != null) {
+            if (lastTransDate == null || docDate.isAfter(lastTransDate)) {
+              lastTransDate = docDate;
+            }
+          }
+        }
+
+        DateTime lastPaymentDate = startDateTime;
+        if (lastTransDate != null) {
+          lastPaymentDate = lastTransDate;
+        }
+
+        // Eksik transaction'ları hesapla ve oluştur
+        await _createMissingTransactions(
+          employeeId: employeeId,
+          entitlementType: entitlementType,
+          entitlement: entitlement,
+          salaryAmount: salaryAmount,
+          lastPaymentDate: lastPaymentDate,
+          now: now,
+          transactionsCol: transactionsCol,
+        );
+      }
+    } catch (e) {
+      debugPrint('Otomatik alacaklandırma kontrolü hatası: $e');
+      // Hata olursa sessizce geç, kullanıcıyı rahatsız etme
+    }
+  }
+
+  // Eksik transaction'ları oluştur
+  Future<void> _createMissingTransactions({
+    required String employeeId,
+    required String entitlementType,
+    required Map<String, dynamic> entitlement,
+    required double salaryAmount,
+    required DateTime lastPaymentDate,
+    required DateTime now,
+    required CollectionReference<Map<String, dynamic>> transactionsCol,
+  }) async {
+    final List<DateTime> missingDates = [];
+
+    // Son ödeme tarihinden itibaren bugüne kadar eksik tüm ödeme tarihlerini bul
+    DateTime current = lastPaymentDate;
+    const maxIterations = 100; // Sonsuz döngüyü önlemek için
+    int iterations = 0;
+
+    while (current.isBefore(now) && iterations < maxIterations) {
+      final nextPayment = _getNextPaymentDate(
+        fromDate: current,
+        entitlementType: entitlementType,
+        entitlement: entitlement,
+      );
+
+      if (nextPayment == null) break;
+
+      // Eğer son ödeme tarihinden sonra ve bugünden önce veya bugün ise
+      if (nextPayment.isAfter(lastPaymentDate) &&
+          (nextPayment.isBefore(now) || nextPayment.isAtSameMomentAs(now))) {
+        missingDates.add(nextPayment);
+        current = nextPayment;
+      } else {
+        break;
+      }
+      iterations++;
+    }
+
+    // Eksik transaction'ları oluştur
+    for (final paymentDate in missingDates) {
+      try {
+        // Aynı tarihli transaction var mı kontrol et (duplicate önleme)
+        final existing = await transactionsCol
+            .where('employeeId', isEqualTo: employeeId)
+            .where('date', isEqualTo: Timestamp.fromDate(paymentDate))
+            .where('direction', isEqualTo: 'in')
+            .limit(1)
+            .get();
+
+        if (existing.docs.isEmpty) {
+          final transactionNote = _getTransactionNoteForEmployee(
+            entitlementType: entitlementType,
+            paymentDate: paymentDate,
+          );
+
+          await transactionsCol.add({
+            'employeeId': employeeId,
+            'amount': salaryAmount,
+            'direction': 'in',
+            'note': transactionNote,
+            'date': Timestamp.fromDate(paymentDate),
+            'tenantId': _tenantId,
+            'createdBy': FirebaseAuth.instance.currentUser?.uid,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
+      } catch (e) {
+        debugPrint('Transaction oluşturma hatası: $e');
+        // Devam et, diğer transaction'ları oluşturmaya çalış
+      }
+    }
+  }
+
+  // Belirli bir tarihten sonraki bir sonraki ödeme tarihini hesapla
+  DateTime? _getNextPaymentDate({
+    required DateTime fromDate,
+    required String entitlementType,
+    required Map<String, dynamic> entitlement,
+  }) {
+    int getWeekdayNumber(String weekday) {
+      const weekdays = {
+        'Pazartesi': 1,
+        'Salı': 2,
+        'Çarşamba': 3,
+        'Perşembe': 4,
+        'Cuma': 5,
+        'Cumartesi': 6,
+        'Pazar': 7,
+      };
+      return weekdays[weekday] ?? 1;
+    }
+
+    DateTime findNextWeekday(DateTime from, int targetWeekday) {
+      DateTime current = from.add(const Duration(days: 1));
+      while (current.weekday != targetWeekday) {
+        current = current.add(const Duration(days: 1));
+      }
+      return current;
+    }
+
+    switch (entitlementType) {
+      case 'Aylık':
+        final monthlyDay = entitlement['monthlyDayOfMonth'] as int?;
+        if (monthlyDay == null) return null;
+
+        DateTime next = DateTime(fromDate.year, fromDate.month + 1, monthlyDay);
+        // Eğer ayın günü ayın sonundan büyükse, ayın sonunu kullan
+        try {
+          return next;
+        } catch (_) {
+          // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
+          next = DateTime(fromDate.year, fromDate.month + 2, 0);
+          return next;
+        }
+
+      case 'Aylık (İki Kere)':
+        final days = entitlement['semiMonthlyDays'] as List?;
+        if (days == null || days.length < 2) return null;
+        final day1 = (days[0] as num?)?.toInt();
+        final day2 = (days[1] as num?)?.toInt();
+        if (day1 == null || day2 == null) return null;
+
+        final currentDay = fromDate.day;
+        DateTime next;
+
+        if (currentDay < day1) {
+          // Bu ayın ilk ödeme gününe git
+          try {
+            next = DateTime(fromDate.year, fromDate.month, day1);
+            return next;
+          } catch (_) {
+            next = DateTime(fromDate.year, fromDate.month + 1, 0);
+            return next;
+          }
+        } else if (currentDay < day2) {
+          // Bu ayın ikinci ödeme gününe git
+          try {
+            next = DateTime(fromDate.year, fromDate.month, day2);
+            return next;
+          } catch (_) {
+            next = DateTime(fromDate.year, fromDate.month + 1, 0);
+            return next;
+          }
+        } else {
+          // Bir sonraki ayın ilk ödeme gününe git
+          try {
+            next = DateTime(fromDate.year, fromDate.month + 1, day1);
+            return next;
+          } catch (_) {
+            next = DateTime(fromDate.year, fromDate.month + 2, 0);
+            return next;
+          }
+        }
+
+      case 'Haftalık':
+        final weekday = entitlement['weeklyWeekday'] as String?;
+        if (weekday == null) return null;
+        final targetWeekday = getWeekdayNumber(weekday);
+        return findNextWeekday(fromDate, targetWeekday);
+
+      case 'Günlük':
+        final weeklyDays = entitlement['weeklyDays'] as List?;
+        if (weeklyDays == null || weeklyDays.isEmpty) return null;
+
+        DateTime current = fromDate.add(const Duration(days: 1));
+        int maxDays = 14; // 2 hafta içinde bul
+        int checked = 0;
+        while (checked < maxDays) {
+          final weekdayName = [
+            'Pazartesi',
+            'Salı',
+            'Çarşamba',
+            'Perşembe',
+            'Cuma',
+            'Cumartesi',
+            'Pazar'
+          ][current.weekday - 1];
+          if (weeklyDays.contains(weekdayName)) {
+            return current;
+          }
+          current = current.add(const Duration(days: 1));
+          checked++;
+        }
+        return null;
+
+      case 'Saatlik':
+        // Ay sonu
+        return DateTime(fromDate.year, fromDate.month + 1, 0);
+
+      default:
+        return null;
+    }
+  }
+
+  // Transaction note oluştur (employee context için)
+  String _getTransactionNoteForEmployee({
+    required String entitlementType,
+    required DateTime paymentDate,
+  }) {
+    final dateStr =
+        '${paymentDate.day.toString().padLeft(2, '0')}.${paymentDate.month.toString().padLeft(2, '0')}.${paymentDate.year}';
+
+    switch (entitlementType) {
+      case 'Aylık':
+        return 'Aylık Maaş - $dateStr';
+      case 'Aylık (İki Kere)':
+        return 'Aylık Maaş (Yarı Dönem) - $dateStr';
+      case 'Haftalık':
+        return 'Haftalık Maaş - $dateStr';
+      case 'Günlük':
+        return 'Günlük Maaş - $dateStr';
+      case 'Saatlik':
+        return 'Saatlik Maaş - $dateStr';
+      default:
+        return 'Maaş Ödemesi - $dateStr';
+    }
   }
 
   void _openManageCategoriesPage() {
@@ -1098,9 +1417,13 @@ class _EmployeesHeader extends StatelessWidget {
             ],
           ),
           const Spacer(),
-          const _HeaderStatCard('8', 'Toplam'),
+          const Flexible(
+            child: _HeaderStatCard('8', 'Toplam'),
+          ),
           const SizedBox(width: 8),
-          const _HeaderStatCard('₺12.500', 'Açık Bakiye'),
+          const Flexible(
+            child: _HeaderStatCard('₺12.500', 'Açık Bakiye'),
+          ),
         ],
       ),
     );
@@ -1455,6 +1778,151 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  // Önümüzdeki hak ediş tarihi gösterimi
+                  FutureBuilder<DateTime?>(
+                    future: _calculateNextEntitlementDate(
+                      tenantId: tenantId,
+                      employeeId: docId,
+                      entitlementType: entitlementType,
+                      entitlement: Map<String, dynamic>.from(entitlement),
+                      startDate: startTs,
+                    ),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Card(
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(width: 12),
+                                Text('Hak ediş tarihi hesaplanıyor...'),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      final nextDate = snapshot.data;
+                      if (nextDate == null) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final now = DateTime.now();
+                      final difference = nextDate.difference(now);
+                      final days = difference.inDays;
+                      final hours = difference.inHours % 24;
+                      final minutes = difference.inMinutes % 60;
+
+                      final isOverdue = difference.isNegative;
+                      final overdueDays = isOverdue ? -days : 0;
+
+                      String timeText;
+                      String titleText;
+                      if (isOverdue) {
+                        titleText = 'ÖDEME GECİKTİ! ⚠️';
+                        if (overdueDays > 0) {
+                          timeText = '$overdueDays gün gecikti';
+                        } else {
+                          final overdueHours = -difference.inHours;
+                          if (overdueHours > 0) {
+                            timeText = '$overdueHours saat gecikti';
+                          } else {
+                            final overdueMinutes = -difference.inMinutes;
+                            timeText = '$overdueMinutes dakika gecikti';
+                          }
+                        }
+                      } else if (days > 0) {
+                        titleText = 'Önümüzdeki Hak Ediş Tarihi';
+                        timeText = '$days gün $hours saat sonra';
+                      } else if (hours > 0) {
+                        titleText = 'Önümüzdeki Hak Ediş Tarihi';
+                        timeText = '$hours saat $minutes dakika sonra';
+                      } else {
+                        titleText = 'Önümüzdeki Hak Ediş Tarihi';
+                        timeText = '$minutes dakika sonra';
+                      }
+
+                      final nextDateStr =
+                          '${nextDate.day.toString().padLeft(2, '0')}.${nextDate.month.toString().padLeft(2, '0')}.${nextDate.year}';
+
+                      return Card(
+                        color: isOverdue
+                            ? Colors.red.shade50
+                            : Colors.blue.shade50,
+                        elevation: isOverdue ? 4 : 1,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isOverdue
+                                    ? Icons.warning
+                                    : Icons.calendar_today,
+                                color: isOverdue
+                                    ? Colors.red.shade700
+                                    : Colors.blue,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      titleText,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            color: isOverdue
+                                                ? Colors.red.shade700
+                                                : null,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      isOverdue
+                                          ? '$nextDateStr • $timeText'
+                                          : '$nextDateStr • $timeText',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: isOverdue
+                                                ? Colors.red.shade700
+                                                : Colors.blue.shade700,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isOverdue)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red.shade700,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'GEÇ',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
                   Card(
                     child: Padding(
                       padding: const EdgeInsets.all(12),
@@ -1547,14 +2015,212 @@ class _EmployeeDetailSheet extends StatelessWidget {
     );
   }
 
-  Future<void> _launchUrl(String url) async {
+  // Önümüzdeki hak ediş tarihini hesapla
+  Future<DateTime?> _calculateNextEntitlementDate({
+    required String? tenantId,
+    required String employeeId,
+    required String entitlementType,
+    required Map<String, dynamic> entitlement,
+    required dynamic startDate,
+  }) async {
     try {
-      final uri = Uri.parse(url);
-      if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        // ignore: use_build_context_synchronously
-        // silently fail or show a snackbar if needed
+      // Start date'i DateTime'a çevir
+      DateTime? startDateTime;
+      if (startDate is Timestamp) {
+        startDateTime = startDate.toDate();
+      } else if (startDate is DateTime) {
+        startDateTime = startDate;
       }
-    } catch (_) {}
+      if (startDateTime == null) return null;
+
+      // Son transaction tarihini bul
+      final transactionsCol = (tenantId != null && tenantId.isNotEmpty)
+          ? FirebaseFirestore.instance
+              .collection('tenants')
+              .doc(tenantId)
+              .collection('employee_transactions')
+          : FirebaseFirestore.instance.collection('employee_transactions');
+
+      // Index gerektirmeyen sorgu - client-side sıralama yapacağız
+      final lastTransactionQuery = await transactionsCol
+          .where('employeeId', isEqualTo: employeeId)
+          .where('direction', isEqualTo: 'in')
+          .get();
+
+      // Client-side sıralama
+      QueryDocumentSnapshot<Map<String, dynamic>>? lastDoc;
+      DateTime? lastDate;
+
+      for (final doc in lastTransactionQuery.docs) {
+        final data = doc.data();
+        final date = data['date'];
+        DateTime? docDate;
+
+        if (date is Timestamp) {
+          docDate = date.toDate();
+        } else if (date is DateTime) {
+          docDate = date;
+        }
+
+        if (docDate != null) {
+          if (lastDate == null || docDate.isAfter(lastDate)) {
+            lastDate = docDate;
+            lastDoc = doc;
+          }
+        }
+      }
+
+      DateTime lastPaymentDate = startDateTime;
+      if (lastDoc != null && lastDate != null) {
+        lastPaymentDate = lastDate;
+      }
+
+      // Bir sonraki ödeme tarihini hesapla
+      final now = DateTime.now();
+      DateTime? nextPayment = _getNextPaymentDateForDisplay(
+        fromDate: lastPaymentDate.isAfter(now) ? lastPaymentDate : now,
+        entitlementType: entitlementType,
+        entitlement: entitlement,
+      );
+
+      return nextPayment;
+    } catch (e) {
+      debugPrint('Hak ediş tarihi hesaplama hatası: $e');
+      return null;
+    }
+  }
+
+  // Bir sonraki ödeme tarihini hesapla (gösterim için)
+  DateTime? _getNextPaymentDateForDisplay({
+    required DateTime fromDate,
+    required String entitlementType,
+    required Map<String, dynamic> entitlement,
+  }) {
+    int getWeekdayNumber(String weekday) {
+      const weekdays = {
+        'Pazartesi': 1,
+        'Salı': 2,
+        'Çarşamba': 3,
+        'Perşembe': 4,
+        'Cuma': 5,
+        'Cumartesi': 6,
+        'Pazar': 7,
+      };
+      return weekdays[weekday] ?? 1;
+    }
+
+    DateTime findNextWeekday(DateTime from, int targetWeekday) {
+      DateTime current = from.add(const Duration(days: 1));
+      while (current.weekday != targetWeekday) {
+        current = current.add(const Duration(days: 1));
+      }
+      return current;
+    }
+
+    switch (entitlementType) {
+      case 'Aylık':
+        final monthlyDay = entitlement['monthlyDayOfMonth'] as int?;
+        if (monthlyDay == null) return null;
+
+        DateTime next = DateTime(fromDate.year, fromDate.month, monthlyDay);
+
+        // Eğer tarih bugünden önceyse, bir sonraki aya al
+        if (next.isBefore(fromDate)) {
+          next = DateTime(fromDate.year, fromDate.month + 1, monthlyDay);
+        }
+
+        try {
+          return next;
+        } catch (_) {
+          // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
+          next = DateTime(fromDate.year, fromDate.month + 1, 0);
+          if (next.isBefore(fromDate)) {
+            next = DateTime(fromDate.year, fromDate.month + 2, 0);
+          }
+          return next;
+        }
+
+      case 'Aylık (İki Kere)':
+        final days = entitlement['semiMonthlyDays'] as List?;
+        if (days == null || days.length < 2) return null;
+        final day1 = (days[0] as num?)?.toInt();
+        final day2 = (days[1] as num?)?.toInt();
+        if (day1 == null || day2 == null) return null;
+
+        final currentDay = fromDate.day;
+        DateTime next;
+
+        if (currentDay < day1) {
+          // Bu ayın ilk ödeme gününe git
+          try {
+            next = DateTime(fromDate.year, fromDate.month, day1);
+            return next;
+          } catch (_) {
+            next = DateTime(fromDate.year, fromDate.month + 1, 0);
+            return next;
+          }
+        } else if (currentDay < day2) {
+          // Bu ayın ikinci ödeme gününe git
+          try {
+            next = DateTime(fromDate.year, fromDate.month, day2);
+            return next;
+          } catch (_) {
+            next = DateTime(fromDate.year, fromDate.month + 1, 0);
+            return next;
+          }
+        } else {
+          // Bir sonraki ayın ilk ödeme gününe git
+          try {
+            next = DateTime(fromDate.year, fromDate.month + 1, day1);
+            return next;
+          } catch (_) {
+            next = DateTime(fromDate.year, fromDate.month + 2, 0);
+            return next;
+          }
+        }
+
+      case 'Haftalık':
+        final weekday = entitlement['weeklyWeekday'] as String?;
+        if (weekday == null) return null;
+        final targetWeekday = getWeekdayNumber(weekday);
+        return findNextWeekday(fromDate, targetWeekday);
+
+      case 'Günlük':
+        final weeklyDays = entitlement['weeklyDays'] as List?;
+        if (weeklyDays == null || weeklyDays.isEmpty) return null;
+
+        DateTime current = fromDate.add(const Duration(days: 1));
+        int maxDays = 14; // 2 hafta içinde bul
+        int checked = 0;
+        while (checked < maxDays) {
+          final weekdayName = [
+            'Pazartesi',
+            'Salı',
+            'Çarşamba',
+            'Perşembe',
+            'Cuma',
+            'Cumartesi',
+            'Pazar'
+          ][current.weekday - 1];
+          if (weeklyDays.contains(weekdayName)) {
+            return current;
+          }
+          current = current.add(const Duration(days: 1));
+          checked++;
+        }
+        return null;
+
+      case 'Saatlik':
+        // Ay sonu
+        DateTime monthEnd = DateTime(fromDate.year, fromDate.month + 1, 0);
+        if (monthEnd.isBefore(fromDate)) {
+          monthEnd = DateTime(fromDate.year, fromDate.month + 2, 0);
+        }
+        return monthEnd;
+
+      default:
+        return null;
+    }
   }
 
   Future<void> _downloadDocument(
@@ -2107,7 +2773,21 @@ class _EmployeeBalance extends StatelessWidget {
           final dir = (m['direction'] as String?) ?? 'out';
           balance += dir == 'in' ? amount : -amount;
         }
-        final text = balance.toStringAsFixed(2);
+
+        // Format balance in Turkish format
+        String formatBalance(double amount) {
+          final parts = amount.abs().toStringAsFixed(2).split('.');
+          final intPart = parts[0];
+          final decPart = parts[1];
+          final formattedInt = intPart.replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+          final formatted = '$formattedInt,$decPart';
+          return balance < 0 ? '-$formatted' : formatted;
+        }
+
+        final text = formatBalance(balance);
         final color = balance >= 0 ? Colors.green : Colors.red;
         return Row(children: [
           Text('Bakiye: ', style: Theme.of(context).textTheme.bodyMedium),
@@ -2427,6 +3107,188 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       TextEditingController(text: '8');
   final TextEditingController _overtimeMultiplierController =
       TextEditingController(text: '1.5');
+
+  // Calculate payment dates based on entitlement type
+  List<DateTime> _calculatePaymentDates({
+    required DateTime startDate,
+    required String entitlementType,
+    int? monthlyDayOfMonth,
+    int? semiMonthlyDay1,
+    int? semiMonthlyDay2,
+    String? weeklyWeekday,
+    int? daysPerWeek,
+    List<String>? weeklySelectedDays,
+  }) {
+    final List<DateTime> paymentDates = [];
+
+    // Haftanın günlerini sayıya çevirme
+    int getWeekdayNumber(String weekday) {
+      const weekdays = {
+        'Pazartesi': 1,
+        'Salı': 2,
+        'Çarşamba': 3,
+        'Perşembe': 4,
+        'Cuma': 5,
+        'Cumartesi': 6,
+        'Pazar': 7,
+      };
+      return weekdays[weekday] ?? 1;
+    }
+
+    // Belirli bir tarihten sonraki ilk belirli günü bul
+    DateTime findNextWeekday(DateTime from, int targetWeekday) {
+      DateTime current = from;
+      while (current.weekday != targetWeekday) {
+        current = current.add(const Duration(days: 1));
+      }
+      return current;
+    }
+
+    switch (entitlementType) {
+      case 'Aylık':
+        if (monthlyDayOfMonth != null) {
+          // İşe başlama tarihinden itibaren ilk ödeme gününü hesapla
+          DateTime firstPayment = DateTime(
+            startDate.year,
+            startDate.month,
+            monthlyDayOfMonth,
+          );
+
+          // Eğer işe başlama tarihinden önceyse, bir sonraki aya al
+          if (firstPayment.isBefore(startDate)) {
+            firstPayment = DateTime(
+              startDate.year,
+              startDate.month + 1,
+              monthlyDayOfMonth,
+            );
+          }
+
+          paymentDates.add(firstPayment);
+        }
+        break;
+
+      case 'Aylık (İki Kere)':
+        if (semiMonthlyDay1 != null && semiMonthlyDay2 != null) {
+          final day1 = semiMonthlyDay1 < semiMonthlyDay2
+              ? semiMonthlyDay1
+              : semiMonthlyDay2;
+          final day2 = semiMonthlyDay1 < semiMonthlyDay2
+              ? semiMonthlyDay2
+              : semiMonthlyDay1;
+
+          // İlk ödeme: Ayın ilk günü
+          DateTime firstPayment = DateTime(
+            startDate.year,
+            startDate.month,
+            day1,
+          );
+          if (firstPayment.isBefore(startDate)) {
+            firstPayment = DateTime(
+              startDate.year,
+              startDate.month + 1,
+              day1,
+            );
+          }
+          paymentDates.add(firstPayment);
+
+          // İkinci ödeme: Ayın ikinci günü (aynı ay veya bir sonraki ay)
+          DateTime secondPayment = DateTime(
+            firstPayment.year,
+            firstPayment.month,
+            day2,
+          );
+          if (secondPayment.isBefore(startDate) ||
+              secondPayment.isBefore(firstPayment)) {
+            secondPayment = DateTime(
+              firstPayment.year,
+              firstPayment.month + 1,
+              day2,
+            );
+          }
+          paymentDates.add(secondPayment);
+        }
+        break;
+
+      case 'Haftalık':
+        if (weeklyWeekday != null) {
+          final targetWeekday = getWeekdayNumber(weeklyWeekday);
+          final firstPayment = findNextWeekday(startDate, targetWeekday);
+          paymentDates.add(firstPayment);
+        }
+        break;
+
+      case 'Günlük':
+        if (weeklySelectedDays != null && weeklySelectedDays.isNotEmpty) {
+          // İlk çalışma gününü bul
+          DateTime current = startDate;
+          int found = 0;
+          while (found < 1) {
+            final weekdayName = [
+              'Pazartesi',
+              'Salı',
+              'Çarşamba',
+              'Perşembe',
+              'Cuma',
+              'Cumartesi',
+              'Pazar'
+            ][current.weekday - 1];
+            if (weeklySelectedDays.contains(weekdayName)) {
+              paymentDates.add(current);
+              found++;
+            }
+            current = current.add(const Duration(days: 1));
+          }
+        }
+        break;
+
+      case 'Saatlik':
+        // Saatlik için ay sonunu kullan
+        DateTime monthEnd = DateTime(
+          startDate.year,
+          startDate.month + 1,
+          0, // Ayın son günü
+        );
+        if (monthEnd.isBefore(startDate)) {
+          monthEnd = DateTime(
+            startDate.year,
+            startDate.month + 2,
+            0,
+          );
+        }
+        paymentDates.add(monthEnd);
+        break;
+
+      default:
+        // Varsayılan olarak işe başlama tarihini kullan
+        paymentDates.add(startDate);
+    }
+
+    return paymentDates;
+  }
+
+  // Get transaction note based on entitlement type
+  String _getTransactionNote({
+    required String entitlementType,
+    required DateTime paymentDate,
+  }) {
+    final dateStr =
+        '${paymentDate.day.toString().padLeft(2, '0')}.${paymentDate.month.toString().padLeft(2, '0')}.${paymentDate.year}';
+
+    switch (entitlementType) {
+      case 'Aylık':
+        return 'Aylık Maaş - $dateStr';
+      case 'Aylık (İki Kere)':
+        return 'Aylık Maaş (Yarı Dönem) - $dateStr';
+      case 'Haftalık':
+        return 'Haftalık Maaş - $dateStr';
+      case 'Günlük':
+        return 'Günlük Maaş - $dateStr';
+      case 'Saatlik':
+        return 'Saatlik Maaş - $dateStr';
+      default:
+        return 'Maaş Ödemesi - $dateStr';
+    }
+  }
 
   @override
   void dispose() {
@@ -3203,6 +4065,62 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
             'updatedAt': FieldValue.serverTimestamp(),
           }),
           'Kayıt güncelleme');
+
+      // Calculate salary amount
+      final salaryAmount = double.tryParse(_salaryAmountController.text
+              .replaceAll('.', '') // Remove thousand separators
+              .replaceAll(',', '.')) ??
+          0;
+
+      // Auto-create entitlement transaction(s) based on payment period
+      if (salaryAmount > 0) {
+        try {
+          final transactionsCol = (widget.tenantId != null &&
+                  widget.tenantId!.isNotEmpty)
+              ? FirebaseFirestore.instance
+                  .collection('tenants')
+                  .doc(widget.tenantId)
+                  .collection('employee_transactions')
+              : FirebaseFirestore.instance.collection('employee_transactions');
+
+          final List<DateTime> paymentDates = _calculatePaymentDates(
+            startDate: _startDate!,
+            entitlementType: _entitlementType,
+            monthlyDayOfMonth: _monthlyDayOfMonth,
+            semiMonthlyDay1: _semiMonthlyDay1,
+            semiMonthlyDay2: _semiMonthlyDay2,
+            weeklyWeekday: _weeklyWeekday,
+            daysPerWeek: _daysPerWeek,
+            weeklySelectedDays: _weeklySelectedDays,
+          );
+
+          // Create transaction(s) for each payment date
+          for (final paymentDate in paymentDates) {
+            final transactionNote = _getTransactionNote(
+              entitlementType: _entitlementType,
+              paymentDate: paymentDate,
+            );
+
+            await withTimeout(
+              transactionsCol.add({
+                'employeeId': employeeId,
+                'amount': salaryAmount,
+                'direction': 'in', // Alacak (personel için ödenecek)
+                'note': transactionNote,
+                'date': Timestamp.fromDate(paymentDate),
+                'tenantId': widget.tenantId,
+                'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                'createdAt': FieldValue.serverTimestamp(),
+                'updatedAt': FieldValue.serverTimestamp(),
+              }),
+              'Otomatik alacak kaydı oluşturma',
+            );
+          }
+        } catch (e) {
+          // Log error but don't fail the employee creation
+          debugPrint('Otomatik alacak kaydı oluşturulurken hata: $e');
+        }
+      }
 
       if (mounted) {
         // Close loading dialog if it's still open
