@@ -1330,20 +1330,20 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       body: Stack(
         children: [
           SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                // HEADER
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _EmployeesHeader(),
-                ),
-                // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildSearchAndFilters(),
-                ),
-                const SizedBox(height: 6),
+        top: false,
+        child: Column(
+          children: [
+            // HEADER
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _EmployeesHeader(),
+            ),
+            // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildSearchAndFilters(),
+            ),
+            const SizedBox(height: 6),
                 Expanded(
                   child: _EmployeeList(
                     searchQuery: _searchQuery,
@@ -1356,9 +1356,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                     ascending: _sortAscending,
                     tenantId: _tenantId,
                   ),
-                ),
-              ],
             ),
+          ],
+        ),
           ),
           Positioned(
             right: 16,
@@ -1563,11 +1563,11 @@ class _EmployeeList extends StatelessWidget {
           }
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
           itemCount: entries.length,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, idx) {
+      itemBuilder: (context, idx) {
             final e = entries[idx];
             if (e.isHeader) {
               return Padding(
@@ -1587,7 +1587,7 @@ class _EmployeeList extends StatelessWidget {
             final department = data['department'] as String? ?? '-';
             final category = data['category'] as String? ?? '-';
             final photoUrl = data['photoUrl'] as String?;
-            return ListTile(
+        return ListTile(
               leading: CircleAvatar(
                 backgroundImage:
                     photoUrl != null ? NetworkImage(photoUrl) : null,
@@ -1909,7 +1909,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                   ),
                                   child: const Text(
                                     'GEÇ',
-                                    style: TextStyle(
+            style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
