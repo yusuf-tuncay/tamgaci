@@ -13,6 +13,17 @@ import 'secure_storage_stub.dart'
 // WebAssembly için ayrı import (dart:html kullanmaz)
 import 'secure_storage_wasm.dart';
 
+// Helper functions for conditional imports
+SecureStorageInterface _createWebStorage() {
+  // ignore: undefined_function
+  return storage_impl.SecureStorageWeb() as SecureStorageInterface;
+}
+
+SecureStorageInterface _createNativeStorage() {
+  // ignore: undefined_function
+  return storage_impl.SecureStorageNative() as SecureStorageInterface;
+}
+
 /// Platform-aware secure storage service
 /// WebAssembly uyumluluğu için conditional imports kullanır
 class SecureStorageService {
@@ -29,10 +40,8 @@ class SecureStorageService {
         _storage = SecureStorageWasm();
       } else {
         // HTML renderer için normal web storage
-        // Web build'de storage_impl SecureStorageWeb olacak
         try {
-          // ignore: avoid_dynamic_calls
-          _storage = (storage_impl as dynamic).SecureStorageWeb() as SecureStorageInterface;
+          _storage = _createWebStorage();
         } catch (e) {
           debugPrint('Web storage init hatası, WASM fallback kullanılıyor: $e');
           _storage = SecureStorageWasm();
@@ -40,9 +49,7 @@ class SecureStorageService {
       }
     } else {
       // Native platform (Android, iOS, Desktop)
-      // Native build'de storage_impl SecureStorageNative olacak
-      // ignore: avoid_dynamic_calls
-      _storage = (storage_impl as dynamic).SecureStorageNative() as SecureStorageInterface;
+      _storage = _createNativeStorage();
     }
   }
 

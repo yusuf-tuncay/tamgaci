@@ -14,6 +14,17 @@ import 'connectivity_stub.dart'
 // WebAssembly için ayrı import
 import 'connectivity_wasm.dart';
 
+// Helper functions for conditional imports
+ConnectivityInterface _createWebConnectivity() {
+  // ignore: undefined_function
+  return connectivity_impl.ConnectivityWeb() as ConnectivityInterface;
+}
+
+ConnectivityInterface _createNativeConnectivity() {
+  // ignore: undefined_function
+  return connectivity_impl.ConnectivityNative() as ConnectivityInterface;
+}
+
 class ConnectivityService {
   static ConnectivityInterface? _connectivity;
   static Stream<List<ConnectivityResult>>? _connectivityStream;
@@ -26,9 +37,7 @@ class ConnectivityService {
         _connectivity = ConnectivityWasm();
       } else {
         try {
-          // Web build'de connectivity_impl ConnectivityWeb olacak
-          // ignore: avoid_dynamic_calls
-          _connectivity = (connectivity_impl as dynamic).ConnectivityWeb() as ConnectivityInterface;
+          _connectivity = _createWebConnectivity();
         } catch (e) {
           debugPrint(
               'Web connectivity init hatası, WASM fallback kullanılıyor: $e');
@@ -36,9 +45,7 @@ class ConnectivityService {
         }
       }
     } else {
-      // Native build'de connectivity_impl ConnectivityNative olacak
-      // ignore: avoid_dynamic_calls
-      _connectivity = (connectivity_impl as dynamic).ConnectivityNative() as ConnectivityInterface;
+      _connectivity = _createNativeConnectivity();
     }
   }
 
