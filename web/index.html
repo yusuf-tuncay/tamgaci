@@ -132,15 +132,8 @@
   {{flutter_js}}
   {{flutter_build_config}}
   
-  <script>
-    window.addEventListener('load', function(ev) {
-      _flutter.loader.load({
-        serviceWorkerSettings: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-      });
-    });
-  </script>
+  <!-- Flutter Bootstrap - Build sırasında oluşturulan bootstrap script'i -->
+  <script src="flutter_bootstrap.js"></script>
 </body>
 
 </html>
