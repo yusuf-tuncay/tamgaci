@@ -21,23 +21,23 @@
     "scope": "/",
     "icons": [
         {
-            "src": "assets/images/logos/192x192logo.png",
+            "src": "/assets/images/logos/192x192logo.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "assets/images/logos/512x512logo.png",
+            "src": "/assets/images/logos/512x512logo.png",
             "sizes": "512x512",
             "type": "image/png"
         },
         {
-            "src": "assets/images/logos/192x192logo.png",
+            "src": "/assets/images/logos/192x192logo.png",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "maskable"
         },
         {
-            "src": "assets/images/logos/512x512logo.png",
+            "src": "/assets/images/logos/512x512logo.png",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
