@@ -4,12 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:async';
 import '../../../../core/theme/constants.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/services/tenant_service.dart';
 import '../../../../core/utils/logger.dart';
+import '../../../../core/services/storage/secure_storage_service.dart';
 import '../providers/auth_providers.dart';
 
 /// Giriş sayfası
@@ -26,7 +26,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _rememberMe = true;
-  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
 
   // Banner state
   bool _showBanner = true;
@@ -80,8 +79,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final prefs = await SharedPreferences.getInstance();
       final remember = prefs.getBool('remember_me') ?? true;
       if (!remember) return;
-      final savedEmail = await _secureStorage.read(key: 'cred_email');
-      final savedPass = await _secureStorage.read(key: 'cred_password');
+      final savedEmail = await SecureStorageService.read('cred_email');
+      final savedPass = await SecureStorageService.read('cred_password');
       if (!mounted) return;
       setState(() {
         if (savedEmail != null) _emailController.text = savedEmail;
@@ -567,13 +566,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('remember_me', _rememberMe);
         if (_rememberMe) {
-          await _secureStorage.write(
-              key: 'cred_email', value: _emailController.text.trim());
-          await _secureStorage.write(
-              key: 'cred_password', value: _passwordController.text);
+          await SecureStorageService.write(
+              'cred_email', _emailController.text.trim());
+          await SecureStorageService.write(
+              'cred_password', _passwordController.text);
         } else {
-          await _secureStorage.delete(key: 'cred_email');
-          await _secureStorage.delete(key: 'cred_password');
+          await SecureStorageService.delete('cred_email');
+          await SecureStorageService.delete('cred_password');
         }
       } catch (_) {}
 

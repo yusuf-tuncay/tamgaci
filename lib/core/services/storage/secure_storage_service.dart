@@ -1,139 +1,104 @@
-// Platform-aware secure storage service
+// Platform-aware secure storage service with conditional imports
+// ignore_for_file: undefined_function
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../platform/platform_selector.dart';
+import 'secure_storage_interface.dart';
 
+// Conditional imports for different platforms
+// Stub (default) -> Native (dart:io) -> Web (dart:html)
+import 'secure_storage_stub.dart'
+    if (dart.library.io) 'secure_storage_native.dart'
+    if (dart.library.html) 'secure_storage_web.dart' as storage_impl;
+
+// WebAssembly için ayrı import (dart:html kullanmaz)
+import 'secure_storage_wasm.dart';
+
+/// Platform-aware secure storage service
+/// WebAssembly uyumluluğu için conditional imports kullanır
 class SecureStorageService {
-  static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(),
-    iOptions: IOSOptions(
-      accessibility: KeychainAccessibility.first_unlock_this_device,
-    ),
-  );
+  // Platform-specific storage implementation
+  static SecureStorageInterface? _storage;
 
-  // WebAssembly uyumlu alternatif storage
-  static final Map<String, String> _webStorage = {};
+  static void _initializeStorage() {
+    if (_storage != null) return;
 
-  static Future<void> init() async {
     if (kIsWeb) {
+      // Web için kontrol: WASM veya HTML renderer
       if (PlatformSelector.isWasmSupported) {
-        // WebAssembly için localStorage alternatifi
-        debugPrint('WebAssembly uyumlu storage başlatılıyor...');
-        await _initWebAssemblyStorage();
+        // WebAssembly uyumlu storage (dart:html kullanmaz)
+        _storage = SecureStorageWasm();
       } else {
-        // Normal web storage
-        debugPrint('Web storage başlatılıyor...');
-        await _initWebStorage();
+        // HTML renderer için normal web storage
+        try {
+          _storage = storage_impl.SecureStorageWeb() as SecureStorageInterface;
+        } catch (e) {
+          debugPrint('Web storage init hatası, WASM fallback kullanılıyor: $e');
+          _storage = SecureStorageWasm();
+        }
       }
     } else {
-      // Native storage
+      // Native platform (Android, iOS, Desktop)
+      _storage = storage_impl.SecureStorageNative() as SecureStorageInterface;
+    }
+  }
+
+  static Future<void> init() async {
+    _initializeStorage();
+    if (kIsWeb) {
+      if (PlatformSelector.isWasmSupported) {
+        debugPrint('WebAssembly uyumlu storage başlatılıyor...');
+      } else {
+        debugPrint('Web storage başlatılıyor...');
+      }
+    } else {
       debugPrint('Native storage başlatılıyor...');
     }
   }
 
-  static Future<void> _initWebAssemblyStorage() async {
-    // WebAssembly için localStorage kullanımı
-    // Bu implementasyon WebAssembly ile uyumlu
-  }
-
-  static Future<void> _initWebStorage() async {
-    // Normal web storage initialization
-  }
-
   static Future<String?> read(String key) async {
-    if (kIsWeb) {
-      if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu okuma
-        return _webStorage[key];
-      } else {
-        // Normal web okuma
-        try {
-          return await _storage.read(key: key);
-        } catch (e) {
-          debugPrint('Web storage okuma hatası: $e');
-          return null;
-        }
-      }
-    } else {
-      // Native okuma
-      return await _storage.read(key: key);
+    _initializeStorage();
+    try {
+      return await _storage?.read(key);
+    } catch (e) {
+      debugPrint('Storage okuma hatası: $e');
+      return null;
     }
   }
 
   static Future<void> write(String key, String value) async {
-    if (kIsWeb) {
-      if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu yazma
-        _webStorage[key] = value;
-      } else {
-        // Normal web yazma
-        try {
-          await _storage.write(key: key, value: value);
-        } catch (e) {
-          debugPrint('Web storage yazma hatası: $e');
-        }
-      }
-    } else {
-      // Native yazma
-      await _storage.write(key: key, value: value);
+    _initializeStorage();
+    try {
+      await _storage?.write(key, value);
+    } catch (e) {
+      debugPrint('Storage yazma hatası: $e');
     }
   }
 
   static Future<void> delete(String key) async {
-    if (kIsWeb) {
-      if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu silme
-        _webStorage.remove(key);
-      } else {
-        // Normal web silme
-        try {
-          await _storage.delete(key: key);
-        } catch (e) {
-          debugPrint('Web storage silme hatası: $e');
-        }
-      }
-    } else {
-      // Native silme
-      await _storage.delete(key: key);
+    _initializeStorage();
+    try {
+      await _storage?.delete(key);
+    } catch (e) {
+      debugPrint('Storage silme hatası: $e');
     }
   }
 
   static Future<void> deleteAll() async {
-    if (kIsWeb) {
-      if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu tümünü silme
-        _webStorage.clear();
-      } else {
-        // Normal web tümünü silme
-        try {
-          await _storage.deleteAll();
-        } catch (e) {
-          debugPrint('Web storage tümünü silme hatası: $e');
-        }
-      }
-    } else {
-      // Native tümünü silme
-      await _storage.deleteAll();
+    _initializeStorage();
+    try {
+      await _storage?.deleteAll();
+    } catch (e) {
+      debugPrint('Storage tümünü silme hatası: $e');
     }
   }
 
   static Future<Map<String, String>> readAll() async {
-    if (kIsWeb) {
-      if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu tümünü okuma
-        return Map.from(_webStorage);
-      } else {
-        // Normal web tümünü okuma
-        try {
-          return await _storage.readAll();
-        } catch (e) {
-          debugPrint('Web storage tümünü okuma hatası: $e');
-          return {};
-        }
-      }
-    } else {
-      // Native tümünü okuma
-      return await _storage.readAll();
+    _initializeStorage();
+    try {
+      return await _storage?.readAll() ?? {};
+    } catch (e) {
+      debugPrint('Storage tümünü okuma hatası: $e');
+      return {};
     }
   }
 }

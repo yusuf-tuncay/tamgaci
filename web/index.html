@@ -93,12 +93,10 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.8; }
     }
-
   </style>
 </head>
 
 <body>
-
   <script>
     // Cache busting script
     const version = '1.0.1+2';
@@ -128,10 +126,23 @@
       }
       return originalFetch(url, options);
     };
-
   </script>
   
-  <script src="flutter_bootstrap.js?v=1.0.1+2&t=1734567890" async></script>
+  <!-- Flutter Web Bootstrap - Bu placeholder'lar build sırasında otomatik değiştirilir -->
+  {{flutter_js}}
+  {{flutter_build_config}}
+  
+  <script>
+    window.addEventListener('load', function(ev) {
+      _flutter.loader.load({
+        serviceWorkerSettings: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+      });
+    });
+  </script>
+  
+  {{flutter_service_worker_js}}
 </body>
 
 </html>

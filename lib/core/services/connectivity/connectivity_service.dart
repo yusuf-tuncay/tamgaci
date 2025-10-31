@@ -1,105 +1,89 @@
-// Platform-aware connectivity service
+// Platform-aware connectivity service with conditional imports
+// ignore_for_file: undefined_function
 import 'package:flutter/foundation.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../platform/platform_selector.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+import 'connectivity_interface.dart';
+
+// Conditional imports
+import 'connectivity_stub.dart'
+    if (dart.library.io) 'connectivity_native.dart'
+    if (dart.library.html) 'connectivity_web.dart' as connectivity_impl;
+
+// WebAssembly için ayrı import
+import 'connectivity_wasm.dart';
 
 class ConnectivityService {
-  static final Connectivity _connectivity = Connectivity();
+  static ConnectivityInterface? _connectivity;
   static Stream<List<ConnectivityResult>>? _connectivityStream;
 
-  static Future<void> init() async {
+  static void _initializeConnectivity() {
+    if (_connectivity != null) return;
+
     if (kIsWeb) {
       if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu connectivity initialization
-        debugPrint('WebAssembly uyumlu connectivity servisi başlatılıyor...');
-        await _initWebAssemblyConnectivity();
+        _connectivity = ConnectivityWasm();
       } else {
-        // Normal web connectivity initialization
-        debugPrint('Web connectivity servisi başlatılıyor...');
-        await _initWebConnectivity();
-      }
-    } else {
-      // Native connectivity initialization
-      debugPrint('Native connectivity servisi başlatılıyor...');
-      await _initNativeConnectivity();
-    }
-  }
-
-  static Future<void> _initWebAssemblyConnectivity() async {
-    // WebAssembly için navigator.onLine alternatifi
-    // Bu implementasyon WebAssembly ile uyumlu
-  }
-
-  static Future<void> _initWebConnectivity() async {
-    // Normal web connectivity initialization
-  }
-
-  static Future<void> _initNativeConnectivity() async {
-    // Native connectivity initialization
-    _connectivityStream =
-        _connectivity.onConnectivityChanged.map((result) => [result]);
-  }
-
-  static Future<List<ConnectivityResult>> checkConnectivity() async {
-    if (kIsWeb) {
-      if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu connectivity kontrolü
-        return await _checkWebAssemblyConnectivity();
-      } else {
-        // Normal web connectivity kontrolü
         try {
-          final result = await _connectivity.checkConnectivity();
-          return [result];
+          _connectivity =
+              connectivity_impl.ConnectivityWeb() as ConnectivityInterface;
         } catch (e) {
-          debugPrint('Web connectivity kontrol hatası: $e');
-          return [ConnectivityResult.none];
+          debugPrint(
+              'Web connectivity init hatası, WASM fallback kullanılıyor: $e');
+          _connectivity = ConnectivityWasm();
         }
       }
     } else {
-      // Native connectivity kontrolü
-      final result = await _connectivity.checkConnectivity();
-      return [result];
+      _connectivity =
+          connectivity_impl.ConnectivityNative() as ConnectivityInterface;
     }
   }
 
-  static Future<List<ConnectivityResult>>
-      _checkWebAssemblyConnectivity() async {
-    // WebAssembly uyumlu connectivity kontrolü
+  static Future<void> init() async {
+    _initializeConnectivity();
+    if (kIsWeb) {
+      if (PlatformSelector.isWasmSupported) {
+        debugPrint('WebAssembly uyumlu connectivity servisi başlatılıyor...');
+      } else {
+        debugPrint('Web connectivity servisi başlatılıyor...');
+      }
+    } else {
+      debugPrint('Native connectivity servisi başlatılıyor...');
+      if (_connectivity != null) {
+        _connectivityStream =
+            _connectivity!.onConnectivityChanged.map((result) => [result]);
+      }
+    }
+  }
+
+  static Future<List<ConnectivityResult>> checkConnectivity() async {
+    _initializeConnectivity();
     try {
-      // WebAssembly uyumlu network durumu kontrolü
-      // Bu implementasyon dart:html kullanmaz
-      return [ConnectivityResult.wifi]; // Varsayılan olarak bağlı kabul et
+      final result = await _connectivity?.checkConnectivity();
+      return result != null ? [result] : [ConnectivityResult.none];
     } catch (e) {
-      debugPrint('WebAssembly connectivity kontrol hatası: $e');
+      debugPrint('Connectivity kontrol hatası: $e');
       return [ConnectivityResult.none];
     }
   }
 
   static Stream<List<ConnectivityResult>>? get connectivityStream {
+    _initializeConnectivity();
     if (kIsWeb) {
       if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu stream
-        return _getWebAssemblyConnectivityStream();
+        return _connectivity?.onConnectivityChanged.map((result) => [result]);
       } else {
-        // Normal web stream
         try {
-          return _connectivity.onConnectivityChanged.map((result) => [result]);
+          return _connectivity?.onConnectivityChanged.map((result) => [result]);
         } catch (e) {
           debugPrint('Web connectivity stream hatası: $e');
           return null;
         }
       }
     } else {
-      // Native stream
       return _connectivityStream;
     }
-  }
-
-  static Stream<List<ConnectivityResult>>? _getWebAssemblyConnectivityStream() {
-    // WebAssembly uyumlu connectivity stream
-    // Bu implementasyon dart:html kullanmaz
-    return Stream.periodic(
-        const Duration(seconds: 30), (_) => [ConnectivityResult.wifi]);
   }
 
   static Future<bool> isConnected() async {
@@ -125,15 +109,13 @@ class ConnectivityService {
   static Future<void> dispose() async {
     if (kIsWeb) {
       if (PlatformSelector.isWasmSupported) {
-        // WebAssembly uyumlu cleanup
         debugPrint('WebAssembly connectivity servisi kapatılıyor...');
       } else {
-        // Normal web cleanup
         debugPrint('Web connectivity servisi kapatılıyor...');
       }
     } else {
-      // Native cleanup
       debugPrint('Native connectivity servisi kapatılıyor...');
+      _connectivityStream = null;
     }
   }
 }
