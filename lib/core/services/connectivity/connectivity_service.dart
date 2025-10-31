@@ -1,27 +1,17 @@
 // Platform-aware connectivity service with conditional imports
-// ignore_for_file: undefined_function
 import 'package:flutter/foundation.dart';
 import '../../platform/platform_selector.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'dart:async';
 import 'connectivity_interface.dart';
 
-// Conditional imports
-import 'connectivity_stub.dart'
-    if (dart.library.io) 'connectivity_native.dart'
-    if (dart.library.html) 'connectivity_web.dart' as connectivity_impl;
+// Conditional imports for implementation factory
+import 'connectivity_service_impl_stub.dart'
+    if (dart.library.io) 'connectivity_service_impl.dart'
+    if (dart.library.html) 'connectivity_service_impl_web.dart';
 
 // WebAssembly için ayrı import
 import 'connectivity_wasm.dart';
-
-// Helper functions for conditional imports
-ConnectivityInterface _createWebConnectivity() {
-  return connectivity_impl.ConnectivityWeb() as ConnectivityInterface;
-}
-
-ConnectivityInterface _createNativeConnectivity() {
-  return connectivity_impl.ConnectivityNative() as ConnectivityInterface;
-}
 
 class ConnectivityService {
   static ConnectivityInterface? _connectivity;
@@ -35,7 +25,7 @@ class ConnectivityService {
         _connectivity = ConnectivityWasm();
       } else {
         try {
-          _connectivity = _createWebConnectivity();
+          _connectivity = createConnectivity();
         } catch (e) {
           debugPrint(
               'Web connectivity init hatası, WASM fallback kullanılıyor: $e');
@@ -43,7 +33,7 @@ class ConnectivityService {
         }
       }
     } else {
-      _connectivity = _createNativeConnectivity();
+      _connectivity = createConnectivity();
     }
   }
 
