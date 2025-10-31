@@ -93,17 +93,27 @@
       0%, 100% { opacity: 1; }
       50% { opacity: 0.8; }
     }
+    
+    /* Hide any raw JavaScript text that might appear in body */
+    body > text {
+      display: none !important;
+    }
+    
+    /* Ensure Flutter canvas is on top */
+    flt-scene-host {
+      position: relative;
+      z-index: 1;
+    }
   </style>
   
-  <!-- Flutter placeholder'ları HEAD içinde olmalı -->
-  {{flutter_js}}
-  {{flutter_build_config}}
+  <!-- Flutter loader script - Load directly -->
+  <script src="flutter.js" defer></script>
 </head>
 
 <body>
   <script>
     // Cache busting script
-    const version = '1.0.1+2';
+    const version = '1.0.1+3';
     const timestamp = Date.now();
     
     // Force reload if version changed
@@ -116,6 +126,14 @@
         caches.keys().then(function(names) {
           names.forEach(function(name) {
             caches.delete(name);
+          });
+        });
+      }
+      // Unregister service workers
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          registrations.forEach(function(registration) {
+            registration.unregister();
           });
         });
       }
@@ -132,8 +150,11 @@
     };
   </script>
   
-  <!-- Flutter Bootstrap -->
-  <script src="flutter_bootstrap.js"></script>
+  <!-- Flutter build configuration and bootstrap -->
+  <script>
+    {{flutter_build_config}}
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 
 </html>
