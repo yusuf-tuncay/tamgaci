@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -320,15 +321,14 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
   void _openManagePositions() {
     final controller = TextEditingController();
-    final categoryCtrl = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Pozisyonlar ve Kategoriler'),
+          title: const Text('Pozisyonlar'),
           content: SizedBox(
             width: 520,
-            height: 560,
+            height: 420,
             child: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -461,166 +461,6 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                       context: context,
                                       builder: (ctx) => AlertDialog(
                                         title: const Text('Pozisyon Sil'),
-                                        content: Text('"$name" silinsin mi?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(false),
-                                            child: const Text('Vazgeç'),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(true),
-                                            child: const Text('Sil'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (ok == true) {
-                                      await d.reference.delete();
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  const Divider(),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Kategoriler',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: categoryCtrl,
-                          decoration: const InputDecoration(
-                            labelText: 'Yeni kategori adı',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      FilledButton(
-                        onPressed: () async {
-                          final name = categoryCtrl.text.trim();
-                          if (name.isEmpty) return;
-                          if (!await _ensureTenant()) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text(
-                                      'Tenant yüklenmedi. Lütfen tekrar deneyin.')),
-                            );
-                            return;
-                          }
-                          final exists = await _tenantCol('employee_categories')
-                              .where('name', isEqualTo: name)
-                              .limit(1)
-                              .get();
-                          if (exists.docs.isNotEmpty) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Bu kategori zaten var')),
-                            );
-                            return;
-                          }
-                          await _tenantCol('employee_categories').add({
-                            'name': name,
-                            'tenantId': _tenantId,
-                            'createdBy': FirebaseAuth.instance.currentUser?.uid,
-                            'createdAt': FieldValue.serverTimestamp(),
-                          });
-                          categoryCtrl.clear();
-                        },
-                        child: const Text('Ekle'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                    stream: _tenantCol('employee_categories')
-                        .orderBy('name')
-                        .snapshots(),
-                    builder: (context, snap) {
-                      if (snap.hasError) {
-                        return Center(child: Text('Hata: ${snap.error}'));
-                      }
-                      if (!snap.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final docs = snap.data!.docs;
-                      if (docs.isEmpty) {
-                        return const Center(child: Text('Kayıt yok'));
-                      }
-                      return ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: docs.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1),
-                        itemBuilder: (context, i) {
-                          final d = docs[i];
-                          final name = d.data()['name'] as String? ?? '-';
-                          return ListTile(
-                            title: Text(name),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  tooltip: 'Düzenle',
-                                  icon: const Icon(Icons.edit),
-                                  onPressed: () async {
-                                    final editCtrl =
-                                        TextEditingController(text: name);
-                                    final ok = await showDialog<bool>(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Kategori Düzenle'),
-                                        content: TextField(
-                                          controller: editCtrl,
-                                          decoration: const InputDecoration(
-                                              labelText: 'Ad'),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(false),
-                                            child: const Text('İptal'),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(true),
-                                            child: const Text('Kaydet'),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                    if (ok == true) {
-                                      final newName = editCtrl.text.trim();
-                                      if (newName.isNotEmpty) {
-                                        await d.reference
-                                            .update({'name': newName});
-                                      }
-                                    }
-                                  },
-                                ),
-                                IconButton(
-                                  tooltip: 'Sil',
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.redAccent),
-                                  onPressed: () async {
-                                    final ok = await showDialog<bool>(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Kategori Sil'),
                                         content: Text('"$name" silinsin mi?'),
                                         actions: [
                                           TextButton(
@@ -940,8 +780,16 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                       vertical: 12,
                     ),
                   ),
+                  isExpanded: true,
                   items: _departments
-                      .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                      .map((d) => DropdownMenuItem(
+                            value: d,
+                            child: Text(
+                              d,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
+                          ))
                       .toList(),
                   onChanged: (v) => setState(() => _selectedDepartment = v!),
                 ),
@@ -1056,8 +904,16 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                     vertical: 12,
                   ),
                 ),
+                isExpanded: true,
                 items: _departments
-                    .map((d) => DropdownMenuItem(value: d, child: Text(d)))
+                    .map((d) => DropdownMenuItem(
+                          value: d,
+                          child: Text(
+                            d,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ))
                     .toList(),
                 onChanged: (v) => setState(() => _selectedDepartment = v!),
               ),
@@ -1752,6 +1608,7 @@ class _EmployeeBalance extends StatelessWidget {
             .collection('tenants')
             .doc(tenantId)
             .collection('employee_transactions')
+            .where('employeeId', isEqualTo: docId)
         : FirebaseFirestore.instance
             .collection('employee_transactions')
             .where('employeeId', isEqualTo: docId);
@@ -1799,6 +1656,8 @@ class _EmployeeTransactionsList extends StatelessWidget {
             .collection('tenants')
             .doc(tenantId)
             .collection('employee_transactions')
+            .where('employeeId', isEqualTo: docId)
+            .limit(10)
         : FirebaseFirestore.instance
             .collection('employee_transactions')
             .where('employeeId', isEqualTo: docId)
@@ -1914,6 +1773,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
   // Controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _tcController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _positionController = TextEditingController();
   final TextEditingController _salaryAmountController = TextEditingController();
   final TextEditingController _customPeriodNoteController =
@@ -1952,10 +1812,13 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
   @override
   void initState() {
     super.initState();
-    // Seed from parent
+    // Seed from parent (filter out "Tümü" for form dropdowns)
     _positionsLive = List<String>.from(widget.positions);
-    _categoriesLive = List<String>.from(widget.categories);
-    _departmentsLive = List<String>.from(widget.departments);
+    _categoriesLive =
+        List<String>.from(widget.categories).where((c) => c != 'Tümü').toList();
+    _departmentsLive = List<String>.from(widget.departments)
+        .where((d) => d != 'Tümü')
+        .toList();
     // Listen to Firestore for runtime updates
     _posSub = _col('positions').orderBy('name').snapshots().listen((s) {
       final names = s.docs
@@ -2003,6 +1866,57 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     });
   }
 
+  // Format salary amount in Turkish format (1.000,00)
+  String _formatSalaryAmount(String value) {
+    if (value.trim().isEmpty) return '';
+
+    // Remove all formatting characters
+    String cleaned = value.replaceAll(RegExp(r'[^\d,]'), '');
+
+    // Split integer and decimal parts
+    String integerPart = cleaned;
+    String? decimalPart;
+
+    if (cleaned.contains(',')) {
+      final parts = cleaned.split(',');
+      integerPart = parts[0];
+      if (parts.length > 1) {
+        decimalPart = parts[1];
+      }
+    }
+
+    // Remove all non-digits from integer part
+    integerPart = integerPart.replaceAll(RegExp(r'[^\d]'), '');
+
+    if (integerPart.isEmpty) return '';
+
+    // Format integer part with thousand separators
+    final buffer = StringBuffer();
+    for (int i = 0; i < integerPart.length; i++) {
+      if (i > 0 && (integerPart.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(integerPart[i]);
+    }
+
+    String result = buffer.toString();
+
+    // Always add decimal part (2 digits)
+    if (decimalPart != null && decimalPart.isNotEmpty) {
+      // Pad or truncate to 2 digits
+      if (decimalPart.length > 2) {
+        decimalPart = decimalPart.substring(0, 2);
+      } else {
+        decimalPart = decimalPart.padRight(2, '0');
+      }
+      result += ',$decimalPart';
+    } else {
+      result += ',00';
+    }
+
+    return result;
+  }
+
   // Çalışma takvimi (saatlik/günlük)
   final List<String> _weekdays = const [
     'Pazartesi',
@@ -2042,6 +1956,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
   void dispose() {
     _nameController.dispose();
     _tcController.dispose();
+    _emailController.dispose();
     _positionController.dispose();
     _salaryAmountController.dispose();
     _customPeriodNoteController.dispose();
@@ -2054,6 +1969,176 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
   }
 
   // Eski birleşik diyalog kaldırıldı (departman+kategori). Ayrı diyaloglar kullanılıyor.
+
+  void _openManageDepartments() {
+    final deptCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Departmanlar'),
+          content: SizedBox(
+            width: 520,
+            height: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(children: [
+                    Expanded(
+                        child: TextField(
+                            controller: deptCtrl,
+                            decoration: const InputDecoration(
+                                labelText: 'Yeni departman adı'))),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                        onPressed: () async {
+                          final name = deptCtrl.text.trim();
+                          if (name.isEmpty) return;
+                          if (widget.tenantId == null ||
+                              widget.tenantId!.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'Tenant bilgisi yüklenmedi. Lütfen tekrar deneyin.')));
+                            return;
+                          }
+                          final exists = await _col('departments')
+                              .where('name', isEqualTo: name)
+                              .limit(1)
+                              .get();
+                          if (exists.docs.isNotEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Bu departman zaten var')));
+                            return;
+                          }
+                          await _col('departments').add({
+                            'name': name,
+                            'tenantId': widget.tenantId,
+                            'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                            'createdAt': FieldValue.serverTimestamp()
+                          });
+                          deptCtrl.clear();
+                        },
+                        child: const Text('Ekle')),
+                  ]),
+                  const SizedBox(height: 8),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _col('departments').orderBy('name').snapshots(),
+                    builder: (context, snap) {
+                      if (snap.hasError) {
+                        return Center(child: Text('Hata: ${snap.error}'));
+                      }
+                      if (!snap.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final docs = snap.data!.docs;
+                      if (docs.isEmpty) {
+                        return const Center(child: Text('Kayıt yok'));
+                      }
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: docs.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final d = docs[i];
+                          final name = d.data()['name'] as String? ?? '-';
+                          return ListTile(
+                            title: Text(name),
+                            trailing:
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                              IconButton(
+                                  tooltip: 'Düzenle',
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () async {
+                                    final editCtrl =
+                                        TextEditingController(text: name);
+                                    final ok = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                                title: const Text(
+                                                    'Departman Düzenle'),
+                                                content: TextField(
+                                                    controller: editCtrl,
+                                                    decoration:
+                                                        const InputDecoration(
+                                                            labelText: 'Ad')),
+                                                actions: [
+                                                  TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(false),
+                                                      child:
+                                                          const Text('İptal')),
+                                                  FilledButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(true),
+                                                      child:
+                                                          const Text('Kaydet'))
+                                                ]));
+                                    if (ok == true) {
+                                      final newName = editCtrl.text.trim();
+                                      if (newName.isNotEmpty) {
+                                        await d.reference
+                                            .update({'name': newName});
+                                      }
+                                    }
+                                  }),
+                              IconButton(
+                                  tooltip: 'Sil',
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.redAccent),
+                                  onPressed: () async {
+                                    final ok = await showDialog<bool>(
+                                        context: context,
+                                        builder: (ctx) => AlertDialog(
+                                                title:
+                                                    const Text('Departman Sil'),
+                                                content: Text(
+                                                    '"$name" silinsin mi?'),
+                                                actions: [
+                                                  TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(false),
+                                                      child:
+                                                          const Text('Vazgeç')),
+                                                  FilledButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(ctx)
+                                                              .pop(true),
+                                                      child: const Text('Sil'))
+                                                ]));
+                                    if (ok == true) {
+                                      await d.reference.delete();
+                                      if (_selectedDepartment == name) {
+                                        setState(
+                                            () => _selectedDepartment = null);
+                                      }
+                                    }
+                                  }),
+                            ]),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Kapat'))
+          ],
+        );
+      },
+    );
+  }
 
   void _openManageCategories() {
     final catCtrl = TextEditingController();
@@ -2080,8 +2165,15 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                         onPressed: () async {
                           final name = catCtrl.text.trim();
                           if (name.isEmpty) return;
-                          final exists = await FirebaseFirestore.instance
-                              .collection('employee_categories')
+                          if (widget.tenantId == null ||
+                              widget.tenantId!.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'Tenant bilgisi yüklenmedi. Lütfen tekrar deneyin.')));
+                            return;
+                          }
+                          final exists = await _col('employee_categories')
                               .where('name', isEqualTo: name)
                               .limit(1)
                               .get();
@@ -2093,6 +2185,8 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                           }
                           await _col('employee_categories').add({
                             'name': name,
+                            'tenantId': widget.tenantId,
+                            'createdBy': FirebaseAuth.instance.currentUser?.uid,
                             'createdAt': FieldValue.serverTimestamp()
                           });
                           catCtrl.clear();
@@ -2219,11 +2313,50 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
 
   Future<void> _pickPhoto() async {
     try {
+      final source = await showDialog<ImageSource>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Fotoğraf Seç'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Galeriden Seç'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt),
+                title: const Text('Kamera ile Çek'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      if (source == null) return;
+
       final picker = ImagePicker();
       final XFile? file =
-          await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+          await picker.pickImage(source: source, imageQuality: 85);
       if (file == null) return;
       final bytes = await file.readAsBytes();
+
+      // Check file size limit (4MB)
+      const maxPhotoSize = 4 * 1024 * 1024; // 4MB in bytes
+      if (bytes.length > maxPhotoSize) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Fotoğraf boyutu 4MB\'dan büyük olamaz'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
       setState(() {
         _photoBytes = bytes;
         _photoName = file.name;
@@ -2233,6 +2366,25 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
 
   Future<void> _pickDocuments() async {
     try {
+      // Check document count limit (max 10)
+      if (_pickedDocs.length >= 10) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Maksimum 10 döküman ekleyebilirsiniz'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Calculate current total size
+      int currentTotalSize = 0;
+      for (final doc in _pickedDocs) {
+        currentTotalSize += doc.bytes.length;
+      }
+
       final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         type: FileType.custom,
@@ -2240,17 +2392,67 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         withData: true,
       );
       if (result == null) return;
+
+      const maxTotalSize = 20 * 1024 * 1024; // 20MB in bytes
+
+      int newFilesCount = 0;
+      int newFilesSize = 0;
+
       for (final f in result.files) {
         if (f.bytes == null) continue;
+
+        // Check remaining slots
+        if (_pickedDocs.length + newFilesCount >= 10) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Maksimum 10 döküman limitine ulaşıldı. Sadece $newFilesCount dosya eklendi.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          break;
+        }
+
+        // Check total size limit
+        if (currentTotalSize + newFilesSize + f.bytes!.length > maxTotalSize) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                    'Toplam boyut 20MB limitini aşıyor. Sadece $newFilesCount dosya eklendi.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+          break;
+        }
+
         _pickedDocs.add(_PickedDoc(name: f.name, bytes: f.bytes!));
+        newFilesCount++;
+        newFilesSize += f.bytes!.length;
       }
-      setState(() {});
+
+      if (newFilesCount > 0) {
+        setState(() {});
+      }
     } catch (_) {}
   }
 
   Future<void> _submit() async {
     if (_isSaving) return;
-    if (!_formKey.currentState!.validate()) return;
+
+    // Validate form
+    if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen tüm alanları doğru şekilde doldurun'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     if (_birthDate == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Doğum tarihi seçin')));
@@ -2342,6 +2544,27 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     }
 
     setState(() => _isSaving = true);
+
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text(
+                  'Personel ekleniyor...\nFotoğraf ve dökümanlar yükleniyor...'),
+            ],
+          ),
+        ),
+      ),
+    );
+
     try {
       final firestore = FirebaseFirestore.instance;
       final storage = FirebaseStorage.instance;
@@ -2406,14 +2629,16 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       final docRef = await employeesCol.add({
         'name': _nameController.text.trim(),
         'tc': _tcController.text.trim(),
+        'email': _emailController.text.trim(),
         'birthDate': Timestamp.fromDate(_birthDate!),
         'startDate': Timestamp.fromDate(_startDate!),
         'department': _selectedDepartment,
         'position': (_selectedPosition ?? _positionController.text.trim()),
         'category': _selectedCategory,
         'salary': {
-          'amount': double.tryParse(
-                  _salaryAmountController.text.replaceAll(',', '.')) ??
+          'amount': double.tryParse(_salaryAmountController.text
+                  .replaceAll('.', '') // Remove thousand separators
+                  .replaceAll(',', '.')) ??
               0,
           'currency': _salaryCurrency,
         },
@@ -2431,10 +2656,15 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       String? photoUrl;
       final List<Map<String, dynamic>> docUrls = [];
 
+      // Build storage path with tenantId if available
+      final String storagePrefix =
+          (widget.tenantId != null && widget.tenantId!.isNotEmpty)
+              ? 'tenants/${widget.tenantId}/employees/$employeeId'
+              : 'employees/$employeeId';
+
       // Upload photo
       if (_photoBytes != null && _photoName != null) {
-        final ref =
-            storage.ref().child('employees/$employeeId/photo/$_photoName');
+        final ref = storage.ref().child('$storagePrefix/photo/$_photoName');
         final snap = await ref.putData(
           _photoBytes!,
           SettableMetadata(contentType: 'image/jpeg'),
@@ -2444,7 +2674,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
 
       // Upload documents
       for (final d in _pickedDocs) {
-        final ref = storage.ref().child('employees/$employeeId/docs/${d.name}');
+        final ref = storage.ref().child('$storagePrefix/docs/${d.name}');
         final contentType = d.name.toLowerCase().endsWith('.pdf')
             ? 'application/pdf'
             : 'image/jpeg';
@@ -2464,15 +2694,26 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       });
 
       if (mounted) {
+        // Close loading dialog
+        Navigator.of(context).pop();
+        // Close form dialog
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Personel başarıyla eklendi'),
+          backgroundColor: Colors.green,
         ));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Kayıt sırasında hata: $e')),
-      );
+      if (mounted) {
+        // Close loading dialog
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kayıt sırasında hata: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -2516,36 +2757,37 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                 ),
                 const SizedBox(height: 8),
 
-                // Photo picker
+                // Photo picker and Name
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundImage: _photoBytes != null
-                          ? MemoryImage(_photoBytes!)
-                          : null,
-                      child: _photoBytes == null
-                          ? const Icon(Icons.person, size: 32)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton.icon(
-                      onPressed: _isSaving ? null : _pickPhoto,
-                      icon: const Icon(Icons.photo_camera),
-                      label: const Text('Fotoğraf Seç'),
-                    ),
-                    const SizedBox(width: 12),
-                    if (_photoBytes != null)
-                      Expanded(
-                        child: Tooltip(
-                          message: _photoName ?? '',
-                          child: Text(
-                            _photoName ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
+                    GestureDetector(
+                      onTap: _isSaving ? null : _pickPhoto,
+                      child: CircleAvatar(
+                        radius: 32,
+                        backgroundImage: _photoBytes != null
+                            ? MemoryImage(_photoBytes!)
+                            : null,
+                        child: _photoBytes == null
+                            ? const Icon(Icons.person, size: 32)
+                            : null,
                       ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _nameController,
+                        decoration:
+                            const InputDecoration(labelText: 'İsim Soyisim'),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-ZçğıöşüÇĞIİÖŞÜ\s]'),
+                          ),
+                        ],
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Zorunlu alan'
+                            : null,
+                      ),
+                    ),
                   ],
                 ),
 
@@ -2677,20 +2919,9 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                   ],
                 ],
 
-                // Name, TC
+                // TC, Email
                 Row(
                   children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _nameController,
-                        decoration:
-                            const InputDecoration(labelText: 'İsim Soyisim'),
-                        validator: (v) => (v == null || v.trim().isEmpty)
-                            ? 'Zorunlu alan'
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
                     Expanded(
                       child: TextFormField(
                         controller: _tcController,
@@ -2700,10 +2931,31 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                         ),
                         keyboardType: TextInputType.number,
                         maxLength: 11,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         validator: (v) {
                           final t = v?.trim() ?? '';
                           if (t.isEmpty) return 'Zorunlu alan';
                           if (t.length != 11) return '11 haneli olmalı';
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(labelText: 'E-posta'),
+                        keyboardType: TextInputType.emailAddress,
+                        validator: (v) {
+                          final email = v?.trim() ?? '';
+                          if (email.isEmpty) return 'Zorunlu alan';
+                          final emailRegex = RegExp(
+                              r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+                          if (!emailRegex.hasMatch(email)) {
+                            return 'Geçerli bir e-posta adresi giriniz';
+                          }
                           return null;
                         },
                       ),
@@ -2713,7 +2965,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
 
                 const SizedBox(height: 12),
 
-                // Birth date, Department
+                // Birth date, Start date
                 Row(
                   children: [
                     Expanded(
@@ -2746,17 +2998,88 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
+                      child: InkWell(
+                        onTap: _isSaving
+                            ? null
+                            : () async {
+                                final now = DateTime.now();
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: now,
+                                  firstDate: DateTime(2000),
+                                  lastDate: DateTime(now.year + 1),
+                                );
+                                if (picked != null) {
+                                  setState(() => _startDate = picked);
+                                }
+                              },
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                              labelText: 'İşe Başlama Tarihi'),
+                          child: Text(
+                            _startDate == null
+                                ? 'Seçiniz'
+                                : '${_startDate!.day.toString().padLeft(2, '0')}.${_startDate!.month.toString().padLeft(2, '0')}.${_startDate!.year}',
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Department, Category
+                Row(
+                  children: [
+                    Expanded(
                       child: DropdownButtonFormField<String>(
                         initialValue: _selectedDepartment,
                         decoration:
                             const InputDecoration(labelText: 'Departman'),
+                        isExpanded: true,
                         items: _departmentsLive
-                            .map((d) =>
-                                DropdownMenuItem(value: d, child: Text(d)))
+                            .map((d) => DropdownMenuItem(
+                                  value: d,
+                                  child: Text(
+                                    d,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ))
                             .toList(),
                         onChanged: _isSaving
                             ? null
                             : (v) => setState(() => _selectedDepartment = v),
+                        validator: (v) => v == null ? 'Zorunlu alan' : null,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Departman Ekle',
+                      onPressed: _isSaving ? null : _openManageDepartments,
+                      icon: const Icon(Icons.add),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedCategory,
+                        decoration:
+                            const InputDecoration(labelText: 'Kategori'),
+                        isExpanded: true,
+                        items: _categoriesLive
+                            .map((c) => DropdownMenuItem(
+                                  value: c,
+                                  child: Text(
+                                    c,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: _isSaving
+                            ? null
+                            : (v) => setState(() => _selectedCategory = v),
                         validator: (v) => v == null ? 'Zorunlu alan' : null,
                       ),
                     ),
@@ -2771,36 +3094,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
 
                 const SizedBox(height: 12),
 
-                // Start date
-                InkWell(
-                  onTap: _isSaving
-                      ? null
-                      : () async {
-                          final now = DateTime.now();
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: now,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(now.year + 1),
-                          );
-                          if (picked != null) {
-                            setState(() => _startDate = picked);
-                          }
-                        },
-                  child: InputDecorator(
-                    decoration:
-                        const InputDecoration(labelText: 'İşe Başlama Tarihi'),
-                    child: Text(
-                      _startDate == null
-                          ? 'Seçiniz'
-                          : '${_startDate!.day.toString().padLeft(2, '0')}.${_startDate!.month.toString().padLeft(2, '0')}.${_startDate!.year}',
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // Position, Category
+                // Position
                 Row(
                   children: [
                     Expanded(
@@ -2823,22 +3117,6 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                       onPressed: _isSaving ? null : widget.onManagePositions,
                       icon: const Icon(Icons.add),
                     ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _selectedCategory,
-                        decoration:
-                            const InputDecoration(labelText: 'Kategori'),
-                        items: _categoriesLive
-                            .map((c) =>
-                                DropdownMenuItem(value: c, child: Text(c)))
-                            .toList(),
-                        onChanged: _isSaving
-                            ? null
-                            : (v) => setState(() => _selectedCategory = v),
-                        validator: (v) => v == null ? 'Zorunlu alan' : null,
-                      ),
-                    ),
                   ],
                 ),
 
@@ -2854,6 +3132,29 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                             const InputDecoration(labelText: 'Maaş Miktarı'),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d,.]'),
+                          ),
+                        ],
+                        onEditingComplete: () {
+                          final formatted =
+                              _formatSalaryAmount(_salaryAmountController.text);
+                          _salaryAmountController.value = TextEditingValue(
+                            text: formatted,
+                            selection: TextSelection.collapsed(
+                                offset: formatted.length),
+                          );
+                        },
+                        onTapOutside: (_) {
+                          final formatted =
+                              _formatSalaryAmount(_salaryAmountController.text);
+                          _salaryAmountController.value = TextEditingValue(
+                            text: formatted,
+                            selection: TextSelection.collapsed(
+                                offset: formatted.length),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -3131,11 +3432,18 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                   children: [
                     FilledButton.icon(
                       onPressed: _isSaving ? null : _pickDocuments,
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
                       icon: const Icon(Icons.attach_file),
                       label: const Text('Döküman Ekle (PDF/PNG/JPG)'),
                     ),
                     const SizedBox(width: 12),
-                    Text('${_pickedDocs.length} dosya seçildi'),
+                    Text('${_pickedDocs.length}/10 dosya seçildi'),
                   ],
                 ),
 
@@ -3145,13 +3453,26 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                     spacing: 8,
                     runSpacing: 8,
                     children: _pickedDocs
-                        .map((d) => Chip(
-                              label: Text(d.name),
-                              onDeleted: _isSaving
-                                  ? null
-                                  : () {
-                                      setState(() => _pickedDocs.remove(d));
-                                    },
+                        .map((d) => Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  d.name,
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  icon: const Icon(Icons.close, size: 18),
+                                  onPressed: _isSaving
+                                      ? null
+                                      : () {
+                                          setState(() => _pickedDocs.remove(d));
+                                        },
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  tooltip: 'Kaldır',
+                                ),
+                              ],
                             ))
                         .toList(),
                   ),
@@ -3160,14 +3481,27 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
 
                 Row(
                   children: [
-                    OutlinedButton(
+                    FilledButton.icon(
                       onPressed:
                           _isSaving ? null : () => Navigator.of(context).pop(),
-                      child: const Text('Vazgeç'),
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: const Icon(Icons.close),
+                      label: const Text('Vazgeç'),
                     ),
                     const Spacer(),
                     FilledButton.icon(
                       onPressed: _isSaving ? null : _submit,
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
                       icon: _isSaving
                           ? const SizedBox(
                               width: 16,
