@@ -15,12 +15,10 @@ import 'secure_storage_wasm.dart';
 
 // Helper functions for conditional imports
 SecureStorageInterface _createWebStorage() {
-  // ignore: undefined_function
   return storage_impl.SecureStorageWeb() as SecureStorageInterface;
 }
 
 SecureStorageInterface _createNativeStorage() {
-  // ignore: undefined_function
   return storage_impl.SecureStorageNative() as SecureStorageInterface;
 }
 

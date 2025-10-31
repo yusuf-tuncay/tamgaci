@@ -16,12 +16,10 @@ import 'connectivity_wasm.dart';
 
 // Helper functions for conditional imports
 ConnectivityInterface _createWebConnectivity() {
-  // ignore: undefined_function
   return connectivity_impl.ConnectivityWeb() as ConnectivityInterface;
 }
 
 ConnectivityInterface _createNativeConnectivity() {
-  // ignore: undefined_function
   return connectivity_impl.ConnectivityNative() as ConnectivityInterface;
 }
 
