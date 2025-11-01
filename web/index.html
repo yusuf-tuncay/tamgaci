@@ -15,177 +15,102 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <meta http-equiv="Last-Modified" content="0" />
-  <meta http-equiv="ETag" content="1.0.1+6" />
   <meta name="keywords"
-    content="muhasebe yazılımı, ön muhasebe yazılımı, fatura yazılımı, e-fatura yazılımı, irsaliye yazılımı, otomatik fatura okuma, fatura OCR yazılımı, yapay zeka ile fatura okuma, çoklu para birimi muhasebe, dövizli fatura yazılımı, uluslararası fatura yazılımı, KOBİ muhasebe yazılımı, kurumsal muhasebe yazılımı, belge tarama muhasebe, irsaliye fotoğrafla girme, otomatik irsaliye tanıma, muhasebe entegrasyonu fatura okuma, fatura girişi otomasyonu, fatura ve irsaliye otomasyonu, muhasebe programı, AI ile fatura girişi, yapay zeka ile fatura girişi yapan yazılım, KOBİ'ler için otomatik fatura okuma yazılımı, çoklu para birimi destekli ön muhasebe programı, irsaliye fotoğrafla giren muhasebe uygulaması" />
-
-  <!-- Open Graph / Facebook -->
-  <meta property="og:title" content="Tamgacı | AI Destekli Fatura & Ön Muhasebe Yazılımı - OCR Fatura Okuma" />
-  <meta property="og:description"
-    content="Tamgacı AI destekli muhasebe yazılımı ile otomatik fatura okuma, OCR teknolojisi, çoklu para birimi desteği. KOBİ ve kurumsal çözümler için e-fatura, irsaliye yönetimi. Yapay zeka ile fatura girişi otomasyonu ve belge tarama muhasebe sistemi." />
-  <meta property="og:type" content="website" />
-  <meta property="og:image" content="/assets/images/logos/512x512logo.png" />
-  <meta property="og:url" content="https://tamgaci.web.app/" />
-  <meta property="og:site_name" content="TAMGACI" />
-
-  <!-- Twitter -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Tamgacı | AI Destekli Fatura & Ön Muhasebe Yazılımı - OCR Fatura Okuma" />
-  <meta name="twitter:description"
-    content="Tamgacı AI destekli muhasebe yazılımı ile otomatik fatura okuma, OCR teknolojisi, çoklu para birimi desteği. KOBİ ve kurumsal çözümler için e-fatura, irsaliye yönetimi. Yapay zeka ile fatura girişi otomasyonu ve belge tarama muhasebe sistemi." />
-  <meta name="twitter:image" content="/assets/images/logos/512x512logo.png" />
-
-  <!-- iOS meta tags & icons -->
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="TAMGACI">
-  <link rel="apple-touch-icon" href="assets/images/logos/192x192logo.png">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="48x48" href="assets/images/logos/favicon_48x48.png" />
-  <link rel="icon" type="image/png" sizes="32x32" href="assets/images/logos/favicon_48x48.png" />
-  <link rel="icon" type="image/png" sizes="16x16" href="assets/images/logos/favicon_48x48.png" />
-  <link rel="shortcut icon" href="assets/images/logos/favicon_48x48.png" />
-  <link rel="canonical" href="https://tamgaci.web.app/" />
-
-  <!-- Preload critical resources -->
-  <link rel="preload" href="/assets/fonts/MaterialIcons-Regular.otf" as="font" type="font/otf" crossorigin />
-
-  <!-- DNS prefetch for external resources -->
-  <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-  <link rel="dns-prefetch" href="//fonts.gstatic.com" />
-  <link rel="dns-prefetch" href="//firebaseapp.com" />
+    content="muhasebe yazılımı, ön muhasebe yazılımı, fatura yazılımı, e-fatura yazılımı, irsaliye yazılımı, otomatik fatura okuma, fatura OCR yazılımı, çoklu para birimi muhasebe, dövizli fatura yazılımı, uluslararası fatura yazılımı, KOBİ muhasebe yazılımı, kurumsal muhasebe yazılımı, belge tarama muhasebe, irsaliye fotoğrafla girme, otomatik irsaliye tanıma, muhasebe entegrasyonu fatura okuma, fatura girişi otomasyonu, fatura ve irsaliye otomasyonu, muhasebe programı, AI ile fatura girişi, yapay zeka ile fatura girişi yapan yazılım, KOBİ'ler için otomatik fatura okuma yazılımı, çoklu para birimi destekli ön muhasebe programı, irsaliye fotoğrafla giren muhasebe uygulaması" />
 
   <title>Tamgacı | AI Destekli Fatura & Ön Muhasebe Yazılımı - OCR Fatura Okuma</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Loading screen styles -->
   <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+
     body {
       margin: 0;
       padding: 0;
       background: linear-gradient(135deg, #2563EB 0%, #4C6EF5 50%, #1D4ED8 100%);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      overflow: hidden;
+      overflow: clip;
       position: relative;
     }
 
-    body::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: 
-        radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
-      animation: backgroundShift 8s ease-in-out infinite;
-      z-index: 0;
+    #flutter-host {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
     }
 
     @keyframes backgroundShift {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.8; }
-    }
-    
-    /* Ensure Flutter canvas is visible */
-    flutter-view {
-      position: relative;
-      z-index: 1;
-    }
-    
-    canvas {
-      position: relative;
-      z-index: 1;
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.8;
+      }
     }
   </style>
-  
-  <!-- Flutter loader script - Load directly -->
-  <script src="flutter.js" defer></script>
+
+  <script>
+    // Unregister SW for clean testing
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) { regs.forEach(function (r) { r.unregister(); }); });
+    }
+    // Runtime fetch shim to normalize font paths and manifest entries
+    (function () {
+      var originalFetch = window.fetch;
+      window.fetch = function (input, init) {
+        try {
+          var url = (typeof input === 'string') ? input : input.url;
+          if (typeof url === 'string') {
+            if (url.indexOf('assets/assets/fonts/') !== -1) {
+              var fixed = url.replace('assets/assets/fonts/', 'assets/fonts/');
+              return originalFetch(fixed, init);
+            }
+            if (url.endsWith('assets/FontManifest.json')) {
+              return originalFetch(url, init).then(function (resp) {
+                if (!resp.ok) return resp;
+                return resp.clone().text().then(function (txt) {
+                  var patched = txt.replace(/\"assets\/fonts\//g, '\"fonts/');
+                  return new Response(patched, { headers: resp.headers, status: resp.status, statusText: resp.statusText });
+                });
+              });
+            }
+          }
+        } catch (e) { }
+        return originalFetch(input, init);
+      };
+    })();
+  </script>
 </head>
 
 <body>
+  <div id="flutter-host"></div>
+
   <script>
-    // Cache busting script
-    const version = '1.0.1+6';
+    const version = '1.0.1+12';
     const timestamp = Date.now();
-    
-    // Force reload if version changed
     const storedVersion = localStorage.getItem('app_version');
     if (storedVersion !== version) {
       localStorage.setItem('app_version', version);
       localStorage.setItem('last_update', timestamp);
-      // Clear all caches
       if ('caches' in window) {
-        caches.keys().then(function(names) {
-          names.forEach(function(name) {
-            caches.delete(name);
-          });
-        });
-      }
-      // Unregister service workers
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          registrations.forEach(function(registration) {
-            registration.unregister();
-          });
-        });
+        caches.keys().then(names => names.forEach(name => caches.delete(name)));
       }
     }
-    
-    // Add version parameter to all asset requests
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options) {
-      if (typeof url === 'string' && (url.includes('.js') || url.includes('.css') || url.includes('.png') || url.includes('.jpg'))) {
-        const separator = url.includes('?') ? '&' : '?';
-        url = url + separator + 'v=' + version + '&t=' + timestamp;
-      }
-      return originalFetch(url, options);
-    };
   </script>
-  
-  <!-- Flutter build configuration -->
-  <script>
-    {{flutter_build_config}}
-  </script>
-  
-  <!-- Custom Flutter bootstrap - Replace bootstrap.js completely -->
-  <script>
-    window.addEventListener('load', function(ev) {
-      // Wait for flutter.js to load
-      const initFlutter = () => {
-        if (!window._flutter || !window._flutter.loader || !window._flutter.buildConfig) {
-          setTimeout(initFlutter, 50);
-          return;
-        }
-        
-        // Get service worker version from build config or use null
-        const serviceWorkerVersion = {{flutter_service_worker_version}};
-        
-        // Call load with onEntrypointLoaded callback
-        window._flutter.loader.load({
-          serviceWorkerSettings: serviceWorkerVersion ? {
-            serviceWorkerVersion: serviceWorkerVersion
-          } : null,
-          onEntrypointLoaded: function(engineInitializer) {
-            engineInitializer.initializeEngine({
-              renderer: "canvaskit"
-            }).then(function(appRunner) {
-              appRunner.runApp();
-            }).catch(function(error) {
-              console.error('Error initializing Flutter engine:', error);
-            });
-          }
-        });
-      };
-      
-      // Start initialization
-      initFlutter();
-    });
-  </script>
+
+  <script src="flutter.js" defer></script>
+  <script src="flutter_build_config.js"></script>
+  <script src="custom_bootstrap.js" defer></script>
 </body>
 
 </html>

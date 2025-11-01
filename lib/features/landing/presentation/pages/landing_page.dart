@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:device_info_plus/device_info_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math' as math;
@@ -43,7 +42,22 @@ class _LandingPageState extends State<LandingPage>
   void initState() {
     super.initState();
     _initializeAnimations();
-    _checkDeviceType();
+    // Device type check build sonrası yapılacak
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Context hazır olduğunda device type kontrolü yap
+    if (_isDesktop == false && MediaQuery.of(context).size.width >= 768) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _isDesktop = true;
+          });
+        }
+      });
+    }
   }
 
   void _initializeAnimations() {
@@ -116,21 +130,6 @@ class _LandingPageState extends State<LandingPage>
     _pulseController.repeat(reverse: true);
   }
 
-  Future<void> _checkDeviceType() async {
-    if (kIsWeb) {
-      final deviceInfo = DeviceInfoPlugin();
-      final webBrowserInfo = await deviceInfo.webBrowserInfo;
-      setState(() {
-        _isDesktop = webBrowserInfo.platform != 'Android' &&
-            webBrowserInfo.platform != 'iOS';
-      });
-    } else {
-      // Windows, macOS, Linux için desktop olarak kabul et
-      setState(() {
-        _isDesktop = true;
-      });
-    }
-  }
 
   @override
   void dispose() {

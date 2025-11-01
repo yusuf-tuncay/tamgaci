@@ -49,6 +49,19 @@
         ]
       },
       {
+        "source": "**/*.@(ttf|otf|woff|woff2|eot)",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "font/ttf"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      {
         "source": "index.html",
         "headers": [
           {

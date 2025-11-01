@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamgaci/app.dart';
 import 'package:tamgaci/core/utils/logger.dart';
+import 'dart:async';
 
 // Firebase imports
 import 'package:firebase_core/firebase_core.dart';
@@ -18,6 +19,16 @@ import 'package:tamgaci/core/platform/platform_selector.dart';
 void main() async {
   // Flutter widget binding'lerini başlat
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Global error yakalama - release'ta da konsola yazsın
+  FlutterError.onError = (FlutterErrorDetails details) {
+    // ignore: avoid_print
+    debugPrint('FLUTTER_ERROR: ${details.exceptionAsString()}');
+    // ignore: avoid_print
+    if (details.stack != null) {
+      print(details.stack);
+    }
+  };
 
   // WebView platform implementation'ını ayarla (yalnız web)
   const WebViewPlatformConfigurer().configure();
@@ -37,10 +48,20 @@ void main() async {
 
   AppLogger.info('Using Firebase-only data storage');
 
-  // Uygulamayı Riverpod Provider scope ile başlat
-  runApp(
-    const ProviderScope(
-      child: TamgaciApp(),
-    ),
-  );
+  // Web engine hazır senkronizasyonu için kısa bekleme
+  await Future<void>.delayed(const Duration(milliseconds: 120));
+
+  // Uygulamayı Zone içinde başlat - tüm senkron/async hataları yakala
+  await runZonedGuarded<Future<void>>(() async {
+    runApp(
+      const ProviderScope(
+        child: TamgaciApp(),
+      ),
+    );
+  }, (Object error, StackTrace stack) {
+    // ignore: avoid_print
+    print('UNCAUGHT: $error');
+    // ignore: avoid_print
+    print(stack);
+  });
 }
