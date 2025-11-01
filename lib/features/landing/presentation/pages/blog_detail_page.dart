@@ -8,14 +8,36 @@ import 'package:go_router/go_router.dart';
 import 'blog_page.dart';
 
 /// Blog detay sayfası - SEO için önemli içerik
-class BlogDetailPage extends StatelessWidget {
+class BlogDetailPage extends StatefulWidget {
   final String slug;
 
   const BlogDetailPage({super.key, required this.slug});
 
   @override
+  State<BlogDetailPage> createState() => _BlogDetailPageState();
+}
+
+class _BlogDetailPageState extends State<BlogDetailPage> {
+  final List<TapGestureRecognizer> _recognizers = [];
+
+  @override
+  void dispose() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final blogPost = _getBlogPostBySlug(slug);
+    // Her build'de eski recognizer'ları temizle
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+
+    final blogPost = _getBlogPostBySlug(widget.slug);
 
     if (blogPost == null) {
       return Scaffold(
@@ -197,6 +219,7 @@ class BlogDetailPage extends StatelessWidget {
                     context,
                     (blogPost['content'] as String?) ??
                         (blogPost['description'] as String),
+                    _recognizers,
                   ),
 
                   const SizedBox(height: 60),
@@ -251,11 +274,15 @@ class BlogDetailPage extends StatelessWidget {
 
   List<Map<String, dynamic>> _getAllBlogPosts() {
     // Blog listesini blog_page.dart'dan al
-    return BlogPage.getBlogPosts();
+    return getBlogPosts();
   }
 
   /// TAMGACI kelimelerini tıklanabilir link yaparak içerik oluşturur
-  Widget _buildRichContent(BuildContext context, String text) {
+  Widget _buildRichContent(
+    BuildContext context,
+    String text,
+    List<TapGestureRecognizer> recognizers,
+  ) {
     final baseStyle = GoogleFonts.poppins(
       fontSize: 18,
       color: const Color(0xFF64748B),
@@ -324,6 +351,7 @@ class BlogDetailPage extends StatelessWidget {
                     baseStyle,
                     linkStyle,
                     tamgaciRegex,
+                    recognizers,
                   ),
                 ),
               ],
@@ -343,6 +371,7 @@ class BlogDetailPage extends StatelessWidget {
             baseStyle,
             linkStyle,
             tamgaciRegex,
+            recognizers,
           ),
         ),
       );
@@ -361,6 +390,7 @@ class BlogDetailPage extends StatelessWidget {
     TextStyle baseStyle,
     TextStyle linkStyle,
     RegExp tamgaciRegex,
+    List<TapGestureRecognizer> recognizers,
   ) {
     final List<TextSpan> spans = [];
     final matches = tamgaciRegex.allMatches(line);
@@ -378,14 +408,18 @@ class BlogDetailPage extends StatelessWidget {
       }
 
       // TAMGACI kelimesini tıklanabilir link olarak ekle
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () {
+          if (mounted) {
+            context.go('/');
+          }
+        };
+      recognizers.add(recognizer);
       spans.add(
         TextSpan(
           text: match.group(0),
           style: linkStyle,
-          recognizer: TapGestureRecognizer()
-            ..onTap = () {
-              context.go('/');
-            },
+          recognizer: recognizer,
         ),
       );
 
