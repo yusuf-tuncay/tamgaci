@@ -1,6 +1,7 @@
 // ========== BLOG DETAIL PAGE ==========
 // lib/features/landing/presentation/pages/blog_detail_page.dart
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -68,8 +69,8 @@ class BlogDetailPage extends StatelessWidget {
               padding: EdgeInsets.all(
                 MediaQuery.of(context).size.width > 768 ? 80 : 40,
               ),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
@@ -144,14 +145,58 @@ class BlogDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Full Content
-                  Text(
-                    blogPost['description'] as String,
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      color: const Color(0xFF64748B),
-                      height: 1.8,
+                  // Blog Image (if available)
+                  if (blogPost['image'] != null)
+                    Container(
+                      width: double.infinity,
+                      height:
+                          MediaQuery.of(context).size.width > 768 ? 400 : 250,
+                      margin: const EdgeInsets.only(bottom: 40),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.network(
+                          blogPost['image'] as String,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: const Color(0xFFE2E8F0),
+                              child: Center(
+                                child: Icon(
+                                  blogPost['icon'] as IconData,
+                                  size: 80,
+                                  color: const Color(0xFF3B82F6),
+                                ),
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: const Color(0xFFE2E8F0),
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
+
+                  // Full Content with TAMGACI links
+                  _buildRichContent(
+                    context,
+                    (blogPost['content'] as String?) ??
+                        (blogPost['description'] as String),
                   ),
 
                   const SizedBox(height: 60),
@@ -208,5 +253,167 @@ class BlogDetailPage extends StatelessWidget {
     // Blog listesini blog_page.dart'dan al
     return BlogPage.getBlogPosts();
   }
-}
 
+  /// TAMGACI kelimelerini tıklanabilir link yaparak içerik oluşturur
+  Widget _buildRichContent(BuildContext context, String text) {
+    final baseStyle = GoogleFonts.poppins(
+      fontSize: 18,
+      color: const Color(0xFF64748B),
+      height: 1.8,
+    );
+
+    final headingStyle = GoogleFonts.poppins(
+      fontSize: 24,
+      color: const Color(0xFF1E3A8A),
+      height: 1.6,
+      fontWeight: FontWeight.w700,
+    );
+
+    final linkStyle = GoogleFonts.poppins(
+      fontSize: 18,
+      color: const Color(0xFF3B82F6),
+      height: 1.8,
+      decoration: TextDecoration.underline,
+      fontWeight: FontWeight.w600,
+    );
+
+    // Markdown benzeri başlıkları ve listeleri parse et
+    final lines = text.split('\n');
+    final List<Widget> widgets = [];
+
+    final RegExp tamgaciRegex = RegExp(r'\bTAMGACI\b', caseSensitive: false);
+
+    for (final line in lines) {
+      if (line.trim().isEmpty) {
+        widgets.add(const SizedBox(height: 16));
+        continue;
+      }
+
+      // Başlık kontrolü (## ile başlayanlar)
+      if (line.startsWith('## ')) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 32, bottom: 16),
+            child: Text(
+              line.substring(3),
+              style: headingStyle,
+            ),
+          ),
+        );
+        continue;
+      }
+
+      // Numaralı liste kontrolü
+      if (RegExp(r'^\d+\.\s').hasMatch(line)) {
+        widgets.add(
+          Padding(
+            padding: const EdgeInsets.only(left: 20, bottom: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '• ',
+                  style: baseStyle.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Expanded(
+                  child: _buildRichTextLine(
+                    context,
+                    line.replaceFirst(RegExp(r'^\d+\.\s'), ''),
+                    baseStyle,
+                    linkStyle,
+                    tamgaciRegex,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+        continue;
+      }
+
+      // Normal metin satırı
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildRichTextLine(
+            context,
+            line,
+            baseStyle,
+            linkStyle,
+            tamgaciRegex,
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
+    );
+  }
+
+  /// Tek bir satırı TAMGACI linkleri ile birlikte oluşturur
+  Widget _buildRichTextLine(
+    BuildContext context,
+    String line,
+    TextStyle baseStyle,
+    TextStyle linkStyle,
+    RegExp tamgaciRegex,
+  ) {
+    final List<TextSpan> spans = [];
+    final matches = tamgaciRegex.allMatches(line);
+    int lastIndex = 0;
+
+    for (final match in matches) {
+      // Match'ten önceki metni ekle
+      if (match.start > lastIndex) {
+        spans.add(
+          TextSpan(
+            text: line.substring(lastIndex, match.start),
+            style: baseStyle,
+          ),
+        );
+      }
+
+      // TAMGACI kelimesini tıklanabilir link olarak ekle
+      spans.add(
+        TextSpan(
+          text: match.group(0),
+          style: linkStyle,
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              context.go('/');
+            },
+        ),
+      );
+
+      lastIndex = match.end;
+    }
+
+    // Kalan metni ekle
+    if (lastIndex < line.length) {
+      spans.add(
+        TextSpan(
+          text: line.substring(lastIndex),
+          style: baseStyle,
+        ),
+      );
+    }
+
+    // Eğer hiç TAMGACI yoksa, sadece metni ekle
+    if (spans.isEmpty) {
+      spans.add(
+        TextSpan(
+          text: line,
+          style: baseStyle,
+        ),
+      );
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+    );
+  }
+}
