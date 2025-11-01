@@ -67,7 +67,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   bool _isRegistering = false;
 
   // Banner state
-  bool _showBanner = true;
+  final bool _showBanner = true;
 
   // Phone area code (country calling code) state
   String _selectedDialCode = '+90';
@@ -2979,26 +2979,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 ),
                 child: Row(
                   children: [
-                    // Close button
-                    GestureDetector(
-                      onTap: () => setState(() => _showBanner = false),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 16),
-
                     // Banner content
                     Expanded(
                       child: Row(

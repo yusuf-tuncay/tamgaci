@@ -7,6 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 // ========== LANDING PAGES ==========
 import '../../features/landing/presentation/pages/landing_page.dart';
+import '../../features/landing/presentation/pages/blog_page.dart';
+import '../../features/landing/presentation/pages/blog_detail_page.dart';
+import '../../features/landing/presentation/pages/faq_page.dart';
 
 // ========== SHARED PAGES ==========
 import '../../shared/pages/not_found_page.dart';
@@ -50,6 +53,30 @@ class AppRouter {
         builder: (context, state) => const LandingPage(),
       ),
 
+      // Blog
+      GoRoute(
+        path: '/blog',
+        name: 'blog',
+        builder: (context, state) => const BlogPage(),
+      ),
+
+      // Blog Detail
+      GoRoute(
+        path: '/blog/:slug',
+        name: 'blog-detail',
+        builder: (context, state) {
+          final slug = state.pathParameters['slug'] ?? '';
+          return BlogDetailPage(slug: slug);
+        },
+      ),
+
+      // FAQ (Sıkça Sorulan Sorular)
+      GoRoute(
+        path: '/faq',
+        name: 'faq',
+        builder: (context, state) => const FAQPage(),
+      ),
+
       // ========== FEATURE ROUTES ==========
       ...AuthRoutes.routes,
       ...DashboardRoutes.routes,
@@ -84,21 +111,30 @@ class AppRouter {
     redirect: (context, state) {
       final user = FirebaseAuth.instance.currentUser;
       final isAuthenticated = user != null;
-      final isOnPaymentPage = state.matchedLocation.startsWith('/payment/');
+      final currentPath = state.uri.path;
+      final isOnPaymentPage = currentPath.startsWith('/payment/');
+      
+      // Blog sayfaları kontrolü - hem /blog hem de /blog/* için
+      final isOnBlogPage = currentPath == '/blog' || currentPath.startsWith('/blog/');
+      
       final isOnPublicPage = [
         '/',
         '/login',
         '/register',
         '/forgot-password',
-      ].contains(state.matchedLocation);
+        '/faq',
+      ].contains(currentPath) || isOnBlogPage;
 
       debugPrint(
           '🔍 AppRouter: Redirect check - Location: ${state.matchedLocation}');
+      debugPrint('🔍 AppRouter: Redirect check - Current path: $currentPath');
       debugPrint('🔍 AppRouter: Redirect check - Full location: ${state.uri}');
       debugPrint(
           '🔍 AppRouter: Redirect check - Is authenticated: $isAuthenticated');
       debugPrint(
           '🔍 AppRouter: Redirect check - Is payment page: $isOnPaymentPage');
+      debugPrint(
+          '🔍 AppRouter: Redirect check - Is blog page: $isOnBlogPage');
       debugPrint(
           '🔍 AppRouter: Redirect check - Is public page: $isOnPublicPage');
 

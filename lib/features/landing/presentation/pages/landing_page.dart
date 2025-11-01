@@ -35,7 +35,7 @@ class _LandingPageState extends State<LandingPage>
 
   // State
   bool _isDesktop = false;
-  bool _showBanner = true;
+  final bool _showBanner = true;
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -1237,6 +1237,8 @@ class _LandingPageState extends State<LandingPage>
 
   /// Professional footer
   Widget _buildProfessionalFooter() {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
     return Container(
       padding:
           EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 60 : 30),
@@ -1250,35 +1252,119 @@ class _LandingPageState extends State<LandingPage>
           ],
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Sol taraf - Şirket adı
-          Expanded(
-            child: Text(
-              '© 2025 Seek IT Apps',
-              style: GoogleFonts.poppins(
-                fontSize: MediaQuery.of(context).size.width > 768 ? 20 : 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.8),
-              ),
-            ),
-          ),
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Links
+                _buildFooterLinks(),
+                const SizedBox(height: 30),
+                // Company info
+                Text(
+                  '© 2025 Seek IT Apps',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.8),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                // Tax info
+                Text(
+                  'Vergi Dairesi: Fatih VD\nVergi No: 4130689211',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.white.withValues(alpha: 0.6),
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Sol taraf - Links ve şirket adı
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildFooterLinks(),
+                      const SizedBox(height: 30),
+                      Text(
+                        '© 2025 Seek IT Apps',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
-          // Sağ taraf - Vergi bilgileri
-          Expanded(
-            child: Text(
-              MediaQuery.of(context).size.width > 768
-                  ? 'Vergi Dairesi: Fatih VD | Vergi No: 4130689211'
-                  : 'Vergi Dairesi: Fatih VD\nVergi No: 4130689211',
-              style: GoogleFonts.poppins(
-                fontSize: MediaQuery.of(context).size.width > 768 ? 16 : 12,
-                color: Colors.white.withValues(alpha: 0.6),
-              ),
-              textAlign: TextAlign.end,
+                // Sağ taraf - Vergi bilgileri
+                Expanded(
+                  child: Text(
+                    'Vergi Dairesi: Fatih VD | Vergi No: 4130689211',
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      color: Colors.white.withValues(alpha: 0.6),
+                    ),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+              ],
             ),
+    );
+  }
+
+  /// Footer links (Blog ve FAQ)
+  Widget _buildFooterLinks() {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
+    return Wrap(
+      spacing: isMobile ? 20 : 40,
+      runSpacing: isMobile ? 16 : 0,
+      children: [
+        _buildFooterLink(
+          'Blog',
+          () => context.go('/blog'),
+        ),
+        _buildFooterLink(
+          'Sıkça Sorulan Sorular',
+          () => context.go('/faq'),
+        ),
+      ],
+    );
+  }
+
+  /// Footer link widget
+  Widget _buildFooterLink(String text, VoidCallback onTap) {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 12 : 16,
+          vertical: isMobile ? 8 : 10,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.2),
+            width: 1,
           ),
-        ],
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: isMobile ? 14 : 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white.withValues(alpha: 0.9),
+          ),
+        ),
       ),
     );
   }
@@ -1320,26 +1406,6 @@ class _LandingPageState extends State<LandingPage>
                 ),
                 child: Row(
                   children: [
-                    // Close button
-                    GestureDetector(
-                      onTap: () => setState(() => _showBanner = false),
-                      child: Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 16),
-
                     // Banner content
                     Expanded(
                       child: Row(

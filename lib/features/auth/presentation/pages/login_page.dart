@@ -28,7 +28,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _rememberMe = true;
 
   // Banner state
-  bool _showBanner = true;
+  final bool _showBanner = true;
 
   // Countdown timer
   Timer? _countdownTimer;
@@ -709,9 +709,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
                 child: Row(
                   children: [
-                    // Close button
+                    // Back to landing page button
                     GestureDetector(
-                      onTap: () => setState(() => _showBanner = false),
+                      onTap: () => context.go('/'),
                       child: Container(
                         width: 32,
                         height: 32,
@@ -720,7 +720,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Icon(
-                          Icons.close,
+                          Icons.arrow_back,
                           color: Colors.white,
                           size: 16,
                         ),

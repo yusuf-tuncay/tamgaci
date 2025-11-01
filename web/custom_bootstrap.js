@@ -33,15 +33,6 @@ window.addEventListener('load', function () {
         
         console.log('Flutter app started successfully');
         
-        // Hide splash content after Flutter is ready
-        setTimeout(() => {
-          const splash = document.getElementById('splash-content');
-          if (splash) {
-            splash.classList.add('hidden');
-            setTimeout(() => splash.remove(), 300);
-          }
-        }, 500);
-        
       } catch (error) {
         console.error('Flutter initialization error:', error);
         console.error('Error stack:', error.stack);

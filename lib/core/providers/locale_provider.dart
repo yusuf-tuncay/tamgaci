@@ -53,7 +53,7 @@ class LocaleNotifier extends StateNotifier<Locale> {
         final parts = localeCode.split('_');
         if (parts.length == 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
           state = Locale(parts[0], parts[1]);
-        } else if (parts.length >= 1 && parts[0].isNotEmpty) {
+        } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
           state = Locale(parts[0]);
         }
       }
