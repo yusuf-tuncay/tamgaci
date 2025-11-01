@@ -1,49 +1,50 @@
+// Standart Flutter Web Bootstrap
+// HTML renderer kullanarak basit ve stabil başlatma
+
 window.addEventListener('load', function () {
   if (!window._flutter || !window._flutter.loader) {
     console.error('Flutter loader not available');
     return;
   }
 
+  console.log('Starting Flutter web app initialization...');
+  
+  // Inject environment variables from env.js
+  if (window.ENV && window.ENV.FIREBASE_FX_PROXY_URL) {
+    console.log('Firebase FX Proxy URL configured:', window.ENV.FIREBASE_FX_PROXY_URL);
+  }
+
+  // Standart Flutter loader configuration
   window._flutter.loader.load({
-    serviceWorkerSettings: null,
-    config: {
-      renderer: 'canvaskit',
-      assetBase: '/',
-      canvasKitBaseUrl: 'canvaskit/'
+    serviceWorkerSettings: {
+      serviceWorkerVersion: null,
     },
     onEntrypointLoaded: async function (engineInitializer) {
       try {
-        console.log('Engine initializer ready');
+        console.log('Initializing Flutter engine...');
+        
+        // Standart engine initialization (multiView API kullanma)
         const appRunner = await engineInitializer.initializeEngine({
-          multiViewEnabled: true,
-          useView: true
+          hostElement: document.getElementById('flutter-host') || document.body,
         });
-        console.log('Engine initialized');
-        const flutterApp = await appRunner.runApp();
-        console.log('App runner invoked');
-        const host = document.getElementById('flutter-host') || document.body;
-        if (flutterApp && typeof flutterApp.addView === 'function') {
-          try {
-            flutterApp.addView({ hostElement: host });
-            console.log('View attached to host');
-            // Render kontrolü için timeout
-            setTimeout(() => {
-              const canvas = document.querySelector('canvas');
-              const sceneHost = document.querySelector('flt-scene-host');
-              if (!canvas || !sceneHost) {
-                console.error('Canvas/SceneHost not created after attach. Canvas:', !!canvas, 'SceneHost:', !!sceneHost);
-              } else {
-                console.log('Canvas and SceneHost created successfully');
-              }
-            }, 2000);
-          } catch (e) {
-            console.error('Error attaching view:', e);
+        
+        console.log('Running Flutter app...');
+        await appRunner.runApp();
+        
+        console.log('Flutter app started successfully');
+        
+        // Hide splash content after Flutter is ready
+        setTimeout(() => {
+          const splash = document.getElementById('splash-content');
+          if (splash) {
+            splash.classList.add('hidden');
+            setTimeout(() => splash.remove(), 300);
           }
-        } else {
-          console.warn('flutterApp.addView is not available', flutterApp);
-        }
-      } catch (e) {
-        console.error('Flutter init failed:', e);
+        }, 500);
+        
+      } catch (error) {
+        console.error('Flutter initialization error:', error);
+        console.error('Error stack:', error.stack);
       }
     }
   });

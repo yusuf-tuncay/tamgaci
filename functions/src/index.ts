@@ -17,7 +17,12 @@ try {
 // EVDS API Key - Server-side'da güvenli şekilde saklanıyor (şimdilik kullanılmıyor)
 // const EVDS_API_KEY = 'Kkze5A46Sf';
 
-export const evdsProxy = onRequest((request, response) => {
+export const evdsProxy = onRequest(
+    {
+        cors: true,
+        invoker: 'public', // Allow public access
+    },
+    (request, response) => {
     return corsHandler(request, response, async () => {
         try {
             // Sadece GET isteklerine izin ver

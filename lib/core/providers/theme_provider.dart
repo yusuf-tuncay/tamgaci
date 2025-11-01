@@ -1,37 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
 class ThemeNotifier extends StateNotifier<ThemeMode> {
   static const String _themeKey = 'theme_mode';
   bool _isInitialized = false;
 
   ThemeNotifier() : super(ThemeMode.system) {
+    // Web'de SharedPreferences initialization'ı gecikmeli yap
     // Constructor'da async işlem yapma - lazy initialization kullan
-    _initializeAsync();
+    if (kIsWeb) {
+      // Web için biraz daha gecikmeli başlat (DOM hazır olana kadar bekle)
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _initializeAsync();
+      });
+    } else {
+      _initializeAsync();
+    }
   }
 
   // Async initialization - non-blocking
   void _initializeAsync() {
     Future.microtask(() async {
-      if (!_isInitialized) {
-        await _loadTheme();
-        _isInitialized = true;
+      if (!_isInitialized && mounted) {
+        try {
+          await _loadTheme();
+        } catch (e) {
+          debugPrint('Theme load error: $e');
+          // Hata durumunda varsayılan tema kullan
+          if (mounted) {
+            state = ThemeMode.system;
+          }
+        } finally {
+          _isInitialized = true;
+        }
       }
     });
   }
 
   Future<void> _loadTheme() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final themeIndex = prefs.getInt(_themeKey) ?? 0;
-      if (mounted) {
+      final prefs = await SharedPreferences.getInstance()
+          .timeout(const Duration(seconds: 2), onTimeout: () {
+        debugPrint('SharedPreferences timeout on web');
+        throw TimeoutException('SharedPreferences timeout', const Duration(seconds: 2));
+      });
+      final themeIndex = prefs.getInt(_themeKey);
+      if (themeIndex != null && themeIndex >= 0 && themeIndex < ThemeMode.values.length && mounted) {
         state = ThemeMode.values[themeIndex];
       }
     } catch (e) {
-      // Varsayılan tema kullan - hata logla ama state'i varsayılanda bırak
+      debugPrint('Theme load error: $e');
+      // Varsayılan tema kullan - hata durumunda sessizce devam et
       if (mounted) {
         state = ThemeMode.system;
+      }
+      // Web'de hata fırlatma - sadece log
+      if (!kIsWeb) {
+        rethrow;
       }
     }
   }

@@ -71,10 +71,11 @@ class ExchangeRateService {
   // Usage: flutter run -d chrome --dart-define=EVDS_PROXY_URL=https://your-proxy.example.com/?url={url}
   static const String _evdsProxyTemplate =
       String.fromEnvironment('EVDS_PROXY_URL');
-  // Alternative: Firebase Functions HTTPS proxy
-  // Usage: flutter run -d chrome --dart-define=FIREBASE_FX_PROXY_URL=https://<region>-<project>.cloudfunctions.net/evdsProxy?url={url}
+  // Firebase Functions HTTPS proxy (hardcoded for web deployment)
   static const String _firebaseFxProxyTemplate =
-      String.fromEnvironment('FIREBASE_FX_PROXY_URL');
+      kIsWeb 
+        ? 'https://evdsproxy-n5c3skxfhq-uc.a.run.app?url={url}'
+        : String.fromEnvironment('FIREBASE_FX_PROXY_URL');
 
   // Simple cache via shared CacheManager
   final CacheManager _cache = CacheManager();

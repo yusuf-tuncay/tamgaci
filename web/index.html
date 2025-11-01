@@ -46,8 +46,96 @@
       z-index: 1;
     }
 
-    @keyframes backgroundShift {
+    /* Splash content - static HTML until Flutter loads */
+    #splash-content {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 0;
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
 
+    #splash-content.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .splash-logo {
+      width: 120px;
+      height: 120px;
+      background: white;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    .splash-logo svg {
+      width: 80px;
+      height: 80px;
+    }
+
+    .splash-title {
+      color: white;
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      text-align: center;
+    }
+
+    .splash-subtitle {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 24px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .splash-description {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 16px;
+      text-align: center;
+      max-width: 600px;
+      margin-bottom: 40px;
+      line-height: 1.6;
+    }
+
+    .splash-cta {
+      display: flex;
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .splash-button {
+      padding: 16px 32px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s;
+    }
+
+    .splash-button-primary {
+      background: white;
+      color: #2563EB;
+    }
+
+    .splash-button-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid white;
+    }
+
+    @keyframes backgroundShift {
       0%,
       100% {
         opacity: 1;
@@ -58,6 +146,11 @@
       }
     }
   </style>
+
+  <script>
+    // Flutter Web Renderer Configuration - MUST BE BEFORE flutter.js loads
+    window.flutterWebRenderer = "html";
+  </script>
 
   <script>
     // Unregister SW for clean testing
@@ -93,6 +186,31 @@
 </head>
 
 <body>
+  <!-- Splash Content - Shows until Flutter loads -->
+  <div id="splash-content">
+    <div class="splash-logo">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="15" y="15" width="35" height="35" rx="4" fill="#2563EB"/>
+        <rect x="55" y="15" width="35" height="35" rx="4" fill="#2563EB"/>
+        <rect x="15" y="55" width="35" height="35" rx="4" fill="#2563EB"/>
+        <rect x="55" y="55" width="35" height="35" rx="4" fill="#2563EB"/>
+        <path d="M30 25 L30 45 M22 35 L38 35" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <path d="M72 25 L72 45" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <path d="M22 65 L38 65 M22 75 L38 75" stroke="white" stroke-width="3" stroke-linecap="round"/>
+        <rect x="62" y="62" width="20" height="20" rx="2" fill="white"/>
+      </svg>
+    </div>
+    <h1 class="splash-title">TAMGACI</h1>
+    <h2 class="splash-subtitle">Kurumsal Ön Muhasebe Çözümü</h2>
+    <p class="splash-description">
+      İşletmenizin muhasebe işlemlerini dijitalleştirin, verimliliğinizi artırın
+    </p>
+    <div class="splash-cta">
+      <button class="splash-button splash-button-primary">Hemen Başla</button>
+      <button class="splash-button splash-button-secondary">Mobil Uygulamalar</button>
+    </div>
+  </div>
+
   <div id="flutter-host"></div>
 
   <script>
@@ -108,6 +226,7 @@
     }
   </script>
 
+  <script src="env.js"></script>
   <script src="flutter.js" defer></script>
   <script src="flutter_build_config.js"></script>
   <script src="custom_bootstrap.js" defer></script>

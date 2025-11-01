@@ -98,31 +98,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       final weatherRes =
           await http.get(weatherUri).timeout(const Duration(seconds: 6));
 
-      // Get location name from reverse geocoding
+      // Location name (reverse geocoding not available in Open-Meteo free API)
       String locationName = defaultLocation;
-      try {
-        final geocodingUri = Uri.parse(
-            'https://api.open-meteo.com/v1/geocoding/reverse?latitude=$lat&longitude=$lon&language=tr');
-        final geocodingRes =
-            await http.get(geocodingUri).timeout(const Duration(seconds: 4));
-        if (geocodingRes.statusCode == 200) {
-          final geocodingData =
-              json.decode(geocodingRes.body) as Map<String, dynamic>;
-          final results = geocodingData['results'] as List<dynamic>?;
-          if (results != null && results.isNotEmpty) {
-            final location = results.first as Map<String, dynamic>;
-            final name = location['name'] as String?;
-            final admin1 = location['admin1'] as String?;
-            if (name != null && admin1 != null) {
-              locationName = '$name, $admin1';
-            } else if (name != null) {
-              locationName = name;
-            }
-          }
-        }
-      } catch (_) {
-        // Use default location if geocoding fails
-      }
 
       if (weatherRes.statusCode == 200) {
         final data = json.decode(weatherRes.body) as Map<String, dynamic>;

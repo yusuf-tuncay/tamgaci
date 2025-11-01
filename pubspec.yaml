@@ -154,4 +154,12 @@ flutter:
     - assets/images/ads/
     - assets/translations/
     - assets/sounds/notifications/
-  # Fonts are loaded via google_fonts package (no local font files needed)
+
+  # Fonts - Roboto font family
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: fonts/Roboto-Regular.ttf
+          weight: 400
+        - asset: fonts/Roboto-Bold.ttf
+          weight: 700

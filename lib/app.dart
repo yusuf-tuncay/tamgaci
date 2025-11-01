@@ -12,9 +12,18 @@ class TamgaciApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Provider'ları watch et ama hata durumunda varsayılan değerler kullan
-    final themeMode = ref.watch(themeProvider);
-    final locale = ref.watch(localeProvider);
+    // Provider'ları watch et - hata durumunda varsayılan değerler kullan
+    // Web'de provider initialization gecikmesi olabilir, bu yüzden try-catch ile koru
+    ThemeMode themeMode = ThemeMode.system;
+    Locale? locale;
+    
+    try {
+      themeMode = ref.watch(themeProvider);
+      locale = ref.watch(localeProvider);
+    } catch (e) {
+      // Provider initialization hatası durumunda varsayılan değerleri kullan
+      debugPrint('Provider watch error in TamgaciApp: $e');
+    }
 
     return MaterialApp.router(
       // ========== UYGULAMA AYARLARI ==========
