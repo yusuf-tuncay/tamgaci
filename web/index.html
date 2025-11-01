@@ -16,7 +16,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <meta http-equiv="Last-Modified" content="0" />
-  <meta http-equiv="ETag" content="1.0.1+5" />
+  <meta http-equiv="ETag" content="1.0.1+6" />
   <meta name="keywords"
     content="muhasebe yazılımı, ön muhasebe yazılımı, fatura yazılımı, e-fatura yazılımı, irsaliye yazılımı, otomatik fatura okuma, fatura OCR yazılımı, yapay zeka ile fatura okuma, çoklu para birimi muhasebe, dövizli fatura yazılımı, uluslararası fatura yazılımı, KOBİ muhasebe yazılımı, kurumsal muhasebe yazılımı, belge tarama muhasebe, irsaliye fotoğrafla girme, otomatik irsaliye tanıma, muhasebe entegrasyonu fatura okuma, fatura girişi otomasyonu, fatura ve irsaliye otomasyonu, muhasebe programı, AI ile fatura girişi, yapay zeka ile fatura girişi yapan yazılım, KOBİ'ler için otomatik fatura okuma yazılımı, çoklu para birimi destekli ön muhasebe programı, irsaliye fotoğrafla giren muhasebe uygulaması" />
 
@@ -110,7 +110,7 @@
 <body>
   <script>
     // Cache busting script
-    const version = '1.0.1+5';
+    const version = '1.0.1+6';
     const timestamp = Date.now();
     
     // Force reload if version changed
@@ -151,7 +151,41 @@
   <script>
     {{flutter_build_config}}
   </script>
-  <script src="flutter_bootstrap.js" async></script>
+  
+  <!-- Custom Flutter bootstrap - Replace bootstrap.js completely -->
+  <script>
+    window.addEventListener('load', function(ev) {
+      // Wait for flutter.js to load
+      const initFlutter = () => {
+        if (!window._flutter || !window._flutter.loader || !window._flutter.buildConfig) {
+          setTimeout(initFlutter, 50);
+          return;
+        }
+        
+        // Get service worker version from build config or use null
+        const serviceWorkerVersion = {{flutter_service_worker_version}};
+        
+        // Call load with onEntrypointLoaded callback
+        window._flutter.loader.load({
+          serviceWorkerSettings: serviceWorkerVersion ? {
+            serviceWorkerVersion: serviceWorkerVersion
+          } : null,
+          onEntrypointLoaded: function(engineInitializer) {
+            engineInitializer.initializeEngine({
+              renderer: "canvaskit"
+            }).then(function(appRunner) {
+              appRunner.runApp();
+            }).catch(function(error) {
+              console.error('Error initializing Flutter engine:', error);
+            });
+          }
+        });
+      };
+      
+      // Start initialization
+      initFlutter();
+    });
+  </script>
 </body>
 
 </html>
