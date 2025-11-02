@@ -38,6 +38,19 @@ class _LandingPageState extends State<LandingPage>
   final bool _showBanner = true;
   final ScrollController _scrollController = ScrollController();
 
+  // Scroll keys for sections
+  final GlobalKey _aboutSectionKey = GlobalKey();
+  final GlobalKey _contactSectionKey = GlobalKey();
+
+  // Responsive helper methods
+  bool _isMobile(BuildContext context) =>
+      MediaQuery.of(context).size.width < 768;
+  bool _isTablet(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 768 &&
+      MediaQuery.of(context).size.width < 1024;
+  bool _isDesktopSize(BuildContext context) =>
+      MediaQuery.of(context).size.width >= 1024;
+
   @override
   void initState() {
     super.initState();
@@ -130,7 +143,6 @@ class _LandingPageState extends State<LandingPage>
     _pulseController.repeat(reverse: true);
   }
 
-
   @override
   void dispose() {
     _fadeController.dispose();
@@ -149,8 +161,8 @@ class _LandingPageState extends State<LandingPage>
           // Main content
           _buildMainContent(),
 
-          // Desktop promo banner
-          if (_isDesktop && _showBanner) _buildProfessionalBanner(),
+          // Promo banner (tüm cihazlarda)
+          if (_showBanner) _buildProfessionalBanner(),
         ],
       ),
     );
@@ -219,78 +231,119 @@ class _LandingPageState extends State<LandingPage>
                   ),
                   child: Padding(
                     padding: EdgeInsets.only(
-                      top:
-                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
-                      left:
-                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
-                      right:
-                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
-                      bottom:
-                          MediaQuery.of(context).size.width > 768 ? 24.0 : 16.0,
+                      top: _isMobile(context)
+                          ? ((_showBanner)
+                              ? 130.0
+                              : 16.0) // Mobil: Banner yüksekliği (80) + padding (50)
+                          : (_isTablet(context)
+                              ? ((_showBanner)
+                                  ? 132.0
+                                  : 32.0) // Tablet: Banner yüksekliği (100) + padding (32)
+                              : ((_isDesktop && _showBanner)
+                                  ? 124.0
+                                  : 24.0)), // Desktop: Banner yüksekliği (100) + padding (24)
+                      left: _isMobile(context)
+                          ? 16.0
+                          : (_isTablet(context) ? 40.0 : 24.0),
+                      right: _isMobile(context)
+                          ? 16.0
+                          : (_isTablet(context) ? 40.0 : 24.0),
+                      bottom: _isMobile(context)
+                          ? 16.0
+                          : (_isTablet(context) ? 32.0 : 24.0),
                     ),
-                    child: MediaQuery.of(context).size.width > 768
-                        ? Row(
-                            children: [
-                              // Sol taraf - Reklam görseli (Desktop)
-                              Expanded(
-                                flex: 1,
-                                child: Center(
-                                  child: _buildAdvertisementImage(),
-                                ),
-                              ),
-
-                              const SizedBox(width: 40),
-
-                              // Sağ taraf - Logo, metin ve butonlar (Desktop)
-                              Expanded(
-                                flex: 1,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    // Professional logo
-                                    _buildProfessionalLogo(),
-
-                                    const SizedBox(height: 40),
-
-                                    // Professional text
-                                    _buildProfessionalText(),
-
-                                    const SizedBox(height: 60),
-
-                                    // Professional buttons
-                                    _buildProfessionalButtons(),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          )
-                        : Column(
+                    child: _isMobile(context)
+                        ? Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Professional logo - üst ve alt margin ile
-                              Container(
-                                margin: const EdgeInsets.only(top: 80),
-                                child: _buildProfessionalLogo(),
-                              ),
+                              // Professional logo
+                              _buildProfessionalLogo(),
 
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 24),
 
                               // Professional text
                               _buildProfessionalText(),
 
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 24),
 
                               // Professional buttons
                               _buildProfessionalButtons(),
 
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 32),
 
                               // Reklam görseli (Mobile - butonların altında)
                               _buildAdvertisementImageMobile(),
 
-                              const SizedBox(height: 40),
+                              const SizedBox(height: 20),
                             ],
-                          ),
+                          )
+                        : _isTablet(context)
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Logo, metin ve butonlar üstte
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      // Professional logo
+                                      _buildProfessionalLogo(),
+
+                                      const SizedBox(height: 30),
+
+                                      // Professional text
+                                      _buildProfessionalText(),
+
+                                      const SizedBox(height: 30),
+
+                                      // Professional buttons
+                                      _buildProfessionalButtons(),
+                                    ],
+                                  ),
+
+                                  const SizedBox(height: 40),
+
+                                  // Görsel altta
+                                  Center(
+                                    child: _buildAdvertisementImage(),
+                                  ),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  // Sol taraf - Reklam görseli (Desktop)
+                                  Expanded(
+                                    flex: 1,
+                                    child: Center(
+                                      child: _buildAdvertisementImage(),
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 40),
+
+                                  // Sağ taraf - Logo, metin ve butonlar (Desktop)
+                                  Expanded(
+                                    flex: 1,
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        // Professional logo
+                                        _buildProfessionalLogo(),
+
+                                        const SizedBox(height: 40),
+
+                                        // Professional text
+                                        _buildProfessionalText(),
+
+                                        const SizedBox(height: 60),
+
+                                        // Professional buttons
+                                        _buildProfessionalButtons(),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                   ),
                 );
               },
@@ -331,25 +384,47 @@ class _LandingPageState extends State<LandingPage>
     return AnimatedBuilder(
       animation: _fadeAnimation,
       builder: (context, child) {
-        return Transform.scale(
-          scale: _fadeAnimation.value,
+        final screenWidth = MediaQuery.of(context).size.width;
+        const padding = 32.0; // Sol ve sağ padding toplamı
+        final availableWidth = screenWidth - padding;
+        final imageWidth = (availableWidth * 0.9).clamp(250.0, 320.0);
+        final imageHeight = (imageWidth * 1.18);
+
+        return Opacity(
+          opacity: _fadeAnimation.value,
           child: Container(
-            width: 250,
-            height:
-                250, // Mobile için daha küçük boyut - overflow'u önlemek için
+            width: imageWidth,
+            height: imageHeight,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                  spreadRadius: 0,
+                ),
+              ],
             ),
             clipBehavior: Clip.antiAlias,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               child: Image.asset(
-                'assets/images/ads/landingMainImage.png', // Ana görseli kullan
-                width: 250,
-                height: 250,
-                fit: BoxFit.cover,
+                'assets/images/ads/landingMainImage.png',
+                width: imageWidth,
+                height: imageHeight,
+                fit: BoxFit.contain,
                 filterQuality: FilterQuality.high,
                 isAntiAlias: true,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[200],
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, size: 48),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -768,11 +843,12 @@ class _LandingPageState extends State<LandingPage>
     required String description,
     required Color color,
   }) {
-    final isMobile = MediaQuery.of(context).size.width <= 768;
+    final isMobile = _isMobile(context);
+    final isTablet = _isTablet(context);
 
     return Container(
       width: isMobile ? double.infinity : null,
-      padding: EdgeInsets.all(isMobile ? 24 : 40),
+      padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 32 : 40)),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -787,8 +863,8 @@ class _LandingPageState extends State<LandingPage>
       child: Column(
         children: [
           Container(
-            width: isMobile ? 80 : 100,
-            height: isMobile ? 80 : 100,
+            width: isMobile ? 80 : (isTablet ? 90 : 100),
+            height: isMobile ? 80 : (isTablet ? 90 : 100),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(25),
               gradient: LinearGradient(
@@ -800,15 +876,15 @@ class _LandingPageState extends State<LandingPage>
             ),
             child: Icon(
               icon,
-              size: isMobile ? 40 : 50,
+              size: isMobile ? 40 : (isTablet ? 45 : 50),
               color: color,
             ),
           ),
-          SizedBox(height: isMobile ? 24 : 32),
+          SizedBox(height: isMobile ? 24 : (isTablet ? 28 : 32)),
           Text(
             title,
             style: GoogleFonts.poppins(
-              fontSize: isMobile ? 20 : 24,
+              fontSize: isMobile ? 20 : (isTablet ? 22 : 24),
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1E3A8A),
             ),
@@ -818,7 +894,7 @@ class _LandingPageState extends State<LandingPage>
           Text(
             description,
             style: GoogleFonts.poppins(
-              fontSize: isMobile ? 14 : 16,
+              fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
               color: const Color(0xFF64748B),
               height: 1.6,
             ),
@@ -856,54 +932,11 @@ class _LandingPageState extends State<LandingPage>
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: MediaQuery.of(context).size.width > 768 ? 50 : 30),
-          // Mobil için dikey düzen, desktop için yatay
-          MediaQuery.of(context).size.width > 768
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.web,
-                        title: 'Web',
-                        description: 'Tüm Tarayıcılar',
-                        color: Colors.white,
-                        onTap: () => _launchWebApp(),
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.phone_android,
-                        title: 'Android',
-                        description: 'Google Play',
-                        color: const Color.fromARGB(255, 62, 255, 184),
-                        onTap: () => _launchGooglePlay(),
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.phone_iphone,
-                        title: 'iOS',
-                        description: 'App Store',
-                        color: const Color.fromARGB(255, 101, 219, 255),
-                        onTap: () => _launchAppStore(),
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.desktop_windows,
-                        title: 'Windows',
-                        description: 'Masaüstü',
-                        color: const Color.fromARGB(255, 248, 179, 122),
-                        onTap: () => _launchWindowsApp(),
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
+          SizedBox(
+              height: _isMobile(context) ? 30 : (_isTablet(context) ? 40 : 50)),
+          // Mobil için dikey düzen, tablet ve desktop için yatay
+          _isMobile(context)
+              ? Column(
                   children: [
                     _buildPlatformCard(
                       icon: Icons.web,
@@ -935,6 +968,50 @@ class _LandingPageState extends State<LandingPage>
                       description: 'Masaüstü',
                       color: const Color.fromARGB(255, 248, 179, 122),
                       onTap: () => _launchWindowsApp(),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.web,
+                        title: 'Web',
+                        description: 'Tüm Tarayıcılar',
+                        color: Colors.white,
+                        onTap: () => _launchWebApp(),
+                      ),
+                    ),
+                    SizedBox(width: _isTablet(context) ? 12 : 20),
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.phone_android,
+                        title: 'Android',
+                        description: 'Google Play',
+                        color: const Color.fromARGB(255, 62, 255, 184),
+                        onTap: () => _launchGooglePlay(),
+                      ),
+                    ),
+                    SizedBox(width: _isTablet(context) ? 12 : 20),
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.phone_iphone,
+                        title: 'iOS',
+                        description: 'App Store',
+                        color: const Color.fromARGB(255, 101, 219, 255),
+                        onTap: () => _launchAppStore(),
+                      ),
+                    ),
+                    SizedBox(width: _isTablet(context) ? 12 : 20),
+                    Flexible(
+                      child: _buildPlatformCard(
+                        icon: Icons.desktop_windows,
+                        title: 'Windows',
+                        description: 'Masaüstü',
+                        color: const Color.fromARGB(255, 248, 179, 122),
+                        onTap: () => _launchWindowsApp(),
+                      ),
                     ),
                   ],
                 ),
@@ -1021,54 +1098,378 @@ class _LandingPageState extends State<LandingPage>
 
   /// About section
   Widget _buildAboutSection() {
+    final isMobile = _isMobile(context);
+    final isTablet = _isTablet(context);
+    final isDesktop = _isDesktopSize(context);
+
     return Container(
-      padding: const EdgeInsets.all(80),
+      key: _aboutSectionKey,
+      padding: EdgeInsets.all(isMobile ? 40 : (isTablet ? 50 : 80)),
+      decoration: const BoxDecoration(
+        color: Color(0xFFF8FAFC),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Hakkımızda',
-            style: GoogleFonts.poppins(
-              fontSize: 54,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+          // Ana Başlık
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  'Hakkımızda',
+                  style: GoogleFonts.poppins(
+                    fontSize: isDesktop ? 54 : 40,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  width: 80,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 60),
+          const SizedBox(height: 80),
+
+          // Şirket Hikayesi - Görsel ve Metin
+          (isTablet || isDesktop)
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Görsel
+                    Expanded(
+                      flex: 1,
+                      child: Container(
+                        height: isTablet ? 400 : 500,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 30,
+                              offset: const Offset(0, 15),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.network(
+                            'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                color: const Color(0xFFE2E8F0),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    color: const Color(0xFF3B82F6),
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                color: const Color(0xFFE2E8F0),
+                                child: const Center(
+                                  child: Icon(
+                                    Icons.business_center,
+                                    size: 100,
+                                    color: Color(0xFF3B82F6),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 40 : 60),
+                    // İçerik
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Seek IT Apps',
+                            style: GoogleFonts.poppins(
+                              fontSize: isTablet ? 36 : 42,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E3A8A),
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Kurumsal ve KOBİ işletmelerin dijital dönüşüm sürecinde yanlarında olmaktan gurur duyuyoruz. '
+                            'Modern teknoloji ve kullanıcı dostu tasarım anlayışımızla, işletmenizin verimliliğini artıracak '
+                            'çözümler sunuyoruz.',
+                            style: GoogleFonts.poppins(
+                              fontSize: isTablet ? 16 : 18,
+                              color: const Color(0xFF64748B),
+                              height: 1.8,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            '2015 yılından beri teknoloji sektöründe faaliyet gösteren ekibimiz, işletmelerin dijitalleşme '
+                            'ihtiyaçlarına çözüm üretmek için sürekli kendini geliştirmektedir. TAMGACI, bu deneyimin '
+                            've tutkunun bir ürünü olarak ortaya çıkmıştır.',
+                            style: GoogleFonts.poppins(
+                              fontSize: isTablet ? 16 : 18,
+                              color: const Color(0xFF64748B),
+                              height: 1.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    Container(
+                      height: 300,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.network(
+                          'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: const Color(0xFFE2E8F0),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                  color: const Color(0xFF3B82F6),
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: const Color(0xFFE2E8F0),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.business_center,
+                                  size: 80,
+                                  color: Color(0xFF3B82F6),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    Text(
+                      'Seek IT Apps',
+                      style: GoogleFonts.poppins(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E3A8A),
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Kurumsal ve KOBİ işletmelerin dijital dönüşüm sürecinde yanlarında olmaktan gurur duyuyoruz. '
+                      'Modern teknoloji ve kullanıcı dostu tasarım anlayışımızla, işletmenizin verimliliğini artıracak '
+                      'çözümler sunuyoruz.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: const Color(0xFF64748B),
+                        height: 1.8,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      '2015 yılından beri teknoloji sektöründe faaliyet gösteren ekibimiz, işletmelerin dijitalleşme '
+                      'ihtiyaçlarına çözüm üretmek için sürekli kendini geliştirmektedir.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: const Color(0xFF64748B),
+                        height: 1.8,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+
+          const SizedBox(height: 80),
+
+          // Misyon, Vizyon, Değerler Kartları
+          (isTablet || isDesktop)
+              ? Row(
+                  children: [
+                    Expanded(
+                      child: _buildAboutCard(
+                        icon: Icons.flag,
+                        title: 'Misyonumuz',
+                        description:
+                            'İşletmelerin finansal yönetim süreçlerini dijitalleştirerek, onların büyümesine ve '
+                            'başarısına katkıda bulunmak. Her işletmenin erişebileceği, kullanımı kolay ve '
+                            'güvenilir ön muhasebe çözümleri sunmak.',
+                        color: const Color(0xFF3B82F6),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 20 : 30),
+                    Expanded(
+                      child: _buildAboutCard(
+                        icon: Icons.visibility,
+                        title: 'Vizyonumuz',
+                        description:
+                            'Türkiye\'nin önde gelen bulut tabanlı ön muhasebe platformu olmak ve işletmelerin '
+                            'dijital dönüşüm yolculuğunda güvenilir bir partner olarak yanlarında yer almak.',
+                        color: const Color(0xFF2563EB),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 20 : 30),
+                    Expanded(
+                      child: _buildAboutCard(
+                        icon: Icons.favorite,
+                        title: 'Değerlerimiz',
+                        description:
+                            'Müşteri odaklılık, inovasyon, güvenilirlik ve sürekli gelişim değerlerimizle, '
+                            'her işletmenin ihtiyacına özel çözümler üretmek için çalışıyoruz.',
+                        color: const Color(0xFF0EA5E9),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  children: [
+                    _buildAboutCard(
+                      icon: Icons.flag,
+                      title: 'Misyonumuz',
+                      description:
+                          'İşletmelerin finansal yönetim süreçlerini dijitalleştirerek, onların büyümesine ve '
+                          'başarısına katkıda bulunmak. Her işletmenin erişebileceği, kullanımı kolay ve '
+                          'güvenilir ön muhasebe çözümleri sunmak.',
+                      color: const Color(0xFF3B82F6),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildAboutCard(
+                      icon: Icons.visibility,
+                      title: 'Vizyonumuz',
+                      description:
+                          'Türkiye\'nin önde gelen bulut tabanlı ön muhasebe platformu olmak ve işletmelerin '
+                          'dijital dönüşüm yolculuğunda güvenilir bir partner olarak yanlarında yer almak.',
+                      color: const Color(0xFF2563EB),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildAboutCard(
+                      icon: Icons.favorite,
+                      title: 'Değerlerimiz',
+                      description:
+                          'Müşteri odaklılık, inovasyon, güvenilirlik ve sürekli gelişim değerlerimizle, '
+                          'her işletmenin ihtiyacına özel çözümler üretmek için çalışıyoruz.',
+                      color: const Color(0xFF0EA5E9),
+                    ),
+                  ],
+                ),
+
+          const SizedBox(height: 80),
+
+          // İstatistikler Bölümü
           Container(
-            padding: const EdgeInsets.all(60),
+            padding: EdgeInsets.all(isMobile ? 40 : (isTablet ? 50 : 60)),
             decoration: BoxDecoration(
-              color: Colors.white,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF1E3A8A),
+                  Color(0xFF3B82F6),
+                ],
+              ),
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 15),
                 ),
               ],
             ),
             child: Column(
               children: [
                 Text(
-                  'Seek IT Apps',
+                  'Rakamlarla Biz',
                   style: GoogleFonts.poppins(
-                    fontSize: 42,
+                    fontSize: isMobile ? 32 : (isTablet ? 36 : 40),
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E3A8A),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  'Kurumsal ve KOBİ işletmelerin dijital dönüşüm sürecinde yanlarında olmaktan gurur duyuyoruz. '
-                  'Modern teknoloji ve kullanıcı dostu tasarım anlayışımızla, işletmenizin verimliliğini artıracak '
-                  'çözümler sunuyoruz.',
-                  style: GoogleFonts.poppins(
-                    fontSize: 20,
-                    color: const Color(0xFF64748B),
-                    height: 1.8,
+                    color: Colors.white,
                   ),
                   textAlign: TextAlign.center,
                 ),
+                const SizedBox(height: 50),
+                isMobile
+                    ? Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildStatisticItem(
+                                  '1000+', 'Mutlu Müşteri', Icons.people),
+                              _buildStatisticItem(
+                                  '50+', 'Ülkede Hizmet', Icons.language),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _buildStatisticItem(
+                                  '99.9%', 'Uptime', Icons.cloud_done),
+                              _buildStatisticItem(
+                                  '7/24', 'Destek', Icons.support_agent),
+                            ],
+                          ),
+                        ],
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildStatisticItem(
+                              '1000+', 'Mutlu Müşteri', Icons.people),
+                          _buildStatisticItem(
+                              '50+', 'Ülkede Hizmet', Icons.language),
+                          _buildStatisticItem(
+                              '99.9%', 'Uptime', Icons.cloud_done),
+                          _buildStatisticItem(
+                              '7/24', 'Destek', Icons.support_agent),
+                        ],
+                      ),
               ],
             ),
           ),
@@ -1077,11 +1478,116 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
+  /// About card widget
+  Widget _buildAboutCard({
+    required IconData icon,
+    required String title,
+    required String description,
+    required Color color,
+  }) {
+    final isMobile = _isMobile(context);
+    final isTablet = _isTablet(context);
+
+    return Container(
+      padding: EdgeInsets.all(isMobile ? 30 : (isTablet ? 35 : 40)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: isMobile ? 50 : (isTablet ? 55 : 60),
+            height: isMobile ? 50 : (isTablet ? 55 : 60),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              gradient: LinearGradient(
+                colors: [
+                  color.withValues(alpha: 0.2),
+                  color.withValues(alpha: 0.1),
+                ],
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: isMobile ? 25 : (isTablet ? 28 : 30),
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: isMobile ? 20 : (isTablet ? 22 : 24),
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF1E3A8A),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            description,
+            style: GoogleFonts.poppins(
+              fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
+              color: const Color(0xFF64748B),
+              height: 1.7,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Statistic item widget
+  Widget _buildStatisticItem(String number, String label, IconData icon) {
+    final isMobile = _isMobile(context);
+    final isTablet = _isTablet(context);
+
+    return Column(
+      children: [
+        Icon(
+          icon,
+          size: isMobile ? 32 : (isTablet ? 36 : 40),
+          color: Colors.white.withValues(alpha: 0.9),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          number,
+          style: GoogleFonts.poppins(
+            fontSize: isMobile ? 36 : (isTablet ? 42 : 48),
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: GoogleFonts.poppins(
+            fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.9),
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
   /// Contact section
   Widget _buildContactSection() {
+    final isMobile = _isMobile(context);
+    final isTablet = _isTablet(context);
+
     return Container(
-      padding:
-          EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 80 : 40),
+      key: _contactSectionKey,
+      padding: EdgeInsets.all(isMobile ? 40 : (isTablet ? 50 : 80)),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -1097,46 +1603,17 @@ class _LandingPageState extends State<LandingPage>
           Text(
             'İletişim',
             style: GoogleFonts.poppins(
-              fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
+              fontSize: isMobile ? 40 : (isTablet ? 48 : 56),
               fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: MediaQuery.of(context).size.width > 768 ? 100 : 40),
-          // Mobil için dikey düzen, desktop için yatay
-          MediaQuery.of(context).size.width > 768
-              ? Row(
+          SizedBox(height: isMobile ? 40 : (isTablet ? 60 : 100)),
+          // Mobil için dikey düzen, tablet ve desktop için yatay
+          isMobile
+              ? Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Flexible(
-                      child: _buildContactCard(
-                        icon: Icons.email,
-                        title: 'E-posta',
-                        value: 'info@seekitapps.com',
-                        onTap: () => _launchEmail(),
-                      ),
-                    ),
-                    Flexible(
-                      child: _buildContactCard(
-                        icon: Icons.phone,
-                        title: 'Telefon',
-                        value: '+90 212 976 4939',
-                        onTap: () => _launchPhone(),
-                      ),
-                    ),
-                    Flexible(
-                      child: _buildContactCard(
-                        icon: Icons.location_on,
-                        title: 'Adres',
-                        value:
-                            'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
-                        onTap: null,
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
                   children: [
                     _buildContactCard(
                       icon: Icons.email,
@@ -1160,6 +1637,38 @@ class _LandingPageState extends State<LandingPage>
                       onTap: null,
                     ),
                   ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Flexible(
+                      child: _buildContactCard(
+                        icon: Icons.email,
+                        title: 'E-posta',
+                        value: 'info@seekitapps.com',
+                        onTap: () => _launchEmail(),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 16 : 20),
+                    Flexible(
+                      child: _buildContactCard(
+                        icon: Icons.phone,
+                        title: 'Telefon',
+                        value: '+90 212 976 4939',
+                        onTap: () => _launchPhone(),
+                      ),
+                    ),
+                    SizedBox(width: isTablet ? 16 : 20),
+                    Flexible(
+                      child: _buildContactCard(
+                        icon: Icons.location_on,
+                        title: 'Adres',
+                        value:
+                            'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
+                        onTap: null,
+                      ),
+                    ),
+                  ],
                 ),
         ],
       ),
@@ -1173,13 +1682,14 @@ class _LandingPageState extends State<LandingPage>
     required String value,
     required VoidCallback? onTap,
   }) {
-    final isMobile = MediaQuery.of(context).size.width <= 768;
+    final isMobile = _isMobile(context);
+    final isTablet = _isTablet(context);
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: isMobile ? double.infinity : 300,
-        padding: EdgeInsets.all(isMobile ? 24 : 40),
+        width: isMobile ? double.infinity : (isTablet ? 220 : 300),
+        padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 30 : 40)),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
@@ -1253,28 +1763,70 @@ class _LandingPageState extends State<LandingPage>
         ),
       ),
       child: isMobile
-          ? Column(
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Links
-                _buildFooterLinks(),
-                const SizedBox(height: 30),
-                // Company info
-                Text(
-                  '© 2025 Seek IT Apps',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.8),
+                // Sol taraf - Şirket adı
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Links
+                      _buildFooterLinks(),
+                      const SizedBox(height: 20),
+                      // Company info
+                      Text(
+                        '© 2025 Seek IT Apps',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                // Tax info
-                Text(
-                  'Vergi Dairesi: Fatih VD\nVergi No: 4130689211',
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.6),
+
+                // Sağ taraf - Vergi bilgileri
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Vergi Dairesi:',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                      Text(
+                        'Fatih VD',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Vergi No:',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                      Text(
+                        '4130689211',
+                        style: GoogleFonts.poppins(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1318,52 +1870,92 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// Footer links (Blog ve FAQ)
+  /// Footer links
   Widget _buildFooterLinks() {
-    final isMobile = MediaQuery.of(context).size.width <= 768;
+    final isMobile = _isMobile(context);
 
+    if (isMobile) {
+      // Mobilde yan yana, "Hakkımızda" tam görünsün
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildFooterLink(
+            'Hakkımızda',
+            () => _scrollToAbout(),
+            isMobile,
+          ),
+          SizedBox(width: isMobile ? 8 : 12),
+          _buildFooterLink(
+            'Blog',
+            () => context.go('/blog'),
+            isMobile,
+          ),
+          SizedBox(width: isMobile ? 8 : 12),
+          _buildFooterLink(
+            'SSS',
+            () => context.go('/faq'),
+            isMobile,
+          ),
+          SizedBox(width: isMobile ? 8 : 12),
+          _buildFooterLink(
+            'İletişim',
+            () => _scrollToContact(),
+            isMobile,
+          ),
+        ],
+      );
+    }
+
+    // Desktop'ta Wrap kullan (daha fazla alan var)
     return Wrap(
-      spacing: isMobile ? 20 : 40,
-      runSpacing: isMobile ? 16 : 0,
+      spacing: 20,
+      runSpacing: 12,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
+        _buildFooterLink(
+          'Hakkımızda',
+          () => _scrollToAbout(),
+          isMobile,
+        ),
         _buildFooterLink(
           'Blog',
           () => context.go('/blog'),
+          isMobile,
         ),
         _buildFooterLink(
-          'Sıkça Sorulan Sorular',
+          'SSS',
           () => context.go('/faq'),
+          isMobile,
+        ),
+        _buildFooterLink(
+          'İletişim',
+          () => _scrollToContact(),
+          isMobile,
         ),
       ],
     );
   }
 
   /// Footer link widget
-  Widget _buildFooterLink(String text, VoidCallback onTap) {
-    final isMobile = MediaQuery.of(context).size.width <= 768;
-
-    return GestureDetector(
+  Widget _buildFooterLink(String text, VoidCallback onTap, bool isMobile) {
+    return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 12 : 16,
-          vertical: isMobile ? 8 : 10,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.2),
-            width: 1,
-          ),
+          horizontal: isMobile ? 4 : 12,
+          vertical: isMobile ? 4 : 6,
         ),
         child: Text(
           text,
           style: GoogleFonts.poppins(
-            fontSize: isMobile ? 14 : 16,
-            fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.9),
+            fontSize: isMobile ? 10 : 14,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.85),
+            letterSpacing: 0.2,
           ),
+          softWrap: false,
+          overflow: TextOverflow.visible,
         ),
       ),
     );
@@ -1378,14 +1970,14 @@ class _LandingPageState extends State<LandingPage>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         height: _showBanner
-            ? (MediaQuery.of(context).size.width > 768 ? 100 : 70)
+            ? (MediaQuery.of(context).size.width > 768 ? 100 : 80)
             : 0,
         curve: Curves.easeInOut,
         child: _showBanner
             ? Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: MediaQuery.of(context).size.width > 768 ? 24 : 12,
-                  vertical: MediaQuery.of(context).size.width > 768 ? 16 : 8,
+                  vertical: MediaQuery.of(context).size.width > 768 ? 16 : 10,
                 ),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
@@ -1405,8 +1997,9 @@ class _LandingPageState extends State<LandingPage>
                   ],
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Banner content
+                    // Banner content - Sol taraf (İkon + Metin)
                     Expanded(
                       child: Row(
                         children: [
@@ -1445,6 +2038,7 @@ class _LandingPageState extends State<LandingPage>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
                                   '30 Gün Ücretsiz Deneyin',
@@ -1456,7 +2050,10 @@ class _LandingPageState extends State<LandingPage>
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
+                                const SizedBox(height: 2),
                                 Text(
                                   MediaQuery.of(context).size.width > 768
                                       ? 'Hiçbir kredi kartı gerektirmez!'
@@ -1468,22 +2065,100 @@ class _LandingPageState extends State<LandingPage>
                                             : 10,
                                     color: Colors.white.withValues(alpha: 0.9),
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),
                           ),
-
-                          const SizedBox(width: 16),
-
-                          // CTA Button
-                          _buildBannerCTA(),
                         ],
                       ),
                     ),
+
+                    // Sağ taraf - Banner butonları (tablet ve desktop) + CTA Button
+                    if (!_isMobile(context))
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Blog ve FAQ Butonları
+                          _buildBannerLinks(),
+                          SizedBox(width: _isTablet(context) ? 8 : 12),
+                          // CTA Button - Sağda sabit
+                          _buildBannerCTA(),
+                        ],
+                      )
+                    else
+                      // Mobilde sadece CTA
+                      _buildBannerCTA(),
                   ],
                 ),
               )
             : const SizedBox.shrink(),
+      ),
+    );
+  }
+
+  /// Banner links (Hakkımızda, Blog, SSS, İletişim)
+  Widget _buildBannerLinks() {
+    final isDesktop = _isDesktopSize(context);
+
+    return Wrap(
+      spacing: _isTablet(context) ? 6 : 8,
+      runSpacing: _isTablet(context) ? 6 : 8,
+      alignment: WrapAlignment.end,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _buildBannerLink(
+          'Hakkımızda',
+          () => _scrollToAbout(),
+          isDesktop,
+        ),
+        _buildBannerLink(
+          'Blog',
+          () => context.go('/blog'),
+          isDesktop,
+        ),
+        _buildBannerLink(
+          'SSS',
+          () => context.go('/faq'),
+          isDesktop,
+        ),
+        _buildBannerLink(
+          'İletişim',
+          () => _scrollToContact(),
+          isDesktop,
+        ),
+      ],
+    );
+  }
+
+  /// Banner link button
+  Widget _buildBannerLink(String text, VoidCallback onTap, bool isDesktop) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+          horizontal: isDesktop ? 12 : 10,
+          vertical: isDesktop ? 6 : 5,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.2),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: isDesktop ? 12 : 10,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }
@@ -1608,6 +2283,46 @@ class _LandingPageState extends State<LandingPage>
       1200,
       duration: const Duration(milliseconds: 1000),
       curve: Curves.easeInOut,
+    );
+  }
+
+  void _scrollToAbout() {
+    if (!mounted) return;
+
+    final context = _aboutSectionKey.currentContext;
+    if (context == null) {
+      // Context henüz hazır değilse, bir sonraki frame'de tekrar dene
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToAbout();
+      });
+      return;
+    }
+
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOut,
+      alignment: 0.1, // Bölümün üst kısmına hizala (banner için offset)
+    );
+  }
+
+  void _scrollToContact() {
+    if (!mounted) return;
+
+    final context = _contactSectionKey.currentContext;
+    if (context == null) {
+      // Context henüz hazır değilse, bir sonraki frame'de tekrar dene
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToContact();
+      });
+      return;
+    }
+
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeInOut,
+      alignment: 0.1, // Bölümün üst kısmına hizala (banner için offset)
     );
   }
 }
