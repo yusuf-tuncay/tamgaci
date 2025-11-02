@@ -110,243 +110,241 @@ class _BlogPageState extends State<BlogPage> {
         ),
         centerTitle: false,
       ),
-      body: Column(
-        children: [
-          // Hero Section
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(
-              MediaQuery.of(context).size.width > 768 ? 80 : 40,
-            ),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1E3A8A),
-                  Color(0xFF3B82F6),
-                ],
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Hero Section
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(
+                MediaQuery.of(context).size.width > 768 ? 80 : 40,
               ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'TAMGACI BLOG',
-                  style: GoogleFonts.poppins(
-                    fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Ön muhasebe, iş yönetimi ve dijital dönüşüm hakkında güncel içerikler',
-                  style: GoogleFonts.poppins(
-                    fontSize: MediaQuery.of(context).size.width > 768 ? 20 : 16,
-                    fontWeight: FontWeight.w400,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-
-          // Arama ve TabBar Section
-          Container(
-            color: Colors.white,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Arama Field
-                Padding(
-                  padding: EdgeInsets.all(
-                    MediaQuery.of(context).size.width > 768 ? 24 : 16,
-                  ),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Blog yazılarında ara...',
-                        hintStyle: GoogleFonts.poppins(
-                          color: const Color(0xFF94A3B8),
-                          fontSize: 14,
-                        ),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Color(0xFF64748B),
-                        ),
-                        suffixIcon: _searchQuery.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(
-                                  Icons.clear,
-                                  color: Color(0xFF64748B),
-                                ),
-                                onPressed: () {
-                                  _searchController.clear();
-                                },
-                              )
-                            : null,
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                      ),
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: const Color(0xFF1E3A8A),
-                      ),
-                    ),
-                  ),
-                ),
-
-                // TabBar - Pill Style
-                Container(
-                  color: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                    horizontal:
-                        MediaQuery.of(context).size.width > 768 ? 24 : 16,
-                    vertical: 16,
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: categories.map((category) {
-                        final isSelected = _selectedCategory == category;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                _selectedCategory = category;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              curve: Curves.easeInOut,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 10,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFF3B82F6)
-                                    : const Color(0xFFF1F5F9),
-                                borderRadius: BorderRadius.circular(25),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? const Color(0xFF3B82F6)
-                                      : const Color(0xFFE2E8F0),
-                                  width: 1.5,
-                                ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: const Color(0xFF3B82F6)
-                                              .withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ]
-                                    : [],
-                              ),
-                              child: Text(
-                                category,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w500,
-                                  color: isSelected
-                                      ? Colors.white
-                                      : const Color(0xFF64748B),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Blog Posts Section
-          Expanded(
-            child: SingleChildScrollView(
-              child: Container(
-                padding: EdgeInsets.all(
-                  MediaQuery.of(context).size.width > 768 ? 80 : 40,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Blog Posts Grid
-                    _getFilteredPosts().isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.all(60),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.search_off,
-                                    size: 64,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Sonuç bulunamadı',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF64748B),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Farklı bir arama terimi veya kategori deneyin',
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 14,
-                                      color: const Color(0xFF94A3B8),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : (MediaQuery.of(context).size.width > 768
-                            ? _buildBlogPostsGrid(context, _getFilteredPosts())
-                            : _buildBlogPostsList(
-                                context, _getFilteredPosts())),
-
-                    const SizedBox(height: 60),
-
-                    // SEO Content Section
-                    _buildSEOContent(context),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF1E3A8A),
+                    Color(0xFF3B82F6),
                   ],
                 ),
               ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'TAMGACI BLOG',
+                    style: GoogleFonts.poppins(
+                      fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Ön muhasebe, iş yönetimi ve dijital dönüşüm hakkında güncel içerikler',
+                    style: GoogleFonts.poppins(
+                      fontSize: MediaQuery.of(context).size.width > 768 ? 20 : 16,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white.withValues(alpha: 0.9),
+                    ),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // Arama ve TabBar Section
+            Container(
+              color: Colors.white,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Arama Field
+                  Padding(
+                    padding: EdgeInsets.all(
+                      MediaQuery.of(context).size.width > 768 ? 24 : 16,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE2E8F0),
+                          width: 1,
+                        ),
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Blog yazılarında ara...',
+                          hintStyle: GoogleFonts.poppins(
+                            color: const Color(0xFF94A3B8),
+                            fontSize: 14,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Color(0xFF64748B),
+                          ),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.clear,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                  },
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: const Color(0xFF1E3A8A),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // TabBar - Pill Style
+                  Container(
+                    color: Colors.white,
+                    padding: EdgeInsets.symmetric(
+                      horizontal:
+                          MediaQuery.of(context).size.width > 768 ? 24 : 16,
+                      vertical: 16,
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: categories.map((category) {
+                          final isSelected = _selectedCategory == category;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedCategory = category;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInOut,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? const Color(0xFF3B82F6)
+                                      : const Color(0xFFF1F5F9),
+                                  borderRadius: BorderRadius.circular(25),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFF3B82F6)
+                                        : const Color(0xFFE2E8F0),
+                                    width: 1.5,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(0xFF3B82F6)
+                                                .withValues(alpha: 0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ]
+                                      : [],
+                                ),
+                                child: Text(
+                                  category,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    fontWeight: isSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w500,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : const Color(0xFF64748B),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Blog Posts Section
+            Container(
+              padding: EdgeInsets.all(
+                MediaQuery.of(context).size.width > 768 ? 80 : 40,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Blog Posts Grid
+                  _getFilteredPosts().isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.all(60),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.search_off,
+                                  size: 64,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Sonuç bulunamadı',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF64748B),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Farklı bir arama terimi veya kategori deneyin',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 14,
+                                    color: const Color(0xFF94A3B8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : (MediaQuery.of(context).size.width > 768
+                          ? _buildBlogPostsGrid(context, _getFilteredPosts())
+                          : _buildBlogPostsList(
+                              context, _getFilteredPosts())),
+
+                  const SizedBox(height: 60),
+
+                  // SEO Content Section
+                  _buildSEOContent(context),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
