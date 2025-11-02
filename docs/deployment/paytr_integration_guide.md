@@ -38,7 +38,7 @@ PayTR panelinde şu URL'ler ayarlanmalıdır:
 
 ```
 Bildirim URL (Callback URL): https://us-central1-tamgaci.cloudfunctions.net/paytrCallback
-Site Adresi: https://tamgaci.online/
+Site Adresi: https://www.tamgaci.online/
 ```
 
 ## 🔥 Firebase Functions Konfigürasyonu

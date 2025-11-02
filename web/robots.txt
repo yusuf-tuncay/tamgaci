@@ -1,6 +1,6 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://tamgaci.online/sitemap.xml
+Sitemap: https://www.tamgaci.online/sitemap.xml
 
 

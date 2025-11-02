@@ -50,7 +50,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
       debugPrint('✅ PaymentSuccessPage: Success message sent to parent');
 
       // Parent window'u subscription sayfasına yönlendir
-      htmlWindow.redirect('https://tamgaci.web.app/settings/subscription?payment=success');
+      htmlWindow.redirect('https://www.tamgaci.online/settings/subscription?payment=success');
       debugPrint(
           '✅ PaymentSuccessPage: Redirected parent to subscription page');
     } catch (e) {
@@ -153,7 +153,7 @@ class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
                       // Parent window'a mesaj gönder, yönlendir ve sekmeyi kapat
                       try {
                         htmlWindow.postMessage('payment_success');
-                        htmlWindow.redirect('https://tamgaci.web.app/settings/subscription?payment=success');
+                        htmlWindow.redirect('https://www.tamgaci.online/settings/subscription?payment=success');
                         htmlWindow.close();
                       } catch (e) {
                         debugPrint('❌ PaymentSuccessPage: Failed to close: $e');

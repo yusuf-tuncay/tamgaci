@@ -20,5 +20,5 @@ Her `main` branch'e push'ta:
 
 ## İndirme Linkleri
 
-- **En Güncel:** https://tamgaci.web.app/download/tamgaci-setup-latest.exe
-- **Sürüm Bilgisi:** https://tamgaci.web.app/download/release.json
+- **En Güncel:** https://www.tamgaci.online/download/tamgaci-setup-latest.exe
+- **Sürüm Bilgisi:** https://www.tamgaci.online/download/release.json

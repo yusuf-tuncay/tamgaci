@@ -7,7 +7,7 @@ Merchant ID: 622887
 Merchant Key: uePB6f7AfxtAAyqZ
 Merchant Salt: ejdEC3ReZay7QxE8
 Callback URL: https://us-central1-tamgaci.cloudfunctions.net/paytrCallback
-Site URL: https://tamgaci.online/
+Site URL: https://www.tamgaci.online/
 ```
 
 ## Hash Oluşturma Mantığı (PayTR Resmi Dökümantasyonu)

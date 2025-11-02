@@ -34,4 +34,4 @@ Write-Host ""
 Write-Host "==================================" -ForegroundColor Cyan
 Write-Host "  TAMAMLANDI!" -ForegroundColor Green
 Write-Host "==================================" -ForegroundColor Cyan
-Write-Host "Web: https://tamgaci.web.app" -ForegroundColor Cyan
+Write-Host "Web: https://www.tamgaci.online" -ForegroundColor Cyan

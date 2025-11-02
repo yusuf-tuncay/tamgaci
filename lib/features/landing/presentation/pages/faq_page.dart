@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 
 /// FAQ sayfası - SEO için önemli içerik
 class FAQPage extends StatefulWidget {
@@ -70,7 +71,7 @@ class _FAQPageState extends State<FAQPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Tamgaci hakkında merak ettiğiniz soruların cevaplarını bulun',
+                    'Tamgacı hakkında merak ettiğiniz soruların cevaplarını bulun',
                     style: GoogleFonts.poppins(
                       fontSize:
                           MediaQuery.of(context).size.width > 768 ? 20 : 16,
@@ -258,7 +259,7 @@ class _FAQPageState extends State<FAQPage> {
           const SizedBox(height: 30),
           ElevatedButton(
             onPressed: () {
-              // Email veya iletişim sayfasına yönlendirme
+              _showContactDialog(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
@@ -299,7 +300,7 @@ class _FAQPageState extends State<FAQPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Tamgaci Hakkında',
+            'Tamgacı Hakkında',
             style: GoogleFonts.poppins(
               fontSize: MediaQuery.of(context).size.width > 768 ? 36 : 28,
               fontWeight: FontWeight.w700,
@@ -308,7 +309,7 @@ class _FAQPageState extends State<FAQPage> {
           ),
           const SizedBox(height: 30),
           Text(
-            'Tamgaci, kurumsal ve KOBİ işletmelerin ön muhasebe ihtiyaçlarını karşılamak için geliştirilmiş modern bir bulut tabanlı yazılımdır. Web, mobil ve masaüstü platformlarında kullanılabilen Tamgaci, işletmenizin tüm finansal işlemlerini tek bir platformda yönetmenize olanak tanır.',
+            'Tamgacı, kurumsal ve KOBİ işletmelerin ön muhasebe ihtiyaçlarını karşılamak için geliştirilmiş modern bir bulut tabanlı yazılımdır. Web, mobil ve masaüstü platformlarında kullanılabilen Tamgacı, işletmenizin tüm finansal işlemlerini tek bir platformda yönetmenize olanak tanır.',
             style: GoogleFonts.poppins(
               fontSize: 16,
               color: const Color(0xFF64748B),
@@ -377,59 +378,429 @@ class _FAQPageState extends State<FAQPage> {
     );
   }
 
+  /// Show Contact Dialog
+  void _showContactDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return const ContactDialog();
+      },
+    );
+  }
+
   /// Get FAQ Items
   List<Map<String, dynamic>> _getFAQItems() {
     return [
       {
-        'question': 'Tamgaci nedir?',
+        'question': 'Tamgacı nedir?',
         'answer':
-            'Tamgaci, kurumsal ve KOBİ işletmelerin ön muhasebe ihtiyaçlarını karşılamak için geliştirilmiş modern bir bulut tabanlı yazılımdır. Fatura yönetimi, stok takibi, müşteri-tedarikçi yönetimi, gelir-gider takibi ve finansal raporlama gibi özellikler sunar.',
+            'Tamgacı, kurumsal ve KOBİ işletmelerin ön muhasebe ihtiyaçlarını karşılamak için geliştirilmiş modern bir bulut tabanlı yazılımdır. Fatura yönetimi, stok takibi, müşteri-tedarikçi yönetimi, gelir-gider takibi ve finansal raporlama gibi özellikler sunar.',
       },
       {
-        'question': 'Tamgaci\'yi nasıl kullanabilirim?',
+        'question': 'Tamgacı\'yi nasıl kullanabilirim?',
         'answer':
-            'Tamgaci\'yi kullanmak için web tarayıcınızdan giriş yapabilir, mobil uygulamasını indirebilir veya masaüstü uygulamasını kurabilirsiniz. Tüm platformlarda aynı verilerinize erişebilir, işlemlerinizi senkronize bir şekilde yönetebilirsiniz.',
+            'Tamgacı\'yi kullanmak için web tarayıcınızdan giriş yapabilir, mobil uygulamasını indirebilir veya masaüstü uygulamasını kurabilirsiniz. Tüm platformlarda aynı verilerinize erişebilir, işlemlerinizi senkronize bir şekilde yönetebilirsiniz.',
       },
       {
-        'question': 'Tamgaci ücretsiz mi?',
+        'question': 'Tamgacı ücretsiz mi?',
         'answer':
-            'Tamgaci, 30 günlük ücretsiz deneme süresi sunar. Deneme süresi sonrasında işletmenizin ihtiyacına uygun paketlerden birini seçebilirsiniz. Detaylı fiyatlandırma bilgisi için lütfen iletişime geçin.',
+            'Tamgacı, 30 günlük ücretsiz deneme süresi sunar. Deneme süresi sonrasında işletmenizin ihtiyacına uygun paketlerden birini seçebilirsiniz. Detaylı fiyatlandırma bilgisi için lütfen iletişime geçin.',
       },
       {
         'question': 'Verilerim güvende mi?',
         'answer':
-            'Evet, verilerinizin güvenliği bizim için çok önemlidir. Tamgaci, banka seviyesi güvenlik standartları kullanır. Verileriniz şifrelenmiş olarak bulut sunucularında saklanır ve düzenli olarak yedeklenir.',
+            'Evet, verilerinizin güvenliği bizim için çok önemlidir. Tamgacı, banka seviyesi güvenlik standartları kullanır. Verileriniz şifrelenmiş olarak bulut sunucularında saklanır ve düzenli olarak yedeklenir.',
       },
       {
         'question': 'E-fatura entegrasyonu var mı?',
         'answer':
-            'Evet, Tamgaci e-fatura, e-arşiv fatura ve e-irsaliye entegrasyonu sunar. GİB (Gelir İdaresi Başkanlığı) sistemleri ile entegre çalışarak faturalarınızı otomatik olarak gönderebilir ve yönetebilirsiniz.',
+            'Evet, Tamgacı e-fatura, e-arşiv fatura ve e-irsaliye entegrasyonu sunar. GİB (Gelir İdaresi Başkanlığı) sistemleri ile entegre çalışarak faturalarınızı otomatik olarak gönderebilir ve yönetebilirsiniz.',
       },
       {
         'question': 'Çoklu kullanıcı desteği var mı?',
         'answer':
-            'Evet, Tamgaci çoklu kullanıcı desteği sunar. İşletmenizdeki farklı kullanıcılara farklı yetki seviyeleri atayabilir, her kullanıcının kendi rolüne göre sistem özelliklerine erişmesini sağlayabilirsiniz.',
+            'Evet, Tamgacı çoklu kullanıcı desteği sunar. İşletmenizdeki farklı kullanıcılara farklı yetki seviyeleri atayabilir, her kullanıcının kendi rolüne göre sistem özelliklerine erişmesini sağlayabilirsiniz.',
       },
       {
         'question': 'Mobil uygulama hangi platformlarda mevcut?',
         'answer':
-            'Tamgaci mobil uygulaması hem Android hem de iOS platformlarında mevcut. Google Play Store ve Apple App Store\'dan indirebilirsiniz.',
+            'Tamgacı mobil uygulaması hem Android hem de iOS platformlarında mevcut. Google Play Store ve Apple App Store\'dan indirebilirsiniz.',
       },
       {
         'question': 'Yedekleme nasıl yapılır?',
         'answer':
-            'Tamgaci, verilerinizi otomatik olarak bulut sunucularında yedekler. Ek olarak, istediğiniz zaman manuel yedekleme de yapabilirsiniz. Yedekleriniz güvenli bir şekilde saklanır ve gerektiğinde geri yüklenebilir.',
+            'Tamgacı, verilerinizi otomatik olarak bulut sunucularında yedekler. Ek olarak, istediğiniz zaman manuel yedekleme de yapabilirsiniz. Yedekleriniz güvenli bir şekilde saklanır ve gerektiğinde geri yüklenebilir.',
       },
       {
         'question': 'Destek nasıl alabilirim?',
         'answer':
-            'Tamgaci müşteri desteği ekibimize e-posta üzerinden veya telefon ile ulaşabilirsiniz. Ayrıca uygulama içi destek sistemi ve detaylı dokümantasyon da mevcuttur.',
+            'Tamgacı müşteri desteği ekibimize e-posta üzerinden veya telefon ile ulaşabilirsiniz. Ayrıca uygulama içi destek sistemi ve detaylı dokümantasyon da mevcuttur.',
       },
       {
         'question': 'Yeni özellikler nasıl ekleniyor?',
         'answer':
-            'Tamgaci sürekli geliştirilmekte olan bir platformdur. Düzenli güncellemeler ile yeni özellikler eklenir ve mevcut özellikler iyileştirilir. Tüm güncellemeler otomatik olarak uygulanır ve kullanıcılar ücretsiz olarak erişebilir.',
+            'Tamgacı sürekli geliştirilmekte olan bir platformdur. Düzenli güncellemeler ile yeni özellikler eklenir ve mevcut özellikler iyileştirilir. Tüm güncellemeler otomatik olarak uygulanır ve kullanıcılar ücretsiz olarak erişebilir.',
       },
     ];
+  }
+}
+
+/// Contact Dialog with Form
+class ContactDialog extends StatefulWidget {
+  const ContactDialog({super.key});
+
+  @override
+  State<ContactDialog> createState() => _ContactDialogState();
+}
+
+class _ContactDialogState extends State<ContactDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _surnameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _messageController = TextEditingController();
+  bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _surnameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // Email is optional
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value)) {
+      return 'Geçerli bir e-posta adresi giriniz';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.isEmpty) {
+      return null; // Phone is optional
+    }
+    final phoneRegex = RegExp(r'^[0-9]{10,15}$');
+    final cleanedPhone = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    if (!phoneRegex.hasMatch(cleanedPhone)) {
+      return 'Geçerli bir telefon numarası giriniz (10-15 rakam)';
+    }
+    return null;
+  }
+
+  String? _validateEmailOrPhone() {
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    if (email.isEmpty && phone.isEmpty) {
+      return 'E-posta veya telefon numarasından en az birisi gereklidir';
+    }
+    return null;
+  }
+
+  String? _validateMessage(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Mesaj alanı zorunludur';
+    }
+    if (value.trim().length < 10) {
+      return 'Mesaj en az 10 karakter olmalıdır';
+    }
+    return null;
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate email or phone requirement
+    final emailOrPhoneError = _validateEmailOrPhone();
+    if (emailOrPhoneError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(emailOrPhoneError),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      // Firebase Function URL'ini al
+      // Production için: https://us-central1-tamgaci.cloudfunctions.net/sendContactEmail
+      final dio = Dio();
+      const functionUrl = 'https://us-central1-tamgaci.cloudfunctions.net/sendContactEmail';
+
+      final response = await dio.post(
+        functionUrl,
+        data: {
+          'name': _nameController.text.trim(),
+          'surname': _surnameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'message': _messageController.text.trim(),
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          validateStatus: (status) => status! < 500, // 500'den küçük status kodlarını handle et
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          // Başarılı
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          Navigator.of(context).pop();
+        } else {
+          // Hata
+          final errorMessage = response.data['error'] ?? 'Bir hata oluştu. Lütfen tekrar deneyin.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+
+        String errorMessage = 'Mesaj gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.';
+        
+        if (e is DioException) {
+          if (e.response != null) {
+            errorMessage = e.response!.data['error'] ?? errorMessage;
+          } else if (e.type == DioExceptionType.connectionTimeout ||
+                     e.type == DioExceptionType.receiveTimeout) {
+            errorMessage = 'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.';
+          } else if (e.type == DioExceptionType.connectionError) {
+            errorMessage = 'İnternet bağlantınızı kontrol edin.';
+          }
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Container(
+        width: isMobile ? double.infinity : 600,
+        padding: EdgeInsets.all(isMobile ? 24 : 32),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'İletişim Formu',
+                      style: GoogleFonts.poppins(
+                        fontSize: isMobile ? 24 : 28,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E3A8A),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                      color: const Color(0xFF64748B),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // Name and Surname Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Ad',
+                          hintText: 'Adınız',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          prefixIcon: const Icon(Icons.person_outline),
+                        ),
+                        style: GoogleFonts.poppins(),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _surnameController,
+                        decoration: InputDecoration(
+                          labelText: 'Soyad',
+                          hintText: 'Soyadınız',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          prefixIcon: const Icon(Icons.person_outline),
+                        ),
+                        style: GoogleFonts.poppins(),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Email
+                TextFormField(
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: 'E-posta',
+                    hintText: 'ornek@email.com',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.email_outlined),
+                  ),
+                  validator: _validateEmail,
+                  style: GoogleFonts.poppins(),
+                ),
+                const SizedBox(height: 20),
+
+                // Phone
+                TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Telefon',
+                    hintText: '0555 123 45 67',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    prefixIcon: const Icon(Icons.phone_outlined),
+                  ),
+                  validator: _validatePhone,
+                  style: GoogleFonts.poppins(),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, left: 16),
+                  child: Text(
+                    '* E-posta veya telefon numarasından en az birisi gereklidir',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Message
+                TextFormField(
+                  controller: _messageController,
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    labelText: 'Mesaj *',
+                    hintText: 'Mesajınızı buraya yazınız...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignLabelWithHint: true,
+                  ),
+                  validator: _validateMessage,
+                  style: GoogleFonts.poppins(),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16),
+                  child: Text(
+                    '* Zorunlu alan',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: const Color(0xFF64748B),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Submit Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isSubmitting ? null : _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Gönder',
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

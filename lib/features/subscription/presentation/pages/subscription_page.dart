@@ -1449,13 +1449,13 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
         // TEST: Payment sayfalarını test et
         debugPrint('🧪 TEST: Testing payment routes...');
         debugPrint('🧪 TEST: You can manually test these URLs:');
-        debugPrint('🧪 TEST: Success: https://tamgaci.web.app/payment/success');
-        debugPrint('🧪 TEST: Fail: https://tamgaci.web.app/payment/fail');
+        debugPrint('🧪 TEST: Success: https://www.tamgaci.online/payment/success');
+        debugPrint('🧪 TEST: Fail: https://www.tamgaci.online/payment/fail');
         debugPrint('🧪 TEST: Hash versions:');
         debugPrint(
-            '🧪 TEST: Success Hash: https://tamgaci.web.app/#/payment/success');
+            '🧪 TEST: Success Hash: https://www.tamgaci.online/#/payment/success');
         debugPrint(
-            '🧪 TEST: Fail Hash: https://tamgaci.web.app/#/payment/fail');
+            '🧪 TEST: Fail Hash: https://www.tamgaci.online/#/payment/fail');
       } else {
         // Hata mesajı göster
         if (mounted) {
@@ -1501,8 +1501,8 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
   void _showPaymentIframe(BuildContext context, String paymentUrl) {
     debugPrint('🔍 Payment Flow: Opening payment in new tab');
     debugPrint('🔍 Payment URL: $paymentUrl');
-    debugPrint('🔍 Success URL: https://tamgaci.web.app/#/payment/success');
-    debugPrint('🔍 Fail URL: https://tamgaci.web.app/#/payment/fail');
+    debugPrint('🔍 Success URL: https://www.tamgaci.online/#/payment/success');
+    debugPrint('🔍 Fail URL: https://www.tamgaci.online/#/payment/fail');
 
     // Web için yeni sekmede aç ama callback URL'leri subscription sayfasına yönlendir
     htmlWindow.open(paymentUrl, '_blank');

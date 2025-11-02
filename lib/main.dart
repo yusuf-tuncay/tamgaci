@@ -20,38 +20,38 @@ void main() async {
   // Uygulamayı Zone içinde başlat - tüm senkron/async hataları yakala
   await runZonedGuarded<Future<void>>(() async {
     // Flutter widget binding'lerini başlat (Zone içinde)
-    WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
-    // Global error yakalama - release'ta da konsola yazsın
-    FlutterError.onError = (FlutterErrorDetails details) {
-      debugPrint('FLUTTER_ERROR: ${details.exceptionAsString()}');
-      AppLogger.error(
-        'Flutter Error: ${details.exceptionAsString()}',
-        details.exception,
-        details.stack,
-      );
-    };
+  // Global error yakalama - release'ta da konsola yazsın
+  FlutterError.onError = (FlutterErrorDetails details) {
+    debugPrint('FLUTTER_ERROR: ${details.exceptionAsString()}');
+    AppLogger.error(
+      'Flutter Error: ${details.exceptionAsString()}',
+      details.exception,
+      details.stack,
+    );
+  };
 
-    // WebView platform implementation'ını ayarla (yalnız web)
-    const WebViewPlatformConfigurer().configure();
+  // WebView platform implementation'ını ayarla (yalnız web)
+  const WebViewPlatformConfigurer().configure();
 
-    // Platform-aware servisleri başlat (WebAssembly uyumluluğu için)
-    await PlatformSelector.initializePlatformServices();
+  // Platform-aware servisleri başlat (WebAssembly uyumluluğu için)
+  await PlatformSelector.initializePlatformServices();
 
-    // Firebase'i başlat
-    try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      AppLogger.info('Firebase initialized successfully');
-    } catch (e) {
-      AppLogger.error('Firebase initialization failed', e);
-    }
+  // Firebase'i başlat
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    AppLogger.info('Firebase initialized successfully');
+  } catch (e) {
+    AppLogger.error('Firebase initialization failed', e);
+  }
 
-    AppLogger.info('Using Firebase-only data storage');
+  AppLogger.info('Using Firebase-only data storage');
 
-    // Web engine hazır senkronizasyonu için kısa bekleme
-    await Future<void>.delayed(const Duration(milliseconds: 120));
+  // Web engine hazır senkronizasyonu için kısa bekleme
+  await Future<void>.delayed(const Duration(milliseconds: 120));
 
     // Uygulamayı başlat
     runApp(

@@ -2236,7 +2236,7 @@ class _LandingPageState extends State<LandingPage>
   }
 
   Future<void> _launchWindowsApp() async {
-    const url = 'https://tamgaci.web.app/download/tamgaci-setup-latest.exe';
+    const url = 'https://www.tamgaci.online/download/tamgaci-setup-latest.exe';
 
     if (kIsWeb) {
       // Web'de otomatik indirme için HTML5 download attribute kullan
