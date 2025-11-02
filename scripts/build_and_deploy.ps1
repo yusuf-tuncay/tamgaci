@@ -41,6 +41,7 @@ if (Test-Path $sourceDir) {
         "og-image-1200x630.png",
         "twitter-card-1200x675.png",
         "twitter-card-120x120.png",
+        "whatsapp-1200x1200.png",
         "google-favicon-512x512.png",
         "favicon_48x48.png",
         "192x192logo.png",
