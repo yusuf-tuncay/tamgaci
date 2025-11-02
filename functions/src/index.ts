@@ -8,6 +8,7 @@ import { createPayTRPayment } from './paytr-payment';
 import { syncSubscriptionStatus } from './sync-subscription';
 import { createUserTrial, checkTrialStatus } from './trial-management';
 import { sendContactEmail } from './send-contact-email';
+import { sendFeedbackEmail } from './send-feedback-email';
 
 const corsHandler = cors({ origin: true });
 
@@ -331,4 +332,4 @@ export const paytrCallback = onRequest((request, response) => {
 });
 
 // Export all Cloud Functions
-export { createPayTRPayment, syncSubscriptionStatus, createUserTrial, checkTrialStatus, sendContactEmail };
+export { createPayTRPayment, syncSubscriptionStatus, createUserTrial, checkTrialStatus, sendContactEmail, sendFeedbackEmail };
