@@ -7,8 +7,7 @@ import * as crypto from 'crypto';
 import { createPayTRPayment } from './paytr-payment';
 import { syncSubscriptionStatus } from './sync-subscription';
 import { createUserTrial, checkTrialStatus } from './trial-management';
-import { sendContactEmail } from './send-contact-email';
-import { sendFeedbackEmail } from './send-feedback-email';
+import { sendAIPingEmails } from './send-ai-ping-emails';
 
 const corsHandler = cors({ origin: true });
 
@@ -331,5 +330,5 @@ export const paytrCallback = onRequest((request, response) => {
     });
 });
 
-// Export all Cloud Functions
-export { createPayTRPayment, syncSubscriptionStatus, createUserTrial, checkTrialStatus, sendContactEmail, sendFeedbackEmail };
+// Export new Cloud Functions
+export { createPayTRPayment, syncSubscriptionStatus, createUserTrial, checkTrialStatus, sendAIPingEmails };
