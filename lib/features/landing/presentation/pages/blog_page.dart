@@ -17,6 +17,7 @@ class _BlogPageState extends State<BlogPage> {
   late final TextEditingController _searchController;
   String _searchQuery = '';
   String _selectedCategory = 'Tümü';
+  int _displayedCount = 12; // Başlangıçta gösterilecek kart sayısı
 
   @override
   void initState() {
@@ -36,8 +37,21 @@ class _BlogPageState extends State<BlogPage> {
 
   void _onSearchChanged() {
     if (!mounted) return;
+    final newQuery = _searchController.text;
     setState(() {
-      _searchQuery = _searchController.text;
+      _searchQuery = newQuery;
+      // Arama temizlendiğinde pagination'ı sıfırla
+      if (newQuery.isEmpty) {
+        _displayedCount = 12; // Arama yoksa pagination'a dön
+      }
+      // Arama yapıldığında _getDisplayedPosts() otomatik olarak tüm sonuçları döndürecek
+    });
+  }
+
+  void _loadMorePosts() {
+    if (!mounted) return;
+    setState(() {
+      _displayedCount += 12;
     });
   }
 
@@ -86,6 +100,23 @@ class _BlogPageState extends State<BlogPage> {
 
       return true;
     }).toList();
+  }
+
+  /// Gösterilecek blog kartlarını döndürür (pagination ile)
+  List<Map<String, dynamic>> _getDisplayedPosts() {
+    final filteredPosts = _getFilteredPosts();
+    
+    // Arama yapıldığında tüm sonuçları göster
+    if (_searchQuery.isNotEmpty) {
+      return filteredPosts;
+    }
+    
+    // Arama yoksa pagination uygula
+    if (_displayedCount >= filteredPosts.length) {
+      return filteredPosts;
+    }
+    
+    return filteredPosts.sublist(0, _displayedCount);
   }
 
   @override
@@ -230,10 +261,13 @@ class _BlogPageState extends State<BlogPage> {
 
                           return Padding(
                             padding: const EdgeInsets.only(right: 12),
-                            child: GestureDetector(
+                              child: GestureDetector(
                               onTap: () {
+                                if (!mounted) return;
                                 setState(() {
                                   _selectedCategory = category;
+                                  // Kategori değiştiğinde pagination'ı sıfırla
+                                  _displayedCount = 12;
                                 });
                               },
                               child: AnimatedContainer(
@@ -332,9 +366,48 @@ class _BlogPageState extends State<BlogPage> {
                           ),
                         )
                       : (MediaQuery.of(context).size.width > 768
-                          ? _buildBlogPostsGrid(context, _getFilteredPosts())
+                          ? _buildBlogPostsGrid(context, _getDisplayedPosts())
                           : _buildBlogPostsList(
-                              context, _getFilteredPosts())),
+                              context, _getDisplayedPosts())),
+
+                  // Daha Fazla Yükle Butonu (sadece arama yapılmadığında ve daha fazla kart varsa)
+                  if (_getFilteredPosts().isNotEmpty &&
+                      _searchQuery.isEmpty &&
+                      _getDisplayedPosts().length < _getFilteredPosts().length)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 40),
+                        child: ElevatedButton(
+                          onPressed: _loadMorePosts,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3B82F6),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 40,
+                              vertical: 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Daha Fazla Yükle',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_downward, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
 
                   const SizedBox(height: 60),
 
