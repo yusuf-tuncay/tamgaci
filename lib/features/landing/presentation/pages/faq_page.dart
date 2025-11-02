@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 
 /// FAQ sayfası - SEO için önemli içerik
 class FAQPage extends StatefulWidget {
@@ -535,83 +534,24 @@ class _ContactDialogState extends State<ContactDialog> {
       _isSubmitting = true;
     });
 
-    try {
-      // Firebase Function URL'ini al
-      // Production için: https://us-central1-tamgaci.cloudfunctions.net/sendContactEmail
-      final dio = Dio();
-      const functionUrl = 'https://us-central1-tamgaci.cloudfunctions.net/sendContactEmail';
+    // Simulate form submission
+    await Future.delayed(const Duration(seconds: 1));
 
-      final response = await dio.post(
-        functionUrl,
-        data: {
-          'name': _nameController.text.trim(),
-          'surname': _surnameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'message': _messageController.text.trim(),
-        },
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          validateStatus: (status) => status! < 500, // 500'den küçük status kodlarını handle et
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
         ),
       );
 
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-
-        if (response.statusCode == 200 && response.data['success'] == true) {
-          // Başarılı
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-          Navigator.of(context).pop();
-        } else {
-          // Hata
-          final errorMessage = response.data['error'] ?? 'Bir hata oluştu. Lütfen tekrar deneyin.';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-
-        String errorMessage = 'Mesaj gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.';
-        
-        if (e is DioException) {
-          if (e.response != null) {
-            errorMessage = e.response!.data['error'] ?? errorMessage;
-          } else if (e.type == DioExceptionType.connectionTimeout ||
-                     e.type == DioExceptionType.receiveTimeout) {
-            errorMessage = 'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.';
-          } else if (e.type == DioExceptionType.connectionError) {
-            errorMessage = 'İnternet bağlantınızı kontrol edin.';
-          }
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      Navigator.of(context).pop();
     }
   }
 

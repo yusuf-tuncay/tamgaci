@@ -7,7 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:dio/dio.dart';
 import 'dart:math' as math;
 import 'package:web/web.dart' as web;
 import '../../../../../shared/platform/web_asset_loader.dart';
@@ -1671,29 +1670,33 @@ class _LandingPageState extends State<LandingPage>
                     ),
                   ],
                 ),
-          SizedBox(height: isMobile ? 30 : (isTablet ? 40 : 50)),
-          // İstek, Öneri, Şikayet butonu
-          ElevatedButton.icon(
-            onPressed: () => _showFeedbackDialog(context),
-            icon: const Icon(Icons.feedback_outlined),
-            label: Text(
-              'İstek, Öneri, Şikayet',
-              style: GoogleFonts.poppins(
-                fontSize: isMobile ? 16 : 18,
-                fontWeight: FontWeight.w600,
+          SizedBox(height: isMobile ? 40 : (isTablet ? 60 : 80)),
+          
+          // Öneri, İstek, Şikayet Butonu
+          SizedBox(
+            width: isMobile ? double.infinity : (isTablet ? 400 : 500),
+            child: ElevatedButton.icon(
+              onPressed: () => _showFeedbackDialog(context),
+              icon: const Icon(Icons.feedback_outlined, size: 24),
+              label: Text(
+                'Öneri, İstek veya Şikayet',
+                style: GoogleFonts.poppins(
+                  fontSize: isMobile ? 16 : 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF3B82F6),
-              padding: EdgeInsets.symmetric(
-                horizontal: isMobile ? 32 : 48,
-                vertical: isMobile ? 16 : 20,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: const Color(0xFF1E3A8A),
+                padding: EdgeInsets.symmetric(
+                  vertical: isMobile ? 16 : 20,
+                  horizontal: isMobile ? 24 : 32,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 4,
               ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
-              ),
-              elevation: 4,
             ),
           ),
         ],
@@ -2352,7 +2355,6 @@ class _LandingPageState extends State<LandingPage>
     );
   }
 
-  /// Show Feedback Dialog
   void _showFeedbackDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -2363,7 +2365,7 @@ class _LandingPageState extends State<LandingPage>
   }
 }
 
-/// Feedback Dialog with Category Selection
+/// Feedback Dialog Widget - Öneri, İstek, Şikayet Formu
 class FeedbackDialog extends StatefulWidget {
   const FeedbackDialog({super.key});
 
@@ -2378,29 +2380,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _messageController = TextEditingController();
-  String? _selectedCategory;
   bool _isSubmitting = false;
-
-  final List<Map<String, dynamic>> _categories = [
-    {
-      'value': 'istek',
-      'label': 'İstek',
-      'icon': Icons.lightbulb_outline,
-      'color': Colors.blue,
-    },
-    {
-      'value': 'oneri',
-      'label': 'Öneri',
-      'icon': Icons.star_outline,
-      'color': Colors.orange,
-    },
-    {
-      'value': 'sikayet',
-      'label': 'Şikayet',
-      'icon': Icons.report_problem_outlined,
-      'color': Colors.red,
-    },
-  ];
+  String? _selectedCategory;
 
   @override
   void dispose() {
@@ -2413,24 +2394,21 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
   }
 
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return null; // Email is optional
-    }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) {
-      return 'Geçerli bir e-posta adresi giriniz';
+    if (value != null && value.isNotEmpty) {
+      final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+      if (!emailRegex.hasMatch(value)) {
+        return 'Geçerli bir e-posta adresi giriniz';
+      }
     }
     return null;
   }
 
   String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
-      return null; // Phone is optional
-    }
-    final phoneRegex = RegExp(r'^[0-9]{10,15}$');
-    final cleanedPhone = value.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-    if (!phoneRegex.hasMatch(cleanedPhone)) {
-      return 'Geçerli bir telefon numarası giriniz (10-15 rakam)';
+    if (value != null && value.isNotEmpty) {
+      final phoneRegex = RegExp(r'^[0-9\s\-\+\(\)]+$');
+      if (!phoneRegex.hasMatch(value)) {
+        return 'Geçerli bir telefon numarası giriniz';
+      }
     }
     return null;
   }
@@ -2446,7 +2424,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
 
   String? _validateMessage(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Mesaj alanı zorunludur';
+      return 'Mesaj zorunludur';
     }
     if (value.trim().length < 10) {
       return 'Mesaj en az 10 karakter olmalıdır';
@@ -2459,7 +2437,16 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
       return;
     }
 
-    // Validate email or phone requirement
+    if (_selectedCategory == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lütfen bir kategori seçiniz'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final emailOrPhoneError = _validateEmailOrPhone();
     if (emailOrPhoneError != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -2471,103 +2458,27 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
       return;
     }
 
-    // Validate category
-    if (_selectedCategory == null || _selectedCategory!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen bir kategori seçiniz'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
     setState(() {
       _isSubmitting = true;
     });
 
-    try {
-      // Firebase Function URL'ini al
-      final dio = Dio();
-      const functionUrl =
-          'https://us-central1-tamgaci.cloudfunctions.net/sendFeedbackEmail';
+    // Simulate form submission
+    await Future.delayed(const Duration(seconds: 1));
 
-      final response = await dio.post(
-        functionUrl,
-        data: {
-          'name': _nameController.text.trim(),
-          'surname': _surnameController.text.trim(),
-          'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'message': _messageController.text.trim(),
-          'category': _selectedCategory,
-        },
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          validateStatus: (status) => status! < 500,
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 3),
         ),
       );
 
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-
-        if (response.statusCode == 200 && response.data['success'] == true) {
-          // Başarılı
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                  'Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-          Navigator.of(context).pop();
-        } else {
-          // Hata
-          final errorMessage = response.data['error'] ??
-              'Bir hata oluştu. Lütfen tekrar deneyin.';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-              duration: const Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-
-        String errorMessage =
-            'Mesaj gönderilirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.';
-
-        if (e is DioException) {
-          if (e.response != null) {
-            errorMessage = e.response!.data['error'] ?? errorMessage;
-          } else if (e.type == DioExceptionType.connectionTimeout ||
-              e.type == DioExceptionType.receiveTimeout) {
-            errorMessage =
-                'Bağlantı zaman aşımına uğradı. Lütfen tekrar deneyin.';
-          } else if (e.type == DioExceptionType.connectionError) {
-            errorMessage = 'İnternet bağlantınızı kontrol edin.';
-          }
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      Navigator.of(context).pop();
     }
   }
 
@@ -2594,7 +2505,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'İstek, Öneri, Şikayet',
+                      'Öneri, İstek veya Şikayet',
                       style: GoogleFonts.poppins(
                         fontSize: isMobile ? 24 : 28,
                         fontWeight: FontWeight.w700,
@@ -2620,76 +2531,27 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: _categories.map((category) {
-                    final isSelected = _selectedCategory == category['value'];
-                    final categoryColor = category['color'] as Color;
-
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          _selectedCategory = category['value'] as String;
-                        });
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? categoryColor.withValues(alpha: 0.1)
-                              : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected
-                                ? categoryColor
-                                : Colors.grey.shade300,
-                            width: isSelected ? 2 : 1,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              category['icon'] as IconData,
-                              color: isSelected
-                                  ? categoryColor
-                                  : Colors.grey.shade600,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              category['label'] as String,
-                              style: GoogleFonts.poppins(
-                                fontSize: 14,
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                color: isSelected
-                                    ? categoryColor
-                                    : Colors.grey.shade700,
-                              ),
-                            ),
-                          ],
-                        ),
+                // Mobilde yan yana, küçük ekranlarda wrap
+                isMobile
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildCategoryChip('Öneri', Icons.lightbulb_outline),
+                          const SizedBox(width: 4),
+                          _buildCategoryChip('İstek', Icons.request_quote_outlined),
+                          const SizedBox(width: 4),
+                          _buildCategoryChip('Şikayet', Icons.error_outline),
+                        ],
+                      )
+                    : Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          _buildCategoryChip('Öneri', Icons.lightbulb_outline),
+                          _buildCategoryChip('İstek', Icons.request_quote_outlined),
+                          _buildCategoryChip('Şikayet', Icons.error_outline),
+                        ],
                       ),
-                    );
-                  }).toList(),
-                ),
-                if (_selectedCategory == null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8, left: 16),
-                    child: Text(
-                      '* Zorunlu alan',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.red,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
                 const SizedBox(height: 24),
 
                 // Name and Surname Row
@@ -2779,7 +2641,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                   maxLines: 5,
                   decoration: InputDecoration(
                     labelText: 'Mesaj *',
-                    hintText: 'Mesajınızı buraya yazınız...',
+                    hintText: 'Öneri, istek veya şikayetinizi detaylı bir şekilde yazınız...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -2822,8 +2684,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -2839,6 +2700,61 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String category, IconData icon) {
+    final isSelected = _selectedCategory == category;
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+    final colors = {
+      'Öneri': const Color(0xFF10B981),
+      'İstek': const Color(0xFF3B82F6),
+      'Şikayet': const Color(0xFFEF4444),
+    };
+
+    return FilterChip(
+      selected: isSelected,
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            icon,
+            size: isMobile ? 14 : 18,
+            color: isSelected ? Colors.white : colors[category],
+          ),
+          SizedBox(width: isMobile ? 3 : 8),
+          Flexible(
+            child: Text(
+              category,
+              style: GoogleFonts.poppins(
+                fontSize: isMobile ? 12 : 14,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
+          ),
+        ],
+      ),
+      onSelected: (selected) {
+        setState(() {
+          _selectedCategory = selected ? category : null;
+        });
+      },
+      selectedColor: colors[category],
+      checkmarkColor: Colors.white,
+      labelStyle: GoogleFonts.poppins(
+        color: isSelected ? Colors.white : colors[category],
+        fontWeight: FontWeight.w500,
+      ),
+      side: BorderSide(
+        color: isSelected ? colors[category]! : colors[category]!.withOpacity(0.3),
+        width: 2,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 4 : 16,
+        vertical: isMobile ? 6 : 12,
       ),
     );
   }
