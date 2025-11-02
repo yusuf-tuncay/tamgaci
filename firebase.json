@@ -9,7 +9,7 @@
     ],
     "rewrites": [
       {
-        "source": "!/{robots.txt,sitemap.xml,ai.txt,favicon.ico,manifest.json}",
+        "source": "!/{robots.txt,sitemap.xml,ai.txt,ai-sitemap.xml,openapi.yaml,favicon.ico,manifest.json}",
         "destination": "/index.html"
       },
       {
@@ -128,6 +128,40 @@
           {
             "key": "Content-Type",
             "value": "text/plain; charset=utf-8"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      {
+        "source": "ai-sitemap.xml",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/xml; charset=utf-8"
+          },
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600"
+          },
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      {
+        "source": "openapi.yaml",
+        "headers": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-yaml; charset=utf-8"
           },
           {
             "key": "Cache-Control",

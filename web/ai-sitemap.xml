@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:ai="https://www.tamgaci.online/ai-sitemap">
+  
+  <!-- AI Information File -->
+  <url>
+    <loc>https://www.tamgaci.online/ai.txt</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <ai:content_type>text/plain</ai:content_type>
+    <ai:description>Comprehensive product information for AI agents about Tamgacı accounting software</ai:description>
+  </url>
+
+  <!-- Main Landing Page -->
+  <url>
+    <loc>https://www.tamgaci.online/</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <ai:content_type>text/html</ai:content_type>
+    <ai:description>Tamgacı landing page with product overview, features, and pricing information</ai:description>
+  </url>
+
+  <!-- FAQ Page -->
+  <url>
+    <loc>https://www.tamgaci.online/faq</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <ai:content_type>text/html</ai:content_type>
+    <ai:description>Frequently Asked Questions about Tamgacı accounting software, features, pricing, and support</ai:description>
+  </url>
+
+  <!-- Blog Page -->
+  <url>
+    <loc>https://www.tamgaci.online/blog</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+    <ai:content_type>text/html</ai:content_type>
+    <ai:description>Tamgacı blog with articles about accounting, business tips, software updates, and best practices</ai:description>
+  </url>
+
+  <!-- Contact Information (Embedded in landing page) -->
+  <url>
+    <loc>https://www.tamgaci.online/#contact</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <ai:content_type>text/html</ai:content_type>
+    <ai:description>Contact information section with support email, phone, and contact form</ai:description>
+    <ai:contact_email>info@seekitapps.com</ai:contact_email>
+    <ai:contact_phone>+90-212-976-49-39</ai:contact_phone>
+  </url>
+
+  <!-- Pricing Information (Available after login, but general info on landing page) -->
+  <url>
+    <loc>https://www.tamgaci.online/#pricing</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <ai:content_type>text/html</ai:content_type>
+    <ai:description>Pricing information: Monthly (119 TL), Semi-annual (599 TL), Annual (949 TL) - Launch pricing valid until Dec 31, 2025</ai:description>
+    <ai:pricing>
+      <ai:plan name="Monthly" price="119" currency="TRY" period="month" />
+      <ai:plan name="Semi-Annual" price="599" currency="TRY" period="6 months" />
+      <ai:plan name="Annual" price="949" currency="TRY" period="year" />
+    </ai:pricing>
+    <ai:trial_days>30</ai:trial_days>
+  </url>
+
+  <!-- Documentation Reference (For AI agents - actual docs require login) -->
+  <url>
+    <loc>https://www.tamgaci.online/blog</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <ai:content_type>text/html</ai:content_type>
+    <ai:description>Documentation and tutorials available in blog section and FAQ page</ai:description>
+  </url>
+
+  <!-- API Documentation (For enterprise customers) -->
+  <url>
+    <loc>https://www.tamgaci.online/openapi.yaml</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <ai:content_type>application/x-yaml</ai:content_type>
+    <ai:description>OpenAPI specification for Tamgacı API integration (requires authentication)</ai:description>
+  </url>
+
+  <!-- About Section (Embedded in landing page) -->
+  <url>
+    <loc>https://www.tamgaci.online/#about</loc>
+    <lastmod>2025-01-27</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <ai:content_type>text/html</ai:content_type>
+    <ai:description>About Tamgacı section with company information, mission, and product overview</ai:description>
+  </url>
+
+</urlset>
+

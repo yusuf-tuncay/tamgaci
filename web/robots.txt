@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
 
+# Sitemaps
 Sitemap: https://www.tamgaci.online/sitemap.xml
+Sitemap: https://www.tamgaci.online/ai-sitemap.xml
 
+# AI Information
+# AI agents can access: https://www.tamgaci.online/ai.txt
 

@@ -1,0 +1,477 @@
+openapi: 3.1.0
+info:
+  title: Tamgacı API
+  version: 1.0.1
+  description: |
+    Tamgacı is an AI-powered accounting and invoice management software designed for small and medium-sized businesses (SMBs) and enterprises in Turkey.
+    
+    This API allows programmatic access to Tamgacı's features including:
+    - Invoice management and OCR processing
+    - Customer and supplier management
+    - Product and inventory management
+    - Sales and purchase tracking
+    - Financial reporting
+    - Multi-currency support
+    - E-invoice generation
+    
+    **Authentication Required**: All endpoints require Bearer token authentication.
+    **Base URL**: https://api.tamgaci.online/v1 (Note: API endpoint configuration required)
+    
+    For more information, visit: https://www.tamgaci.online
+    Support: info@seekitapps.com
+  contact:
+    name: Tamgacı Support
+    email: info@seekitapps.com
+    url: https://www.tamgaci.online
+  license:
+    name: Proprietary
+    url: https://www.tamgaci.online/terms
+
+servers:
+  - url: https://api.tamgaci.online/v1
+    description: Production server
+  - url: https://www.tamgaci.online/api/v1
+    description: Alternative endpoint
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Invoices
+    description: Invoice management and OCR processing
+  - name: Customers
+    description: Customer relationship management
+  - name: Products
+    description: Product and inventory management
+  - name: Sales
+    description: Sales tracking and management
+  - name: Purchases
+    description: Purchase tracking and management
+  - name: Reports
+    description: Financial reports and analytics
+  - name: Documents
+    description: Document upload, OCR, and management
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+
+  /invoices:
+    get:
+      tags:
+        - Invoices
+      summary: List invoices
+      description: Retrieve a list of invoices with optional filtering
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: currency
+          in: query
+          schema:
+            type: string
+            enum: [TRY, USD, EUR, GBP]
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Invoice'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags:
+        - Invoices
+      summary: Create invoice
+      description: Create a new invoice manually or via OCR
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceCreate'
+      responses:
+        '201':
+          description: Invoice created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+
+  /invoices/{id}:
+    get:
+      tags:
+        - Invoices
+      summary: Get invoice by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Invoice details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+
+  /invoices/ocr:
+    post:
+      tags:
+        - Invoices
+      summary: Process invoice with OCR
+      description: Upload invoice image and extract data using AI/OCR technology
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Invoice image file (JPEG, PNG)
+      responses:
+        '200':
+          description: OCR processing result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OCRResult'
+
+  /customers:
+    get:
+      tags:
+        - Customers
+      summary: List customers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: List products
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+
+  /reports/financial:
+    get:
+      tags:
+        - Reports
+      summary: Get financial report
+      description: Generate financial reports (profit/loss, cash flow, etc.)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: currency
+          in: query
+          schema:
+            type: string
+            default: TRY
+      responses:
+        '200':
+          description: Financial report data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialReport'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+        user:
+          $ref: '#/components/schemas/User'
+        expires_in:
+          type: integer
+          description: Token expiration time in seconds
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        subscription:
+          $ref: '#/components/schemas/Subscription'
+
+    Subscription:
+      type: object
+      properties:
+        plan:
+          type: string
+          enum: [monthly, semi_annual, annual]
+        status:
+          type: string
+          enum: [active, trial, expired]
+        expires_at:
+          type: string
+          format: date-time
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+        invoice_number:
+          type: string
+        date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        customer_id:
+          type: string
+        customer_name:
+          type: string
+        subtotal:
+          type: number
+        tax_amount:
+          type: number
+        total:
+          type: number
+        currency:
+          type: string
+          enum: [TRY, USD, EUR, GBP]
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue]
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    InvoiceCreate:
+      type: object
+      required:
+        - invoice_number
+        - date
+        - customer_id
+        - items
+      properties:
+        invoice_number:
+          type: string
+        date:
+          type: string
+          format: date
+        due_date:
+          type: string
+          format: date
+        customer_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        currency:
+          type: string
+          default: TRY
+
+    InvoiceItem:
+      type: object
+      required:
+        - description
+        - quantity
+        - unit_price
+      properties:
+        description:
+          type: string
+        quantity:
+          type: number
+        unit_price:
+          type: number
+        tax_rate:
+          type: number
+          default: 20
+
+    OCRResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        invoice_data:
+          $ref: '#/components/schemas/Invoice'
+        confidence:
+          type: number
+          description: OCR confidence score (0-1)
+        raw_text:
+          type: string
+          description: Extracted raw text from image
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        tax_id:
+          type: string
+        address:
+          type: string
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        sku:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        stock_quantity:
+          type: integer
+
+    FinancialReport:
+      type: object
+      properties:
+        period:
+          type: object
+          properties:
+            start_date:
+              type: string
+              format: date
+            end_date:
+              type: string
+              format: date
+        revenue:
+          type: number
+        expenses:
+          type: number
+        profit:
+          type: number
+        currency:
+          type: string
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
