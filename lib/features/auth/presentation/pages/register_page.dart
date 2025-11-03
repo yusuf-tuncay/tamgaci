@@ -2916,12 +2916,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   /// Price box builder
   Widget _buildPriceBox(String price, String period, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
-        border:
-            Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1),
+        color: Colors.black.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 1.0),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -2929,16 +2938,34 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           Text(
             price,
             style: GoogleFonts.poppins(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
               color: Colors.white,
+              letterSpacing: 0.5,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  offset: const Offset(1, 1),
+                  blurRadius: 3,
+                ),
+              ],
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             period,
             style: GoogleFonts.poppins(
-              fontSize: 8,
-              color: Colors.white.withValues(alpha: 0.8),
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              letterSpacing: 0.3,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  offset: const Offset(1, 1),
+                  blurRadius: 2,
+                ),
+              ],
             ),
           ),
         ],

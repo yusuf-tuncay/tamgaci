@@ -10,6 +10,7 @@ import '../../features/landing/presentation/pages/landing_page.dart';
 import '../../features/landing/presentation/pages/blog_page.dart';
 import '../../features/landing/presentation/pages/blog_detail_page.dart';
 import '../../features/landing/presentation/pages/faq_page.dart';
+import '../../features/landing/presentation/pages/pricing_page.dart';
 
 // ========== SHARED PAGES ==========
 import '../../shared/pages/not_found_page.dart';
@@ -77,6 +78,13 @@ class AppRouter {
         builder: (context, state) => const FAQPage(),
       ),
 
+      // Pricing (Ücretler ve Kampanyalar)
+      GoRoute(
+        path: '/pricing',
+        name: 'pricing',
+        builder: (context, state) => const PricingPage(),
+      ),
+
       // ========== FEATURE ROUTES ==========
       ...AuthRoutes.routes,
       ...DashboardRoutes.routes,
@@ -123,6 +131,7 @@ class AppRouter {
         '/register',
         '/forgot-password',
         '/faq',
+        '/pricing',
       ].contains(currentPath) || isOnBlogPage;
 
       debugPrint(

@@ -1671,7 +1671,7 @@ class _LandingPageState extends State<LandingPage>
                   ],
                 ),
           SizedBox(height: isMobile ? 40 : (isTablet ? 60 : 80)),
-          
+
           // Öneri, İstek, Şikayet Butonu
           SizedBox(
             width: isMobile ? double.infinity : (isTablet ? 400 : 500),
@@ -2148,6 +2148,11 @@ class _LandingPageState extends State<LandingPage>
           isDesktop,
         ),
         _buildBannerLink(
+          'Ücretler',
+          () => context.go('/pricing'),
+          isDesktop,
+        ),
+        _buildBannerLink(
           'SSS',
           () => context.go('/faq'),
           isDesktop,
@@ -2472,7 +2477,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
+          content: Text(
+              'Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 3),
         ),
@@ -2538,7 +2544,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                         children: [
                           _buildCategoryChip('Öneri', Icons.lightbulb_outline),
                           const SizedBox(width: 4),
-                          _buildCategoryChip('İstek', Icons.request_quote_outlined),
+                          _buildCategoryChip(
+                              'İstek', Icons.request_quote_outlined),
                           const SizedBox(width: 4),
                           _buildCategoryChip('Şikayet', Icons.error_outline),
                         ],
@@ -2548,7 +2555,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                         runSpacing: 12,
                         children: [
                           _buildCategoryChip('Öneri', Icons.lightbulb_outline),
-                          _buildCategoryChip('İstek', Icons.request_quote_outlined),
+                          _buildCategoryChip(
+                              'İstek', Icons.request_quote_outlined),
                           _buildCategoryChip('Şikayet', Icons.error_outline),
                         ],
                       ),
@@ -2641,7 +2649,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                   maxLines: 5,
                   decoration: InputDecoration(
                     labelText: 'Mesaj *',
-                    hintText: 'Öneri, istek veya şikayetinizi detaylı bir şekilde yazınız...',
+                    hintText:
+                        'Öneri, istek veya şikayetinizi detaylı bir şekilde yazınız...',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -2684,7 +2693,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
                         : Text(
@@ -2749,7 +2759,9 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
         fontWeight: FontWeight.w500,
       ),
       side: BorderSide(
-        color: isSelected ? colors[category]! : colors[category]!.withOpacity(0.3),
+        color: isSelected
+            ? colors[category]!
+            : colors[category]!.withValues(alpha: 0.3),
         width: 2,
       ),
       padding: EdgeInsets.symmetric(
