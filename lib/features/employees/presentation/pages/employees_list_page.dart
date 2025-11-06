@@ -157,6 +157,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         final entitlementType = entitlement['type'] as String?;
         if (entitlementType == null) continue;
 
+        // Saatlik maaş için otomatik hak ediş oluşturma (çalışılan saat bilinmediği için)
+        if (entitlementType == 'Saatlik') continue;
+
         // Start date'i DateTime'a çevir
         DateTime? startDateTime;
         if (startDate is Timestamp) {
@@ -273,9 +276,29 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
             paymentDate: paymentDate,
           );
 
+          // Aylık (İki Kere) için ödeme gününe göre tutarı belirle
+          double transactionAmount = salaryAmount;
+          if (entitlementType == 'Aylık (İki Kere)') {
+            final amounts =
+                entitlement['semiMonthlyAmounts'] as Map<String, dynamic>?;
+            if (amounts != null) {
+              final paymentDay = paymentDate.day.toString();
+              final dayAmount = amounts[paymentDay];
+              if (dayAmount != null) {
+                transactionAmount = (dayAmount as num).toDouble();
+              } else {
+                // Geriye dönük uyumluluk: yarıya böl
+                transactionAmount = salaryAmount / 2;
+              }
+            } else {
+              // Geriye dönük uyumluluk: yarıya böl
+              transactionAmount = salaryAmount / 2;
+            }
+          }
+
           await transactionsCol.add({
             'employeeId': employeeId,
-            'amount': salaryAmount,
+            'amount': transactionAmount,
             'direction': 'in',
             'note': transactionNote,
             'date': Timestamp.fromDate(paymentDate),
@@ -3069,20 +3092,34 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
     switch (entitlementType) {
       case 'Aylık':
-        // Aylık maaş: Ayda 30 gün, günde 8 saat varsayımı
-        final monthlyDays = entitlement['monthlyDayOfMonth'] != null ? 30 : 30;
-        hourlyRate = salaryAmount / (monthlyDays * 8);
+      case 'Aylık (İki Kere)':
+        // Aylık maaş: Haftada kaç gün ve günde kaç saat bilgilerini kullan
+        final daysPerWeek = entitlement['daysPerWeek'] as int? ?? 5;
+        final hoursPerDay = entitlement['hoursPerDay'] as int? ?? 8;
+        // Ayda ortalama 4.33 hafta var (30 gün / 7 gün ≈ 4.33)
+        // Ayda toplam çalışma saati = 4.33 * haftada gün sayısı * günde saat sayısı
+        final weeklyHours = daysPerWeek * hoursPerDay;
+        final monthlyHours = weeklyHours * 4.33; // Ortalama hafta sayısı
+        hourlyRate = salaryAmount / monthlyHours;
         break;
       case 'Haftalık':
-        // Haftalık maaş: Haftada 5 gün, günde 8 saat
-        hourlyRate = salaryAmount / (5 * 8);
+        // Haftalık maaş: Haftada 5 gün, günde 8 saat (varsayılan)
+        // Eğer entitlement'da bilgi varsa kullan
+        final daysPerWeek = entitlement['daysPerWeek'] as int? ?? 5;
+        final hoursPerDay = entitlement['hoursPerDay'] as int? ?? 8;
+        hourlyRate = salaryAmount / (daysPerWeek * hoursPerDay);
         break;
       case 'Günlük':
-        // Günlük maaş: Günde 8 saat
-        hourlyRate = salaryAmount / 8;
+        // Günlük maaş: Günde kaç saat bilgisini kullan
+        final hoursPerDay = entitlement['hoursPerDay'] as int? ?? 8;
+        hourlyRate = salaryAmount / hoursPerDay;
+        break;
+      case 'Saatlik':
+        // Saatlik maaş: Zaten saatlik ücret
+        hourlyRate = salaryAmount;
         break;
       default:
-        // Varsayılan: Aylık hesaplama
+        // Varsayılan: Aylık hesaplama (eski yöntem - geriye dönük uyumluluk)
         hourlyRate = salaryAmount / (30 * 8);
     }
 
@@ -4504,6 +4541,11 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
   final TextEditingController _salaryAmountController = TextEditingController();
   final TextEditingController _customPeriodNoteController =
       TextEditingController();
+  // Aylık (İki Kere) için özel tutar alanları
+  final TextEditingController _semiMonthlyAmount1Controller =
+      TextEditingController();
+  final TextEditingController _semiMonthlyAmount2Controller =
+      TextEditingController();
 
   // Selections
   DateTime? _birthDate;
@@ -4516,9 +4558,14 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
   int? _monthlyDayOfMonth; // 1-31
   int? _semiMonthlyDay1;
   int? _semiMonthlyDay2;
+  double? _semiMonthlyAmount1; // 1. ödeme günü tutarı
+  double? _semiMonthlyAmount2; // 2. ödeme günü tutarı
   String? _weeklyWeekday; // Pazartesi, ...
   int _daysPerWeek = 5;
   final List<String> _weeklySelectedDays = [];
+  // Aylık ve Aylık (İki Kere) için çalışma bilgileri
+  int _monthlyDaysPerWeek = 5; // Haftada kaç gün
+  int _monthlyHoursPerDay = 8; // Günde kaç saat
 
   // Uploads
   Uint8List? _photoBytes;
@@ -4600,6 +4647,36 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         }
       });
     });
+  }
+
+  void _updateTotalSalary() {
+    if (_entitlementType == 'Aylık (İki Kere)') {
+      final amount1Text = _semiMonthlyAmount1Controller.text.trim();
+      final amount2Text = _semiMonthlyAmount2Controller.text.trim();
+
+      if (amount1Text.isEmpty && amount2Text.isEmpty) {
+        _salaryAmountController.clear();
+        return;
+      }
+
+      final amount1 = double.tryParse(
+              amount1Text.replaceAll('.', '').replaceAll(',', '.')) ??
+          0;
+      final amount2 = double.tryParse(
+              amount2Text.replaceAll('.', '').replaceAll(',', '.')) ??
+          0;
+      final total = amount1 + amount2;
+
+      if (total == 0) {
+        _salaryAmountController.clear();
+        return;
+      }
+
+      // Format: 1000.00 -> "1000,00" -> format edilmiş hali
+      final totalStr = total.toStringAsFixed(2).replaceAll('.', ',');
+      final formatted = _formatSalaryAmount(totalStr);
+      _salaryAmountController.text = formatted;
+    }
   }
 
   // Format salary amount in Turkish format (1.000,00)
@@ -4878,6 +4955,8 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     _positionController.dispose();
     _salaryAmountController.dispose();
     _customPeriodNoteController.dispose();
+    _semiMonthlyAmount1Controller.dispose();
+    _semiMonthlyAmount2Controller.dispose();
     _overtimeThresholdHoursController.dispose();
     _overtimeMultiplierController.dispose();
     _posSub?.cancel();
@@ -5512,6 +5591,25 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
             const SnackBar(content: Text('Günler farklı olmalı')));
         return;
       }
+      // Tutar kontrolü
+      final amount1 = double.tryParse(_semiMonthlyAmount1Controller.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+      final amount2 = double.tryParse(_semiMonthlyAmount2Controller.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+      if (amount1 <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('${_semiMonthlyDay1}. gün için tutar girin')));
+        return;
+      }
+      if (amount2 <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('${_semiMonthlyDay2}. gün için tutar girin')));
+        return;
+      }
     } else if (_entitlementType == 'Haftalık') {
       if (_weeklyWeekday == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -5608,14 +5706,53 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       };
       if (_entitlementType == 'Aylık') {
         entitlement['monthlyDayOfMonth'] = _monthlyDayOfMonth;
+        entitlement['daysPerWeek'] = _monthlyDaysPerWeek;
+        entitlement['hoursPerDay'] = _monthlyHoursPerDay;
       } else if (_entitlementType == 'Aylık (İki Kere)') {
         final days = [_semiMonthlyDay1, _semiMonthlyDay2]..sort();
         entitlement['semiMonthlyDays'] = days;
+        entitlement['daysPerWeek'] = _monthlyDaysPerWeek;
+        entitlement['hoursPerDay'] = _monthlyHoursPerDay;
+        // Her ödeme günü için tutarları kaydet
+        final amount1 = double.tryParse(_semiMonthlyAmount1Controller.text
+                .replaceAll('.', '')
+                .replaceAll(',', '.')) ??
+            0;
+        final amount2 = double.tryParse(_semiMonthlyAmount2Controller.text
+                .replaceAll('.', '')
+                .replaceAll(',', '.')) ??
+            0;
+        // Gün numaralarına göre tutarları eşleştir
+        entitlement['semiMonthlyAmounts'] = {
+          _semiMonthlyDay1.toString(): amount1,
+          _semiMonthlyDay2.toString(): amount2,
+        };
       } else if (_entitlementType == 'Haftalık') {
         entitlement['weeklyWeekday'] = _weeklyWeekday;
       } else if (_entitlementType == 'Günlük') {
         entitlement['daysPerWeek'] = _daysPerWeek;
         entitlement['weeklyDays'] = List<String>.from(_weeklySelectedDays);
+        // Günlük maaş için ortalama günlük çalışma saatini hesapla
+        // Eğer çalışma saatleri belirlenmişse, ortalama saat hesapla
+        int totalHours = 0;
+        int enabledDays = 0;
+        for (final d in _weekdays) {
+          if (_dayEnabled[d] == true) {
+            final start = _startTimes[d]!;
+            final end = _endTimes[d]!;
+            final startMinutes = start.hour * 60 + start.minute;
+            final endMinutes = end.hour * 60 + end.minute;
+            final dayHours = (endMinutes - startMinutes) / 60;
+            if (dayHours > 0) {
+              totalHours += dayHours.round();
+              enabledDays++;
+            }
+          }
+        }
+        // Ortalama günlük saat hesapla, yoksa varsayılan 8 saat
+        final avgHoursPerDay =
+            enabledDays > 0 ? (totalHours / enabledDays).round() : 8;
+        entitlement['hoursPerDay'] = avgHoursPerDay;
       }
 
       // Çalışma takvimi ve fazla mesai
@@ -5670,10 +5807,19 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
           'position': (_selectedPosition ?? _positionController.text.trim()),
           'category': _selectedCategory,
           'salary': {
-            'amount': double.tryParse(_salaryAmountController.text
-                    .replaceAll('.', '') // Remove thousand separators
-                    .replaceAll(',', '.')) ??
-                0,
+            'amount': _entitlementType == 'Aylık (İki Kere)'
+                ? (double.tryParse(_semiMonthlyAmount1Controller.text
+                            .replaceAll('.', '')
+                            .replaceAll(',', '.')) ??
+                        0) +
+                    (double.tryParse(_semiMonthlyAmount2Controller.text
+                            .replaceAll('.', '')
+                            .replaceAll(',', '.')) ??
+                        0)
+                : (double.tryParse(_salaryAmountController.text
+                        .replaceAll('.', '') // Remove thousand separators
+                        .replaceAll(',', '.')) ??
+                    0),
             'currency': _salaryCurrency,
           },
           'entitlement': entitlement,
@@ -5744,13 +5890,23 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
           'Kayıt güncelleme');
 
       // Calculate salary amount
-      final salaryAmount = double.tryParse(_salaryAmountController.text
-              .replaceAll('.', '') // Remove thousand separators
-              .replaceAll(',', '.')) ??
-          0;
+      final salaryAmount = _entitlementType == 'Aylık (İki Kere)'
+          ? (double.tryParse(_semiMonthlyAmount1Controller.text
+                      .replaceAll('.', '')
+                      .replaceAll(',', '.')) ??
+                  0) +
+              (double.tryParse(_semiMonthlyAmount2Controller.text
+                      .replaceAll('.', '')
+                      .replaceAll(',', '.')) ??
+                  0)
+          : (double.tryParse(_salaryAmountController.text
+                  .replaceAll('.', '') // Remove thousand separators
+                  .replaceAll(',', '.')) ??
+              0);
 
       // Auto-create entitlement transaction(s) based on payment period
-      if (salaryAmount > 0) {
+      // Saatlik maaş için otomatik hak ediş oluşturma (çalışılan saat bilinmediği için)
+      if (salaryAmount > 0 && _entitlementType != 'Saatlik') {
         try {
           final transactionsCol = (widget.tenantId != null &&
                   widget.tenantId!.isNotEmpty)
@@ -5778,10 +5934,33 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
               paymentDate: paymentDate,
             );
 
+            // Aylık (İki Kere) için ödeme gününe göre tutarı belirle
+            double transactionAmount = salaryAmount;
+            if (_entitlementType == 'Aylık (İki Kere)') {
+              final amount1 = double.tryParse(_semiMonthlyAmount1Controller.text
+                      .replaceAll('.', '')
+                      .replaceAll(',', '.')) ??
+                  0;
+              final amount2 = double.tryParse(_semiMonthlyAmount2Controller.text
+                      .replaceAll('.', '')
+                      .replaceAll(',', '.')) ??
+                  0;
+
+              // Ödeme gününe göre tutarı belirle
+              if (paymentDate.day == _semiMonthlyDay1) {
+                transactionAmount = amount1;
+              } else if (paymentDate.day == _semiMonthlyDay2) {
+                transactionAmount = amount2;
+              } else {
+                // Varsayılan: yarıya böl (güvenlik için)
+                transactionAmount = salaryAmount / 2;
+              }
+            }
+
             await withTimeout(
               transactionsCol.add({
                 'employeeId': employeeId,
-                'amount': salaryAmount,
+                'amount': transactionAmount,
                 'direction': 'in', // Alacak (personel için ödenecek)
                 'note': transactionNote,
                 'date': Timestamp.fromDate(paymentDate),
@@ -6248,32 +6427,41 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                     Expanded(
                       child: TextFormField(
                         controller: _salaryAmountController,
-                        decoration:
-                            const InputDecoration(labelText: 'Maaş Miktarı'),
+                        decoration: InputDecoration(
+                          labelText: _entitlementType == 'Aylık (İki Kere)'
+                              ? 'Toplam Maaş (Otomatik)'
+                              : 'Maaş Miktarı',
+                        ),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
+                        enabled: _entitlementType != 'Aylık (İki Kere)',
+                        readOnly: _entitlementType == 'Aylık (İki Kere)',
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(
                             RegExp(r'[\d,.]'),
                           ),
                         ],
                         onEditingComplete: () {
-                          final formatted =
-                              _formatSalaryAmount(_salaryAmountController.text);
-                          _salaryAmountController.value = TextEditingValue(
-                            text: formatted,
-                            selection: TextSelection.collapsed(
-                                offset: formatted.length),
-                          );
+                          if (_entitlementType != 'Aylık (İki Kere)') {
+                            final formatted = _formatSalaryAmount(
+                                _salaryAmountController.text);
+                            _salaryAmountController.value = TextEditingValue(
+                              text: formatted,
+                              selection: TextSelection.collapsed(
+                                  offset: formatted.length),
+                            );
+                          }
                         },
                         onTapOutside: (_) {
-                          final formatted =
-                              _formatSalaryAmount(_salaryAmountController.text);
-                          _salaryAmountController.value = TextEditingValue(
-                            text: formatted,
-                            selection: TextSelection.collapsed(
-                                offset: formatted.length),
-                          );
+                          if (_entitlementType != 'Aylık (İki Kere)') {
+                            final formatted = _formatSalaryAmount(
+                                _salaryAmountController.text);
+                            _salaryAmountController.value = TextEditingValue(
+                              text: formatted,
+                              selection: TextSelection.collapsed(
+                                  offset: formatted.length),
+                            );
+                          }
                         },
                       ),
                     ),
@@ -6313,12 +6501,20 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                       .toList(),
                   onChanged: _isSaving
                       ? null
-                      : (v) => setState(() => _entitlementType = v ?? 'Aylık'),
+                      : (v) {
+                          setState(() {
+                            _entitlementType = v ?? 'Aylık';
+                            // Maaş türü değiştiğinde toplam maaşı güncelle
+                            if (_entitlementType == 'Aylık (İki Kere)') {
+                              _updateTotalSalary();
+                            }
+                          });
+                        },
                 ),
 
                 const SizedBox(height: 8),
 
-                if (_entitlementType == 'Aylık')
+                if (_entitlementType == 'Aylık') ...[
                   DropdownButtonFormField<int>(
                     initialValue: _monthlyDayOfMonth,
                     decoration:
@@ -6331,8 +6527,45 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                         ? null
                         : (v) => setState(() => _monthlyDayOfMonth = v),
                   ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _monthlyDaysPerWeek,
+                          decoration: const InputDecoration(
+                              labelText: 'Haftada Kaç Gün Çalışır?'),
+                          items: List.generate(7, (i) => i + 1)
+                              .map((d) => DropdownMenuItem(
+                                  value: d, child: Text('$d gün')))
+                              .toList(),
+                          onChanged: _isSaving
+                              ? null
+                              : (v) =>
+                                  setState(() => _monthlyDaysPerWeek = v ?? 5),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _monthlyHoursPerDay,
+                          decoration: const InputDecoration(
+                              labelText: 'Günde Kaç Saat Çalışır?'),
+                          items: List.generate(12, (i) => i + 1)
+                              .map((h) => DropdownMenuItem(
+                                  value: h, child: Text('$h saat')))
+                              .toList(),
+                          onChanged: _isSaving
+                              ? null
+                              : (v) =>
+                                  setState(() => _monthlyHoursPerDay = v ?? 8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
 
-                if (_entitlementType == 'Aylık (İki Kere)')
+                if (_entitlementType == 'Aylık (İki Kere)') ...[
                   Row(
                     children: [
                       Expanded(
@@ -6346,7 +6579,12 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                               .toList(),
                           onChanged: _isSaving
                               ? null
-                              : (v) => setState(() => _semiMonthlyDay1 = v),
+                              : (v) {
+                                  setState(() {
+                                    _semiMonthlyDay1 = v;
+                                    // Gün değiştiğinde label'ı güncellemek için
+                                  });
+                                },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -6361,11 +6599,164 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                               .toList(),
                           onChanged: _isSaving
                               ? null
-                              : (v) => setState(() => _semiMonthlyDay2 = v),
+                              : (v) {
+                                  setState(() {
+                                    _semiMonthlyDay2 = v;
+                                    // Gün değiştiğinde label'ı güncellemek için
+                                  });
+                                },
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 12),
+                  // Her ödeme günü için tutar alanları
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _semiMonthlyAmount1Controller,
+                          decoration: InputDecoration(
+                            labelText:
+                                '${_semiMonthlyDay1 ?? 1}. Gün Tutarı ($_salaryCurrency)',
+                            border: const OutlineInputBorder(),
+                            hintText: 'Örn: 5000',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          enabled: !_isSaving && _semiMonthlyDay1 != null,
+                          onChanged: (value) {
+                            // Sadece toplam maaşı güncelle, formatlama yapma
+                            _updateTotalSalary();
+                          },
+                          onEditingComplete: () {
+                            // Focus kaybedildiğinde formatla
+                            final value = _semiMonthlyAmount1Controller.text;
+                            if (value.isNotEmpty) {
+                              final formatted = _formatSalaryAmount(value);
+                              if (formatted != value) {
+                                _semiMonthlyAmount1Controller.value =
+                                    TextEditingValue(
+                                  text: formatted,
+                                  selection: TextSelection.collapsed(
+                                      offset: formatted.length),
+                                );
+                              }
+                            }
+                            // Toplam maaşı güncelle
+                            _updateTotalSalary();
+                          },
+                          onTapOutside: (_) {
+                            // Focus kaybedildiğinde formatla
+                            final value = _semiMonthlyAmount1Controller.text;
+                            if (value.isNotEmpty) {
+                              final formatted = _formatSalaryAmount(value);
+                              if (formatted != value) {
+                                _semiMonthlyAmount1Controller.value =
+                                    TextEditingValue(
+                                  text: formatted,
+                                  selection: TextSelection.collapsed(
+                                      offset: formatted.length),
+                                );
+                              }
+                            }
+                            // Toplam maaşı güncelle
+                            _updateTotalSalary();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _semiMonthlyAmount2Controller,
+                          decoration: InputDecoration(
+                            labelText:
+                                '${_semiMonthlyDay2 ?? 2}. Gün Tutarı ($_salaryCurrency)',
+                            border: const OutlineInputBorder(),
+                            hintText: 'Örn: 5000',
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          enabled: !_isSaving && _semiMonthlyDay2 != null,
+                          onChanged: (value) {
+                            // Sadece toplam maaşı güncelle, formatlama yapma
+                            _updateTotalSalary();
+                          },
+                          onEditingComplete: () {
+                            // Focus kaybedildiğinde formatla
+                            final value = _semiMonthlyAmount2Controller.text;
+                            if (value.isNotEmpty) {
+                              final formatted = _formatSalaryAmount(value);
+                              if (formatted != value) {
+                                _semiMonthlyAmount2Controller.value =
+                                    TextEditingValue(
+                                  text: formatted,
+                                  selection: TextSelection.collapsed(
+                                      offset: formatted.length),
+                                );
+                              }
+                            }
+                            // Toplam maaşı güncelle
+                            _updateTotalSalary();
+                          },
+                          onTapOutside: (_) {
+                            // Focus kaybedildiğinde formatla
+                            final value = _semiMonthlyAmount2Controller.text;
+                            if (value.isNotEmpty) {
+                              final formatted = _formatSalaryAmount(value);
+                              if (formatted != value) {
+                                _semiMonthlyAmount2Controller.value =
+                                    TextEditingValue(
+                                  text: formatted,
+                                  selection: TextSelection.collapsed(
+                                      offset: formatted.length),
+                                );
+                              }
+                            }
+                            // Toplam maaşı güncelle
+                            _updateTotalSalary();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _monthlyDaysPerWeek,
+                          decoration: const InputDecoration(
+                              labelText: 'Haftada Kaç Gün Çalışır?'),
+                          items: List.generate(7, (i) => i + 1)
+                              .map((d) => DropdownMenuItem(
+                                  value: d, child: Text('$d gün')))
+                              .toList(),
+                          onChanged: _isSaving
+                              ? null
+                              : (v) =>
+                                  setState(() => _monthlyDaysPerWeek = v ?? 5),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<int>(
+                          initialValue: _monthlyHoursPerDay,
+                          decoration: const InputDecoration(
+                              labelText: 'Günde Kaç Saat Çalışır?'),
+                          items: List.generate(12, (i) => i + 1)
+                              .map((h) => DropdownMenuItem(
+                                  value: h, child: Text('$h saat')))
+                              .toList(),
+                          onChanged: _isSaving
+                              ? null
+                              : (v) =>
+                                  setState(() => _monthlyHoursPerDay = v ?? 8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
 
                 if (_entitlementType == 'Haftalık')
                   DropdownButtonFormField<String>(
