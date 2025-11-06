@@ -179,11 +179,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         }
 
         // Eğer createdAt yoksa, doc'un oluşturulma zamanını kullan (Firestore metadata)
-        if (createdAt == null) {
-          // Firestore'da createdAt yoksa, doc'un metadata'sından al
-          // Ancak bu her zaman mevcut olmayabilir, bu durumda şu anki zamanı kullan
-          createdAt = DateTime.now();
-        }
+        createdAt ??= DateTime.now();
 
         // Otomatik hak ediş başlangıç tarihi: personelin kaydedildiği tarih ile işe başlama tarihinden daha geç olan
         // Eğer personel gelecekte başlayacaksa (startDate > createdAt), startDate kullan
@@ -270,12 +266,16 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
       if (nextPayment == null) break;
 
-      // Sadece kayıt tarihinden sonraki ödeme tarihlerini ekle
+      // Sadece kayıt tarihinden sonraki ve bugüne kadar olan ödeme tarihlerini ekle
+      // Ödeme tarihi bugünden önce veya bugün olmalı (gelecekteki tarihler eklenmemeli)
       if (nextPayment.isAfter(lastPaymentDate) &&
           nextPayment.isAfter(startDateTime) &&
           (nextPayment.isBefore(now) || nextPayment.isAtSameMomentAs(now))) {
         missingDates.add(nextPayment);
         current = nextPayment;
+      } else if (nextPayment.isAfter(now)) {
+        // Gelecekteki tarih bulundu, döngüden çık
+        break;
       } else {
         break;
       }
@@ -373,10 +373,13 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         final monthlyDay = entitlement['monthlyDayOfMonth'] as int?;
         if (monthlyDay == null) return null;
 
+        // Geçersiz değerleri düzelt (1-31 arasında olmalı)
+        final validDay = monthlyDay >= 1 && monthlyDay <= 31 ? monthlyDay : 31;
+
         // Önce aynı ayın ödeme gününü kontrol et
         try {
           final sameMonthPayment =
-              DateTime(fromDate.year, fromDate.month, monthlyDay);
+              DateTime(fromDate.year, fromDate.month, validDay);
           if (sameMonthPayment.isAfter(fromDate)) {
             return sameMonthPayment;
           }
@@ -385,7 +388,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         }
 
         // Aynı ayın ödeme günü geçmişse, bir sonraki ayın ödeme gününe git
-        DateTime next = DateTime(fromDate.year, fromDate.month + 1, monthlyDay);
+        DateTime next = DateTime(fromDate.year, fromDate.month + 1, validDay);
         // Eğer ayın günü ayın sonundan büyükse, ayın sonunu kullan
         try {
           return next;
@@ -513,9 +516,12 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         final daysWorked = paymentDate.difference(startDate).inDays;
         if (daysWorked <= 0) return 0;
 
-        // Ayın toplam gün sayısını hesapla
-        final daysInMonth =
-            DateTime(paymentDate.year, paymentDate.month + 1, 0).day;
+        // Eğer başlangıç ve ödeme aynı aydaysa, o ayın gün sayısını kullan
+        // Eğer farklı aylardaysa, ödeme ayının gün sayısını kullan
+        final daysInMonth = (startDate.year == paymentDate.year &&
+                startDate.month == paymentDate.month)
+            ? DateTime(startDate.year, startDate.month + 1, 0).day
+            : DateTime(paymentDate.year, paymentDate.month + 1, 0).day;
 
         // Orantılı maaş: (Çalışılan gün / Ayın toplam günü) * Aylık Maaş
         return (daysWorked / daysInMonth) * salaryAmount;
@@ -1908,9 +1914,19 @@ class _EmployeeListState extends State<_EmployeeList> {
               opacity: isArchived ? 0.6 : 1.0,
               child: ListTile(
                 leading: CircleAvatar(
-                  backgroundImage:
-                      photoUrl != null ? NetworkImage(photoUrl) : null,
-                  child: photoUrl == null ? const Icon(Icons.person) : null,
+                  radius: 24,
+                  backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                      ? NetworkImage(photoUrl)
+                      : null,
+                  onBackgroundImageError:
+                      (photoUrl != null && photoUrl.isNotEmpty)
+                          ? (exception, stackTrace) {
+                              // Hata durumunda icon gösterilecek
+                            }
+                          : null,
+                  child: (photoUrl == null || photoUrl.isEmpty)
+                      ? const Icon(Icons.person)
+                      : null,
                 ),
                 title: Text(
                   name,
@@ -2617,8 +2633,16 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       CircleAvatar(
                         radius: 28,
                         backgroundImage:
-                            photoUrl != null ? NetworkImage(photoUrl) : null,
-                        child: photoUrl == null
+                            (photoUrl != null && photoUrl.isNotEmpty)
+                                ? NetworkImage(photoUrl)
+                                : null,
+                        onBackgroundImageError:
+                            (photoUrl != null && photoUrl.isNotEmpty)
+                                ? (exception, stackTrace) {
+                                    // Hata durumunda icon gösterilecek
+                                  }
+                                : null,
+                        child: (photoUrl == null || photoUrl.isEmpty)
                             ? const Icon(Icons.person, size: 28)
                             : null,
                       ),
@@ -2708,6 +2732,15 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       entitlementType: entitlementType,
                       entitlement: Map<String, dynamic>.from(entitlement),
                       startDate: startTs,
+                      createdAt: () {
+                        final createdAtField = data['createdAt'];
+                        if (createdAtField is Timestamp) {
+                          return createdAtField.toDate();
+                        } else if (createdAtField is DateTime) {
+                          return createdAtField;
+                        }
+                        return null;
+                      }(),
                     ),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -2918,12 +2951,20 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                       Theme.of(context).textTheme.titleMedium),
                               const Spacer(),
                               _EmployeeBalance(
-                                  tenantId: tenantId, docId: docId),
+                                  tenantId: tenantId,
+                                  docId: docId,
+                                  currency: salaryCurrency.isNotEmpty
+                                      ? salaryCurrency
+                                      : 'TRY'),
                             ],
                           ),
                           const SizedBox(height: 8),
                           _EmployeeTransactionsList(
-                              tenantId: tenantId, docId: docId),
+                              tenantId: tenantId,
+                              docId: docId,
+                              currency: salaryCurrency.isNotEmpty
+                                  ? salaryCurrency
+                                  : 'TRY'),
                         ],
                       ),
                     ),
@@ -2944,6 +2985,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
     required String entitlementType,
     required Map<String, dynamic> entitlement,
     required dynamic startDate,
+    DateTime? createdAt,
   }) async {
     try {
       // Start date'i DateTime'a çevir
@@ -2954,6 +2996,15 @@ class _EmployeeDetailSheet extends StatelessWidget {
         startDateTime = startDate;
       }
       if (startDateTime == null) return null;
+
+      // Personelin kaydedildiği tarihi kullan (eğer verilmişse)
+      // Eğer createdAt verilmemişse, şu anki zamanı kullan
+      final effectiveCreatedAt = createdAt ?? DateTime.now();
+
+      // Otomatik hak ediş başlangıç tarihi: personelin kaydedildiği tarih ile işe başlama tarihinden daha geç olan
+      final effectiveStartDate = startDateTime.isAfter(effectiveCreatedAt)
+          ? startDateTime
+          : effectiveCreatedAt;
 
       // Son transaction tarihini bul
       final transactionsCol = (tenantId != null && tenantId.isNotEmpty)
@@ -2992,15 +3043,21 @@ class _EmployeeDetailSheet extends StatelessWidget {
         }
       }
 
-      DateTime lastPaymentDate = startDateTime;
-      if (lastDoc != null && lastDate != null) {
+      // Son ödeme tarihini belirle: effectiveStartDate'den önceki tarihleri dikkate alma
+      DateTime lastPaymentDate = effectiveStartDate;
+      if (lastDoc != null &&
+          lastDate != null &&
+          lastDate.isAfter(effectiveStartDate)) {
         lastPaymentDate = lastDate;
       }
 
       // Bir sonraki ödeme tarihini hesapla
       final now = DateTime.now();
+      // fromDate olarak lastPaymentDate veya now'dan daha geç olanı kullan
+      final fromDate = lastPaymentDate.isAfter(now) ? lastPaymentDate : now;
+
       DateTime? nextPayment = _getNextPaymentDateForDisplay(
-        fromDate: lastPaymentDate.isAfter(now) ? lastPaymentDate : now,
+        fromDate: fromDate,
         entitlementType: entitlementType,
         entitlement: entitlement,
       );
@@ -3051,21 +3108,29 @@ class _EmployeeDetailSheet extends StatelessWidget {
         final monthlyDay = entitlement['monthlyDayOfMonth'] as int?;
         if (monthlyDay == null) return null;
 
-        DateTime next = DateTime(fromDate.year, fromDate.month, monthlyDay);
+        // Geçersiz değerleri düzelt (1-31 arasında olmalı)
+        final validDay = monthlyDay >= 1 && monthlyDay <= 31 ? monthlyDay : 31;
 
-        // Eğer tarih bugünden önceyse veya aynı günse, bir sonraki aya al
-        if (next.isBefore(fromDate) || next.isAtSameMomentAs(fromDate)) {
-          next = DateTime(fromDate.year, fromDate.month + 1, monthlyDay);
+        // Önce aynı ayın ödeme gününü kontrol et
+        try {
+          final sameMonthPayment =
+              DateTime(fromDate.year, fromDate.month, validDay);
+          if (sameMonthPayment.isAfter(fromDate) ||
+              sameMonthPayment.isAtSameMomentAs(fromDate)) {
+            return sameMonthPayment;
+          }
+        } catch (_) {
+          // Geçersiz tarih (örn: 31 Şubat), devam et
         }
 
+        // Aynı ayın ödeme günü geçmişse, bir sonraki ayın ödeme gününe git
+        DateTime next = DateTime(fromDate.year, fromDate.month + 1, validDay);
+        // Eğer ayın günü ayın sonundan büyükse, ayın sonunu kullan
         try {
           return next;
         } catch (_) {
           // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
-          next = DateTime(fromDate.year, fromDate.month + 1, 0);
-          if (next.isBefore(fromDate)) {
-            next = DateTime(fromDate.year, fromDate.month + 2, 0);
-          }
+          next = DateTime(fromDate.year, fromDate.month + 2, 0);
           return next;
         }
 
@@ -4008,12 +4073,25 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     _InfoTile(label: 'TC', value: tc),
                     _InfoTile(label: 'E-posta', value: email),
                     // Entitlement details based on type
-                    if (entitlementType == 'Aylık' &&
-                        entitlement['monthlyDayOfMonth'] != null)
-                      _InfoTile(
-                        label: 'Ödeme Günü',
-                        value: 'Ayın ${entitlement['monthlyDayOfMonth']}. günü',
-                      ),
+                    Builder(
+                      builder: (context) {
+                        if (entitlementType == 'Aylık' &&
+                            entitlement['monthlyDayOfMonth'] != null) {
+                          final monthlyDay =
+                              entitlement['monthlyDayOfMonth'] as int?;
+                          // Geçersiz değerleri düzelt (1-31 arasında olmalı)
+                          if (monthlyDay != null &&
+                              monthlyDay >= 1 &&
+                              monthlyDay <= 31) {
+                            return _InfoTile(
+                              label: 'Ödeme Günü',
+                              value: 'Ayın $monthlyDay. günü',
+                            );
+                          }
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
                     if (entitlementType == 'Aylık (İki Kere)' &&
                         entitlement['semiMonthlyDays'] != null)
                       Builder(builder: (context) {
@@ -4518,7 +4596,12 @@ class _InfoTile extends StatelessWidget {
 class _EmployeeBalance extends StatelessWidget {
   final String? tenantId;
   final String docId;
-  const _EmployeeBalance({required this.tenantId, required this.docId});
+  final String currency;
+  const _EmployeeBalance({
+    required this.tenantId,
+    required this.docId,
+    required this.currency,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -4568,7 +4651,7 @@ class _EmployeeBalance extends StatelessWidget {
         final color = balance >= 0 ? Colors.green : Colors.red;
         return Row(children: [
           Text('Bakiye: ', style: Theme.of(context).textTheme.bodyMedium),
-          Text(text,
+          Text('$text $currency',
               style: TextStyle(fontWeight: FontWeight.w700, color: color)),
         ]);
       },
@@ -4579,8 +4662,12 @@ class _EmployeeBalance extends StatelessWidget {
 class _EmployeeTransactionsList extends StatelessWidget {
   final String? tenantId;
   final String docId;
-  const _EmployeeTransactionsList(
-      {required this.tenantId, required this.docId});
+  final String currency;
+  const _EmployeeTransactionsList({
+    required this.tenantId,
+    required this.docId,
+    required this.currency,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -4652,6 +4739,28 @@ class _EmployeeTransactionsList extends StatelessWidget {
                     '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
               }
             } catch (_) {}
+
+            // Format amount in Turkish format
+            String formatAmount(double amount) {
+              final parts = amount.abs().toStringAsFixed(2).split('.');
+              final intPart = parts[0];
+              final decPart = parts[1];
+              final formattedInt = intPart.replaceAllMapped(
+                RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                (Match m) => '${m[1]}.',
+              );
+              return '$formattedInt,$decPart';
+            }
+
+            final formattedAmount = formatAmount(amount);
+            final transactionId = docs[i].id;
+            final transactionType = m['type'] as String?;
+            // Hak ediş olarak kabul edilen transaction'lar: direction == 'in' ve type yok veya 'entitlement'
+            final isEntitlement = dir == 'in' &&
+                (transactionType == null ||
+                    transactionType == 'entitlement' ||
+                    transactionType.isEmpty);
+
             return ListTile(
               dense: true,
               leading: Icon(dir == 'in' ? Icons.call_received : Icons.call_made,
@@ -4660,12 +4769,276 @@ class _EmployeeTransactionsList extends StatelessWidget {
                   ? (dir == 'in' ? 'Ödeme' : 'Avans/Çıkış')
                   : note),
               subtitle: Text(dt),
-              trailing: Text('$sign${amount.toStringAsFixed(2)}',
-                  style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('$sign$formattedAmount $currency',
+                      style:
+                          TextStyle(color: color, fontWeight: FontWeight.w600)),
+                  if (isEntitlement)
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, size: 20),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _showEditTransactionDialog(
+                            context,
+                            tenantId,
+                            docId,
+                            transactionId,
+                            m,
+                            currency,
+                          );
+                        } else if (value == 'delete') {
+                          _showDeleteTransactionDialog(
+                            context,
+                            tenantId,
+                            transactionId,
+                          );
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 20),
+                              SizedBox(width: 8),
+                              Text('Düzenle'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 20, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Sil', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
             );
           },
         );
       },
+    );
+  }
+
+  // Düzenleme dialogu
+  void _showEditTransactionDialog(
+    BuildContext context,
+    String? tenantId,
+    String employeeId,
+    String transactionId,
+    Map<String, dynamic> transactionData,
+    String currency,
+  ) {
+    final amount = (transactionData['amount'] as num?)?.toDouble() ?? 0;
+    final note = transactionData['note']?.toString() ?? '';
+    final date = transactionData['date'];
+    DateTime? transactionDate;
+    if (date is Timestamp) {
+      transactionDate = date.toDate();
+    } else if (date is DateTime) {
+      transactionDate = date;
+    }
+    transactionDate ??= DateTime.now();
+
+    final amountController = TextEditingController(
+        text: amount.toStringAsFixed(2).replaceAll('.', ','));
+    final noteController = TextEditingController(text: note);
+    DateTime selectedDate = transactionDate;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Hak Ediş Düzenle'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Tarih seçici
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        selectedDate = picked;
+                      });
+                    }
+                  },
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: 'Tarih',
+                      suffixIcon: Icon(Icons.calendar_today),
+                    ),
+                    child: Text(
+                      '${selectedDate.day.toString().padLeft(2, '0')}.${selectedDate.month.toString().padLeft(2, '0')}.${selectedDate.year}',
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                // Tutar
+                TextFormField(
+                  controller: amountController,
+                  decoration: InputDecoration(
+                    labelText: 'Tutar ($currency)',
+                  ),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(
+                        RegExp(r'^\d+([,.]\d{0,2})?$')),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                // Not
+                TextFormField(
+                  controller: noteController,
+                  decoration: const InputDecoration(
+                    labelText: 'Not (Opsiyonel)',
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('İptal'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final amountText = amountController.text
+                    .replaceAll('.', '')
+                    .replaceAll(',', '.');
+                final newAmount = double.tryParse(amountText) ?? 0;
+                final newNote = noteController.text.trim();
+
+                if (newAmount <= 0) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tutar 0\'dan büyük olmalıdır'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                  return;
+                }
+
+                try {
+                  final transactionsCol =
+                      (tenantId != null && tenantId.isNotEmpty)
+                          ? FirebaseFirestore.instance
+                              .collection('tenants')
+                              .doc(tenantId)
+                              .collection('employee_transactions')
+                          : FirebaseFirestore.instance
+                              .collection('employee_transactions');
+
+                  await transactionsCol.doc(transactionId).update({
+                    'amount': newAmount,
+                    'note': newNote,
+                    'date': Timestamp.fromDate(selectedDate),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Hak ediş güncellendi'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Hata: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Silme dialogu
+  void _showDeleteTransactionDialog(
+    BuildContext context,
+    String? tenantId,
+    String transactionId,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hak Edişi Sil'),
+        content: const Text(
+            'Bu hak edişi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              try {
+                final transactionsCol =
+                    (tenantId != null && tenantId.isNotEmpty)
+                        ? FirebaseFirestore.instance
+                            .collection('tenants')
+                            .doc(tenantId)
+                            .collection('employee_transactions')
+                        : FirebaseFirestore.instance
+                            .collection('employee_transactions');
+
+                await transactionsCol.doc(transactionId).delete();
+
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Hak ediş silindi'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Hata: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -4910,9 +5283,12 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         final daysWorked = paymentDate.difference(startDate).inDays;
         if (daysWorked <= 0) return 0;
 
-        // Ayın toplam gün sayısını hesapla
-        final daysInMonth =
-            DateTime(paymentDate.year, paymentDate.month + 1, 0).day;
+        // Eğer başlangıç ve ödeme aynı aydaysa, o ayın gün sayısını kullan
+        // Eğer farklı aylardaysa, ödeme ayının gün sayısını kullan
+        final daysInMonth = (startDate.year == paymentDate.year &&
+                startDate.month == paymentDate.month)
+            ? DateTime(startDate.year, startDate.month + 1, 0).day
+            : DateTime(paymentDate.year, paymentDate.month + 1, 0).day;
 
         // Orantılı maaş: (Çalışılan gün / Ayın toplam günü) * Aylık Maaş
         return (daysWorked / daysInMonth) * salaryAmount;
@@ -5034,7 +5410,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         break;
       case 'Haftalık':
         final daysPerWeek = _daysPerWeek;
-        final hoursPerDay = 8; // Varsayılan, günlük saat bilgisi yok
+        const hoursPerDay = 8; // Varsayılan, günlük saat bilgisi yok
         hourlyRate = salaryAmount / (daysPerWeek * hoursPerDay);
         break;
       case 'Günlük':
@@ -5165,7 +5541,7 @@ Saatlik Maaş: $formattedSalary ÷ ${monthlyHours.toStringAsFixed(2)} = ${_forma
         break;
       case 'Haftalık':
         final daysPerWeek = _daysPerWeek;
-        final hoursPerDay = 8; // Varsayılan
+        const hoursPerDay = 8; // Varsayılan
         final weeklyHours = daysPerWeek * hoursPerDay;
         formula =
             '$formattedSalary $_salaryCurrency ÷ ($daysPerWeek gün/hafta × $hoursPerDay saat/gün)';
@@ -5408,11 +5784,16 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
     switch (entitlementType) {
       case 'Aylık':
         if (monthlyDayOfMonth != null) {
+          // Geçersiz değerleri düzelt (1-31 arasında olmalı)
+          final validDay = monthlyDayOfMonth >= 1 && monthlyDayOfMonth <= 31
+              ? monthlyDayOfMonth
+              : 31;
+
           // İşe başlama tarihinden itibaren ilk ödeme gününü hesapla
           DateTime firstPayment = DateTime(
             startDate.year,
             startDate.month,
-            monthlyDayOfMonth,
+            validDay,
           );
 
           // Eğer işe başlama tarihinden önceyse veya aynı günse, bir sonraki aya al
@@ -5421,7 +5802,7 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
             firstPayment = DateTime(
               startDate.year,
               startDate.month + 1,
-              monthlyDayOfMonth,
+              validDay,
             );
           }
 
@@ -6213,13 +6594,13 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
               .replaceAll(',', '.')) ??
           0;
       if (amount1 <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${_semiMonthlyDay1}. gün için tutar girin')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$_semiMonthlyDay1. gün için tutar girin')));
         return;
       }
       if (amount2 <= 0) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${_semiMonthlyDay2}. gün için tutar girin')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$_semiMonthlyDay2. gün için tutar girin')));
         return;
       }
     } else if (_entitlementType == 'Haftalık') {
@@ -6549,10 +6930,10 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
           final effectiveStartDate =
               _startDate!.isAfter(now) ? _startDate! : now;
 
-          // Sadece bugünden (kayıt tarihinden) sonraki ödeme tarihleri için transaction oluştur
-          // Eğer personel geriye dönük kaydediliyorsa, sadece bugünden itibaren hak ediş oluştur
+          // Sadece bugüne kadar olan ödeme tarihleri için transaction oluştur
+          // Gelecekteki tarihler için transaction oluşturulmamalı (tarihi gelmeden eklenmesin)
           final effectivePaymentDates = paymentDates
-              .where((date) => date.isAfter(now) || date.isAtSameMomentAs(now))
+              .where((date) => date.isBefore(now) || date.isAtSameMomentAs(now))
               .toList();
 
           // Create transaction(s) for each payment date
