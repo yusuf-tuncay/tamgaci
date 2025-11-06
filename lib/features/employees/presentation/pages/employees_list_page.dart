@@ -169,6 +169,28 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         }
         if (startDateTime == null) continue;
 
+        // Personelin kaydedildiği tarihi al (createdAt)
+        DateTime? createdAt;
+        final createdAtField = empData['createdAt'];
+        if (createdAtField is Timestamp) {
+          createdAt = createdAtField.toDate();
+        } else if (createdAtField is DateTime) {
+          createdAt = createdAtField;
+        }
+
+        // Eğer createdAt yoksa, doc'un oluşturulma zamanını kullan (Firestore metadata)
+        if (createdAt == null) {
+          // Firestore'da createdAt yoksa, doc'un metadata'sından al
+          // Ancak bu her zaman mevcut olmayabilir, bu durumda şu anki zamanı kullan
+          createdAt = DateTime.now();
+        }
+
+        // Otomatik hak ediş başlangıç tarihi: personelin kaydedildiği tarih ile işe başlama tarihinden daha geç olan
+        // Eğer personel gelecekte başlayacaksa (startDate > createdAt), startDate kullan
+        // Eğer geriye dönük kayıt yapılıyorsa (startDate < createdAt), createdAt kullan
+        final effectiveStartDate =
+            startDateTime.isAfter(createdAt) ? startDateTime : createdAt;
+
         // Son transaction tarihini bul - Index gerektirmeyen sorgu
         final lastTransactionQuery = await transactionsCol
             .where('employeeId', isEqualTo: employeeId)
@@ -195,9 +217,10 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
           }
         }
 
-        // Son ödeme tarihini belirle: startDateTime'dan önceki tarihleri dikkate alma
-        DateTime lastPaymentDate = startDateTime;
-        if (lastTransDate != null && lastTransDate.isAfter(startDateTime)) {
+        // Son ödeme tarihini belirle: effectiveStartDate'den önceki tarihleri dikkate alma
+        DateTime lastPaymentDate = effectiveStartDate;
+        if (lastTransDate != null &&
+            lastTransDate.isAfter(effectiveStartDate)) {
           lastPaymentDate = lastTransDate;
         }
 
@@ -208,7 +231,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
           entitlement: entitlement,
           salaryAmount: salaryAmount,
           lastPaymentDate: lastPaymentDate,
-          startDateTime: startDateTime,
+          startDateTime: effectiveStartDate,
           now: now,
           transactionsCol: transactionsCol,
         );
@@ -260,7 +283,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     }
 
     // Eksik transaction'ları oluştur
-    for (final paymentDate in missingDates) {
+    for (int i = 0; i < missingDates.length; i++) {
+      final paymentDate = missingDates[i];
       try {
         // Aynı tarihli transaction var mı kontrol et (duplicate önleme)
         final existing = await transactionsCol
@@ -276,25 +300,20 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
             paymentDate: paymentDate,
           );
 
-          // Aylık (İki Kere) için ödeme gününe göre tutarı belirle
-          double transactionAmount = salaryAmount;
-          if (entitlementType == 'Aylık (İki Kere)') {
-            final amounts =
-                entitlement['semiMonthlyAmounts'] as Map<String, dynamic>?;
-            if (amounts != null) {
-              final paymentDay = paymentDate.day.toString();
-              final dayAmount = amounts[paymentDay];
-              if (dayAmount != null) {
-                transactionAmount = (dayAmount as num).toDouble();
-              } else {
-                // Geriye dönük uyumluluk: yarıya böl
-                transactionAmount = salaryAmount / 2;
-              }
-            } else {
-              // Geriye dönük uyumluluk: yarıya böl
-              transactionAmount = salaryAmount / 2;
-            }
-          }
+          // İlk ödeme kontrolü: lastPaymentDate startDateTime'dan önceyse veya eşitse, bu ilk ödemedir
+          final isFirstPayment = lastPaymentDate.isBefore(startDateTime) ||
+              lastPaymentDate.isAtSameMomentAs(startDateTime) ||
+              (i == 0 && paymentDate.isAfter(startDateTime));
+
+          // İlk ödeme için orantılı maaş hesapla
+          double transactionAmount = _calculateProRataAmount(
+            entitlementType: entitlementType,
+            entitlement: entitlement,
+            salaryAmount: salaryAmount,
+            startDate: startDateTime,
+            paymentDate: paymentDate,
+            isFirstPayment: isFirstPayment,
+          );
 
           await transactionsCol.add({
             'employeeId': employeeId,
@@ -335,9 +354,16 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     }
 
     DateTime findNextWeekday(DateTime from, int targetWeekday) {
-      DateTime current = from.add(const Duration(days: 1));
-      while (current.weekday != targetWeekday) {
+      DateTime current = from;
+      // Eğer bugün hedef günse, bir sonraki haftaya geç
+      if (current.weekday == targetWeekday) {
+        current = current.add(const Duration(days: 7));
+      } else {
+        // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
+        while (current.weekday != targetWeekday) {
+          current = current.add(const Duration(days: 1));
+        }
       }
       return current;
     }
@@ -347,6 +373,18 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         final monthlyDay = entitlement['monthlyDayOfMonth'] as int?;
         if (monthlyDay == null) return null;
 
+        // Önce aynı ayın ödeme gününü kontrol et
+        try {
+          final sameMonthPayment =
+              DateTime(fromDate.year, fromDate.month, monthlyDay);
+          if (sameMonthPayment.isAfter(fromDate)) {
+            return sameMonthPayment;
+          }
+        } catch (_) {
+          // Geçersiz tarih (örn: 31 Şubat), devam et
+        }
+
+        // Aynı ayın ödeme günü geçmişse, bir sonraki ayın ödeme gününe git
         DateTime next = DateTime(fromDate.year, fromDate.month + 1, monthlyDay);
         // Eğer ayın günü ayın sonundan büyükse, ayın sonunu kullan
         try {
@@ -364,36 +402,36 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         final day2 = (days[1] as num?)?.toInt();
         if (day1 == null || day2 == null) return null;
 
-        final currentDay = fromDate.day;
         DateTime next;
 
-        if (currentDay < day1) {
-          // Bu ayın ilk ödeme gününe git
-          try {
-            next = DateTime(fromDate.year, fromDate.month, day1);
-            return next;
-          } catch (_) {
-            next = DateTime(fromDate.year, fromDate.month + 1, 0);
+        // Önce aynı ayın ilk ödeme gününü kontrol et
+        try {
+          next = DateTime(fromDate.year, fromDate.month, day1);
+          if (next.isAfter(fromDate)) {
             return next;
           }
-        } else if (currentDay < day2) {
-          // Bu ayın ikinci ödeme gününe git
-          try {
-            next = DateTime(fromDate.year, fromDate.month, day2);
-            return next;
-          } catch (_) {
-            next = DateTime(fromDate.year, fromDate.month + 1, 0);
-            return next;
-          }
-        } else {
-          // Bir sonraki ayın ilk ödeme gününe git
-          try {
-            next = DateTime(fromDate.year, fromDate.month + 1, day1);
-            return next;
-          } catch (_) {
-            next = DateTime(fromDate.year, fromDate.month + 2, 0);
+        } catch (_) {
+          // Geçersiz tarih, devam et
+        }
+
+        // Sonra aynı ayın ikinci ödeme gününü kontrol et
+        try {
+          next = DateTime(fromDate.year, fromDate.month, day2);
+          if (next.isAfter(fromDate)) {
             return next;
           }
+        } catch (_) {
+          // Geçersiz tarih, devam et
+        }
+
+        // Eğer aynı ayın ödeme günleri geçmişse, bir sonraki ayın ilk ödeme gününe git
+        try {
+          next = DateTime(fromDate.year, fromDate.month + 1, day1);
+          return next;
+        } catch (_) {
+          // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
+          next = DateTime(fromDate.year, fromDate.month + 2, 0);
+          return next;
         }
 
       case 'Haftalık':
@@ -428,11 +466,138 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         return null;
 
       case 'Saatlik':
-        // Ay sonu
-        return DateTime(fromDate.year, fromDate.month + 1, 0);
+        // Önce aynı ayın sonunu kontrol et
+        final sameMonthEnd = DateTime(fromDate.year, fromDate.month + 1, 0);
+        if (sameMonthEnd.isAfter(fromDate)) {
+          return sameMonthEnd;
+        }
+        // Aynı ayın sonu geçmişse, bir sonraki ayın sonuna git
+        return DateTime(fromDate.year, fromDate.month + 2, 0);
 
       default:
         return null;
+    }
+  }
+
+  // Orantılı (pro-rata) maaş hesaplama fonksiyonu
+  double _calculateProRataAmount({
+    required String entitlementType,
+    required Map<String, dynamic> entitlement,
+    required double salaryAmount,
+    required DateTime startDate,
+    required DateTime paymentDate,
+    required bool isFirstPayment,
+  }) {
+    // İlk ödeme değilse tam maaş
+    if (!isFirstPayment) {
+      if (entitlementType == 'Aylık (İki Kere)') {
+        final amounts =
+            entitlement['semiMonthlyAmounts'] as Map<String, dynamic>?;
+        if (amounts != null) {
+          final paymentDay = paymentDate.day.toString();
+          final dayAmount = amounts[paymentDay];
+          if (dayAmount != null) {
+            return (dayAmount as num).toDouble();
+          }
+        }
+        // Geriye dönük uyumluluk: yarıya böl
+        return salaryAmount / 2;
+      }
+      return salaryAmount;
+    }
+
+    // İlk ödeme için orantılı hesaplama
+    switch (entitlementType) {
+      case 'Aylık':
+        // Çalışılan gün sayısını hesapla
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Ayın toplam gün sayısını hesapla
+        final daysInMonth =
+            DateTime(paymentDate.year, paymentDate.month + 1, 0).day;
+
+        // Orantılı maaş: (Çalışılan gün / Ayın toplam günü) * Aylık Maaş
+        return (daysWorked / daysInMonth) * salaryAmount;
+
+      case 'Aylık (İki Kere)':
+        // İlk ödeme gününe kadar çalışılan gün sayısı
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Ödeme gününe kadar olan gün sayısı (ayın başından itibaren)
+        final daysUntilPayment = paymentDate.day;
+
+        // İlgili ödeme gününün tutarını al
+        final amounts =
+            entitlement['semiMonthlyAmounts'] as Map<String, dynamic>?;
+        double baseAmount = salaryAmount / 2; // Varsayılan
+        if (amounts != null) {
+          final paymentDay = paymentDate.day.toString();
+          final dayAmount = amounts[paymentDay];
+          if (dayAmount != null) {
+            baseAmount = (dayAmount as num).toDouble();
+          }
+        }
+
+        // Orantılı maaş: (Çalışılan gün / Ödeme gününe kadar olan gün) * Ödeme günü tutarı
+        return (daysWorked / daysUntilPayment) * baseAmount;
+
+      case 'Haftalık':
+        // Çalışılan gün sayısını hesapla
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Haftada çalışılan gün sayısını al
+        final daysPerWeek = entitlement['daysPerWeek'] as int? ?? 5;
+
+        // Eğer çalışılan gün sayısı haftada çalışılan gün sayısına eşitse tam maaş
+        if (daysWorked == daysPerWeek) {
+          return salaryAmount;
+        }
+
+        // Değilse orantılı maaş: (Çalışılan gün / Haftada çalışılan gün) * Haftalık Maaş
+        return (daysWorked / daysPerWeek) * salaryAmount;
+
+      case 'Günlük':
+        // Günlük maaş için çalışılan gün sayısı
+        // paymentDate dahil değil, sadece startDate'den paymentDate'e kadar (paymentDate hariç)
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Günlük maaş * çalışılan gün sayısı
+        // Ancak sadece çalışma günlerini saymalıyız
+        final weeklyDays = entitlement['weeklyDays'] as List?;
+        if (weeklyDays != null && weeklyDays.isNotEmpty) {
+          int workingDaysCount = 0;
+          DateTime current = startDate;
+          // paymentDate hariç, sadece startDate'den paymentDate'e kadar olan günleri say
+          while (current.isBefore(paymentDate)) {
+            final weekdayName = [
+              'Pazartesi',
+              'Salı',
+              'Çarşamba',
+              'Perşembe',
+              'Cuma',
+              'Cumartesi',
+              'Pazar'
+            ][current.weekday - 1];
+            if (weeklyDays.contains(weekdayName)) {
+              workingDaysCount++;
+            }
+            current = current.add(const Duration(days: 1));
+          }
+          return workingDaysCount * salaryAmount;
+        }
+        // Çalışma günleri bilgisi yoksa, tüm günleri say (paymentDate hariç)
+        return daysWorked * salaryAmount;
+
+      case 'Saatlik':
+        // Saatlik maaş için orantılı hesaplama yapılmaz (çalışılan saat bilinmiyor)
+        return salaryAmount;
+
+      default:
+        return salaryAmount;
     }
   }
 
@@ -2867,9 +3032,16 @@ class _EmployeeDetailSheet extends StatelessWidget {
     }
 
     DateTime findNextWeekday(DateTime from, int targetWeekday) {
-      DateTime current = from.add(const Duration(days: 1));
-      while (current.weekday != targetWeekday) {
+      DateTime current = from;
+      // Eğer bugün hedef günse, bir sonraki haftaya geç
+      if (current.weekday == targetWeekday) {
+        current = current.add(const Duration(days: 7));
+      } else {
+        // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
+        while (current.weekday != targetWeekday) {
+          current = current.add(const Duration(days: 1));
+        }
       }
       return current;
     }
@@ -2881,8 +3053,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
         DateTime next = DateTime(fromDate.year, fromDate.month, monthlyDay);
 
-        // Eğer tarih bugünden önceyse, bir sonraki aya al
-        if (next.isBefore(fromDate)) {
+        // Eğer tarih bugünden önceyse veya aynı günse, bir sonraki aya al
+        if (next.isBefore(fromDate) || next.isAtSameMomentAs(fromDate)) {
           next = DateTime(fromDate.year, fromDate.month + 1, monthlyDay);
         }
 
@@ -2904,36 +3076,34 @@ class _EmployeeDetailSheet extends StatelessWidget {
         final day2 = (days[1] as num?)?.toInt();
         if (day1 == null || day2 == null) return null;
 
-        final currentDay = fromDate.day;
-        DateTime next;
+        // Önce aynı ayın ilk ödeme gününü kontrol et
+        try {
+          DateTime next = DateTime(fromDate.year, fromDate.month, day1);
+          if (next.isAfter(fromDate)) {
+            return next;
+          }
+        } catch (_) {
+          // Geçersiz tarih, devam et
+        }
 
-        if (currentDay < day1) {
-          // Bu ayın ilk ödeme gününe git
-          try {
-            next = DateTime(fromDate.year, fromDate.month, day1);
-            return next;
-          } catch (_) {
-            next = DateTime(fromDate.year, fromDate.month + 1, 0);
+        // Sonra aynı ayın ikinci ödeme gününü kontrol et
+        try {
+          DateTime next = DateTime(fromDate.year, fromDate.month, day2);
+          if (next.isAfter(fromDate)) {
             return next;
           }
-        } else if (currentDay < day2) {
-          // Bu ayın ikinci ödeme gününe git
-          try {
-            next = DateTime(fromDate.year, fromDate.month, day2);
-            return next;
-          } catch (_) {
-            next = DateTime(fromDate.year, fromDate.month + 1, 0);
-            return next;
-          }
-        } else {
-          // Bir sonraki ayın ilk ödeme gününe git
-          try {
-            next = DateTime(fromDate.year, fromDate.month + 1, day1);
-            return next;
-          } catch (_) {
-            next = DateTime(fromDate.year, fromDate.month + 2, 0);
-            return next;
-          }
+        } catch (_) {
+          // Geçersiz tarih, devam et
+        }
+
+        // Eğer aynı ayın ödeme günleri geçmişse, bir sonraki ayın ilk ödeme gününe git
+        try {
+          DateTime next = DateTime(fromDate.year, fromDate.month + 1, day1);
+          return next;
+        } catch (_) {
+          // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
+          DateTime next = DateTime(fromDate.year, fromDate.month + 2, 0);
+          return next;
         }
 
       case 'Haftalık':
@@ -4546,6 +4716,10 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       TextEditingController();
   final TextEditingController _semiMonthlyAmount2Controller =
       TextEditingController();
+  // Focus node'ları (Tab tuşu için)
+  final FocusNode _salaryAmountFocusNode = FocusNode();
+  final FocusNode _semiMonthlyAmount1FocusNode = FocusNode();
+  final FocusNode _semiMonthlyAmount2FocusNode = FocusNode();
 
   // Selections
   DateTime? _birthDate;
@@ -4599,6 +4773,29 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       }
     }
     _daysPerWeek = _weeklySelectedDays.length;
+
+    // Focus node'larına key event listener ekle
+    _salaryAmountFocusNode.onKeyEvent = (node, event) {
+      if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
+        _handleSalaryAmountFormat();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    };
+    _semiMonthlyAmount1FocusNode.onKeyEvent = (node, event) {
+      if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
+        _handleSemiMonthlyAmount1Format();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    };
+    _semiMonthlyAmount2FocusNode.onKeyEvent = (node, event) {
+      if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.tab) {
+        _handleSemiMonthlyAmount2Format();
+        return KeyEventResult.handled;
+      }
+      return KeyEventResult.ignored;
+    };
     // Listen to Firestore for runtime updates
     _posSub = _col('positions').orderBy('name').snapshots().listen((s) {
       if (!mounted) return;
@@ -4677,6 +4874,406 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
       final formatted = _formatSalaryAmount(totalStr);
       _salaryAmountController.text = formatted;
     }
+  }
+
+  // Orantılı (pro-rata) maaş hesaplama fonksiyonu
+  double _calculateProRataAmount({
+    required String entitlementType,
+    required Map<String, dynamic> entitlement,
+    required double salaryAmount,
+    required DateTime startDate,
+    required DateTime paymentDate,
+    required bool isFirstPayment,
+  }) {
+    // İlk ödeme değilse tam maaş
+    if (!isFirstPayment) {
+      if (entitlementType == 'Aylık (İki Kere)') {
+        final amounts =
+            entitlement['semiMonthlyAmounts'] as Map<String, dynamic>?;
+        if (amounts != null) {
+          final paymentDay = paymentDate.day.toString();
+          final dayAmount = amounts[paymentDay];
+          if (dayAmount != null) {
+            return (dayAmount as num).toDouble();
+          }
+        }
+        // Geriye dönük uyumluluk: yarıya böl
+        return salaryAmount / 2;
+      }
+      return salaryAmount;
+    }
+
+    // İlk ödeme için orantılı hesaplama
+    switch (entitlementType) {
+      case 'Aylık':
+        // Çalışılan gün sayısını hesapla
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Ayın toplam gün sayısını hesapla
+        final daysInMonth =
+            DateTime(paymentDate.year, paymentDate.month + 1, 0).day;
+
+        // Orantılı maaş: (Çalışılan gün / Ayın toplam günü) * Aylık Maaş
+        return (daysWorked / daysInMonth) * salaryAmount;
+
+      case 'Aylık (İki Kere)':
+        // İlk ödeme gününe kadar çalışılan gün sayısı
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Ödeme gününe kadar olan gün sayısı (ayın başından itibaren)
+        final daysUntilPayment = paymentDate.day;
+
+        // İlgili ödeme gününün tutarını al
+        final amounts =
+            entitlement['semiMonthlyAmounts'] as Map<String, dynamic>?;
+        double baseAmount = salaryAmount / 2; // Varsayılan
+        if (amounts != null) {
+          final paymentDay = paymentDate.day.toString();
+          final dayAmount = amounts[paymentDay];
+          if (dayAmount != null) {
+            baseAmount = (dayAmount as num).toDouble();
+          }
+        }
+
+        // Orantılı maaş: (Çalışılan gün / Ödeme gününe kadar olan gün) * Ödeme günü tutarı
+        return (daysWorked / daysUntilPayment) * baseAmount;
+
+      case 'Haftalık':
+        // Çalışılan gün sayısını hesapla
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Haftada çalışılan gün sayısını al
+        final daysPerWeek = entitlement['daysPerWeek'] as int? ?? 5;
+
+        // Eğer çalışılan gün sayısı haftada çalışılan gün sayısına eşitse tam maaş
+        if (daysWorked == daysPerWeek) {
+          return salaryAmount;
+        }
+
+        // Değilse orantılı maaş: (Çalışılan gün / Haftada çalışılan gün) * Haftalık Maaş
+        return (daysWorked / daysPerWeek) * salaryAmount;
+
+      case 'Günlük':
+        // Günlük maaş için çalışılan gün sayısı
+        // paymentDate dahil değil, sadece startDate'den paymentDate'e kadar (paymentDate hariç)
+        final daysWorked = paymentDate.difference(startDate).inDays;
+        if (daysWorked <= 0) return 0;
+
+        // Günlük maaş * çalışılan gün sayısı
+        // Ancak sadece çalışma günlerini saymalıyız
+        final weeklyDays = entitlement['weeklyDays'] as List?;
+        if (weeklyDays != null && weeklyDays.isNotEmpty) {
+          int workingDaysCount = 0;
+          DateTime current = startDate;
+          // paymentDate hariç, sadece startDate'den paymentDate'e kadar olan günleri say
+          while (current.isBefore(paymentDate)) {
+            final weekdayName = [
+              'Pazartesi',
+              'Salı',
+              'Çarşamba',
+              'Perşembe',
+              'Cuma',
+              'Cumartesi',
+              'Pazar'
+            ][current.weekday - 1];
+            if (weeklyDays.contains(weekdayName)) {
+              workingDaysCount++;
+            }
+            current = current.add(const Duration(days: 1));
+          }
+          return workingDaysCount * salaryAmount;
+        }
+        // Çalışma günleri bilgisi yoksa, tüm günleri say (paymentDate hariç)
+        return daysWorked * salaryAmount;
+
+      case 'Saatlik':
+        // Saatlik maaş için orantılı hesaplama yapılmaz (çalışılan saat bilinmiyor)
+        return salaryAmount;
+
+      default:
+        return salaryAmount;
+    }
+  }
+
+  // Saatlik maaş hesaplama fonksiyonu
+  double? _calculateHourlyRate() {
+    double? salaryAmount;
+
+    if (_entitlementType == 'Aylık (İki Kere)') {
+      final amount1 = double.tryParse(_semiMonthlyAmount1Controller.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+      final amount2 = double.tryParse(_semiMonthlyAmount2Controller.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+      salaryAmount = amount1 + amount2;
+    } else {
+      salaryAmount = double.tryParse(_salaryAmountController.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+    }
+
+    if (salaryAmount <= 0) return null;
+
+    double hourlyRate = 0;
+
+    switch (_entitlementType) {
+      case 'Aylık':
+      case 'Aylık (İki Kere)':
+        final daysPerWeek = _monthlyDaysPerWeek;
+        final hoursPerDay = _monthlyHoursPerDay;
+        final weeklyHours = daysPerWeek * hoursPerDay;
+        final monthlyHours = weeklyHours * 4.33; // Ortalama hafta sayısı
+        hourlyRate = salaryAmount / monthlyHours;
+        break;
+      case 'Haftalık':
+        final daysPerWeek = _daysPerWeek;
+        final hoursPerDay = 8; // Varsayılan, günlük saat bilgisi yok
+        hourlyRate = salaryAmount / (daysPerWeek * hoursPerDay);
+        break;
+      case 'Günlük':
+        // Günlük maaş için ortalama saat hesapla
+        if (_weeklySelectedDays.isEmpty) return null;
+        double totalHours = 0;
+        int workingDays = 0;
+        for (final day in _weeklySelectedDays) {
+          if (_dayEnabled[day] == true) {
+            final start = _startTimes[day];
+            final end = _endTimes[day];
+            if (start != null && end != null) {
+              final startMin = start.hour * 60 + start.minute;
+              final endMin = end.hour * 60 + end.minute;
+              if (endMin > startMin) {
+                totalHours += (endMin - startMin) / 60.0;
+                workingDays++;
+              }
+            }
+          }
+        }
+        if (totalHours == 0 || workingDays == 0) return null;
+        final avgHoursPerDay = totalHours / workingDays;
+        hourlyRate = salaryAmount / avgHoursPerDay;
+        break;
+      case 'Saatlik':
+        hourlyRate = salaryAmount;
+        break;
+      default:
+        return null;
+    }
+
+    return hourlyRate;
+  }
+
+  // Formatlama fonksiyonları (Enter ve Tab için)
+  void _handleSalaryAmountFormat() {
+    if (_entitlementType != 'Aylık (İki Kere)') {
+      final formatted = _formatSalaryAmount(_salaryAmountController.text);
+      if (formatted != _salaryAmountController.text) {
+        _salaryAmountController.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
+        );
+      }
+    }
+    setState(() {}); // Saatlik maaş bilgisini güncelle
+  }
+
+  void _handleSemiMonthlyAmount1Format() {
+    final value = _semiMonthlyAmount1Controller.text;
+    if (value.isNotEmpty) {
+      final formatted = _formatSalaryAmount(value);
+      if (formatted != value) {
+        _semiMonthlyAmount1Controller.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
+        );
+      }
+    }
+    setState(() {
+      _updateTotalSalary();
+    });
+  }
+
+  void _handleSemiMonthlyAmount2Format() {
+    final value = _semiMonthlyAmount2Controller.text;
+    if (value.isNotEmpty) {
+      final formatted = _formatSalaryAmount(value);
+      if (formatted != value) {
+        _semiMonthlyAmount2Controller.value = TextEditingValue(
+          text: formatted,
+          selection: TextSelection.collapsed(offset: formatted.length),
+        );
+      }
+    }
+    setState(() {
+      _updateTotalSalary();
+    });
+  }
+
+  // Saatlik maaş hesaplama bilgisi dialog'u
+  void _showHourlyRateCalculationInfo(BuildContext context) {
+    final hourlyRate = _calculateHourlyRate();
+    if (hourlyRate == null || hourlyRate <= 0) return;
+
+    String calculationInfo = '';
+    String formula = '';
+    double? salaryAmount;
+
+    if (_entitlementType == 'Aylık (İki Kere)') {
+      final amount1 = double.tryParse(_semiMonthlyAmount1Controller.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+      final amount2 = double.tryParse(_semiMonthlyAmount2Controller.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+      salaryAmount = amount1 + amount2;
+    } else {
+      salaryAmount = double.tryParse(_salaryAmountController.text
+              .replaceAll('.', '')
+              .replaceAll(',', '.')) ??
+          0;
+    }
+
+    final formattedSalary = _formatSalaryAmount(
+        salaryAmount.toStringAsFixed(2).replaceAll('.', ','));
+
+    switch (_entitlementType) {
+      case 'Aylık':
+      case 'Aylık (İki Kere)':
+        final daysPerWeek = _monthlyDaysPerWeek;
+        final hoursPerDay = _monthlyHoursPerDay;
+        final weeklyHours = daysPerWeek * hoursPerDay;
+        final monthlyHours = weeklyHours * 4.33;
+        formula =
+            '$formattedSalary $_salaryCurrency ÷ ($daysPerWeek gün/hafta × $hoursPerDay saat/gün × 4.33 hafta/ay)';
+        calculationInfo = '''
+Aylık Maaş: $formattedSalary $_salaryCurrency
+Haftada Çalışılan Gün: $daysPerWeek gün
+Günde Çalışılan Saat: $hoursPerDay saat
+Haftalık Çalışma Saati: $daysPerWeek × $hoursPerDay = ${weeklyHours.toStringAsFixed(0)} saat
+Aylık Çalışma Saati: ${weeklyHours.toStringAsFixed(0)} × 4.33 = ${monthlyHours.toStringAsFixed(2)} saat
+Saatlik Maaş: $formattedSalary ÷ ${monthlyHours.toStringAsFixed(2)} = ${_formatSalaryAmount(hourlyRate.toStringAsFixed(2).replaceAll('.', ','))} $_salaryCurrency/saat
+''';
+        break;
+      case 'Haftalık':
+        final daysPerWeek = _daysPerWeek;
+        final hoursPerDay = 8; // Varsayılan
+        final weeklyHours = daysPerWeek * hoursPerDay;
+        formula =
+            '$formattedSalary $_salaryCurrency ÷ ($daysPerWeek gün/hafta × $hoursPerDay saat/gün)';
+        calculationInfo = '''
+Haftalık Maaş: $formattedSalary $_salaryCurrency
+Haftada Çalışılan Gün: $daysPerWeek gün
+Günde Çalışılan Saat: $hoursPerDay saat (varsayılan)
+Haftalık Çalışma Saati: $daysPerWeek × $hoursPerDay = $weeklyHours saat
+Saatlik Maaş: $formattedSalary ÷ $weeklyHours = ${_formatSalaryAmount(hourlyRate.toStringAsFixed(2).replaceAll('.', ','))} $_salaryCurrency/saat
+
+Not: İlk ödeme için, çalışılan gün sayısı haftada çalışılan gün sayısına ($daysPerWeek) eşitse tam maaş, değilse orantılı hesaplama yapılır.
+''';
+        break;
+      case 'Günlük':
+        if (_weeklySelectedDays.isEmpty) return;
+        double totalHours = 0;
+        int workingDays = 0;
+        for (final day in _weeklySelectedDays) {
+          if (_dayEnabled[day] == true) {
+            final start = _startTimes[day];
+            final end = _endTimes[day];
+            if (start != null && end != null) {
+              final startMin = start.hour * 60 + start.minute;
+              final endMin = end.hour * 60 + end.minute;
+              if (endMin > startMin) {
+                totalHours += (endMin - startMin) / 60.0;
+                workingDays++;
+              }
+            }
+          }
+        }
+        if (totalHours == 0 || workingDays == 0) return;
+        final avgHoursPerDay = totalHours / workingDays;
+        formula =
+            '$formattedSalary $_salaryCurrency ÷ ${avgHoursPerDay.toStringAsFixed(2)} saat/gün';
+        calculationInfo = '''
+Günlük Maaş: $formattedSalary $_salaryCurrency
+Çalışılan Günler: ${_weeklySelectedDays.join(', ')}
+Toplam Çalışma Saati: ${totalHours.toStringAsFixed(2)} saat
+Çalışılan Gün Sayısı: $workingDays gün
+Ortalama Günlük Çalışma Saati: ${totalHours.toStringAsFixed(2)} ÷ $workingDays = ${avgHoursPerDay.toStringAsFixed(2)} saat
+Saatlik Maaş: $formattedSalary ÷ ${avgHoursPerDay.toStringAsFixed(2)} = ${_formatSalaryAmount(hourlyRate.toStringAsFixed(2).replaceAll('.', ','))} $_salaryCurrency/saat
+''';
+        break;
+      case 'Saatlik':
+        formula = '$formattedSalary $_salaryCurrency (direkt saatlik ücret)';
+        calculationInfo = '''
+Saatlik Maaş: $formattedSalary $_salaryCurrency/saat
+Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
+''';
+        break;
+      default:
+        return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.calculate, size: 24),
+            SizedBox(width: 8),
+            Text('Saatlik Maaş Hesaplaması'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Formül:',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                formula,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'monospace',
+                    ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Hesaplama Detayları:',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                calculationInfo.trim(),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontFamily: 'monospace',
+                    ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Kapat'),
+          ),
+        ],
+      ),
+    );
   }
 
   // Format salary amount in Turkish format (1.000,00)
@@ -4795,8 +5392,15 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     // Belirli bir tarihten sonraki ilk belirli günü bul
     DateTime findNextWeekday(DateTime from, int targetWeekday) {
       DateTime current = from;
-      while (current.weekday != targetWeekday) {
+      // Eğer bugün hedef günse, bir sonraki haftaya geç
+      if (current.weekday == targetWeekday) {
+        current = current.add(const Duration(days: 7));
+      } else {
+        // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
+        while (current.weekday != targetWeekday) {
+          current = current.add(const Duration(days: 1));
+        }
       }
       return current;
     }
@@ -4811,8 +5415,9 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
             monthlyDayOfMonth,
           );
 
-          // Eğer işe başlama tarihinden önceyse, bir sonraki aya al
-          if (firstPayment.isBefore(startDate)) {
+          // Eğer işe başlama tarihinden önceyse veya aynı günse, bir sonraki aya al
+          if (firstPayment.isBefore(startDate) ||
+              firstPayment.isAtSameMomentAs(startDate)) {
             firstPayment = DateTime(
               startDate.year,
               startDate.month + 1,
@@ -4839,7 +5444,8 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
             startDate.month,
             day1,
           );
-          if (firstPayment.isBefore(startDate)) {
+          if (firstPayment.isBefore(startDate) ||
+              firstPayment.isAtSameMomentAs(startDate)) {
             firstPayment = DateTime(
               startDate.year,
               startDate.month + 1,
@@ -4876,10 +5482,11 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
 
       case 'Günlük':
         if (weeklySelectedDays != null && weeklySelectedDays.isNotEmpty) {
-          // İlk çalışma gününü bul
-          DateTime current = startDate;
-          int found = 0;
-          while (found < 1) {
+          // İlk çalışma gününü bul (başlangıç tarihinden sonraki)
+          DateTime current = startDate.add(const Duration(days: 1));
+          int maxDays = 14; // 2 hafta içinde bul
+          int checked = 0;
+          while (checked < maxDays) {
             final weekdayName = [
               'Pazartesi',
               'Salı',
@@ -4891,9 +5498,10 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
             ][current.weekday - 1];
             if (weeklySelectedDays.contains(weekdayName)) {
               paymentDates.add(current);
-              found++;
+              break;
             }
             current = current.add(const Duration(days: 1));
+            checked++;
           }
         }
         break;
@@ -4905,7 +5513,8 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
           startDate.month + 1,
           0, // Ayın son günü
         );
-        if (monthEnd.isBefore(startDate)) {
+        if (monthEnd.isBefore(startDate) ||
+            monthEnd.isAtSameMomentAs(startDate)) {
           monthEnd = DateTime(
             startDate.year,
             startDate.month + 2,
@@ -4957,6 +5566,9 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     _customPeriodNoteController.dispose();
     _semiMonthlyAmount1Controller.dispose();
     _semiMonthlyAmount2Controller.dispose();
+    _salaryAmountFocusNode.dispose();
+    _semiMonthlyAmount1FocusNode.dispose();
+    _semiMonthlyAmount2FocusNode.dispose();
     _overtimeThresholdHoursController.dispose();
     _overtimeMultiplierController.dispose();
     _posSub?.cancel();
@@ -5729,6 +6341,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         };
       } else if (_entitlementType == 'Haftalık') {
         entitlement['weeklyWeekday'] = _weeklyWeekday;
+        entitlement['daysPerWeek'] = _daysPerWeek;
       } else if (_entitlementType == 'Günlük') {
         entitlement['daysPerWeek'] = _daysPerWeek;
         entitlement['weeklyDays'] = List<String>.from(_weeklySelectedDays);
@@ -5927,15 +6540,35 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
             weeklySelectedDays: _weeklySelectedDays,
           );
 
+          // Personelin kaydedildiği tarih (şu anki zaman)
+          final now = DateTime.now();
+
+          // Otomatik hak ediş başlangıç tarihi: personelin kaydedildiği tarih ile işe başlama tarihinden daha geç olan
+          // Eğer personel gelecekte başlayacaksa (startDate > now), startDate kullan
+          // Eğer geriye dönük kayıt yapılıyorsa (startDate < now), now kullan
+          final effectiveStartDate =
+              _startDate!.isAfter(now) ? _startDate! : now;
+
+          // Sadece bugünden (kayıt tarihinden) sonraki ödeme tarihleri için transaction oluştur
+          // Eğer personel geriye dönük kaydediliyorsa, sadece bugünden itibaren hak ediş oluştur
+          final effectivePaymentDates = paymentDates
+              .where((date) => date.isAfter(now) || date.isAtSameMomentAs(now))
+              .toList();
+
           // Create transaction(s) for each payment date
-          for (final paymentDate in paymentDates) {
+          for (int i = 0; i < effectivePaymentDates.length; i++) {
+            final paymentDate = effectivePaymentDates[i];
+            final isFirstPayment = i == 0;
+
             final transactionNote = _getTransactionNote(
               entitlementType: _entitlementType,
               paymentDate: paymentDate,
             );
 
-            // Aylık (İki Kere) için ödeme gününe göre tutarı belirle
-            double transactionAmount = salaryAmount;
+            // Entitlement map'ini oluştur
+            final Map<String, dynamic> entitlementMap = {
+              'type': _entitlementType,
+            };
             if (_entitlementType == 'Aylık (İki Kere)') {
               final amount1 = double.tryParse(_semiMonthlyAmount1Controller.text
                       .replaceAll('.', '')
@@ -5945,17 +6578,27 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                       .replaceAll('.', '')
                       .replaceAll(',', '.')) ??
                   0;
-
-              // Ödeme gününe göre tutarı belirle
-              if (paymentDate.day == _semiMonthlyDay1) {
-                transactionAmount = amount1;
-              } else if (paymentDate.day == _semiMonthlyDay2) {
-                transactionAmount = amount2;
-              } else {
-                // Varsayılan: yarıya böl (güvenlik için)
-                transactionAmount = salaryAmount / 2;
-              }
+              entitlementMap['semiMonthlyAmounts'] = {
+                _semiMonthlyDay1.toString(): amount1,
+                _semiMonthlyDay2.toString(): amount2,
+              };
+            } else if (_entitlementType == 'Haftalık') {
+              entitlementMap['weeklyWeekday'] = _weeklyWeekday;
+              entitlementMap['daysPerWeek'] = _daysPerWeek;
+            } else if (_entitlementType == 'Günlük') {
+              entitlementMap['weeklyDays'] =
+                  List<String>.from(_weeklySelectedDays);
             }
+
+            // İlk ödeme için orantılı maaş hesapla (effectiveStartDate kullan)
+            double transactionAmount = _calculateProRataAmount(
+              entitlementType: _entitlementType,
+              entitlement: entitlementMap,
+              salaryAmount: salaryAmount,
+              startDate: effectiveStartDate,
+              paymentDate: paymentDate,
+              isFirstPayment: isFirstPayment,
+            );
 
             await withTimeout(
               transactionsCol.add({
@@ -6427,6 +7070,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                     Expanded(
                       child: TextFormField(
                         controller: _salaryAmountController,
+                        focusNode: _salaryAmountFocusNode,
                         decoration: InputDecoration(
                           labelText: _entitlementType == 'Aylık (İki Kere)'
                               ? 'Toplam Maaş (Otomatik)'
@@ -6434,6 +7078,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
+                        textInputAction: TextInputAction.next,
                         enabled: _entitlementType != 'Aylık (İki Kere)',
                         readOnly: _entitlementType == 'Aylık (İki Kere)',
                         inputFormatters: [
@@ -6441,28 +7086,9 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                             RegExp(r'[\d,.]'),
                           ),
                         ],
-                        onEditingComplete: () {
-                          if (_entitlementType != 'Aylık (İki Kere)') {
-                            final formatted = _formatSalaryAmount(
-                                _salaryAmountController.text);
-                            _salaryAmountController.value = TextEditingValue(
-                              text: formatted,
-                              selection: TextSelection.collapsed(
-                                  offset: formatted.length),
-                            );
-                          }
-                        },
-                        onTapOutside: (_) {
-                          if (_entitlementType != 'Aylık (İki Kere)') {
-                            final formatted = _formatSalaryAmount(
-                                _salaryAmountController.text);
-                            _salaryAmountController.value = TextEditingValue(
-                              text: formatted,
-                              selection: TextSelection.collapsed(
-                                  offset: formatted.length),
-                            );
-                          }
-                        },
+                        onEditingComplete: _handleSalaryAmountFormat,
+                        onFieldSubmitted: (_) => _handleSalaryAmountFormat(),
+                        onTapOutside: (_) => _handleSalaryAmountFormat(),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -6482,6 +7108,49 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                       ),
                     ),
                   ],
+                ),
+
+                // Saatlik maaş bilgisi
+                Builder(
+                  builder: (context) {
+                    final hourlyRate = _calculateHourlyRate();
+                    if (hourlyRate == null || hourlyRate <= 0) {
+                      return const SizedBox.shrink();
+                    }
+                    final formattedHourlyRate = _formatSalaryAmount(
+                        hourlyRate.toStringAsFixed(2).replaceAll('.', ','));
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Row(
+                        children: [
+                          InkWell(
+                            onTap: () =>
+                                _showHourlyRateCalculationInfo(context),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Icon(Icons.info_outline,
+                                  size: 16,
+                                  color: Theme.of(context).colorScheme.primary),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Saatlik Maaş: $formattedHourlyRate $_salaryCurrency/saat',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
 
                 const SizedBox(height: 12),
@@ -6616,6 +7285,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                       Expanded(
                         child: TextFormField(
                           controller: _semiMonthlyAmount1Controller,
+                          focusNode: _semiMonthlyAmount1FocusNode,
                           decoration: InputDecoration(
                             labelText:
                                 '${_semiMonthlyDay1 ?? 1}. Gün Tutarı ($_salaryCurrency)',
@@ -6624,51 +7294,26 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                           ),
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
+                          textInputAction: TextInputAction.next,
                           enabled: !_isSaving && _semiMonthlyDay1 != null,
                           onChanged: (value) {
                             // Sadece toplam maaşı güncelle, formatlama yapma
-                            _updateTotalSalary();
+                            setState(() {
+                              _updateTotalSalary();
+                            });
                           },
-                          onEditingComplete: () {
-                            // Focus kaybedildiğinde formatla
-                            final value = _semiMonthlyAmount1Controller.text;
-                            if (value.isNotEmpty) {
-                              final formatted = _formatSalaryAmount(value);
-                              if (formatted != value) {
-                                _semiMonthlyAmount1Controller.value =
-                                    TextEditingValue(
-                                  text: formatted,
-                                  selection: TextSelection.collapsed(
-                                      offset: formatted.length),
-                                );
-                              }
-                            }
-                            // Toplam maaşı güncelle
-                            _updateTotalSalary();
-                          },
-                          onTapOutside: (_) {
-                            // Focus kaybedildiğinde formatla
-                            final value = _semiMonthlyAmount1Controller.text;
-                            if (value.isNotEmpty) {
-                              final formatted = _formatSalaryAmount(value);
-                              if (formatted != value) {
-                                _semiMonthlyAmount1Controller.value =
-                                    TextEditingValue(
-                                  text: formatted,
-                                  selection: TextSelection.collapsed(
-                                      offset: formatted.length),
-                                );
-                              }
-                            }
-                            // Toplam maaşı güncelle
-                            _updateTotalSalary();
-                          },
+                          onEditingComplete: _handleSemiMonthlyAmount1Format,
+                          onFieldSubmitted: (_) =>
+                              _handleSemiMonthlyAmount1Format(),
+                          onTapOutside: (_) =>
+                              _handleSemiMonthlyAmount1Format(),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: TextFormField(
                           controller: _semiMonthlyAmount2Controller,
+                          focusNode: _semiMonthlyAmount2FocusNode,
                           decoration: InputDecoration(
                             labelText:
                                 '${_semiMonthlyDay2 ?? 2}. Gün Tutarı ($_salaryCurrency)',
@@ -6677,45 +7322,19 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                           ),
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
+                          textInputAction: TextInputAction.next,
                           enabled: !_isSaving && _semiMonthlyDay2 != null,
                           onChanged: (value) {
                             // Sadece toplam maaşı güncelle, formatlama yapma
-                            _updateTotalSalary();
+                            setState(() {
+                              _updateTotalSalary();
+                            });
                           },
-                          onEditingComplete: () {
-                            // Focus kaybedildiğinde formatla
-                            final value = _semiMonthlyAmount2Controller.text;
-                            if (value.isNotEmpty) {
-                              final formatted = _formatSalaryAmount(value);
-                              if (formatted != value) {
-                                _semiMonthlyAmount2Controller.value =
-                                    TextEditingValue(
-                                  text: formatted,
-                                  selection: TextSelection.collapsed(
-                                      offset: formatted.length),
-                                );
-                              }
-                            }
-                            // Toplam maaşı güncelle
-                            _updateTotalSalary();
-                          },
-                          onTapOutside: (_) {
-                            // Focus kaybedildiğinde formatla
-                            final value = _semiMonthlyAmount2Controller.text;
-                            if (value.isNotEmpty) {
-                              final formatted = _formatSalaryAmount(value);
-                              if (formatted != value) {
-                                _semiMonthlyAmount2Controller.value =
-                                    TextEditingValue(
-                                  text: formatted,
-                                  selection: TextSelection.collapsed(
-                                      offset: formatted.length),
-                                );
-                              }
-                            }
-                            // Toplam maaşı güncelle
-                            _updateTotalSalary();
-                          },
+                          onEditingComplete: _handleSemiMonthlyAmount2Format,
+                          onFieldSubmitted: (_) =>
+                              _handleSemiMonthlyAmount2Format(),
+                          onTapOutside: (_) =>
+                              _handleSemiMonthlyAmount2Format(),
                         ),
                       ),
                     ],
