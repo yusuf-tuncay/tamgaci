@@ -192,18 +192,20 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
           }
         }
 
+        // Son ödeme tarihini belirle: startDateTime'dan önceki tarihleri dikkate alma
         DateTime lastPaymentDate = startDateTime;
-        if (lastTransDate != null) {
+        if (lastTransDate != null && lastTransDate.isAfter(startDateTime)) {
           lastPaymentDate = lastTransDate;
         }
 
-        // Eksik transaction'ları hesapla ve oluştur
+        // Eksik transaction'ları hesapla ve oluştur (sadece kayıt tarihinden itibaren)
         await _createMissingTransactions(
           employeeId: employeeId,
           entitlementType: entitlementType,
           entitlement: entitlement,
           salaryAmount: salaryAmount,
           lastPaymentDate: lastPaymentDate,
+          startDateTime: startDateTime,
           now: now,
           transactionsCol: transactionsCol,
         );
@@ -221,12 +223,14 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     required Map<String, dynamic> entitlement,
     required double salaryAmount,
     required DateTime lastPaymentDate,
+    required DateTime startDateTime,
     required DateTime now,
     required CollectionReference<Map<String, dynamic>> transactionsCol,
   }) async {
     final List<DateTime> missingDates = [];
 
     // Son ödeme tarihinden itibaren bugüne kadar eksik tüm ödeme tarihlerini bul
+    // Ancak sadece kayıt tarihinden (startDateTime) itibaren olanları oluştur
     DateTime current = lastPaymentDate;
     const maxIterations = 100; // Sonsuz döngüyü önlemek için
     int iterations = 0;
@@ -240,8 +244,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
       if (nextPayment == null) break;
 
-      // Eğer son ödeme tarihinden sonra ve bugünden önce veya bugün ise
+      // Sadece kayıt tarihinden sonraki ödeme tarihlerini ekle
       if (nextPayment.isAfter(lastPaymentDate) &&
+          nextPayment.isAfter(startDateTime) &&
           (nextPayment.isBefore(now) || nextPayment.isAtSameMomentAs(now))) {
         missingDates.add(nextPayment);
         current = nextPayment;
@@ -488,6 +493,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                         .orderBy('name')
                         .snapshots(),
                     builder: (context, snap) {
+                      if (!context.mounted) {
+                        return const SizedBox.shrink();
+                      }
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
                       }
@@ -717,6 +725,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                     stream: _tenantCol('positions').orderBy('name').snapshots(),
                     builder: (context, snap) {
+                      if (!context.mounted) {
+                        return const SizedBox.shrink();
+                      }
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
                       }
@@ -783,6 +794,44 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                   icon: const Icon(Icons.delete,
                                       color: Colors.redAccent),
                                   onPressed: () async {
+                                    // Bu pozisyona ait personel var mı kontrol et
+                                    if (!await _ensureTenant()) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Tenant yüklenmedi. Lütfen tekrar deneyin.',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+
+                                    final employeesWithPos =
+                                        await _tenantCol('employees')
+                                            .where('position', isEqualTo: name)
+                                            .limit(1)
+                                            .get();
+
+                                    if (employeesWithPos.docs.isNotEmpty) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '"$name" pozisyonuna ait personel bulunduğu için silinemez. Önce personelleri başka bir pozisyona aktarın.',
+                                            ),
+                                            backgroundColor: Colors.orange,
+                                            duration:
+                                                const Duration(seconds: 4),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+
                                     final ok = await showDialog<bool>(
                                       context: context,
                                       builder: (ctx) => AlertDialog(
@@ -803,6 +852,29 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                       ),
                                     );
                                     if (ok == true) {
+                                      // Tekrar kontrol et (güvenlik için)
+                                      final recheck =
+                                          await _tenantCol('employees')
+                                              .where('position',
+                                                  isEqualTo: name)
+                                              .limit(1)
+                                              .get();
+
+                                      if (recheck.docs.isNotEmpty) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '"$name" pozisyonuna ait personel bulunduğu için silinemez.',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                        return;
+                                      }
+
                                       await d.reference.delete();
                                     }
                                   },
@@ -888,6 +960,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                     stream:
                         _tenantCol('departments').orderBy('name').snapshots(),
                     builder: (context, snap) {
+                      if (!context.mounted) {
+                        return const SizedBox.shrink();
+                      }
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
                       }
@@ -1521,6 +1596,9 @@ class _EmployeeListState extends State<_EmployeeList> {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: query.snapshots(),
       builder: (context, snap) {
+        if (!context.mounted) {
+          return const SizedBox.shrink();
+        }
         if (snap.hasError) {
           return Center(child: Text('Hata: ${snap.error}'));
         }
@@ -1747,6 +1825,9 @@ class _ArchiveHeader extends StatelessWidget {
                       .where('isActive', isEqualTo: false)
                       .snapshots(),
               builder: (context, snapshot) {
+                if (!context.mounted) {
+                  return const SizedBox.shrink();
+                }
                 final count = snapshot.data?.docs.length ?? 0;
                 return Container(
                   padding:
@@ -2123,6 +2204,9 @@ class _DepartmentEditDialogState extends State<_DepartmentEditDialog> {
                           .where('department', isEqualTo: widget.departmentName)
                           .snapshots(),
                       builder: (context, snapshot) {
+                        if (!context.mounted) {
+                          return const SizedBox.shrink();
+                        }
                         if (snapshot.hasError) {
                           return Text('Hata: ${snapshot.error}');
                         }
@@ -3527,6 +3611,9 @@ class _EmployeeDetailSheet extends StatelessWidget {
                 .doc(docId)
                 .snapshots(),
         builder: (streamContext, snapshot) {
+          if (!streamContext.mounted) {
+            return const SizedBox.shrink();
+          }
           List<dynamic> currentDocs = docs;
           if (snapshot.hasData && snapshot.data!.exists) {
             final data = snapshot.data!.data() as Map<String, dynamic>;
@@ -4458,8 +4545,16 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     _departmentsLive = List<String>.from(widget.departments)
         .where((d) => d != 'Tümü')
         .toList();
+    // Başlangıçta _dayEnabled'e göre _weeklySelectedDays'i doldur
+    for (final day in _weekdays) {
+      if (_dayEnabled[day] == true) {
+        _weeklySelectedDays.add(day);
+      }
+    }
+    _daysPerWeek = _weeklySelectedDays.length;
     // Listen to Firestore for runtime updates
     _posSub = _col('positions').orderBy('name').snapshots().listen((s) {
+      if (!mounted) return;
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
@@ -4475,6 +4570,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     });
     _catSub =
         _col('employee_categories').orderBy('name').snapshots().listen((s) {
+      if (!mounted) return;
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
@@ -4490,6 +4586,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
     });
 
     _deptSub = _col('departments').orderBy('name').snapshots().listen((s) {
+      if (!mounted) return;
       final names = s.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
@@ -4848,6 +4945,9 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                   StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                     stream: _col('departments').orderBy('name').snapshots(),
                     builder: (context, snap) {
+                      if (!context.mounted) {
+                        return const SizedBox.shrink();
+                      }
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
                       }
@@ -4913,6 +5013,31 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                                   icon: const Icon(Icons.delete,
                                       color: Colors.redAccent),
                                   onPressed: () async {
+                                    // Bu departmana ait personel var mı kontrol et
+                                    final employeesWithDept =
+                                        await _col('employees')
+                                            .where('department',
+                                                isEqualTo: name)
+                                            .limit(1)
+                                            .get();
+
+                                    if (employeesWithDept.docs.isNotEmpty) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '"$name" departmanına ait personel bulunduğu için silinemez. Önce personelleri başka bir departmana aktarın.',
+                                            ),
+                                            backgroundColor: Colors.orange,
+                                            duration:
+                                                const Duration(seconds: 4),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+
                                     final ok = await showDialog<bool>(
                                         context: context,
                                         builder: (ctx) => AlertDialog(
@@ -4934,8 +5059,30 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                                                       child: const Text('Sil'))
                                                 ]));
                                     if (ok == true) {
+                                      // Tekrar kontrol et (güvenlik için)
+                                      final recheck = await _col('employees')
+                                          .where('department', isEqualTo: name)
+                                          .limit(1)
+                                          .get();
+
+                                      if (recheck.docs.isNotEmpty) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '"$name" departmanına ait personel bulunduğu için silinemez.',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                        return;
+                                      }
+
                                       await d.reference.delete();
-                                      if (_selectedDepartment == name) {
+                                      if (mounted &&
+                                          _selectedDepartment == name) {
                                         setState(
                                             () => _selectedDepartment = null);
                                       }
@@ -5019,6 +5166,9 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                     stream:
                         _col('employee_categories').orderBy('name').snapshots(),
                     builder: (context, snap) {
+                      if (!context.mounted) {
+                        return const SizedBox.shrink();
+                      }
                       if (snap.hasError) {
                         return Center(child: Text('Hata: ${snap.error}'));
                       }
@@ -5084,6 +5234,30 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                                   icon: const Icon(Icons.delete,
                                       color: Colors.redAccent),
                                   onPressed: () async {
+                                    // Bu kategoriye ait personel var mı kontrol et
+                                    final employeesWithCat =
+                                        await _col('employees')
+                                            .where('category', isEqualTo: name)
+                                            .limit(1)
+                                            .get();
+
+                                    if (employeesWithCat.docs.isNotEmpty) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '"$name" kategorisine ait personel bulunduğu için silinemez. Önce personelleri başka bir kategoriye aktarın.',
+                                            ),
+                                            backgroundColor: Colors.orange,
+                                            duration:
+                                                const Duration(seconds: 4),
+                                          ),
+                                        );
+                                      }
+                                      return;
+                                    }
+
                                     final ok = await showDialog<bool>(
                                         context: context,
                                         builder: (ctx) => AlertDialog(
@@ -5104,7 +5278,30 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                                                               .pop(true),
                                                       child: const Text('Sil'))
                                                 ]));
-                                    if (ok == true) await d.reference.delete();
+                                    if (ok == true) {
+                                      // Tekrar kontrol et (güvenlik için)
+                                      final recheck = await _col('employees')
+                                          .where('category', isEqualTo: name)
+                                          .limit(1)
+                                          .get();
+
+                                      if (recheck.docs.isNotEmpty) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                '"$name" kategorisine ait personel bulunduğu için silinemez.',
+                                              ),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                        return;
+                                      }
+
+                                      await d.reference.delete();
+                                    }
                                   }),
                             ]),
                           );
@@ -5322,17 +5519,14 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
         return;
       }
     } else if (_entitlementType == 'Günlük') {
-      if (_daysPerWeek < 1 || _daysPerWeek > 7) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Haftada 1-7 gün arasında çalışabilir')));
-        return;
-      }
+      // Günler saat seçimi ile otomatik seçildiği için sadece kontrol et
       if (_weeklySelectedDays.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Çalışılan günleri seçin')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('En az bir gün için çalışma saatleri seçin')));
         return;
       }
-      for (final d in _weekdays) {
+      // Seçili günler için saat kontrolü yap
+      for (final d in _weeklySelectedDays) {
         if (_dayEnabled[d] == true) {
           final s = _startTimes[d]!;
           final e = _endTimes[d]!;
@@ -6195,53 +6389,7 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                   ),
 
                 if (_entitlementType == 'Günlük') ...[
-                  DropdownButtonFormField<int>(
-                    initialValue: _daysPerWeek,
-                    decoration: const InputDecoration(
-                        labelText: 'Haftada Kaç Gün Çalışır?'),
-                    items: List.generate(7, (i) => i + 1)
-                        .map((d) =>
-                            DropdownMenuItem(value: d, child: Text('$d')))
-                        .toList(),
-                    onChanged: _isSaving
-                        ? null
-                        : (v) => setState(() => _daysPerWeek = v ?? 5),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 6,
-                    children: [
-                      'Pazartesi',
-                      'Salı',
-                      'Çarşamba',
-                      'Perşembe',
-                      'Cuma',
-                      'Cumartesi',
-                      'Pazar'
-                    ]
-                        .map((d) => Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: FilterChip(
-                                label: Text(d),
-                                selected: _weeklySelectedDays.contains(d),
-                                onSelected: _isSaving
-                                    ? null
-                                    : (sel) {
-                                        setState(() {
-                                          if (sel) {
-                                            _weeklySelectedDays.add(d);
-                                          } else {
-                                            _weeklySelectedDays.remove(d);
-                                          }
-                                        });
-                                      },
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  // Haftalık çalışma saatleri
+                  // Haftalık çalışma saatleri - Günler saat seçimi ile otomatik seçilir
                   Text('Çalışma Saatleri',
                       style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
@@ -6261,8 +6409,23 @@ class _AddEmployeeFormState extends State<_AddEmployeeForm> {
                                 value: enabled,
                                 onChanged: _isSaving
                                     ? null
-                                    : (v) => setState(
-                                        () => _dayEnabled[d] = v ?? false),
+                                    : (v) {
+                                        setState(() {
+                                          _dayEnabled[d] = v ?? false;
+                                          // Gün seçildiğinde veya kaldırıldığında _weeklySelectedDays'i güncelle
+                                          if (v == true) {
+                                            if (!_weeklySelectedDays
+                                                .contains(d)) {
+                                              _weeklySelectedDays.add(d);
+                                            }
+                                          } else {
+                                            _weeklySelectedDays.remove(d);
+                                          }
+                                          // _daysPerWeek'i güncelle
+                                          _daysPerWeek =
+                                              _weeklySelectedDays.length;
+                                        });
+                                      },
                               ),
                             ),
                             const SizedBox(width: 8),
