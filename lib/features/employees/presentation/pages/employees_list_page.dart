@@ -146,10 +146,15 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         final salary = empData['salary'] as Map<String, dynamic>?;
         final entitlement = empData['entitlement'] as Map<String, dynamic>?;
         final startDate = empData['startDate'];
+        final autoEntitlementEnabled =
+            empData['autoEntitlementEnabled'] as bool? ?? true;
 
         if (salary == null || entitlement == null || startDate == null) {
           continue;
         }
+
+        // Otomatik hak ediş kapalıysa atla
+        if (!autoEntitlementEnabled) continue;
 
         final salaryAmount = (salary['amount'] as num?)?.toDouble() ?? 0;
         if (salaryAmount <= 0) continue;
@@ -4297,9 +4302,228 @@ class _EmployeeDetailSheet extends StatelessWidget {
   }
 
   void _handleEntitlementAction(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Hak ediş özelliği yakında eklenecek'),
+    final name = data['name'] as String? ?? 'Personel';
+    final salary =
+        (data['salary'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+    final salaryCurrency = salary['currency']?.toString() ?? 'TRY';
+    final autoEntitlementEnabled =
+        data['autoEntitlementEnabled'] as bool? ?? true;
+
+    _showAddEntitlementDialog(
+        context, name, salaryCurrency, autoEntitlementEnabled);
+  }
+
+  void _showAddEntitlementDialog(
+    BuildContext context,
+    String name,
+    String currency,
+    bool currentAutoEntitlementEnabled,
+  ) {
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    final now = DateTime.now();
+    final dateController = TextEditingController(
+      text:
+          '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}',
+    );
+    DateTime selectedDate = now;
+    bool autoEntitlementEnabled = currentAutoEntitlementEnabled;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setState) => AlertDialog(
+          title: const Text('Manuel Hak Ediş Ekle'),
+          contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('$name için manuel hak ediş ekle'),
+                  const SizedBox(height: 16),
+                  // Otomatik hak ediş açma/kapama
+                  Card(
+                    color: Colors.grey[50],
+                    child: SwitchListTile(
+                      title: const Text('Otomatik Hak Ediş'),
+                      subtitle: const Text(
+                        'Otomatik hak ediş oluşturmayı aç/kapat',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                      value: autoEntitlementEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          autoEntitlementEnabled = value;
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Tarih seçici
+                  InkWell(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: dialogContext,
+                        initialDate: selectedDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        locale: const Locale('tr', 'TR'),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          selectedDate = picked;
+                          dateController.text =
+                              '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
+                        });
+                      }
+                    },
+                    child: InputDecorator(
+                      decoration: const InputDecoration(
+                        labelText: 'Tarih',
+                        border: OutlineInputBorder(),
+                        suffixIcon: Icon(Icons.calendar_today),
+                      ),
+                      child: Text(
+                        dateController.text.isEmpty
+                            ? 'Tarih seçin'
+                            : dateController.text,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Tutar
+                  TextFormField(
+                    controller: amountController,
+                    decoration: InputDecoration(
+                      labelText: 'Tutar ($currency)',
+                      border: const OutlineInputBorder(),
+                      hintText: 'Örn: 10000,00',
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                          RegExp(r'^\d+([,.]\d{0,2})?$')),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Not
+                  TextFormField(
+                    controller: noteController,
+                    decoration: const InputDecoration(
+                      labelText: 'Not (Opsiyonel)',
+                      border: OutlineInputBorder(),
+                      hintText: 'Hak ediş açıklaması...',
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                amountController.dispose();
+                noteController.dispose();
+                dateController.dispose();
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                final amountText = amountController.text
+                    .replaceAll('.', '')
+                    .replaceAll(',', '.');
+                final amount = double.tryParse(amountText) ?? 0;
+                final note = noteController.text.trim();
+
+                if (amount <= 0) {
+                  ScaffoldMessenger.of(dialogContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Tutar 0\'dan büyük olmalıdır'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  // Önce employee document'ini güncelle (otomatik hak ediş ayarı)
+                  final employeesCol =
+                      (tenantId != null && tenantId!.isNotEmpty)
+                          ? FirebaseFirestore.instance
+                              .collection('tenants')
+                              .doc(tenantId)
+                              .collection('employees')
+                          : FirebaseFirestore.instance.collection('employees');
+
+                  await employeesCol.doc(docId).update({
+                    'autoEntitlementEnabled': autoEntitlementEnabled,
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+
+                  // Sonra transaction'ı ekle
+                  final transactionsCol = (tenantId != null &&
+                          tenantId!.isNotEmpty)
+                      ? FirebaseFirestore.instance
+                          .collection('tenants')
+                          .doc(tenantId)
+                          .collection('employee_transactions')
+                      : FirebaseFirestore.instance
+                          .collection('employee_transactions');
+
+                  await transactionsCol.add({
+                    'employeeId': docId,
+                    'amount': amount,
+                    'direction': 'in',
+                    'type': 'entitlement',
+                    'note': note.isEmpty ? 'Manuel hak ediş' : note,
+                    'date': Timestamp.fromDate(selectedDate),
+                    'currency': currency,
+                    'tenantId': tenantId,
+                    'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                    'createdAt': FieldValue.serverTimestamp(),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+
+                  if (ctx.mounted) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Hak ediş eklendi (${amount.toStringAsFixed(2)} $currency)${autoEntitlementEnabled ? '' : '\nOtomatik hak ediş kapatıldı'}',
+                        ),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+
+                  amountController.dispose();
+                  noteController.dispose();
+                  dateController.dispose();
+                } catch (e) {
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      SnackBar(
+                        content: Text('Hata: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Ekle'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -7824,6 +8048,7 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
           if (schedule.isNotEmpty) 'schedule': schedule,
           'photoUrl': null,
           'documents': [],
+          'autoEntitlementEnabled': true, // Varsayılan olarak açık
           'tenantId': widget.tenantId,
           'createdBy': FirebaseAuth.instance.currentUser?.uid,
           'createdAt': FieldValue.serverTimestamp(),
