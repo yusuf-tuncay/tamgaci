@@ -17,6 +17,8 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
+import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
+import 'package:intl/intl.dart';
 
 class EmployeesListPage extends StatefulWidget {
   const EmployeesListPage({super.key});
@@ -4294,11 +4296,671 @@ class _EmployeeDetailSheet extends StatelessWidget {
   }
 
   void _handleAdvancePaymentAction(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Avans/Ödeme özelliği yakında eklenecek'),
-      ),
+    final name = data['name'] as String? ?? 'Personel';
+    final salary =
+        (data['salary'] as Map<String, dynamic>?) ?? <String, dynamic>{};
+    final salaryCurrency = salary['currency']?.toString() ?? 'TRY';
+
+    _showAddPaymentDialog(context, name, salaryCurrency);
+  }
+
+  // Kur bilgisini otomatik getir
+  Future<void> _fetchExchangeRate(
+    String fromCurrency,
+    String toCurrency,
+    TextEditingController controller,
+    StateSetter setState,
+    Function(double?) onRateFetched,
+  ) async {
+    try {
+      final exchangeRateService = ExchangeRateService();
+
+      // Her iki para biriminin TRY karşılığını al
+      final fromRate = await exchangeRateService.getExchangeRate(fromCurrency);
+      final toRate = await exchangeRateService.getExchangeRate(toCurrency);
+
+      if (fromRate != null && toRate != null && toRate.rate > 0) {
+        // Kur hesaplama: 1 fromCurrency = ? toCurrency
+        // Örnek: 1 GBP = ? USD
+        // GBP/TRY = 45, USD/TRY = 34
+        // Kur = 45 / 34 = 1.32 (1 GBP = 1.32 USD)
+        final calculatedRate = fromRate.rate / toRate.rate;
+
+        setState(() {
+          onRateFetched(calculatedRate);
+          // Türkçe formatla (virgül ile)
+          final formattedRate =
+              calculatedRate.toStringAsFixed(6).replaceAll('.', ',');
+          controller.text = formattedRate;
+        });
+      } else {
+        // Kur bulunamadıysa boş bırak
+        setState(() {
+          onRateFetched(null);
+          controller.clear();
+        });
+      }
+    } catch (e) {
+      // Hata durumunda boş bırak, kullanıcı manuel girebilir
+      setState(() {
+        onRateFetched(null);
+        controller.clear();
+      });
+    }
+  }
+
+  // Türkçe sayı formatı yardımcısı
+  String _formatNumberTr(double value, {int decimalDigits = 2}) {
+    final decimalPart =
+        decimalDigits > 0 ? '.${List.filled(decimalDigits, '0').join()}' : '';
+    final formatter = NumberFormat('#,##0$decimalPart', 'tr_TR');
+    return formatter.format(value);
+  }
+
+  double? _parseAmountText(String text) {
+    if (text.trim().isEmpty) return null;
+    String sanitized = text.replaceAll(' ', '');
+    sanitized = sanitized.replaceAll(RegExp(r'[^0-9,.]'), '');
+    if (sanitized.isEmpty) return null;
+
+    final formatter = NumberFormat.decimalPattern('tr_TR');
+    double? parsed;
+    try {
+      parsed = formatter.parse(sanitized).toDouble();
+    } catch (_) {}
+
+    if (parsed == null && sanitized.contains('.')) {
+      try {
+        parsed = formatter.parse(sanitized.replaceAll('.', ',')).toDouble();
+      } catch (_) {}
+    }
+
+    if (parsed == null) {
+      final fallback = sanitized.replaceAll('.', '').replaceAll(',', '.');
+      parsed = double.tryParse(fallback);
+    }
+
+    return parsed;
+  }
+
+  // Tutar alanını Türkçe formata çevir
+  void _formatAmountField(TextEditingController controller) {
+    final value = _parseAmountText(controller.text);
+    if (value == null) return;
+
+    final formatted = _formatNumberTr(value);
+    controller.value = TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
+  }
+
+  void _showAddPaymentDialog(
+    BuildContext context,
+    String name,
+    String currency,
+  ) async {
+    // Önce kasaları çek - accounts collection'ından
+    final accountsCol = (tenantId != null && tenantId!.isNotEmpty)
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('accounts')
+        : FirebaseFirestore.instance.collection('accounts');
+
+    try {
+      final accountsSnapshot =
+          await accountsCol.where('isActive', isEqualTo: true).get();
+
+      // Sadece Nakit ve Banka (checking/savings) kasalarını filtrele
+      final availableAccounts = accountsSnapshot.docs.where((doc) {
+        final data = doc.data();
+        final type = data['type'] as String?;
+        // Nakit veya Banka (checking, savings) hesapları
+        return type == 'cash' || type == 'checking' || type == 'savings';
+      }).map((doc) {
+        final data = doc.data();
+        final type = data['type'] as String?;
+        String typeLabel = 'Diğer';
+        if (type == 'cash') {
+          typeLabel = 'Nakit';
+        } else if (type == 'checking' || type == 'savings') {
+          typeLabel = 'Banka';
+        }
+        return {
+          'id': doc.id,
+          'name': data['name'] as String? ?? '',
+          'type': type ?? '',
+          'typeLabel': typeLabel,
+          'balance': (data['balance'] as num?)?.toDouble() ?? 0.0,
+          'currency': data['currency'] as String? ?? 'TRY',
+        };
+      }).toList();
+
+      if (availableAccounts.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Aktif Nakit veya Banka hesabı bulunamadı. Lütfen önce hesap ekleyin.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!context.mounted) return;
+
+      final amountController = TextEditingController();
+      final exchangeRateController = TextEditingController();
+      final noteController = TextEditingController();
+      final now = DateTime.now();
+      final dateController = TextEditingController(
+        text:
+            '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}',
+      );
+      DateTime selectedDate = now;
+      String? selectedAccountId = availableAccounts.first['id'] as String;
+      String selectedAccountCurrency =
+          availableAccounts.first['currency'] as String;
+      bool needsExchangeRate = selectedAccountCurrency != currency;
+      double? exchangeRate;
+      bool isDialogDisposed = false;
+
+      showDialog(
+        context: context,
+        builder: (ctx) => StatefulBuilder(builder: (dialogContext, setState) {
+          // İlk yüklemede kur bilgisini otomatik getir
+          if (needsExchangeRate && exchangeRate == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _fetchExchangeRate(
+                selectedAccountCurrency,
+                currency,
+                exchangeRateController,
+                setState,
+                (rate) {
+                  exchangeRate = rate;
+                },
+              );
+            });
+          }
+          return AlertDialog(
+            title: const Text('Ödeme Ekle'),
+            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('$name için ödeme ekle'),
+                    const SizedBox(height: 16),
+                    // Kasa seçimi - StreamBuilder ile güncel bakiye gösterimi
+                    StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: selectedAccountId != null
+                          ? accountsCol.doc(selectedAccountId).snapshots()
+                          : null,
+                      builder: (context, snapshot) {
+                        double currentBalance = 0.0;
+                        String accountCurrency = 'TRY';
+                        if (snapshot.hasData && snapshot.data!.exists) {
+                          final accountData = snapshot.data!.data()!;
+                          currentBalance =
+                              (accountData['balance'] as num?)?.toDouble() ??
+                                  0.0;
+                          accountCurrency =
+                              accountData['currency'] as String? ?? 'TRY';
+                        } else {
+                          // İlk yükleme için availableAccounts'tan al
+                          final selectedAccount = availableAccounts.firstWhere(
+                            (acc) => acc['id'] == selectedAccountId,
+                            orElse: () => availableAccounts.first,
+                          );
+                          currentBalance = selectedAccount['balance'] as double;
+                          accountCurrency =
+                              selectedAccount['currency'] as String;
+                        }
+
+                        // Format balance in Turkish format
+                        String formatBalance(double amount) {
+                          final parts =
+                              amount.abs().toStringAsFixed(2).split('.');
+                          final intPart = parts[0];
+                          final decPart = parts[1];
+                          final formattedInt = intPart.replaceAllMapped(
+                            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                            (Match m) => '${m[1]}.',
+                          );
+                          return '$formattedInt,$decPart';
+                        }
+
+                        final formattedBalance = formatBalance(currentBalance);
+
+                        return DropdownButtonFormField<String>(
+                          initialValue: selectedAccountId,
+                          decoration: InputDecoration(
+                            labelText: 'Kasa *',
+                            border: const OutlineInputBorder(),
+                            helperText: snapshot.hasData
+                                ? 'Bakiye: $formattedBalance $accountCurrency'
+                                : 'Nakit veya Banka hesabı seçin',
+                            isDense: true,
+                          ),
+                          isExpanded: true,
+                          items: availableAccounts.map((account) {
+                            final accountName = account['name'] as String;
+                            final typeLabel = account['typeLabel'] as String;
+                            return DropdownMenuItem<String>(
+                              value: account['id'] as String,
+                              child: Text(
+                                '$accountName ($typeLabel)',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            );
+                          }).toList(),
+                          selectedItemBuilder: (BuildContext context) {
+                            return availableAccounts.map((account) {
+                              final accountName = account['name'] as String;
+                              final typeLabel = account['typeLabel'] as String;
+                              return Text(
+                                '$accountName ($typeLabel)',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            }).toList();
+                          },
+                          onChanged: (value) async {
+                            setState(() {
+                              selectedAccountId = value;
+                              // Seçilen hesabın para birimini al
+                              final selectedAccount =
+                                  availableAccounts.firstWhere(
+                                (acc) => acc['id'] == value,
+                              );
+                              selectedAccountCurrency =
+                                  selectedAccount['currency'] as String;
+                              needsExchangeRate =
+                                  selectedAccountCurrency != currency;
+                              if (!needsExchangeRate) {
+                                exchangeRate = null;
+                                exchangeRateController.clear();
+                              } else {
+                                // Kur bilgisini otomatik getir
+                                _fetchExchangeRate(
+                                  selectedAccountCurrency,
+                                  currency,
+                                  exchangeRateController,
+                                  setState,
+                                  (rate) {
+                                    exchangeRate = rate;
+                                  },
+                                );
+                              }
+                            });
+                          },
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Kasa seçimi zorunludur';
+                            }
+                            return null;
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Tarih seçici
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogContext,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          locale: const Locale('tr', 'TR'),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            selectedDate = picked;
+                            dateController.text =
+                                '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
+                          });
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Tarih',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          dateController.text.isEmpty
+                              ? 'Tarih seçin'
+                              : dateController.text,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Kur girişi (farklı para birimi varsa)
+                    if (needsExchangeRate) ...[
+                      TextFormField(
+                        controller: exchangeRateController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Kur (1 $selectedAccountCurrency = ? $currency) *',
+                          border: const OutlineInputBorder(),
+                          hintText: 'Örn: 34,50',
+                          helperText:
+                              'Kasa para birimi ($selectedAccountCurrency) ile personel para birimi ($currency) farklı',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+([,.]\d{0,6})?$')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            final rateText =
+                                value.replaceAll('.', '').replaceAll(',', '.');
+                            exchangeRate = double.tryParse(rateText);
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    // Tutar
+                    Builder(
+                      builder: (context) {
+                        // Hesap para birimi karşılığını hesapla
+                        String? accountCurrencyEquivalent;
+                        final parsedAmount =
+                            _parseAmountText(amountController.text);
+                        if (parsedAmount != null && parsedAmount > 0) {
+                          if (needsExchangeRate &&
+                              exchangeRate != null &&
+                              exchangeRate! > 0) {
+                            final accountAmount = parsedAmount / exchangeRate!;
+                            accountCurrencyEquivalent =
+                                '${_formatNumberTr(accountAmount)} $selectedAccountCurrency';
+                          } else if (selectedAccountCurrency == currency) {
+                            accountCurrencyEquivalent =
+                                '${_formatNumberTr(parsedAmount)} $selectedAccountCurrency';
+                          }
+                        }
+
+                        return Focus(
+                          onFocusChange: (hasFocus) {
+                            if (!hasFocus && !isDialogDisposed) {
+                              // Focus kaybedildiğinde formatla
+                              try {
+                                setState(() {
+                                  _formatAmountField(amountController);
+                                });
+                              } catch (e) {
+                                // Dialog kapatıldıysa hata yok sayılır
+                              }
+                            }
+                          },
+                          child: TextFormField(
+                            controller: amountController,
+                            decoration: InputDecoration(
+                              labelText: 'Tutar ($currency)',
+                              border: const OutlineInputBorder(),
+                              hintText: 'Örn: 10000,00',
+                              helperText: accountCurrencyEquivalent,
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9.,]')),
+                            ],
+                            onChanged: (value) {
+                              // Tutar değiştiğinde hesap para birimi karşılığını güncelle
+                              if (!isDialogDisposed) {
+                                try {
+                                  setState(() {});
+                                } catch (e) {
+                                  // Dialog kapatıldıysa hata yok sayılır
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Not
+                    TextFormField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Not (Opsiyonel)',
+                        border: OutlineInputBorder(),
+                        hintText: 'Ödeme açıklaması...',
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  isDialogDisposed = true;
+                  amountController.dispose();
+                  exchangeRateController.dispose();
+                  noteController.dispose();
+                  dateController.dispose();
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  if (selectedAccountId == null || selectedAccountId!.isEmpty) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen bir kasa seçin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Kur kontrolü (farklı para birimi varsa)
+                  if (needsExchangeRate &&
+                      (exchangeRate == null || exchangeRate! <= 0)) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen geçerli bir kur girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final amountText = amountController.text
+                      .replaceAll('.', '')
+                      .replaceAll(',', '.');
+                  final amount = double.tryParse(amountText) ?? 0;
+                  final note = noteController.text.trim();
+
+                  if (amount <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tutar 0\'dan büyük olmalıdır'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    // Önce account bilgisini al (balance güncellemesi için)
+                    final accountDoc =
+                        await accountsCol.doc(selectedAccountId).get();
+                    if (!accountDoc.exists) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Seçilen hesap bulunamadı'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final accountData =
+                        accountDoc.data() as Map<String, dynamic>;
+                    final accountCurrency =
+                        accountData['currency'] as String? ?? 'TRY';
+                    final currentBalance =
+                        (accountData['balance'] as num?)?.toDouble() ?? 0.0;
+                    final blockedAmount =
+                        (accountData['blockedAmount'] as num?)?.toDouble() ??
+                            0.0;
+
+                    // Tutarı kasa para birimine çevir (eğer farklıysa)
+                    double amountInAccountCurrency = amount;
+                    if (accountCurrency != currency &&
+                        exchangeRate != null &&
+                        exchangeRate! > 0) {
+                      amountInAccountCurrency = amount / exchangeRate!;
+                    }
+
+                    final newBalance = currentBalance -
+                        amountInAccountCurrency; // Ödeme çıkış olduğu için balance'dan düş
+                    final newAvailableBalance = newBalance - blockedAmount;
+
+                    // Batch işlem: hem employee_transaction hem account_transaction ekle, account balance güncelle
+                    final batch = FirebaseFirestore.instance.batch();
+
+                    // 1. Employee transaction ekle
+                    final employeeTransactionsCol =
+                        (tenantId != null && tenantId!.isNotEmpty)
+                            ? FirebaseFirestore.instance
+                                .collection('tenants')
+                                .doc(tenantId)
+                                .collection('employee_transactions')
+                            : FirebaseFirestore.instance
+                                .collection('employee_transactions');
+
+                    final employeeTransactionRef =
+                        employeeTransactionsCol.doc();
+                    batch.set(employeeTransactionRef, {
+                      'employeeId': docId,
+                      'amount': amount,
+                      'direction': 'out',
+                      'type': 'payment',
+                      'note': note.isEmpty ? 'Ödeme' : note,
+                      'date': Timestamp.fromDate(selectedDate),
+                      'currency': currency,
+                      'accountId': selectedAccountId,
+                      'tenantId': tenantId,
+                      'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                      'createdAt': FieldValue.serverTimestamp(),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    // 2. Account transaction ekle (kasa hareketi)
+                    final accountTransactionsCol =
+                        (tenantId != null && tenantId!.isNotEmpty)
+                            ? FirebaseFirestore.instance
+                                .collection('tenants')
+                                .doc(tenantId)
+                                .collection('accountTransactions')
+                            : FirebaseFirestore.instance
+                                .collection('accountTransactions');
+
+                    final accountTransactionRef = accountTransactionsCol.doc();
+                    final exchangeRateNote = needsExchangeRate &&
+                            exchangeRate != null
+                        ? ' (Kur: $exchangeRate, $amount $currency = ${amountInAccountCurrency.toStringAsFixed(2)} $accountCurrency)'
+                        : '';
+                    batch.set(accountTransactionRef, {
+                      'accountId': selectedAccountId,
+                      'type': 'withdrawal', // Para çıkışı
+                      'category': 'expense', // Gider
+                      'amount':
+                          amountInAccountCurrency, // Kasa para biriminde tutar
+                      'debitAmount': amountInAccountCurrency, // Borç (çıkış)
+                      'creditAmount': null,
+                      'balanceAfter': newBalance,
+                      'description':
+                          '$name - Personel Ödemesi$exchangeRateNote',
+                      'notes': note.isEmpty ? null : note,
+                      'transactionDate': Timestamp.fromDate(selectedDate),
+                      'userId': FirebaseAuth.instance.currentUser?.uid ?? '',
+                      'isReconciled': false,
+                      'tenantId': tenantId,
+                      'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                      'updatedBy': FirebaseAuth.instance.currentUser?.uid,
+                      'createdAt': FieldValue.serverTimestamp(),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    // 3. Account balance güncelle
+                    final accountRef = accountsCol.doc(selectedAccountId);
+                    batch.update(accountRef, {
+                      'balance': newBalance,
+                      'availableBalance': newAvailableBalance,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                      'updatedBy': FirebaseAuth.instance.currentUser?.uid,
+                    });
+
+                    // Batch'i commit et
+                    await batch.commit();
+
+                    if (ctx.mounted) {
+                      isDialogDisposed = true;
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Ödeme eklendi (${amount.toStringAsFixed(2)} $currency)',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+
+                    amountController.dispose();
+                    exchangeRateController.dispose();
+                    noteController.dispose();
+                    dateController.dispose();
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Hata: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Ekle'),
+              ),
+            ],
+          );
+        }),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kasa bilgileri alınırken hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _handleEntitlementAction(BuildContext context) {
