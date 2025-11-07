@@ -18,6 +18,7 @@ import 'package:path/path.dart' as path;
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
+import 'package:tamgaci/core/services/utils/export_service.dart';
 import 'package:intl/intl.dart';
 
 class EmployeesListPage extends StatefulWidget {
@@ -368,8 +369,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       } else {
         // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
-      while (current.weekday != targetWeekday) {
-        current = current.add(const Duration(days: 1));
+        while (current.weekday != targetWeekday) {
+          current = current.add(const Duration(days: 1));
         }
       }
       return current;
@@ -415,33 +416,33 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         DateTime next;
 
         // Önce aynı ayın ilk ödeme gününü kontrol et
-          try {
-            next = DateTime(fromDate.year, fromDate.month, day1);
+        try {
+          next = DateTime(fromDate.year, fromDate.month, day1);
           if (next.isAfter(fromDate)) {
             return next;
           }
-          } catch (_) {
+        } catch (_) {
           // Geçersiz tarih, devam et
-          }
+        }
 
         // Sonra aynı ayın ikinci ödeme gününü kontrol et
-          try {
-            next = DateTime(fromDate.year, fromDate.month, day2);
+        try {
+          next = DateTime(fromDate.year, fromDate.month, day2);
           if (next.isAfter(fromDate)) {
             return next;
           }
-          } catch (_) {
+        } catch (_) {
           // Geçersiz tarih, devam et
-          }
+        }
 
         // Eğer aynı ayın ödeme günleri geçmişse, bir sonraki ayın ilk ödeme gününe git
-          try {
-            next = DateTime(fromDate.year, fromDate.month + 1, day1);
-            return next;
-          } catch (_) {
+        try {
+          next = DateTime(fromDate.year, fromDate.month + 1, day1);
+          return next;
+        } catch (_) {
           // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
-            next = DateTime(fromDate.year, fromDate.month + 2, 0);
-            return next;
+          next = DateTime(fromDate.year, fromDate.month + 2, 0);
+          return next;
         }
 
       case 'Haftalık':
@@ -1297,7 +1298,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               title: const Text('Excel Olarak İndir'),
               onTap: () {
                 Navigator.of(context).pop();
-                // TODO: Excel export implementation
+                _exportEmployeesToExcel(context);
               },
             ),
             ListTile(
@@ -1305,7 +1306,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               title: const Text('PDF Olarak İndir'),
               onTap: () {
                 Navigator.of(context).pop();
-                // TODO: PDF export implementation
+                _exportEmployeesToPDF(context);
               },
             ),
           ],
@@ -1315,6 +1316,426 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   }
 
   // Tarih aralığı kaldırıldı
+
+  Future<void> _exportEmployeesToExcel(BuildContext context) async {
+    bool dialogShown = false;
+    Object? error;
+    String? fileName;
+    try {
+      // Loading göster
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      dialogShown = true;
+
+      // Personel listesini çek
+      Query<Map<String, dynamic>> query = _tenantCol('employees');
+
+      if (_selectedDepartment != 'Tümü' && _selectedDepartment.isNotEmpty) {
+        query = query.where('department', isEqualTo: _selectedDepartment);
+      }
+      if (_selectedCategory != 'Tümü' && _selectedCategory.isNotEmpty) {
+        query = query.where('category', isEqualTo: _selectedCategory);
+      }
+
+      String orderField;
+      switch (_sortBy) {
+        case 'Ad Soyad':
+          orderField = 'name';
+          break;
+        case 'Departman':
+          orderField = 'department';
+          break;
+        case 'Kategori':
+          orderField = 'category';
+          break;
+        case 'Bakiye':
+          orderField = 'name';
+          break;
+        default:
+          orderField = 'createdAt';
+      }
+      query = query.orderBy(orderField, descending: !_sortAscending);
+
+      final snapshot = await query.get();
+      var docs = snapshot.docs;
+
+      // Arama sorgusu varsa filtrele
+      final q = _searchQuery.trim().toLowerCase();
+      if (q.isNotEmpty) {
+        docs = docs.where((d) {
+          final data = d.data();
+          final name = (data['name'] as String?)?.toLowerCase() ?? '';
+          final department =
+              (data['department'] as String?)?.toLowerCase() ?? '';
+          final category = (data['category'] as String?)?.toLowerCase() ?? '';
+          return name.contains(q) ||
+              department.contains(q) ||
+              category.contains(q);
+        }).toList();
+      }
+
+      if (docs.isEmpty) {
+        if (context.mounted) {
+          try {
+            if (Navigator.of(context, rootNavigator: true).canPop()) {
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+          } catch (_) {}
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Export edilecek personel bulunamadı'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+        return;
+      }
+
+      // Headers
+      final headers = [
+        'Ad Soyad',
+        'Departman',
+        'Kategori',
+        'Pozisyon',
+        'Maaş',
+        'Para Birimi',
+        'Durum',
+      ];
+
+      // Data
+      final exportData = <List<dynamic>>[];
+
+      for (final doc in docs) {
+        final data = doc.data();
+        final name = data['name'] as String? ?? '-';
+        final department = data['department'] as String? ?? '-';
+        final category = data['category'] as String? ?? '-';
+        final position = data['position'] as String? ?? '-';
+        final salary = (data['salary'] as Map?) ?? {};
+        final salaryAmount = (salary['amount'] as num?)?.toDouble() ?? 0.0;
+        final salaryCurrency = salary['currency']?.toString() ?? 'TRY';
+        final isActive = data['isActive'] as bool? ?? true;
+        final status = isActive ? 'Aktif' : 'Arşiv';
+
+        // Format amount in Turkish format
+        String formatAmount(double amount) {
+          final parts = amount.abs().toStringAsFixed(2).split('.');
+          final intPart = parts[0];
+          final decPart = parts[1];
+          final formattedInt = intPart.replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+          return '$formattedInt,$decPart';
+        }
+
+        exportData.add([
+          name,
+          department,
+          category,
+          position,
+          formatAmount(salaryAmount),
+          salaryCurrency,
+          status,
+        ]);
+      }
+
+      // Export service kullan
+      final exportService = ExportService();
+      final fileBytes = await exportService.exportToExcel(
+        title: 'Personel Listesi',
+        headers: headers,
+        data: exportData,
+        sheetName: 'Personeller',
+      );
+
+      // Dosyayı kaydet
+      fileName =
+          'Personel_Listesi_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+
+      if (kIsWeb) {
+        final blob = web.Blob([fileBytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        web.URL.revokeObjectURL(url);
+      } else {
+        final directory = await getDownloadsDirectory();
+        if (directory != null) {
+          final filePath = path.join(directory.path, fileName);
+          final file = File(filePath);
+          await file.writeAsBytes(fileBytes);
+        }
+      }
+    } catch (e) {
+      error = e;
+    } finally {
+      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      if (dialogShown) {
+        final finalError = error;
+        final finalFileName = fileName;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (context.mounted) {
+              // Dialog'u kapat
+              if (Navigator.of(context, rootNavigator: true).canPop()) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+              // SnackBar göster
+              if (finalError != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Export hatası: $finalError'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              } else if (finalFileName != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Excel dosyası indirildi: $finalFileName'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir, sessizce geç
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _exportEmployeesToPDF(BuildContext context) async {
+    bool dialogShown = false;
+    Object? error;
+    String? fileName;
+    try {
+      // Loading göster
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      dialogShown = true;
+
+      // Personel listesini çek
+      Query<Map<String, dynamic>> query = _tenantCol('employees');
+
+      if (_selectedDepartment != 'Tümü' && _selectedDepartment.isNotEmpty) {
+        query = query.where('department', isEqualTo: _selectedDepartment);
+      }
+      if (_selectedCategory != 'Tümü' && _selectedCategory.isNotEmpty) {
+        query = query.where('category', isEqualTo: _selectedCategory);
+      }
+
+      String orderField;
+      switch (_sortBy) {
+        case 'Ad Soyad':
+          orderField = 'name';
+          break;
+        case 'Departman':
+          orderField = 'department';
+          break;
+        case 'Kategori':
+          orderField = 'category';
+          break;
+        case 'Bakiye':
+          orderField = 'name';
+          break;
+        default:
+          orderField = 'createdAt';
+      }
+      query = query.orderBy(orderField, descending: !_sortAscending);
+
+      final snapshot = await query.get();
+      var docs = snapshot.docs;
+
+      // Arama sorgusu varsa filtrele
+      final q = _searchQuery.trim().toLowerCase();
+      if (q.isNotEmpty) {
+        docs = docs.where((d) {
+          final data = d.data();
+          final name = (data['name'] as String?)?.toLowerCase() ?? '';
+          final department =
+              (data['department'] as String?)?.toLowerCase() ?? '';
+          final category = (data['category'] as String?)?.toLowerCase() ?? '';
+          return name.contains(q) ||
+              department.contains(q) ||
+              category.contains(q);
+        }).toList();
+      }
+
+      if (docs.isEmpty) {
+        if (dialogShown && context.mounted) {
+          try {
+            Navigator.of(context, rootNavigator: true).pop();
+            dialogShown = false;
+          } catch (_) {}
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Export edilecek personel bulunamadı'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+        return;
+      }
+
+      // Headers
+      final headers = [
+        'Ad Soyad',
+        'Departman',
+        'Kategori',
+        'Pozisyon',
+        'Maaş',
+        'Para Birimi',
+        'Durum',
+      ];
+
+      // Data
+      final exportData = <List<dynamic>>[];
+      int activeCount = 0;
+      int archivedCount = 0;
+
+      for (final doc in docs) {
+        final data = doc.data();
+        final name = data['name'] as String? ?? '-';
+        final department = data['department'] as String? ?? '-';
+        final category = data['category'] as String? ?? '-';
+        final position = data['position'] as String? ?? '-';
+        final salary = (data['salary'] as Map?) ?? {};
+        final salaryAmount = (salary['amount'] as num?)?.toDouble() ?? 0.0;
+        final salaryCurrency = salary['currency']?.toString() ?? 'TRY';
+        final isActive = data['isActive'] as bool? ?? true;
+        final status = isActive ? 'Aktif' : 'Arşiv';
+
+        if (isActive) {
+          activeCount++;
+        } else {
+          archivedCount++;
+        }
+
+        // Format amount in Turkish format
+        String formatAmount(double amount) {
+          final parts = amount.abs().toStringAsFixed(2).split('.');
+          final intPart = parts[0];
+          final decPart = parts[1];
+          final formattedInt = intPart.replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+          return '$formattedInt,$decPart';
+        }
+
+        exportData.add([
+          name,
+          department,
+          category,
+          position,
+          formatAmount(salaryAmount),
+          salaryCurrency,
+          status,
+        ]);
+      }
+
+      // Özet bilgileri
+      final summary = <String, dynamic>{
+        'Toplam Personel': docs.length,
+        'Aktif Personel': activeCount,
+        'Arşiv Personel': archivedCount,
+      };
+
+      // Export service kullan
+      final exportService = ExportService();
+      final fileBytes = await exportService.exportToPDF(
+        title: 'Personel Listesi',
+        subtitle: 'Personel raporu',
+        headers: headers,
+        data: exportData,
+        summary: summary,
+        tenantId: _tenantId,
+      );
+
+      // Dosyayı kaydet
+      fileName =
+          'Personel_Listesi_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob([fileBytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        web.URL.revokeObjectURL(url);
+      } else {
+        final directory = await getDownloadsDirectory();
+        if (directory != null) {
+          final filePath = path.join(directory.path, fileName);
+          final file = File(filePath);
+          await file.writeAsBytes(fileBytes);
+        }
+      }
+    } catch (e) {
+      error = e;
+    } finally {
+      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      if (dialogShown) {
+        final finalError = error;
+        final finalFileName = fileName;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (context.mounted) {
+              // Dialog'u kapat
+              if (Navigator.of(context, rootNavigator: true).canPop()) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+              // SnackBar göster
+              if (finalError != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Export hatası: $finalError'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              } else if (finalFileName != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('PDF dosyası indirildi: $finalFileName'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir, sessizce geç
+          }
+        });
+      }
+    }
+  }
 
   void _onAddEmployee() {
     showModalBottomSheet(
@@ -1606,20 +2027,20 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       body: Stack(
         children: [
           SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            // HEADER
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: _EmployeesHeader(),
-            ),
-            // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: _buildSearchAndFilters(),
-            ),
-            const SizedBox(height: 6),
+            top: false,
+            child: Column(
+              children: [
+                // HEADER
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: _EmployeesHeader(),
+                ),
+                // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: _buildSearchAndFilters(),
+                ),
+                const SizedBox(height: 6),
                 Expanded(
                   child: _EmployeeList(
                     searchQuery: _searchQuery,
@@ -1632,9 +2053,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                     ascending: _sortAscending,
                     tenantId: _tenantId,
                   ),
+                ),
+              ],
             ),
-          ],
-        ),
           ),
           Positioned(
             right: 16,
@@ -1882,11 +2303,11 @@ class _EmployeeListState extends State<_EmployeeList> {
           }
         }
 
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
           itemCount: entries.length,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, idx) {
+          itemBuilder: (context, idx) {
             final e = entries[idx];
             if (e.isHeader) {
               if (e.isArchiveHeader) {
@@ -1920,7 +2341,7 @@ class _EmployeeListState extends State<_EmployeeList> {
             return Opacity(
               opacity: isArchived ? 0.6 : 1.0,
               child: ListTile(
-              leading: CircleAvatar(
+                leading: CircleAvatar(
                   radius: 24,
                   backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
                       ? NetworkImage(photoUrl)
@@ -1944,12 +2365,12 @@ class _EmployeeListState extends State<_EmployeeList> {
                         )
                       : null,
                 ),
-              subtitle: Text('$department • $category'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => showModalBottomSheet(
-                context: context,
-                isScrollControlled: true,
-                builder: (ctx) => _EmployeeDetailSheet(
+                subtitle: Text('$department • $category'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  builder: (ctx) => _EmployeeDetailSheet(
                       tenantId: widget.tenantId, docId: snap.id, data: data),
                 ),
               ),
@@ -2871,7 +3292,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                   ),
                                   child: const Text(
                                     'GEÇ',
-            style: TextStyle(
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -2953,16 +3374,36 @@ class _EmployeeDetailSheet extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text('Hareketler',
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium),
-                              const Spacer(),
-                              _EmployeeBalance(
-                                  tenantId: tenantId,
-                                  docId: docId,
-                                  currency: salaryCurrency.isNotEmpty
-                                      ? salaryCurrency
-                                      : 'TRY'),
+                              Expanded(
+                                child: Text('Hareketler',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.file_download),
+                                iconSize: 20,
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                tooltip: 'Dışa Aktar',
+                                onPressed: () {
+                                  final sheet = _EmployeeDetailSheet(
+                                    tenantId: tenantId,
+                                    docId: docId,
+                                    data: data,
+                                  );
+                                  sheet._showExportTransactionsOptions(context);
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: _EmployeeBalance(
+                                    tenantId: tenantId,
+                                    docId: docId,
+                                    currency: salaryCurrency.isNotEmpty
+                                        ? salaryCurrency
+                                        : 'TRY'),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -3149,8 +3590,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
       } else {
         // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
-      while (current.weekday != targetWeekday) {
-        current = current.add(const Duration(days: 1));
+        while (current.weekday != targetWeekday) {
+          current = current.add(const Duration(days: 1));
         }
       }
       return current;
@@ -3183,7 +3624,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
           return next;
         } catch (_) {
           // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
-            next = DateTime(fromDate.year, fromDate.month + 2, 0);
+          next = DateTime(fromDate.year, fromDate.month + 2, 0);
           return next;
         }
 
@@ -3200,28 +3641,28 @@ class _EmployeeDetailSheet extends StatelessWidget {
           if (next.isAfter(fromDate)) {
             return next;
           }
-          } catch (_) {
+        } catch (_) {
           // Geçersiz tarih, devam et
-          }
+        }
 
         // Sonra aynı ayın ikinci ödeme gününü kontrol et
-          try {
+        try {
           DateTime next = DateTime(fromDate.year, fromDate.month, day2);
           if (next.isAfter(fromDate)) {
             return next;
           }
-          } catch (_) {
+        } catch (_) {
           // Geçersiz tarih, devam et
-          }
+        }
 
         // Eğer aynı ayın ödeme günleri geçmişse, bir sonraki ayın ilk ödeme gününe git
-          try {
+        try {
           DateTime next = DateTime(fromDate.year, fromDate.month + 1, day1);
-            return next;
-          } catch (_) {
+          return next;
+        } catch (_) {
           // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
           DateTime next = DateTime(fromDate.year, fromDate.month + 2, 0);
-            return next;
+          return next;
         }
 
       case 'Haftalık':
@@ -3831,7 +4272,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       noteController.dispose();
 
                       if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
+                        ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               '$hours saat mesai eklendi (${overtimeAmount.toStringAsFixed(2)} $salaryCurrency)',
@@ -4195,7 +4636,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                   );
                   if (hours == null || hours <= 0) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
-      const SnackBar(
+                      const SnackBar(
                         content: Text('Lütfen geçerli bir mesai saati girin'),
                         backgroundColor: Colors.red,
                       ),
@@ -4469,8 +4910,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
       if (availableAccounts.isEmpty) {
         if (context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
               content: Text(
                   'Aktif Nakit veya Banka hesabı bulunamadı. Lütfen önce hesap ekleyin.'),
               backgroundColor: Colors.red,
@@ -4950,7 +5391,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     if (ctx.mounted) {
                       isDialogDisposed = true;
                       Navigator.of(ctx).pop();
-    ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             'Ödeme eklendi (${amount.toStringAsFixed(2)} $currency)',
@@ -5139,7 +5580,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
                 if (amount <= 0) {
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
-      const SnackBar(
+                    const SnackBar(
                       content: Text('Tutar 0\'dan büyük olmalıdır'),
                       backgroundColor: Colors.red,
                     ),
@@ -5429,7 +5870,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     // Entitlement details based on type
                     Builder(
                       builder: (context) {
-                    if (entitlementType == 'Aylık' &&
+                        if (entitlementType == 'Aylık' &&
                             entitlement['monthlyDayOfMonth'] != null) {
                           final monthlyDay =
                               entitlement['monthlyDayOfMonth'] as int?;
@@ -5438,14 +5879,14 @@ class _EmployeeDetailSheet extends StatelessWidget {
                               monthlyDay >= 1 &&
                               monthlyDay <= 31) {
                             return _InfoTile(
-                        label: 'Ödeme Günü',
+                              label: 'Ödeme Günü',
                               value: 'Ayın $monthlyDay. günü',
                             );
                           }
                         }
                         return const SizedBox.shrink();
                       },
-                      ),
+                    ),
                     if (entitlementType == 'Aylık (İki Kere)' &&
                         entitlement['semiMonthlyDays'] != null)
                       Builder(builder: (context) {
@@ -5828,7 +6269,11 @@ class _EmployeeDetailSheet extends StatelessWidget {
   }
 
   void _openEdit(BuildContext context) {
+    // Mevcut verileri al
     final nameCtrl = TextEditingController(text: data['name'] as String? ?? '');
+    final tcCtrl = TextEditingController(text: data['tc']?.toString() ?? '');
+    final emailCtrl =
+        TextEditingController(text: data['email']?.toString() ?? '');
     final posCtrl =
         TextEditingController(text: data['position'] as String? ?? '');
     final deptCtrl =
@@ -5841,75 +6286,669 @@ class _EmployeeDetailSheet extends StatelessWidget {
     final salCurCtrl =
         TextEditingController(text: (salary['currency']?.toString()) ?? 'TRY');
 
+    // Tarihleri al
+    final startTs = data['startDate'];
+    final birthTs = data['birthDate'];
+    DateTime? startDate;
+    DateTime? birthDate;
+    if (startTs is Timestamp) {
+      startDate = startTs.toDate();
+    } else if (startTs is DateTime) {
+      startDate = startTs;
+    }
+    if (birthTs is Timestamp) {
+      birthDate = birthTs.toDate();
+    } else if (birthTs is DateTime) {
+      birthDate = birthTs;
+    }
+
+    // Entitlement bilgilerini al
+    final entitlement = (data['entitlement'] as Map?) ?? {};
+    final entitlementType = entitlement['type']?.toString() ?? 'Aylık';
+    final monthlyDayOfMonth = entitlement['monthlyDayOfMonth'] as int?;
+    final semiMonthlyDay1 = entitlement['semiMonthlyDay1'] as int?;
+    final semiMonthlyDay2 = entitlement['semiMonthlyDay2'] as int?;
+    final weeklyWeekday = entitlement['weeklyWeekday'] as String?;
+    final daysPerWeek = entitlement['daysPerWeek'] as int? ?? 5;
+    final weeklySelectedDays = (entitlement['weeklyDays'] as List?)
+            ?.map((e) => e.toString())
+            .toList() ??
+        [];
+    final monthlyDaysPerWeek = entitlement['monthlyDaysPerWeek'] as int? ?? 5;
+    final monthlyHoursPerDay = entitlement['monthlyHoursPerDay'] as int? ?? 8;
+    final semiMonthlyAmounts =
+        entitlement['semiMonthlyAmounts'] as Map<String, dynamic>?;
+
+    // Schedule bilgilerini al (şimdilik kullanılmıyor, gelecekte eklenebilir)
+    // final schedule = (data['schedule'] as Map?) ?? {};
+    // final workHours = (schedule['workHours'] as Map?) ?? {};
+    // final overtime = (schedule['overtime'] as Map?) ?? {};
+    final autoEntitlementEnabled =
+        data['autoEntitlementEnabled'] as bool? ?? true;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Personel Düzenle'),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Ad Soyad')),
-              TextField(
-                  controller: posCtrl,
-                  decoration: const InputDecoration(labelText: 'Pozisyon')),
-              TextField(
-                  controller: deptCtrl,
-                  decoration: const InputDecoration(labelText: 'Departman')),
-              TextField(
-                  controller: catCtrl,
-                  decoration: const InputDecoration(labelText: 'Kategori')),
-              Row(children: [
-                Expanded(
-                    child: TextField(
-                        controller: salAmtCtrl,
-                        decoration: const InputDecoration(labelText: 'Maaş'))),
-                const SizedBox(width: 8),
-                SizedBox(
-                    width: 90,
-                    child: TextField(
-                        controller: salCurCtrl,
-                        decoration: const InputDecoration(labelText: 'PB'))),
-              ]),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Vazgeç')),
-          FilledButton(
-            onPressed: () async {
-              try {
-                final col = (tenantId != null && tenantId!.isNotEmpty)
-                    ? FirebaseFirestore.instance
-                        .collection('tenants')
-                        .doc(tenantId)
-                        .collection('employees')
-                    : FirebaseFirestore.instance.collection('employees');
-                await col.doc(docId).update({
-                  'name': nameCtrl.text.trim(),
-                  'position': posCtrl.text.trim(),
-                  'department': deptCtrl.text.trim(),
-                  'category': catCtrl.text.trim(),
-                  'salary': {
-                    'amount':
-                        double.tryParse(salAmtCtrl.text.replaceAll(',', '.')) ??
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setState) {
+          // Tarih controller'ları
+          final startDateCtrl = TextEditingController(
+            text: startDate != null
+                ? '${startDate.day.toString().padLeft(2, '0')}.${startDate.month.toString().padLeft(2, '0')}.${startDate.year}'
+                : '',
+          );
+          final birthDateCtrl = TextEditingController(
+            text: birthDate != null
+                ? '${birthDate.day.toString().padLeft(2, '0')}.${birthDate.month.toString().padLeft(2, '0')}.${birthDate.year}'
+                : '',
+          );
+
+          DateTime? selectedStartDate = startDate;
+          DateTime? selectedBirthDate = birthDate;
+          String selectedEntitlementType = entitlementType;
+          int? selectedMonthlyDayOfMonth = monthlyDayOfMonth;
+          int? selectedSemiMonthlyDay1 = semiMonthlyDay1;
+          int? selectedSemiMonthlyDay2 = semiMonthlyDay2;
+          String? selectedWeeklyWeekday = weeklyWeekday;
+          int selectedDaysPerWeek = daysPerWeek;
+          List<String> selectedWeeklyDays = List.from(weeklySelectedDays);
+          int selectedMonthlyDaysPerWeek = monthlyDaysPerWeek;
+          int selectedMonthlyHoursPerDay = monthlyHoursPerDay;
+          bool selectedAutoEntitlementEnabled = autoEntitlementEnabled;
+
+          // Aylık (İki Kere) için tutar controller'ları
+          final semiMonthlyAmount1Ctrl = TextEditingController(
+            text: semiMonthlyAmounts != null &&
+                    semiMonthlyAmounts[semiMonthlyDay1.toString()] != null
+                ? (semiMonthlyAmounts[semiMonthlyDay1.toString()] as num)
+                    .toString()
+                : '',
+          );
+          final semiMonthlyAmount2Ctrl = TextEditingController(
+            text: semiMonthlyAmounts != null &&
+                    semiMonthlyAmounts[semiMonthlyDay2.toString()] != null
+                ? (semiMonthlyAmounts[semiMonthlyDay2.toString()] as num)
+                    .toString()
+                : '',
+          );
+
+          return AlertDialog(
+            title: const Text('Personel Düzenle'),
+            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Temel Bilgiler
+                    Text(
+                      'Temel Bilgiler',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: nameCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Ad Soyad *',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: tcCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'TC Kimlik No',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: emailCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'E-posta',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+                    // Tarihler
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: dialogContext,
+                                initialDate:
+                                    selectedStartDate ?? DateTime.now(),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime(2100),
+                                locale: const Locale('tr', 'TR'),
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  selectedStartDate = picked;
+                                  startDateCtrl.text =
+                                      '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
+                                });
+                              }
+                            },
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'İşe Başlama Tarihi',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.calendar_today),
+                              ),
+                              child: Text(
+                                startDateCtrl.text.isEmpty
+                                    ? 'Tarih seçin'
+                                    : startDateCtrl.text,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: dialogContext,
+                                initialDate:
+                                    selectedBirthDate ?? DateTime.now(),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime.now(),
+                                locale: const Locale('tr', 'TR'),
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  selectedBirthDate = picked;
+                                  birthDateCtrl.text =
+                                      '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
+                                });
+                              }
+                            },
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'Doğum Tarihi',
+                                border: OutlineInputBorder(),
+                                suffixIcon: Icon(Icons.calendar_today),
+                              ),
+                              child: Text(
+                                birthDateCtrl.text.isEmpty
+                                    ? 'Tarih seçin'
+                                    : birthDateCtrl.text,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // İş Bilgileri
+                    Text(
+                      'İş Bilgileri',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: posCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Pozisyon',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: deptCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Departman',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: catCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Kategori',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Maaş Bilgileri
+                    Text(
+                      'Maaş Bilgileri',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: salAmtCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Maaş Tutarı',
+                              border: OutlineInputBorder(),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          width: 100,
+                          child: TextField(
+                            controller: salCurCtrl,
+                            decoration: const InputDecoration(
+                              labelText: 'Para Birimi',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    // Hak Ediş Bilgileri
+                    Text(
+                      'Hak Ediş Bilgileri',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: selectedEntitlementType,
+                      decoration: const InputDecoration(
+                        labelText: 'Hak Ediş Türü',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'Aylık', child: Text('Aylık')),
+                        DropdownMenuItem(
+                            value: 'Aylık (İki Kere)',
+                            child: Text('Aylık (İki Kere)')),
+                        DropdownMenuItem(
+                            value: 'Haftalık', child: Text('Haftalık')),
+                        DropdownMenuItem(
+                            value: 'Günlük', child: Text('Günlük')),
+                        DropdownMenuItem(
+                            value: 'Saatlik', child: Text('Saatlik')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          selectedEntitlementType = value ?? 'Aylık';
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Hak Ediş türüne göre ek alanlar
+                    if (selectedEntitlementType == 'Aylık') ...[
+                      DropdownButtonFormField<int>(
+                        initialValue: selectedMonthlyDayOfMonth,
+                        decoration: const InputDecoration(
+                          labelText: 'Ödeme Günü',
+                          border: OutlineInputBorder(),
+                          helperText: 'Ayın kaçıncı günü ödeme yapılacak?',
+                        ),
+                        items: List.generate(31, (index) => index + 1)
+                            .map((day) => DropdownMenuItem(
+                                  value: day,
+                                  child: Text('Ayın $day. günü'),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedMonthlyDayOfMonth = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: selectedMonthlyDaysPerWeek,
+                              decoration: const InputDecoration(
+                                labelText: 'Haftada Kaç Gün',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: List.generate(7, (index) => index + 1)
+                                  .map((days) => DropdownMenuItem(
+                                        value: days,
+                                        child: Text('$days gün'),
+                                      ))
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedMonthlyDaysPerWeek = value ?? 5;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: selectedMonthlyHoursPerDay,
+                              decoration: const InputDecoration(
+                                labelText: 'Günde Kaç Saat',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: List.generate(12, (index) => index + 1)
+                                  .map((hours) => DropdownMenuItem(
+                                        value: hours,
+                                        child: Text('$hours saat'),
+                                      ))
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedMonthlyHoursPerDay = value ?? 8;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (selectedEntitlementType ==
+                        'Aylık (İki Kere)') ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: selectedSemiMonthlyDay1,
+                              decoration: const InputDecoration(
+                                labelText: '1. Ödeme Günü',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: List.generate(31, (index) => index + 1)
+                                  .map((day) => DropdownMenuItem(
+                                        value: day,
+                                        child: Text('$day'),
+                                      ))
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedSemiMonthlyDay1 = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: semiMonthlyAmount1Ctrl,
+                              decoration: const InputDecoration(
+                                labelText: '1. Ödeme Tutarı',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<int>(
+                              initialValue: selectedSemiMonthlyDay2,
+                              decoration: const InputDecoration(
+                                labelText: '2. Ödeme Günü',
+                                border: OutlineInputBorder(),
+                              ),
+                              items: List.generate(31, (index) => index + 1)
+                                  .map((day) => DropdownMenuItem(
+                                        value: day,
+                                        child: Text('$day'),
+                                      ))
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  selectedSemiMonthlyDay2 = value;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              controller: semiMonthlyAmount2Ctrl,
+                              decoration: const InputDecoration(
+                                labelText: '2. Ödeme Tutarı',
+                                border: OutlineInputBorder(),
+                              ),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                      decimal: true),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else if (selectedEntitlementType == 'Haftalık') ...[
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedWeeklyWeekday,
+                        decoration: const InputDecoration(
+                          labelText: 'Ödeme Günü',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                              value: 'Pazartesi', child: Text('Pazartesi')),
+                          DropdownMenuItem(value: 'Salı', child: Text('Salı')),
+                          DropdownMenuItem(
+                              value: 'Çarşamba', child: Text('Çarşamba')),
+                          DropdownMenuItem(
+                              value: 'Perşembe', child: Text('Perşembe')),
+                          DropdownMenuItem(value: 'Cuma', child: Text('Cuma')),
+                          DropdownMenuItem(
+                              value: 'Cumartesi', child: Text('Cumartesi')),
+                          DropdownMenuItem(
+                              value: 'Pazar', child: Text('Pazar')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedWeeklyWeekday = value;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<int>(
+                        initialValue: selectedDaysPerWeek,
+                        decoration: const InputDecoration(
+                          labelText: 'Haftada Kaç Gün',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: List.generate(7, (index) => index + 1)
+                            .map((days) => DropdownMenuItem(
+                                  value: days,
+                                  child: Text('$days gün'),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedDaysPerWeek = value ?? 5;
+                          });
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    // Otomatik Hak Ediş
+                    SwitchListTile(
+                      title: const Text('Otomatik Hak Ediş'),
+                      subtitle: const Text(
+                          'Otomatik olarak hak ediş oluşturulsun mu?'),
+                      value: selectedAutoEntitlementEnabled,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedAutoEntitlementEnabled = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  nameCtrl.dispose();
+                  tcCtrl.dispose();
+                  emailCtrl.dispose();
+                  posCtrl.dispose();
+                  deptCtrl.dispose();
+                  catCtrl.dispose();
+                  salAmtCtrl.dispose();
+                  salCurCtrl.dispose();
+                  startDateCtrl.dispose();
+                  birthDateCtrl.dispose();
+                  semiMonthlyAmount1Ctrl.dispose();
+                  semiMonthlyAmount2Ctrl.dispose();
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  try {
+                    final col = (tenantId != null &&
+                            (tenantId?.isNotEmpty ?? false))
+                        ? FirebaseFirestore.instance
+                            .collection('tenants')
+                            .doc(tenantId)
+                            .collection('employees')
+                        : FirebaseFirestore.instance.collection('employees');
+
+                    // Entitlement map'ini oluştur
+                    final Map<String, dynamic> entitlementMap = {
+                      'type': selectedEntitlementType,
+                    };
+
+                    if (selectedEntitlementType == 'Aylık') {
+                      if (selectedMonthlyDayOfMonth != null) {
+                        entitlementMap['monthlyDayOfMonth'] =
+                            selectedMonthlyDayOfMonth;
+                      }
+                      entitlementMap['monthlyDaysPerWeek'] =
+                          selectedMonthlyDaysPerWeek;
+                      entitlementMap['monthlyHoursPerDay'] =
+                          selectedMonthlyHoursPerDay;
+                    } else if (selectedEntitlementType == 'Aylık (İki Kere)') {
+                      if (selectedSemiMonthlyDay1 != null) {
+                        entitlementMap['semiMonthlyDay1'] =
+                            selectedSemiMonthlyDay1;
+                      }
+                      if (selectedSemiMonthlyDay2 != null) {
+                        entitlementMap['semiMonthlyDay2'] =
+                            selectedSemiMonthlyDay2;
+                      }
+                      final amount1 = double.tryParse(semiMonthlyAmount1Ctrl
+                              .text
+                              .replaceAll(',', '.')) ??
+                          0;
+                      final amount2 = double.tryParse(semiMonthlyAmount2Ctrl
+                              .text
+                              .replaceAll(',', '.')) ??
+                          0;
+                      if (amount1 > 0 || amount2 > 0) {
+                        entitlementMap['semiMonthlyAmounts'] = {
+                          if (selectedSemiMonthlyDay1 != null)
+                            selectedSemiMonthlyDay1.toString(): amount1,
+                          if (selectedSemiMonthlyDay2 != null)
+                            selectedSemiMonthlyDay2.toString(): amount2,
+                        };
+                      }
+                    } else if (selectedEntitlementType == 'Haftalık') {
+                      if (selectedWeeklyWeekday != null) {
+                        entitlementMap['weeklyWeekday'] = selectedWeeklyWeekday;
+                      }
+                      entitlementMap['daysPerWeek'] = selectedDaysPerWeek;
+                    } else if (selectedEntitlementType == 'Günlük') {
+                      if (selectedWeeklyDays.isNotEmpty) {
+                        entitlementMap['weeklyDays'] = selectedWeeklyDays;
+                      }
+                    }
+
+                    // Update map'ini oluştur
+                    final updateMap = <String, dynamic>{
+                      'name': nameCtrl.text.trim(),
+                      'tc': tcCtrl.text.trim(),
+                      'email': emailCtrl.text.trim(),
+                      'position': posCtrl.text.trim(),
+                      'department': deptCtrl.text.trim(),
+                      'category': catCtrl.text.trim(),
+                      'salary': {
+                        'amount': double.tryParse(salAmtCtrl.text
+                                .replaceAll('.', '')
+                                .replaceAll(',', '.')) ??
                             0,
-                    'currency': salCurCtrl.text.trim(),
-                  },
-                  'updatedAt': FieldValue.serverTimestamp(),
-                });
-                // ignore: use_build_context_synchronously
-                Navigator.of(ctx).pop();
-              } catch (_) {}
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
+                        'currency': salCurCtrl.text.trim(),
+                      },
+                      'entitlement': entitlementMap,
+                      'autoEntitlementEnabled': selectedAutoEntitlementEnabled,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    };
+
+                    // Tarihleri ekle
+                    if (selectedStartDate != null) {
+                      updateMap['startDate'] =
+                          Timestamp.fromDate(selectedStartDate!);
+                    }
+                    if (selectedBirthDate != null) {
+                      updateMap['birthDate'] =
+                          Timestamp.fromDate(selectedBirthDate!);
+                    }
+
+                    await col.doc(docId).update(updateMap);
+
+                    nameCtrl.dispose();
+                    tcCtrl.dispose();
+                    emailCtrl.dispose();
+                    posCtrl.dispose();
+                    deptCtrl.dispose();
+                    catCtrl.dispose();
+                    salAmtCtrl.dispose();
+                    salCurCtrl.dispose();
+                    startDateCtrl.dispose();
+                    birthDateCtrl.dispose();
+                    semiMonthlyAmount1Ctrl.dispose();
+                    semiMonthlyAmount2Ctrl.dispose();
+
+                    if (ctx.mounted) {
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Personel bilgileri güncellendi'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Hata: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Kaydet'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -7839,6 +8878,509 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
       ),
     );
   }
+
+  // Personel hareketlerini export et
+  void _showExportTransactionsOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.table_chart),
+              title: const Text('Excel Olarak İndir'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _exportTransactionsToExcel(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.picture_as_pdf),
+              title: const Text('PDF Olarak İndir'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _exportTransactionsToPDF(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _exportTransactionsToExcel(BuildContext context) async {
+    bool dialogShown = false;
+    Object? error;
+    String? fileName;
+    try {
+      // Loading göster
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      dialogShown = true;
+
+      // Currency bilgisini al
+      final salary = (data['salary'] as Map?) ?? {};
+      final currency = salary['currency']?.toString() ?? 'TRY';
+
+      // Tüm hareketleri çek (limit yok)
+      final transactionsCol =
+          (tenantId != null && (tenantId?.isNotEmpty ?? false))
+              ? FirebaseFirestore.instance
+                  .collection('tenants')
+                  .doc(tenantId)
+                  .collection('employee_transactions')
+              : FirebaseFirestore.instance.collection('employee_transactions');
+
+      final snapshot =
+          await transactionsCol.where('employeeId', isEqualTo: docId).get();
+
+      final employeeName = data['name'] as String? ?? 'Personel';
+      final transactions = [...snapshot.docs];
+
+      // Client-side sıralama (index gerektirmez)
+      transactions.sort((a, b) {
+        final ad = a.data()['date'];
+        final bd = b.data()['date'];
+        DateTime adt;
+        DateTime bdt;
+        try {
+          adt = ad is Timestamp
+              ? ad.toDate()
+              : DateTime.fromMillisecondsSinceEpoch(0);
+        } catch (_) {
+          adt = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+        try {
+          bdt = bd is Timestamp
+              ? bd.toDate()
+              : DateTime.fromMillisecondsSinceEpoch(0);
+        } catch (_) {
+          bdt = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+        return bdt.compareTo(adt); // desc
+      });
+
+      if (transactions.isEmpty) {
+        if (dialogShown && context.mounted) {
+          try {
+            Navigator.of(context, rootNavigator: true).pop();
+            dialogShown = false;
+          } catch (_) {}
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Export edilecek hareket bulunamadı'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
+        return;
+      }
+
+      // Headers
+      final headers = [
+        'Tarih',
+        'İşlem Türü',
+        'Açıklama',
+        'Tutar',
+        'Yön',
+      ];
+
+      // Data
+      final exportData = <List<dynamic>>[];
+
+      for (final doc in transactions) {
+        final m = doc.data();
+        final amount = (m['amount'] as num?)?.toDouble() ?? 0;
+        final dir = (m['direction'] as String?) ?? 'out';
+        final note = m['note']?.toString() ?? '';
+        final transactionType = m['type'] as String?;
+        final ts = m['date'];
+
+        String dateStr = '';
+        if (ts is Timestamp) {
+          final d = ts.toDate();
+          dateStr =
+              '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+        }
+
+        String transactionTypeStr = '';
+        if (transactionType == 'overtime') {
+          transactionTypeStr = 'Mesai Ekleme';
+        } else if (transactionType == 'overtime_deduction') {
+          transactionTypeStr = 'Mesai Kesme';
+        } else if (transactionType == 'payment') {
+          transactionTypeStr = 'Ödeme';
+        } else if (dir == 'in') {
+          transactionTypeStr = 'Hak Ediş';
+        } else {
+          transactionTypeStr = 'Avans/Çıkış';
+        }
+
+        String description = note.isEmpty
+            ? (transactionTypeStr == 'Mesai Ekleme' ||
+                    transactionTypeStr == 'Mesai Kesme'
+                ? transactionTypeStr
+                : (dir == 'in' ? 'Ödeme' : 'Avans/Çıkış'))
+            : note;
+
+        // Format amount in Turkish format
+        String formatAmount(double amount) {
+          final parts = amount.abs().toStringAsFixed(2).split('.');
+          final intPart = parts[0];
+          final decPart = parts[1];
+          final formattedInt = intPart.replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+          return '$formattedInt,$decPart';
+        }
+
+        final formattedAmount = formatAmount(amount);
+        final direction = dir == 'in' ? 'Giriş' : 'Çıkış';
+
+        exportData.add([
+          dateStr,
+          transactionTypeStr,
+          description,
+          '$formattedAmount $currency',
+          direction,
+        ]);
+      }
+
+      // Export service kullan
+      final exportService = ExportService();
+      final fileBytes = await exportService.exportToExcel(
+        title: '$employeeName - Hareketler',
+        headers: headers,
+        data: exportData,
+        sheetName: 'Hareketler',
+      );
+
+      // Dosyayı kaydet
+      fileName =
+          '${employeeName.replaceAll(' ', '_')}_Hareketler_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+
+      if (kIsWeb) {
+        final blob = web.Blob([fileBytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        web.URL.revokeObjectURL(url);
+      } else {
+        final directory = await getDownloadsDirectory();
+        if (directory != null) {
+          final filePath = path.join(directory.path, fileName);
+          final file = File(filePath);
+          await file.writeAsBytes(fileBytes);
+        }
+      }
+    } catch (e) {
+      error = e;
+    } finally {
+      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      if (dialogShown) {
+        final finalError = error;
+        final finalFileName = fileName;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (context.mounted) {
+              // Dialog'u kapat
+              if (Navigator.of(context, rootNavigator: true).canPop()) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+              // SnackBar göster
+              if (finalError != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Export hatası: $finalError'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              } else if (finalFileName != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Excel dosyası indirildi: $finalFileName'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir, sessizce geç
+          }
+        });
+      }
+    }
+  }
+
+  Future<void> _exportTransactionsToPDF(BuildContext context) async {
+    bool dialogShown = false;
+    Object? error;
+    String? fileName;
+    try {
+      // Loading göster
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+      dialogShown = true;
+
+      // Currency bilgisini al
+      final salary = (data['salary'] as Map?) ?? {};
+      final currency = salary['currency']?.toString() ?? 'TRY';
+
+      // Tüm hareketleri çek (limit yok)
+      final transactionsCol =
+          (tenantId != null && (tenantId?.isNotEmpty ?? false))
+              ? FirebaseFirestore.instance
+                  .collection('tenants')
+                  .doc(tenantId)
+                  .collection('employee_transactions')
+              : FirebaseFirestore.instance.collection('employee_transactions');
+
+      final snapshot =
+          await transactionsCol.where('employeeId', isEqualTo: docId).get();
+
+      final employeeName = data['name'] as String? ?? 'Personel';
+      final transactions = [...snapshot.docs];
+
+      // Client-side sıralama (index gerektirmez)
+      transactions.sort((a, b) {
+        final ad = a.data()['date'];
+        final bd = b.data()['date'];
+        DateTime adt;
+        DateTime bdt;
+        try {
+          adt = ad is Timestamp
+              ? ad.toDate()
+              : DateTime.fromMillisecondsSinceEpoch(0);
+        } catch (_) {
+          adt = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+        try {
+          bdt = bd is Timestamp
+              ? bd.toDate()
+              : DateTime.fromMillisecondsSinceEpoch(0);
+        } catch (_) {
+          bdt = DateTime.fromMillisecondsSinceEpoch(0);
+        }
+        return bdt.compareTo(adt); // desc
+      });
+
+      if (transactions.isEmpty) {
+        if (dialogShown) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            try {
+              if (context.mounted) {
+                if (Navigator.of(context, rootNavigator: true).canPop()) {
+                  Navigator.of(context, rootNavigator: true).pop();
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Export edilecek hareket bulunamadı'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+              }
+            } catch (_) {}
+          });
+        }
+        return;
+      }
+
+      // Headers
+      final headers = [
+        'Tarih',
+        'İşlem Türü',
+        'Açıklama',
+        'Tutar',
+        'Yön',
+      ];
+
+      // Data
+      final exportData = <List<dynamic>>[];
+      double totalIn = 0;
+      double totalOut = 0;
+
+      for (final doc in transactions) {
+        final m = doc.data();
+        final amount = (m['amount'] as num?)?.toDouble() ?? 0;
+        final dir = (m['direction'] as String?) ?? 'out';
+        final note = m['note']?.toString() ?? '';
+        final transactionType = m['type'] as String?;
+        final ts = m['date'];
+
+        String dateStr = '';
+        if (ts is Timestamp) {
+          final d = ts.toDate();
+          dateStr =
+              '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+        }
+
+        String transactionTypeStr = '';
+        if (transactionType == 'overtime') {
+          transactionTypeStr = 'Mesai Ekleme';
+        } else if (transactionType == 'overtime_deduction') {
+          transactionTypeStr = 'Mesai Kesme';
+        } else if (transactionType == 'payment') {
+          transactionTypeStr = 'Ödeme';
+        } else if (dir == 'in') {
+          transactionTypeStr = 'Hak Ediş';
+        } else {
+          transactionTypeStr = 'Avans/Çıkış';
+        }
+
+        String description = note.isEmpty
+            ? (transactionTypeStr == 'Mesai Ekleme' ||
+                    transactionTypeStr == 'Mesai Kesme'
+                ? transactionTypeStr
+                : (dir == 'in' ? 'Ödeme' : 'Avans/Çıkış'))
+            : note;
+
+        // Format amount in Turkish format
+        String formatAmount(double amount) {
+          final parts = amount.abs().toStringAsFixed(2).split('.');
+          final intPart = parts[0];
+          final decPart = parts[1];
+          final formattedInt = intPart.replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+          return '$formattedInt,$decPart';
+        }
+
+        final formattedAmount = formatAmount(amount);
+        final direction = dir == 'in' ? 'Giriş' : 'Çıkış';
+
+        exportData.add([
+          dateStr,
+          transactionTypeStr,
+          description,
+          '$formattedAmount $currency',
+          direction,
+        ]);
+
+        if (dir == 'in') {
+          totalIn += amount;
+        } else {
+          totalOut += amount;
+        }
+      }
+
+      // Özet bilgileri
+      final summary = <String, dynamic>{
+        'Toplam Giriş': '${formatAmount(totalIn)} $currency',
+        'Toplam Çıkış': '${formatAmount(totalOut)} $currency',
+        'Bakiye': '${formatAmount(totalIn - totalOut)} $currency',
+        'Toplam İşlem': transactions.length,
+      };
+
+      // Export service kullan
+      final exportService = ExportService();
+      final fileBytes = await exportService.exportToPDF(
+        title: '$employeeName - Hareketler',
+        subtitle: 'Personel hareket raporu',
+        headers: headers,
+        data: exportData,
+        summary: summary,
+        tenantId: tenantId,
+      );
+
+      // Dosyayı kaydet
+      fileName =
+          '${employeeName.replaceAll(' ', '_')}_Hareketler_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob([fileBytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        web.URL.revokeObjectURL(url);
+      } else {
+        final directory = await getDownloadsDirectory();
+        if (directory != null) {
+          final filePath = path.join(directory.path, fileName);
+          final file = File(filePath);
+          await file.writeAsBytes(fileBytes);
+        }
+      }
+    } catch (e) {
+      error = e;
+    } finally {
+      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      if (dialogShown) {
+        final finalError = error;
+        final finalFileName = fileName;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            if (context.mounted) {
+              // Dialog'u kapat
+              if (Navigator.of(context, rootNavigator: true).canPop()) {
+                Navigator.of(context, rootNavigator: true).pop();
+              }
+              // SnackBar göster
+              if (finalError != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Export hatası: $finalError'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              } else if (finalFileName != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('PDF dosyası indirildi: $finalFileName'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir, sessizce geç
+          }
+        });
+      }
+    }
+  }
+
+  // Format amount helper
+  String formatAmount(double amount) {
+    final parts = amount.abs().toStringAsFixed(2).split('.');
+    final intPart = parts[0];
+    final decPart = parts[1];
+    final formattedInt = intPart.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+    return '$formattedInt,$decPart';
+  }
 }
 
 class _AddEmployeeForm extends StatefulWidget {
@@ -8572,8 +10114,8 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
       } else {
         // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
-      while (current.weekday != targetWeekday) {
-        current = current.add(const Duration(days: 1));
+        while (current.weekday != targetWeekday) {
+          current = current.add(const Duration(days: 1));
         }
       }
       return current;
@@ -9609,8 +11151,8 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
                             .replaceAll(',', '.')) ??
                         0)
                 : (double.tryParse(_salaryAmountController.text
-                    .replaceAll('.', '') // Remove thousand separators
-                    .replaceAll(',', '.')) ??
+                        .replaceAll('.', '') // Remove thousand separators
+                        .replaceAll(',', '.')) ??
                     0),
             'currency': _salaryCurrency,
           },
@@ -9693,8 +11235,8 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
                       .replaceAll(',', '.')) ??
                   0)
           : (double.tryParse(_salaryAmountController.text
-              .replaceAll('.', '') // Remove thousand separators
-              .replaceAll(',', '.')) ??
+                  .replaceAll('.', '') // Remove thousand separators
+                  .replaceAll(',', '.')) ??
               0);
 
       // Auto-create entitlement transaction(s) based on payment period

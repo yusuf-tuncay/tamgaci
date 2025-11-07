@@ -10,6 +10,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:tamgaci/core/utils/currency_helper.dart';
 import 'package:tamgaci/core/utils/logger.dart';
+import 'package:tamgaci/core/services/tenant_service.dart';
+import 'package:http/http.dart' as http;
 
 /// Dışa aktarım formatları
 enum ExportFormat {
@@ -25,6 +27,8 @@ enum ExportFormat {
 class ExportService {
   final Logger _logger = Logger();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TenantService _tenantService = TenantService();
+  static pw.MemoryImage? _cachedCompanyLogo;
 
   /// Excel dosyası oluştur
   Future<Uint8List> exportToExcel({
@@ -94,6 +98,89 @@ class ExportService {
     }
   }
 
+  /// Türkçe karakterleri İngilizce karakterlerle değiştir
+  String _convertTurkishChars(String text) {
+    return text
+        .replaceAll('ç', 'c')
+        .replaceAll('Ç', 'C')
+        .replaceAll('ğ', 'g')
+        .replaceAll('Ğ', 'G')
+        .replaceAll('ı', 'i')
+        .replaceAll('İ', 'I')
+        .replaceAll('ö', 'o')
+        .replaceAll('Ö', 'O')
+        .replaceAll('ş', 's')
+        .replaceAll('Ş', 'S')
+        .replaceAll('ü', 'u')
+        .replaceAll('Ü', 'U');
+  }
+
+  /// Firma logosu yükleme fonksiyonu
+  Future<void> _ensureCompanyLogoLoaded(String? logoUrl) async {
+    if (logoUrl == null || logoUrl.isEmpty) {
+      _cachedCompanyLogo = null;
+      return;
+    }
+
+    try {
+      final response = await http.get(Uri.parse(logoUrl));
+      if (response.statusCode == 200) {
+        final logoBytes = response.bodyBytes;
+        _cachedCompanyLogo = pw.MemoryImage(logoBytes);
+      } else {
+        _cachedCompanyLogo = null;
+      }
+    } catch (e) {
+      _cachedCompanyLogo = null;
+    }
+  }
+
+  /// Firma bilgilerini getir
+  Future<Map<String, dynamic>?> _getCompanyInfo(String? tenantId) async {
+    try {
+      if (tenantId == null || tenantId.isEmpty) {
+        final currentTenantId = await _tenantService.getUserTenantId();
+        if (currentTenantId == null) return null;
+        tenantId = currentTenantId;
+      }
+
+      // Önce tenants/{tenantId}/companies/{tenantId} koleksiyonundan dene
+      final companyDoc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('companies')
+          .doc(tenantId)
+          .get();
+
+      if (companyDoc.exists) {
+        final data = companyDoc.data()!;
+        return {
+          'name': data['name'] ?? '',
+          'logoUrl': data['logoUrl'],
+        };
+      }
+
+      // Fallback: company_info koleksiyonundan dene
+      final companyInfoDoc = await _firestore
+          .collection('company_info')
+          .doc(tenantId)
+          .get();
+
+      if (companyInfoDoc.exists) {
+        final data = companyInfoDoc.data()!;
+        return {
+          'name': data['name'] ?? '',
+          'logoUrl': data['logoUrl'],
+        };
+      }
+
+      return null;
+    } catch (e) {
+      _logger.w('Firma bilgileri alınamadı: $e');
+      return null;
+    }
+  }
+
   /// PDF dosyası oluştur
   Future<Uint8List> exportToPDF({
     required String title,
@@ -101,8 +188,15 @@ class ExportService {
     required List<List<dynamic>> data,
     String? subtitle,
     Map<String, dynamic>? summary,
+    String? tenantId,
   }) async {
     try {
+      // Firma bilgilerini al
+      final companyInfo = await _getCompanyInfo(tenantId);
+      if (companyInfo != null && companyInfo['logoUrl'] != null) {
+        await _ensureCompanyLogoLoaded(companyInfo['logoUrl'] as String?);
+      }
+
       final pdf = pw.Document();
 
       pdf.addPage(
@@ -111,11 +205,71 @@ class ExportService {
           margin: const pw.EdgeInsets.all(40),
           build: (pw.Context context) {
             return [
+              // Firma logosu ve adı
+              if (companyInfo != null) ...[
+                pw.Container(
+                  padding: const pw.EdgeInsets.only(bottom: 20),
+                  child: pw.Row(
+                    children: [
+                      // Firma logosu
+                      if (_cachedCompanyLogo != null)
+                        pw.Container(
+                          width: 50,
+                          height: 50,
+                          decoration: pw.BoxDecoration(
+                            border: pw.Border.all(color: PdfColors.grey300),
+                            borderRadius: pw.BorderRadius.circular(6),
+                            color: PdfColors.white,
+                          ),
+                          child: pw.Image(
+                            _cachedCompanyLogo!,
+                            fit: pw.BoxFit.contain,
+                          ),
+                        )
+                      else
+                        pw.Container(
+                          width: 50,
+                          height: 50,
+                          decoration: pw.BoxDecoration(
+                            border: pw.Border.all(color: PdfColors.grey300),
+                            borderRadius: pw.BorderRadius.circular(6),
+                            color: PdfColors.grey100,
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              _convertTurkishChars('LOGO'),
+                              style: const pw.TextStyle(
+                                fontSize: 8,
+                                color: PdfColors.grey500,
+                              ),
+                            ),
+                          ),
+                        ),
+                      pw.SizedBox(width: 12),
+                      // Firma adı
+                      pw.Expanded(
+                        child: pw.Text(
+                          _convertTurkishChars(companyInfo['name'] ?? ''),
+                          style: pw.TextStyle(
+                            fontSize: 18,
+                            fontWeight: pw.FontWeight.bold,
+                            color: PdfColors.blue800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.SizedBox(height: 10),
+                pw.Divider(),
+                pw.SizedBox(height: 20),
+              ],
+
               // Başlık
               pw.Header(
                 level: 0,
                 child: pw.Text(
-                  title,
+                  _convertTurkishChars(title),
                   style: pw.TextStyle(
                     fontSize: 24,
                     fontWeight: pw.FontWeight.bold,
@@ -126,7 +280,7 @@ class ExportService {
               if (subtitle != null) ...[
                 pw.SizedBox(height: 10),
                 pw.Text(
-                  subtitle,
+                  _convertTurkishChars(subtitle),
                   style: const pw.TextStyle(
                     fontSize: 14,
                     color: PdfColors.grey700,
@@ -528,7 +682,7 @@ class ExportService {
         crossAxisAlignment: pw.CrossAxisAlignment.start,
         children: [
           pw.Text(
-            'Özet',
+            _convertTurkishChars('Özet'),
             style: pw.TextStyle(
               fontSize: 16,
               fontWeight: pw.FontWeight.bold,
@@ -540,9 +694,9 @@ class ExportService {
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(entry.key),
+                    pw.Text(_convertTurkishChars(entry.key)),
                     pw.Text(
-                      entry.value.toString(),
+                      _convertTurkishChars(entry.value.toString()),
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                   ],
@@ -568,7 +722,7 @@ class ExportService {
               .map((header) => pw.Padding(
                     padding: const pw.EdgeInsets.all(8),
                     child: pw.Text(
-                      header,
+                      _convertTurkishChars(header),
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
                     ),
                   ))
@@ -579,7 +733,7 @@ class ExportService {
               children: row
                   .map((cell) => pw.Padding(
                         padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(cell.toString()),
+                        child: pw.Text(_convertTurkishChars(cell.toString())),
                       ))
                   .toList(),
             )),
