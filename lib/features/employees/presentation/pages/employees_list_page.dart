@@ -368,8 +368,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       } else {
         // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
-        while (current.weekday != targetWeekday) {
-          current = current.add(const Duration(days: 1));
+      while (current.weekday != targetWeekday) {
+        current = current.add(const Duration(days: 1));
         }
       }
       return current;
@@ -415,33 +415,33 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         DateTime next;
 
         // Önce aynı ayın ilk ödeme gününü kontrol et
-        try {
-          next = DateTime(fromDate.year, fromDate.month, day1);
+          try {
+            next = DateTime(fromDate.year, fromDate.month, day1);
           if (next.isAfter(fromDate)) {
             return next;
           }
-        } catch (_) {
+          } catch (_) {
           // Geçersiz tarih, devam et
-        }
+          }
 
         // Sonra aynı ayın ikinci ödeme gününü kontrol et
-        try {
-          next = DateTime(fromDate.year, fromDate.month, day2);
+          try {
+            next = DateTime(fromDate.year, fromDate.month, day2);
           if (next.isAfter(fromDate)) {
             return next;
           }
-        } catch (_) {
+          } catch (_) {
           // Geçersiz tarih, devam et
-        }
+          }
 
         // Eğer aynı ayın ödeme günleri geçmişse, bir sonraki ayın ilk ödeme gününe git
-        try {
-          next = DateTime(fromDate.year, fromDate.month + 1, day1);
-          return next;
-        } catch (_) {
+          try {
+            next = DateTime(fromDate.year, fromDate.month + 1, day1);
+            return next;
+          } catch (_) {
           // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
-          next = DateTime(fromDate.year, fromDate.month + 2, 0);
-          return next;
+            next = DateTime(fromDate.year, fromDate.month + 2, 0);
+            return next;
         }
 
       case 'Haftalık':
@@ -1606,20 +1606,20 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       body: Stack(
         children: [
           SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                // HEADER
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: _EmployeesHeader(),
-                ),
-                // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: _buildSearchAndFilters(),
-                ),
-                const SizedBox(height: 6),
+        top: false,
+        child: Column(
+          children: [
+            // HEADER
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _EmployeesHeader(),
+            ),
+            // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: _buildSearchAndFilters(),
+            ),
+            const SizedBox(height: 6),
                 Expanded(
                   child: _EmployeeList(
                     searchQuery: _searchQuery,
@@ -1632,9 +1632,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                     ascending: _sortAscending,
                     tenantId: _tenantId,
                   ),
-                ),
-              ],
             ),
+          ],
+        ),
           ),
           Positioned(
             right: 16,
@@ -1882,11 +1882,11 @@ class _EmployeeListState extends State<_EmployeeList> {
           }
         }
 
-        return ListView.separated(
-          padding: const EdgeInsets.all(16),
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
           itemCount: entries.length,
           separatorBuilder: (_, __) => const SizedBox(height: 8),
-          itemBuilder: (context, idx) {
+      itemBuilder: (context, idx) {
             final e = entries[idx];
             if (e.isHeader) {
               if (e.isArchiveHeader) {
@@ -1920,7 +1920,7 @@ class _EmployeeListState extends State<_EmployeeList> {
             return Opacity(
               opacity: isArchived ? 0.6 : 1.0,
               child: ListTile(
-                leading: CircleAvatar(
+              leading: CircleAvatar(
                   radius: 24,
                   backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
                       ? NetworkImage(photoUrl)
@@ -1944,12 +1944,12 @@ class _EmployeeListState extends State<_EmployeeList> {
                         )
                       : null,
                 ),
-                subtitle: Text('$department • $category'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  builder: (ctx) => _EmployeeDetailSheet(
+              subtitle: Text('$department • $category'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (ctx) => _EmployeeDetailSheet(
                       tenantId: widget.tenantId, docId: snap.id, data: data),
                 ),
               ),
@@ -2871,7 +2871,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                   ),
                                   child: const Text(
                                     'GEÇ',
-                                    style: TextStyle(
+            style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
@@ -2986,6 +2986,36 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                   transId,
                                   transData,
                                   curr,
+                                );
+                              },
+                              onEditPaymentTransaction:
+                                  (ctx, tId, empId, transId, transData, curr) {
+                                final sheet = _EmployeeDetailSheet(
+                                  tenantId: tId,
+                                  docId: empId,
+                                  data: data,
+                                );
+                                sheet._showEditPaymentTransactionDialog(
+                                  ctx,
+                                  tId,
+                                  empId,
+                                  transId,
+                                  transData,
+                                  curr,
+                                );
+                              },
+                              onDeletePaymentTransaction:
+                                  (ctx, tId, transId, transData) {
+                                final sheet = _EmployeeDetailSheet(
+                                  tenantId: tId,
+                                  docId: docId,
+                                  data: data,
+                                );
+                                sheet._showDeletePaymentTransactionDialog(
+                                  ctx,
+                                  tId,
+                                  transId,
+                                  transData,
                                 );
                               }),
                         ],
@@ -3119,8 +3149,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
       } else {
         // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
-        while (current.weekday != targetWeekday) {
-          current = current.add(const Duration(days: 1));
+      while (current.weekday != targetWeekday) {
+        current = current.add(const Duration(days: 1));
         }
       }
       return current;
@@ -3153,7 +3183,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
           return next;
         } catch (_) {
           // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
-          next = DateTime(fromDate.year, fromDate.month + 2, 0);
+            next = DateTime(fromDate.year, fromDate.month + 2, 0);
           return next;
         }
 
@@ -3170,28 +3200,28 @@ class _EmployeeDetailSheet extends StatelessWidget {
           if (next.isAfter(fromDate)) {
             return next;
           }
-        } catch (_) {
+          } catch (_) {
           // Geçersiz tarih, devam et
-        }
+          }
 
         // Sonra aynı ayın ikinci ödeme gününü kontrol et
-        try {
+          try {
           DateTime next = DateTime(fromDate.year, fromDate.month, day2);
           if (next.isAfter(fromDate)) {
             return next;
           }
-        } catch (_) {
+          } catch (_) {
           // Geçersiz tarih, devam et
-        }
+          }
 
         // Eğer aynı ayın ödeme günleri geçmişse, bir sonraki ayın ilk ödeme gününe git
-        try {
+          try {
           DateTime next = DateTime(fromDate.year, fromDate.month + 1, day1);
-          return next;
-        } catch (_) {
+            return next;
+          } catch (_) {
           // Geçersiz tarih (örn: 31 Şubat), ayın sonunu kullan
           DateTime next = DateTime(fromDate.year, fromDate.month + 2, 0);
-          return next;
+            return next;
         }
 
       case 'Haftalık':
@@ -3801,7 +3831,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       noteController.dispose();
 
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
                               '$hours saat mesai eklendi (${overtimeAmount.toStringAsFixed(2)} $salaryCurrency)',
@@ -4165,7 +4195,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                   );
                   if (hours == null || hours <= 0) {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      const SnackBar(
+      const SnackBar(
                         content: Text('Lütfen geçerli bir mesai saati girin'),
                         backgroundColor: Colors.red,
                       ),
@@ -4439,8 +4469,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
       if (availableAccounts.isEmpty) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
               content: Text(
                   'Aktif Nakit veya Banka hesabı bulunamadı. Lütfen önce hesap ekleyin.'),
               backgroundColor: Colors.red,
@@ -4920,7 +4950,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     if (ctx.mounted) {
                       isDialogDisposed = true;
                       Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
                             'Ödeme eklendi (${amount.toStringAsFixed(2)} $currency)',
@@ -5109,7 +5139,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
                 if (amount <= 0) {
                   ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(
+      const SnackBar(
                       content: Text('Tutar 0\'dan büyük olmalıdır'),
                       backgroundColor: Colors.red,
                     ),
@@ -5399,7 +5429,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     // Entitlement details based on type
                     Builder(
                       builder: (context) {
-                        if (entitlementType == 'Aylık' &&
+                    if (entitlementType == 'Aylık' &&
                             entitlement['monthlyDayOfMonth'] != null) {
                           final monthlyDay =
                               entitlement['monthlyDayOfMonth'] as int?;
@@ -5408,14 +5438,14 @@ class _EmployeeDetailSheet extends StatelessWidget {
                               monthlyDay >= 1 &&
                               monthlyDay <= 31) {
                             return _InfoTile(
-                              label: 'Ödeme Günü',
+                        label: 'Ödeme Günü',
                               value: 'Ayın $monthlyDay. günü',
                             );
                           }
                         }
                         return const SizedBox.shrink();
                       },
-                    ),
+                      ),
                     if (entitlementType == 'Aylık (İki Kere)' &&
                         entitlement['semiMonthlyDays'] != null)
                       Builder(builder: (context) {
@@ -5990,11 +6020,18 @@ class _EmployeeTransactionsList extends StatelessWidget {
   final Function(
           BuildContext, String?, String, String, Map<String, dynamic>, String)?
       onEditOvertimeTransaction;
+  final Function(
+          BuildContext, String?, String, String, Map<String, dynamic>, String)?
+      onEditPaymentTransaction;
+  final Function(BuildContext, String?, String, Map<String, dynamic>)?
+      onDeletePaymentTransaction;
   const _EmployeeTransactionsList({
     required this.tenantId,
     required this.docId,
     required this.currency,
     this.onEditOvertimeTransaction,
+    this.onEditPaymentTransaction,
+    this.onDeletePaymentTransaction,
   });
 
   @override
@@ -6091,6 +6128,8 @@ class _EmployeeTransactionsList extends StatelessWidget {
             // Mesai işlemleri: type == 'overtime' veya 'overtime_deduction'
             final isOvertime = transactionType == 'overtime' ||
                 transactionType == 'overtime_deduction';
+            // Ödeme işlemleri: type == 'payment' ve direction == 'out'
+            final isPayment = transactionType == 'payment' && dir == 'out';
 
             return ListTile(
               dense: true,
@@ -6111,7 +6150,7 @@ class _EmployeeTransactionsList extends StatelessWidget {
                   Text('$sign$formattedAmount $currency',
                       style:
                           TextStyle(color: color, fontWeight: FontWeight.w600)),
-                  if (isEntitlement || isOvertime)
+                  if (isEntitlement || isOvertime || isPayment)
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, size: 20),
                       onSelected: (value) {
@@ -6119,6 +6158,17 @@ class _EmployeeTransactionsList extends StatelessWidget {
                           if (isOvertime) {
                             if (onEditOvertimeTransaction != null) {
                               onEditOvertimeTransaction!(
+                                context,
+                                tenantId,
+                                docId,
+                                transactionId,
+                                m,
+                                currency,
+                              );
+                            }
+                          } else if (isPayment) {
+                            if (onEditPaymentTransaction != null) {
+                              onEditPaymentTransaction!(
                                 context,
                                 tenantId,
                                 docId,
@@ -6138,11 +6188,22 @@ class _EmployeeTransactionsList extends StatelessWidget {
                             );
                           }
                         } else if (value == 'delete') {
-                          _showDeleteTransactionDialog(
-                            context,
-                            tenantId,
-                            transactionId,
-                          );
+                          if (isPayment) {
+                            if (onDeletePaymentTransaction != null) {
+                              onDeletePaymentTransaction!(
+                                context,
+                                tenantId,
+                                transactionId,
+                                m,
+                              );
+                            }
+                          } else {
+                            _showDeleteTransactionDialog(
+                              context,
+                              tenantId,
+                              transactionId,
+                            );
+                          }
                         }
                       },
                       itemBuilder: (context) => [
@@ -6931,6 +6992,853 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
       ),
     );
   }
+
+  // Ödeme işlemi düzenleme dialogu
+  void _showEditPaymentTransactionDialog(
+    BuildContext context,
+    String? tenantId,
+    String employeeId,
+    String transactionId,
+    Map<String, dynamic> transactionData,
+    String currency,
+  ) async {
+    // Önce employee bilgilerini çek
+    final employeesCol = (tenantId != null && (tenantId.isNotEmpty))
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('employees')
+        : FirebaseFirestore.instance.collection('employees');
+
+    final employeeDoc = await employeesCol.doc(employeeId).get();
+    if (!employeeDoc.exists || !context.mounted) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Personel bulunamadı'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final employeeData = employeeDoc.data() as Map<String, dynamic>;
+    final name = employeeData['name'] as String? ?? 'Personel';
+
+    // Mevcut transaction bilgilerini al
+    final amount = (transactionData['amount'] as num?)?.toDouble() ?? 0;
+    final note = transactionData['note']?.toString() ?? '';
+    final date = transactionData['date'];
+    DateTime? transactionDate;
+    if (date is Timestamp) {
+      transactionDate = date.toDate();
+    } else if (date is DateTime) {
+      transactionDate = date;
+    }
+    transactionDate ??= DateTime.now();
+    final accountId = transactionData['accountId'] as String?;
+
+    // Önce kasaları çek - accounts collection'ından
+    final accountsCol = (tenantId != null && (tenantId.isNotEmpty))
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('accounts')
+        : FirebaseFirestore.instance.collection('accounts');
+
+    try {
+      final accountsSnapshot =
+          await accountsCol.where('isActive', isEqualTo: true).get();
+
+      // Sadece Nakit ve Banka (checking/savings) kasalarını filtrele
+      final availableAccounts = accountsSnapshot.docs.where((doc) {
+        final data = doc.data();
+        final type = data['type'] as String?;
+        return type == 'cash' || type == 'checking' || type == 'savings';
+      }).map((doc) {
+        final data = doc.data();
+        final type = data['type'] as String?;
+        String typeLabel = 'Diğer';
+        if (type == 'cash') {
+          typeLabel = 'Nakit';
+        } else if (type == 'checking' || type == 'savings') {
+          typeLabel = 'Banka';
+        }
+        return {
+          'id': doc.id,
+          'name': data['name'] as String? ?? '',
+          'type': type ?? '',
+          'typeLabel': typeLabel,
+          'balance': (data['balance'] as num?)?.toDouble() ?? 0.0,
+          'currency': data['currency'] as String? ?? 'TRY',
+        };
+      }).toList();
+
+      if (availableAccounts.isEmpty) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Aktif Nakit veya Banka hesabı bulunamadı. Lütfen önce hesap ekleyin.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!context.mounted) return;
+
+      // Seçili hesabı bul veya ilk hesabı kullan
+      String? selectedAccountId = accountId;
+      if (selectedAccountId == null ||
+          !availableAccounts.any((acc) => acc['id'] == selectedAccountId)) {
+        selectedAccountId = availableAccounts.first['id'] as String;
+      }
+
+      final selectedAccount = availableAccounts.firstWhere(
+        (acc) => acc['id'] == selectedAccountId,
+        orElse: () => availableAccounts.first,
+      );
+      String selectedAccountCurrency = selectedAccount['currency'] as String;
+      bool needsExchangeRate = selectedAccountCurrency != currency;
+      double? exchangeRate;
+
+      // Eski account transaction'ı bul (kur bilgisi için)
+      String? oldAccountTransactionId;
+      double? oldAmountInAccountCurrency;
+      if (accountId != null) {
+        final accountTransactionsCol =
+            (tenantId != null && (tenantId.isNotEmpty))
+                ? FirebaseFirestore.instance
+                    .collection('tenants')
+                    .doc(tenantId)
+                    .collection('accountTransactions')
+                : FirebaseFirestore.instance.collection('accountTransactions');
+
+        final accountTransactionsSnapshot = await accountTransactionsCol
+            .where('accountId', isEqualTo: accountId)
+            .where('transactionDate',
+                isEqualTo: Timestamp.fromDate(transactionDate))
+            .where('type', isEqualTo: 'withdrawal')
+            .where('category', isEqualTo: 'expense')
+            .get();
+
+        if (accountTransactionsSnapshot.docs.isNotEmpty) {
+          // İlk eşleşeni al (genellikle tek olmalı)
+          final accountTransactionDoc = accountTransactionsSnapshot.docs.first;
+          oldAccountTransactionId = accountTransactionDoc.id;
+          final accountTransactionData = accountTransactionDoc.data();
+          oldAmountInAccountCurrency =
+              (accountTransactionData['amount'] as num?)?.toDouble();
+        }
+      }
+
+      // Kur bilgisini hesapla (eğer farklı para birimi varsa)
+      if (needsExchangeRate &&
+          oldAmountInAccountCurrency != null &&
+          amount > 0) {
+        exchangeRate = amount / oldAmountInAccountCurrency;
+      }
+
+      final amountController = TextEditingController(
+        text: _formatNumberTr(amount),
+      );
+      final exchangeRateController = TextEditingController(
+        text: exchangeRate != null
+            ? exchangeRate.toStringAsFixed(6).replaceAll('.', ',')
+            : '',
+      );
+      final noteController = TextEditingController(text: note);
+      final dateController = TextEditingController(
+        text:
+            '${transactionDate.day.toString().padLeft(2, '0')}.${transactionDate.month.toString().padLeft(2, '0')}.${transactionDate.year}',
+      );
+      DateTime selectedDate = transactionDate;
+      bool isDialogDisposed = false;
+
+      if (!context.mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (ctx) => StatefulBuilder(builder: (dialogContext, setState) {
+          // İlk yüklemede kur bilgisini otomatik getir (eğer yoksa)
+          if (needsExchangeRate && exchangeRate == null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _fetchExchangeRate(
+                selectedAccountCurrency,
+                currency,
+                exchangeRateController,
+                setState,
+                (rate) {
+                  exchangeRate = rate;
+                },
+              );
+            });
+          }
+          return AlertDialog(
+            title: const Text('Ödeme Düzenle'),
+            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('$name için ödeme düzenle'),
+                    const SizedBox(height: 16),
+                    // Kasa seçimi - StreamBuilder ile güncel bakiye gösterimi
+                    StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      stream: selectedAccountId != null
+                          ? accountsCol.doc(selectedAccountId).snapshots()
+                          : null,
+                      builder: (context, snapshot) {
+                        double currentBalance = 0.0;
+                        String accountCurrency = 'TRY';
+                        if (snapshot.hasData && snapshot.data!.exists) {
+                          final accountData = snapshot.data!.data()!;
+                          currentBalance =
+                              (accountData['balance'] as num?)?.toDouble() ??
+                                  0.0;
+                          accountCurrency =
+                              accountData['currency'] as String? ?? 'TRY';
+                        } else {
+                          final selectedAccount = availableAccounts.firstWhere(
+                            (acc) => acc['id'] == selectedAccountId,
+                            orElse: () => availableAccounts.first,
+                          );
+                          currentBalance = selectedAccount['balance'] as double;
+                          accountCurrency =
+                              selectedAccount['currency'] as String;
+                        }
+
+                        String formatBalance(double amount) {
+                          final parts =
+                              amount.abs().toStringAsFixed(2).split('.');
+                          final intPart = parts[0];
+                          final decPart = parts[1];
+                          final formattedInt = intPart.replaceAllMapped(
+                            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                            (Match m) => '${m[1]}.',
+                          );
+                          return '$formattedInt,$decPart';
+                        }
+
+                        final formattedBalance = formatBalance(currentBalance);
+
+                        return DropdownButtonFormField<String>(
+                          initialValue: selectedAccountId,
+                          decoration: InputDecoration(
+                            labelText: 'Kasa *',
+                            border: const OutlineInputBorder(),
+                            helperText: snapshot.hasData
+                                ? 'Bakiye: $formattedBalance $accountCurrency'
+                                : 'Nakit veya Banka hesabı seçin',
+                            isDense: true,
+                          ),
+                          isExpanded: true,
+                          items: availableAccounts.map((account) {
+                            final accountName = account['name'] as String;
+                            final typeLabel = account['typeLabel'] as String;
+                            return DropdownMenuItem<String>(
+                              value: account['id'] as String,
+                              child: Text(
+                                '$accountName ($typeLabel)',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            );
+                          }).toList(),
+                          selectedItemBuilder: (BuildContext context) {
+                            return availableAccounts.map((account) {
+                              final accountName = account['name'] as String;
+                              final typeLabel = account['typeLabel'] as String;
+                              return Text(
+                                '$accountName ($typeLabel)',
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              );
+                            }).toList();
+                          },
+                          onChanged: (value) async {
+                            setState(() {
+                              selectedAccountId = value;
+                              final selectedAccount =
+                                  availableAccounts.firstWhere(
+                                (acc) => acc['id'] == value,
+                              );
+                              selectedAccountCurrency =
+                                  selectedAccount['currency'] as String;
+                              needsExchangeRate =
+                                  selectedAccountCurrency != currency;
+                              if (!needsExchangeRate) {
+                                exchangeRate = null;
+                                exchangeRateController.clear();
+                              } else {
+                                _fetchExchangeRate(
+                                  selectedAccountCurrency,
+                                  currency,
+                                  exchangeRateController,
+                                  setState,
+                                  (rate) {
+                                    exchangeRate = rate;
+                                  },
+                                );
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Tarih seçici
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogContext,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          locale: const Locale('tr', 'TR'),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            selectedDate = picked;
+                            dateController.text =
+                                '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
+                          });
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Tarih',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          dateController.text.isEmpty
+                              ? 'Tarih seçin'
+                              : dateController.text,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Kur girişi (farklı para birimi varsa)
+                    if (needsExchangeRate) ...[
+                      TextFormField(
+                        controller: exchangeRateController,
+                        decoration: InputDecoration(
+                          labelText:
+                              'Kur (1 $selectedAccountCurrency = ? $currency) *',
+                          border: const OutlineInputBorder(),
+                          hintText: 'Örn: 34,50',
+                          helperText:
+                              'Kasa para birimi ($selectedAccountCurrency) ile personel para birimi ($currency) farklı',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+([,.]\d{0,6})?$')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            final rateText =
+                                value.replaceAll('.', '').replaceAll(',', '.');
+                            exchangeRate = double.tryParse(rateText);
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    // Tutar
+                    Builder(
+                      builder: (context) {
+                        String? accountCurrencyEquivalent;
+                        final parsedAmount =
+                            _parseAmountText(amountController.text);
+                        if (parsedAmount != null && parsedAmount > 0) {
+                          if (needsExchangeRate &&
+                              exchangeRate != null &&
+                              exchangeRate! > 0) {
+                            final accountAmount = parsedAmount / exchangeRate!;
+                            accountCurrencyEquivalent =
+                                '${_formatNumberTr(accountAmount)} $selectedAccountCurrency';
+                          } else if (selectedAccountCurrency == currency) {
+                            accountCurrencyEquivalent =
+                                '${_formatNumberTr(parsedAmount)} $selectedAccountCurrency';
+                          }
+                        }
+
+                        return Focus(
+                          onFocusChange: (hasFocus) {
+                            if (!hasFocus && !isDialogDisposed) {
+                              try {
+                                setState(() {
+                                  _formatAmountField(amountController);
+                                });
+                              } catch (e) {
+                                // Dialog kapatıldıysa hata yok sayılır
+                              }
+                            }
+                          },
+                          child: TextFormField(
+                            controller: amountController,
+                            decoration: InputDecoration(
+                              labelText: 'Tutar ($currency)',
+                              border: const OutlineInputBorder(),
+                              hintText: 'Örn: 10000,00',
+                              helperText: accountCurrencyEquivalent,
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9.,]')),
+                            ],
+                            onChanged: (value) {
+                              if (!isDialogDisposed) {
+                                try {
+                                  setState(() {});
+                                } catch (e) {
+                                  // Dialog kapatıldıysa hata yok sayılır
+                                }
+                              }
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Not
+                    TextFormField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Not (Opsiyonel)',
+                        border: OutlineInputBorder(),
+                        hintText: 'Ödeme açıklaması...',
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  isDialogDisposed = true;
+                  amountController.dispose();
+                  exchangeRateController.dispose();
+                  noteController.dispose();
+                  dateController.dispose();
+                  Navigator.of(ctx).pop();
+                },
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  if (selectedAccountId == null || selectedAccountId!.isEmpty) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen bir kasa seçin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  if (needsExchangeRate &&
+                      (exchangeRate == null || exchangeRate! <= 0)) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen geçerli bir kur girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final amountText = amountController.text
+                      .replaceAll('.', '')
+                      .replaceAll(',', '.');
+                  final newAmount = double.tryParse(amountText) ?? 0;
+                  final newNote = noteController.text.trim();
+
+                  if (newAmount <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Tutar 0\'dan büyük olmalıdır'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    // Eski account bilgisini al (yukarıda hesaplanan oldAmountInAccountCurrency kullanılacak)
+                    final oldAccountDoc = accountId != null
+                        ? await accountsCol.doc(accountId).get()
+                        : null;
+
+                    // Yeni account bilgisini al
+                    final newAccountDoc =
+                        await accountsCol.doc(selectedAccountId).get();
+                    if (!newAccountDoc.exists) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Seçilen hesap bulunamadı'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
+                    final newAccountData =
+                        newAccountDoc.data() as Map<String, dynamic>;
+                    final newAccountCurrency =
+                        newAccountData['currency'] as String? ?? 'TRY';
+                    double currentBalance =
+                        (newAccountData['balance'] as num?)?.toDouble() ?? 0.0;
+                    final blockedAmount =
+                        (newAccountData['blockedAmount'] as num?)?.toDouble() ??
+                            0.0;
+
+                    // Eski ödeme tutarını geri ekle (eğer aynı hesapsa)
+                    if (accountId == selectedAccountId &&
+                        oldAccountDoc != null &&
+                        oldAmountInAccountCurrency != null) {
+                      currentBalance += oldAmountInAccountCurrency;
+                    }
+
+                    // Yeni tutarı kasa para birimine çevir
+                    double newAmountInAccountCurrency = newAmount;
+                    if (newAccountCurrency != currency &&
+                        exchangeRate != null &&
+                        exchangeRate! > 0) {
+                      newAmountInAccountCurrency = newAmount / exchangeRate!;
+                    }
+
+                    // Yeni balance hesapla
+                    final newBalance =
+                        currentBalance - newAmountInAccountCurrency;
+                    final newAvailableBalance = newBalance - blockedAmount;
+
+                    // Batch işlem
+                    final batch = FirebaseFirestore.instance.batch();
+
+                    // 1. Employee transaction güncelle
+                    final employeeTransactionsCol =
+                        (tenantId != null && (tenantId.isNotEmpty))
+                            ? FirebaseFirestore.instance
+                                .collection('tenants')
+                                .doc(tenantId)
+                                .collection('employee_transactions')
+                            : FirebaseFirestore.instance
+                                .collection('employee_transactions');
+
+                    final employeeTransactionRef =
+                        employeeTransactionsCol.doc(transactionId);
+                    batch.update(employeeTransactionRef, {
+                      'amount': newAmount,
+                      'note': newNote.isEmpty ? 'Ödeme' : newNote,
+                      'date': Timestamp.fromDate(selectedDate),
+                      'accountId': selectedAccountId,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    // 2. Eski account transaction'ı sil veya güncelle
+                    if (oldAccountTransactionId != null && accountId != null) {
+                      final accountTransactionsCol =
+                          (tenantId != null && (tenantId.isNotEmpty))
+                              ? FirebaseFirestore.instance
+                                  .collection('tenants')
+                                  .doc(tenantId)
+                                  .collection('accountTransactions')
+                              : FirebaseFirestore.instance
+                                  .collection('accountTransactions');
+
+                      final oldAccountTransactionRef =
+                          accountTransactionsCol.doc(oldAccountTransactionId);
+                      batch.delete(oldAccountTransactionRef);
+
+                      // Eski account balance'ı geri yükle
+                      if (accountId != selectedAccountId &&
+                          oldAccountDoc != null &&
+                          oldAmountInAccountCurrency != null) {
+                        final oldAccountRef = accountsCol.doc(accountId);
+                        final oldAccountDocData = oldAccountDoc.data()!;
+                        final oldAccountBalance =
+                            (oldAccountDocData['balance'] as num?)
+                                    ?.toDouble() ??
+                                0.0;
+                        final oldAccountBlockedAmount =
+                            (oldAccountDocData['blockedAmount'] as num?)
+                                    ?.toDouble() ??
+                                0.0;
+                        batch.update(oldAccountRef, {
+                          'balance':
+                              oldAccountBalance + oldAmountInAccountCurrency,
+                          'availableBalance':
+                              (oldAccountBalance + oldAmountInAccountCurrency) -
+                                  oldAccountBlockedAmount,
+                          'updatedAt': FieldValue.serverTimestamp(),
+                          'updatedBy': FirebaseAuth.instance.currentUser?.uid,
+                        });
+                      }
+                    }
+
+                    // 3. Yeni account transaction ekle
+                    final accountTransactionsCol =
+                        (tenantId != null && (tenantId.isNotEmpty))
+                            ? FirebaseFirestore.instance
+                                .collection('tenants')
+                                .doc(tenantId)
+                                .collection('accountTransactions')
+                            : FirebaseFirestore.instance
+                                .collection('accountTransactions');
+
+                    final accountTransactionRef = accountTransactionsCol.doc();
+                    final exchangeRateNote = needsExchangeRate &&
+                            exchangeRate != null
+                        ? ' (Kur: $exchangeRate, $newAmount $currency = ${newAmountInAccountCurrency.toStringAsFixed(2)} $newAccountCurrency)'
+                        : '';
+                    batch.set(accountTransactionRef, {
+                      'accountId': selectedAccountId,
+                      'type': 'withdrawal',
+                      'category': 'expense',
+                      'amount': newAmountInAccountCurrency,
+                      'debitAmount': newAmountInAccountCurrency,
+                      'creditAmount': null,
+                      'balanceAfter': newBalance,
+                      'description':
+                          '$name - Personel Ödemesi$exchangeRateNote',
+                      'notes': newNote.isEmpty ? null : newNote,
+                      'transactionDate': Timestamp.fromDate(selectedDate),
+                      'userId': FirebaseAuth.instance.currentUser?.uid ?? '',
+                      'isReconciled': false,
+                      'tenantId': tenantId,
+                      'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                      'updatedBy': FirebaseAuth.instance.currentUser?.uid,
+                      'createdAt': FieldValue.serverTimestamp(),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    // 4. Yeni account balance güncelle
+                    final newAccountRef = accountsCol.doc(selectedAccountId);
+                    batch.update(newAccountRef, {
+                      'balance': newBalance,
+                      'availableBalance': newAvailableBalance,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                      'updatedBy': FirebaseAuth.instance.currentUser?.uid,
+                    });
+
+                    await batch.commit();
+
+                    if (ctx.mounted) {
+                      isDialogDisposed = true;
+                      Navigator.of(ctx).pop();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Ödeme güncellendi (${newAmount.toStringAsFixed(2)} $currency)',
+                          ),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+
+                    amountController.dispose();
+                    exchangeRateController.dispose();
+                    noteController.dispose();
+                    dateController.dispose();
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Hata: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Kaydet'),
+              ),
+            ],
+          );
+        }),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kasa bilgileri alınırken hata oluştu: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Ödeme işlemi silme dialogu
+  void _showDeletePaymentTransactionDialog(
+    BuildContext context,
+    String? tenantId,
+    String transactionId,
+    Map<String, dynamic> transactionData,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ödemeyi Sil'),
+        content: const Text(
+            'Bu ödemeyi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve ilgili kasa bakiyesi güncellenecektir.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              try {
+                final accountId = transactionData['accountId'] as String?;
+                final amount =
+                    (transactionData['amount'] as num?)?.toDouble() ?? 0;
+                final date = transactionData['date'];
+                DateTime? transactionDate;
+                if (date is Timestamp) {
+                  transactionDate = date.toDate();
+                } else if (date is DateTime) {
+                  transactionDate = date;
+                }
+
+                // Account transaction'ı bul
+                String? accountTransactionId;
+                double? amountInAccountCurrency;
+                if (accountId != null && transactionDate != null) {
+                  final accountTransactionsCol =
+                      (tenantId != null && (tenantId.isNotEmpty))
+                          ? FirebaseFirestore.instance
+                              .collection('tenants')
+                              .doc(tenantId)
+                              .collection('accountTransactions')
+                          : FirebaseFirestore.instance
+                              .collection('accountTransactions');
+
+                  final accountTransactionsSnapshot =
+                      await accountTransactionsCol
+                          .where('accountId', isEqualTo: accountId)
+                          .where('transactionDate',
+                              isEqualTo: Timestamp.fromDate(transactionDate))
+                          .where('type', isEqualTo: 'withdrawal')
+                          .where('category', isEqualTo: 'expense')
+                          .get();
+
+                  if (accountTransactionsSnapshot.docs.isNotEmpty) {
+                    final accountTransactionDoc =
+                        accountTransactionsSnapshot.docs.first;
+                    accountTransactionId = accountTransactionDoc.id;
+                    final accountTransactionData = accountTransactionDoc.data();
+                    amountInAccountCurrency =
+                        (accountTransactionData['amount'] as num?)?.toDouble();
+                  }
+                }
+
+                // Batch işlem
+                final batch = FirebaseFirestore.instance.batch();
+
+                // 1. Employee transaction sil
+                final employeeTransactionsCol =
+                    (tenantId != null && (tenantId.isNotEmpty))
+                        ? FirebaseFirestore.instance
+                            .collection('tenants')
+                            .doc(tenantId)
+                            .collection('employee_transactions')
+                        : FirebaseFirestore.instance
+                            .collection('employee_transactions');
+
+                batch.delete(employeeTransactionsCol.doc(transactionId));
+
+                // 2. Account transaction sil ve balance geri yükle
+                if (accountId != null && accountTransactionId != null) {
+                  final accountTransactionsCol =
+                      (tenantId != null && (tenantId.isNotEmpty))
+                          ? FirebaseFirestore.instance
+                              .collection('tenants')
+                              .doc(tenantId)
+                              .collection('accountTransactions')
+                          : FirebaseFirestore.instance
+                              .collection('accountTransactions');
+
+                  batch
+                      .delete(accountTransactionsCol.doc(accountTransactionId));
+
+                  // Account balance'ı geri yükle
+                  final accountsCol =
+                      (tenantId != null && (tenantId.isNotEmpty))
+                          ? FirebaseFirestore.instance
+                              .collection('tenants')
+                              .doc(tenantId)
+                              .collection('accounts')
+                          : FirebaseFirestore.instance.collection('accounts');
+
+                  final accountDoc = await accountsCol.doc(accountId).get();
+                  if (accountDoc.exists) {
+                    final accountData = accountDoc.data()!;
+                    final currentBalance =
+                        (accountData['balance'] as num?)?.toDouble() ?? 0.0;
+                    final blockedAmount =
+                        (accountData['blockedAmount'] as num?)?.toDouble() ??
+                            0.0;
+                    final newBalance =
+                        currentBalance + (amountInAccountCurrency ?? amount);
+                    final newAvailableBalance = newBalance - blockedAmount;
+
+                    batch.update(accountsCol.doc(accountId), {
+                      'balance': newBalance,
+                      'availableBalance': newAvailableBalance,
+                      'updatedAt': FieldValue.serverTimestamp(),
+                      'updatedBy': FirebaseAuth.instance.currentUser?.uid,
+                    });
+                  }
+                }
+
+                await batch.commit();
+
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Ödeme silindi'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Hata: $e'),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              }
+            },
+            style: FilledButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _AddEmployeeForm extends StatefulWidget {
@@ -7664,8 +8572,8 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
       } else {
         // Bir sonraki hedef günü bul
         current = current.add(const Duration(days: 1));
-        while (current.weekday != targetWeekday) {
-          current = current.add(const Duration(days: 1));
+      while (current.weekday != targetWeekday) {
+        current = current.add(const Duration(days: 1));
         }
       }
       return current;
@@ -8701,8 +9609,8 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
                             .replaceAll(',', '.')) ??
                         0)
                 : (double.tryParse(_salaryAmountController.text
-                        .replaceAll('.', '') // Remove thousand separators
-                        .replaceAll(',', '.')) ??
+                    .replaceAll('.', '') // Remove thousand separators
+                    .replaceAll(',', '.')) ??
                     0),
             'currency': _salaryCurrency,
           },
@@ -8785,8 +9693,8 @@ Bu maaş türü zaten saatlik ücret olduğu için hesaplama yapılmamıştır.
                       .replaceAll(',', '.')) ??
                   0)
           : (double.tryParse(_salaryAmountController.text
-                  .replaceAll('.', '') // Remove thousand separators
-                  .replaceAll(',', '.')) ??
+              .replaceAll('.', '') // Remove thousand separators
+              .replaceAll(',', '.')) ??
               0);
 
       // Auto-create entitlement transaction(s) based on payment period
