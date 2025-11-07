@@ -2964,7 +2964,23 @@ class _EmployeeDetailSheet extends StatelessWidget {
                               docId: docId,
                               currency: salaryCurrency.isNotEmpty
                                   ? salaryCurrency
-                                  : 'TRY'),
+                                  : 'TRY',
+                              onEditOvertimeTransaction:
+                                  (ctx, tId, empId, transId, transData, curr) {
+                                final sheet = _EmployeeDetailSheet(
+                                  tenantId: tId,
+                                  docId: empId,
+                                  data: data,
+                                );
+                                sheet._showEditOvertimeTransactionDialog(
+                                  ctx,
+                                  tId,
+                                  empId,
+                                  transId,
+                                  transData,
+                                  curr,
+                                );
+                              }),
                         ],
                       ),
                     ),
@@ -3316,9 +3332,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
     );
   }
 
-  // Mesai ücretini maaş türüne göre hesapla
-  double _calculateOvertimeAmount({
-    required double hours,
+  // Saatlik ücreti hesapla
+  double _calculateHourlyRateForOvertime({
     required double salaryAmount,
     required String entitlementType,
     required Map<String, dynamic> entitlement,
@@ -3358,8 +3373,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
         hourlyRate = salaryAmount / (30 * 8);
     }
 
-    // Mesai ücreti saatlik ücretin 1.5 katı
-    return hourlyRate * hours * 1.5;
+    return hourlyRate;
   }
 
   void _showAddOvertimeDialog(BuildContext context) {
@@ -3373,6 +3387,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
     final entitlementType = entitlement['type']?.toString() ?? 'Aylık';
 
     final hoursController = TextEditingController();
+    final multiplierController = TextEditingController(text: '1');
+    final hourlyOvertimeRateController = TextEditingController();
     final amountController = TextEditingController();
     final dateController = TextEditingController(
       text: DateTime.now().toString().split(' ')[0],
@@ -3380,33 +3396,102 @@ class _EmployeeDetailSheet extends StatelessWidget {
     final noteController = TextEditingController();
     DateTime? selectedDate = DateTime.now();
 
+    // Saatlik ücreti hesapla
+    final baseHourlyRate = _calculateHourlyRateForOvertime(
+      salaryAmount: salaryAmount,
+      entitlementType: entitlementType,
+      entitlement: entitlement,
+    );
+
     // İlk hesaplama için listener ekle
-    String? lastCalculatedAmount;
-    void updateAmount() {
-      final hours =
-          double.tryParse(hoursController.text.replaceAll(',', '.')) ?? 0;
-      if (hours > 0) {
-        final calculatedAmount = _calculateOvertimeAmount(
-          hours: hours,
-          salaryAmount: salaryAmount,
-          entitlementType: entitlementType,
-          entitlement: entitlement,
-        );
-        final calculatedAmountStr = calculatedAmount.toStringAsFixed(2);
-        // Sadece kullanıcı manuel değiştirmediyse güncelle
-        if (lastCalculatedAmount == null ||
-            amountController.text == lastCalculatedAmount ||
-            amountController.text.isEmpty) {
-          amountController.text = calculatedAmountStr;
-          lastCalculatedAmount = calculatedAmountStr;
+    String? lastCalculatedHourlyRate;
+    String? lastCalculatedMultiplier;
+    bool userChangedHourlyRate = false;
+    bool userChangedMultiplier = false;
+    bool isDisposed = false;
+
+    // İlk saatlik mesai ücretini hesapla ve doldur (çarpan = 1)
+    if (baseHourlyRate > 0) {
+      final initialHourlyOvertimeRate = baseHourlyRate * 1;
+      hourlyOvertimeRateController.text =
+          initialHourlyOvertimeRate.toStringAsFixed(2);
+      lastCalculatedHourlyRate = initialHourlyOvertimeRate.toStringAsFixed(2);
+    }
+
+    void updateHourlyOvertimeRate() {
+      if (isDisposed) return;
+      final multiplier =
+          double.tryParse(multiplierController.text.replaceAll(',', '.')) ?? 1;
+      if (multiplier > 0 && baseHourlyRate > 0 && !userChangedHourlyRate) {
+        final calculatedHourlyRate = baseHourlyRate * multiplier;
+        final calculatedHourlyRateStr = calculatedHourlyRate.toStringAsFixed(2);
+        if (lastCalculatedHourlyRate == null ||
+            hourlyOvertimeRateController.text == lastCalculatedHourlyRate ||
+            hourlyOvertimeRateController.text.isEmpty) {
+          hourlyOvertimeRateController.text = calculatedHourlyRateStr;
+          lastCalculatedHourlyRate = calculatedHourlyRateStr;
         }
-      } else {
-        amountController.text = '';
-        lastCalculatedAmount = null;
       }
     }
 
+    void updateMultiplier() {
+      if (isDisposed) return;
+      final hourlyOvertimeRate = double.tryParse(
+              hourlyOvertimeRateController.text.replaceAll(',', '.')) ??
+          0;
+      if (hourlyOvertimeRate > 0 &&
+          baseHourlyRate > 0 &&
+          !userChangedMultiplier) {
+        final calculatedMultiplier = hourlyOvertimeRate / baseHourlyRate;
+        final calculatedMultiplierStr = calculatedMultiplier.toStringAsFixed(2);
+        if (lastCalculatedMultiplier == null ||
+            multiplierController.text == lastCalculatedMultiplier ||
+            multiplierController.text.isEmpty) {
+          multiplierController.text = calculatedMultiplierStr;
+          lastCalculatedMultiplier = calculatedMultiplierStr;
+        }
+      }
+    }
+
+    void updateAmount({bool force = false}) {
+      if (isDisposed) return;
+      final hours =
+          double.tryParse(hoursController.text.replaceAll(',', '.')) ?? 0;
+      final hourlyOvertimeRate = double.tryParse(
+              hourlyOvertimeRateController.text.replaceAll(',', '.')) ??
+          0;
+
+      if (hours > 0 && hourlyOvertimeRate > 0) {
+        // Mesai tutarı her zaman otomatik hesaplanır (read-only alan)
+        final calculatedAmount = hourlyOvertimeRate * hours;
+        final calculatedAmountStr = calculatedAmount.toStringAsFixed(2);
+        amountController.text = calculatedAmountStr;
+      } else {
+        amountController.text = '';
+      }
+    }
+
+    // Listener fonksiyonlarını sakla (dispose için)
+    void multiplierListener() {
+      if (isDisposed) return;
+      userChangedMultiplier = true;
+      userChangedHourlyRate = false;
+      updateHourlyOvertimeRate();
+      updateAmount();
+    }
+
+    void hourlyOvertimeRateListener() {
+      if (isDisposed) return;
+      userChangedHourlyRate = true;
+      userChangedMultiplier = false;
+      updateMultiplier();
+      updateAmount();
+    }
+
     hoursController.addListener(updateAmount);
+    multiplierController.addListener(multiplierListener);
+    hourlyOvertimeRateController.addListener(hourlyOvertimeRateListener);
+    // Mesai tutarı read-only olduğu için listener'a gerek yok
 
     showDialog(
       context: context,
@@ -3414,101 +3499,194 @@ class _EmployeeDetailSheet extends StatelessWidget {
         builder: (dialogContext, setState) {
           return AlertDialog(
             title: const Text('Mesai Ekle'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('$name için mesai ekle'),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: dialogContext,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('tr', 'TR'),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          selectedDate = picked;
-                          dateController.text =
-                              '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
-                        });
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tarih',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      child: Text(
-                        dateController.text.isEmpty
-                            ? 'Tarih seçin'
-                            : dateController.text,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: hoursController,
-                    decoration: const InputDecoration(
-                      labelText: 'Mesai Saati',
-                      border: OutlineInputBorder(),
-                      hintText: 'Örn: 2.5',
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    onChanged: (_) {
-                      setState(() {
-                        updateAmount();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: amountController,
-                    decoration: InputDecoration(
-                      labelText: 'Mesai Tutarı ($salaryCurrency)',
-                      border: const OutlineInputBorder(),
-                      hintText: 'Otomatik hesaplanır',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.refresh),
-                        tooltip: 'Yeniden hesapla',
-                        onPressed: () {
+            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('$name için mesai ekle'),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogContext,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          locale: const Locale('tr', 'TR'),
+                        );
+                        if (picked != null) {
                           setState(() {
-                            updateAmount();
+                            selectedDate = picked;
+                            dateController.text =
+                                '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
                           });
-                        },
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Tarih',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          dateController.text.isEmpty
+                              ? 'Tarih seçin'
+                              : dateController.text,
+                        ),
                       ),
                     ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: noteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Açıklama (Opsiyonel)',
-                      border: OutlineInputBorder(),
-                      hintText: 'Mesai nedeni...',
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: hoursController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mesai Saati',
+                        border: OutlineInputBorder(),
+                        hintText: 'Örn: 2.5',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
                     ),
-                    maxLines: 3,
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: multiplierController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mesai Çarpanı',
+                        border: OutlineInputBorder(),
+                        hintText: 'Örn: 1.5 (varsayılan: 1)',
+                        helperText: 'Saatlik ücretin kaç katı olacak?',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: hourlyOvertimeRateController,
+                      decoration: InputDecoration(
+                        labelText: 'Saatlik Mesai Ücreti ($salaryCurrency)',
+                        border: const OutlineInputBorder(),
+                        hintText: 'Otomatik hesaplanır',
+                        helperText: 'Saatlik ücret × çarpan',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: amountController,
+                      decoration: InputDecoration(
+                        labelText: 'Mesai Tutarı ($salaryCurrency)',
+                        border: const OutlineInputBorder(),
+                        hintText: 'Otomatik hesaplanır',
+                        helperText: 'Saatlik mesai ücreti × mesai saati',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                      ),
+                      readOnly: true,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Açıklama (Opsiyonel)',
+                        border: OutlineInputBorder(),
+                        hintText: 'Mesai nedeni...',
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
               TextButton(
                 onPressed: () {
+                  // Önce isDisposed flag'ini set et
+                  isDisposed = true;
+                  // Listener'ları kaldır
                   hoursController.removeListener(updateAmount);
-                  hoursController.dispose();
-                  amountController.dispose();
-                  dateController.dispose();
-                  noteController.dispose();
-                  Navigator.of(ctx).pop();
+                  multiplierController.removeListener(multiplierListener);
+                  hourlyOvertimeRateController
+                      .removeListener(hourlyOvertimeRateListener);
+                  // Dialog'u önce kapat (Flutter otomatik olarak focus'u temizler)
+                  if (ctx.mounted) {
+                    Navigator.of(ctx).pop();
+                  }
+                  // Controller'ları dispose et (dialog kapandıktan sonra)
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    hoursController.dispose();
+                    multiplierController.dispose();
+                    hourlyOvertimeRateController.dispose();
+                    amountController.dispose();
+                    dateController.dispose();
+                    noteController.dispose();
+                  });
                 },
                 child: const Text('Vazgeç'),
               ),
@@ -3521,6 +3699,33 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       const SnackBar(
                         content: Text('Lütfen geçerli bir mesai saati girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final multiplier = double.tryParse(
+                    multiplierController.text.replaceAll(',', '.'),
+                  );
+                  if (multiplier == null || multiplier <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen geçerli bir çarpan girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final hourlyOvertimeRate = double.tryParse(
+                    hourlyOvertimeRateController.text.replaceAll(',', '.'),
+                  );
+                  if (hourlyOvertimeRate == null || hourlyOvertimeRate <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Lütfen geçerli bir saatlik mesai ücreti girin'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -3555,9 +3760,11 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       'direction': 'in',
                       'type': 'overtime',
                       'note': noteController.text.trim().isEmpty
-                          ? 'Mesai: $hours saat'
-                          : 'Mesai: $hours saat - ${noteController.text.trim()}',
+                          ? 'Mesai: $hours saat (x$multiplier)'
+                          : 'Mesai: $hours saat (x$multiplier) - ${noteController.text.trim()}',
                       'overtimeHours': hours,
+                      'overtimeMultiplier': multiplier,
+                      'hourlyOvertimeRate': hourlyOvertimeRate,
                       'date': Timestamp.fromDate(selectedDate!),
                       'currency': salaryCurrency,
                       'tenantId': tenantId,
@@ -3566,25 +3773,39 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       'updatedAt': FieldValue.serverTimestamp(),
                     });
 
+                    // Önce isDisposed flag'ini set et
+                    isDisposed = true;
+                    // Listener'ları kaldır
                     hoursController.removeListener(updateAmount);
-                    hoursController.dispose();
-                    amountController.dispose();
-                    dateController.dispose();
-                    noteController.dispose();
-
+                    multiplierController.removeListener(multiplierListener);
+                    hourlyOvertimeRateController
+                        .removeListener(hourlyOvertimeRateListener);
+                    // Dialog'u önce kapat (Flutter otomatik olarak focus'u temizler)
                     if (ctx.mounted) {
                       Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '$hours saat mesai eklendi (${overtimeAmount.toStringAsFixed(2)} $salaryCurrency)',
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
                     }
+                    // Controller'ları dispose et ve SnackBar'ı göster (dialog kapandıktan sonra)
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      hoursController.dispose();
+                      multiplierController.dispose();
+                      hourlyOvertimeRateController.dispose();
+                      amountController.dispose();
+                      dateController.dispose();
+                      noteController.dispose();
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '$hours saat mesai eklendi (${overtimeAmount.toStringAsFixed(2)} $salaryCurrency)',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    });
                   } catch (e) {
-                    if (ctx.mounted) {
+                    if (!isDisposed && ctx.mounted) {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
                         SnackBar(
                           content: Text('Hata: $e'),
@@ -3617,6 +3838,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
     final entitlementType = entitlement['type']?.toString() ?? 'Aylık';
 
     final hoursController = TextEditingController();
+    final multiplierController = TextEditingController(text: '1');
+    final hourlyOvertimeRateController = TextEditingController();
     final amountController = TextEditingController();
     final dateController = TextEditingController(
       text: DateTime.now().toString().split(' ')[0],
@@ -3624,33 +3847,102 @@ class _EmployeeDetailSheet extends StatelessWidget {
     final noteController = TextEditingController();
     DateTime? selectedDate = DateTime.now();
 
+    // Saatlik ücreti hesapla
+    final baseHourlyRate = _calculateHourlyRateForOvertime(
+      salaryAmount: salaryAmount,
+      entitlementType: entitlementType,
+      entitlement: entitlement,
+    );
+
     // İlk hesaplama için listener ekle
-    String? lastCalculatedAmount;
-    void updateAmount() {
-      final hours =
-          double.tryParse(hoursController.text.replaceAll(',', '.')) ?? 0;
-      if (hours > 0) {
-        final calculatedAmount = _calculateOvertimeAmount(
-          hours: hours,
-          salaryAmount: salaryAmount,
-          entitlementType: entitlementType,
-          entitlement: entitlement,
-        );
-        final calculatedAmountStr = calculatedAmount.toStringAsFixed(2);
-        // Sadece kullanıcı manuel değiştirmediyse güncelle
-        if (lastCalculatedAmount == null ||
-            amountController.text == lastCalculatedAmount ||
-            amountController.text.isEmpty) {
-          amountController.text = calculatedAmountStr;
-          lastCalculatedAmount = calculatedAmountStr;
+    String? lastCalculatedHourlyRate;
+    String? lastCalculatedMultiplier;
+    bool userChangedHourlyRate = false;
+    bool userChangedMultiplier = false;
+    bool isDisposed = false;
+
+    // İlk saatlik mesai ücretini hesapla ve doldur (çarpan = 1)
+    if (baseHourlyRate > 0) {
+      final initialHourlyOvertimeRate = baseHourlyRate * 1;
+      hourlyOvertimeRateController.text =
+          initialHourlyOvertimeRate.toStringAsFixed(2);
+      lastCalculatedHourlyRate = initialHourlyOvertimeRate.toStringAsFixed(2);
+    }
+
+    void updateHourlyOvertimeRate() {
+      if (isDisposed) return;
+      final multiplier =
+          double.tryParse(multiplierController.text.replaceAll(',', '.')) ?? 1;
+      if (multiplier > 0 && baseHourlyRate > 0 && !userChangedHourlyRate) {
+        final calculatedHourlyRate = baseHourlyRate * multiplier;
+        final calculatedHourlyRateStr = calculatedHourlyRate.toStringAsFixed(2);
+        if (lastCalculatedHourlyRate == null ||
+            hourlyOvertimeRateController.text == lastCalculatedHourlyRate ||
+            hourlyOvertimeRateController.text.isEmpty) {
+          hourlyOvertimeRateController.text = calculatedHourlyRateStr;
+          lastCalculatedHourlyRate = calculatedHourlyRateStr;
         }
-      } else {
-        amountController.text = '';
-        lastCalculatedAmount = null;
       }
     }
 
+    void updateMultiplier() {
+      if (isDisposed) return;
+      final hourlyOvertimeRate = double.tryParse(
+              hourlyOvertimeRateController.text.replaceAll(',', '.')) ??
+          0;
+      if (hourlyOvertimeRate > 0 &&
+          baseHourlyRate > 0 &&
+          !userChangedMultiplier) {
+        final calculatedMultiplier = hourlyOvertimeRate / baseHourlyRate;
+        final calculatedMultiplierStr = calculatedMultiplier.toStringAsFixed(2);
+        if (lastCalculatedMultiplier == null ||
+            multiplierController.text == lastCalculatedMultiplier ||
+            multiplierController.text.isEmpty) {
+          multiplierController.text = calculatedMultiplierStr;
+          lastCalculatedMultiplier = calculatedMultiplierStr;
+        }
+      }
+    }
+
+    void updateAmount({bool force = false}) {
+      if (isDisposed) return;
+      final hours =
+          double.tryParse(hoursController.text.replaceAll(',', '.')) ?? 0;
+      final hourlyOvertimeRate = double.tryParse(
+              hourlyOvertimeRateController.text.replaceAll(',', '.')) ??
+          0;
+
+      if (hours > 0 && hourlyOvertimeRate > 0) {
+        // Mesai tutarı her zaman otomatik hesaplanır (read-only alan)
+        final calculatedAmount = hourlyOvertimeRate * hours;
+        final calculatedAmountStr = calculatedAmount.toStringAsFixed(2);
+        amountController.text = calculatedAmountStr;
+      } else {
+        amountController.text = '';
+      }
+    }
+
+    // Listener fonksiyonlarını sakla (dispose için)
+    void multiplierListener() {
+      if (isDisposed) return;
+      userChangedMultiplier = true;
+      userChangedHourlyRate = false;
+      updateHourlyOvertimeRate();
+      updateAmount();
+    }
+
+    void hourlyOvertimeRateListener() {
+      if (isDisposed) return;
+      userChangedHourlyRate = true;
+      userChangedMultiplier = false;
+      updateMultiplier();
+      updateAmount();
+    }
+
     hoursController.addListener(updateAmount);
+    multiplierController.addListener(multiplierListener);
+    hourlyOvertimeRateController.addListener(hourlyOvertimeRateListener);
+    // Mesai tutarı read-only olduğu için listener'a gerek yok
 
     showDialog(
       context: context,
@@ -3658,101 +3950,204 @@ class _EmployeeDetailSheet extends StatelessWidget {
         builder: (dialogContext, setState) {
           return AlertDialog(
             title: const Text('Mesaiden Kes'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('$name için mesai kes'),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: dialogContext,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('tr', 'TR'),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          selectedDate = picked;
-                          dateController.text =
-                              '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
-                        });
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tarih',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
-                      ),
-                      child: Text(
-                        dateController.text.isEmpty
-                            ? 'Tarih seçin'
-                            : dateController.text,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: hoursController,
-                    decoration: const InputDecoration(
-                      labelText: 'Kesilecek Mesai Saati',
-                      border: OutlineInputBorder(),
-                      hintText: 'Örn: 2.5',
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    onChanged: (_) {
-                      setState(() {
-                        updateAmount();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: amountController,
-                    decoration: InputDecoration(
-                      labelText: 'Kesilecek Mesai Tutarı ($salaryCurrency)',
-                      border: const OutlineInputBorder(),
-                      hintText: 'Otomatik hesaplanır',
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.refresh),
-                        tooltip: 'Yeniden hesapla',
-                        onPressed: () {
+            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('$name için mesai kes'),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogContext,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          locale: const Locale('tr', 'TR'),
+                        );
+                        if (picked != null) {
                           setState(() {
-                            updateAmount();
+                            selectedDate = picked;
+                            dateController.text =
+                                '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
                           });
-                        },
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Tarih',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(
+                          dateController.text.isEmpty
+                              ? 'Tarih seçin'
+                              : dateController.text,
+                        ),
                       ),
                     ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: noteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Açıklama (Opsiyonel)',
-                      border: OutlineInputBorder(),
-                      hintText: 'Kesme nedeni...',
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: hoursController,
+                      decoration: const InputDecoration(
+                        labelText: 'Kesilecek Mesai Saati',
+                        border: OutlineInputBorder(),
+                        hintText: 'Örn: 2.5',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
                     ),
-                    maxLines: 3,
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: multiplierController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mesai Çarpanı',
+                        border: OutlineInputBorder(),
+                        hintText: 'Örn: 1.5 (varsayılan: 1)',
+                        helperText: 'Saatlik ücretin kaç katı olacak?',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: hourlyOvertimeRateController,
+                      decoration: InputDecoration(
+                        labelText: 'Saatlik Mesai Ücreti ($salaryCurrency)',
+                        border: const OutlineInputBorder(),
+                        hintText: 'Otomatik hesaplanır',
+                        helperText: 'Saatlik ücret × çarpan',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: amountController,
+                      decoration: InputDecoration(
+                        labelText: 'Kesilecek Mesai Tutarı ($salaryCurrency)',
+                        border: const OutlineInputBorder(),
+                        hintText: 'Otomatik hesaplanır',
+                        helperText: 'Saatlik mesai ücreti × mesai saati',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        setState(() {});
+                      },
+                      onEditingComplete: () {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Açıklama (Opsiyonel)',
+                        border: OutlineInputBorder(),
+                        hintText: 'Kesme nedeni...',
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
               TextButton(
                 onPressed: () {
+                  // Önce isDisposed flag'ini set et
+                  isDisposed = true;
+                  // Listener'ları kaldır
                   hoursController.removeListener(updateAmount);
-                  hoursController.dispose();
-                  amountController.dispose();
-                  dateController.dispose();
-                  noteController.dispose();
-                  Navigator.of(ctx).pop();
+                  multiplierController.removeListener(multiplierListener);
+                  hourlyOvertimeRateController
+                      .removeListener(hourlyOvertimeRateListener);
+                  // Dialog'u önce kapat (Flutter otomatik olarak focus'u temizler)
+                  if (ctx.mounted) {
+                    Navigator.of(ctx).pop();
+                  }
+                  // Controller'ları dispose et (dialog kapandıktan sonra)
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    hoursController.dispose();
+                    multiplierController.dispose();
+                    hourlyOvertimeRateController.dispose();
+                    amountController.dispose();
+                    dateController.dispose();
+                    noteController.dispose();
+                  });
                 },
                 child: const Text('Vazgeç'),
               ),
@@ -3765,6 +4160,33 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     ScaffoldMessenger.of(dialogContext).showSnackBar(
                       const SnackBar(
                         content: Text('Lütfen geçerli bir mesai saati girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final multiplier = double.tryParse(
+                    multiplierController.text.replaceAll(',', '.'),
+                  );
+                  if (multiplier == null || multiplier <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen geçerli bir çarpan girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final hourlyOvertimeRate = double.tryParse(
+                    hourlyOvertimeRateController.text.replaceAll(',', '.'),
+                  );
+                  if (hourlyOvertimeRate == null || hourlyOvertimeRate <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Lütfen geçerli bir saatlik mesai ücreti girin'),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -3799,9 +4221,11 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       'direction': 'out',
                       'type': 'overtime_deduction',
                       'note': noteController.text.trim().isEmpty
-                          ? 'Mesaiden kesme: $hours saat'
-                          : 'Mesaiden kesme: $hours saat - ${noteController.text.trim()}',
+                          ? 'Mesaiden kesme: $hours saat (x$multiplier)'
+                          : 'Mesaiden kesme: $hours saat (x$multiplier) - ${noteController.text.trim()}',
                       'overtimeHours': hours,
+                      'overtimeMultiplier': multiplier,
+                      'hourlyOvertimeRate': hourlyOvertimeRate,
                       'date': Timestamp.fromDate(selectedDate!),
                       'currency': salaryCurrency,
                       'tenantId': tenantId,
@@ -3810,25 +4234,39 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       'updatedAt': FieldValue.serverTimestamp(),
                     });
 
+                    // Önce isDisposed flag'ini set et
+                    isDisposed = true;
+                    // Listener'ları kaldır
                     hoursController.removeListener(updateAmount);
-                    hoursController.dispose();
-                    amountController.dispose();
-                    dateController.dispose();
-                    noteController.dispose();
-
+                    multiplierController.removeListener(multiplierListener);
+                    hourlyOvertimeRateController
+                        .removeListener(hourlyOvertimeRateListener);
+                    // Dialog'u önce kapat (Flutter otomatik olarak focus'u temizler)
                     if (ctx.mounted) {
                       Navigator.of(ctx).pop();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '$hours saat mesai kesildi (${overtimeAmount.toStringAsFixed(2)} $salaryCurrency)',
-                          ),
-                          backgroundColor: Colors.orange,
-                        ),
-                      );
                     }
+                    // Controller'ları dispose et ve SnackBar'ı göster (dialog kapandıktan sonra)
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      hoursController.dispose();
+                      multiplierController.dispose();
+                      hourlyOvertimeRateController.dispose();
+                      amountController.dispose();
+                      dateController.dispose();
+                      noteController.dispose();
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '$hours saat mesai kesildi (${overtimeAmount.toStringAsFixed(2)} $salaryCurrency)',
+                            ),
+                            backgroundColor: Colors.orange,
+                          ),
+                        );
+                      }
+                    });
                   } catch (e) {
-                    if (ctx.mounted) {
+                    if (!isDisposed && ctx.mounted) {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
                         SnackBar(
                           content: Text('Hata: $e'),
@@ -4663,10 +5101,14 @@ class _EmployeeTransactionsList extends StatelessWidget {
   final String? tenantId;
   final String docId;
   final String currency;
+  final Function(
+          BuildContext, String?, String, String, Map<String, dynamic>, String)?
+      onEditOvertimeTransaction;
   const _EmployeeTransactionsList({
     required this.tenantId,
     required this.docId,
     required this.currency,
+    this.onEditOvertimeTransaction,
   });
 
   @override
@@ -4760,13 +5202,21 @@ class _EmployeeTransactionsList extends StatelessWidget {
                 (transactionType == null ||
                     transactionType == 'entitlement' ||
                     transactionType.isEmpty);
+            // Mesai işlemleri: type == 'overtime' veya 'overtime_deduction'
+            final isOvertime = transactionType == 'overtime' ||
+                transactionType == 'overtime_deduction';
 
             return ListTile(
               dense: true,
-              leading: Icon(dir == 'in' ? Icons.call_received : Icons.call_made,
+              leading: Icon(
+                  isOvertime
+                      ? Icons.access_time
+                      : (dir == 'in' ? Icons.call_received : Icons.call_made),
                   color: color),
               title: Text(note.isEmpty
-                  ? (dir == 'in' ? 'Ödeme' : 'Avans/Çıkış')
+                  ? (isOvertime
+                      ? (dir == 'in' ? 'Mesai Ekleme' : 'Mesai Kesme')
+                      : (dir == 'in' ? 'Ödeme' : 'Avans/Çıkış'))
                   : note),
               subtitle: Text(dt),
               trailing: Row(
@@ -4775,19 +5225,32 @@ class _EmployeeTransactionsList extends StatelessWidget {
                   Text('$sign$formattedAmount $currency',
                       style:
                           TextStyle(color: color, fontWeight: FontWeight.w600)),
-                  if (isEntitlement)
+                  if (isEntitlement || isOvertime)
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, size: 20),
                       onSelected: (value) {
                         if (value == 'edit') {
-                          _showEditTransactionDialog(
-                            context,
-                            tenantId,
-                            docId,
-                            transactionId,
-                            m,
-                            currency,
-                          );
+                          if (isOvertime) {
+                            if (onEditOvertimeTransaction != null) {
+                              onEditOvertimeTransaction!(
+                                context,
+                                tenantId,
+                                docId,
+                                transactionId,
+                                m,
+                                currency,
+                              );
+                            }
+                          } else {
+                            _showEditTransactionDialog(
+                              context,
+                              tenantId,
+                              docId,
+                              transactionId,
+                              m,
+                              currency,
+                            );
+                          }
                         } else if (value == 'delete') {
                           _showDeleteTransactionDialog(
                             context,
@@ -5038,6 +5501,547 @@ class _EmployeeTransactionsList extends StatelessWidget {
             child: const Text('Sil'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
+  // Mesai işlemi düzenleme dialogu
+  void _showEditOvertimeTransactionDialog(
+    BuildContext context,
+    String? tenantId,
+    String employeeId,
+    String transactionId,
+    Map<String, dynamic> transactionData,
+    String currency,
+  ) async {
+    // Önce employee bilgilerini çek
+    final employeesCol = (tenantId != null && tenantId.isNotEmpty)
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('employees')
+        : FirebaseFirestore.instance.collection('employees');
+
+    final employeeDoc = await employeesCol.doc(employeeId).get();
+    if (!employeeDoc.exists || !context.mounted) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Personel bulunamadı'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
+
+    final employeeData = employeeDoc.data() as Map<String, dynamic>;
+    final name = employeeData['name'] as String? ?? 'Personel';
+    final salary = (employeeData['salary'] as Map<String, dynamic>?) ??
+        <String, dynamic>{};
+    final salaryAmount = (salary['amount'] as num?)?.toDouble() ?? 0;
+    final salaryCurrency = salary['currency']?.toString() ?? 'TRY';
+    final entitlement =
+        (employeeData['entitlement'] as Map<String, dynamic>?) ??
+            <String, dynamic>{};
+    final entitlementType = entitlement['type']?.toString() ?? 'Aylık';
+
+    // Mevcut transaction verilerini al
+    final amount = (transactionData['amount'] as num?)?.toDouble() ?? 0;
+    final note = transactionData['note']?.toString() ?? '';
+    final overtimeHours =
+        (transactionData['overtimeHours'] as num?)?.toDouble() ?? 0;
+    final overtimeMultiplier =
+        (transactionData['overtimeMultiplier'] as num?)?.toDouble() ?? 1;
+    final hourlyOvertimeRate =
+        (transactionData['hourlyOvertimeRate'] as num?)?.toDouble() ?? 0;
+    final date = transactionData['date'];
+    DateTime? transactionDate;
+    if (date is Timestamp) {
+      transactionDate = date.toDate();
+    } else if (date is DateTime) {
+      transactionDate = date;
+    }
+    transactionDate ??= DateTime.now();
+
+    // Note'dan açıklama kısmını çıkar (eğer varsa)
+    String noteText = note;
+    if (note.contains(' - ')) {
+      noteText = note.split(' - ').skip(1).join(' - ');
+    } else if (note.startsWith('Mesai:') ||
+        note.startsWith('Mesaiden kesme:')) {
+      noteText = '';
+    }
+
+    final hoursController =
+        TextEditingController(text: overtimeHours.toStringAsFixed(2));
+    final multiplierController =
+        TextEditingController(text: overtimeMultiplier.toStringAsFixed(2));
+    final hourlyOvertimeRateController =
+        TextEditingController(text: hourlyOvertimeRate.toStringAsFixed(2));
+    final amountController =
+        TextEditingController(text: amount.toStringAsFixed(2));
+    final dateController = TextEditingController(
+      text:
+          '${transactionDate.day.toString().padLeft(2, '0')}.${transactionDate.month.toString().padLeft(2, '0')}.${transactionDate.year}',
+    );
+    final noteController = TextEditingController(text: noteText);
+    DateTime selectedDate = transactionDate;
+
+    // Saatlik ücreti hesapla - extension içinde helper fonksiyon kullan
+    double calculateHourlyRateForOvertime({
+      required double salaryAmount,
+      required String entitlementType,
+      required Map<String, dynamic> entitlement,
+    }) {
+      double hourlyRate = 0;
+      switch (entitlementType) {
+        case 'Aylık':
+        case 'Aylık (İki Kere)':
+          final daysPerWeek = entitlement['daysPerWeek'] as int? ?? 5;
+          final hoursPerDay = entitlement['hoursPerDay'] as int? ?? 8;
+          final weeklyHours = daysPerWeek * hoursPerDay;
+          final monthlyHours = weeklyHours * 4.33;
+          hourlyRate = salaryAmount / monthlyHours;
+          break;
+        case 'Haftalık':
+          final daysPerWeek = entitlement['daysPerWeek'] as int? ?? 5;
+          final hoursPerDay = entitlement['hoursPerDay'] as int? ?? 8;
+          hourlyRate = salaryAmount / (daysPerWeek * hoursPerDay);
+          break;
+        case 'Günlük':
+          final hoursPerDay = entitlement['hoursPerDay'] as int? ?? 8;
+          hourlyRate = salaryAmount / hoursPerDay;
+          break;
+        case 'Saatlik':
+          hourlyRate = salaryAmount;
+          break;
+        default:
+          hourlyRate = salaryAmount / (30 * 8);
+      }
+      return hourlyRate;
+    }
+
+    final baseHourlyRate = calculateHourlyRateForOvertime(
+      salaryAmount: salaryAmount,
+      entitlementType: entitlementType,
+      entitlement: entitlement,
+    );
+
+    // İlk hesaplama için listener ekle
+    String? lastCalculatedHourlyRate;
+    String? lastCalculatedMultiplier;
+    bool userChangedHourlyRate = false;
+    bool userChangedMultiplier = false;
+    bool isDisposed = false;
+
+    void updateHourlyOvertimeRate() {
+      if (isDisposed) return;
+      final multiplier =
+          double.tryParse(multiplierController.text.replaceAll(',', '.')) ?? 1;
+      if (multiplier > 0 && baseHourlyRate > 0 && !userChangedHourlyRate) {
+        final calculatedHourlyRate = baseHourlyRate * multiplier;
+        final calculatedHourlyRateStr = calculatedHourlyRate.toStringAsFixed(2);
+        if (lastCalculatedHourlyRate == null ||
+            hourlyOvertimeRateController.text == lastCalculatedHourlyRate ||
+            hourlyOvertimeRateController.text.isEmpty) {
+          hourlyOvertimeRateController.text = calculatedHourlyRateStr;
+          lastCalculatedHourlyRate = calculatedHourlyRateStr;
+        }
+      }
+    }
+
+    void updateMultiplier() {
+      if (isDisposed) return;
+      final hourlyOvertimeRate = double.tryParse(
+              hourlyOvertimeRateController.text.replaceAll(',', '.')) ??
+          0;
+      if (hourlyOvertimeRate > 0 &&
+          baseHourlyRate > 0 &&
+          !userChangedMultiplier) {
+        final calculatedMultiplier = hourlyOvertimeRate / baseHourlyRate;
+        final calculatedMultiplierStr = calculatedMultiplier.toStringAsFixed(2);
+        if (lastCalculatedMultiplier == null ||
+            multiplierController.text == lastCalculatedMultiplier ||
+            multiplierController.text.isEmpty) {
+          multiplierController.text = calculatedMultiplierStr;
+          lastCalculatedMultiplier = calculatedMultiplierStr;
+        }
+      }
+    }
+
+    void updateAmount({bool force = false}) {
+      if (isDisposed) return;
+      final hours =
+          double.tryParse(hoursController.text.replaceAll(',', '.')) ?? 0;
+      final hourlyOvertimeRate = double.tryParse(
+              hourlyOvertimeRateController.text.replaceAll(',', '.')) ??
+          0;
+
+      if (hours > 0 && hourlyOvertimeRate > 0) {
+        // Mesai tutarı her zaman otomatik hesaplanır (read-only alan)
+        final calculatedAmount = hourlyOvertimeRate * hours;
+        final calculatedAmountStr = calculatedAmount.toStringAsFixed(2);
+        amountController.text = calculatedAmountStr;
+      } else {
+        if (force) {
+          amountController.text = '0.00';
+        }
+      }
+    }
+
+    void multiplierListener() {
+      if (isDisposed) return;
+      userChangedMultiplier = true;
+      userChangedHourlyRate = false;
+      updateHourlyOvertimeRate();
+      updateAmount();
+    }
+
+    void hourlyOvertimeRateListener() {
+      if (isDisposed) return;
+      userChangedHourlyRate = true;
+      userChangedMultiplier = false;
+      updateMultiplier();
+      updateAmount();
+    }
+
+    hoursController.addListener(updateAmount);
+    multiplierController.addListener(multiplierListener);
+    hourlyOvertimeRateController.addListener(hourlyOvertimeRateListener);
+
+    final transactionType = transactionData['type'] as String?;
+    final isDeduction = transactionType == 'overtime_deduction';
+    final dialogTitle =
+        isDeduction ? 'Mesaiden Kesme Düzenle' : 'Mesai Ekleme Düzenle';
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogContext, setState) {
+          return AlertDialog(
+            title: Text(dialogTitle),
+            contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.9,
+                maxHeight: MediaQuery.of(context).size.height * 0.8,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                        '$name için mesai ${isDeduction ? 'kesme' : 'ekleme'} düzenle'),
+                    const SizedBox(height: 16),
+                    InkWell(
+                      onTap: () async {
+                        final picked = await showDatePicker(
+                          context: dialogContext,
+                          initialDate: selectedDate,
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                          locale: const Locale('tr', 'TR'),
+                        );
+                        if (picked != null) {
+                          setState(() {
+                            selectedDate = picked;
+                            dateController.text =
+                                '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
+                          });
+                        }
+                      },
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Tarih',
+                          border: OutlineInputBorder(),
+                          suffixIcon: Icon(Icons.calendar_today),
+                        ),
+                        child: Text(dateController.text),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: hoursController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mesai Saati',
+                        border: OutlineInputBorder(),
+                        hintText: 'Örn: 2.5',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        setState(() {
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: multiplierController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mesai Çarpanı',
+                        border: OutlineInputBorder(),
+                        hintText: 'Örn: 1.5 (varsayılan: 1)',
+                        helperText: 'Saatlik ücretin kaç katı olacak?',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateHourlyOvertimeRate();
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: hourlyOvertimeRateController,
+                      decoration: InputDecoration(
+                        labelText: 'Saatlik Mesai Ücreti ($salaryCurrency)',
+                        border: const OutlineInputBorder(),
+                        hintText: 'Otomatik hesaplanır',
+                        helperText: 'Saatlik ücret × çarpan',
+                      ),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      onChanged: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount();
+                        });
+                      },
+                      onEditingComplete: () {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount(force: true);
+                        });
+                      },
+                      onTapOutside: (_) {
+                        if (isDisposed || !ctx.mounted) return;
+                        setState(() {
+                          updateMultiplier();
+                          updateAmount(force: true);
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: amountController,
+                      decoration: InputDecoration(
+                        labelText: 'Mesai Tutarı ($salaryCurrency)',
+                        border: const OutlineInputBorder(),
+                        hintText: 'Otomatik hesaplanır',
+                        helperText: 'Saatlik mesai ücreti × mesai saati',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                      ),
+                      readOnly: true,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: noteController,
+                      decoration: const InputDecoration(
+                        labelText: 'Açıklama (Opsiyonel)',
+                        border: OutlineInputBorder(),
+                        hintText: 'Mesai nedeni...',
+                      ),
+                      maxLines: 3,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  // Önce isDisposed flag'ini set et
+                  isDisposed = true;
+                  // Listener'ları kaldır
+                  hoursController.removeListener(updateAmount);
+                  multiplierController.removeListener(multiplierListener);
+                  hourlyOvertimeRateController
+                      .removeListener(hourlyOvertimeRateListener);
+                  // Dialog'u önce kapat (Flutter otomatik olarak focus'u temizler)
+                  if (ctx.mounted) {
+                    Navigator.of(ctx).pop();
+                  }
+                  // Controller'ları dispose et (dialog kapandıktan sonra)
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    hoursController.dispose();
+                    multiplierController.dispose();
+                    hourlyOvertimeRateController.dispose();
+                    amountController.dispose();
+                    dateController.dispose();
+                    noteController.dispose();
+                  });
+                },
+                child: const Text('Vazgeç'),
+              ),
+              FilledButton(
+                onPressed: () async {
+                  final hours = double.tryParse(
+                    hoursController.text.replaceAll(',', '.'),
+                  );
+                  if (hours == null || hours <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen geçerli bir mesai saati girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final multiplier = double.tryParse(
+                    multiplierController.text.replaceAll(',', '.'),
+                  );
+                  if (multiplier == null || multiplier <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen geçerli bir çarpan girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final hourlyOvertimeRate = double.tryParse(
+                    hourlyOvertimeRateController.text.replaceAll(',', '.'),
+                  );
+                  if (hourlyOvertimeRate == null || hourlyOvertimeRate <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'Lütfen geçerli bir saatlik mesai ücreti girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final overtimeAmount = double.tryParse(
+                    amountController.text.replaceAll(',', '.'),
+                  );
+                  if (overtimeAmount == null || overtimeAmount <= 0) {
+                    ScaffoldMessenger.of(dialogContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Lütfen geçerli bir tutar girin'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final col = (tenantId != null && tenantId.isNotEmpty)
+                        ? FirebaseFirestore.instance
+                            .collection('tenants')
+                            .doc(tenantId)
+                            .collection('employee_transactions')
+                        : FirebaseFirestore.instance
+                            .collection('employee_transactions');
+
+                    final noteText = noteController.text.trim();
+                    final finalNote = noteText.isEmpty
+                        ? (isDeduction
+                            ? 'Mesaiden kesme: $hours saat (x$multiplier)'
+                            : 'Mesai: $hours saat (x$multiplier)')
+                        : (isDeduction
+                            ? 'Mesaiden kesme: $hours saat (x$multiplier) - $noteText'
+                            : 'Mesai: $hours saat (x$multiplier) - $noteText');
+
+                    await col.doc(transactionId).update({
+                      'amount': overtimeAmount,
+                      'note': finalNote,
+                      'overtimeHours': hours,
+                      'overtimeMultiplier': multiplier,
+                      'hourlyOvertimeRate': hourlyOvertimeRate,
+                      'date': Timestamp.fromDate(selectedDate),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    // Önce isDisposed flag'ini set et
+                    isDisposed = true;
+                    // Listener'ları kaldır
+                    hoursController.removeListener(updateAmount);
+                    multiplierController.removeListener(multiplierListener);
+                    hourlyOvertimeRateController
+                        .removeListener(hourlyOvertimeRateListener);
+                    // Dialog'u önce kapat (Flutter otomatik olarak focus'u temizler)
+                    if (ctx.mounted) {
+                      Navigator.of(ctx).pop();
+                    }
+                    // Controller'ları dispose et ve SnackBar'ı göster (dialog kapandıktan sonra)
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      hoursController.dispose();
+                      multiplierController.dispose();
+                      hourlyOvertimeRateController.dispose();
+                      amountController.dispose();
+                      dateController.dispose();
+                      noteController.dispose();
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Mesai ${isDeduction ? 'kesme' : 'ekleme'} güncellendi',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    });
+                  } catch (e) {
+                    if (!isDisposed && ctx.mounted) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        SnackBar(
+                          content: Text('Hata: $e'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+                child: Text(isDeduction ? 'Mesaiden Kes' : 'Mesai Ekle'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
