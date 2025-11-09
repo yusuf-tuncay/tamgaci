@@ -1085,6 +1085,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             if (banner != null) banner,
             _buildWelcomeCard(isDark),
@@ -1132,6 +1133,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Banner (if exists)
             if (banner != null) ...[
@@ -1202,6 +1204,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Banner (if exists)
             if (banner != null) ...[
@@ -1276,6 +1279,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Logo + text (open calculator on tap)
           GestureDetector(
@@ -1306,6 +1310,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Consumer(builder: (context, ref, _) {
                   final companyName = ref.watch(companyNameProvider);

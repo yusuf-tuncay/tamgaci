@@ -16,6 +16,7 @@ import 'package:tamgaci/features/inventory/domain/usecases/delete_inventory_move
 import 'package:tamgaci/features/inventory/domain/usecases/get_inventory_movements_statistics_usecase.dart';
 import 'package:tamgaci/features/inventory/domain/usecases/duplicate_inventory_movement_usecase.dart';
 import 'package:tamgaci/features/inventory/presentation/states/inventory_state.dart';
+import 'package:tamgaci/core/utils/logger.dart';
 
 /// Inventory state notifier
 class InventoryNotifier extends StateNotifier<InventoryState> {
@@ -81,6 +82,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
     int? limit,
     int? offset,
   }) async {
+    AppLogger.info(
+        'getInventoryItems başlatıldı - limit: $limit, offset: $offset');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -89,11 +92,14 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         offset: offset,
       );
 
+      AppLogger.info(
+          'getInventoryItems başarılı - ${inventoryItems.length} öğe getirildi');
       state = state.copyWith(
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('getInventoryItems hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -107,6 +113,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
     int? limit,
     int? offset,
   }) async {
+    AppLogger.info(
+        'getInventoryItemsByType başlatıldı - type: $type, limit: $limit, offset: $offset');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -116,11 +124,14 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         offset: offset,
       );
 
+      AppLogger.info(
+          'getInventoryItemsByType başarılı - ${inventoryItems.length} öğe getirildi');
       state = state.copyWith(
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('getInventoryItemsByType hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -134,6 +145,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
     int? limit,
     int? offset,
   }) async {
+    AppLogger.info(
+        'getInventoryItemsByStatus başlatıldı - status: $status, limit: $limit, offset: $offset');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -143,11 +156,14 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         offset: offset,
       );
 
+      AppLogger.info(
+          'getInventoryItemsByStatus başarılı - ${inventoryItems.length} öğe getirildi');
       state = state.copyWith(
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('getInventoryItemsByStatus hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -161,6 +177,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
     int? limit,
     int? offset,
   }) async {
+    AppLogger.info(
+        'getInventoryItemsByCategory başlatıldı - category: $category, limit: $limit, offset: $offset');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -170,11 +188,14 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         offset: offset,
       );
 
+      AppLogger.info(
+          'getInventoryItemsByCategory başarılı - ${inventoryItems.length} öğe getirildi');
       state = state.copyWith(
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('getInventoryItemsByCategory hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -201,7 +222,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -228,7 +250,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -253,7 +276,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -278,7 +302,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -305,7 +330,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -332,7 +358,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItems: inventoryItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -342,16 +369,19 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// Tek envanter öğesi getirir
   Future<void> getInventoryItem(String id) async {
+    AppLogger.info('getInventoryItem başlatıldı - id: $id');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final inventoryItem = await _getInventoryItemUseCase.call(id);
 
+      AppLogger.info('getInventoryItem başarılı - id: $id');
       state = state.copyWith(
         isLoading: false,
         selectedInventoryItem: inventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('getInventoryItem hatası - id: $id', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -361,16 +391,20 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// SKU'ya göre envanter öğesi getirir
   Future<void> getInventoryItemBySku(String sku) async {
+    AppLogger.info('getInventoryItemBySku başlatıldı - sku: $sku');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final inventoryItem = await _getInventoryItemUseCase.getBySku(sku);
 
+      AppLogger.info('getInventoryItemBySku başarılı - sku: $sku');
       state = state.copyWith(
         isLoading: false,
         selectedInventoryItem: inventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+          'getInventoryItemBySku hatası - sku: $sku', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -380,17 +414,21 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// Barkod'a göre envanter öğesi getirir
   Future<void> getInventoryItemByBarcode(String barcode) async {
+    AppLogger.info('getInventoryItemByBarcode başlatıldı - barcode: $barcode');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final inventoryItem =
           await _getInventoryItemUseCase.getByBarcode(barcode);
 
+      AppLogger.info('getInventoryItemByBarcode başarılı - barcode: $barcode');
       state = state.copyWith(
         isLoading: false,
         selectedInventoryItem: inventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('getInventoryItemByBarcode hatası - barcode: $barcode', e,
+          stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -400,17 +438,22 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// Yeni envanter öğesi oluşturur
   Future<void> createInventoryItem(InventoryItem inventoryItem) async {
+    AppLogger.info(
+        'createInventoryItem başlatıldı - id: ${inventoryItem.id}, name: ${inventoryItem.name}');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final createdInventoryItem =
           await _createInventoryItemUseCase.call(inventoryItem);
 
+      AppLogger.info(
+          'createInventoryItem başarılı - id: ${createdInventoryItem.id}');
       state = state.copyWith(
         isLoading: false,
         inventoryItems: [...state.inventoryItems, createdInventoryItem],
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('createInventoryItem hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -420,12 +463,15 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// Envanter öğesi günceller
   Future<void> updateInventoryItem(InventoryItem inventoryItem) async {
+    AppLogger.info('updateInventoryItem başlatıldı - id: ${inventoryItem.id}');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final updatedInventoryItem =
           await _updateInventoryItemUseCase.call(inventoryItem);
 
+      AppLogger.info(
+          'updateInventoryItem başarılı - id: ${updatedInventoryItem.id}');
       final updatedInventoryItems = state.inventoryItems.map((item) {
         return item.id == updatedInventoryItem.id ? updatedInventoryItem : item;
       }).toList();
@@ -438,7 +484,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryItem
                 : state.selectedInventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('updateInventoryItem hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -449,12 +496,15 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
   /// Envanter öğesi durumunu günceller
   Future<void> updateInventoryItemStatus(
       String id, InventoryItemStatus status) async {
+    AppLogger.info(
+        'updateInventoryItemStatus başlatıldı - id: $id, status: $status');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final updatedInventoryItem =
           await _updateInventoryItemUseCase.updateStatus(id, status);
 
+      AppLogger.info('updateInventoryItemStatus başarılı - id: $id');
       final updatedInventoryItems = state.inventoryItems.map((item) {
         return item.id == updatedInventoryItem.id ? updatedInventoryItem : item;
       }).toList();
@@ -467,7 +517,9 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryItem
                 : state.selectedInventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+          'updateInventoryItemStatus hatası - id: $id', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -477,12 +529,16 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// Stok miktarını günceller
   Future<void> updateStockQuantity(String id, double quantity) async {
+    AppLogger.info(
+        'updateStockQuantity başlatıldı - id: $id, quantity: $quantity');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final updatedInventoryItem =
           await _updateInventoryItemUseCase.updateStockQuantity(id, quantity);
 
+      AppLogger.info(
+          'updateStockQuantity başarılı - id: $id, yeni miktar: ${updatedInventoryItem.currentStock}');
       final updatedInventoryItems = state.inventoryItems.map((item) {
         return item.id == updatedInventoryItem.id ? updatedInventoryItem : item;
       }).toList();
@@ -495,7 +551,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryItem
                 : state.selectedInventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('updateStockQuantity hatası - id: $id', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -505,11 +562,13 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// Envanter öğesi siler
   Future<void> deleteInventoryItem(String id) async {
+    AppLogger.info('deleteInventoryItem başlatıldı - id: $id');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       await _deleteInventoryItemUseCase.call(id);
 
+      AppLogger.info('deleteInventoryItem başarılı - id: $id');
       final updatedInventoryItems =
           state.inventoryItems.where((item) => item.id != id).toList();
 
@@ -520,7 +579,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
             ? null
             : state.selectedInventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('deleteInventoryItem hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -540,7 +600,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItems: [...state.inventoryItems, duplicatedInventoryItem],
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -568,7 +629,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryItem
                 : state.selectedInventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -596,7 +658,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryItem
                 : state.selectedInventoryItem,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -615,7 +678,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItemsStatistics: statistics,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -642,7 +706,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryItemsReport: report,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -657,6 +722,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
     int? limit,
     int? offset,
   }) async {
+    AppLogger.info(
+        'getInventoryMovements başlatıldı - limit: $limit, offset: $offset');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -665,11 +732,14 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         offset: offset,
       );
 
+      AppLogger.info(
+          'getInventoryMovements başarılı - ${inventoryMovements.length} hareket getirildi');
       state = state.copyWith(
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('getInventoryMovements hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -696,7 +766,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -726,7 +797,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -753,7 +825,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -781,7 +854,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -809,7 +883,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -839,7 +914,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -866,7 +942,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovements: inventoryMovements,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -885,7 +962,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         selectedInventoryMovement: inventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -905,7 +983,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         selectedInventoryMovement: inventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -916,12 +995,16 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
   /// Yeni envanter hareket oluşturur
   Future<void> createInventoryMovement(
       InventoryMovement inventoryMovement) async {
+    AppLogger.info(
+        'createInventoryMovement başlatıldı - id: ${inventoryMovement.id}, type: ${inventoryMovement.type}');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final createdInventoryMovement =
           await _createInventoryMovementUseCase.call(inventoryMovement);
 
+      AppLogger.info(
+          'createInventoryMovement başarılı - id: ${createdInventoryMovement.id}');
       state = state.copyWith(
         isLoading: false,
         inventoryMovements: [
@@ -929,7 +1012,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
           createdInventoryMovement
         ],
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('createInventoryMovement hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -940,12 +1024,16 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
   /// Envanter hareket günceller
   Future<void> updateInventoryMovement(
       InventoryMovement inventoryMovement) async {
+    AppLogger.info(
+        'updateInventoryMovement başlatıldı - id: ${inventoryMovement.id}');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final updatedInventoryMovement =
           await _updateInventoryMovementUseCase.call(inventoryMovement);
 
+      AppLogger.info(
+          'updateInventoryMovement başarılı - id: ${updatedInventoryMovement.id}');
       final updatedInventoryMovements =
           state.inventoryMovements.map((movement) {
         return movement.id == updatedInventoryMovement.id
@@ -961,7 +1049,11 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryMovement
                 : state.selectedInventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+          'updateInventoryMovement hatası - id: ${inventoryMovement.id}',
+          e,
+          stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -993,7 +1085,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryMovement
                 : state.selectedInventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1024,7 +1117,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryMovement
                 : state.selectedInventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1055,7 +1149,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryMovement
                 : state.selectedInventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1086,7 +1181,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
                 ? updatedInventoryMovement
                 : state.selectedInventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1096,11 +1192,13 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
 
   /// Envanter hareket siler
   Future<void> deleteInventoryMovement(String id) async {
+    AppLogger.info('deleteInventoryMovement başlatıldı - id: $id');
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       await _deleteInventoryMovementUseCase.call(id);
 
+      AppLogger.info('deleteInventoryMovement başarılı - id: $id');
       final updatedInventoryMovements = state.inventoryMovements
           .where((movement) => movement.id != id)
           .toList();
@@ -1112,7 +1210,9 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
             ? null
             : state.selectedInventoryMovement,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error(
+          'deleteInventoryMovement hatası - id: $id', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1135,7 +1235,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
           duplicatedInventoryMovement
         ],
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1160,7 +1261,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovementsStatistics: statistics,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1187,7 +1289,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         inventoryMovementsReport: report,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1215,7 +1318,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         topMovedItems: topMovedItems,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
@@ -1243,7 +1347,8 @@ class InventoryNotifier extends StateNotifier<InventoryState> {
         isLoading: false,
         topLocations: topLocations,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      AppLogger.error('InventoryNotifier metod hatası', e, stackTrace);
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),

@@ -1,7 +1,6 @@
 // ========== EXPORT SERVICE ==========
 // lib/core/services/export_service.dart
 
-import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -12,6 +11,8 @@ import 'package:tamgaci/core/utils/currency_helper.dart';
 import 'package:tamgaci/core/utils/logger.dart';
 import 'package:tamgaci/core/services/tenant_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/foundation.dart';
 
 /// Dışa aktarım formatları
 enum ExportFormat {
@@ -29,6 +30,8 @@ class ExportService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TenantService _tenantService = TenantService();
   static pw.MemoryImage? _cachedCompanyLogo;
+  static pw.Font? _cachedRobotoFont;
+  static pw.Font? _cachedRobotoBoldFont;
 
   /// Excel dosyası oluştur
   Future<Uint8List> exportToExcel({
@@ -135,6 +138,31 @@ class ExportService {
     }
   }
 
+  /// Roboto fontunu yükle (Unicode desteği için)
+  Future<void> _ensureRobotoFontLoaded() async {
+    if (_cachedRobotoFont != null && _cachedRobotoBoldFont != null) {
+      return;
+    }
+
+    // Web platformunda font yükleme desteklenmiyor, varsayılan font kullanılacak
+    if (kIsWeb) {
+      return;
+    }
+
+    try {
+      // Roboto Regular fontunu yükle
+      final regularFontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+      _cachedRobotoFont = pw.Font.ttf(regularFontData);
+
+      // Roboto Bold fontunu yükle
+      final boldFontData = await rootBundle.load('assets/fonts/Roboto-Bold.ttf');
+      _cachedRobotoBoldFont = pw.Font.ttf(boldFontData);
+    } catch (e) {
+      // Font yükleme başarısız, varsayılan font kullanılacak
+      _logger.w('Roboto font yüklenemedi, varsayılan font kullanılacak: $e');
+    }
+  }
+
   /// Firma bilgilerini getir
   Future<Map<String, dynamic>?> _getCompanyInfo(String? tenantId) async {
     try {
@@ -196,6 +224,9 @@ class ExportService {
       if (companyInfo != null && companyInfo['logoUrl'] != null) {
         await _ensureCompanyLogoLoaded(companyInfo['logoUrl'] as String?);
       }
+
+      // Roboto fontunu yükle (Unicode desteği için)
+      await _ensureRobotoFontLoaded();
 
       final pdf = pw.Document();
 

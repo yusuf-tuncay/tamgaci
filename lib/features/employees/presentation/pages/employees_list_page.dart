@@ -1283,12 +1283,13 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   }
 
   void _showExportOptions() {
+    final parentContext = context;
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1297,16 +1298,16 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               leading: const Icon(Icons.table_chart),
               title: const Text('Excel Olarak İndir'),
               onTap: () {
-                Navigator.of(context).pop();
-                _exportEmployeesToExcel(context);
+                Navigator.of(sheetContext).pop();
+                _exportEmployeesToExcel(parentContext);
               },
             ),
             ListTile(
               leading: const Icon(Icons.picture_as_pdf),
               title: const Text('PDF Olarak İndir'),
               onTap: () {
-                Navigator.of(context).pop();
-                _exportEmployeesToPDF(context);
+                Navigator.of(sheetContext).pop();
+                _exportEmployeesToPDF(parentContext);
               },
             ),
           ],
@@ -1381,20 +1382,21 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       }
 
       if (docs.isEmpty) {
-        if (context.mounted) {
+        if (dialogShown && context.mounted) {
           try {
             if (Navigator.of(context, rootNavigator: true).canPop()) {
               Navigator.of(context, rootNavigator: true).pop();
             }
+            dialogShown = false;
           } catch (_) {}
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Export edilecek personel bulunamadı'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
+        }
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export edilecek personel bulunamadı'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         }
         return;
       }
@@ -1483,18 +1485,29 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     } catch (e) {
       error = e;
     } finally {
-      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      // Dialog'u mutlaka kapat ve SnackBar göster
       if (dialogShown) {
         final finalError = error;
         final finalFileName = fileName;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+
+        // Dialog'u kapat
+        Future.microtask(() {
           try {
             if (context.mounted) {
-              // Dialog'u kapat
-              if (Navigator.of(context, rootNavigator: true).canPop()) {
-                Navigator.of(context, rootNavigator: true).pop();
+              final navigator = Navigator.of(context, rootNavigator: true);
+              if (navigator.canPop()) {
+                navigator.pop();
               }
-              // SnackBar göster
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir
+          }
+        });
+
+        // SnackBar'ı göster (dialog kapandıktan sonra)
+        Future.delayed(const Duration(milliseconds: 200), () {
+          try {
+            if (context.mounted) {
               if (finalError != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -1512,7 +1525,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               }
             }
           } catch (_) {
-            // Context dispose edilmiş olabilir, sessizce geç
+            // Context dispose edilmiş olabilir
           }
         });
       }
@@ -1585,17 +1598,19 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
       if (docs.isEmpty) {
         if (dialogShown && context.mounted) {
           try {
-            Navigator.of(context, rootNavigator: true).pop();
+            if (Navigator.of(context, rootNavigator: true).canPop()) {
+              Navigator.of(context, rootNavigator: true).pop();
+            }
             dialogShown = false;
           } catch (_) {}
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Export edilecek personel bulunamadı'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
+        }
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export edilecek personel bulunamadı'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         }
         return;
       }
@@ -1701,18 +1716,29 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
     } catch (e) {
       error = e;
     } finally {
-      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      // Dialog'u mutlaka kapat ve SnackBar göster
       if (dialogShown) {
         final finalError = error;
         final finalFileName = fileName;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+
+        // Dialog'u kapat
+        Future.microtask(() {
           try {
             if (context.mounted) {
-              // Dialog'u kapat
-              if (Navigator.of(context, rootNavigator: true).canPop()) {
-                Navigator.of(context, rootNavigator: true).pop();
+              final navigator = Navigator.of(context, rootNavigator: true);
+              if (navigator.canPop()) {
+                navigator.pop();
               }
-              // SnackBar göster
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir
+          }
+        });
+
+        // SnackBar'ı göster (dialog kapandıktan sonra)
+        Future.delayed(const Duration(milliseconds: 200), () {
+          try {
+            if (context.mounted) {
               if (finalError != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -1730,7 +1756,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               }
             }
           } catch (_) {
-            // Context dispose edilmiş olabilir, sessizce geç
+            // Context dispose edilmiş olabilir
           }
         });
       }
@@ -2033,7 +2059,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                 // HEADER
                 Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: _EmployeesHeader(),
+                  child: _EmployeesHeader(tenantId: _tenantId),
                 ),
                 // FİLTRE/ARAMA/SIRALAMA/EXPORT BLOĞU
                 Padding(
@@ -2081,44 +2107,198 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 }
 
 class _EmployeesHeader extends StatelessWidget {
+  final String? tenantId;
+  const _EmployeesHeader({required this.tenantId});
+
+  // Personellerin bakiyelerini toplu olarak hesapla
+  Future<Map<String, double>> _calculateTotalBalance(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> employees,
+    String? tenantId,
+  ) async {
+    final Map<String, double> balances = {};
+
+    final transactionsCol = (tenantId != null && tenantId.isNotEmpty)
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('employee_transactions')
+        : FirebaseFirestore.instance.collection('employee_transactions');
+
+    // Tüm personel ID'lerini topla
+    final employeeIds = employees.map((e) => e.id).toList();
+
+    if (employeeIds.isEmpty) {
+      return balances;
+    }
+
+    // Tüm transaction'ları tek seferde çek (whereIn kullanarak)
+    // Not: Firestore whereIn limiti 10'dur, bu yüzden batch'ler halinde çekmeliyiz
+    const batchSize = 10;
+    for (int i = 0; i < employeeIds.length; i += batchSize) {
+      final batch = employeeIds.skip(i).take(batchSize).toList();
+      final snapshot =
+          await transactionsCol.where('employeeId', whereIn: batch).get();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final employeeId = data['employeeId'] as String?;
+        if (employeeId == null) continue;
+
+        final amount = (data['amount'] as num?)?.toDouble() ?? 0;
+        final dir = (data['direction'] as String?) ?? 'out';
+        balances[employeeId] =
+            (balances[employeeId] ?? 0.0) + (dir == 'in' ? amount : -amount);
+      }
+    }
+
+    // Bakiyesi olmayan personeller için 0.0 ekle
+    for (final emp in employees) {
+      balances.putIfAbsent(emp.id, () => 0.0);
+    }
+
+    return balances;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF3897F0), Color(0xFF4C6EF5), Color(0xFF1A56D9)],
-        ),
-      ),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Personeller',
-                style: GoogleFonts.poppins(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                'Şirket personellerinizi yönetin.',
-                style: GoogleFonts.poppins(
-                    fontSize: 14, color: Colors.white.withValues(alpha: 0.9)),
-              ),
-            ],
-          ),
-          const Spacer(),
-          const _HeaderStatCard('8', 'Toplam'),
-          const SizedBox(width: 8),
-          const _HeaderStatCard('₺12.500', 'Açık Bakiye'),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 600;
+        final scaleFactor = constraints.maxWidth < 400 ? 0.85 : 1.0;
+
+        final employeesQuery = (tenantId != null && tenantId!.isNotEmpty)
+            ? FirebaseFirestore.instance
+                .collection('tenants')
+                .doc(tenantId)
+                .collection('employees')
+            : FirebaseFirestore.instance.collection('employees');
+
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: employeesQuery.snapshots(),
+          builder: (context, employeesSnapshot) {
+            // Aktif personel sayısını hesapla
+            int activeCount = 0;
+            if (employeesSnapshot.hasData) {
+              activeCount = employeesSnapshot.data!.docs
+                  .where((doc) => (doc.data()['isActive'] as bool? ?? true))
+                  .length;
+            }
+
+            // Toplam bakiyeyi hesapla - Her personelin bakiyesini ayrı ayrı hesaplayıp topla
+            final activeEmployees = employeesSnapshot.hasData
+                ? employeesSnapshot.data!.docs
+                    .where((doc) => (doc.data()['isActive'] as bool? ?? true))
+                    .toList()
+                : <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+
+            return FutureBuilder<Map<String, double>>(
+              future: _calculateTotalBalance(activeEmployees, tenantId),
+              builder: (context, balanceSnapshot) {
+                double totalBalance = 0.0;
+                String currency = 'TRY';
+
+                if (balanceSnapshot.hasData) {
+                  // Tüm aktif personellerin bakiyelerini topla
+                  totalBalance = balanceSnapshot.data!.values
+                      .fold(0.0, (sum, balance) => sum + balance);
+
+                  // İlk aktif personelin para birimini al (varsayılan olarak)
+                  if (activeEmployees.isNotEmpty) {
+                    for (final empDoc in activeEmployees) {
+                      final empData = empDoc.data();
+                      final salary = (empData['salary'] as Map?) ?? {};
+                      final empCurrency = salary['currency']?.toString();
+                      if (empCurrency != null && empCurrency.isNotEmpty) {
+                        currency = empCurrency;
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                // Format balance in Turkish format
+                String formatBalance(double amount) {
+                  final parts = amount.abs().toStringAsFixed(2).split('.');
+                  final intPart = parts[0];
+                  final decPart = parts[1];
+                  final formattedInt = intPart.replaceAllMapped(
+                    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                    (Match m) => '${m[1]}.',
+                  );
+                  final formatted = '$formattedInt,$decPart';
+                  return amount < 0 ? '-$formatted' : formatted;
+                }
+
+                final formattedBalance = formatBalance(totalBalance);
+
+                return Container(
+                  padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Color(0xFF3897F0),
+                        Color(0xFF4C6EF5),
+                        Color(0xFF1A56D9)
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Personeller',
+                              style: GoogleFonts.poppins(
+                                fontSize: 24 * scaleFactor,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            Text(
+                              'Şirket personellerinizi yönetin.',
+                              style: GoogleFonts.poppins(
+                                  fontSize: 14 * scaleFactor,
+                                  color: Colors.white.withValues(alpha: 0.9)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!isSmallScreen)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: _HeaderStatCard(
+                                activeCount.toString(),
+                                'Aktif Personel',
+                                centerText: true,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: _HeaderStatCard(
+                                '$formattedBalance $currency',
+                                'Toplam Bakiye',
+                                centerText: false,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
@@ -2126,27 +2306,47 @@ class _EmployeesHeader extends StatelessWidget {
 class _HeaderStatCard extends StatelessWidget {
   final String value;
   final String title;
-  const _HeaderStatCard(this.value, this.title);
+  final bool centerText;
+  const _HeaderStatCard(this.value, this.title, {this.centerText = false});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.24),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Text(value,
-              style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold)),
-          Text(title,
-              style: GoogleFonts.poppins(
-                  fontSize: 10, color: Colors.white.withValues(alpha: 0.8))),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final scaleFactor = constraints.maxWidth < 400 ? 0.85 : 1.0;
+
+        return Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: 12 * scaleFactor,
+            vertical: 8 * scaleFactor,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.24),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment:
+                centerText ? CrossAxisAlignment.center : CrossAxisAlignment.end,
+            children: [
+              Text(value,
+                  style: GoogleFonts.poppins(
+                      fontSize: 18 * scaleFactor,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: centerText ? TextAlign.center : TextAlign.right),
+              Text(title,
+                  style: GoogleFonts.poppins(
+                      fontSize: 10 * scaleFactor,
+                      color: Colors.white.withValues(alpha: 0.8)),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  textAlign: centerText ? TextAlign.center : TextAlign.right),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -2176,6 +2376,55 @@ class _EmployeeList extends StatefulWidget {
 
 class _EmployeeListState extends State<_EmployeeList> {
   bool _isArchiveExpanded = false;
+
+  // Personellerin bakiyelerini toplu olarak hesapla
+  Future<Map<String, double>> _calculateBalancesForEmployees(
+    List<QueryDocumentSnapshot<Map<String, dynamic>>> employees,
+    String? tenantId,
+  ) async {
+    final Map<String, double> balances = {};
+
+    final transactionsCol = (tenantId != null && tenantId.isNotEmpty)
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('employee_transactions')
+        : FirebaseFirestore.instance.collection('employee_transactions');
+
+    // Tüm personel ID'lerini topla
+    final employeeIds = employees.map((e) => e.id).toList();
+
+    if (employeeIds.isEmpty) {
+      return balances;
+    }
+
+    // Tüm transaction'ları tek seferde çek (whereIn kullanarak)
+    // Not: Firestore whereIn limiti 10'dur, bu yüzden batch'ler halinde çekmeliyiz
+    const batchSize = 10;
+    for (int i = 0; i < employeeIds.length; i += batchSize) {
+      final batch = employeeIds.skip(i).take(batchSize).toList();
+      final snapshot =
+          await transactionsCol.where('employeeId', whereIn: batch).get();
+
+      for (final doc in snapshot.docs) {
+        final data = doc.data();
+        final employeeId = data['employeeId'] as String?;
+        if (employeeId == null) continue;
+
+        final amount = (data['amount'] as num?)?.toDouble() ?? 0;
+        final dir = (data['direction'] as String?) ?? 'out';
+        balances[employeeId] =
+            (balances[employeeId] ?? 0.0) + (dir == 'in' ? amount : -amount);
+      }
+    }
+
+    // Bakiyesi olmayan personeller için 0.0 ekle
+    for (final emp in employees) {
+      balances.putIfAbsent(emp.id, () => 0.0);
+    }
+
+    return balances;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2279,6 +2528,163 @@ class _EmployeeListState extends State<_EmployeeList> {
           }
         }
 
+        // Bakiye sıralaması için client-side sorting
+        if (widget.sortBy == 'Bakiye') {
+          // Tüm personelleri bakiye bilgisiyle birlikte sırala
+          return FutureBuilder<Map<String, double>>(
+            future: _calculateBalancesForEmployees(
+              activeEmployees,
+              widget.tenantId,
+            ),
+            builder: (context, balanceSnapshot) {
+              if (!balanceSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final balances = balanceSnapshot.data!;
+
+              // Personelleri bakiyelerine göre sırala
+              final sortedEmployees =
+                  List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
+                      activeEmployees);
+              sortedEmployees.sort((a, b) {
+                final balanceA = balances[a.id] ?? 0.0;
+                final balanceB = balances[b.id] ?? 0.0;
+                return widget.ascending
+                    ? balanceA.compareTo(balanceB)
+                    : balanceB.compareTo(balanceA);
+              });
+
+              // Departmanlara göre grupla
+              final Map<String,
+                      List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+                  grouped = {};
+              for (final d in sortedEmployees) {
+                final dep = (d.data()['department'] as String?)?.trim();
+                final key = (dep == null || dep.isEmpty) ? '-' : dep;
+                (grouped[key] ??= []).add(d);
+              }
+              final departments = grouped.keys.toList()..sort();
+
+              final List<_SectionEntry> balanceEntries = [];
+
+              // Arşiv bölümünü en üste ekle
+              if (archivedEmployees.isNotEmpty) {
+                archivedEmployees.sort((a, b) {
+                  final an = (a.data()['name'] as String? ?? '').toLowerCase();
+                  final bn = (b.data()['name'] as String? ?? '').toLowerCase();
+                  return an.compareTo(bn);
+                });
+                balanceEntries.add(_SectionEntry.archiveHeader());
+                if (_isArchiveExpanded) {
+                  for (final doc in archivedEmployees) {
+                    balanceEntries.add(_SectionEntry.item(doc));
+                  }
+                }
+              }
+
+              for (final dep in departments) {
+                final items = grouped[dep]!;
+                balanceEntries.add(_SectionEntry.header(dep));
+                for (final doc in items) {
+                  balanceEntries.add(_SectionEntry.item(doc));
+                }
+              }
+
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: balanceEntries.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, idx) {
+                  final e = balanceEntries[idx];
+                  if (e.isHeader) {
+                    if (e.isArchiveHeader) {
+                      return _ArchiveHeader(
+                        tenantId: widget.tenantId,
+                        isExpanded: _isArchiveExpanded,
+                        onToggle: () {
+                          setState(() {
+                            _isArchiveExpanded = !_isArchiveExpanded;
+                          });
+                        },
+                      );
+                    }
+                    final departmentName = e.headerTitle ?? '-';
+                    return _DepartmentHeader(
+                      departmentName:
+                          departmentName == '-' ? null : departmentName,
+                      tenantId: widget.tenantId,
+                      onDepartmentChanged: () {},
+                    );
+                  }
+                  final snap = e.doc!;
+                  final data = snap.data();
+                  final name = data['name'] as String? ?? '-';
+                  final department = data['department'] as String? ?? '-';
+                  final category = data['category'] as String? ?? '-';
+                  final photoUrl = data['photoUrl'] as String?;
+                  final isActive = data['isActive'] as bool? ?? true;
+                  final isArchived = !isActive;
+                  final salary = (data['salary'] as Map?) ?? {};
+                  final salaryCurrency =
+                      salary['currency']?.toString() ?? 'TRY';
+                  return Opacity(
+                    opacity: isArchived ? 0.6 : 1.0,
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        radius: 24,
+                        backgroundImage:
+                            (photoUrl != null && photoUrl.isNotEmpty)
+                                ? NetworkImage(photoUrl)
+                                : null,
+                        onBackgroundImageError:
+                            (photoUrl != null && photoUrl.isNotEmpty)
+                                ? (exception, stackTrace) {}
+                                : null,
+                        child: (photoUrl == null || photoUrl.isEmpty)
+                            ? const Icon(Icons.person)
+                            : null,
+                      ),
+                      title: Text(
+                        name,
+                        style: isArchived
+                            ? TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                                color: Colors.grey[600],
+                              )
+                            : null,
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('$department • $category'),
+                          const SizedBox(height: 4),
+                          _EmployeeBalanceCompact(
+                            tenantId: widget.tenantId,
+                            docId: snap.id,
+                            currency: salaryCurrency.isNotEmpty
+                                ? salaryCurrency
+                                : 'TRY',
+                          ),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        builder: (ctx) => _EmployeeDetailSheet(
+                            tenantId: widget.tenantId,
+                            docId: snap.id,
+                            data: data),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        }
+
         // Aktif personelleri departmanlara göre grupla
         final Map<String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>
             grouped = {};
@@ -2338,6 +2744,8 @@ class _EmployeeListState extends State<_EmployeeList> {
             final photoUrl = data['photoUrl'] as String?;
             final isActive = data['isActive'] as bool? ?? true;
             final isArchived = !isActive;
+            final salary = (data['salary'] as Map?) ?? {};
+            final salaryCurrency = salary['currency']?.toString() ?? 'TRY';
             return Opacity(
               opacity: isArchived ? 0.6 : 1.0,
               child: ListTile(
@@ -2365,7 +2773,20 @@ class _EmployeeListState extends State<_EmployeeList> {
                         )
                       : null,
                 ),
-                subtitle: Text('$department • $category'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('$department • $category'),
+                    const SizedBox(height: 4),
+                    _EmployeeBalanceCompact(
+                      tenantId: widget.tenantId,
+                      docId: snap.id,
+                      currency:
+                          salaryCurrency.isNotEmpty ? salaryCurrency : 'TRY',
+                    ),
+                  ],
+                ),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => showModalBottomSheet(
                   context: context,
@@ -3078,31 +3499,56 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(name,
-                                style: Theme.of(context).textTheme.titleLarge),
+                                style: Theme.of(context).textTheme.titleLarge,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1),
                             const SizedBox(height: 4),
-                            Text('$department • $category'),
+                            Text('$department • $category',
+                                overflow: TextOverflow.ellipsis, maxLines: 1),
                           ],
                         ),
                       ),
-                      Row(children: [
-                        IconButton(
-                          onPressed: () => _openEdit(context),
-                          icon: const Icon(Icons.edit),
-                          tooltip: 'Düzenle',
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              onPressed: () => _openEdit(context),
+                              icon: const Icon(Icons.edit),
+                              tooltip: 'Düzenle',
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            IconButton(
+                              onPressed: () =>
+                                  _showEmployeeActionDialog(context),
+                              icon: const Icon(Icons.more_vert),
+                              tooltip: 'İşlemler',
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
+                              ),
+                              padding: EdgeInsets.zero,
+                            ),
+                            IconButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              icon: const Icon(Icons.close),
+                              tooltip: 'Kapat',
+                              constraints: const BoxConstraints(
+                                minWidth: 40,
+                                minHeight: 40,
+                              ),
+                              padding: EdgeInsets.zero,
+                            )
+                          ],
                         ),
-                        IconButton(
-                          onPressed: () => _showEmployeeActionDialog(context),
-                          icon: const Icon(Icons.more_vert),
-                          tooltip: 'İşlemler',
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close),
-                          tooltip: 'Kapat',
-                        )
-                      ])
+                      )
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -3374,17 +3820,20 @@ class _EmployeeDetailSheet extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Expanded(
+                              Flexible(
                                 child: Text('Hareketler',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleMedium),
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                    overflow: TextOverflow.ellipsis),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.file_download),
-                                iconSize: 20,
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
+                                iconSize: 18,
+                                padding: const EdgeInsets.all(4),
+                                constraints: const BoxConstraints(
+                                  minWidth: 32,
+                                  minHeight: 32,
+                                ),
                                 tooltip: 'Dışa Aktar',
                                 onPressed: () {
                                   final sheet = _EmployeeDetailSheet(
@@ -3395,7 +3844,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                   sheet._showExportTransactionsOptions(context);
                                 },
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: 4),
                               Flexible(
                                 child: _EmployeeBalance(
                                     tenantId: tenantId,
@@ -7052,6 +7501,88 @@ class _EmployeeBalance extends StatelessWidget {
   }
 }
 
+class _EmployeeBalanceCompact extends StatelessWidget {
+  final String? tenantId;
+  final String docId;
+  final String currency;
+  const _EmployeeBalanceCompact({
+    required this.tenantId,
+    required this.docId,
+    required this.currency,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final query = (tenantId != null && tenantId!.isNotEmpty)
+        ? FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('employee_transactions')
+            .where('employeeId', isEqualTo: docId)
+        : FirebaseFirestore.instance
+            .collection('employee_transactions')
+            .where('employeeId', isEqualTo: docId);
+
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: query.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const SizedBox.shrink();
+        }
+        if (!snapshot.hasData) {
+          return const SizedBox(
+              width: 60,
+              height: 12,
+              child: LinearProgressIndicator(minHeight: 2));
+        }
+        double balance = 0;
+        for (final doc in snapshot.data!.docs) {
+          final m = doc.data();
+          final amount = (m['amount'] as num?)?.toDouble() ?? 0;
+          final dir = (m['direction'] as String?) ?? 'out';
+          balance += dir == 'in' ? amount : -amount;
+        }
+
+        // Format balance in Turkish format
+        String formatBalance(double amount) {
+          final parts = amount.abs().toStringAsFixed(2).split('.');
+          final intPart = parts[0];
+          final decPart = parts[1];
+          final formattedInt = intPart.replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+          final formatted = '$formattedInt,$decPart';
+          return balance < 0 ? '-$formatted' : formatted;
+        }
+
+        final text = formatBalance(balance);
+        final color =
+            balance >= 0 ? Colors.green.shade700 : Colors.red.shade700;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.account_balance_wallet,
+              size: 14,
+              color: color,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Bakiye: $text $currency',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
 class _EmployeeTransactionsList extends StatelessWidget {
   final String? tenantId;
   final String docId;
@@ -8881,12 +9412,13 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
 
   // Personel hareketlerini export et
   void _showExportTransactionsOptions(BuildContext context) {
+    final parentContext = context;
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -8895,16 +9427,16 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
               leading: const Icon(Icons.table_chart),
               title: const Text('Excel Olarak İndir'),
               onTap: () {
-                Navigator.of(context).pop();
-                _exportTransactionsToExcel(context);
+                Navigator.of(sheetContext).pop();
+                _exportTransactionsToExcel(parentContext);
               },
             ),
             ListTile(
               leading: const Icon(Icons.picture_as_pdf),
               title: const Text('PDF Olarak İndir'),
               onTap: () {
-                Navigator.of(context).pop();
-                _exportTransactionsToPDF(context);
+                Navigator.of(sheetContext).pop();
+                _exportTransactionsToPDF(parentContext);
               },
             ),
           ],
@@ -9095,18 +9627,29 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
     } catch (e) {
       error = e;
     } finally {
-      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      // Dialog'u mutlaka kapat ve SnackBar göster
       if (dialogShown) {
         final finalError = error;
         final finalFileName = fileName;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+
+        // Dialog'u kapat
+        Future.microtask(() {
           try {
             if (context.mounted) {
-              // Dialog'u kapat
-              if (Navigator.of(context, rootNavigator: true).canPop()) {
-                Navigator.of(context, rootNavigator: true).pop();
+              final navigator = Navigator.of(context, rootNavigator: true);
+              if (navigator.canPop()) {
+                navigator.pop();
               }
-              // SnackBar göster
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir
+          }
+        });
+
+        // SnackBar'ı göster (dialog kapandıktan sonra)
+        Future.delayed(const Duration(milliseconds: 200), () {
+          try {
+            if (context.mounted) {
               if (finalError != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -9124,7 +9667,7 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
               }
             }
           } catch (_) {
-            // Context dispose edilmiş olabilir, sessizce geç
+            // Context dispose edilmiş olabilir
           }
         });
       }
@@ -9190,22 +9733,21 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
       });
 
       if (transactions.isEmpty) {
-        if (dialogShown) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            try {
-              if (context.mounted) {
-                if (Navigator.of(context, rootNavigator: true).canPop()) {
-                  Navigator.of(context, rootNavigator: true).pop();
-                }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Export edilecek hareket bulunamadı'),
-                    backgroundColor: Colors.orange,
-                  ),
-                );
-              }
-            } catch (_) {}
-          });
+        if (dialogShown && context.mounted) {
+          try {
+            if (Navigator.of(context, rootNavigator: true).canPop()) {
+              Navigator.of(context, rootNavigator: true).pop();
+            }
+            dialogShown = false;
+          } catch (_) {}
+        }
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Export edilecek hareket bulunamadı'),
+              backgroundColor: Colors.orange,
+            ),
+          );
         }
         return;
       }
@@ -9334,18 +9876,29 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
     } catch (e) {
       error = e;
     } finally {
-      // Dialog'u mutlaka kapat ve SnackBar'ı göster
+      // Dialog'u mutlaka kapat ve SnackBar göster
       if (dialogShown) {
         final finalError = error;
         final finalFileName = fileName;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+
+        // Dialog'u kapat
+        Future.microtask(() {
           try {
             if (context.mounted) {
-              // Dialog'u kapat
-              if (Navigator.of(context, rootNavigator: true).canPop()) {
-                Navigator.of(context, rootNavigator: true).pop();
+              final navigator = Navigator.of(context, rootNavigator: true);
+              if (navigator.canPop()) {
+                navigator.pop();
               }
-              // SnackBar göster
+            }
+          } catch (_) {
+            // Context dispose edilmiş olabilir
+          }
+        });
+
+        // SnackBar'ı göster (dialog kapandıktan sonra)
+        Future.delayed(const Duration(milliseconds: 200), () {
+          try {
+            if (context.mounted) {
               if (finalError != null) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -9363,7 +9916,7 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
               }
             }
           } catch (_) {
-            // Context dispose edilmiş olabilir, sessizce geç
+            // Context dispose edilmiş olabilir
           }
         });
       }

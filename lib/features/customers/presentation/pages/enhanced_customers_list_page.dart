@@ -635,7 +635,7 @@ class _EnhancedCustomersListPageState
                 Row(
                   children: [
                     // Sıralama
-                    Expanded(
+                    Flexible(
                       child: DropdownButtonFormField<String>(
                         initialValue: _sortBy,
                         decoration: InputDecoration(
@@ -645,7 +645,9 @@ class _EnhancedCustomersListPageState
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 12),
+                          isDense: true,
                         ),
+                        isExpanded: true,
                         items: const [
                           DropdownMenuItem(value: 'name', child: Text('İsim')),
                           DropdownMenuItem(
@@ -676,6 +678,11 @@ class _EnhancedCustomersListPageState
                             : Icons.arrow_downward,
                       ),
                       tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
                     const SizedBox(width: 8),
                     // Excel, CSV, PDF, Import butonları

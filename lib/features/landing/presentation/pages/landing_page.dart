@@ -2510,18 +2510,27 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Öneri, İstek veya Şikayet',
-                      style: GoogleFonts.poppins(
-                        fontSize: isMobile ? 24 : 28,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E3A8A),
+                    Expanded(
+                      child: Text(
+                        'Öneri, İstek veya Şikayet',
+                        style: GoogleFonts.poppins(
+                          fontSize: isMobile ? 24 : 28,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E3A8A),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () => Navigator.of(context).pop(),
                       color: const Color(0xFF64748B),
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
                   ],
                 ),
@@ -2539,14 +2548,14 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                 const SizedBox(height: 12),
                 // Mobilde yan yana, küçük ekranlarda wrap
                 isMobile
-                    ? Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                    ? Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 4,
+                        runSpacing: 8,
                         children: [
                           _buildCategoryChip('Öneri', Icons.lightbulb_outline),
-                          const SizedBox(width: 4),
                           _buildCategoryChip(
                               'İstek', Icons.request_quote_outlined),
-                          const SizedBox(width: 4),
                           _buildCategoryChip('Şikayet', Icons.error_outline),
                         ],
                       )

@@ -389,11 +389,16 @@ class _EnhancedSuppliersListPageState
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                isDense: true,
               ),
+              isExpanded: true,
               items: _categories.map((category) {
                 return DropdownMenuItem(
                   value: category,
-                  child: Text(category),
+                  child: Text(
+                    category,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
@@ -415,11 +420,16 @@ class _EnhancedSuppliersListPageState
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                isDense: true,
               ),
+              isExpanded: true,
               items: _statuses.map((status) {
                 return DropdownMenuItem(
                   value: status,
-                  child: Text(status),
+                  child: Text(
+                    status,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
@@ -441,21 +451,26 @@ class _EnhancedSuppliersListPageState
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                isDense: true,
               ),
+              isExpanded: true,
               items: _sortOptions.map((option) {
                 return DropdownMenuItem(
                   value: option,
-                  child: Text(option == 'name'
-                      ? 'İsim'
-                      : option == 'contactPerson'
-                          ? 'İletişim'
-                          : option == 'currentBalance'
-                              ? 'Bakiye'
-                              : option == 'creditLimit'
-                                  ? 'Kredi Limiti'
-                                  : option == 'createdAt'
-                                      ? 'Tarih'
-                                      : option),
+                  child: Text(
+                    option == 'name'
+                        ? 'İsim'
+                        : option == 'contactPerson'
+                            ? 'İletişim'
+                            : option == 'currentBalance'
+                                ? 'Bakiye'
+                                : option == 'creditLimit'
+                                    ? 'Kredi Limiti'
+                                    : option == 'createdAt'
+                                        ? 'Tarih'
+                                        : option,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 );
               }).toList(),
               onChanged: (value) {
@@ -788,11 +803,16 @@ class _EnhancedSuppliersListPageState
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 12),
+                          isDense: true,
                         ),
+                        isExpanded: true,
                         items: _statuses.map((status) {
                           return DropdownMenuItem(
                             value: status,
-                            child: Text(status),
+                            child: Text(
+                              status,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -819,18 +839,30 @@ class _EnhancedSuppliersListPageState
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 12),
+                          isDense: true,
                         ),
+                        isExpanded: true,
                         items: const [
-                          DropdownMenuItem(value: 'name', child: Text('İsim')),
                           DropdownMenuItem(
-                              value: 'contactPerson', child: Text('İletişim')),
+                            value: 'name',
+                            child: Text('İsim', overflow: TextOverflow.ellipsis),
+                          ),
                           DropdownMenuItem(
-                              value: 'currentBalance', child: Text('Bakiye')),
+                            value: 'contactPerson',
+                            child: Text('İletişim', overflow: TextOverflow.ellipsis),
+                          ),
                           DropdownMenuItem(
-                              value: 'creditLimit',
-                              child: Text('Kredi Limiti')),
+                            value: 'currentBalance',
+                            child: Text('Bakiye', overflow: TextOverflow.ellipsis),
+                          ),
                           DropdownMenuItem(
-                              value: 'createdAt', child: Text('Tarih')),
+                            value: 'creditLimit',
+                            child: Text('Kredi Limiti', overflow: TextOverflow.ellipsis),
+                          ),
+                          DropdownMenuItem(
+                            value: 'createdAt',
+                            child: Text('Tarih', overflow: TextOverflow.ellipsis),
+                          ),
                         ],
                         onChanged: (value) {
                           setState(() {
@@ -853,6 +885,11 @@ class _EnhancedSuppliersListPageState
                             : Icons.arrow_downward,
                       ),
                       tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                      constraints: const BoxConstraints(
+                        minWidth: 40,
+                        minHeight: 40,
+                      ),
+                      padding: EdgeInsets.zero,
                     ),
                     const SizedBox(width: 8),
                     // Excel, CSV, PDF, Import butonları
@@ -1428,8 +1465,9 @@ class _EnhancedSuppliersListPageState
       }).toList();
     }
 
-    // Sıralama
-    filtered.sort((a, b) {
+    // Sıralama (web'de immutable array'ler için yeni liste oluştur)
+    final sorted = List<Supplier>.from(filtered);
+    sorted.sort((a, b) {
       int comparison = 0;
       switch (_sortBy) {
         case 'name':
@@ -1455,7 +1493,7 @@ class _EnhancedSuppliersListPageState
       return _sortAscending ? comparison : -comparison;
     });
 
-    return filtered;
+    return sorted;
   }
 
   Widget _buildSupplierCard(Supplier supplier) {
