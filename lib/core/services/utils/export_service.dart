@@ -13,6 +13,7 @@ import 'package:tamgaci/core/services/tenant_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 /// Dışa aktarım formatları
 enum ExportFormat {
@@ -151,11 +152,13 @@ class ExportService {
 
     try {
       // Roboto Regular fontunu yükle
-      final regularFontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+      final regularFontData =
+          await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
       _cachedRobotoFont = pw.Font.ttf(regularFontData);
 
       // Roboto Bold fontunu yükle
-      final boldFontData = await rootBundle.load('assets/fonts/Roboto-Bold.ttf');
+      final boldFontData =
+          await rootBundle.load('assets/fonts/Roboto-Bold.ttf');
       _cachedRobotoBoldFont = pw.Font.ttf(boldFontData);
     } catch (e) {
       // Font yükleme başarısız, varsayılan font kullanılacak
@@ -189,10 +192,8 @@ class ExportService {
       }
 
       // Fallback: company_info koleksiyonundan dene
-      final companyInfoDoc = await _firestore
-          .collection('company_info')
-          .doc(tenantId)
-          .get();
+      final companyInfoDoc =
+          await _firestore.collection('company_info').doc(tenantId).get();
 
       if (companyInfoDoc.exists) {
         final data = companyInfoDoc.data()!;
@@ -217,6 +218,7 @@ class ExportService {
     String? subtitle,
     Map<String, dynamic>? summary,
     String? tenantId,
+    PdfPageFormat pageFormat = PdfPageFormat.a4,
   }) async {
     try {
       // Firma bilgilerini al
@@ -232,104 +234,112 @@ class ExportService {
 
       pdf.addPage(
         pw.MultiPage(
-          pageFormat: PdfPageFormat.a4,
-          margin: const pw.EdgeInsets.all(40),
+          pageFormat: pageFormat,
+          margin: const pw.EdgeInsets.symmetric(horizontal: 30, vertical: 32),
           build: (pw.Context context) {
-            return [
-              // Firma logosu ve adı
-              if (companyInfo != null) ...[
-                pw.Container(
-                  padding: const pw.EdgeInsets.only(bottom: 20),
-                  child: pw.Row(
-                    children: [
-                      // Firma logosu
-                      if (_cachedCompanyLogo != null)
-                        pw.Container(
-                          width: 50,
-                          height: 50,
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.grey300),
-                            borderRadius: pw.BorderRadius.circular(6),
-                            color: PdfColors.white,
-                          ),
-                          child: pw.Image(
-                            _cachedCompanyLogo!,
-                            fit: pw.BoxFit.contain,
-                          ),
-                        )
-                      else
-                        pw.Container(
-                          width: 50,
-                          height: 50,
-                          decoration: pw.BoxDecoration(
-                            border: pw.Border.all(color: PdfColors.grey300),
-                            borderRadius: pw.BorderRadius.circular(6),
-                            color: PdfColors.grey100,
-                          ),
-                          child: pw.Center(
-                            child: pw.Text(
-                              _convertTurkishChars('LOGO'),
-                              style: const pw.TextStyle(
-                                fontSize: 8,
-                                color: PdfColors.grey500,
-                              ),
+            final widgets = <pw.Widget>[];
+
+            if (companyInfo != null) {
+              widgets.add(
+                pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    if (_cachedCompanyLogo != null)
+                      pw.Container(
+                        width: 36,
+                        height: 36,
+                        decoration: pw.BoxDecoration(
+                          border: pw.Border.all(color: PdfColors.grey300),
+                          borderRadius: pw.BorderRadius.circular(6),
+                        ),
+                        child: pw.Image(_cachedCompanyLogo!,
+                            fit: pw.BoxFit.contain),
+                      ),
+                    if (_cachedCompanyLogo != null) pw.SizedBox(width: 8),
+                    pw.Expanded(
+                      child: pw.Column(
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Text(
+                            _convertTurkishChars(companyInfo['name'] ?? ''),
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.blue800,
                             ),
                           ),
-                        ),
-                      pw.SizedBox(width: 12),
-                      // Firma adı
-                      pw.Expanded(
-                        child: pw.Text(
-                          _convertTurkishChars(companyInfo['name'] ?? ''),
-                          style: pw.TextStyle(
-                            fontSize: 18,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.blue800,
+                          pw.Text(
+                            _convertTurkishChars(DateFormat('dd.MM.yyyy')
+                                .format(DateTime.now())),
+                            style: const pw.TextStyle(
+                              fontSize: 9,
+                              color: PdfColors.grey700,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                pw.SizedBox(height: 10),
-                pw.Divider(),
-                pw.SizedBox(height: 20),
-              ],
+              );
+              widgets.add(pw.SizedBox(height: 10));
+            }
 
-              // Başlık
-              pw.Header(
-                level: 0,
-                child: pw.Text(
-                  _convertTurkishChars(title),
-                  style: pw.TextStyle(
-                    fontSize: 24,
-                    fontWeight: pw.FontWeight.bold,
-                  ),
+            widgets.add(
+              pw.Text(
+                _convertTurkishChars(title),
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
                 ),
               ),
+            );
 
-              if (subtitle != null) ...[
-                pw.SizedBox(height: 10),
-                pw.Text(
-                  _convertTurkishChars(subtitle),
-                  style: const pw.TextStyle(
-                    fontSize: 14,
-                    color: PdfColors.grey700,
+            if (subtitle != null && subtitle.isNotEmpty) {
+              widgets
+                ..add(pw.SizedBox(height: 6))
+                ..add(
+                  pw.Text(
+                    _convertTurkishChars(subtitle),
+                    style: const pw.TextStyle(
+                      fontSize: 10,
+                      color: PdfColors.grey700,
+                    ),
                   ),
+                );
+            }
+
+            widgets.add(pw.SizedBox(height: 16));
+
+            if (summary != null) {
+              widgets.add(
+                _buildSummarySection(
+                  summary,
+                  titleFontSize: 10,
+                  itemFontSize: 8.5,
                 ),
-              ],
+              );
+              widgets.add(pw.SizedBox(height: 12));
+            }
 
-              pw.SizedBox(height: 20),
+            widgets.add(
+              _buildTable(
+                headers,
+                data,
+                headerStyle: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  fontSize: 9,
+                  color: PdfColors.blueGrey800,
+                ),
+                cellStyle: pw.TextStyle(fontSize: 8.5),
+                headerPadding:
+                    const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 5),
+                cellPadding:
+                    const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 5),
+              ),
+            );
 
-              // Özet bilgileri
-              if (summary != null) ...[
-                _buildSummarySection(summary),
-                pw.SizedBox(height: 20),
-              ],
-
-              // Tablo
-              _buildTable(headers, data),
-            ];
+            return widgets;
           },
         ),
       );
@@ -340,6 +350,178 @@ class ExportService {
       return bytes;
     } catch (e) {
       _logger.e('PDF dosyası oluşturulurken hata: $e');
+      rethrow;
+    }
+  }
+
+  Future<Uint8List> exportTransactionDetailPDF({
+    required String title,
+    required Map<String, String> details,
+    String? subtitle,
+    String? tenantId,
+    bool includeSignature = false,
+    PdfPageFormat pageFormat = PdfPageFormat.a5,
+  }) async {
+    try {
+      final companyInfo = await _getCompanyInfo(tenantId);
+      if (companyInfo != null && companyInfo['logoUrl'] != null) {
+        await _ensureCompanyLogoLoaded(companyInfo['logoUrl'] as String?);
+      }
+
+      await _ensureRobotoFontLoaded();
+
+      final pdf = pw.Document();
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: pageFormat,
+          margin: const pw.EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+          build: (context) {
+            final detailWidgets = details.entries.map((entry) {
+              return pw.Container(
+                margin: const pw.EdgeInsets.only(bottom: 8),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Container(
+                      width: 110,
+                      child: pw.Text(
+                        _convertTurkishChars(entry.key),
+                        style: pw.TextStyle(
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.blueGrey800,
+                        ),
+                      ),
+                    ),
+                    pw.SizedBox(width: 12),
+                    pw.Expanded(
+                      child: pw.Text(
+                        _convertTurkishChars(entry.value),
+                        style: const pw.TextStyle(
+                          fontSize: 12,
+                          color: PdfColors.grey800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList();
+
+            final content = <pw.Widget>[];
+
+            if (companyInfo != null) {
+              content.add(
+                pw.Container(
+                  padding: const pw.EdgeInsets.only(bottom: 16),
+                  child: pw.Row(
+                    children: [
+                      if (_cachedCompanyLogo != null)
+                        pw.Container(
+                          width: 45,
+                          height: 45,
+                          decoration: pw.BoxDecoration(
+                            borderRadius: pw.BorderRadius.circular(6),
+                            border: pw.Border.all(color: PdfColors.grey300),
+                          ),
+                          child: pw.Image(_cachedCompanyLogo!,
+                              fit: pw.BoxFit.contain),
+                        ),
+                      pw.SizedBox(width: 12),
+                      pw.Expanded(
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(
+                              _convertTurkishChars(companyInfo['name'] ?? ''),
+                              style: pw.TextStyle(
+                                fontSize: 16,
+                                fontWeight: pw.FontWeight.bold,
+                                color: PdfColors.blue800,
+                              ),
+                            ),
+                            if (companyInfo['name'] != null)
+                              pw.SizedBox(height: 4),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              content.add(pw.Divider());
+              content.add(pw.SizedBox(height: 16));
+            }
+
+            content.add(
+              pw.Text(
+                _convertTurkishChars(title),
+                style: pw.TextStyle(
+                  fontSize: 20,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+            );
+
+            if (subtitle != null && subtitle.isNotEmpty) {
+              content.add(pw.SizedBox(height: 8));
+              content.add(
+                pw.Text(
+                  _convertTurkishChars(subtitle),
+                  style: const pw.TextStyle(
+                      fontSize: 12, color: PdfColors.grey700),
+                ),
+              );
+            }
+
+            content.add(pw.SizedBox(height: 20));
+            content.add(
+              pw.Container(
+                padding: const pw.EdgeInsets.all(12),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(6),
+                ),
+                child: pw.Column(children: detailWidgets),
+              ),
+            );
+
+            if (includeSignature) {
+              content
+                ..add(pw.SizedBox(height: 40))
+                ..add(
+                  pw.Row(
+                    children: [
+                      pw.Spacer(),
+                      pw.Container(
+                        width: 160,
+                        child: pw.Column(
+                          children: [
+                            pw.SizedBox(height: 60),
+                            pw.Divider(),
+                            pw.SizedBox(height: 4),
+                            pw.Text(
+                              _convertTurkishChars('İmza'),
+                              style: const pw.TextStyle(
+                                fontSize: 12,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+            }
+
+            return content;
+          },
+        ),
+      );
+
+      return await pdf.save();
+    } catch (e) {
+      _logger.e('Tekil işlem PDF\'i oluşturulurken hata: $e');
       rethrow;
     }
   }
@@ -702,12 +884,13 @@ class ExportService {
   }
 
   /// PDF'de özet bölümü oluştur
-  pw.Widget _buildSummarySection(Map<String, dynamic> summary) {
+  pw.Widget _buildSummarySection(Map<String, dynamic> summary,
+      {double titleFontSize = 11, double itemFontSize = 9}) {
     return pw.Container(
-      padding: const pw.EdgeInsets.all(16),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: pw.BoxDecoration(
         border: pw.Border.all(color: PdfColors.grey300),
-        borderRadius: pw.BorderRadius.circular(8),
+        borderRadius: pw.BorderRadius.circular(6),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -715,31 +898,68 @@ class ExportService {
           pw.Text(
             _convertTurkishChars('Özet'),
             style: pw.TextStyle(
-              fontSize: 16,
+              fontSize: titleFontSize,
               fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blueGrey800,
             ),
           ),
-          pw.SizedBox(height: 10),
-          ...summary.entries.map((entry) => pw.Padding(
-                padding: const pw.EdgeInsets.symmetric(vertical: 2),
-                child: pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(_convertTurkishChars(entry.key)),
-                    pw.Text(
-                      _convertTurkishChars(entry.value.toString()),
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          pw.SizedBox(height: 6),
+          ...summary.entries.map(
+            (entry) => pw.Padding(
+              padding: const pw.EdgeInsets.symmetric(vertical: 2),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Expanded(
+                    child: pw.Text(
+                      _convertTurkishChars(entry.key),
+                      style: pw.TextStyle(
+                        fontSize: itemFontSize,
+                        color: PdfColors.grey700,
+                      ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
+                  pw.SizedBox(width: 12),
+                  pw.Text(
+                    _convertTurkishChars(entry.value.toString()),
+                    style: pw.TextStyle(
+                      fontSize: itemFontSize,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blueGrey900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   /// PDF'de tablo oluştur
-  pw.Widget _buildTable(List<String> headers, List<List<dynamic>> data) {
+  pw.Widget _buildTable(
+    List<String> headers,
+    List<List<dynamic>> data, {
+    pw.TextStyle? headerStyle,
+    pw.TextStyle? cellStyle,
+    pw.EdgeInsets? headerPadding,
+    pw.EdgeInsets? cellPadding,
+  }) {
+    final pw.TextStyle effectiveHeaderStyle = headerStyle ??
+        pw.TextStyle(
+          fontWeight: pw.FontWeight.bold,
+          fontSize: 10,
+          color: PdfColors.blueGrey800,
+        );
+    final pw.TextStyle effectiveCellStyle =
+        cellStyle ?? const pw.TextStyle(fontSize: 9);
+    final pw.EdgeInsets effectiveHeaderPadding = headerPadding ??
+        const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 6);
+    final pw.EdgeInsets effectiveCellPadding = cellPadding ??
+        const pw.EdgeInsets.symmetric(vertical: 5, horizontal: 6);
+
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey300),
       columnWidths: {
@@ -751,10 +971,10 @@ class ExportService {
           decoration: const pw.BoxDecoration(color: PdfColors.grey200),
           children: headers
               .map((header) => pw.Padding(
-                    padding: const pw.EdgeInsets.all(8),
+                    padding: effectiveHeaderPadding,
                     child: pw.Text(
                       _convertTurkishChars(header),
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      style: effectiveHeaderStyle,
                     ),
                   ))
               .toList(),
@@ -763,8 +983,11 @@ class ExportService {
         ...data.map((row) => pw.TableRow(
               children: row
                   .map((cell) => pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(_convertTurkishChars(cell.toString())),
+                        padding: effectiveCellPadding,
+                        child: pw.Text(
+                          _convertTurkishChars(cell.toString()),
+                          style: effectiveCellStyle,
+                        ),
                       ))
                   .toList(),
             )),

@@ -20,6 +20,7 @@ import 'dart:js_interop';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 import 'package:tamgaci/core/services/utils/export_service.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
 
 class EmployeesListPage extends StatefulWidget {
   const EmployeesListPage({super.key});
@@ -74,11 +75,14 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final tid = userDoc.data()?['tenantId'] as String?;
       if (tid != null && tid.isNotEmpty && tid != _tenantId) {
+        if (!mounted) return;
         setState(() {
           _tenantId = tid;
         });
         // Yeniden meta koleksiyonları dinle (tenant değiştiyse)
-        _listenToMetaCollections(restart: true);
+        if (mounted) {
+          _listenToMetaCollections(restart: true);
+        }
       }
     } catch (_) {
       // Sessiz geç: tenantId yoksa üst seviye koleksiyonlara düşer
@@ -812,11 +816,13 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         .orderBy('name')
         .snapshots()
         .listen((snapshot) {
+      if (!mounted) return;
       final names = snapshot.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
           .toSet()
           .toList();
+      if (!mounted) return;
       setState(() {
         _departments = ['Tümü', ...names];
         if (!_departments.contains(_selectedDepartment)) {
@@ -829,11 +835,13 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
         .orderBy('name')
         .snapshots()
         .listen((snapshot) {
+      if (!mounted) return;
       final names = snapshot.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
           .toSet()
           .toList();
+      if (!mounted) return;
       setState(() {
         _categories = ['Tümü', ...names];
         if (!_categories.contains(_selectedCategory)) {
@@ -844,11 +852,13 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
     _posMetaSub =
         _tenantCol('positions').orderBy('name').snapshots().listen((snapshot) {
+      if (!mounted) return;
       final names = snapshot.docs
           .map((d) => (d.data())['name'] as String)
           .where((e) => e.trim().isNotEmpty)
           .toSet()
           .toList();
+      if (!mounted) return;
       setState(() {
         _positions = names;
       });
@@ -2445,25 +2455,8 @@ class _EmployeeListState extends State<_EmployeeList> {
       query = query.where('category', isEqualTo: widget.selectedCategory);
     }
 
-    String orderField;
-    switch (widget.sortBy) {
-      case 'Ad Soyad':
-        orderField = 'name';
-        break;
-      case 'Departman':
-        orderField = 'department';
-        break;
-      case 'Kategori':
-        orderField = 'category';
-        break;
-      case 'Bakiye':
-        orderField = 'name'; // placeholder
-        break;
-      default:
-        orderField = 'createdAt';
-    }
-    // Tek bir orderBy kullanarak kompozit index ihtiyacını azalt
-    query = query.orderBy(orderField, descending: !widget.ascending);
+    // Client-side sorting kullanacağız, bu yüzden Firestore'dan sıralama yapmıyoruz
+    // Sadece filtreleme için query kullanıyoruz
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: query.snapshots(),
       builder: (context, snap) {
@@ -2532,6 +2525,8 @@ class _EmployeeListState extends State<_EmployeeList> {
         if (widget.sortBy == 'Bakiye') {
           // Tüm personelleri bakiye bilgisiyle birlikte sırala
           return FutureBuilder<Map<String, double>>(
+            key: ValueKey(
+                'balance_${widget.ascending}_${activeEmployees.length}'),
             future: _calculateBalancesForEmployees(
               activeEmployees,
               widget.tenantId,
@@ -2554,7 +2549,7 @@ class _EmployeeListState extends State<_EmployeeList> {
                     : balanceB.compareTo(balanceA);
               });
 
-              // Departmanlara göre grupla
+              // Bakiye sıralamasında: Departmanlara göre grupla ama sıralamayı koru
               final Map<String,
                       List<QueryDocumentSnapshot<Map<String, dynamic>>>>
                   grouped = {};
@@ -2563,7 +2558,18 @@ class _EmployeeListState extends State<_EmployeeList> {
                 final key = (dep == null || dep.isEmpty) ? '-' : dep;
                 (grouped[key] ??= []).add(d);
               }
-              final departments = grouped.keys.toList()..sort();
+
+              // Departmanları sıralı şekilde al (sortedEmployees'daki sıraya göre)
+              final seenDepartments = <String>{};
+              final orderedDepartments = <String>[];
+              for (final d in sortedEmployees) {
+                final dep = (d.data()['department'] as String?)?.trim();
+                final key = (dep == null || dep.isEmpty) ? '-' : dep;
+                if (!seenDepartments.contains(key)) {
+                  seenDepartments.add(key);
+                  orderedDepartments.add(key);
+                }
+              }
 
               final List<_SectionEntry> balanceEntries = [];
 
@@ -2582,7 +2588,7 @@ class _EmployeeListState extends State<_EmployeeList> {
                 }
               }
 
-              for (final dep in departments) {
+              for (final dep in orderedDepartments) {
                 final items = grouped[dep]!;
                 balanceEntries.add(_SectionEntry.header(dep));
                 for (final doc in items) {
@@ -2685,24 +2691,79 @@ class _EmployeeListState extends State<_EmployeeList> {
           );
         }
 
-        // Aktif personelleri departmanlara göre grupla
+        // Client-side sorting - Tüm sıralama türleri için
+        final sortedActiveEmployees =
+            List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
+                activeEmployees);
+        sortedActiveEmployees.sort((a, b) {
+          final dataA = a.data();
+          final dataB = b.data();
+          int comparison = 0;
+
+          switch (widget.sortBy) {
+            case 'Ad Soyad':
+              final nameA = (dataA['name'] as String? ?? '').toLowerCase();
+              final nameB = (dataB['name'] as String? ?? '').toLowerCase();
+              comparison = nameA.compareTo(nameB);
+              break;
+            case 'Departman':
+              final deptA =
+                  (dataA['department'] as String? ?? '').toLowerCase();
+              final deptB =
+                  (dataB['department'] as String? ?? '').toLowerCase();
+              comparison = deptA.compareTo(deptB);
+              // Aynı departmanda ise ada göre sırala
+              if (comparison == 0) {
+                final nameA = (dataA['name'] as String? ?? '').toLowerCase();
+                final nameB = (dataB['name'] as String? ?? '').toLowerCase();
+                comparison = nameA.compareTo(nameB);
+              }
+              break;
+            case 'Kategori':
+              final catA = (dataA['category'] as String? ?? '').toLowerCase();
+              final catB = (dataB['category'] as String? ?? '').toLowerCase();
+              comparison = catA.compareTo(catB);
+              // Aynı kategoride ise ada göre sırala
+              if (comparison == 0) {
+                final nameA = (dataA['name'] as String? ?? '').toLowerCase();
+                final nameB = (dataB['name'] as String? ?? '').toLowerCase();
+                comparison = nameA.compareTo(nameB);
+              }
+              break;
+            default:
+              // Varsayılan olarak ada göre sırala
+              final nameA = (dataA['name'] as String? ?? '').toLowerCase();
+              final nameB = (dataB['name'] as String? ?? '').toLowerCase();
+              comparison = nameA.compareTo(nameB);
+          }
+
+          return widget.ascending ? comparison : -comparison;
+        });
+
+        // Sıralama türüne göre gruplama yap - Sıralamayı koru
         final Map<String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>
             grouped = {};
-        for (final d in activeEmployees) {
+        for (final d in sortedActiveEmployees) {
           final dep = (d.data()['department'] as String?)?.trim();
           final key = (dep == null || dep.isEmpty) ? '-' : dep;
           (grouped[key] ??= []).add(d);
         }
-        final departments = grouped.keys.toList()..sort();
 
-        for (final dep in departments) {
+        // Departmanları sıralı şekilde al (sortedActiveEmployees'daki sıraya göre)
+        // Bu sayede sıralama korunur
+        final seenDepartments = <String>{};
+        final orderedDepartments = <String>[];
+        for (final d in sortedActiveEmployees) {
+          final dep = (d.data()['department'] as String?)?.trim();
+          final key = (dep == null || dep.isEmpty) ? '-' : dep;
+          if (!seenDepartments.contains(key)) {
+            seenDepartments.add(key);
+            orderedDepartments.add(key);
+          }
+        }
+
+        for (final dep in orderedDepartments) {
           final items = grouped[dep]!;
-          // İstikrarlı görünüm için departman içini ada göre sırala (yerel sıralama)
-          items.sort((a, b) {
-            final an = (a.data()['name'] as String? ?? '').toLowerCase();
-            final bn = (b.data()['name'] as String? ?? '').toLowerCase();
-            return an.compareTo(bn);
-          });
           entries.add(_SectionEntry.header(dep));
           for (final doc in items) {
             entries.add(_SectionEntry.item(doc));
@@ -3857,57 +3918,74 @@ class _EmployeeDetailSheet extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           _EmployeeTransactionsList(
-                              tenantId: tenantId,
-                              docId: docId,
-                              currency: salaryCurrency.isNotEmpty
-                                  ? salaryCurrency
-                                  : 'TRY',
-                              onEditOvertimeTransaction:
-                                  (ctx, tId, empId, transId, transData, curr) {
-                                final sheet = _EmployeeDetailSheet(
-                                  tenantId: tId,
-                                  docId: empId,
-                                  data: data,
-                                );
-                                sheet._showEditOvertimeTransactionDialog(
-                                  ctx,
-                                  tId,
-                                  empId,
-                                  transId,
-                                  transData,
-                                  curr,
-                                );
-                              },
-                              onEditPaymentTransaction:
-                                  (ctx, tId, empId, transId, transData, curr) {
-                                final sheet = _EmployeeDetailSheet(
-                                  tenantId: tId,
-                                  docId: empId,
-                                  data: data,
-                                );
-                                sheet._showEditPaymentTransactionDialog(
-                                  ctx,
-                                  tId,
-                                  empId,
-                                  transId,
-                                  transData,
-                                  curr,
-                                );
-                              },
-                              onDeletePaymentTransaction:
-                                  (ctx, tId, transId, transData) {
-                                final sheet = _EmployeeDetailSheet(
-                                  tenantId: tId,
-                                  docId: docId,
-                                  data: data,
-                                );
-                                sheet._showDeletePaymentTransactionDialog(
-                                  ctx,
-                                  tId,
-                                  transId,
-                                  transData,
-                                );
-                              }),
+                            tenantId: tenantId,
+                            docId: docId,
+                            currency: salaryCurrency.isNotEmpty
+                                ? salaryCurrency
+                                : 'TRY',
+                            onEditOvertimeTransaction:
+                                (ctx, tId, empId, transId, transData, curr) {
+                              final sheet = _EmployeeDetailSheet(
+                                tenantId: tId,
+                                docId: empId,
+                                data: data,
+                              );
+                              sheet._showEditOvertimeTransactionDialog(
+                                ctx,
+                                tId,
+                                empId,
+                                transId,
+                                transData,
+                                curr,
+                              );
+                            },
+                            onEditPaymentTransaction:
+                                (ctx, tId, empId, transId, transData, curr) {
+                              final sheet = _EmployeeDetailSheet(
+                                tenantId: tId,
+                                docId: empId,
+                                data: data,
+                              );
+                              sheet._showEditPaymentTransactionDialog(
+                                ctx,
+                                tId,
+                                empId,
+                                transId,
+                                transData,
+                                curr,
+                              );
+                            },
+                            onDeletePaymentTransaction:
+                                (ctx, tId, transId, transData) {
+                              final sheet = _EmployeeDetailSheet(
+                                tenantId: tId,
+                                docId: docId,
+                                data: data,
+                              );
+                              sheet._showDeletePaymentTransactionDialog(
+                                ctx,
+                                tId,
+                                transId,
+                                transData,
+                              );
+                            },
+                            onPrintTransaction:
+                                (ctx, tId, empId, transId, transData, curr) {
+                              final sheet = _EmployeeDetailSheet(
+                                tenantId: tId,
+                                docId: empId,
+                                data: data,
+                              );
+                              sheet._exportSingleTransactionToPDF(
+                                ctx,
+                                tId,
+                                empId,
+                                transId,
+                                transData,
+                                curr,
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -5902,6 +5980,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
     bool currentAutoEntitlementEnabled,
   ) {
     final amountController = TextEditingController();
+    final amountFocusNode = FocusNode();
     final noteController = TextEditingController();
     final now = DateTime.now();
     final dateController = TextEditingController(
@@ -5912,201 +5991,242 @@ class _EmployeeDetailSheet extends StatelessWidget {
     bool autoEntitlementEnabled = currentAutoEntitlementEnabled;
 
     showDialog(
+      barrierDismissible: false,
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (dialogContext, setState) => AlertDialog(
-          title: const Text('Manuel Hak Ediş Ekle'),
-          contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
-          content: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.9,
-              maxHeight: MediaQuery.of(context).size.height * 0.8,
-            ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('$name için manuel hak ediş ekle'),
-                  const SizedBox(height: 16),
-                  // Otomatik hak ediş açma/kapama
-                  Card(
-                    color: Colors.grey[50],
-                    child: SwitchListTile(
-                      title: const Text('Otomatik Hak Ediş'),
-                      subtitle: const Text(
-                        'Otomatik hak ediş oluşturmayı aç/kapat',
-                        style: TextStyle(fontSize: 12),
+      builder: (ctx) {
+        // Tutar formatlama fonksiyonu - dialog içinde tanımla
+        void formatAmount() {
+          final amountText =
+              amountController.text.replaceAll('.', '').replaceAll(',', '.');
+          final amount = double.tryParse(amountText);
+          if (amount != null && amount > 0) {
+            // Türkçe format: 1.000,00
+            final parts = amount.toStringAsFixed(2).split('.');
+            final intPart = parts[0];
+            final decPart = parts[1];
+            final formattedInt = intPart.replaceAllMapped(
+              RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+              (Match m) => '${m[1]}.',
+            );
+            amountController.text = '$formattedInt,$decPart';
+          }
+        }
+
+        // Focus kaybında formatla - dialog içinde listener ekle
+        void focusListener() {
+          if (!amountFocusNode.hasFocus && amountController.text.isNotEmpty) {
+            formatAmount();
+          }
+        }
+
+        amountFocusNode.addListener(focusListener);
+
+        return StatefulBuilder(
+          builder: (dialogContext, setState) {
+            return AlertDialog(
+              title: const Text('Manuel Hak Ediş Ekle'),
+              contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
+              content: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.9,
+                  maxHeight: MediaQuery.of(context).size.height * 0.8,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('$name için manuel hak ediş ekle'),
+                      const SizedBox(height: 16),
+                      // Otomatik hak ediş açma/kapama
+                      Card(
+                        color: Colors.grey[50],
+                        child: SwitchListTile(
+                          title: const Text('Otomatik Hak Ediş'),
+                          subtitle: const Text(
+                            'Otomatik hak ediş oluşturmayı aç/kapat',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          value: autoEntitlementEnabled,
+                          onChanged: (value) {
+                            setState(() {
+                              autoEntitlementEnabled = value;
+                            });
+                          },
+                        ),
                       ),
-                      value: autoEntitlementEnabled,
-                      onChanged: (value) {
-                        setState(() {
-                          autoEntitlementEnabled = value;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Tarih seçici
-                  InkWell(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: dialogContext,
-                        initialDate: selectedDate,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                        locale: const Locale('tr', 'TR'),
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          selectedDate = picked;
-                          dateController.text =
-                              '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
-                        });
-                      }
-                    },
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Tarih',
-                        border: OutlineInputBorder(),
-                        suffixIcon: Icon(Icons.calendar_today),
+                      const SizedBox(height: 16),
+                      // Tarih seçici
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: dialogContext,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                            locale: const Locale('tr', 'TR'),
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              selectedDate = picked;
+                              dateController.text =
+                                  '${picked.day.toString().padLeft(2, '0')}.${picked.month.toString().padLeft(2, '0')}.${picked.year}';
+                            });
+                          }
+                        },
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            labelText: 'Tarih',
+                            border: OutlineInputBorder(),
+                            suffixIcon: Icon(Icons.calendar_today),
+                          ),
+                          child: Text(
+                            dateController.text.isEmpty
+                                ? 'Tarih seçin'
+                                : dateController.text,
+                          ),
+                        ),
                       ),
-                      child: Text(
-                        dateController.text.isEmpty
-                            ? 'Tarih seçin'
-                            : dateController.text,
+                      const SizedBox(height: 16),
+                      // Tutar
+                      TextFormField(
+                        controller: amountController,
+                        focusNode: amountFocusNode,
+                        decoration: InputDecoration(
+                          labelText: 'Tutar ($currency)',
+                          border: const OutlineInputBorder(),
+                          hintText: 'Örn: 10000,00',
+                        ),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'^\d+([,.]\d{0,2})?$')),
+                        ],
+                        onEditingComplete: () {
+                          formatAmount();
+                          amountFocusNode.unfocus();
+                        },
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Tutar
-                  TextFormField(
-                    controller: amountController,
-                    decoration: InputDecoration(
-                      labelText: 'Tutar ($currency)',
-                      border: const OutlineInputBorder(),
-                      hintText: 'Örn: 10000,00',
-                    ),
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d+([,.]\d{0,2})?$')),
+                      const SizedBox(height: 16),
+                      // Not
+                      TextFormField(
+                        controller: noteController,
+                        decoration: const InputDecoration(
+                          labelText: 'Not (Opsiyonel)',
+                          border: OutlineInputBorder(),
+                          hintText: 'Hak ediş açıklaması...',
+                        ),
+                        maxLines: 3,
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  // Not
-                  TextFormField(
-                    controller: noteController,
-                    decoration: const InputDecoration(
-                      labelText: 'Not (Opsiyonel)',
-                      border: OutlineInputBorder(),
-                      hintText: 'Hak ediş açıklaması...',
-                    ),
-                    maxLines: 3,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                amountController.dispose();
-                noteController.dispose();
-                dateController.dispose();
-                Navigator.of(ctx).pop();
-              },
-              child: const Text('Vazgeç'),
-            ),
-            FilledButton(
-              onPressed: () async {
-                final amountText = amountController.text
-                    .replaceAll('.', '')
-                    .replaceAll(',', '.');
-                final amount = double.tryParse(amountText) ?? 0;
-                final note = noteController.text.trim();
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    amountFocusNode.removeListener(focusListener);
+                    amountFocusNode.dispose();
+                    amountController.dispose();
+                    noteController.dispose();
+                    dateController.dispose();
+                    Navigator.of(ctx).pop();
+                  },
+                  child: const Text('Vazgeç'),
+                ),
+                FilledButton(
+                  onPressed: () async {
+                    final amountText = amountController.text
+                        .replaceAll('.', '')
+                        .replaceAll(',', '.');
+                    final amount = double.tryParse(amountText) ?? 0;
+                    final note = noteController.text.trim();
 
-                if (amount <= 0) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(
-                      content: Text('Tutar 0\'dan büyük olmalıdır'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                  return;
-                }
+                    if (amount <= 0) {
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(
+                          content: Text('Tutar 0\'dan büyük olmalıdır'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
 
-                try {
-                  // Önce employee document'ini güncelle (otomatik hak ediş ayarı)
-                  final employeesCol =
-                      (tenantId != null && tenantId!.isNotEmpty)
+                    try {
+                      // Önce employee document'ini güncelle (otomatik hak ediş ayarı)
+                      final employeesCol = (tenantId != null &&
+                              tenantId!.isNotEmpty)
                           ? FirebaseFirestore.instance
                               .collection('tenants')
                               .doc(tenantId)
                               .collection('employees')
                           : FirebaseFirestore.instance.collection('employees');
 
-                  await employeesCol.doc(docId).update({
-                    'autoEntitlementEnabled': autoEntitlementEnabled,
-                    'updatedAt': FieldValue.serverTimestamp(),
-                  });
+                      await employeesCol.doc(docId).update({
+                        'autoEntitlementEnabled': autoEntitlementEnabled,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
 
-                  // Sonra transaction'ı ekle
-                  final transactionsCol = (tenantId != null &&
-                          tenantId!.isNotEmpty)
-                      ? FirebaseFirestore.instance
-                          .collection('tenants')
-                          .doc(tenantId)
-                          .collection('employee_transactions')
-                      : FirebaseFirestore.instance
-                          .collection('employee_transactions');
+                      // Sonra transaction'ı ekle
+                      final transactionsCol =
+                          (tenantId != null && tenantId!.isNotEmpty)
+                              ? FirebaseFirestore.instance
+                                  .collection('tenants')
+                                  .doc(tenantId)
+                                  .collection('employee_transactions')
+                              : FirebaseFirestore.instance
+                                  .collection('employee_transactions');
 
-                  await transactionsCol.add({
-                    'employeeId': docId,
-                    'amount': amount,
-                    'direction': 'in',
-                    'type': 'entitlement',
-                    'note': note.isEmpty ? 'Manuel hak ediş' : note,
-                    'date': Timestamp.fromDate(selectedDate),
-                    'currency': currency,
-                    'tenantId': tenantId,
-                    'createdBy': FirebaseAuth.instance.currentUser?.uid,
-                    'createdAt': FieldValue.serverTimestamp(),
-                    'updatedAt': FieldValue.serverTimestamp(),
-                  });
+                      await transactionsCol.add({
+                        'employeeId': docId,
+                        'amount': amount,
+                        'direction': 'in',
+                        'type': 'entitlement',
+                        'note': note.isEmpty ? 'Manuel hak ediş' : note,
+                        'date': Timestamp.fromDate(selectedDate),
+                        'currency': currency,
+                        'tenantId': tenantId,
+                        'createdBy': FirebaseAuth.instance.currentUser?.uid,
+                        'createdAt': FieldValue.serverTimestamp(),
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      });
 
-                  if (ctx.mounted) {
-                    Navigator.of(ctx).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Hak ediş eklendi (${amount.toStringAsFixed(2)} $currency)${autoEntitlementEnabled ? '' : '\nOtomatik hak ediş kapatıldı'}',
-                        ),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  }
+                      if (ctx.mounted) {
+                        Navigator.of(ctx).pop();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Hak ediş eklendi (${amount.toStringAsFixed(2)} $currency)${autoEntitlementEnabled ? '' : '\nOtomatik hak ediş kapatıldı'}',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
 
-                  amountController.dispose();
-                  noteController.dispose();
-                  dateController.dispose();
-                } catch (e) {
-                  if (ctx.mounted) {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(
-                        content: Text('Hata: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
-              child: const Text('Ekle'),
-            ),
-          ],
-        ),
-      ),
+                      amountFocusNode.removeListener(focusListener);
+                      amountFocusNode.dispose();
+                      amountController.dispose();
+                      noteController.dispose();
+                      dateController.dispose();
+                    } catch (e) {
+                      if (ctx.mounted) {
+                        ScaffoldMessenger.of(dialogContext).showSnackBar(
+                          SnackBar(
+                            content: Text('Hata: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Ekle'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -7595,6 +7715,9 @@ class _EmployeeTransactionsList extends StatelessWidget {
       onEditPaymentTransaction;
   final Function(BuildContext, String?, String, Map<String, dynamic>)?
       onDeletePaymentTransaction;
+  final Function(
+          BuildContext, String?, String, String, Map<String, dynamic>, String)?
+      onPrintTransaction;
   const _EmployeeTransactionsList({
     required this.tenantId,
     required this.docId,
@@ -7602,6 +7725,7 @@ class _EmployeeTransactionsList extends StatelessWidget {
     this.onEditOvertimeTransaction,
     this.onEditPaymentTransaction,
     this.onDeletePaymentTransaction,
+    this.onPrintTransaction,
   });
 
   @override
@@ -7701,6 +7825,34 @@ class _EmployeeTransactionsList extends StatelessWidget {
             // Ödeme işlemleri: type == 'payment' ve direction == 'out'
             final isPayment = transactionType == 'payment' && dir == 'out';
 
+            final List<PopupMenuEntry<String>> menuItems = [
+              const PopupMenuItem<String>(
+                value: 'print',
+                child: Text('PDF olarak yazdır'),
+              ),
+            ];
+            if (isEntitlement || isOvertime || isPayment) {
+              menuItems.addAll(const [
+                PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  value: 'edit',
+                  child: Text('Düzenle'),
+                ),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text('Sil'),
+                ),
+              ]);
+            } else {
+              menuItems.addAll(const [
+                PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  value: 'delete',
+                  child: Text('Sil'),
+                ),
+              ]);
+            }
+
             return ListTile(
               dense: true,
               leading: Icon(
@@ -7714,16 +7866,39 @@ class _EmployeeTransactionsList extends StatelessWidget {
                       : (dir == 'in' ? 'Ödeme' : 'Avans/Çıkış'))
                   : note),
               subtitle: Text(dt),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('$sign$formattedAmount $currency',
-                      style:
-                          TextStyle(color: color, fontWeight: FontWeight.w600)),
-                  if (isEntitlement || isOvertime || isPayment)
+              trailing: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 170),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '$sign$formattedAmount $currency',
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.fade,
+                        softWrap: false,
+                      ),
+                    ),
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, size: 20),
+                      itemBuilder: (_) => menuItems,
                       onSelected: (value) {
+                        if (value == 'print') {
+                          if (onPrintTransaction != null) {
+                            onPrintTransaction!(
+                              context,
+                              tenantId,
+                              docId,
+                              transactionId,
+                              m,
+                              currency,
+                            );
+                          }
+                          return;
+                        }
                         if (value == 'edit') {
                           if (isOvertime) {
                             if (onEditOvertimeTransaction != null) {
@@ -7776,30 +7951,9 @@ class _EmployeeTransactionsList extends StatelessWidget {
                           }
                         }
                       },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: 'edit',
-                          child: Row(
-                            children: [
-                              Icon(Icons.edit, size: 20),
-                              SizedBox(width: 8),
-                              Text('Düzenle'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, size: 20, color: Colors.red),
-                              SizedBox(width: 8),
-                              Text('Sil', style: TextStyle(color: Colors.red)),
-                            ],
-                          ),
-                        ),
-                      ],
                     ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -9848,6 +10002,7 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
         data: exportData,
         summary: summary,
         tenantId: tenantId,
+        pageFormat: PdfPageFormat.a5,
       );
 
       // Dosyayı kaydet
@@ -9918,6 +10073,153 @@ extension _EmployeeDetailSheetExtension on _EmployeeDetailSheet {
           } catch (_) {
             // Context dispose edilmiş olabilir
           }
+        });
+      }
+    }
+  }
+
+  Future<void> _exportSingleTransactionToPDF(
+    BuildContext context,
+    String? tenantId,
+    String docId,
+    String transactionId,
+    Map<String, dynamic> transactionData,
+    String currency,
+  ) async {
+    bool dialogShown = false;
+    Object? error;
+    String? fileName;
+    try {
+      if (!context.mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+      dialogShown = true;
+
+      final exportService = ExportService();
+      final employeeName = data['name'] as String? ?? 'Personel';
+      final amount = (transactionData['amount'] as num?)?.toDouble() ?? 0.0;
+      final dir = (transactionData['direction'] as String?) ?? 'out';
+      final note = transactionData['note']?.toString() ?? '';
+      final transactionType = transactionData['type'] as String?;
+      final ts = transactionData['date'];
+      String dateStr = '';
+      if (ts is Timestamp) {
+        final d = ts.toDate();
+        dateStr =
+            '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+      } else if (ts is DateTime) {
+        dateStr =
+            '${ts.day.toString().padLeft(2, '0')}.${ts.month.toString().padLeft(2, '0')}.${ts.year}';
+      }
+
+      String transactionTypeStr = '';
+      if (transactionType == 'overtime') {
+        transactionTypeStr = 'Mesai Ekleme';
+      } else if (transactionType == 'overtime_deduction') {
+        transactionTypeStr = 'Mesai Kesme';
+      } else if (transactionType == 'payment') {
+        transactionTypeStr = dir == 'in' ? 'Ödeme Girişi' : 'Ödeme';
+      } else if (dir == 'in') {
+        transactionTypeStr = 'Hak Ediş';
+      } else {
+        transactionTypeStr = 'Avans/Çıkış';
+      }
+
+      String formatAmount(double value) {
+        final parts = value.abs().toStringAsFixed(2).split('.');
+        final intPart = parts[0];
+        final decPart = parts[1];
+        final formattedInt = intPart.replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]}.',
+        );
+        return '$formattedInt,$decPart';
+      }
+
+      final details = <String, String>{
+        'İşlem ID': transactionId,
+        if (dateStr.isNotEmpty) 'Tarih': dateStr,
+        'İşlem Türü': transactionTypeStr,
+        'Yön': dir == 'in' ? 'Giriş' : 'Çıkış',
+        'Tutar': '${formatAmount(amount)} $currency',
+        if (transactionData['accountId'] != null)
+          'Hesap ID': transactionData['accountId'].toString(),
+        if (note.isNotEmpty) 'Açıklama': note,
+      };
+
+      final fileBytes = await exportService.exportTransactionDetailPDF(
+        title: '$employeeName - İşlem Detayı',
+        subtitle: dateStr.isNotEmpty
+            ? 'İşlem Tarihi: $dateStr'
+            : 'İşlem: $transactionId',
+        details: details,
+        tenantId: tenantId,
+        includeSignature: true,
+        pageFormat: PdfPageFormat.a5,
+      );
+
+      fileName =
+          '${employeeName.replaceAll(' ', '_')}_islem_${transactionId}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob([fileBytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        web.URL.revokeObjectURL(url);
+      } else {
+        final directory = await getDownloadsDirectory();
+        if (directory != null) {
+          final filePath = path.join(directory.path, fileName);
+          final file = File(filePath);
+          await file.writeAsBytes(fileBytes);
+        }
+      }
+    } catch (e) {
+      error = e;
+    } finally {
+      if (dialogShown) {
+        final finalError = error;
+        final finalFileName = fileName;
+        Future.microtask(() {
+          try {
+            if (context.mounted) {
+              final navigator = Navigator.of(context, rootNavigator: true);
+              if (navigator.canPop()) {
+                navigator.pop();
+              }
+            }
+          } catch (_) {}
+        });
+
+        Future.delayed(const Duration(milliseconds: 200), () {
+          try {
+            if (context.mounted) {
+              if (finalError != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Export hatası: $finalError'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              } else if (finalFileName != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('PDF dosyası indirildi: $finalFileName'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          } catch (_) {}
         });
       }
     }
