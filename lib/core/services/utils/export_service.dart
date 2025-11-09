@@ -331,7 +331,7 @@ class ExportService {
                   fontSize: 9,
                   color: PdfColors.blueGrey800,
                 ),
-                cellStyle: pw.TextStyle(fontSize: 8.5),
+                cellStyle: const pw.TextStyle(fontSize: 8.5),
                 headerPadding:
                     const pw.EdgeInsets.symmetric(vertical: 4, horizontal: 5),
                 cellPadding:

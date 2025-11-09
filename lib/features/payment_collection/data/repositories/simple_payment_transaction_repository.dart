@@ -2,6 +2,7 @@
 // lib/features/payment_collection/data/repositories/simple_payment_transaction_repository.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../domain/entities/payment_transaction.dart';
 import '../../domain/entities/payment_enums.dart';
 import '../../domain/repositories/payment_transaction_repository.dart';
@@ -11,13 +12,50 @@ import 'package:tamgaci/core/utils/logger.dart';
 class SimplePaymentTransactionRepository
     implements PaymentTransactionRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? _cachedTenantId;
 
   String _getCollectionPath(String tenantId) =>
       'tenants/$tenantId/payment_transactions';
 
   Future<String> _tenantId() async {
-    // Basit tenant ID - gerçek implementasyonda auth'dan gelecek
-    return 'default_tenant';
+    if (_cachedTenantId != null) {
+      return _cachedTenantId!;
+    }
+
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseException(
+        plugin: 'SimplePaymentTransactionRepository',
+        code: 'unauthenticated',
+        message: 'Kullanıcı oturumu yok. TenantId alınamadı.',
+      );
+    }
+
+    final userDoc =
+        await _firestore.collection('users').doc(user.uid).get(const GetOptions(
+              source: Source.serverAndCache,
+            ));
+
+    if (!userDoc.exists) {
+      throw FirebaseException(
+        plugin: 'SimplePaymentTransactionRepository',
+        code: 'user-doc-missing',
+        message: 'Kullanıcı dokümanı bulunamadı. TenantId alınamadı.',
+      );
+    }
+
+    final tenantId = userDoc.data()?['tenantId'] as String?;
+    if (tenantId == null || tenantId.isEmpty) {
+      throw FirebaseException(
+        plugin: 'SimplePaymentTransactionRepository',
+        code: 'tenant-missing',
+        message: 'Kullanıcı dokümanında tenantId alanı bulunamadı.',
+      );
+    }
+
+    _cachedTenantId = tenantId;
+    return tenantId;
   }
 
   @override
@@ -918,8 +956,16 @@ class SimplePaymentTransactionRepository
       }
 
       return transactions;
+    } on FirebaseException catch (e) {
+      if (e.code == 'permission-denied') {
+        AppLogger.warning(
+            'Permission denied while fetching transactions for accountId: $accountId');
+        return [];
+      }
+      AppLogger.error('Firebase error getting filtered transactions', e);
+      rethrow;
     } catch (e) {
-      AppLogger.error('Error getting filtered transactions', e);
+      AppLogger.error('Unexpected error getting filtered transactions', e);
       rethrow;
     }
   }

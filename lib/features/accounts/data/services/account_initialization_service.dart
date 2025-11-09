@@ -46,7 +46,9 @@ class AccountInitializationService {
       AppLogger.info('Mevcut hesap sayısı: ${existingAccounts.docs.length}');
 
       if (existingAccounts.docs.isNotEmpty) {
-        AppLogger.info('Varsayılan hesaplar zaten mevcut');
+        AppLogger.info('Varsayılan hesaplar zaten mevcut, isDefault alanı güncelleniyor...');
+        // Mevcut varsayılan hesapların isDefault alanını güncelle
+        await _updateDefaultAccountsFlag(tenantId);
         return;
       }
 
@@ -56,6 +58,59 @@ class AccountInitializationService {
       AppLogger.info('Varsayılan hesaplar başarıyla oluşturuldu');
     } catch (e) {
       AppLogger.error('Varsayılan hesaplar oluşturulurken hata', e);
+    }
+  }
+
+  /// Mevcut varsayılan hesapların isDefault alanını güncelle
+  Future<void> _updateDefaultAccountsFlag(String tenantId) async {
+    try {
+      // Varsayılan hesap isimleri listesi
+      final defaultAccountNames = [
+        'Nakit Kasa',
+        'Kredi Kartı',
+        'Çek Hesabı',
+        'Senet Hesabı',
+        'POS Hesabı',
+        'USD Kasa',
+        'EUR Kasa',
+      ];
+
+      // Tüm hesapları al
+      final accountsSnapshot = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('accounts')
+          .get();
+
+      final batch = _firestore.batch();
+      int updatedCount = 0;
+
+      for (final doc in accountsSnapshot.docs) {
+        final data = doc.data();
+        final accountName = data['name'] as String? ?? '';
+
+        // Eğer hesap varsayılan hesap isimlerinden biriyse ve isDefault false ise güncelle
+        if (defaultAccountNames.contains(accountName)) {
+          final currentIsDefault = data['isDefault'] as bool? ?? false;
+          if (!currentIsDefault) {
+            batch.update(doc.reference, {
+              'isDefault': true,
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+            updatedCount++;
+            AppLogger.info('Hesap güncellendi: $accountName (isDefault: true)');
+          }
+        }
+      }
+
+      if (updatedCount > 0) {
+        await batch.commit();
+        AppLogger.info('$updatedCount varsayılan hesap güncellendi');
+      } else {
+        AppLogger.info('Güncellenecek varsayılan hesap bulunamadı');
+      }
+    } catch (e) {
+      AppLogger.error('Varsayılan hesaplar güncellenirken hata', e);
     }
   }
 
@@ -237,32 +292,6 @@ class AccountInitializationService {
         isActive: true,
         isDefault: true, // Varsayılan hesap
         description: 'EUR nakit kasa hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-
-      // GBP Kasa
-      Account(
-        id: '',
-        name: 'GBP Kasa',
-        accountNumber: 'GBP-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'GBP Kasa',
-        branchName: '',
-        currency: 'GBP',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.cash,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'GBP nakit kasa hesabı',
         notes: 'Otomatik oluşturulan varsayılan hesap',
         tenantId: tenantId,
         createdBy: userId,

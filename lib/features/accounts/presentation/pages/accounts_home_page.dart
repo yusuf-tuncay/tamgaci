@@ -109,24 +109,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
     );
   }
 
-  /// Türkçe format ile para birimi formatla
-  String _formatCurrency(double amount) {
-    final formatter = NumberFormat.currency(
-      locale: 'tr_TR',
-      symbol: '₺',
-      decimalDigits: 2,
-    );
-    return formatter.format(amount);
-  }
-
   Widget _buildWelcomeCard(List<Account> accounts) {
-    final totalAccounts = accounts.length;
-    final activeAccounts =
-        accounts.where((a) => a.status == AccountStatus.active).length;
-    final totalBalance = accounts.fold<double>(0, (sum, a) => sum + a.balance);
-    final totalCredit =
-        accounts.fold<double>(0, (sum, a) => sum + a.availableBalance);
-
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -187,41 +170,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                   ],
                 ),
               ),
-              // Özet istatistikler - sadece masaüstünde göster
-              if (MediaQuery.of(context).size.width > 768)
-                Row(
-                  children: [
-                    _buildHeaderStatCard('Toplam', totalAccounts.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Aktif', activeAccounts.toString()),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard(
-                        'Bakiye', _formatCurrency(totalBalance)),
-                    const SizedBox(width: 8),
-                    _buildHeaderStatCard('Kredi', _formatCurrency(totalCredit)),
-                  ],
-                ),
             ],
           ),
-          // Mobil için istatistikler
-          if (MediaQuery.of(context).size.width <= 768) ...[
-            const SizedBox(height: 16),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildHeaderStatCard('Toplam', totalAccounts.toString()),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Aktif', activeAccounts.toString()),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard(
-                      'Bakiye', _formatCurrency(totalBalance)),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Kredi', _formatCurrency(totalCredit)),
-                ],
-              ),
-            ),
-          ],
           const SizedBox(height: 8),
           Container(
             height: 1,
@@ -234,37 +184,6 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             style: GoogleFonts.poppins(
               fontSize: 13,
               color: Colors.white.withValues(alpha: 0.9),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Header içindeki istatistik kartı - banner timer gibi
-  Widget _buildHeaderStatCard(String title, String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.8),
             ),
           ),
         ],

@@ -185,6 +185,66 @@ class Account extends Equatable {
         createdBy,
         updatedBy,
       ];
+
+  /// Çek hesabı mı?
+  bool get isCheckAccount {
+    final normalized = name.toLowerCase();
+    return type.name.toLowerCase() == 'check' ||
+        normalized.contains('çek') ||
+        normalized.contains('check');
+  }
+
+  /// Senet hesabı mı?
+  bool get isPromissoryAccount {
+    final normalized = name.toLowerCase();
+    return type.name.toLowerCase() == 'promissorynote' ||
+        normalized.contains('senet') ||
+        normalized.contains('promissory');
+  }
+
+  /// Portföy hesabı mı? (Çek veya Senet)
+  bool get isPortfolioAccount => isCheckAccount || isPromissoryAccount;
+
+  /// Sistem tarafından oluşturulan varsayılan hesap mı?
+  bool get isSystemDefaultAccount {
+    final normalizedName = name.trim().toLowerCase();
+    final normalizedAccountNumber = accountNumber.trim().toUpperCase();
+    return isDefault ||
+        _defaultAccountNames.contains(normalizedName) ||
+        _defaultAccountNumbers.contains(normalizedAccountNumber);
+  }
+
+  static const Set<String> _defaultAccountNames = {
+    'nakit kasa',
+    'kredi kartı',
+    'çek hesabı',
+    'senet hesabı',
+    'pos hesabı',
+    'usd kasa',
+    'eur kasa',
+  };
+
+  static const Set<String> _defaultAccountNumbers = {
+    'CASH-001',
+    'CC-001',
+    'CHECK-001',
+    'PROM-001',
+    'POS-001',
+    'USD-001',
+    'EUR-001',
+  };
+
+  static const double _balanceTolerance = 0.01;
+
+  /// Hesapta bakiye var mı? (Pozitif veya negatif)
+  bool get hasBalance {
+    return balance.abs() > _balanceTolerance ||
+        availableBalance.abs() > _balanceTolerance ||
+        blockedAmount.abs() > _balanceTolerance;
+  }
+
+  /// Hesap silinebilir mi?
+  bool get canBeDeleted => !isSystemDefaultAccount && !hasBalance;
 }
 
 /// Hesap türleri

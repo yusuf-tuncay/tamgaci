@@ -70,7 +70,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            // Go router kullanıldığı için context.go ile login sayfasına dön
+            context.go('/login');
+          },
           icon: const Icon(Icons.arrow_back),
         ),
       ),

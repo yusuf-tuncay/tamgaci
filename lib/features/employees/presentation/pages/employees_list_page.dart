@@ -2209,8 +2209,8 @@ class _EmployeesHeader extends StatelessWidget {
 
                 if (balanceSnapshot.hasData) {
                   // Tüm aktif personellerin bakiyelerini topla
-                  totalBalance = balanceSnapshot.data!.values
-                      .fold(0.0, (sum, balance) => sum + balance);
+                  totalBalance = balanceSnapshot.data!.values.fold(
+                      0.0, (runningTotal, balance) => runningTotal + balance);
 
                   // İlk aktif personelin para birimini al (varsayılan olarak)
                   if (activeEmployees.isNotEmpty) {

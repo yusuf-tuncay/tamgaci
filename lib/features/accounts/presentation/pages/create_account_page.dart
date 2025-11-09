@@ -707,7 +707,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
             ),
             // Sadece düzenleme modunda ve varsayılan olmayan hesaplar için silme butonu
             if (widget.existingAccount != null &&
-                !widget.existingAccount!.isDefault)
+                widget.existingAccount!.canBeDeleted)
               ListTile(
                 leading: const Icon(Icons.delete, color: Colors.red),
                 title: Text(
@@ -717,6 +717,30 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                 onTap: () {
                   context.pop();
                   _showDeleteConfirmation();
+                },
+              ),
+            if (widget.existingAccount != null &&
+                !widget.existingAccount!.isSystemDefaultAccount &&
+                !widget.existingAccount!.canBeDeleted)
+              ListTile(
+                leading:
+                    const Icon(Icons.delete_outline, color: Colors.grey),
+                title: Text(
+                  'Bakiyesi olan hesaplar silinemez',
+                  style: GoogleFonts.poppins(color: Colors.grey[600]),
+                ),
+                subtitle: Text(
+                  'Silmeden önce bakiye, kullanılabilir ve bloke tutarlarını sıfırlayın.',
+                  style: GoogleFonts.poppins(fontSize: 12),
+                ),
+                onTap: () {
+                  context.pop();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Bu hesabı silmek için önce tüm bakiyeleri sıfırlayın.'),
+                    ),
+                  );
                 },
               ),
             ListTile(

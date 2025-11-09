@@ -1,7 +1,30 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../payment_collection/domain/entities/payment_enums.dart';
+import '../../../payment_collection/domain/entities/payment_transaction.dart';
+import '../../../payment_collection/presentation/providers/payment_collection_providers.dart';
 import '../../data/repositories/firebase_account_transaction_repository.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../../domain/repositories/account_transaction_repository.dart';
+
+const _portfolioKeySeparator = '::';
+
+String buildAccountPortfolioKey({
+  required String accountId,
+  required String tenantId,
+}) =>
+    '$tenantId$_portfolioKeySeparator$accountId';
+
+({String accountId, String tenantId}) _parseAccountPortfolioKey(String key) {
+  final separatorIndex = key.indexOf(_portfolioKeySeparator);
+  if (separatorIndex == -1) {
+    return (accountId: key, tenantId: '');
+  }
+  final tenantId = key.substring(0, separatorIndex);
+  final accountId =
+      key.substring(separatorIndex + _portfolioKeySeparator.length);
+  return (accountId: accountId, tenantId: tenantId);
+}
 
 /// Account Transaction Repository Provider
 final accountTransactionRepositoryProvider =
@@ -32,6 +55,44 @@ final transactionsByAccountIdProvider =
         (ref, accountId) async {
   final repository = ref.read(accountTransactionRepositoryProvider);
   return await repository.getTransactionsByAccountId(accountId);
+});
+
+/// Çek portföy sağlayıcısı
+final checkPortfolioProvider =
+    FutureProvider.family<List<PaymentTransaction>, String>((ref, key) async {
+  final parsedKey = _parseAccountPortfolioKey(key);
+  final repository = ref.read(paymentTransactionRepositoryProvider);
+  try {
+    return await repository.getFilteredTransactions(
+      accountId: parsedKey.accountId,
+      tenantId: parsedKey.tenantId.isNotEmpty ? parsedKey.tenantId : null,
+      type: PaymentTransactionType.check,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code == 'permission-denied') {
+      return [];
+    }
+    rethrow;
+  }
+});
+
+/// Senet portföy sağlayıcısı
+final promissoryPortfolioProvider =
+    FutureProvider.family<List<PaymentTransaction>, String>((ref, key) async {
+  final parsedKey = _parseAccountPortfolioKey(key);
+  final repository = ref.read(paymentTransactionRepositoryProvider);
+  try {
+    return await repository.getFilteredTransactions(
+      accountId: parsedKey.accountId,
+      tenantId: parsedKey.tenantId.isNotEmpty ? parsedKey.tenantId : null,
+      type: PaymentTransactionType.promissoryNote,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code == 'permission-denied') {
+      return [];
+    }
+    rethrow;
+  }
 });
 
 /// Transactions by Type Provider

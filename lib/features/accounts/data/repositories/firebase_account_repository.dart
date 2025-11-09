@@ -201,6 +201,27 @@ class FirebaseAccountRepository implements AccountRepository {
         throw Exception('Varsayılan hesaplar silinemez');
       }
 
+      double readNumeric(String key) {
+        final value = accountData[key];
+        if (value is num) return value.toDouble();
+        if (value is String) return double.tryParse(value) ?? 0.0;
+        return 0.0;
+      }
+
+      const balanceTolerance = 0.01;
+      final balance = readNumeric('balance');
+      final availableBalance = readNumeric('availableBalance');
+      final blockedAmount = readNumeric('blockedAmount');
+
+      final hasBalance = balance.abs() > balanceTolerance ||
+          availableBalance.abs() > balanceTolerance ||
+          blockedAmount.abs() > balanceTolerance;
+
+      if (hasBalance) {
+        throw Exception(
+            'Bakiyesi olan hesaplar silinemez. Lütfen bakiyeleri sıfırlayın.');
+      }
+
       await _firestore
           .collection('tenants')
           .doc(tenantId)

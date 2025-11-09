@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../payment_collection/domain/entities/payment_enums.dart';
+import '../../../payment_collection/domain/entities/payment_transaction.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_transaction_providers.dart';
@@ -32,6 +34,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _isDetailsExpanded = false;
 
   @override
   void initState() {
@@ -87,6 +90,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               'AccountDetailPage - accountNotifier account: ${updatedAccount.name}');
           debugPrint(
               'AccountDetailPage - accountNotifier balance: ${updatedAccount.balance}');
+          debugPrint(
+              'AccountDetailPage - updatedAccount.isDefault: ${updatedAccount.isDefault}');
 
           return transactionsAsync.when(
             data: (transactions) {
@@ -95,6 +100,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                   _calculateBalanceFromTransactions(transactions);
               final accountWithCalculatedBalance =
                   updatedAccount.copyWith(balance: calculatedBalance);
+              final account = accountWithCalculatedBalance;
+
+              debugPrint(
+                  'AccountDetailPage - account.isDefault: ${account.isDefault}');
 
               debugPrint(
                   'AccountDetailPage - calculated balance: $calculatedBalance');
@@ -103,11 +112,16 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
               return CustomScrollView(
                 slivers: [
-                  _buildAppBar(accountWithCalculatedBalance),
-                  _buildAccountCard(accountWithCalculatedBalance),
-                  _buildDetailsSection(accountWithCalculatedBalance),
-                  _buildTransactionsSection(accountWithCalculatedBalance),
-                  _buildActionsSection(accountWithCalculatedBalance),
+                  _buildAppBar(account),
+                  _buildAccountCard(account),
+                  _buildDetailsSection(account),
+                  if (account.isCheckAccount)
+                    _buildCheckPortfolioSection(account)
+                  else if (account.isPromissoryAccount)
+                    _buildPromissoryPortfolioSection(account)
+                  else
+                    _buildTransactionsSection(account),
+                  _buildActionsSection(account),
                 ],
               );
             },
@@ -283,8 +297,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             child: SlideTransition(
               position: _slideAnimation,
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -299,30 +312,75 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Hesap Detayları',
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey[800],
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _isDetailsExpanded = !_isDetailsExpanded;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.info_outline,
+                              color: Colors.blue[600],
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Hesap Detayları',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              _isDetailsExpanded
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                              color: Colors.grey[600],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildDetailRow('Hesap Numarası', account.accountNumber),
-                    _buildDetailRow('IBAN', account.iban),
-                    _buildDetailRow('SWIFT Kodu', account.swiftCode),
-                    _buildDetailRow('Şube', account.branchName),
-                    _buildDetailRow('Para Birimi', account.currency),
-                    _buildDetailRow('Hesap Türü', account.type.displayName),
-                    _buildDetailRow('Durum', account.status.displayName),
-                    if (account.description != null)
-                      _buildDetailRow('Açıklama', account.description!),
-                    if (account.notes != null)
-                      _buildDetailRow('Notlar', account.notes!),
-                    _buildDetailRow(
-                        'Oluşturulma', _formatDate(account.createdAt)),
-                    _buildDetailRow(
-                        'Son Güncelleme', _formatDate(account.updatedAt)),
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 300),
+                      crossFadeState: _isDetailsExpanded
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                      firstChild: const SizedBox.shrink(),
+                      secondChild: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildDetailRow(
+                                'Hesap Numarası', account.accountNumber),
+                            _buildDetailRow('IBAN', account.iban),
+                            _buildDetailRow('SWIFT Kodu', account.swiftCode),
+                            _buildDetailRow('Şube', account.branchName),
+                            _buildDetailRow('Para Birimi', account.currency),
+                            _buildDetailRow(
+                                'Hesap Türü', account.type.displayName),
+                            _buildDetailRow(
+                                'Durum', account.status.displayName),
+                            if (account.description != null)
+                              _buildDetailRow('Açıklama', account.description!),
+                            if (account.notes != null)
+                              _buildDetailRow('Notlar', account.notes!),
+                            _buildDetailRow(
+                                'Oluşturulma', _formatDate(account.createdAt)),
+                            _buildDetailRow('Son Güncelleme',
+                                _formatDate(account.updatedAt)),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -364,6 +422,509 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         ],
       ),
     );
+  }
+
+  Widget _buildCheckPortfolioSection(Account account) {
+    final accentColor = Colors.orange[600] ?? Colors.orange;
+    final portfolioAsync = ref.watch(
+      checkPortfolioProvider(
+        buildAccountPortfolioKey(
+          accountId: account.id,
+          tenantId: account.tenantId,
+        ),
+      ),
+    );
+    return _buildPortfolioSection(
+      title: 'Çek Portföyü',
+      asyncValue: portfolioAsync,
+      accentColor: accentColor,
+      icon: Icons.receipt_long_outlined,
+      emptyMessage: 'Bu hesapta kayıtlı çek bulunmuyor.',
+      infoText: 'Çek ekleme ve yönetimi Tahsilat modülünden yapılır.',
+    );
+  }
+
+  Widget _buildPromissoryPortfolioSection(Account account) {
+    final accentColor = Colors.blueGrey[600] ?? Colors.blueGrey;
+    final portfolioAsync = ref.watch(
+      promissoryPortfolioProvider(
+        buildAccountPortfolioKey(
+          accountId: account.id,
+          tenantId: account.tenantId,
+        ),
+      ),
+    );
+    return _buildPortfolioSection(
+      title: 'Senet Portföyü',
+      asyncValue: portfolioAsync,
+      accentColor: accentColor,
+      icon: Icons.description_outlined,
+      emptyMessage: 'Bu hesapta kayıtlı senet bulunmuyor.',
+      infoText: 'Senet ekleme ve yönetimi Tahsilat modülünden yapılır.',
+    );
+  }
+
+  Widget _buildPortfolioSection({
+    required String title,
+    required AsyncValue<List<PaymentTransaction>> asyncValue,
+    required Color accentColor,
+    required IconData icon,
+    required String emptyMessage,
+    String? infoText,
+  }) {
+    return SliverToBoxAdapter(
+      child: AnimatedBuilder(
+        animation: _fadeAnimation,
+        builder: (context, child) {
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Container(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: asyncValue.when(
+                  data: (transactions) {
+                    if (transactions.isEmpty) {
+                      return _buildPortfolioEmptyState(
+                        icon: icon,
+                        message: emptyMessage,
+                        accentColor: accentColor,
+                      );
+                    }
+                    return _buildPortfolioContent(
+                      title: title,
+                      transactions: transactions,
+                      accentColor: accentColor,
+                      icon: icon,
+                      infoText: infoText,
+                    );
+                  },
+                  loading: () => _buildPortfolioLoading(),
+                  error: (error, stack) =>
+                      _buildPortfolioError(title, error.toString()),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPortfolioContent({
+    required String title,
+    required List<PaymentTransaction> transactions,
+    required Color accentColor,
+    required IconData icon,
+    String? infoText,
+  }) {
+    final currency = transactions.first.currency;
+    final totalAmount = transactions.fold<double>(
+        0, (runningTotal, transaction) => runningTotal + transaction.amount);
+    final pendingCount = transactions
+        .where((transaction) =>
+            transaction.status == PaymentTransactionStatus.pending ||
+            transaction.status == PaymentTransactionStatus.processing ||
+            transaction.status == PaymentTransactionStatus.onHold)
+        .length;
+    final completedCount = transactions
+        .where((transaction) =>
+            transaction.status == PaymentTransactionStatus.completed ||
+            transaction.status == PaymentTransactionStatus.approved)
+        .length;
+    final sortedTransactions = transactions.toList()
+      ..sort((a, b) {
+        final aDate = a.dueDate ?? a.transactionDate;
+        final bDate = b.dueDate ?? b.transactionDate;
+        return aDate.compareTo(bDate);
+      });
+
+    final pendingColor = Colors.orange[600] ?? Colors.orange;
+    final completedColor = Colors.green[600] ?? Colors.green;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: accentColor),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey[800],
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (infoText != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            infoText,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _buildPortfolioSummaryChip(
+              label: 'Toplam Tutar',
+              value:
+                  '${NumberFormat('#,##0.00', 'tr_TR').format(totalAmount)} $currency',
+              accentColor: accentColor,
+            ),
+            _buildPortfolioSummaryChip(
+              label: 'Bekleyen',
+              value: pendingCount.toString(),
+              accentColor: pendingColor,
+            ),
+            _buildPortfolioSummaryChip(
+              label: 'Tamamlanan',
+              value: completedCount.toString(),
+              accentColor: completedColor,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Column(
+          children: sortedTransactions
+              .map((transaction) =>
+                  _buildPortfolioItem(transaction, accentColor))
+              .toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPortfolioSummaryChip({
+    required String label,
+    required String value,
+    required Color accentColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: accentColor.withValues(alpha: 0.8),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPortfolioItem(
+      PaymentTransaction transaction, Color accentColor) {
+    final amountText =
+        '${NumberFormat('#,##0.00', 'tr_TR').format(transaction.amount)} ${transaction.currency}';
+    final transactionDate = _formatDate(transaction.transactionDate);
+    final dueDateText = transaction.dueDate != null
+        ? _formatDate(transaction.dueDate!)
+        : 'Belirtilmemiş';
+    final statusColor = _mapStatusColor(transaction.status);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                transaction.transactionNumber,
+                style: GoogleFonts.poppins(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  transaction.statusDisplayName,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.payments_outlined, color: accentColor, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                amountText,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: accentColor,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _buildPortfolioMetaChip(
+                icon: Icons.today_outlined,
+                label: 'İşlem',
+                value: transactionDate,
+              ),
+              _buildPortfolioMetaChip(
+                icon: Icons.event_outlined,
+                label: 'Vade',
+                value: dueDateText,
+              ),
+              _buildPortfolioMetaChip(
+                icon: Icons.sync_alt,
+                label: 'Yön',
+                value: transaction.directionDisplayName,
+              ),
+            ],
+          ),
+          if (transaction.description != null &&
+              transaction.description!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Text(
+                transaction.description!,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPortfolioMetaChip({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: Colors.grey[600]),
+          const SizedBox(width: 6),
+          Text(
+            '$label:',
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: GoogleFonts.poppins(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPortfolioEmptyState({
+    required IconData icon,
+    required String message,
+    required Color accentColor,
+  }) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 48, color: accentColor.withValues(alpha: 0.4)),
+        const SizedBox(height: 16),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.grey[600],
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPortfolioLoading() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: List.generate(
+        3,
+        (index) => Container(
+          margin: EdgeInsets.only(bottom: index == 2 ? 0 : 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      height: 12,
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPortfolioError(String title, String message) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$title yüklenirken bir hata oluştu',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.red[600],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          message,
+          style: GoogleFonts.poppins(
+            fontSize: 12,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _mapStatusColor(PaymentTransactionStatus status) {
+    switch (status) {
+      case PaymentTransactionStatus.completed:
+      case PaymentTransactionStatus.approved:
+        return Colors.green[600] ?? Colors.green;
+      case PaymentTransactionStatus.pending:
+      case PaymentTransactionStatus.processing:
+      case PaymentTransactionStatus.onHold:
+        return Colors.orange[600] ?? Colors.orange;
+      case PaymentTransactionStatus.cancelled:
+      case PaymentTransactionStatus.rejected:
+      case PaymentTransactionStatus.failed:
+        return Colors.red[600] ?? Colors.red;
+      default:
+        return Colors.blueGrey[600] ?? Colors.blueGrey;
+    }
   }
 
   Widget _buildTransactionsSection(Account account) {
@@ -516,27 +1077,60 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       Colors.green[600]!,
                       () => _updateBalance(account),
                     ),
-                    const SizedBox(height: 12),
-                    _buildActionButton(
-                      'Para Transferi',
-                      Icons.swap_horiz,
-                      Colors.orange[600]!,
-                      _transferMoney,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildActionButton(
-                      'Masraf Ekle',
-                      Icons.add_circle_outline,
-                      Colors.purple[600]!,
-                      () => _addExpense(account),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildActionButton(
-                      'Hesap Sil',
-                      Icons.delete,
-                      Colors.red[600]!,
-                      _deleteAccount,
-                    ),
+                    if (!account.isPortfolioAccount) ...[
+                      const SizedBox(height: 12),
+                      _buildActionButton(
+                        'Para Transferi',
+                        Icons.swap_horiz,
+                        Colors.orange[600]!,
+                        _transferMoney,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildActionButton(
+                        'Masraf Ekle',
+                        Icons.add_circle_outline,
+                        Colors.purple[600]!,
+                        () => _addExpense(account),
+                      ),
+                    ],
+                    if (!account.isSystemDefaultAccount) ...[
+                      const SizedBox(height: 12),
+                      _buildActionButton(
+                        'Hesap Sil',
+                        Icons.delete,
+                        account.canBeDeleted
+                            ? Colors.red[600]!
+                            : Colors.grey[400]!,
+                        account.canBeDeleted
+                            ? () => _deleteAccount(account)
+                            : null,
+                        enabled: account.canBeDeleted,
+                      ),
+                      if (!account.canBeDeleted)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                size: 16,
+                                color: Colors.red[600],
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Bu hesapta bakiye veya bloke tutarı bulunduğu için silinemez.',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: Colors.red[600],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ],
                 ),
               ),
@@ -551,15 +1145,19 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     String label,
     IconData icon,
     Color color,
-    VoidCallback onTap,
-  ) {
+    VoidCallback? onTap, {
+    bool enabled = true,
+  }) {
+    final accentColor = enabled ? color : Colors.grey[400]!;
+    final textColor = enabled ? Colors.grey[800] : Colors.grey[500];
+    final arrowColor = enabled ? Colors.grey[400] : Colors.grey[300];
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       elevation: 2,
       shadowColor: Colors.black.withValues(alpha: 0.1),
       child: InkWell(
-        onTap: onTap,
+        onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -569,10 +1167,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: accentColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: accentColor, size: 20),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -581,14 +1179,14 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[800],
+                    color: textColor,
                   ),
                 ),
               ),
               Icon(
                 Icons.arrow_forward_ios,
                 size: 16,
-                color: Colors.grey[400],
+                color: arrowColor,
               ),
             ],
           ),
@@ -719,7 +1317,17 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  void _deleteAccount() {
+  void _deleteAccount(Account account) {
+    if (!account.canBeDeleted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Bu hesabı silmeden önce bakiyesini sıfırlamanız gerekir.'),
+        ),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -734,7 +1342,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           TextButton(
             onPressed: () async {
               context.pop(); // Dialog'u kapat
-              await _performDeleteAccount();
+              await _performDeleteAccount(account);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Sil'),
@@ -744,7 +1352,17 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     );
   }
 
-  Future<void> _performDeleteAccount() async {
+  Future<void> _performDeleteAccount(Account account) async {
+    if (!account.canBeDeleted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Bu hesabı silmeden önce bakiyesini sıfırlamanız gerekir.'),
+        ),
+      );
+      return;
+    }
+
     try {
       // Loading göster
       showDialog(
@@ -755,8 +1373,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         ),
       );
 
-      // Hesap silme işlemi burada yapılacak
-      // TODO: Account service ile silme işlemi implement edilecek
+      await ref
+          .read(accountNotifierProvider.notifier)
+          .deleteAccount(account.id);
 
       // Loading'i kapat
       if (mounted) context.pop();
