@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/constants.dart';
+import '../overlays/calculator_overlay.dart';
 
 /// Özel AppBar widget'ı
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -144,48 +145,57 @@ class _CustomAppBarState extends State<CustomAppBar>
         final glowIntensity = _glowAnimation.value;
         final isGlowing = glowIntensity > 0.8; // Son %20'de parlama
 
-        return Transform.scale(
-          scale: _pulseAnimation.value,
-          child: Text(
-            'TAMGACI',
-            style: GoogleFonts.poppins(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: isDark
-                  ? const Color(0xFF4F46E5) // Indigo-600 for dark mode
-                  : const Color(0xFF3B82F6), // Blue-500 for light mode
-              letterSpacing: 1.5,
-              shadows: [
-                // Normal gölge
-                Shadow(
-                  color: (isDark
-                          ? const Color(0xFF4F46E5)
-                          : const Color(0xFF3B82F6))
-                      .withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+        return GestureDetector(
+          onTap: () {
+            // Hesap makinesini aç
+            CalculatorOverlay.instance.show(context);
+          },
+          child: MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: Transform.scale(
+              scale: _pulseAnimation.value,
+              child: Text(
+                'TAMGACI',
+                style: GoogleFonts.poppins(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: isDark
+                      ? const Color(0xFF4F46E5) // Indigo-600 for dark mode
+                      : const Color(0xFF3B82F6), // Blue-500 for light mode
+                  letterSpacing: 1.5,
+                  shadows: [
+                    // Normal gölge
+                    Shadow(
+                      color: (isDark
+                              ? const Color(0xFF4F46E5)
+                              : const Color(0xFF3B82F6))
+                          .withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                    // Parlama efekti gölgesi
+                    if (isGlowing)
+                      Shadow(
+                        color: (isDark
+                                ? const Color(0xFF4F46E5)
+                                : const Color(0xFF3B82F6))
+                            .withValues(alpha: 0.8),
+                        blurRadius: 20 + (glowIntensity * 15),
+                        offset: const Offset(0, 0),
+                      ),
+                    // Parlama efekti - dış glow
+                    if (isGlowing)
+                      Shadow(
+                        color: (isDark
+                                ? const Color(0xFF4F46E5)
+                                : const Color(0xFF3B82F6))
+                            .withValues(alpha: 0.4),
+                        blurRadius: 30 + (glowIntensity * 20),
+                        offset: const Offset(0, 0),
+                      ),
+                  ],
                 ),
-                // Parlama efekti gölgesi
-                if (isGlowing)
-                  Shadow(
-                    color: (isDark
-                            ? const Color(0xFF4F46E5)
-                            : const Color(0xFF3B82F6))
-                        .withValues(alpha: 0.8),
-                    blurRadius: 20 + (glowIntensity * 15),
-                    offset: const Offset(0, 0),
-                  ),
-                // Parlama efekti - dış glow
-                if (isGlowing)
-                  Shadow(
-                    color: (isDark
-                            ? const Color(0xFF4F46E5)
-                            : const Color(0xFF3B82F6))
-                        .withValues(alpha: 0.4),
-                    blurRadius: 30 + (glowIntensity * 20),
-                    offset: const Offset(0, 0),
-                  ),
-              ],
+              ),
             ),
           ),
         );

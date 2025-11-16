@@ -455,7 +455,9 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Satış Yap',
               color: Colors.green,
               onTap: () {
-                context.go('/sales/create');
+                context.push(
+                  '/sales/create?customerId=${customer.id}&customerName=${Uri.encodeComponent(customer.name)}',
+                );
               },
             ),
           ),

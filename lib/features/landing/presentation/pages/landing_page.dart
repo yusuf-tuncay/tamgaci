@@ -761,18 +761,28 @@ class _LandingPageState extends State<LandingPage>
 
   /// Business features section
   Widget _buildBusinessFeatures() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding:
           EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 80 : 40),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFF8FAFC),
-            Color(0xFFE2E8F0),
-          ],
-        ),
+      decoration: BoxDecoration(
+        gradient: isDark
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.grey[900]!,
+                  Colors.grey[850]!,
+                ],
+              )
+            : const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFF8FAFC),
+                  Color(0xFFE2E8F0),
+                ],
+              ),
       ),
       child: Column(
         children: [
@@ -781,7 +791,7 @@ class _LandingPageState extends State<LandingPage>
             style: GoogleFonts.poppins(
               fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: isDark ? Colors.white : const Color(0xFF1E3A8A),
             ),
             textAlign: TextAlign.center,
           ),
@@ -860,16 +870,20 @@ class _LandingPageState extends State<LandingPage>
   }) {
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       width: isMobile ? double.infinity : null,
       padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 32 : 40)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: isDark
+            ? Border.all(color: Colors.white12, width: 1)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -901,7 +915,7 @@ class _LandingPageState extends State<LandingPage>
             style: GoogleFonts.poppins(
               fontSize: isMobile ? 20 : (isTablet ? 22 : 24),
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E3A8A),
+              color: isDark ? Colors.white : const Color(0xFF1E3A8A),
             ),
             textAlign: TextAlign.center,
           ),
@@ -910,7 +924,7 @@ class _LandingPageState extends State<LandingPage>
             description,
             style: GoogleFonts.poppins(
               fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
-              color: const Color(0xFF64748B),
+              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
               height: 1.6,
             ),
             textAlign: TextAlign.center,
@@ -1116,12 +1130,13 @@ class _LandingPageState extends State<LandingPage>
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
     final isDesktop = _isDesktopSize(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       key: _aboutSectionKey,
       padding: EdgeInsets.all(isMobile ? 40 : (isTablet ? 50 : 80)),
-      decoration: const BoxDecoration(
-        color: Color(0xFFF8FAFC),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.grey[900] : const Color(0xFFF8FAFC),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1135,7 +1150,7 @@ class _LandingPageState extends State<LandingPage>
                   style: GoogleFonts.poppins(
                     fontSize: isDesktop ? 54 : 40,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF1E3A8A),
+                    color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -1182,7 +1197,7 @@ class _LandingPageState extends State<LandingPage>
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
                               return Container(
-                                color: const Color(0xFFE2E8F0),
+                                color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
                                 child: Center(
                                   child: CircularProgressIndicator(
                                     value: loadingProgress.expectedTotalBytes !=
@@ -1198,12 +1213,12 @@ class _LandingPageState extends State<LandingPage>
                             },
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
-                                color: const Color(0xFFE2E8F0),
-                                child: const Center(
+                                color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
+                                child: Center(
                                   child: Icon(
                                     Icons.business_center,
                                     size: 100,
-                                    color: Color(0xFF3B82F6),
+                                    color: isDark ? Colors.grey[400] : const Color(0xFF3B82F6),
                                   ),
                                 ),
                               );
@@ -1224,7 +1239,7 @@ class _LandingPageState extends State<LandingPage>
                             style: GoogleFonts.poppins(
                               fontSize: isTablet ? 36 : 42,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E3A8A),
+                              color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                             ),
                           ),
                           const SizedBox(height: 24),
@@ -1234,7 +1249,7 @@ class _LandingPageState extends State<LandingPage>
                             'çözümler sunuyoruz.',
                             style: GoogleFonts.poppins(
                               fontSize: isTablet ? 16 : 18,
-                              color: const Color(0xFF64748B),
+                              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                               height: 1.8,
                             ),
                           ),
@@ -1245,7 +1260,7 @@ class _LandingPageState extends State<LandingPage>
                             've tutkunun bir ürünü olarak ortaya çıkmıştır.',
                             style: GoogleFonts.poppins(
                               fontSize: isTablet ? 16 : 18,
-                              color: const Color(0xFF64748B),
+                              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                               height: 1.8,
                             ),
                           ),
@@ -1276,7 +1291,7 @@ class _LandingPageState extends State<LandingPage>
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
-                              color: const Color(0xFFE2E8F0),
+                              color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
                               child: Center(
                                 child: CircularProgressIndicator(
                                   value: loadingProgress.expectedTotalBytes !=
@@ -1291,12 +1306,12 @@ class _LandingPageState extends State<LandingPage>
                           },
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: const Color(0xFFE2E8F0),
-                              child: const Center(
+                              color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
+                              child: Center(
                                 child: Icon(
                                   Icons.business_center,
                                   size: 80,
-                                  color: Color(0xFF3B82F6),
+                                  color: isDark ? Colors.grey[400] : const Color(0xFF3B82F6),
                                 ),
                               ),
                             );
@@ -1310,7 +1325,7 @@ class _LandingPageState extends State<LandingPage>
                       style: GoogleFonts.poppins(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E3A8A),
+                        color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -1321,7 +1336,7 @@ class _LandingPageState extends State<LandingPage>
                       'çözümler sunuyoruz.',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: const Color(0xFF64748B),
+                        color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                         height: 1.8,
                       ),
                       textAlign: TextAlign.center,
@@ -1332,7 +1347,7 @@ class _LandingPageState extends State<LandingPage>
                       'ihtiyaçlarına çözüm üretmek için sürekli kendini geliştirmektedir.',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: const Color(0xFF64748B),
+                        color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                         height: 1.8,
                       ),
                       textAlign: TextAlign.center,
@@ -1518,15 +1533,19 @@ class _LandingPageState extends State<LandingPage>
   }) {
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       padding: EdgeInsets.all(isMobile ? 30 : (isTablet ? 35 : 40)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(20),
+        border: isDark
+            ? Border.all(color: Colors.white12, width: 1)
+            : null,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -1559,7 +1578,7 @@ class _LandingPageState extends State<LandingPage>
             style: GoogleFonts.poppins(
               fontSize: isMobile ? 20 : (isTablet ? 22 : 24),
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: isDark ? Colors.white : const Color(0xFF1E3A8A),
             ),
           ),
           const SizedBox(height: 16),
@@ -1567,7 +1586,7 @@ class _LandingPageState extends State<LandingPage>
             description,
             style: GoogleFonts.poppins(
               fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
-              color: const Color(0xFF64748B),
+              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
               height: 1.7,
             ),
           ),
@@ -2540,11 +2559,13 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width <= 768;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
+      backgroundColor: isDark ? Colors.grey[850] : null,
       child: Container(
         width: isMobile ? double.infinity : 600,
         padding: EdgeInsets.all(isMobile ? 24 : 32),
@@ -2565,7 +2586,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                         style: GoogleFonts.poppins(
                           fontSize: isMobile ? 24 : 28,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E3A8A),
+                          color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -2574,7 +2595,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                     IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () => Navigator.of(context).pop(),
-                      color: const Color(0xFF64748B),
+                      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                       constraints: const BoxConstraints(
                         minWidth: 40,
                         minHeight: 40,
@@ -2591,7 +2612,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E3A8A),
+                    color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -2694,7 +2715,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                     '* E-posta veya telefon numarasından en az birisi gereklidir',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: const Color(0xFF64748B),
+                      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -2724,7 +2745,7 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                     '* Zorunlu alan',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: const Color(0xFF64748B),
+                      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
                       fontStyle: FontStyle.italic,
                     ),
                   ),

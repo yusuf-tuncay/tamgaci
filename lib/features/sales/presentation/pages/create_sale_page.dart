@@ -31,14 +31,19 @@ import 'package:tamgaci/features/invoices/presentation/pages/invoice_preview_pag
 import 'package:tamgaci/core/services/unified_invoice_converter.dart';
 import 'package:tamgaci/core/widgets/disposed_view_suppressor.dart';
 import 'package:tamgaci/core/errors/ultra_error_suppressor.dart';
+import 'package:tamgaci/shared/widgets/custom_app_bar.dart';
 
 /// Yeni satış oluşturma sayfası
 class CreateSalePage extends ConsumerStatefulWidget {
   final String? saleId; // Düzenleme için
+  final String? initialCustomerId; // Başlangıç müşteri ID'si
+  final String? initialCustomerName; // Başlangıç müşteri adı
 
   const CreateSalePage({
     super.key,
     this.saleId,
+    this.initialCustomerId,
+    this.initialCustomerName,
   });
 
   @override
@@ -148,10 +153,18 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         });
       });
     });
-    // Eğer route ile müşteri bilgisi geldiyse doldur
+    // Eğer widget parametreleri ile müşteri bilgisi geldiyse doldur
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.initialCustomerId != null) {
+        _customerIdController.text = widget.initialCustomerId!;
+        _loadCustomer(widget.initialCustomerId!);
+      }
+      if (widget.initialCustomerName != null) {
+        _customerNameController.text = widget.initialCustomerName!;
+      }
+      // Eski yöntem (ModalRoute arguments) - geriye dönük uyumluluk için
       final args = ModalRoute.of(context)?.settings.arguments;
-      if (args is Map) {
+      if (args is Map && widget.initialCustomerId == null) {
         final cid = args['customerId'] as String?;
         final cname = args['customerName'] as String?;
         if (cid != null) {
@@ -489,8 +502,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
 
     return UltraDisposedViewSuppressor(
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(isEditing ? 'Satış Düzenle' : 'Yeni Satış'),
+        appBar: CustomAppBar(
+          title: 'TAMGACI',
+          showBackButton: true,
+          onBackPressed: () => context.pop(),
           actions: [
             if (isEditing)
               IconButton(

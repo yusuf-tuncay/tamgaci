@@ -13,6 +13,7 @@ import '../providers/account_transaction_providers.dart';
 import '../providers/account_providers.dart';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 import 'package:tamgaci/core/theme/constants.dart';
+import '../../../../shared/overlays/calculator_overlay.dart';
 import 'create_account_page.dart';
 import 'account_transactions_page.dart';
 
@@ -162,13 +163,22 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       pinned: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       elevation: 1,
-      title: Text(
-        'TAMGACI',
-        style: GoogleFonts.poppins(
-          fontSize: 22,
-          fontWeight: FontWeight.w800,
-          color: TamgaciConstants.primaryColor,
-          letterSpacing: 1.5,
+      title: GestureDetector(
+        onTap: () {
+          // Hesap makinesini aç
+          CalculatorOverlay.instance.show(context);
+        },
+        child: MouseRegion(
+          cursor: SystemMouseCursors.click,
+          child: Text(
+            'TAMGACI',
+            style: GoogleFonts.poppins(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: TamgaciConstants.primaryColor,
+              letterSpacing: 1.5,
+            ),
+          ),
         ),
       ),
       centerTitle: true,

@@ -25,11 +25,18 @@ class SalesRoutes {
         GoRoute(
           path: '/sales/create',
           name: 'create-sale',
-          builder: (context, state) => const SubscriptionGuard(
-            allowTrial: true,
-            allowExpired: false,
-            child: CreateSalePage(),
-          ),
+          builder: (context, state) {
+            final customerId = state.uri.queryParameters['customerId'];
+            final customerName = state.uri.queryParameters['customerName'];
+            return SubscriptionGuard(
+              allowTrial: true,
+              allowExpired: false,
+              child: CreateSalePage(
+                initialCustomerId: customerId,
+                initialCustomerName: customerName,
+              ),
+            );
+          },
         ),
 
         GoRoute(
