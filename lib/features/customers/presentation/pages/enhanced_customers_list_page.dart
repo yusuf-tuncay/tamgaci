@@ -369,10 +369,10 @@ class _EnhancedCustomersListPageState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: LayoutBuilder(
@@ -757,7 +757,7 @@ class _EnhancedCustomersListPageState
             Icon(
               Icons.people_outline,
               size: 64,
-              color: isDark ? Colors.grey[600] : Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
@@ -768,7 +768,7 @@ class _EnhancedCustomersListPageState
                   : 'Henüz müşteri eklenmemiş',
               style: GoogleFonts.poppins(
                 fontSize: 16,
-                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             if (_searchQuery.isNotEmpty ||
@@ -816,10 +816,10 @@ class _EnhancedCustomersListPageState
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -1259,14 +1259,14 @@ class _EnhancedCustomersListPageState
                     Icon(
                       Icons.phone,
                       size: 16,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       customer.phone!,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -1298,14 +1298,14 @@ class _EnhancedCustomersListPageState
                     Icon(
                       Icons.email,
                       size: 16,
-                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       customer.email!,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                   ],

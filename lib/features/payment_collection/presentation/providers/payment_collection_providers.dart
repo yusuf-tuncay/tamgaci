@@ -56,6 +56,13 @@ final paymentTransactionFormProvider = StateNotifierProvider<
   return PaymentTransactionFormNotifier();
 });
 
+/// Customer PaymentTransactions Stream Provider
+final customerPaymentTransactionsProvider =
+    FutureProvider.family<List<PaymentTransaction>, String>((ref, customerId) async {
+  final repository = ref.read(paymentTransactionRepositoryProvider);
+  return await repository.getCustomerTransactions(customerId);
+});
+
 /// PaymentCollectionNotifier
 class PaymentCollectionNotifier extends StateNotifier<PaymentCollectionState> {
   final PaymentTransactionRepository _transactionRepository;
@@ -134,7 +141,8 @@ class PaymentCollectionNotifier extends StateNotifier<PaymentCollectionState> {
   }
 
   /// İşlem oluştur
-  Future<void> createTransaction(PaymentTransaction transaction) async {
+  Future<PaymentTransaction?> createTransaction(
+      PaymentTransaction transaction) async {
     state = state.setSaving(true);
     try {
       // Service henüz aktif değil, doğrudan repository kullan
@@ -142,8 +150,10 @@ class PaymentCollectionNotifier extends StateNotifier<PaymentCollectionState> {
           await _transactionRepository.createTransaction(transaction);
       state = state.addTransaction(createdTransaction);
       state = state.setSuccess('İşlem başarıyla oluşturuldu');
+      return createdTransaction;
     } catch (e) {
       state = state.setError('İşlem oluşturulurken hata oluştu: $e');
+      return null;
     } finally {
       state = state.setSaving(false);
     }
@@ -355,6 +365,12 @@ class PaymentTransactionFormNotifier
         break;
       case 'relatedDocumentType':
         state = state.copyWith(relatedDocumentType: value);
+        break;
+      case 'metadata':
+        final newMetadata = value == null
+            ? <String, dynamic>{}
+            : Map<String, dynamic>.from(value as Map);
+        state = state.copyWith(metadata: newMetadata);
         break;
     }
   }

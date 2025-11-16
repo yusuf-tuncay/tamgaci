@@ -2,6 +2,7 @@
 // lib/features/payment_collection/presentation/pages/transaction_form_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../domain/entities/payment_enums.dart';
@@ -12,6 +13,8 @@ import '../../../customers/presentation/providers/customer_providers.dart';
 import '../../../suppliers/presentation/providers/supplier_providers.dart';
 import '../../../accounts/presentation/providers/account_providers.dart';
 import '../../../accounts/domain/entities/account.dart';
+import '../../../../core/services/business/transaction_service.dart';
+import '../models/payment_transaction_form_model.dart';
 
 /// Tahsilat ve ödeme işlemi form ekranı
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -97,6 +100,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         'relatedDocumentId', transaction.relatedDocumentId);
     formNotifier.updateField(
         'relatedDocumentType', transaction.relatedDocumentType);
+
+    // Metadata'yı da yükle (çek/senet bilgileri için)
+    if (transaction.metadata != null && transaction.metadata.isNotEmpty) {
+      formNotifier.updateField('metadata', transaction.metadata);
+    }
   }
 
   void _setupNewTransaction() {
@@ -200,7 +208,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         });
       } catch (e) {
         debugPrint('DEBUG: Tedarikçi para birimi alınamadı: $e');
-    formNotifier.updateField('currency', defaultCurrency);
+        formNotifier.updateField('currency', defaultCurrency);
       }
     } else {
       formNotifier.updateField('currency', defaultCurrency);
@@ -550,6 +558,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
               const SizedBox(height: 16),
 
+              // Çek/Senet bilgileri göster
+              if (formState.type == PaymentTransactionType.check ||
+                  formState.type == PaymentTransactionType.promissoryNote) ...[
+                _buildCheckPromissoryInfoCard(formState),
+                const SizedBox(height: 16),
+              ],
+
               TransactionFormFields.buildDirectionField(
                 formState: formState,
                 onChanged: (value) => _updateField('direction', value),
@@ -622,8 +637,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               if (formState.type != PaymentTransactionType.debtReceipt &&
                   formState.type != PaymentTransactionType.creditReceipt &&
                   formState.type != PaymentTransactionType.accountTransfer)
-              Consumer(
-                builder: (context, ref, child) {
+                Consumer(
+                  builder: (context, ref, child) {
                     // Önce activeAccountsProvider'ı dene, başarısız olursa accountsProvider'ı kullan
                     final activeAccountsAsync =
                         ref.watch(activeAccountsProvider);
@@ -636,8 +651,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                       error: (error, stack) => allAccountsAsync,
                     );
 
-                  return accountsAsync.when(
-                    data: (accounts) {
+                    return accountsAsync.when(
+                      data: (accounts) {
                         // Debug: Hesap sayısını logla
                         debugPrint('DEBUG: Loaded ${accounts.length} accounts');
                         for (final account in accounts) {
@@ -650,23 +665,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             .where((account) =>
                                 account.isActive &&
                                 account.status == AccountStatus.active)
-                          .toList();
+                            .toList();
 
                         debugPrint(
                             'DEBUG: Filtered to ${activeAccounts.length} active accounts');
 
                         // Tüm aktif hesapları göster
                         if (activeAccounts.isEmpty) {
-                        return Container(
-                          height: 56,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 16),
-                          decoration: BoxDecoration(
+                          return Container(
+                            height: 56,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 16),
+                            decoration: BoxDecoration(
                               border: Border.all(color: Colors.orange),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
                             child: Row(
-                            children: [
+                              children: [
                                 const Icon(Icons.warning, color: Colors.orange),
                                 const SizedBox(width: 8),
                                 const Expanded(
@@ -685,19 +700,19 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                     'Hesap Oluştur',
                                     style: TextStyle(fontSize: 12),
                                   ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
+                                ),
+                              ],
+                            ),
+                          );
+                        }
 
-                      // Seçili hesap ID'sinin listede olup olmadığını kontrol et
-                      String? selectedValue = formState.accountId;
-                      if (selectedValue != null &&
+                        // Seçili hesap ID'sinin listede olup olmadığını kontrol et
+                        String? selectedValue = formState.accountId;
+                        if (selectedValue != null &&
                             !activeAccounts.any(
                                 (account) => account.id == selectedValue)) {
-                        selectedValue = null;
-                      }
+                          selectedValue = null;
+                        }
 
                         // İşlem türü değiştiğinde hesap seçimini yeniden hesapla
                         final newSelectedValue =
@@ -758,14 +773,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                                       ),
                                       if (selectedValue != null) ...[
                                         const SizedBox(height: 2),
-                                      Text(
+                                        Text(
                                           '${activeAccounts.firstWhere((a) => a.id == selectedValue).type.displayName} - ${activeAccounts.firstWhere((a) => a.id == selectedValue).currency}',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
                                       ],
                                     ],
                                   ),
@@ -775,43 +790,43 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                               ],
                             ),
                           ),
-                      );
-                    },
-                    loading: () => Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Row(
-                        children: [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          SizedBox(width: 8),
+                        );
+                      },
+                      loading: () => Container(
+                        height: 56,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 16),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Row(
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                            SizedBox(width: 8),
                             Text('Hesaplar yükleniyor...'),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
                       error: (error, stack) {
                         // Debug: Hata detaylarını logla
                         debugPrint('DEBUG: Error loading accounts: $error');
                         debugPrint('DEBUG: Stack trace: $stack');
 
                         return Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 16),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.red),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 16),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.red),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                           child: Row(
-                        children: [
+                            children: [
                               const Icon(Icons.error, color: Colors.red),
                               const SizedBox(width: 8),
                               Expanded(
@@ -825,9 +840,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                           ),
                         );
                       },
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
 
               const SizedBox(height: 16),
 
@@ -835,20 +850,20 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
               if (formState.type == PaymentTransactionType.accountTransfer)
                 _buildAccountTransferFields(formState)
               else ...[
-              // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
-              if (formState.isCustomerSelectionRequired &&
-                  widget.customerId == null)
-                TransactionFormFields.buildCustomerField(
-                  formState: formState,
-                  onChanged: (value) => _updateField('customerId', value),
-                ),
+                // Müşteri/Tedarikçi seçimi - sadece ID yoksa göster
+                if (formState.isCustomerSelectionRequired &&
+                    widget.customerId == null)
+                  TransactionFormFields.buildCustomerField(
+                    formState: formState,
+                    onChanged: (value) => _updateField('customerId', value),
+                  ),
 
-              if (formState.isSupplierSelectionRequired &&
-                  widget.supplierId == null)
-                TransactionFormFields.buildSupplierField(
-                  formState: formState,
-                  onChanged: (value) => _updateField('supplierId', value),
-                ),
+                if (formState.isSupplierSelectionRequired &&
+                    widget.supplierId == null)
+                  TransactionFormFields.buildSupplierField(
+                    formState: formState,
+                    onChanged: (value) => _updateField('supplierId', value),
+                  ),
               ],
 
               const SizedBox(height: 16),
@@ -917,48 +932,106 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     });
   }
 
-  /// Hesap türüne göre ikon döndür
-  IconData _getAccountTypeIcon(AccountType type) {
-    switch (type) {
-      case AccountType.cash:
-        return Icons.account_balance_wallet;
-      case AccountType.checking:
-        return Icons.account_balance;
-      case AccountType.savings:
-        return Icons.savings;
-      case AccountType.credit:
-        return Icons.credit_card;
-      case AccountType.creditCard:
-        return Icons.credit_card;
-      case AccountType.investment:
-        return Icons.trending_up;
-      case AccountType.foreign:
-        return Icons.currency_exchange;
-      case AccountType.other:
-        return Icons.account_balance;
+  /// Doğrulamadan önce zorunlu alanlar için varsayılan değerleri uygular
+  void _ensureRequiredDefaults() {
+    final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
+    var formState = ref.read(paymentTransactionFormProvider);
+
+    // Çek/Senet işlemleri için vade tarihini metadata'dan al
+    if ((formState.type == PaymentTransactionType.check ||
+            formState.type == PaymentTransactionType.promissoryNote) &&
+        formState.dueDate == null) {
+      final metadataDueDate = formState.metadata['dueDate'];
+      DateTime? parsed;
+      if (metadataDueDate is String) {
+        parsed = DateTime.tryParse(metadataDueDate);
+      } else if (metadataDueDate is DateTime) {
+        parsed = metadataDueDate;
+      }
+      if (parsed != null) {
+        formNotifier.updateField('dueDate', parsed);
+      }
+      formState = ref.read(paymentTransactionFormProvider);
+    }
+
+    // Ödeme yöntemi seçili değilse işleme göre otomatik seç
+    if (formState.paymentMethodId == null ||
+        (formState.paymentMethodId?.isEmpty ?? true)) {
+      final defaultMethod = _getDefaultPaymentMethodId(formState.type);
+      formNotifier.updateField('paymentMethodId', defaultMethod);
+      formState = ref.read(paymentTransactionFormProvider);
+    }
+
+    // Ödeme kaynağı gerekli ise otomatik seç
+    if (formState.isPaymentSourceRequired &&
+        (formState.paymentSourceId == null ||
+            (formState.paymentSourceId?.isEmpty ?? true))) {
+      final defaultSource =
+          _getDefaultPaymentSourceId(formState.type, formState.direction);
+      formNotifier.updateField('paymentSourceId', defaultSource);
+      formState = ref.read(paymentTransactionFormProvider);
+    }
+
+    // Hedef hesap gerekli ise otomatik bir hedef belirle
+    if (formState.isTargetAccountRequired &&
+        (formState.targetAccountId == null ||
+            (formState.targetAccountId?.isEmpty ?? true))) {
+      final defaultTarget = _getDefaultTargetAccountId(formState);
+      formNotifier.updateField('targetAccountId', defaultTarget);
     }
   }
 
-  /// Hesap türüne göre renk döndür
-  Color _getAccountTypeColor(AccountType type) {
-    switch (type) {
-      case AccountType.cash:
-        return Colors.green;
-      case AccountType.checking:
-        return Colors.blue;
-      case AccountType.savings:
-        return Colors.teal;
-      case AccountType.credit:
-        return Colors.orange;
-      case AccountType.creditCard:
-        return Colors.red;
-      case AccountType.investment:
-        return Colors.purple;
-      case AccountType.foreign:
-        return Colors.indigo;
-      case AccountType.other:
-        return Colors.grey;
+  String _getDefaultPaymentMethodId(PaymentTransactionType? type) {
+    if (type == null) {
+      return 'payment_method_auto_cash';
     }
+    switch (type) {
+      case PaymentTransactionType.cash:
+        return 'payment_method_auto_cash';
+      case PaymentTransactionType.creditCard:
+        return 'payment_method_auto_credit_card';
+      case PaymentTransactionType.eftTransfer:
+        return 'payment_method_auto_bank_transfer';
+      case PaymentTransactionType.check:
+        return 'payment_method_auto_check';
+      case PaymentTransactionType.promissoryNote:
+        return 'payment_method_auto_promissory';
+      case PaymentTransactionType.debtReceipt:
+        return 'payment_method_auto_adjustment';
+      case PaymentTransactionType.creditReceipt:
+        return 'payment_method_auto_credit_receipt';
+      case PaymentTransactionType.accountTransfer:
+        return 'payment_method_auto_account_transfer';
+    }
+  }
+
+  String _getDefaultPaymentSourceId(
+      PaymentTransactionType? type, PaymentDirection? direction) {
+    final prefix = direction == PaymentDirection.outgoing ? 'out' : 'in';
+    if (type == PaymentTransactionType.creditCard) {
+      return 'payment_source_${prefix}_pos';
+    }
+    if (type == PaymentTransactionType.eftTransfer) {
+      return 'payment_source_${prefix}_bank';
+    }
+    if (type == PaymentTransactionType.check ||
+        type == PaymentTransactionType.promissoryNote) {
+      return 'payment_source_${prefix}_portfolio';
+    }
+    return 'payment_source_${prefix}_cash';
+  }
+
+  String _getDefaultTargetAccountId(PaymentTransactionFormModel formState) {
+    if (formState.direction == PaymentDirection.incoming) {
+      return formState.customerId ?? 'target_account_auto_customer';
+    }
+    if (formState.direction == PaymentDirection.outgoing) {
+      return formState.supplierId ?? 'target_account_auto_supplier';
+    }
+    if (formState.category == PaymentTransactionCategory.internalTransfer) {
+      return 'target_account_auto_internal';
+    }
+    return 'target_account_auto_default';
   }
 
   /// İşlem türü ve para birimine göre en uygun hesabı seç
@@ -1107,7 +1180,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       context: context,
       builder: (BuildContext context) {
         // Hesap transferi için filtreleme
-        List<Account> filteredAccounts = accounts;
+        List<Account> baseFilteredAccounts = accounts;
         if (formState.type == PaymentTransactionType.accountTransfer) {
           // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
           final selectedCustomerId = formState.customerId;
@@ -1115,7 +1188,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
           if (selectedCustomerId != null || selectedSupplierId != null) {
             // Seçili müşteri/tedarikçi ile aynı hesap filtrelenmeli
-            filteredAccounts = accounts.where((account) {
+            baseFilteredAccounts = accounts.where((account) {
               // Seçili müşteri ile aynı hesap filtrelenmeli
               if (selectedCustomerId != null &&
                   account.name
@@ -1137,66 +1210,23 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           }
         }
 
-        return AlertDialog(
-          title: const Text('Hesap Seçin'),
-          content: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight:
-                  MediaQuery.of(context).size.height * 0.6, // Ekranın %60'ı
-              maxWidth:
-                  MediaQuery.of(context).size.width * 0.9, // Ekranın %90'ı
-            ),
-            child: filteredAccounts.isEmpty
-                ? const Center(
-                    child: Text(
-                      'Hesap bulunamadı',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: filteredAccounts.length,
-                    itemBuilder: (context, index) {
-                      final account = filteredAccounts[index];
-                      return ListTile(
-                        leading: Icon(
-                          _getAccountTypeIcon(account.type),
-                          color: _getAccountTypeColor(account.type),
-                        ),
-                        title: Text(
-                          _cleanAccountName(account.name),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}',
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        onTap: () {
-                          _updateField('accountId', account.id);
-                          Navigator.of(context).pop();
-                        },
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('İptal'),
-            ),
-          ],
+        return _AccountSelectionDialog(
+          accounts: baseFilteredAccounts,
+          onAccountSelected: (accountId) {
+            _updateField('accountId', accountId);
+          },
         );
       },
     );
   }
 
   Future<void> _saveTransaction() async {
-    final formState = ref.read(paymentTransactionFormProvider);
-    final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
+    _ensureRequiredDefaults();
 
-    // Form doğrulama
+    final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
     formNotifier.validateForm();
 
+    var formState = ref.read(paymentTransactionFormProvider);
     if (!formState.isValid) {
       setState(() {});
       return;
@@ -1270,17 +1300,21 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         updatedBy: null,
       );
 
-      await ref
+      final createdTransaction = await ref
           .read(paymentCollectionStateProvider.notifier)
           .createTransaction(transaction);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('İşlem başarıyla kaydedildi'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (createdTransaction != null) {
+        await _recordCustomerTransaction(createdTransaction);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('İşlem başarıyla kaydedildi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -1291,6 +1325,64 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _recordCustomerTransaction(
+      PaymentTransaction paymentTransaction) async {
+    final customerId = paymentTransaction.customerId;
+    if (customerId == null || customerId.isEmpty) {
+      return;
+    }
+
+    try {
+      final transactionService = TransactionService();
+      final now = DateTime.now();
+
+      final transactionType =
+          paymentTransaction.direction == PaymentDirection.outgoing
+              ? TransactionType.refund
+              : TransactionType.payment;
+
+      final description = paymentTransaction.description ??
+          (paymentTransaction.type == PaymentTransactionType.check
+              ? 'Çek Tahsilatı'
+              : paymentTransaction.type == PaymentTransactionType.promissoryNote
+                  ? 'Senet Tahsilatı'
+                  : 'Ödeme');
+
+      final customerTransaction = Transaction(
+        id: '',
+        customerId: customerId,
+        supplierId: paymentTransaction.supplierId,
+        type: transactionType,
+        amount: paymentTransaction.amount,
+        currency: paymentTransaction.currency,
+        description: description,
+        reference: paymentTransaction.referenceNumber,
+        transactionDate: paymentTransaction.transactionDate,
+        dueDate: paymentTransaction.dueDate,
+        invoiceId: paymentTransaction.relatedDocumentId,
+        paymentMethod: paymentTransaction.paymentMethodId,
+        documentNumber: paymentTransaction.transactionNumber,
+        status: TransactionStatus.completed,
+        companyId: paymentTransaction.companyId,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: paymentTransaction.createdBy,
+        updatedBy: paymentTransaction.updatedBy,
+        metadata: {
+          'paymentTransactionId': paymentTransaction.id,
+          'paymentTransactionType': paymentTransaction.type.name,
+          'accountId': paymentTransaction.accountId,
+          'targetAccountId': paymentTransaction.targetAccountId,
+          'paymentSourceId': paymentTransaction.paymentSourceId,
+        },
+      );
+
+      await transactionService.createTransaction(customerTransaction);
+    } catch (e) {
+      debugPrint('Error recording customer transaction: $e');
     }
   }
 
@@ -1430,10 +1522,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   type.displayName,
                   overflow: TextOverflow.ellipsis,
                 ),
-                onTap: () {
+                onTap: () async {
+                  Navigator.pop(context);
                   _updateField('type', type);
                   _updateAccountSelection();
-                  Navigator.pop(context);
+
+                  // Çek veya senet seçildiyse bilgileri dialog ile al
+                  if (type == PaymentTransactionType.check) {
+                    final saved = await _showCheckInfoDialog(formState);
+                    // Eğer dialog iptal edildiyse veya kaydedilmediyse işlem türünü geri al
+                    if (!saved) {
+                      _updateField('type', PaymentTransactionType.cash);
+                    }
+                  } else if (type == PaymentTransactionType.promissoryNote) {
+                    final saved =
+                        await _showPromissoryNoteInfoDialog(formState);
+                    // Eğer dialog iptal edildiyse veya kaydedilmediyse işlem türünü geri al
+                    if (!saved) {
+                      _updateField('type', PaymentTransactionType.cash);
+                    }
+                  }
+
                   // State'i yeniden tetiklemek için setState çağır
                   if (mounted) {
                     setState(() {});
@@ -1453,20 +1562,151 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
   }
 
-  /// Hesap adından ID'leri temizle
-  String _cleanAccountName(String accountName) {
-    // ID'leri temizle (genellikle _ ile başlayan veya uzun string'ler)
-    String cleaned = accountName;
+  /// Çek/Senet bilgileri kartı
+  Widget _buildCheckPromissoryInfoCard(dynamic formState) {
+    final metadata = formState.metadata ?? {};
+    final isCheck = formState.type == PaymentTransactionType.check;
+    final cardColor = isCheck ? Colors.blue[50] : Colors.orange[50];
+    final borderColor = isCheck ? Colors.blue[200] : Colors.orange[200];
+    final iconColor = isCheck ? Colors.blue[700] : Colors.orange[700];
+    final icon = isCheck ? Icons.account_balance : Icons.description;
 
-    // Müşteri/tedarikçi ID'lerini temizle
-    // Örnek: "Ahmet Yılmaz_customer_123" -> "Ahmet Yılmaz"
-    cleaned = cleaned.replaceAll(RegExp(r'_[a-zA-Z0-9_]+$'), '');
-    cleaned = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_]{20,}'), '');
+    // Bilgilerin var olup olmadığını kontrol et
+    final hasInfo = isCheck
+        ? (metadata['checkNumber'] != null || metadata['bankName'] != null)
+        : (metadata['noteNumber'] != null);
 
-    // Fazla boşlukları temizle
-    cleaned = cleaned.trim();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borderColor!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: iconColor, size: 24),
+                  const SizedBox(width: 8),
+                  Text(
+                    isCheck ? 'Çek Bilgileri' : 'Senet Bilgileri',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: iconColor,
+                    ),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: Icon(hasInfo ? Icons.edit : Icons.add, size: 20),
+                color: iconColor,
+                onPressed: () async {
+                  if (isCheck) {
+                    await _showCheckInfoDialog(formState, isEdit: hasInfo);
+                  } else {
+                    await _showPromissoryNoteInfoDialog(formState,
+                        isEdit: hasInfo);
+                  }
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+                tooltip: hasInfo ? 'Düzenle' : 'Ekle',
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (!hasInfo)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                '${isCheck ? 'Çek' : 'Senet'} bilgileri henüz eklenmemiş. Bilgileri eklemek için yukarıdaki butona tıklayın.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            )
+          else if (isCheck) ...[
+            if (metadata['checkNumber'] != null)
+              _buildInfoRow('Çek Numarası', metadata['checkNumber'].toString()),
+            if (metadata['bankName'] != null)
+              _buildInfoRow('Banka', metadata['bankName'].toString()),
+            if (metadata['branchName'] != null)
+              _buildInfoRow('Şube', metadata['branchName'].toString()),
+            if (metadata['accountNumber'] != null)
+              _buildInfoRow('Hesap No', metadata['accountNumber'].toString()),
+            if (metadata['iban'] != null)
+              _buildInfoRow('IBAN', metadata['iban'].toString()),
+            if (metadata['checkDate'] != null)
+              _buildInfoRow(
+                  'Çek Tarihi',
+                  DateFormat('dd.MM.yyyy')
+                      .format(DateTime.parse(metadata['checkDate']))),
+            if (metadata['dueDate'] != null)
+              _buildInfoRow(
+                  'Vade Tarihi',
+                  DateFormat('dd.MM.yyyy')
+                      .format(DateTime.parse(metadata['dueDate']))),
+          ] else ...[
+            if (metadata['noteNumber'] != null)
+              _buildInfoRow(
+                  'Senet Numarası', metadata['noteNumber'].toString()),
+            if (metadata['noteDate'] != null)
+              _buildInfoRow(
+                  'Senet Tarihi',
+                  DateFormat('dd.MM.yyyy')
+                      .format(DateTime.parse(metadata['noteDate']))),
+            if (metadata['dueDate'] != null)
+              _buildInfoRow(
+                  'Vade Tarihi',
+                  DateFormat('dd.MM.yyyy')
+                      .format(DateTime.parse(metadata['dueDate']))),
+            if (metadata['interestRate'] != null)
+              _buildInfoRow('Faiz Oranı', '${metadata['interestRate']}%'),
+          ],
+        ],
+      ),
+    );
+  }
 
-    return cleaned.isEmpty ? accountName : cleaned;
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Cari virman için hesap seçimi alanları
@@ -1619,11 +1859,12 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 onTap: () {
-                  formState.targetAccountId = entity['id'];
+                  final notifier =
+                      ref.read(paymentTransactionFormProvider.notifier);
+                  notifier.updateField('targetAccountId', entity['id']);
                   debugPrint(
                       'DEBUG: Seçilen hesap: ${entity['name']} (${entity['type']})');
                   Navigator.pop(context);
-                  // State'i yeniden tetiklemek için setState çağır
                   if (mounted) {
                     setState(() {});
                   }
@@ -1639,6 +1880,729 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Çek bilgileri dialog'unu göster
+  /// Returns true if saved successfully, false if cancelled
+  Future<bool> _showCheckInfoDialog(dynamic formState,
+      {bool isEdit = false}) async {
+    final metadata = formState.metadata ?? {};
+    final checkNumberController = TextEditingController(
+        text: isEdit ? (metadata['checkNumber']?.toString() ?? '') : '');
+    final bankNameController = TextEditingController(
+        text: isEdit ? (metadata['bankName']?.toString() ?? '') : '');
+    final branchNameController = TextEditingController(
+        text: isEdit ? (metadata['branchName']?.toString() ?? '') : '');
+    final accountNumberController = TextEditingController(
+        text: isEdit ? (metadata['accountNumber']?.toString() ?? '') : '');
+    final ibanController = TextEditingController(
+        text: isEdit ? (metadata['iban']?.toString() ?? '') : '');
+    DateTime? checkDate = isEdit && metadata['checkDate'] != null
+        ? DateTime.parse(metadata['checkDate'])
+        : DateTime.now();
+    DateTime? dueDate = isEdit && metadata['dueDate'] != null
+        ? DateTime.parse(metadata['dueDate'])
+        : DateTime.now().add(const Duration(days: 30));
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isEdit ? 'Çek Bilgilerini Düzenle' : 'Çek Bilgileri'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.9,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: checkNumberController,
+                    decoration: InputDecoration(
+                      labelText: 'Çek Numarası *',
+                      border: const OutlineInputBorder(),
+                      hintText: 'Sadece rakam (min 6, max 20 karakter)',
+                      errorText: checkNumberController.text.isNotEmpty &&
+                              !RegExp(r'^[0-9]+$')
+                                  .hasMatch(checkNumberController.text)
+                          ? 'Sadece rakam girebilirsiniz'
+                          : checkNumberController.text.isNotEmpty &&
+                                  (checkNumberController.text.length < 6 ||
+                                      checkNumberController.text.length > 20)
+                              ? '6-20 karakter arası olmalıdır'
+                              : null,
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(20),
+                    ],
+                    onChanged: (value) {
+                      setDialogState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: bankNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Banka Adı *',
+                      border: const OutlineInputBorder(),
+                      errorText: bankNameController.text.isEmpty &&
+                              bankNameController.text.isNotEmpty
+                          ? 'Banka adı zorunludur'
+                          : null,
+                    ),
+                    onChanged: (value) {
+                      setDialogState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: branchNameController,
+                    decoration: InputDecoration(
+                      labelText: 'Şube Adı *',
+                      border: const OutlineInputBorder(),
+                      errorText: branchNameController.text.isEmpty &&
+                              branchNameController.text.isNotEmpty
+                          ? 'Şube adı zorunludur'
+                          : null,
+                    ),
+                    onChanged: (value) {
+                      setDialogState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: accountNumberController,
+                    decoration: InputDecoration(
+                      labelText: 'Hesap Numarası *',
+                      border: const OutlineInputBorder(),
+                      hintText: 'Sadece rakam (min 6, max 20 karakter)',
+                      errorText: accountNumberController.text.isNotEmpty &&
+                              !RegExp(r'^[0-9]+$')
+                                  .hasMatch(accountNumberController.text)
+                          ? 'Sadece rakam girebilirsiniz'
+                          : accountNumberController.text.isNotEmpty &&
+                                  (accountNumberController.text.length < 6 ||
+                                      accountNumberController.text.length > 20)
+                              ? '6-20 karakter arası olmalıdır'
+                              : null,
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(20),
+                    ],
+                    onChanged: (value) {
+                      setDialogState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: ibanController,
+                    decoration: InputDecoration(
+                      labelText: 'IBAN',
+                      border: const OutlineInputBorder(),
+                      hintText: 'TR... (15-34 karakter)',
+                      errorText: ibanController.text.isNotEmpty &&
+                              (ibanController.text.length < 15 ||
+                                  ibanController.text.length > 34)
+                          ? '15-34 karakter arası olmalıdır'
+                          : ibanController.text.isNotEmpty &&
+                                  !RegExp(r'^[A-Z0-9]+$').hasMatch(
+                                      ibanController.text.toUpperCase())
+                              ? 'Sadece harf ve rakam girebilirsiniz'
+                              : null,
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
+                      LengthLimitingTextInputFormatter(34),
+                    ],
+                    onChanged: (value) {
+                      setDialogState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: Text(
+                      'Çek Tarihi: ${checkDate != null ? DateFormat('dd.MM.yyyy').format(checkDate!) : 'Seçin'}',
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: checkDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setDialogState(() {
+                          checkDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(
+                      'Vade Tarihi: ${dueDate != null ? DateFormat('dd.MM.yyyy').format(dueDate!) : 'Seçin'}',
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dueDate ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setDialogState(() {
+                          dueDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false); // İptal
+              },
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Validasyon kontrolü
+                bool isValid = true;
+                String errorMessage = '';
+                final checkNumber = checkNumberController.text.trim();
+                final accountNumber = accountNumberController.text.trim();
+
+                if (checkNumber.isEmpty) {
+                  isValid = false;
+                  errorMessage = 'Çek numarası zorunludur';
+                } else if (!RegExp(r'^[0-9]+$').hasMatch(checkNumber)) {
+                  isValid = false;
+                  errorMessage = 'Çek numarası sadece rakam içermelidir';
+                } else if (checkNumber.length < 6 || checkNumber.length > 20) {
+                  isValid = false;
+                  errorMessage = 'Çek numarası 6-20 karakter arası olmalıdır';
+                } else if (bankNameController.text.trim().isEmpty) {
+                  isValid = false;
+                  errorMessage = 'Banka adı zorunludur';
+                } else if (branchNameController.text.trim().isEmpty) {
+                  isValid = false;
+                  errorMessage = 'Şube adı zorunludur';
+                } else if (accountNumber.isEmpty) {
+                  isValid = false;
+                  errorMessage = 'Hesap numarası zorunludur';
+                } else if (!RegExp(r'^[0-9]+$').hasMatch(accountNumber)) {
+                  isValid = false;
+                  errorMessage = 'Hesap numarası sadece rakam içermelidir';
+                } else if (accountNumber.length < 6 ||
+                    accountNumber.length > 20) {
+                  isValid = false;
+                  errorMessage = 'Hesap numarası 6-20 karakter arası olmalıdır';
+                } else if (checkDate == null) {
+                  isValid = false;
+                  errorMessage = 'Çek tarihi seçilmelidir';
+                } else if (dueDate == null) {
+                  isValid = false;
+                  errorMessage = 'Vade tarihi seçilmelidir';
+                } else if (checkDate != null &&
+                    dueDate != null &&
+                    dueDate!.isBefore(checkDate!)) {
+                  isValid = false;
+                  errorMessage = 'Vade tarihi çek tarihinden önce olamaz';
+                }
+
+                // IBAN validasyonu (opsiyonel ama doluysa kontrol et)
+                final iban = ibanController.text.trim();
+                if (iban.isNotEmpty) {
+                  if (iban.length < 15 || iban.length > 34) {
+                    isValid = false;
+                    errorMessage = 'IBAN 15-34 karakter arası olmalıdır';
+                  } else if (!RegExp(r'^[A-Z0-9]+$')
+                      .hasMatch(iban.toUpperCase())) {
+                    isValid = false;
+                    errorMessage = 'IBAN sadece harf ve rakam içermelidir';
+                  }
+                }
+
+                if (!isValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  setDialogState(() {});
+                  return;
+                }
+
+                // Çek bilgilerini metadata'ya ekle
+                final formNotifier =
+                    ref.read(paymentTransactionFormProvider.notifier);
+                // Güncel form state'i oku
+                final currentFormState =
+                    ref.read(paymentTransactionFormProvider);
+                final currentMetadata =
+                    Map<String, dynamic>.from(currentFormState.metadata);
+                currentMetadata['checkNumber'] =
+                    checkNumberController.text.trim();
+                currentMetadata['bankName'] = bankNameController.text.trim();
+                currentMetadata['branchName'] =
+                    branchNameController.text.trim();
+                currentMetadata['accountNumber'] =
+                    accountNumberController.text.trim();
+                if (ibanController.text.trim().isNotEmpty) {
+                  currentMetadata['iban'] =
+                      ibanController.text.trim().toUpperCase();
+                } else {
+                  currentMetadata.remove('iban');
+                }
+                currentMetadata['checkDate'] = checkDate?.toIso8601String();
+                currentMetadata['dueDate'] = dueDate?.toIso8601String();
+                formNotifier.updateField('metadata', currentMetadata);
+
+                // State'i güncelle
+                if (mounted) {
+                  setState(() {});
+                }
+
+                Navigator.pop(context, true); // Başarılı kayıt
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return result ?? false;
+  }
+
+  /// Senet bilgileri dialog'unu göster
+  /// Returns true if saved successfully, false if cancelled
+  Future<bool> _showPromissoryNoteInfoDialog(dynamic formState,
+      {bool isEdit = false}) async {
+    final metadata = formState.metadata ?? {};
+    final noteNumberController = TextEditingController(
+        text: isEdit ? (metadata['noteNumber']?.toString() ?? '') : '');
+    DateTime? noteDate = isEdit && metadata['noteDate'] != null
+        ? DateTime.parse(metadata['noteDate'])
+        : DateTime.now();
+    DateTime? dueDate = isEdit && metadata['dueDate'] != null
+        ? DateTime.parse(metadata['dueDate'])
+        : DateTime.now().add(const Duration(days: 30));
+    final interestRateController = TextEditingController(
+        text: isEdit ? (metadata['interestRate']?.toString() ?? '') : '');
+    final descriptionController = TextEditingController(
+        text: isEdit ? (metadata['description']?.toString() ?? '') : '');
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(isEdit ? 'Senet Bilgilerini Düzenle' : 'Senet Bilgileri'),
+          content: SingleChildScrollView(
+            child: SizedBox(
+              width: MediaQuery.of(context).size.width * 0.9,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: noteNumberController,
+                    decoration: InputDecoration(
+                      labelText: 'Senet Numarası *',
+                      border: const OutlineInputBorder(),
+                      hintText: 'Min 3, max 50 karakter',
+                      errorText: noteNumberController.text.isNotEmpty &&
+                              (noteNumberController.text.length < 3 ||
+                                  noteNumberController.text.length > 50)
+                          ? '3-50 karakter arası olmalıdır'
+                          : null,
+                    ),
+                    textCapitalization: TextCapitalization.characters,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(50),
+                    ],
+                    onChanged: (value) {
+                      setDialogState(() {});
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  ListTile(
+                    title: Text(
+                      'Senet Tarihi: ${noteDate != null ? DateFormat('dd.MM.yyyy').format(noteDate!) : 'Seçin'}',
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: noteDate ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setDialogState(() {
+                          noteDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(
+                      'Vade Tarihi: ${dueDate != null ? DateFormat('dd.MM.yyyy').format(dueDate!) : 'Seçin'}',
+                    ),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: dueDate ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        setDialogState(() {
+                          dueDate = picked;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: interestRateController,
+                    decoration: const InputDecoration(
+                      labelText: 'Faiz Oranı (%)',
+                      border: OutlineInputBorder(),
+                      hintText: 'Örn: 15.5',
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descriptionController,
+                    decoration: const InputDecoration(
+                      labelText: 'Açıklama',
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false); // İptal
+              },
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Validasyon kontrolü
+                bool isValid = true;
+                String errorMessage = '';
+                final noteNumber = noteNumberController.text.trim();
+
+                if (noteNumber.isEmpty) {
+                  isValid = false;
+                  errorMessage = 'Senet numarası zorunludur';
+                } else if (noteNumber.length < 3 || noteNumber.length > 50) {
+                  isValid = false;
+                  errorMessage = 'Senet numarası 3-50 karakter arası olmalıdır';
+                } else if (noteDate == null) {
+                  isValid = false;
+                  errorMessage = 'Senet tarihi seçilmelidir';
+                } else if (dueDate == null) {
+                  isValid = false;
+                  errorMessage = 'Vade tarihi seçilmelidir';
+                } else if (noteDate != null &&
+                    dueDate != null &&
+                    dueDate!.isBefore(noteDate!)) {
+                  isValid = false;
+                  errorMessage = 'Vade tarihi senet tarihinden önce olamaz';
+                }
+
+                if (interestRateController.text.isNotEmpty) {
+                  final interestRate =
+                      double.tryParse(interestRateController.text.trim());
+                  if (interestRate == null ||
+                      interestRate < 0 ||
+                      interestRate > 100) {
+                    isValid = false;
+                    errorMessage =
+                        'Faiz oranı 0-100 arası geçerli bir sayı olmalıdır';
+                  }
+                }
+
+                if (!isValid) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(errorMessage),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  setDialogState(() {});
+                  return;
+                }
+
+                final interestRateText = interestRateController.text.trim();
+                final descriptionText = descriptionController.text.trim();
+
+                // Senet bilgilerini metadata'ya ekle
+                final formNotifier =
+                    ref.read(paymentTransactionFormProvider.notifier);
+                // Güncel form state'i oku
+                final currentFormState =
+                    ref.read(paymentTransactionFormProvider);
+                final currentMetadata =
+                    Map<String, dynamic>.from(currentFormState.metadata);
+                currentMetadata['noteNumber'] =
+                    noteNumberController.text.trim();
+                currentMetadata['noteDate'] = noteDate?.toIso8601String();
+                currentMetadata['dueDate'] = dueDate?.toIso8601String();
+                if (interestRateText.isNotEmpty) {
+                  final interestRate = double.tryParse(interestRateText);
+                  if (interestRate != null) {
+                    currentMetadata['interestRate'] = interestRate;
+                  }
+                } else {
+                  currentMetadata.remove('interestRate');
+                }
+                if (descriptionText.isNotEmpty) {
+                  currentMetadata['description'] = descriptionText;
+                } else {
+                  currentMetadata.remove('description');
+                }
+                formNotifier.updateField('metadata', currentMetadata);
+
+                // State'i güncelle
+                if (mounted) {
+                  setState(() {});
+                }
+
+                Navigator.pop(context, true); // Başarılı kayıt
+              },
+              child: const Text('Kaydet'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    return result ?? false;
+  }
+}
+
+/// Hesap seçim dialog widget'ı
+class _AccountSelectionDialog extends StatefulWidget {
+  final List<Account> accounts;
+  final Function(String) onAccountSelected;
+
+  const _AccountSelectionDialog({
+    required this.accounts,
+    required this.onAccountSelected,
+  });
+
+  @override
+  State<_AccountSelectionDialog> createState() =>
+      _AccountSelectionDialogState();
+}
+
+class _AccountSelectionDialogState extends State<_AccountSelectionDialog> {
+  late TextEditingController _searchController;
+  List<Account> _filteredAccounts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController();
+    _filteredAccounts = widget.accounts;
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      final searchText = _searchController.text.toLowerCase();
+      if (searchText.isEmpty) {
+        _filteredAccounts = widget.accounts;
+      } else {
+        _filteredAccounts = widget.accounts.where((account) {
+          final name = _cleanAccountName(account.name).toLowerCase();
+          final type = account.type.displayName.toLowerCase();
+          final currency = account.currency.toLowerCase();
+          return name.contains(searchText) ||
+              type.contains(searchText) ||
+              currency.contains(searchText);
+        }).toList();
+      }
+    });
+  }
+
+  String _cleanAccountName(String accountName) {
+    // Hesap adından gereksiz bilgileri temizle
+    String cleaned = accountName;
+
+    // UUID'leri temizle (20+ karakterlik alfanumerik diziler)
+    cleaned = cleaned.replaceAll(RegExp(r'[a-zA-Z0-9_]{20,}'), '');
+
+    // Fazla boşlukları temizle
+    cleaned = cleaned.trim();
+
+    return cleaned.isEmpty ? accountName : cleaned;
+  }
+
+  IconData _getAccountTypeIcon(AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return Icons.account_balance_wallet;
+      case AccountType.checking:
+        return Icons.account_balance;
+      case AccountType.savings:
+        return Icons.savings;
+      case AccountType.credit:
+        return Icons.credit_card;
+      case AccountType.creditCard:
+        return Icons.credit_card;
+      case AccountType.investment:
+        return Icons.trending_up;
+      case AccountType.foreign:
+        return Icons.currency_exchange;
+      case AccountType.other:
+        return Icons.account_balance;
+    }
+  }
+
+  Color _getAccountTypeColor(AccountType type) {
+    switch (type) {
+      case AccountType.cash:
+        return Colors.green;
+      case AccountType.checking:
+        return Colors.blue;
+      case AccountType.savings:
+        return Colors.blue.shade300;
+      case AccountType.credit:
+        return Colors.orange;
+      case AccountType.creditCard:
+        return Colors.orange;
+      case AccountType.investment:
+        return Colors.purple;
+      case AccountType.foreign:
+        return Colors.teal;
+      case AccountType.other:
+        return Colors.grey;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Hesap Seçin'),
+      content: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.9,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Arama kutusu
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _searchController,
+              builder: (context, value, child) {
+                return TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Hesap ara...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: value.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            // Hesap listesi
+            Flexible(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.5,
+                  minHeight: 100.0,
+                ),
+                child: _filteredAccounts.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            'Hesap bulunamadı',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: _filteredAccounts.length,
+                        itemBuilder: (context, index) {
+                          final account = _filteredAccounts[index];
+                          return ListTile(
+                            leading: Icon(
+                              _getAccountTypeIcon(account.type),
+                              color: _getAccountTypeColor(account.type),
+                            ),
+                            title: Text(
+                              _cleanAccountName(account.name),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '${account.type.displayName} - ${account.currency} - ${account.balance.toStringAsFixed(2)}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            onTap: () {
+                              widget.onAccountSelected(account.id);
+                              Navigator.of(context).pop();
+                            },
+                          );
+                        },
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('İptal'),
+        ),
+      ],
     );
   }
 }

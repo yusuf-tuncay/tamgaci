@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import '../../../../shared/overlays/calculator_overlay.dart';
 import '../../../../core/theme/constants.dart';
@@ -43,6 +44,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   // Backfill kaldırıldı: bazı projelerde kurallar nedeniyle uyarı üretiyordu
   Map<String, dynamic>? _weather;
   String? _locationName;
+  DateTime? _sunrise;
+  DateTime? _sunset;
+  Timer? _dayNightUpdateTimer;
 
   @override
   void initState() {
@@ -56,6 +60,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         _loadWeather();
       }
     });
+
+    // Gece/gündüz durumunu her dakika güncelle (animasyon için)
+    _dayNightUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          // Sadece state'i güncelle, API çağrısı yapma
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _dayNightUpdateTimer?.cancel();
+    super.dispose();
   }
 
   /// Real-time listener başlat
@@ -92,9 +111,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         lon = pos.longitude;
       }
 
-      // Open-Meteo free API (no key) - weather data
+      // Open-Meteo free API (no key) - weather data with additional parameters
       final weatherUri = Uri.parse(
-          'https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true&timezone=auto');
+          'https://api.open-meteo.com/v1/forecast?latitude=$lat&longitude=$lon&current_weather=true&hourly=relativehumidity_2m&daily=sunrise,sunset&timezone=auto');
       final weatherRes =
           await http.get(weatherUri).timeout(const Duration(seconds: 6));
 
@@ -104,9 +123,85 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       if (weatherRes.statusCode == 200) {
         final data = json.decode(weatherRes.body) as Map<String, dynamic>;
         if (mounted) {
+          final currentWeather = data['current_weather'] as Map<String, dynamic>?;
+          final hourly = data['hourly'] as Map<String, dynamic>?;
+          final daily = data['daily'] as Map<String, dynamic>?;
+          
+          // Get current hour index for humidity
+          int? humidity;
+          if (hourly != null && hourly['relativehumidity_2m'] != null) {
+            final humidityList = hourly['relativehumidity_2m'] as List<dynamic>?;
+            if (humidityList != null && humidityList.isNotEmpty) {
+              // Get first hour (current hour) humidity
+              humidity = (humidityList[0] as num?)?.toInt();
+            }
+          }
+          
+          // Get sunrise and sunset times
+          DateTime? sunrise;
+          DateTime? sunset;
+          if (daily != null) {
+            final sunriseList = daily['sunrise'] as List<dynamic>?;
+            final sunsetList = daily['sunset'] as List<dynamic>?;
+            if (sunriseList != null && sunriseList.isNotEmpty) {
+              try {
+                final sunriseStr = sunriseList[0] as String?;
+                if (sunriseStr != null) {
+                  // Parse ISO 8601 format (e.g., "2024-01-15T07:30" or "2024-01-15T07:30Z")
+                  DateTime parsedSunrise = DateTime.parse(sunriseStr);
+                  // Convert to local timezone if it's UTC
+                  if (parsedSunrise.isUtc) {
+                    parsedSunrise = parsedSunrise.toLocal();
+                  }
+                  // Store only the time part (hour and minute) for today's date
+                  sunrise = DateTime(
+                    DateTime.now().year,
+                    DateTime.now().month,
+                    DateTime.now().day,
+                    parsedSunrise.hour,
+                    parsedSunrise.minute,
+                  );
+                }
+              } catch (_) {
+                // ignore parsing errors
+              }
+            }
+            if (sunsetList != null && sunsetList.isNotEmpty) {
+              try {
+                final sunsetStr = sunsetList[0] as String?;
+                if (sunsetStr != null) {
+                  // Parse ISO 8601 format (e.g., "2024-01-15T18:45" or "2024-01-15T18:45Z")
+                  DateTime parsedSunset = DateTime.parse(sunsetStr);
+                  // Convert to local timezone if it's UTC
+                  if (parsedSunset.isUtc) {
+                    parsedSunset = parsedSunset.toLocal();
+                  }
+                  // Store only the time part (hour and minute) for today's date
+                  sunset = DateTime(
+                    DateTime.now().year,
+                    DateTime.now().month,
+                    DateTime.now().day,
+                    parsedSunset.hour,
+                    parsedSunset.minute,
+                  );
+                }
+              } catch (_) {
+                // ignore parsing errors
+              }
+            }
+          }
+          
+          // Merge weather data with additional info
+          final weatherData = <String, dynamic>{
+            if (currentWeather != null) ...currentWeather,
+            if (humidity != null) 'humidity': humidity,
+          };
+          
           setState(() {
-            _weather = data['current_weather'] as Map<String, dynamic>?;
+            _weather = weatherData.isNotEmpty ? weatherData : null;
             _locationName = locationName;
+            _sunrise = sunrise;
+            _sunset = sunset;
           });
         }
       }
@@ -286,319 +381,681 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     }
   }
 
-  /// Sıcaklık bazlı ısı uyarısını döndürür
-  Map<String, dynamic>? _getHeatAlert(double? temperature) {
-    if (temperature == null) return null;
+  /// Gece mi gündüz mü olduğunu kontrol eder (konum ve saate göre)
+  bool _isNightTime() {
+    final now = DateTime.now();
+    if (_sunrise == null || _sunset == null) {
+      // Eğer güneş doğuş/batış bilgisi yoksa, saat bazlı tahmin yap
+      final hour = now.hour;
+      return hour < 6 || hour >= 20; // 20:00-06:00 arası gece kabul et
+    }
+    
+    // Güneş doğuş ve batış saatlerini bugünün tarihi ile birleştir
+    final today = DateTime(now.year, now.month, now.day);
+    final todaySunrise = DateTime(
+      today.year,
+      today.month,
+      today.day,
+      _sunrise!.hour,
+      _sunrise!.minute,
+    );
+    final todaySunset = DateTime(
+      today.year,
+      today.month,
+      today.day,
+      _sunset!.hour,
+      _sunset!.minute,
+    );
+    
+    // Güneş batışından 30 dakika önce ve güneş doğuşundan 30 dakika sonra gece kabul et
+    final sunsetWithMargin = todaySunset.subtract(const Duration(minutes: 30));
+    final sunriseWithMargin = todaySunrise.add(const Duration(minutes: 30));
+    
+    // Eğer şu an güneş batışından sonra veya güneş doğuşundan önceyse gece
+    if (now.isAfter(sunsetWithMargin)) {
+      return true; // Güneş batışından sonra = gece
+    }
+    if (now.isBefore(sunriseWithMargin)) {
+      return true; // Güneş doğuşundan önce = gece
+    }
+    
+    return false; // Gündüz
+  }
 
-    // Sıcaklık bazlı uyarı seviyeleri
-    if (temperature >= 40) {
+  /// Gece/gündüz durumunu metin olarak döndürür
+  String _getDayNightStatus() {
+    final isNight = _isNightTime();
+    if (_sunrise != null && _sunset != null) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      
+      if (isNight) {
+        // Gece ise, güneş doğuşuna ne kadar kaldığını göster
+        var nextSunrise = DateTime(
+          today.year,
+          today.month,
+          today.day,
+          _sunrise!.hour,
+          _sunrise!.minute,
+        );
+        // Eğer bugünün güneş doğuşu geçmişse, yarının güneş doğuşunu kullan
+        if (nextSunrise.isBefore(now)) {
+          nextSunrise = nextSunrise.add(const Duration(days: 1));
+        }
+        final timeUntilSunrise = nextSunrise.difference(now);
+        if (timeUntilSunrise.inHours < 24 && timeUntilSunrise.inMinutes > 0) {
+          final hours = timeUntilSunrise.inHours;
+          final minutes = timeUntilSunrise.inMinutes % 60;
+          if (hours > 0) {
+            return 'Gece • Güneş $hours saat $minutes dakika sonra doğacak';
+          } else if (minutes > 0) {
+            return 'Gece • Güneş $minutes dakika sonra doğacak';
+          }
+        }
+        return 'Gece';
+      } else {
+        // Gündüz ise, güneş batışına ne kadar kaldığını göster
+        var nextSunset = DateTime(
+          today.year,
+          today.month,
+          today.day,
+          _sunset!.hour,
+          _sunset!.minute,
+        );
+        // Eğer bugünün güneş batışı geçmişse, yarının güneş batışını kullan
+        if (nextSunset.isBefore(now)) {
+          nextSunset = nextSunset.add(const Duration(days: 1));
+        }
+        final timeUntilSunset = nextSunset.difference(now);
+        if (timeUntilSunset.inHours < 24 && timeUntilSunset.inMinutes > 0) {
+          final hours = timeUntilSunset.inHours;
+          final minutes = timeUntilSunset.inMinutes % 60;
+          if (hours > 0) {
+            return 'Gündüz • Güneş $hours saat $minutes dakika sonra batacak';
+          } else if (minutes > 0) {
+            return 'Gündüz • Güneş $minutes dakika sonra batacak';
+          }
+        }
+        return 'Gündüz';
+      }
+    }
+    return isNight ? 'Gece' : 'Gündüz';
+  }
+
+  /// Hava durumu, sıcaklık, rüzgar ve nemi göz önünde bulundurarak entegre uyarı döndürür
+  Map<String, dynamic>? _getIntegratedWeatherAlert(
+    int? weatherCode,
+    double? temperature,
+    double? windSpeed,
+    int? humidity,
+  ) {
+    if (weatherCode == null || temperature == null) return null;
+    
+    final isNight = _isNightTime();
+
+    // Rüzgar hızı kontrolü (km/h cinsinden)
+    final isWindy = windSpeed != null && windSpeed > 30; // 30 km/h üzeri rüzgarlı
+    final isVeryWindy = windSpeed != null && windSpeed > 50; // 50 km/h üzeri çok rüzgarlı
+
+    // Nem kontrolü
+    final isHumid = humidity != null && humidity > 70; // %70 üzeri nemli
+    final isVeryHumid = humidity != null && humidity > 85; // %85 üzeri çok nemli
+
+    // Sıcaklık kategorileri
+    final isExtremelyHot = temperature >= 40;
+    final isVeryHot = temperature >= 35;
+    final isHot = temperature >= 30;
+    final isWarm = temperature >= 20;
+    final isMild = temperature >= 10;
+    final isCool = temperature >= 5;
+    final isCold = temperature >= 0;
+    final isVeryCold = temperature >= -5;
+    final isExtremelyCold = temperature < -5;
+
+    // Hava durumu kodlarına göre temel durum
+    final isClear = weatherCode == 0;
+    final isPartlyCloudy = weatherCode >= 1 && weatherCode <= 3;
+    final isFoggy = weatherCode == 45 || weatherCode == 48;
+    final isDrizzling = weatherCode >= 51 && weatherCode <= 55;
+    final isFreezingDrizzle = weatherCode == 56 || weatherCode == 57;
+    final isRaining = weatherCode >= 61 && weatherCode <= 65;
+    final isFreezingRain = weatherCode == 66 || weatherCode == 67;
+    final isSnowing = weatherCode >= 71 && weatherCode <= 77;
+    final isRainShower = weatherCode >= 80 && weatherCode <= 82;
+    final isSnowShower = weatherCode == 85 || weatherCode == 86;
+    final isThunderstorm = weatherCode == 95;
+    final isThunderstormWithHail = weatherCode == 96 || weatherCode == 99;
+
+    // Entegre uyarı mantığı
+    // 1. Önce kritik durumlar (fırtına, dolu, don yağmuru)
+    if (isThunderstormWithHail) {
       return {
-        'message': 'Aşırı sıcak: Güneş koruması ve bol su almayı unutmayın.',
+        'message': 'Dolu ile fırtına: Mutlaka kapalı alanda bekleyin.',
         'type': 'warning',
-        'icon': Icons.wb_sunny,
+        'icon': Icons.warning_amber,
       };
-    } else if (temperature >= 35) {
+    }
+    if (isThunderstorm) {
       return {
-        'message': 'Çok sıcak: Şapka, güneş gözlüğü ve su alın.',
-        'type': 'info',
-        'icon': Icons.wb_sunny,
-      };
-    } else if (temperature >= 30) {
-      return {
-        'message': 'Sıcak hava: Güneş koruması almanızı öneririz.',
-        'type': 'info',
-        'icon': Icons.wb_sunny,
-      };
-    } else if (temperature <= -10) {
-      return {
-        'message':
-            'Aşırı soğuk: Sıcak giyinmeyi ve kapalı alanda kalmayı unutmayın.',
+        'message': 'Fırtınalı hava: Güvenli bir yerde bekleyin.',
         'type': 'warning',
-        'icon': Icons.ac_unit,
+        'icon': Icons.flash_on,
       };
-    } else if (temperature <= -5) {
+    }
+    if (isFreezingRain) {
       return {
-        'message': 'Çok soğuk: Kalın giysiler ve sıcak içecekler alın.',
+        'message': 'Don yağmuru: Kaygan yollarda dikkatli olun.',
+        'type': 'warning',
+        'icon': Icons.warning_amber,
+      };
+    }
+    if (isFreezingDrizzle) {
+      return {
+        'message': 'Don çiselemesi: Yürürken dikkatli olun.',
         'type': 'info',
         'icon': Icons.ac_unit,
       };
-    } else if (temperature <= 0) {
+    }
+
+    // 2. Kar durumları
+    if (isSnowShower) {
+      String message = 'Sağanak kar: Sıcak giyinmeyi ve dikkatli sürüş yapmayı unutmayın.';
+      if (isExtremelyCold) {
+        message = 'Sağanak kar ve aşırı soğuk: Kalın giysiler ve kapalı alanda kalmayı unutmayın.';
+      } else if (isVeryCold) {
+        message = 'Sağanak kar ve çok soğuk: Sıcak giyinmeyi unutmayın.';
+      }
       return {
-        'message': 'Soğuk hava: Sıcak giyinmeyi unutmayın.',
-        'type': 'info',
-        'icon': Icons.ac_unit,
+        'message': message,
+        'type': 'warning',
+        'icon': Icons.snowing,
       };
+    }
+    if (isSnowing) {
+      String message = 'Karlı hava: Sıcak giyinmeyi unutmayın.';
+      if (isExtremelyCold) {
+        message = 'Karlı ve aşırı soğuk hava: Kalın giysiler ve sıcak içecekler alın.';
+      } else if (isVeryCold) {
+        message = 'Karlı ve soğuk hava: Sıcak giyinmeyi unutmayın.';
+      }
+      return {
+        'message': message,
+        'type': 'info',
+        'icon': Icons.snowing,
+      };
+    }
+
+    // 3. Yağmur durumları
+    if (isRainShower) {
+      String message = 'Sağanak yağmur: Şemsiye ve su geçirmez kıyafet alın.';
+      if (isCold || isVeryCold || isExtremelyCold) {
+        message = 'Sağanak yağmur ve soğuk: Şemsiye ve sıcak giysiler alın.';
+      } else if (isVeryWindy) {
+        message = 'Sağanak yağmur ve güçlü rüzgar: Şemsiye ve dikkatli olun.';
+      }
+      return {
+        'message': message,
+        'type': 'warning',
+        'icon': Icons.umbrella,
+      };
+    }
+    if (isRaining) {
+      String message = 'Yağmurlu hava: Şemsiye ve yağmurluk almayı unutmayın.';
+      if (isCold || isVeryCold || isExtremelyCold) {
+        message = 'Yağmurlu ve soğuk hava: Şemsiye ve sıcak giysiler alın.';
+      } else if (isVeryWindy) {
+        message = 'Yağmurlu ve rüzgarlı hava: Şemsiye ve dikkatli olun.';
+      }
+      return {
+        'message': message,
+        'type': 'info',
+        'icon': Icons.umbrella,
+      };
+    }
+    if (isDrizzling) {
+      String message = 'Hafif yağış: Şemsiyenizi yanınıza alın.';
+      if (isCold || isVeryCold || isExtremelyCold) {
+        message = 'Hafif yağış ve soğuk: Şemsiye ve sıcak giysiler alın.';
+      }
+      return {
+        'message': message,
+        'type': 'info',
+        'icon': Icons.umbrella,
+      };
+    }
+
+    // 4. Sis durumu
+    if (isFoggy) {
+      String message = 'Sisli hava: Araç kullanırken dikkatli olun.';
+      if (isCold || isVeryCold || isExtremelyCold) {
+        message = 'Sisli ve soğuk hava: Araç kullanırken dikkatli olun, sıcak giyinmeyi unutmayın.';
+      }
+      return {
+        'message': message,
+        'type': 'info',
+        'icon': Icons.foggy,
+      };
+    }
+
+    // 5. Açık ve kısmen bulutlu hava - sıcaklığa göre öneriler
+    if (isClear) {
+      // Aşırı sıcak
+      if (isExtremelyHot) {
+        String message = isNight
+            ? 'Berrak gece ve aşırı sıcak: Bol su almayı unutmayın.'
+            : 'Aşırı sıcak ve güneşli: Güneş koruması ve bol su almayı unutmayın.';
+        if (isVeryHumid) {
+          message = isNight
+              ? 'Berrak gece, aşırı sıcak ve nemli: Bol su ve serin yerlerde kalın.'
+              : 'Aşırı sıcak, güneşli ve nemli: Güneş koruması, bol su ve serin yerlerde kalın.';
+        } else if (isHumid) {
+          message = isNight
+              ? 'Berrak gece ve nemli: Bol su almayı unutmayın.'
+              : 'Aşırı sıcak ve nemli: Güneş koruması ve bol su almayı unutmayın.';
+        }
+        return {
+          'message': message,
+          'type': 'warning',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_sunny,
+        };
+      }
+      // Çok sıcak
+      if (isVeryHot) {
+        String message = isNight
+            ? 'Berrak gece ve çok sıcak: Su almayı unutmayın.'
+            : 'Çok sıcak ve güneşli: Şapka, güneş gözlüğü ve su alın.';
+        if (isVeryHumid) {
+          message = isNight
+              ? 'Berrak gece, sıcak ve nemli: Su ve serin yerlerde kalın.'
+              : 'Çok sıcak, güneşli ve nemli: Şapka, güneş gözlüğü, su ve serin yerlerde kalın.';
+        } else if (isHumid) {
+          message = isNight
+              ? 'Berrak gece ve nemli: Su almayı unutmayın.'
+              : 'Çok sıcak ve nemli: Şapka, güneş gözlüğü ve su alın.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_sunny,
+        };
+      }
+      // Sıcak
+      if (isHot) {
+        String message = isNight
+            ? 'Berrak gece ve sıcak: Keyifli bir gece!'
+            : 'Sıcak ve güneşli hava: Güneş koruması almanızı öneririz.';
+        if (isVeryHumid) {
+          message = isNight
+              ? 'Berrak gece, sıcak ve nemli: Su almayı unutmayın.'
+              : 'Sıcak, güneşli ve nemli: Güneş koruması ve su almayı unutmayın.';
+        } else if (isHumid) {
+          message = isNight
+              ? 'Berrak gece ve nemli: Keyifli bir gece!'
+              : 'Sıcak ve nemli: Güneş koruması almanızı öneririz.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_sunny,
+        };
+      }
+      // Ilık
+      if (isWarm) {
+        String message = isNight
+            ? 'Berrak gece ve ılık: Keyifli bir gece!'
+            : 'Güneşli ve ılık hava: Keyifli bir gün!';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Berrak gece ama rüzgarlı: Hafif bir ceket alabilirsiniz.'
+              : 'Güneşli ama rüzgarlı: Hafif bir ceket alabilirsiniz.';
+        } else if (isWindy) {
+          message = isNight
+              ? 'Berrak gece ve hafif rüzgarlı: Keyifli bir gece!'
+              : 'Güneşli ve hafif rüzgarlı: Keyifli bir gün!';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_sunny,
+        };
+      }
+      // Serin
+      if (isMild) {
+        String message = isNight
+            ? 'Berrak gece ama serin: Hafif bir ceket almanızı öneririz.'
+            : 'Açık ama serin hava: Hafif bir ceket almanızı öneririz.';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve serin: Ceket almanızı öneririz.'
+              : 'Açık ama rüzgarlı ve serin: Ceket almanızı öneririz.';
+        } else if (isWindy) {
+          message = isNight
+              ? 'Berrak gece ama rüzgarlı: Hafif bir ceket almanızı öneririz.'
+              : 'Açık ama rüzgarlı: Hafif bir ceket almanızı öneririz.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_sunny,
+        };
+      }
+      // Soğuk
+      if (isCool) {
+        String message = isNight
+            ? 'Berrak gece ama soğuk: Sıcak giyinmeyi unutmayın.'
+            : 'Açık ama soğuk hava: Sıcak giyinmeyi unutmayın.';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve soğuk: Kalın giysiler almanızı öneririz.'
+              : 'Açık ama rüzgarlı ve soğuk: Kalın giysiler almanızı öneririz.';
+        } else if (isWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve soğuk: Sıcak giyinmeyi unutmayın.'
+              : 'Açık ama rüzgarlı ve soğuk: Sıcak giyinmeyi unutmayın.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_sunny,
+        };
+      }
+      // Çok soğuk
+      if (isCold) {
+        String message = isNight
+            ? 'Berrak gece ama soğuk: Sıcak giyinmeyi unutmayın.'
+            : 'Açık ama soğuk hava: Sıcak giyinmeyi unutmayın.';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve soğuk: Kalın giysiler almanızı öneririz.'
+              : 'Açık ama rüzgarlı ve soğuk: Kalın giysiler almanızı öneririz.';
+        } else if (isWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve soğuk: Sıcak giyinmeyi unutmayın.'
+              : 'Açık ama rüzgarlı ve soğuk: Sıcak giyinmeyi unutmayın.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_sunny,
+        };
+      }
+      // Aşırı soğuk
+      if (isVeryCold) {
+        String message = isNight
+            ? 'Berrak gece ama çok soğuk: Kalın giysiler ve sıcak içecekler alın.'
+            : 'Açık ama çok soğuk: Kalın giysiler ve sıcak içecekler alın.';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve çok soğuk: Kalın giysiler ve kapalı alanda kalmayı unutmayın.'
+              : 'Açık ama rüzgarlı ve çok soğuk: Kalın giysiler ve kapalı alanda kalmayı unutmayın.';
+        } else if (isWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve çok soğuk: Kalın giysiler alın.'
+              : 'Açık ama rüzgarlı ve çok soğuk: Kalın giysiler alın.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': Icons.ac_unit,
+        };
+      }
+      // Çok aşırı soğuk
+      if (isExtremelyCold) {
+        String message = isNight
+            ? 'Berrak gece ama aşırı soğuk: Sıcak giyinmeyi ve kapalı alanda kalmayı unutmayın.'
+            : 'Açık ama aşırı soğuk: Sıcak giyinmeyi ve kapalı alanda kalmayı unutmayın.';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve aşırı soğuk: Mutlaka kalın giysiler ve kapalı alanda kalın.'
+              : 'Açık ama rüzgarlı ve aşırı soğuk: Mutlaka kalın giysiler ve kapalı alanda kalın.';
+        } else if (isWindy) {
+          message = isNight
+              ? 'Berrak gece, rüzgarlı ve aşırı soğuk: Kalın giysiler ve kapalı alanda kalmayı unutmayın.'
+              : 'Açık ama rüzgarlı ve aşırı soğuk: Kalın giysiler ve kapalı alanda kalmayı unutmayın.';
+        }
+        return {
+          'message': message,
+          'type': 'warning',
+          'icon': Icons.ac_unit,
+        };
+      }
+    }
+
+    // 6. Kısmen bulutlu hava
+    if (isPartlyCloudy) {
+      // Aşırı sıcak
+      if (isExtremelyHot) {
+        String message = isNight
+            ? 'Kısmen bulutlu gece ve aşırı sıcak: Bol su almayı unutmayın.'
+            : 'Kısmen bulutlu ve aşırı sıcak: Güneş koruması ve bol su almayı unutmayın.';
+        if (isVeryHumid) {
+          message = isNight
+              ? 'Kısmen bulutlu gece, aşırı sıcak ve nemli: Bol su ve serin yerlerde kalın.'
+              : 'Kısmen bulutlu, aşırı sıcak ve nemli: Güneş koruması, bol su ve serin yerlerde kalın.';
+        }
+        return {
+          'message': message,
+          'type': 'warning',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_cloudy,
+        };
+      }
+      // Çok sıcak
+      if (isVeryHot) {
+        String message = isNight
+            ? 'Kısmen bulutlu gece ve çok sıcak: Su almayı unutmayın.'
+            : 'Kısmen bulutlu ve çok sıcak: Güneş koruması almanızı öneririz.';
+        if (isVeryHumid) {
+          message = isNight
+              ? 'Kısmen bulutlu gece, sıcak ve nemli: Su almayı unutmayın.'
+              : 'Kısmen bulutlu, sıcak ve nemli: Güneş koruması ve su almayı unutmayın.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_cloudy,
+        };
+      }
+      // Sıcak
+      if (isHot) {
+        String message = isNight
+            ? 'Kısmen bulutlu gece ve sıcak: Keyifli bir gece!'
+            : 'Kısmen bulutlu ve sıcak: Güneş koruması almanızı öneririz.';
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_cloudy,
+        };
+      }
+      // Ilık
+      if (isWarm) {
+        String message = isNight
+            ? 'Kısmen bulutlu gece ve ılık: Keyifli bir gece!'
+            : 'Kısmen bulutlu ve ılık hava: Keyifli bir gün!';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Kısmen bulutlu gece ve rüzgarlı: Hafif bir ceket alabilirsiniz.'
+              : 'Kısmen bulutlu ve rüzgarlı: Hafif bir ceket alabilirsiniz.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_cloudy,
+        };
+      }
+      // Serin ve soğuk
+      if (isMild || isCool || isCold) {
+        String message = isNight
+            ? 'Kısmen bulutlu gece ve serin: Hafif bir ceket almanızı öneririz.'
+            : 'Kısmen bulutlu ve serin: Hafif bir ceket almanızı öneririz.';
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Kısmen bulutlu gece, rüzgarlı ve serin: Ceket almanızı öneririz.'
+              : 'Kısmen bulutlu, rüzgarlı ve serin: Ceket almanızı öneririz.';
+        } else if (isWindy) {
+          message = isNight
+              ? 'Kısmen bulutlu gece ve rüzgarlı: Hafif bir ceket almanızı öneririz.'
+              : 'Kısmen bulutlu ve rüzgarlı: Hafif bir ceket almanızı öneririz.';
+        }
+        if (isCold) {
+          message = isNight
+              ? 'Kısmen bulutlu gece ve soğuk: Sıcak giyinmeyi unutmayın.'
+              : 'Kısmen bulutlu ve soğuk: Sıcak giyinmeyi unutmayın.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_cloudy,
+        };
+      }
+      // Çok soğuk
+      if (isVeryCold || isExtremelyCold) {
+        String message = isNight
+            ? 'Kısmen bulutlu gece ve soğuk: Sıcak giyinmeyi unutmayın.'
+            : 'Kısmen bulutlu ve soğuk: Sıcak giyinmeyi unutmayın.';
+        if (isExtremelyCold) {
+          message = isNight
+              ? 'Kısmen bulutlu gece ve aşırı soğuk: Kalın giysiler alın.'
+              : 'Kısmen bulutlu ve aşırı soğuk: Kalın giysiler alın.';
+        }
+        if (isVeryWindy) {
+          message = isNight
+              ? 'Kısmen bulutlu gece, rüzgarlı ve soğuk: Kalın giysiler almanızı öneririz.'
+              : 'Kısmen bulutlu, rüzgarlı ve soğuk: Kalın giysiler almanızı öneririz.';
+        }
+        return {
+          'message': message,
+          'type': 'info',
+          'icon': isNight ? Icons.nightlight_round : Icons.wb_cloudy,
+        };
+      }
     }
 
     return null;
   }
 
-  /// Weather code'larına göre uyarı mesajını döndürür
-  Map<String, dynamic>? _getWeatherAlert(int? weatherCode) {
-    if (weatherCode == null) return null;
-
-    // WMO Weather interpretation codes (WW)
-    switch (weatherCode) {
-      // Clear sky - Sunny day tips
-      case 0:
-        return {
-          'message': 'Güneşli hava: Güneş gözlüğü ve şapka almayı unutmayın.',
-          'type': 'info',
-          'icon': Icons.wb_sunny,
-        };
-
-      // Mainly clear - Partly cloudy tips
-      case 1:
-      case 2:
-      case 3:
-        return {
-          'message': 'Kısmen bulutlu: Güneş koruması almanızı öneririz.',
-          'type': 'info',
-          'icon': Icons.wb_cloudy,
-        };
-
-      // Fog - Gentle fog advice
-      case 45:
-      case 48:
-        return {
-          'message': 'Sisli hava: Araç kullanırken dikkatli olun.',
-          'type': 'info',
-          'icon': Icons.foggy,
-        };
-
-      // Drizzle - Light rain advice
-      case 51:
-      case 53:
-      case 55:
-        return {
-          'message': 'Hafif yağış: Şemsiyenizi yanınıza alın.',
-          'type': 'info',
-          'icon': Icons.umbrella,
-        };
-
-      // Freezing drizzle - Gentle ice advice
-      case 56:
-      case 57:
-        return {
-          'message': 'Don çiselemesi: Yürürken dikkatli olun.',
-          'type': 'info',
-          'icon': Icons.ac_unit,
-        };
-
-      // Rain - Gentle rain advice
-      case 61:
-      case 63:
-      case 65:
-        return {
-          'message': 'Yağmurlu hava: Şemsiye ve yağmurluk almayı unutmayın.',
-          'type': 'info',
-          'icon': Icons.umbrella,
-        };
-
-      // Freezing rain - Gentle ice advice
-      case 66:
-      case 67:
-        return {
-          'message': 'Don yağmuru: Kaygan yollarda dikkatli olun.',
-          'type': 'warning',
-          'icon': Icons.warning_amber,
-        };
-
-      // Snow fall - Gentle snow advice
-      case 71:
-      case 73:
-      case 75:
-        return {
-          'message':
-              'Karlı hava: Sıcak giyinmeyi ve kar lastiği almayı unutmayın.',
-          'type': 'info',
-          'icon': Icons.snowing,
-        };
-
-      // Snow grains - Gentle snow advice
-      case 77:
-        return {
-          'message': 'Hafif kar: Sıcak giyinmeyi unutmayın.',
-          'type': 'info',
-          'icon': Icons.snowing,
-        };
-
-      // Rain showers - Gentle rain advice
-      case 80:
-      case 81:
-      case 82:
-        return {
-          'message': 'Sağanak yağmur: Şemsiye ve su geçirmez kıyafet alın.',
-          'type': 'warning',
-          'icon': Icons.umbrella,
-        };
-
-      // Snow showers - Gentle snow advice
-      case 85:
-      case 86:
-        return {
-          'message':
-              'Sağanak kar: Sıcak giyinmeyi ve dikkatli sürüş yapmayı unutmayın.',
-          'type': 'warning',
-          'icon': Icons.snowing,
-        };
-
-      // Thunderstorm - Gentle storm advice
-      case 95:
-        return {
-          'message': 'Fırtınalı hava: Güvenli bir yerde bekleyin.',
-          'type': 'warning',
-          'icon': Icons.flash_on,
-        };
-
-      // Thunderstorm with hail - Gentle storm advice
-      case 96:
-      case 99:
-        return {
-          'message': 'Dolu ile fırtına: Kapalı alanda bekleyin.',
-          'type': 'warning',
-          'icon': Icons.warning_amber,
-        };
-
-      default:
-        return null;
-    }
-  }
-
-  /// Weather code'larına göre gradient renklerini döndürür
-  List<Color> _getWeatherGradientColors(int? weatherCode) {
+  /// Weather code'larına göre gradient renklerini döndürür (light/dark mode desteği ile)
+  List<Color> _getWeatherGradientColors(int? weatherCode, bool isDark) {
     if (weatherCode == null) {
       // Default sunny gradient
-      return [
-        Colors.orange.shade300,
-        Colors.orange.shade500,
-      ];
+      return isDark
+          ? [Colors.orange.shade700, Colors.orange.shade900]
+          : [Colors.orange.shade300, Colors.orange.shade500];
     }
 
     // WMO Weather interpretation codes (WW)
     switch (weatherCode) {
       // Clear sky - Sunny gradient
       case 0:
-        return [
-          Colors.orange.shade300,
-          Colors.orange.shade500,
-        ];
+        return isDark
+            ? [Colors.orange.shade700, Colors.orange.shade900]
+            : [Colors.orange.shade300, Colors.orange.shade500];
 
       // Mainly clear - Light blue gradient
       case 1:
       case 2:
       case 3:
-        return [
-          Colors.lightBlue.shade300,
-          Colors.lightBlue.shade500,
-        ];
+        return isDark
+            ? [Colors.lightBlue.shade700, Colors.lightBlue.shade900]
+            : [Colors.lightBlue.shade300, Colors.lightBlue.shade500];
 
       // Fog - Gray gradient
       case 45:
       case 48:
-        return [
-          Colors.grey.shade400,
-          Colors.grey.shade600,
-        ];
+        return isDark
+            ? [Colors.grey.shade700, Colors.grey.shade900]
+            : [Colors.grey.shade400, Colors.grey.shade600];
 
       // Drizzle - Blue gradient
       case 51:
       case 53:
       case 55:
-        return [
-          Colors.blue.shade300,
-          Colors.blue.shade500,
-        ];
+        return isDark
+            ? [Colors.blue.shade700, Colors.blue.shade900]
+            : [Colors.blue.shade300, Colors.blue.shade500];
 
       // Freezing drizzle - Cyan gradient
       case 56:
       case 57:
-        return [
-          Colors.cyan.shade300,
-          Colors.cyan.shade500,
-        ];
+        return isDark
+            ? [Colors.cyan.shade700, Colors.cyan.shade900]
+            : [Colors.cyan.shade300, Colors.cyan.shade500];
 
       // Rain - Dark blue gradient
       case 61:
       case 63:
       case 65:
-        return [
-          Colors.blue.shade400,
-          Colors.blue.shade600,
-        ];
+        return isDark
+            ? [Colors.blue.shade800, Colors.blue.shade900]
+            : [Colors.blue.shade400, Colors.blue.shade600];
 
       // Freezing rain - Cyan gradient
       case 66:
       case 67:
-        return [
-          Colors.cyan.shade400,
-          Colors.cyan.shade600,
-        ];
+        return isDark
+            ? [Colors.cyan.shade800, Colors.cyan.shade900]
+            : [Colors.cyan.shade400, Colors.cyan.shade600];
 
       // Snow fall - White gradient
       case 71:
       case 73:
       case 75:
-        return [
-          Colors.white.withValues(alpha: 0.8),
-          Colors.blue.shade100,
-        ];
+        return isDark
+            ? [Colors.blue.shade800, Colors.blue.shade900]
+            : [Colors.white.withValues(alpha: 0.8), Colors.blue.shade100];
 
       // Snow grains - Light white gradient
       case 77:
-        return [
-          Colors.white.withValues(alpha: 0.6),
-          Colors.blue.shade50,
-        ];
+        return isDark
+            ? [Colors.blue.shade700, Colors.blue.shade800]
+            : [Colors.white.withValues(alpha: 0.6), Colors.blue.shade50];
 
       // Rain showers - Indigo gradient
       case 80:
       case 81:
       case 82:
-        return [
-          Colors.indigo.shade400,
-          Colors.indigo.shade600,
-        ];
+        return isDark
+            ? [Colors.indigo.shade800, Colors.indigo.shade900]
+            : [Colors.indigo.shade400, Colors.indigo.shade600];
 
       // Snow showers - Light white gradient
       case 85:
       case 86:
-        return [
-          Colors.white.withValues(alpha: 0.7),
-          Colors.blue.shade200,
-        ];
+        return isDark
+            ? [Colors.blue.shade700, Colors.blue.shade800]
+            : [Colors.white.withValues(alpha: 0.7), Colors.blue.shade200];
 
       // Thunderstorm - Purple gradient
       case 95:
-        return [
-          Colors.purple.shade400,
-          Colors.purple.shade600,
-        ];
+        return isDark
+            ? [Colors.purple.shade800, Colors.purple.shade900]
+            : [Colors.purple.shade400, Colors.purple.shade600];
 
       // Thunderstorm with hail - Dark purple gradient
       case 96:
       case 99:
-        return [
-          Colors.deepPurple.shade500,
-          Colors.deepPurple.shade700,
-        ];
+        return isDark
+            ? [Colors.deepPurple.shade800, Colors.deepPurple.shade900]
+            : [Colors.deepPurple.shade500, Colors.deepPurple.shade700];
 
       default:
         // Default sunny gradient
-        return [
-          Colors.orange.shade300,
-          Colors.orange.shade500,
-        ];
+        return isDark
+            ? [Colors.orange.shade700, Colors.orange.shade900]
+            : [Colors.orange.shade300, Colors.orange.shade500];
     }
   }
 
-  /// Weather code'larına göre renk temasını döndürür
-  Map<String, Color> _getWeatherColors(int? weatherCode) {
+  /// Weather code'larına göre renk temasını döndürür (light/dark mode desteği ile)
+  Map<String, Color> _getWeatherColors(int? weatherCode, bool isDark) {
     if (weatherCode == null) {
       // Default sunny theme
       return {
-        'border': Colors.orange.withValues(alpha: 0.6),
-        'shadow': Colors.orange.withValues(alpha: 0.3),
+        'border': isDark
+            ? Colors.orange.withValues(alpha: 0.4)
+            : Colors.orange.withValues(alpha: 0.6),
+        'shadow': isDark
+            ? Colors.orange.withValues(alpha: 0.2)
+            : Colors.orange.withValues(alpha: 0.3),
       };
     }
 
@@ -607,8 +1064,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       // Clear sky - Sunny theme
       case 0:
         return {
-          'border': Colors.orange.withValues(alpha: 0.6),
-          'shadow': Colors.orange.withValues(alpha: 0.3),
+          'border': isDark
+              ? Colors.orange.withValues(alpha: 0.4)
+              : Colors.orange.withValues(alpha: 0.6),
+          'shadow': isDark
+              ? Colors.orange.withValues(alpha: 0.2)
+              : Colors.orange.withValues(alpha: 0.3),
         };
 
       // Mainly clear - Light blue theme
@@ -616,16 +1077,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 2:
       case 3:
         return {
-          'border': Colors.lightBlue.withValues(alpha: 0.6),
-          'shadow': Colors.lightBlue.withValues(alpha: 0.3),
+          'border': isDark
+              ? Colors.lightBlue.withValues(alpha: 0.4)
+              : Colors.lightBlue.withValues(alpha: 0.6),
+          'shadow': isDark
+              ? Colors.lightBlue.withValues(alpha: 0.2)
+              : Colors.lightBlue.withValues(alpha: 0.3),
         };
 
       // Fog - Gray theme
       case 45:
       case 48:
         return {
-          'border': Colors.grey.withValues(alpha: 0.6),
-          'shadow': Colors.grey.withValues(alpha: 0.3),
+          'border': isDark
+              ? Colors.grey.withValues(alpha: 0.4)
+              : Colors.grey.withValues(alpha: 0.6),
+          'shadow': isDark
+              ? Colors.grey.withValues(alpha: 0.2)
+              : Colors.grey.withValues(alpha: 0.3),
         };
 
       // Drizzle - Light blue theme
@@ -633,16 +1102,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 53:
       case 55:
         return {
-          'border': Colors.blue.withValues(alpha: 0.5),
-          'shadow': Colors.blue.withValues(alpha: 0.2),
+          'border': isDark
+              ? Colors.blue.withValues(alpha: 0.4)
+              : Colors.blue.withValues(alpha: 0.5),
+          'shadow': isDark
+              ? Colors.blue.withValues(alpha: 0.2)
+              : Colors.blue.withValues(alpha: 0.2),
         };
 
       // Freezing drizzle - Light cyan theme
       case 56:
       case 57:
         return {
-          'border': Colors.cyan.withValues(alpha: 0.6),
-          'shadow': Colors.cyan.withValues(alpha: 0.3),
+          'border': isDark
+              ? Colors.cyan.withValues(alpha: 0.4)
+              : Colors.cyan.withValues(alpha: 0.6),
+          'shadow': isDark
+              ? Colors.cyan.withValues(alpha: 0.2)
+              : Colors.cyan.withValues(alpha: 0.3),
         };
 
       // Rain - Blue theme
@@ -650,16 +1127,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 63:
       case 65:
         return {
-          'border': Colors.blue.withValues(alpha: 0.7),
-          'shadow': Colors.blue.withValues(alpha: 0.4),
+          'border': isDark
+              ? Colors.blue.withValues(alpha: 0.5)
+              : Colors.blue.withValues(alpha: 0.7),
+          'shadow': isDark
+              ? Colors.blue.withValues(alpha: 0.3)
+              : Colors.blue.withValues(alpha: 0.4),
         };
 
       // Freezing rain - Cyan theme
       case 66:
       case 67:
         return {
-          'border': Colors.cyan.withValues(alpha: 0.7),
-          'shadow': Colors.cyan.withValues(alpha: 0.4),
+          'border': isDark
+              ? Colors.cyan.withValues(alpha: 0.5)
+              : Colors.cyan.withValues(alpha: 0.7),
+          'shadow': isDark
+              ? Colors.cyan.withValues(alpha: 0.3)
+              : Colors.cyan.withValues(alpha: 0.4),
         };
 
       // Snow fall - White theme
@@ -667,15 +1152,23 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 73:
       case 75:
         return {
-          'border': Colors.white.withValues(alpha: 0.8),
-          'shadow': Colors.white.withValues(alpha: 0.5),
+          'border': isDark
+              ? Colors.blue.withValues(alpha: 0.5)
+              : Colors.white.withValues(alpha: 0.8),
+          'shadow': isDark
+              ? Colors.blue.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: 0.5),
         };
 
       // Snow grains - Light white theme
       case 77:
         return {
-          'border': Colors.white.withValues(alpha: 0.7),
-          'shadow': Colors.white.withValues(alpha: 0.4),
+          'border': isDark
+              ? Colors.blue.withValues(alpha: 0.4)
+              : Colors.white.withValues(alpha: 0.7),
+          'shadow': isDark
+              ? Colors.blue.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.4),
         };
 
       // Rain showers - Dark blue theme
@@ -683,45 +1176,190 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       case 81:
       case 82:
         return {
-          'border': Colors.indigo.withValues(alpha: 0.7),
-          'shadow': Colors.indigo.withValues(alpha: 0.4),
+          'border': isDark
+              ? Colors.indigo.withValues(alpha: 0.5)
+              : Colors.indigo.withValues(alpha: 0.7),
+          'shadow': isDark
+              ? Colors.indigo.withValues(alpha: 0.3)
+              : Colors.indigo.withValues(alpha: 0.4),
         };
 
       // Snow showers - Light white theme
       case 85:
       case 86:
         return {
-          'border': Colors.white.withValues(alpha: 0.6),
-          'shadow': Colors.white.withValues(alpha: 0.3),
+          'border': isDark
+              ? Colors.blue.withValues(alpha: 0.4)
+              : Colors.white.withValues(alpha: 0.6),
+          'shadow': isDark
+              ? Colors.blue.withValues(alpha: 0.2)
+              : Colors.white.withValues(alpha: 0.3),
         };
 
       // Thunderstorm - Purple theme
       case 95:
         return {
-          'border': Colors.purple.withValues(alpha: 0.7),
-          'shadow': Colors.purple.withValues(alpha: 0.4),
+          'border': isDark
+              ? Colors.purple.withValues(alpha: 0.5)
+              : Colors.purple.withValues(alpha: 0.7),
+          'shadow': isDark
+              ? Colors.purple.withValues(alpha: 0.3)
+              : Colors.purple.withValues(alpha: 0.4),
         };
 
       // Thunderstorm with hail - Dark purple theme
       case 96:
       case 99:
         return {
-          'border': Colors.deepPurple.withValues(alpha: 0.8),
-          'shadow': Colors.deepPurple.withValues(alpha: 0.5),
+          'border': isDark
+              ? Colors.deepPurple.withValues(alpha: 0.6)
+              : Colors.deepPurple.withValues(alpha: 0.8),
+          'shadow': isDark
+              ? Colors.deepPurple.withValues(alpha: 0.4)
+              : Colors.deepPurple.withValues(alpha: 0.5),
         };
 
       default:
         // Default sunny theme
         return {
-          'border': Colors.orange.withValues(alpha: 0.6),
-          'shadow': Colors.orange.withValues(alpha: 0.3),
+          'border': isDark
+              ? Colors.orange.withValues(alpha: 0.4)
+              : Colors.orange.withValues(alpha: 0.6),
+          'shadow': isDark
+              ? Colors.orange.withValues(alpha: 0.2)
+              : Colors.orange.withValues(alpha: 0.3),
         };
     }
   }
 
-  /// Uyarı tipine göre renk döndürür
-  Color _getAlertColor(String alertType) {
-    return Colors.white; // Tüm uyarı mesajları beyaz
+  /// Uyarı tipine göre renk döndürür (hava durumu kartı için)
+  Color _getAlertColor(String alertType, bool isDark) {
+    // Hava durumu kartı üzerinde olduğu için beyaz/açık renk kullan
+    if (isDark) {
+      // Dark mode: daha parlak beyaz
+      return alertType == 'warning'
+          ? Colors.white.withValues(alpha: 0.95)
+          : Colors.white.withValues(alpha: 0.9);
+    } else {
+      // Light mode: beyaz
+      return alertType == 'warning'
+          ? Colors.white.withValues(alpha: 0.95)
+          : Colors.white.withValues(alpha: 0.9);
+    }
+  }
+
+  /// Hava durumu kartı için metin rengi döndürür
+  Color _getWeatherTextColor(bool isDark, {double alpha = 1.0}) {
+    // Gradient üzerinde olduğu için beyaz kullan
+    return Colors.white.withValues(alpha: alpha);
+  }
+
+  /// Hava durumu kartı için ikon rengi döndürür
+  Color _getWeatherIconColor(bool isDark) {
+    // Gradient üzerinde olduğu için beyaz kullan
+    return Colors.white;
+  }
+
+  /// Animasyonlu gece/gündüz göstergesi widget'ı
+  Widget _buildDayNightIndicator(bool isDark) {
+    final isNight = _isNightTime();
+    
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeInOut,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.scale(
+            scale: 0.85 + (value * 0.15),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 600),
+                  transitionBuilder: (child, animation) {
+                    return RotationTransition(
+                      turns: Tween<double>(begin: 0.0, end: 0.5).animate(
+                        CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeInOut,
+                        ),
+                      ),
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: 0.5, end: 1.0).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.elasticOut,
+                          ),
+                        ),
+                        child: FadeTransition(
+                          opacity: animation,
+                          child: child,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Icon(
+                    isNight ? Icons.nightlight_round : Icons.wb_sunny,
+                    key: ValueKey(isNight),
+                    color: _getWeatherTextColor(isDark, alpha: 0.9),
+                    size: 14,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.0, 0.2),
+                          end: Offset.zero,
+                        ).animate(CurvedAnimation(
+                          parent: animation,
+                          curve: Curves.easeOut,
+                        )),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Text(
+                    _getDayNightStatus(),
+                    key: ValueKey(_getDayNightStatus()),
+                    style: GoogleFonts.poppins(
+                      color: _getWeatherTextColor(isDark, alpha: 0.85),
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Rüzgar yönünü derece cinsinden metin olarak döndürür
+  String _getWindDirection(int? windDirection) {
+    if (windDirection == null) return '';
+    
+    // Rüzgar yönü 0-360 derece arasında
+    if (windDirection >= 337.5 || windDirection < 22.5) return 'K';
+    if (windDirection >= 22.5 && windDirection < 67.5) return 'KD';
+    if (windDirection >= 67.5 && windDirection < 112.5) return 'D';
+    if (windDirection >= 112.5 && windDirection < 157.5) return 'GD';
+    if (windDirection >= 157.5 && windDirection < 202.5) return 'G';
+    if (windDirection >= 202.5 && windDirection < 247.5) return 'GB';
+    if (windDirection >= 247.5 && windDirection < 292.5) return 'B';
+    if (windDirection >= 292.5 && windDirection < 337.5) return 'KB';
+    
+    return '';
   }
 
   @override
@@ -835,7 +1473,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -845,7 +1483,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         : 'Deneme süreniz doldu',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -925,7 +1563,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -933,7 +1571,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     'Aboneliğinizi yenileyerek tüm özelliklerden yararlanmaya devam edin',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -1020,7 +1658,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1028,7 +1666,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       '$remainingDays gün kaldı. Yenilemeyi unutmayın!',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -1267,7 +1905,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -1288,10 +1926,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25),
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.25),
                     width: 1,
                   ),
                 ),
@@ -1321,7 +1959,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     style: GoogleFonts.poppins(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                       letterSpacing: 0.2,
                     ),
                   );
@@ -1336,7 +1974,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
                       fontSize: narrow ? 11 : 12,
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                       fontWeight: FontWeight.w500,
                     ),
                   );
@@ -1345,7 +1983,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 Container(
                   height: 1,
                   width: double.infinity,
-                  color: Colors.white.withValues(alpha: 0.12),
+                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.12),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -1366,26 +2004,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildWeatherRow(bool isDark) {
     // Weather verisi yoksa loading göster
     if (_weather == null) {
+      final loadingColors = _getWeatherGradientColors(null, isDark);
+      final loadingTheme = _getWeatherColors(null, isDark);
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.orange, Colors.orange],
+            colors: loadingColors,
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.orange.withValues(alpha: 0.6)),
+          border: Border.all(color: loadingTheme['border']!),
         ),
         child: Row(
           children: [
-            const Icon(
-              Icons.wb_sunny,
-              color: Colors.white,
-              size: 24,
-            ),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1393,7 +2027,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Text(
                     'Hava durumu yükleniyor...',
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: _getWeatherTextColor(isDark),
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1402,13 +2036,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Text(
                     'İstanbul',
                     style: GoogleFonts.poppins(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: _getWeatherTextColor(isDark, alpha: 0.85),
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 12),
+            Icon(
+              Icons.wb_sunny,
+              color: _getWeatherIconColor(isDark),
+              size: 24,
             ),
             const SizedBox(
               width: 20,
@@ -1431,19 +2071,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: _getWeatherGradientColors(
-              _weather != null ? _weather!['weathercode'] as int? : null),
+              _weather != null ? _weather!['weathercode'] as int? : null, isDark),
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _getWeatherColors(_weather != null
               ? _weather!['weathercode'] as int?
-              : null)['border']!,
+              : null, isDark)['border']!,
         ),
         boxShadow: [
           BoxShadow(
             color: _getWeatherColors(_weather != null
                 ? _weather!['weathercode'] as int?
-                : null)['shadow']!,
+                : null, isDark)['shadow']!,
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -1451,14 +2091,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
       child: Row(
         children: [
-          // Weather Icon
-          Icon(
-            _getWeatherIcon(
-                _weather != null ? _weather!['weathercode'] as int? : null),
-            color: Colors.white,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
           // Weather Info
           Expanded(
             child: Column(
@@ -1472,7 +2104,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           ? '${_weather!['temperature']}°C'
                           : 'Hava',
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: _getWeatherTextColor(isDark),
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1483,7 +2115,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           ? _weather!['weathercode'] as int?
                           : null),
                       style: GoogleFonts.poppins(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: _getWeatherTextColor(isDark, alpha: 0.95),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1491,55 +2123,124 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ],
                 ),
                 const SizedBox(height: 4),
-                // Weather Alert (if exists) - Desktop
-                if (_getWeatherAlert(_weather != null
-                            ? _weather!['weathercode'] as int?
-                            : null) !=
-                        null ||
-                    _getHeatAlert(_weather != null
-                            ? (_weather!['temperature'] as num?)?.toDouble()
-                            : null) !=
-                        null)
+                // Weather Alert (if exists) - Desktop - Entegre uyarı sistemi
+                if (_getIntegratedWeatherAlert(
+                      _weather != null ? _weather!['weathercode'] as int? : null,
+                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['humidity'] as int?) : null,
+                    ) !=
+                    null)
                   Text(
-                    _getWeatherAlert(_weather != null
-                                ? _weather!['weathercode'] as int?
-                                : null) !=
-                            null
-                        ? _getWeatherAlert(_weather != null
-                            ? _weather!['weathercode'] as int?
-                            : null)!['message']
-                        : _getHeatAlert(_weather != null
-                            ? (_weather!['temperature'] as num?)?.toDouble()
-                            : null)!['message'],
+                    _getIntegratedWeatherAlert(
+                      _weather != null ? _weather!['weathercode'] as int? : null,
+                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['humidity'] as int?) : null,
+                    )!['message'],
                     style: GoogleFonts.poppins(
-                      color: _getAlertColor(_getWeatherAlert(_weather != null
-                                  ? _weather!['weathercode'] as int?
-                                  : null) !=
-                              null
-                          ? _getWeatherAlert(_weather != null
-                              ? _weather!['weathercode'] as int?
-                              : null)!['type']
-                          : _getHeatAlert(_weather != null
-                              ? (_weather!['temperature'] as num?)?.toDouble()
-                              : null)!['type']),
-                      fontSize: 10,
+                      color: _getAlertColor(
+                        _getIntegratedWeatherAlert(
+                          _weather != null ? _weather!['weathercode'] as int? : null,
+                          _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
+                          _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                          _weather != null ? (_weather!['humidity'] as int?) : null,
+                        )!['type'],
+                        isDark,
+                      ),
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
                 const SizedBox(height: 4),
+                // Additional weather info: Wind and Humidity
+                Row(
+                  children: [
+                    // Wind Speed
+                    if (_weather != null && _weather!['windspeed'] != null) ...[
+                      Icon(
+                        Icons.air,
+                        size: 12,
+                        color: _getWeatherTextColor(isDark, alpha: 0.9),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${(_weather!['windspeed'] as num).toStringAsFixed(0)} km/h',
+                        style: GoogleFonts.poppins(
+                          color: _getWeatherTextColor(isDark, alpha: 0.9),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      // Wind Direction
+                      if (_weather != null && _weather!['winddirection'] != null) ...[
+                        const SizedBox(width: 2),
+                        Text(
+                          _getWindDirection((_weather!['winddirection'] as num?)?.toInt()),
+                          style: GoogleFonts.poppins(
+                            color: _getWeatherTextColor(isDark, alpha: 0.85),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ],
+                    // Separator
+                    if (_weather != null && 
+                        _weather!['windspeed'] != null && 
+                        _weather!['humidity'] != null) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        width: 1,
+                        height: 12,
+                        color: _getWeatherTextColor(isDark, alpha: 0.4),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    // Humidity
+                    if (_weather != null && _weather!['humidity'] != null) ...[
+                      Icon(
+                        Icons.water_drop,
+                        size: 12,
+                        color: _getWeatherTextColor(isDark, alpha: 0.9),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '%${_weather!['humidity']}',
+                        style: GoogleFonts.poppins(
+                          color: _getWeatherTextColor(isDark, alpha: 0.9),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                // Day/Night Indicator with Animation
+                _buildDayNightIndicator(isDark),
+                const SizedBox(height: 4),
                 // Location
                 Text(
                   _locationName ?? 'İstanbul',
                   style: GoogleFonts.poppins(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: _getWeatherTextColor(isDark, alpha: 0.85),
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 12),
+          // Weather Icon (moved to right)
+          Icon(
+            _getWeatherIcon(
+                _weather != null ? _weather!['weathercode'] as int? : null),
+            color: _getWeatherIconColor(isDark),
+            size: 24,
           ),
         ],
       ),
@@ -1549,26 +2250,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   Widget _buildWeatherRowMobile(bool isDark) {
     // Weather verisi yoksa loading göster
     if (_weather == null) {
+      final loadingColors = _getWeatherGradientColors(null, isDark);
+      final loadingTheme = _getWeatherColors(null, isDark);
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.orange, Colors.orange],
+            colors: loadingColors,
           ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange.withValues(alpha: 0.6)),
+          border: Border.all(color: loadingTheme['border']!),
         ),
         child: Row(
           children: [
-            const Icon(
-              Icons.wb_sunny,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1576,7 +2273,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Text(
                     'Hava durumu yükleniyor...',
                     style: GoogleFonts.poppins(
-                      color: Colors.white,
+                      color: _getWeatherTextColor(isDark),
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
@@ -1587,7 +2284,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Text(
                     'İstanbul',
                     style: GoogleFonts.poppins(
-                      color: Colors.white.withValues(alpha: 0.8),
+                      color: _getWeatherTextColor(isDark, alpha: 0.85),
                       fontSize: 10,
                       fontWeight: FontWeight.w400,
                     ),
@@ -1596,6 +2293,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ),
                 ],
               ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.wb_sunny,
+              color: _getWeatherIconColor(isDark),
+              size: 20,
             ),
             const SizedBox(
               width: 16,
@@ -1618,19 +2321,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: _getWeatherGradientColors(
-              _weather != null ? _weather!['weathercode'] as int? : null),
+              _weather != null ? _weather!['weathercode'] as int? : null, isDark),
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: _getWeatherColors(_weather != null
               ? _weather!['weathercode'] as int?
-              : null)['border']!,
+              : null, isDark)['border']!,
         ),
         boxShadow: [
           BoxShadow(
             color: _getWeatherColors(_weather != null
                 ? _weather!['weathercode'] as int?
-                : null)['shadow']!,
+                : null, isDark)['shadow']!,
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -1638,14 +2341,6 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       ),
       child: Row(
         children: [
-          // Weather Icon
-          Icon(
-            _getWeatherIcon(
-                _weather != null ? _weather!['weathercode'] as int? : null),
-            color: Colors.white,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
           // Weather Info
           Expanded(
             child: Column(
@@ -1659,7 +2354,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           ? '${_weather!['temperature']}°C'
                           : 'Hava',
                       style: GoogleFonts.poppins(
-                        color: Colors.white,
+                        color: _getWeatherTextColor(isDark),
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1673,7 +2368,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                             ? _weather!['weathercode'] as int?
                             : null),
                         style: GoogleFonts.poppins(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: _getWeatherTextColor(isDark, alpha: 0.95),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -1684,49 +2379,110 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   ],
                 ),
                 const SizedBox(height: 2),
-                // Weather Alert (if exists) - Mobile
-                if (_getWeatherAlert(_weather != null
-                            ? _weather!['weathercode'] as int?
-                            : null) !=
-                        null ||
-                    _getHeatAlert(_weather != null
-                            ? (_weather!['temperature'] as num?)?.toDouble()
-                            : null) !=
-                        null)
+                // Weather Alert (if exists) - Mobile - Entegre uyarı sistemi
+                if (_getIntegratedWeatherAlert(
+                      _weather != null ? _weather!['weathercode'] as int? : null,
+                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['humidity'] as int?) : null,
+                    ) !=
+                    null)
                   Text(
-                    _getWeatherAlert(_weather != null
-                                ? _weather!['weathercode'] as int?
-                                : null) !=
-                            null
-                        ? _getWeatherAlert(_weather != null
-                            ? _weather!['weathercode'] as int?
-                            : null)!['message']
-                        : _getHeatAlert(_weather != null
-                            ? (_weather!['temperature'] as num?)?.toDouble()
-                            : null)!['message'],
+                    _getIntegratedWeatherAlert(
+                      _weather != null ? _weather!['weathercode'] as int? : null,
+                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null ? (_weather!['humidity'] as int?) : null,
+                    )!['message'],
                     style: GoogleFonts.poppins(
-                      color: _getAlertColor(_getWeatherAlert(_weather != null
-                                  ? _weather!['weathercode'] as int?
-                                  : null) !=
-                              null
-                          ? _getWeatherAlert(_weather != null
-                              ? _weather!['weathercode'] as int?
-                              : null)!['type']
-                          : _getHeatAlert(_weather != null
-                              ? (_weather!['temperature'] as num?)?.toDouble()
-                              : null)!['type']),
-                      fontSize: 8,
+                      color: _getAlertColor(
+                        _getIntegratedWeatherAlert(
+                          _weather != null ? _weather!['weathercode'] as int? : null,
+                          _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
+                          _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                          _weather != null ? (_weather!['humidity'] as int?) : null,
+                        )!['type'],
+                        isDark,
+                      ),
+                      fontSize: 10,
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
                     maxLines: 1,
                   ),
                 const SizedBox(height: 2),
+                // Additional weather info: Wind and Humidity (Mobile)
+                Row(
+                  children: [
+                    // Wind Speed
+                    if (_weather != null && _weather!['windspeed'] != null) ...[
+                      Icon(
+                        Icons.air,
+                        size: 10,
+                        color: _getWeatherTextColor(isDark, alpha: 0.9),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '${(_weather!['windspeed'] as num).toStringAsFixed(0)} km/h',
+                        style: GoogleFonts.poppins(
+                          color: _getWeatherTextColor(isDark, alpha: 0.9),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      // Wind Direction
+                      if (_weather != null && _weather!['winddirection'] != null) ...[
+                        const SizedBox(width: 2),
+                        Text(
+                          _getWindDirection((_weather!['winddirection'] as num?)?.toInt()),
+                          style: GoogleFonts.poppins(
+                            color: _getWeatherTextColor(isDark, alpha: 0.85),
+                            fontSize: 8,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ],
+                    // Separator
+                    if (_weather != null && 
+                        _weather!['windspeed'] != null && 
+                        _weather!['humidity'] != null) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 1,
+                        height: 10,
+                        color: _getWeatherTextColor(isDark, alpha: 0.4),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    // Humidity
+                    if (_weather != null && _weather!['humidity'] != null) ...[
+                      Icon(
+                        Icons.water_drop,
+                        size: 10,
+                        color: _getWeatherTextColor(isDark, alpha: 0.9),
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        '%${_weather!['humidity']}',
+                        style: GoogleFonts.poppins(
+                          color: _getWeatherTextColor(isDark, alpha: 0.9),
+                          fontSize: 9,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                // Day/Night Indicator with Animation (Mobile)
+                _buildDayNightIndicator(isDark),
+                const SizedBox(height: 2),
                 // Location
                 Text(
                   _locationName ?? 'İstanbul',
                   style: GoogleFonts.poppins(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: _getWeatherTextColor(isDark, alpha: 0.85),
                     fontSize: 10,
                     fontWeight: FontWeight.w400,
                   ),
@@ -1735,6 +2491,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 8),
+          // Weather Icon (moved to right)
+          Icon(
+            _getWeatherIcon(
+                _weather != null ? _weather!['weathercode'] as int? : null),
+            color: _getWeatherIconColor(isDark),
+            size: 20,
           ),
         ],
       ),
@@ -1745,27 +2509,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white, // Beyaz
-            Colors.grey.shade100, // Açık gri
-          ],
-        ),
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.grey.shade300,
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade400,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-            spreadRadius: 0,
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.black12,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1775,7 +2532,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.grey[800],
             ),
           ),
           const SizedBox(height: 16),
@@ -1790,47 +2547,47 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     _buildActionCardHorizontal(
                         isMobile ? 'Fatura' : 'Fatura Oluştur',
                         Icons.receipt_long,
-                        TamgaciConstants.primaryColor, () {
+                        isDark ? const Color(0xFF3B82F6) : const Color(0xFF2563EB), () {
                       context.pushNamed('invoices-list');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(isMobile ? 'Ürün' : 'Ürün Ekle',
-                        Icons.inventory_2, Colors.orange, () {
+                        Icons.inventory_2, isDark ? const Color(0xFFF59E0B) : const Color(0xFFD97706), () {
                       context.pushNamed('create-product');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Müşteri' : 'Müşteri Ekle',
                         Icons.person_add,
-                        Colors.blue, () {
+                        isDark ? const Color(0xFF8B5CF6) : const Color(0xFF7C3AED), () {
                       context.pushNamed('create-customer');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Stok' : 'Stok İşlemi',
                         Icons.warehouse,
-                        Colors.green, () {
+                        isDark ? const Color(0xFF10B981) : const Color(0xFF059669), () {
                       context.pushNamed('inventory');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Depo' : 'Depo Listesi',
                         Icons.list,
-                        Colors.indigo, () {
+                        isDark ? const Color(0xFF6366F1) : const Color(0xFF4F46E5), () {
                       context.pushNamed('warehouses-home');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Stok Listesi' : 'Stok Listesi',
                         Icons.inventory,
-                        Colors.teal, () {
+                        isDark ? const Color(0xFF14B8A6) : const Color(0xFF0D9488), () {
                       context.pushNamed('stock-list');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Test' : 'Logger Test',
                         Icons.color_lens,
-                        Colors.pink, () {
+                        isDark ? const Color(0xFFEC4899) : const Color(0xFFDB2777), () {
                       context.pushNamed('colorized-logger-test');
                     }, isDark),
                   ],
@@ -1852,14 +2609,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: color,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              color,
+              color.withValues(alpha: 0.85),
+            ],
+          ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.8), width: 1),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.3 : 0.2),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.6),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: color.withValues(alpha: isDark ? 0.4 : 0.25),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
               spreadRadius: 0,
             ),
           ],
@@ -1888,23 +2655,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white, // Beyaz
-            Colors.grey.shade100, // Açık gri
-          ],
-        ),
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade400,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-            spreadRadius: 0,
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.black12,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1914,7 +2678,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: isDark ? Colors.white : Colors.grey[800],
             ),
           ),
           const SizedBox(height: 12),
@@ -1969,41 +2733,63 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       AsyncValue<DashboardSummary> dashboardSummaryAsync, bool isDark) {
     return dashboardSummaryAsync.when(
       data: (summary) {
+        // Modern renk paleti - light ve dark mode için optimize edilmiş
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        
+        // Satış - Yeşil tonları
+        final salesColor = isDark ? const Color(0xFF10B981) : const Color(0xFF059669);
+        // Alış - Turuncu tonları
+        final purchaseColor = isDark ? const Color(0xFFF59E0B) : const Color(0xFFD97706);
+        // Kar - Yeşil, Zarar - Kırmızı
+        final profitColor = summary.netProfit >= 0
+            ? (isDark ? const Color(0xFF10B981) : const Color(0xFF059669))
+            : (isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626));
+        // Bakiye - Mavi tonları
+        final balanceColor = isDark ? const Color(0xFF3B82F6) : const Color(0xFF2563EB);
+        // Kritik Stok - Turuncu/Kırmızı tonları
+        final criticalColor = isDark ? const Color(0xFFF97316) : const Color(0xFFEA580C);
+        // Müşteri - Mor tonları
+        final customerColor = isDark ? const Color(0xFF8B5CF6) : const Color(0xFF7C3AED);
+        // Tahsilat - Teal tonları
+        final receivablesColor = isDark ? const Color(0xFF14B8A6) : const Color(0xFF0D9488);
+        // Ödeme - Pembe tonları
+        final payablesColor = isDark ? const Color(0xFFEC4899) : const Color(0xFFDB2777);
+
         final cards = <Widget>[
           DashboardStatsCard(
             title: 'Toplam Satış',
             value: summary.totalSales,
             currency: 'TRY',
             icon: Icons.trending_up,
-            iconColor: Colors.green,
-            backgroundColor: Colors.green,
+            iconColor: salesColor,
+            backgroundColor: salesColor,
             percentageChange: summary.salesGrowthRate,
             percentageColor:
-                summary.salesGrowthRate >= 0 ? Colors.green : Colors.red,
+                summary.salesGrowthRate >= 0 ? salesColor : (isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626)),
           ),
           DashboardStatsCard(
             title: 'Toplam Alış',
             value: summary.totalPurchases,
             currency: 'TRY',
             icon: Icons.shopping_cart,
-            iconColor: Colors.amber,
-            backgroundColor: Colors.amber,
+            iconColor: purchaseColor,
+            backgroundColor: purchaseColor,
           ),
           DashboardStatsCard(
             title: 'Net Kar/Zarar',
             value: summary.netProfit,
             currency: 'TRY',
             icon: Icons.account_balance_wallet,
-            iconColor: summary.netProfit >= 0 ? Colors.green : Colors.red,
-            backgroundColor: summary.netProfit >= 0 ? Colors.green : Colors.red,
+            iconColor: profitColor,
+            backgroundColor: profitColor,
           ),
           DashboardStatsCard(
             title: 'Toplam Bakiye',
             value: summary.totalBalance,
             currency: 'TRY',
             icon: Icons.account_balance,
-            iconColor: Colors.cyan,
-            backgroundColor: Colors.cyan,
+            iconColor: balanceColor,
+            backgroundColor: balanceColor,
           ),
           DashboardStatsCard(
             title: 'Kritik Stok',
@@ -2011,8 +2797,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             currency: '',
             subtitle: 'ürün',
             icon: Icons.warning,
-            iconColor: Colors.deepOrange,
-            backgroundColor: Colors.deepOrange,
+            iconColor: criticalColor,
+            backgroundColor: criticalColor,
           ),
           DashboardStatsCard(
             title: 'Toplam Müşteri',
@@ -2020,24 +2806,24 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             currency: '',
             subtitle: 'kişi',
             icon: Icons.people,
-            iconColor: Colors.deepPurple,
-            backgroundColor: Colors.deepPurple,
+            iconColor: customerColor,
+            backgroundColor: customerColor,
           ),
           DashboardStatsCard(
             title: 'Bekleyen Tahsilat',
             value: summary.pendingReceivables,
             currency: 'TRY',
             icon: Icons.download,
-            iconColor: Colors.lightGreen,
-            backgroundColor: Colors.lightGreen,
+            iconColor: receivablesColor,
+            backgroundColor: receivablesColor,
           ),
           DashboardStatsCard(
             title: 'Bekleyen Ödeme',
             value: summary.pendingPayables,
             currency: 'TRY',
             icon: Icons.upload,
-            iconColor: Colors.pink,
-            backgroundColor: Colors.pink,
+            iconColor: payablesColor,
+            backgroundColor: payablesColor,
           ),
         ];
 

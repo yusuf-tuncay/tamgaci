@@ -22,23 +22,20 @@ class ExchangeRatesWidget extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white, // Beyaz
-            Colors.grey.shade100, // Açık gri
-          ],
-        ),
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade400,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-            spreadRadius: 0,
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.black12,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +74,7 @@ class ExchangeRatesWidget extends ConsumerWidget {
                     style: GoogleFonts.poppins(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.grey[800],
                     ),
                   ),
                   const Spacer(),
@@ -176,7 +173,7 @@ class ExchangeRatesWidget extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               const Spacer(),

@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/constants.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_providers.dart';
 
@@ -64,8 +63,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -94,12 +94,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: TamgaciConstants.primaryColor,
+                        color: theme.colorScheme.primary,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.lock_reset,
-                        color: Colors.white,
+                        color: theme.colorScheme.onPrimary,
                         size: 40,
                       ),
                     ),
@@ -109,7 +109,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: TamgaciConstants.textPrimary,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -117,7 +117,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                       'E-posta adresinizi girin, şifrenizi sıfırlamak için size bir bağlantı göndereceğiz.',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: TamgaciConstants.textSecondary,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -160,21 +160,21 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                       return ElevatedButton(
                         onPressed: isLoading ? null : _sendResetEmail,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: TamgaciConstants.primaryColor,
-                          foregroundColor: Colors.white,
+                          backgroundColor: theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
+                                    theme.colorScheme.onPrimary,
                                   ),
                                 ),
                               )
@@ -220,7 +220,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           'Şifre sıfırlama bağlantısı ${_emailController.text} adresine gönderildi. Lütfen e-postanızı kontrol edin.',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: TamgaciConstants.textSecondary,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                           ),
                           textAlign: TextAlign.center,
                         ),
@@ -264,7 +264,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                       'Şifrenizi hatırladınız mı? ',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: TamgaciConstants.textSecondary,
+                        color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
                     TextButton(
@@ -276,7 +276,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: TamgaciConstants.primaryColor,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ),

@@ -100,6 +100,42 @@ class AppTheme {
         textColor: _onSurfaceLight,
         iconColor: _onSurfaceLight,
       ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: _surfaceLight,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: _surfaceLight,
+        titleTextStyle: const TextStyle(
+          color: _onSurfaceLight,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: const TextStyle(
+          color: _onSurfaceLight,
+          fontSize: 14,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      chipTheme: const ChipThemeData(
+        backgroundColor: _surfaceLight,
+        deleteIconColor: _onSurfaceLight,
+        disabledColor: Color(0xFFE0E0E0),
+        selectedColor: _primaryLight,
+        secondarySelectedColor: _secondaryLight,
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        labelStyle: TextStyle(color: _onSurfaceLight),
+        secondaryLabelStyle: TextStyle(color: _onPrimaryLight),
+        brightness: Brightness.light,
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: _surfaceLight,
+        scrimColor: Color(0x40000000),
+      ),
     );
   }
 
@@ -180,6 +216,42 @@ class AppTheme {
       listTileTheme: const ListTileThemeData(
         textColor: _onSurfaceDark,
         iconColor: _onSurfaceDark,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: _surfaceDark,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: _surfaceDark,
+        titleTextStyle: const TextStyle(
+          color: _onSurfaceDark,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: const TextStyle(
+          color: _onSurfaceDark,
+          fontSize: 14,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      chipTheme: const ChipThemeData(
+        backgroundColor: _surfaceDark,
+        deleteIconColor: _onSurfaceDark,
+        disabledColor: Color(0xFF424242),
+        selectedColor: _primaryDark,
+        secondarySelectedColor: _secondaryDark,
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        labelStyle: TextStyle(color: _onSurfaceDark),
+        secondaryLabelStyle: TextStyle(color: _onPrimaryDark),
+        brightness: Brightness.dark,
+      ),
+      drawerTheme: const DrawerThemeData(
+        backgroundColor: _surfaceDark,
+        scrimColor: Color(0x40000000),
       ),
     );
   }

@@ -103,9 +103,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -129,7 +127,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       children: [
         Container(
           height: MediaQuery.of(context).size.height,
-          color: Colors.white, // Beyaz arkaplan
+          color: Theme.of(context).scaffoldBackgroundColor,
           child: Row(
             children: [
               // Sol taraf - Login görseli
@@ -324,8 +322,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             fontSize: 16,
             fontWeight: FontWeight.w500,
             color: isDark
-                ? Colors.white.withValues(alpha: 0.8)
-                : Colors.black.withValues(alpha: 0.7),
+                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)
+                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -352,7 +350,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
             ),
             filled: true,
-            fillColor: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             labelStyle: TextStyle(
               color: isDark
                   ? TamgaciConstants.textSecondaryDark
@@ -406,7 +404,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
             ),
             filled: true,
-            fillColor: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             labelStyle: TextStyle(
               color: isDark
                   ? TamgaciConstants.textSecondaryDark
@@ -624,7 +622,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
@@ -701,7 +699,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),

@@ -14,13 +14,15 @@ class SimplePaymentTransactionRepository
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _cachedTenantId;
+  String? _cachedCompanyId;
+  Map<String, dynamic>? _cachedUserData;
 
   String _getCollectionPath(String tenantId) =>
       'tenants/$tenantId/payment_transactions';
 
-  Future<String> _tenantId() async {
-    if (_cachedTenantId != null) {
-      return _cachedTenantId!;
+  Future<Map<String, dynamic>> _userData() async {
+    if (_cachedUserData != null) {
+      return _cachedUserData!;
     }
 
     final user = _auth.currentUser;
@@ -28,24 +30,44 @@ class SimplePaymentTransactionRepository
       throw FirebaseException(
         plugin: 'SimplePaymentTransactionRepository',
         code: 'unauthenticated',
-        message: 'Kullanıcı oturumu yok. TenantId alınamadı.',
+        message: 'Kullanıcı oturumu yok. Kullanıcı bilgisi alınamadı.',
       );
     }
 
-    final userDoc =
-        await _firestore.collection('users').doc(user.uid).get(const GetOptions(
-              source: Source.serverAndCache,
-            ));
+    final userDoc = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .get(const GetOptions(source: Source.serverAndCache));
 
-    if (!userDoc.exists) {
+    if (!userDoc.exists || userDoc.data() == null) {
       throw FirebaseException(
         plugin: 'SimplePaymentTransactionRepository',
         code: 'user-doc-missing',
-        message: 'Kullanıcı dokümanı bulunamadı. TenantId alınamadı.',
+        message: 'Kullanıcı dokümanı bulunamadı.',
       );
     }
 
-    final tenantId = userDoc.data()?['tenantId'] as String?;
+    _cachedUserData = userDoc.data() as Map<String, dynamic>;
+    _cachedTenantId = (_cachedUserData?['tenantId'] as String?)?.trim();
+    final resolvedTenantId =
+        (_cachedTenantId != null && _cachedTenantId!.isNotEmpty)
+            ? _cachedTenantId!
+            : '';
+    final userCompanyId =
+        (_cachedUserData?['companyId'] as String?)?.trim() ?? '';
+    _cachedCompanyId =
+        userCompanyId.isNotEmpty ? userCompanyId : resolvedTenantId;
+    return _cachedUserData!;
+  }
+
+  Future<String> _tenantId() async {
+    if (_cachedTenantId != null && _cachedTenantId!.isNotEmpty) {
+      return _cachedTenantId!;
+    }
+
+    final data = await _userData();
+    final tenantId = (data['tenantId'] as String?)?.trim();
+
     if (tenantId == null || tenantId.isEmpty) {
       throw FirebaseException(
         plugin: 'SimplePaymentTransactionRepository',
@@ -57,6 +79,22 @@ class SimplePaymentTransactionRepository
     _cachedTenantId = tenantId;
     return tenantId;
   }
+
+  Future<String> _companyId() async {
+    if (_cachedCompanyId != null && _cachedCompanyId!.isNotEmpty) {
+      return _cachedCompanyId!;
+    }
+
+    final data = await _userData();
+    final tenantId = (data['tenantId'] as String?)?.trim() ?? '';
+    final companyId = (data['companyId'] as String?)?.trim();
+    final resolved =
+        (companyId != null && companyId.isNotEmpty) ? companyId : tenantId;
+    _cachedCompanyId = resolved;
+    return resolved;
+  }
+
+  String? _currentUserId() => _auth.currentUser?.uid;
 
   @override
   Future<List<PaymentTransaction>> getAllTransactions({
@@ -110,12 +148,24 @@ class SimplePaymentTransactionRepository
       PaymentTransaction transaction) async {
     try {
       final tenantId = await _tenantId();
+      final companyId = await _companyId();
+      final userId = _currentUserId() ?? transaction.createdBy;
       final docRef = _firestore.collection(_getCollectionPath(tenantId)).doc();
 
       final transactionData = _toFirestore(transaction);
       transactionData['id'] = docRef.id;
       transactionData['transactionNumber'] =
           'TXN-${DateTime.now().millisecondsSinceEpoch}';
+      transactionData['tenantId'] = tenantId;
+      transactionData['companyId'] =
+          (transactionData['companyId'] as String?)?.isNotEmpty == true
+              ? transactionData['companyId']
+              : companyId;
+      transactionData['createdBy'] =
+          (transactionData['createdBy'] as String?)?.isNotEmpty == true
+              ? transactionData['createdBy']
+              : userId;
+      transactionData['updatedBy'] = userId;
 
       await docRef.set(transactionData);
 
@@ -131,12 +181,29 @@ class SimplePaymentTransactionRepository
       PaymentTransaction transaction) async {
     try {
       final tenantId = await _tenantId();
+      final companyId = await _companyId();
+      final userId = _currentUserId() ?? transaction.updatedBy;
+
+      final updateData = _toFirestore(transaction);
+      updateData['tenantId'] = tenantId;
+      updateData['companyId'] =
+          (updateData['companyId'] as String?)?.isNotEmpty == true
+              ? updateData['companyId']
+              : companyId;
+      if (userId != null && userId.isNotEmpty) {
+        updateData['updatedBy'] = userId;
+      }
+
       await _firestore
           .collection(_getCollectionPath(tenantId))
           .doc(transaction.id)
-          .update(_toFirestore(transaction));
+          .update(updateData);
 
-      return transaction;
+      return transaction.copyWith(
+        tenantId: tenantId,
+        companyId: updateData['companyId'] as String? ?? transaction.companyId,
+        updatedBy: userId ?? transaction.updatedBy,
+      );
     } catch (e) {
       AppLogger.error('Error updating transaction', e);
       rethrow;

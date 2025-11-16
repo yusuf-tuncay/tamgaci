@@ -25,7 +25,7 @@ class ProductDetailPage extends ConsumerWidget {
     required this.productId,
   });
 
-  Widget _buildPremiumHeader(Product product) {
+  Widget _buildPremiumHeader(Product product, BuildContext context) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -34,16 +34,16 @@ class ProductDetailPage extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF6366F1), // Indigo-500
-            Color(0xFF8B5CF6), // Violet-500
-            Color(0xFF7C3AED), // Violet-600
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
             blurRadius: 18,
             spreadRadius: 1,
             offset: const Offset(0, 10),
@@ -58,12 +58,12 @@ class ProductDetailPage extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               _getProductTypeIcon(product.type),
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               size: 24,
             ),
           ),
@@ -78,7 +78,7 @@ class ProductDetailPage extends ConsumerWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -86,7 +86,7 @@ class ProductDetailPage extends ConsumerWidget {
                   '${product.type.displayName} • ${product.warehouseName ?? "Depo yok"}',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -140,9 +140,6 @@ class ProductDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Consumer(
       builder: (context, ref, child) {
         final productAsync = ref.watch(productDetailProvider(productId));
@@ -163,35 +160,52 @@ class ProductDetailPage extends ConsumerWidget {
             }
 
             return Scaffold(
-              backgroundColor: isDark
-                  ? TamgaciConstants.backgroundColorDark
-                  : TamgaciConstants.backgroundColor,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               appBar: AppBar(
                 title: Text(
                   product.name,
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                backgroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.surface,
                 elevation: 1,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.black87),
-                  onPressed: () => Navigator.of(context).pop(),
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  onPressed: () {
+                    try {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        // Fallback: Ürünler listesine git
+                        context.go('/products');
+                      }
+                    } catch (e) {
+                      debugPrint('Navigation error: $e');
+                      // Fallback navigation: Ürünler listesine git
+                      context.go('/products');
+                    }
+                  },
                 ),
                 actions: [
                   IconButton(
                     onPressed: () => _showProductActions(context, product, ref),
-                    icon: const Icon(Icons.more_vert, color: Colors.black87),
+                    icon: Icon(
+                      Icons.more_vert,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
                   ),
                 ],
               ),
               body: Column(
                 children: [
                   // Premium Header
-                  _buildPremiumHeader(product),
+                  _buildPremiumHeader(product, context),
 
                   // Content
                   Expanded(
@@ -325,10 +339,10 @@ class ProductDetailPage extends ConsumerWidget {
                             return Container(
                               width: 100,
                               height: 100,
-                              color: Colors.grey[300],
+                              color: isDark ? Colors.grey[800] : Colors.grey[300],
                               child: Icon(
                                 Icons.broken_image,
-                                color: Colors.grey[600],
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
                                 size: 32,
                               ),
                             );
@@ -338,7 +352,7 @@ class ProductDetailPage extends ConsumerWidget {
                             return Container(
                               width: 100,
                               height: 100,
-                              color: Colors.grey[200],
+                              color: isDark ? Colors.grey[800] : Colors.grey[200],
                               child: const Center(
                                 child: CircularProgressIndicator(),
                               ),
@@ -728,64 +742,71 @@ class ProductDetailPage extends ConsumerWidget {
             if (product.attributeValues != null &&
                 product.attributeValues!.isNotEmpty) ...[
               const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.tune, color: Colors.blue[700], size: 16),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Özel Özellikler',
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ],
+              Builder(
+                builder: (context) {
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[850] : Colors.blue.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.blue.withValues(alpha: 0.2),
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    ...product.attributeValues!.entries.map((entry) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Expanded(
-                              flex: 2,
-                              child: Text(
-                                entry.key,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                entry.value.toString(),
-                                style: GoogleFonts.poppins(
-                                  fontSize: 12,
-                                  color: Colors.grey[600],
-                                ),
+                            Icon(Icons.tune, color: Colors.blue[700], size: 16),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Özel Özellikler',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blue[700],
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }),
-                  ],
-                ),
+                        const SizedBox(height: 12),
+                        ...product.attributeValues!.entries.map((entry) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    entry.key,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    entry.value.toString(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12,
+                                      color: isDark ? Colors.grey[300] : Colors.grey[600],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ],
@@ -864,7 +885,7 @@ class ProductDetailPage extends ConsumerWidget {
                             '${CurrencyHelper.formatNumber(variant.stockQuantity.toDouble()).replaceAll(',00', '')} adet',
                             style: GoogleFonts.poppins(
                               fontSize: 11,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -949,7 +970,7 @@ class ProductDetailPage extends ConsumerWidget {
             Icon(
               icon,
               size: 16,
-              color: iconColor ?? Colors.grey[600],
+              color: iconColor ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
             ),
             const SizedBox(width: 8),
           ],
@@ -1031,19 +1052,15 @@ class ProductDetailPage extends ConsumerWidget {
               leading: const Icon(Icons.edit),
               title: const Text('Düzenle'),
               onTap: () {
-                Navigator.pop(context);
-                Navigator.pushNamed(
-                  context,
-                  '/products/create',
-                  arguments: product.id,
-                );
+                context.pop();
+                context.push('/products/create', extra: product.id);
               },
             ),
             ListTile(
               leading: const Icon(Icons.copy),
               title: const Text('Kopyala'),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 // Copy product functionality
               },
             ),
@@ -1051,7 +1068,7 @@ class ProductDetailPage extends ConsumerWidget {
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('Sil', style: TextStyle(color: Colors.red)),
               onTap: () {
-                Navigator.pop(context);
+                context.pop();
                 _showDeleteConfirmation(context, product, ref);
               },
             ),
@@ -1071,12 +1088,12 @@ class ProductDetailPage extends ConsumerWidget {
             Text('${product.name} ürününü silmek istediğinizden emin misiniz?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.pop(),
             child: const Text('İptal'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              context.pop();
               await _deleteProduct(context, product, ref);
             },
             child: const Text('Sil', style: TextStyle(color: Colors.red)),

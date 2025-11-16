@@ -6,6 +6,7 @@ import '../../core/guards/subscription_guard.dart';
 import '../../features/customers/presentation/pages/enhanced_customers_list_page.dart';
 import '../../features/customers/presentation/pages/customer_create_page.dart';
 import '../../features/customers/presentation/pages/enhanced_customer_detail_page_v2.dart';
+import '../../features/customers/presentation/pages/customer_all_transactions_page.dart';
 
 /// Customers routes
 class CustomersRoutes {
@@ -41,6 +42,19 @@ class CustomersRoutes {
               allowTrial: true,
               allowExpired: false,
               child: EnhancedCustomerDetailPageV2(customerId: id),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/customers/:id/all-transactions',
+          name: 'customer-all-transactions',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            return SubscriptionGuard(
+              allowTrial: true,
+              allowExpired: false,
+              child: CustomerAllTransactionsPage(customerId: id),
             );
           },
         ),

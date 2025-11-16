@@ -103,7 +103,7 @@ class _SvgWhiteLogoFallback extends StatelessWidget {
     return Image.asset(
       'assets/images/logos/140x140logo.png',
       fit: BoxFit.contain,
-      color: color ?? Colors.white,
+      color: color ?? Theme.of(context).colorScheme.onSurface,
       colorBlendMode: BlendMode.srcIn,
     );
   }
@@ -393,7 +393,10 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .shadow
+                        .withValues(alpha: 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 4),
                   ),
@@ -598,7 +601,8 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     }
     final now = DateTime.now();
     String text = '';
-    Color color = Colors.grey;
+    final theme = Theme.of(context);
+    Color color = theme.colorScheme.onSurface.withValues(alpha: 0.6);
 
     if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial &&
         user.trialEndAt != null) {
@@ -1026,12 +1030,13 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 fontSize: 15,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 color: !item.isActive
-                    ? Colors.grey
+                    ? Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6)
                     : (isActive
-                        ? TamgaciConstants.primaryColor
-                        : (isDark
-                            ? TamgaciConstants.textPrimaryDark
-                            : TamgaciConstants.textPrimary)),
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurface),
               ),
             ),
             trailing: hasSubItems
@@ -1226,16 +1231,14 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     return Container(
       margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: isDark ? TamgaciConstants.backgroundColorDark : Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark
-              ? TamgaciConstants.borderColor.withValues(alpha: 0.1)
-              : Colors.grey[200]!,
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 3),
           ),

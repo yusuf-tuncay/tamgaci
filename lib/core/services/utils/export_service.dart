@@ -104,6 +104,12 @@ class ExportService {
 
   /// Türkçe karakterleri İngilizce karakterlerle değiştir
   String _convertTurkishChars(String text) {
+    // Roboto font yüklüyse Türkçe karakterler desteklenir, dönüştürme yapma
+    if (_cachedRobotoFont != null) {
+      return text;
+    }
+    
+    // Font yoksa ASCII'ye dönüştür
     return text
         .replaceAll('ç', 'c')
         .replaceAll('Ç', 'C')
@@ -291,6 +297,7 @@ class ExportService {
                 style: pw.TextStyle(
                   fontSize: 16,
                   fontWeight: pw.FontWeight.bold,
+                  font: _cachedRobotoBoldFont,
                 ),
               ),
             );
@@ -301,9 +308,10 @@ class ExportService {
                 ..add(
                   pw.Text(
                     _convertTurkishChars(subtitle),
-                    style: const pw.TextStyle(
+                    style: pw.TextStyle(
                       fontSize: 10,
                       color: PdfColors.grey700,
+                      font: _cachedRobotoFont,
                     ),
                   ),
                 );
@@ -927,6 +935,7 @@ class ExportService {
                       fontSize: itemFontSize,
                       fontWeight: pw.FontWeight.bold,
                       color: PdfColors.blueGrey900,
+                      font: _cachedRobotoBoldFont,
                     ),
                   ),
                 ],
@@ -952,9 +961,13 @@ class ExportService {
           fontWeight: pw.FontWeight.bold,
           fontSize: 10,
           color: PdfColors.blueGrey800,
+          font: _cachedRobotoBoldFont,
         );
-    final pw.TextStyle effectiveCellStyle =
-        cellStyle ?? const pw.TextStyle(fontSize: 9);
+    final pw.TextStyle effectiveCellStyle = cellStyle ?? 
+        pw.TextStyle(
+          fontSize: 9,
+          font: _cachedRobotoFont,
+        );
     final pw.EdgeInsets effectiveHeaderPadding = headerPadding ??
         const pw.EdgeInsets.symmetric(vertical: 6, horizontal: 6);
     final pw.EdgeInsets effectiveCellPadding = cellPadding ??

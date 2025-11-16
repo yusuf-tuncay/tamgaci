@@ -116,7 +116,9 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(
+            color:
+                Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -143,7 +145,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -224,7 +226,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -375,18 +377,24 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
 
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.black12,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,7 +419,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: isDark ? Colors.white : Colors.grey[800],
             ),
           ),
           const SizedBox(height: 4),
@@ -419,7 +427,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
             title,
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
         ],
@@ -463,160 +471,168 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           return FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
-              position: _slideAnimation,
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Filtreler',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    // Arama çubuğu - tam genişlik
-                    _buildSearchField(),
-                    const SizedBox(height: 12),
-                    // Filtreler - iki satır
-                    Row(
-                      children: [
-                        Expanded(
-                          child:
-                              _buildFilterButton('Kategori', _selectedCategory),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildFilterButton(
-                              'Tür', _selectedType?.displayName ?? 'Tümü'),
+                position: _slideAnimation,
+                child: Builder(builder: (context) {
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
+                  return Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[850] : Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 16,
+                          spreadRadius: 1,
+                          offset: const Offset(0, 8),
                         ),
                       ],
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                        width: 1,
+                      ),
                     ),
-                    const SizedBox(height: 12),
-                    // İkinci satır: Sıralama ve Export/Import
-                    Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: _buildFilterButton('Sırala', 'İsim'),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _sortAscending = !_sortAscending;
-                            });
-                          },
-                          icon: Icon(
-                            _sortAscending
-                                ? Icons.arrow_upward
-                                : Icons.arrow_downward,
+                        Text(
+                          'Filtreler',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey[800],
                           ),
-                          tooltip: _sortAscending ? 'Artan' : 'Azalan',
                         ),
-                        const SizedBox(width: 8),
-                        // Export/Import butonları
+                        const SizedBox(height: 12),
+                        // Arama çubuğu - tam genişlik
+                        _buildSearchField(),
+                        const SizedBox(height: 12),
+                        // Filtreler - iki satır
                         Row(
-                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            IconButton(
-                              onPressed: _exportToExcel,
-                              icon: const Icon(Icons.table_chart),
-                              tooltip: 'Excel\'e Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.green.withValues(alpha: 0.1),
-                                foregroundColor: Colors.green,
-                              ),
+                            Expanded(
+                              child: _buildFilterButton(
+                                  'Kategori', _selectedCategory),
                             ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              onPressed: _exportToCSV,
-                              icon: const Icon(Icons.description),
-                              tooltip: 'CSV\'ye Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.blue.withValues(alpha: 0.1),
-                                foregroundColor: Colors.blue,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              onPressed: _exportToPDF,
-                              icon: const Icon(Icons.picture_as_pdf),
-                              tooltip: 'PDF\'ye Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.red.withValues(alpha: 0.1),
-                                foregroundColor: Colors.red,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              onPressed: _showImportDialog,
-                              icon: const Icon(Icons.upload_file),
-                              tooltip: 'Dosya İçe Aktar',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Colors.orange.withValues(alpha: 0.1),
-                                foregroundColor: Colors.orange,
-                              ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _buildFilterButton(
+                                  'Tür', _selectedType?.displayName ?? 'Tümü'),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                    if (_showLowStockOnly)
-                      Container(
-                        margin: const EdgeInsets.only(top: 12),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
+                        const SizedBox(height: 12),
+                        // İkinci satır: Sıralama ve Export/Import
+                        Row(
                           children: [
-                            Icon(Icons.warning,
-                                color: Colors.orange[600], size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Sadece düşük stoklu ürünler gösteriliyor',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: Colors.orange[600],
-                              ),
+                            Expanded(
+                              child: _buildFilterButton('Sırala', 'İsim'),
                             ),
-                            const Spacer(),
-                            GestureDetector(
-                              onTap: () {
+                            const SizedBox(width: 8),
+                            IconButton(
+                              onPressed: () {
                                 setState(() {
-                                  _showLowStockOnly = false;
+                                  _sortAscending = !_sortAscending;
                                 });
                               },
-                              child: Icon(Icons.close,
-                                  color: Colors.orange[600], size: 16),
+                              icon: Icon(
+                                _sortAscending
+                                    ? Icons.arrow_upward
+                                    : Icons.arrow_downward,
+                              ),
+                              tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                            ),
+                            const SizedBox(width: 8),
+                            // Export/Import butonları
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  onPressed: _exportToExcel,
+                                  icon: const Icon(Icons.table_chart),
+                                  tooltip: 'Excel\'e Aktar',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.green.withValues(alpha: 0.1),
+                                    foregroundColor: Colors.green,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  onPressed: _exportToCSV,
+                                  icon: const Icon(Icons.description),
+                                  tooltip: 'CSV\'ye Aktar',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.blue.withValues(alpha: 0.1),
+                                    foregroundColor: Colors.blue,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  onPressed: _exportToPDF,
+                                  icon: const Icon(Icons.picture_as_pdf),
+                                  tooltip: 'PDF\'ye Aktar',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.red.withValues(alpha: 0.1),
+                                    foregroundColor: Colors.red,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                IconButton(
+                                  onPressed: _showImportDialog,
+                                  icon: const Icon(Icons.upload_file),
+                                  tooltip: 'Dosya İçe Aktar',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor:
+                                        Colors.orange.withValues(alpha: 0.1),
+                                    foregroundColor: Colors.orange,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
+                        if (_showLowStockOnly)
+                          Container(
+                            margin: const EdgeInsets.only(top: 12),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning,
+                                    color: Colors.orange[600], size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Sadece düşük stoklu ürünler gösteriliyor',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: Colors.orange[600],
+                                  ),
+                                ),
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _showLowStockOnly = false;
+                                    });
+                                  },
+                                  child: Icon(Icons.close,
+                                      color: Colors.orange[600], size: 16),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                })),
           );
         },
       ),
@@ -652,15 +668,18 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   }
 
   Widget _buildFilterButton(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: () => _showFilterDialog(label),
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: isDark ? Colors.grey[800] : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(
+            color: isDark ? Colors.white12 : Colors.grey[300]!,
+          ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -669,11 +688,15 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
               '$label: $value',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[700],
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.arrow_drop_down, size: 16, color: Colors.grey),
+            Icon(
+              Icons.arrow_drop_down,
+              size: 16,
+              color: isDark ? Colors.grey[400] : Colors.grey,
+            ),
           ],
         ),
       ),
@@ -687,10 +710,19 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        color: isDark ? Colors.grey[850] : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
+          ),
+        ],
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: isDark ? Colors.white12 : Colors.black12,
+          width: 1,
         ),
       ),
       child: Row(
@@ -704,11 +736,35 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                   _searchQuery = value;
                 });
               },
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
               decoration: InputDecoration(
                 hintText: 'Ürün ara...',
-                prefixIcon: const Icon(Icons.search),
+                hintStyle: GoogleFonts.poppins(
+                  color: isDark ? Colors.grey[500] : Colors.grey[500],
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: isDark ? Colors.grey[400] : Colors.grey,
+                ),
+                filled: true,
+                fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.grey[300]!,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.grey[300]!,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Color(0xFF6366F1)),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -939,10 +995,19 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          color: isDark ? Colors.grey[850] : Colors.white,
           borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 16,
+              spreadRadius: 1,
+              offset: const Offset(0, 8),
+            ),
+          ],
           border: Border.all(
-            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+            color: isDark ? Colors.white12 : Colors.black12,
+            width: 1,
           ),
         ),
         child: Column(
@@ -955,6 +1020,12 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.black12,
+                    width: 1,
+                  ),
                 ),
               ),
               child: Row(
@@ -991,12 +1062,13 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
 
   /// Tablo başlığı widget'ı
   Widget _buildTableHeader(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
       style: GoogleFonts.poppins(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: TamgaciConstants.textPrimary,
+        color: isDark ? Colors.white : Colors.grey[800],
       ),
     );
   }

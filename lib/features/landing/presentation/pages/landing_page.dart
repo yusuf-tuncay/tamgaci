@@ -35,6 +35,7 @@ class _LandingPageState extends State<LandingPage>
 
   // State
   bool _isDesktop = false;
+  bool _isDesktopCheckScheduled = false;
   final bool _showBanner = true;
   final ScrollController _scrollController = ScrollController();
 
@@ -61,8 +62,9 @@ class _LandingPageState extends State<LandingPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Context hazır olduğunda device type kontrolü yap
-    if (_isDesktop == false && MediaQuery.of(context).size.width >= 768) {
+    // Context hazır olduğunda device type kontrolü yap (sadece bir kez)
+    if (!_isDesktopCheckScheduled && _isDesktop == false && MediaQuery.of(context).size.width >= 768) {
+      _isDesktopCheckScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           setState(() {
@@ -135,16 +137,29 @@ class _LandingPageState extends State<LandingPage>
     ));
 
     // Start animations
-    _fadeController.forward();
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _slideController.forward();
-    });
-    _floatController.repeat(reverse: true);
-    _pulseController.repeat(reverse: true);
+    if (mounted) {
+      _fadeController.forward();
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (mounted && !_slideController.isAnimating) {
+          _slideController.forward();
+        }
+      });
+      if (mounted) {
+        _floatController.repeat(reverse: true);
+        _pulseController.repeat(reverse: true);
+      }
+    }
   }
 
   @override
   void dispose() {
+    // Stop animations before disposing
+    _fadeController.stop();
+    _slideController.stop();
+    _floatController.stop();
+    _pulseController.stop();
+    
+    // Dispose controllers
     _fadeController.dispose();
     _slideController.dispose();
     _floatController.dispose();
@@ -1439,20 +1454,28 @@ class _LandingPageState extends State<LandingPage>
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildStatisticItem(
-                                  '1000+', 'Mutlu Müşteri', Icons.people),
-                              _buildStatisticItem(
-                                  '50+', 'Ülkede Hizmet', Icons.language),
+                              Flexible(
+                                child: _buildStatisticItem(
+                                    '1000+', 'Mutlu Müşteri', Icons.people),
+                              ),
+                              Flexible(
+                                child: _buildStatisticItem(
+                                    '50+', 'Ülkede Hizmet', Icons.language),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 30),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                             children: [
-                              _buildStatisticItem(
-                                  '99.9%', 'Uptime', Icons.cloud_done),
-                              _buildStatisticItem(
-                                  '7/24', 'Destek', Icons.support_agent),
+                              Flexible(
+                                child: _buildStatisticItem(
+                                    '99.9%', 'Uptime', Icons.cloud_done),
+                              ),
+                              Flexible(
+                                child: _buildStatisticItem(
+                                    '7/24', 'Destek', Icons.support_agent),
+                              ),
                             ],
                           ),
                         ],
@@ -1460,14 +1483,22 @@ class _LandingPageState extends State<LandingPage>
                     : Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildStatisticItem(
-                              '1000+', 'Mutlu Müşteri', Icons.people),
-                          _buildStatisticItem(
-                              '50+', 'Ülkede Hizmet', Icons.language),
-                          _buildStatisticItem(
-                              '99.9%', 'Uptime', Icons.cloud_done),
-                          _buildStatisticItem(
-                              '7/24', 'Destek', Icons.support_agent),
+                          Flexible(
+                            child: _buildStatisticItem(
+                                '1000+', 'Mutlu Müşteri', Icons.people),
+                          ),
+                          Flexible(
+                            child: _buildStatisticItem(
+                                '50+', 'Ülkede Hizmet', Icons.language),
+                          ),
+                          Flexible(
+                            child: _buildStatisticItem(
+                                '99.9%', 'Uptime', Icons.cloud_done),
+                          ),
+                          Flexible(
+                            child: _buildStatisticItem(
+                                '7/24', 'Destek', Icons.support_agent),
+                          ),
                         ],
                       ),
               ],
@@ -1904,28 +1935,27 @@ class _LandingPageState extends State<LandingPage>
     final isMobile = _isMobile(context);
 
     if (isMobile) {
-      // Mobilde yan yana, "Hakkımızda" tam görünsün
-      return Row(
-        mainAxisSize: MainAxisSize.min,
+      // Mobilde Wrap kullan (overflow'u önlemek için)
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.start,
         children: [
           _buildFooterLink(
             'Hakkımızda',
             () => _scrollToAbout(),
             isMobile,
           ),
-          SizedBox(width: isMobile ? 8 : 12),
           _buildFooterLink(
             'Blog',
             () => context.go('/blog'),
             isMobile,
           ),
-          SizedBox(width: isMobile ? 8 : 12),
           _buildFooterLink(
             'SSS',
             () => context.go('/faq'),
             isMobile,
           ),
-          SizedBox(width: isMobile ? 8 : 12),
           _buildFooterLink(
             'İletişim',
             () => _scrollToContact(),
@@ -2106,15 +2136,19 @@ class _LandingPageState extends State<LandingPage>
 
                     // Sağ taraf - Banner butonları (tablet ve desktop) + CTA Button
                     if (!_isMobile(context))
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Blog ve FAQ Butonları
-                          _buildBannerLinks(),
-                          SizedBox(width: _isTablet(context) ? 8 : 12),
-                          // CTA Button - Sağda sabit
-                          _buildBannerCTA(),
-                        ],
+                      Flexible(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Blog ve FAQ Butonları
+                            Flexible(
+                              child: _buildBannerLinks(),
+                            ),
+                            SizedBox(width: _isTablet(context) ? 8 : 12),
+                            // CTA Button - Sağda sabit
+                            _buildBannerCTA(),
+                          ],
+                        ),
                       )
                     else
                       // Mobilde sadece CTA
@@ -2240,17 +2274,25 @@ class _LandingPageState extends State<LandingPage>
   // ========== URL LAUNCHER METHODS ==========
 
   Future<void> _launchWebApp() async {
+    if (!mounted) return;
+    
     // Firebase Auth durumunu kontrol et
     final user = FirebaseAuth.instance.currentUser;
 
+    if (!mounted) return;
+    
     if (user != null) {
       // Kullanıcı giriş yapmış - dashboard'a yönlendir
       debugPrint('LandingPage: User is signed in, navigating to dashboard');
-      context.go('/dashboard');
+      if (mounted) {
+        context.go('/dashboard');
+      }
     } else {
       // Kullanıcı giriş yapmamış - login sayfasına yönlendir
       debugPrint('LandingPage: User is not signed in, navigating to login');
-      context.go('/login');
+      if (mounted) {
+        context.go('/login');
+      }
     }
   }
 
@@ -2313,6 +2355,7 @@ class _LandingPageState extends State<LandingPage>
   }
 
   void _scrollToPlatforms() {
+    if (!mounted || !_scrollController.hasClients) return;
     _scrollController.animateTo(
       1200,
       duration: const Duration(milliseconds: 1000),
@@ -2327,11 +2370,14 @@ class _LandingPageState extends State<LandingPage>
     if (context == null) {
       // Context henüz hazır değilse, bir sonraki frame'de tekrar dene
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToAbout();
+        if (mounted) {
+          _scrollToAbout();
+        }
       });
       return;
     }
 
+    if (!mounted) return;
     Scrollable.ensureVisible(
       context,
       duration: const Duration(milliseconds: 800),
@@ -2347,11 +2393,14 @@ class _LandingPageState extends State<LandingPage>
     if (context == null) {
       // Context henüz hazır değilse, bir sonraki frame'de tekrar dene
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _scrollToContact();
+        if (mounted) {
+          _scrollToContact();
+        }
       });
       return;
     }
 
+    if (!mounted) return;
     Scrollable.ensureVisible(
       context,
       duration: const Duration(milliseconds: 800),

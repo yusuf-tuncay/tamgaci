@@ -95,6 +95,23 @@ final promissoryPortfolioProvider =
   }
 });
 
+/// Tüm payment transactions by account ID
+final paymentTransactionsByAccountProvider =
+    FutureProvider.family<List<PaymentTransaction>, String>(
+        (ref, accountId) async {
+  final repository = ref.read(paymentTransactionRepositoryProvider);
+  try {
+    return await repository.getFilteredTransactions(
+      accountId: accountId,
+    );
+  } on FirebaseException catch (e) {
+    if (e.code == 'permission-denied') {
+      return [];
+    }
+    rethrow;
+  }
+});
+
 /// Transactions by Type Provider
 final transactionsByTypeProvider =
     FutureProvider.family<List<AccountTransaction>, TransactionType>(

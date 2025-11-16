@@ -51,26 +51,30 @@ class DashboardStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    // Modern gradient - daha yumuşak geçişler
+    final gradientColors = [
+      backgroundColor,
+      backgroundColor.withValues(alpha: 0.85),
+      backgroundColor.withValues(alpha: 0.75),
+    ];
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            backgroundColor,
-            backgroundColor.withValues(alpha: 0.7),
-          ],
+          colors: gradientColors,
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: backgroundColor.withValues(alpha: 0.9),
+          color: backgroundColor.withValues(alpha: isDark ? 0.3 : 0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: backgroundColor.withValues(alpha: 0.8),
-            blurRadius: 12,
+            color: backgroundColor.withValues(alpha: isDark ? 0.4 : 0.25),
+            blurRadius: 16,
             offset: const Offset(0, 6),
             spreadRadius: 0,
           ),
@@ -121,7 +125,7 @@ class DashboardStatsCard extends StatelessWidget {
                         subtitle!,
                         style: GoogleFonts.poppins(
                           fontSize: 11,
-                          color: isDark ? Colors.grey[400] : Colors.grey[500],
+                          color: Colors.white.withValues(alpha: 0.7),
                         ),
                       ),
                     ],
@@ -169,7 +173,7 @@ class DashboardStatsCard extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
-                color: isDark ? Colors.white : Colors.grey[900],
+                color: Colors.white,
               ),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,

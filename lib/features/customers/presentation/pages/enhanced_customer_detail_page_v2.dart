@@ -16,13 +16,21 @@ import '../../domain/entities/customer.dart';
 import '../providers/customer_providers.dart';
 import '../../../cash_management/presentation/providers/cash_management_providers.dart';
 import '../../../cash_management/domain/entities/cash_transaction.dart';
-import '../../../../core/services/business/transaction_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
+import '../../../../core/services/business/transaction_service.dart'
+    show TransactionService, Transaction, TransactionType;
 import '../../../sales/presentation/providers/sale_providers.dart' as sales;
 import '../../../purchases/presentation/providers/purchase_providers.dart'
     as purchases;
 import '../../../../core/widgets/lifecycle_mixin.dart';
 import '../../../payment_collection/presentation/pages/transaction_form_screen.dart';
 import '../../../payment_collection/domain/entities/payment_enums.dart';
+import '../../../payment_collection/domain/entities/payment_transaction.dart';
+import '../../../payment_collection/presentation/providers/payment_collection_providers.dart';
+import '../../../../core/services/utils/export_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -45,6 +53,13 @@ class _EnhancedCustomerDetailPageV2State
   // ignore: unused_field
   int _selectedTabIndex = 0;
   final bool _hasLoadedTransactions = false;
+  bool _isCustomerInfoExpanded = false; // Müşteri bilgileri açılır/kapanır kontrolü
+  bool _isAccountSummaryExpanded = true; // Hesap özeti açılır/kapanır kontrolü
+  int _transactionLimit = 20; // Gösterilecek işlem sayısı
+  int _transactionsBadgeCount = 0;
+  int _invoicesBadgeCount = 0;
+  int _paymentsBadgeCount = 0;
+  int _statementBadgeCount = 0;
 
   void _tabListener() {
     if (mounted) {
@@ -83,7 +98,7 @@ class _EnhancedCustomerDetailPageV2State
     final customersAsync = ref.watch(customersProvider);
 
     return ResponsiveScaffold(
-      appBar: const CustomAppBar(title: 'Müşteri Detayı', showDrawer: true),
+      appBar: const CustomAppBar(title: 'Müşteri Detayı', showBackButton: true, showDrawer: false),
       drawerContent: const TamgaciDrawerMenu(),
       persistentOnLarge: false,
       body: customersAsync.when(
@@ -140,107 +155,184 @@ class _EnhancedCustomerDetailPageV2State
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
 
-    final balanceColor = customer.balance > 0
+    final invoicesAsync =
+        ref.watch(sales.customerInvoicesStreamProvider(customer.id));
+    final cashState = ref.watch(cashManagementNotifierProvider);
+    final paymentTransactionsAsync =
+        ref.watch(customerPaymentTransactionsProvider(customer.id));
+
+    // Hesap ekstresinden net bakiyeyi hesapla
+    double calculatedBalance = customer.balance;
+    
+    if (invoicesAsync.hasValue && paymentTransactionsAsync.hasValue) {
+      final invoices = invoicesAsync.value ?? [];
+      final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
+      final payments = cashState.cashTransactions
+          .where((t) => invoiceIds.contains(t.relatedDocumentId))
+          .toList();
+      final paymentTransactions = paymentTransactionsAsync.value ?? [];
+
+      double totalDebit = 0.0;
+      double totalCredit = 0.0;
+
+      // Faturalardan borç
+      for (var invoice in invoices) {
+        final totalAmount =
+            (invoice['totalAmount'] as num?)?.toDouble() ?? 0.0;
+        totalDebit += totalAmount;
+      }
+
+      // Ödemelerden alacak
+      for (var payment in payments) {
+        totalCredit += payment.amount;
+      }
+
+      // Payment transactions'dan
+      for (var pt in paymentTransactions) {
+        if (pt.direction == PaymentDirection.incoming) {
+          totalCredit += pt.amount;
+        } else {
+          totalDebit += pt.amount;
+        }
+      }
+
+      calculatedBalance = totalCredit - totalDebit;
+    }
+
+    final balanceColor = calculatedBalance > 0
         ? Colors.green
-        : customer.balance < 0
+        : calculatedBalance < 0
             ? Colors.red
             : Colors.grey;
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Başlık satırı
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                child: Text(
-                  customer.name.isNotEmpty
-                      ? customer.name[0].toUpperCase()
-                      : 'M',
-                  style: GoogleFonts.poppins(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      customer.name,
+          // Tıklanabilir başlık satırı
+          InkWell(
+            onTap: () {
+              setState(() {
+                _isCustomerInfoExpanded = !_isCustomerInfoExpanded;
+              });
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                    child: Text(
+                      customer.name.isNotEmpty
+                          ? customer.name[0].toUpperCase()
+                          : 'M',
                       style: GoogleFonts.poppins(
-                        fontSize: 20,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.grey[800],
+                        color: AppColors.primary,
                       ),
                     ),
-                    if (customer.customerCode != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Kod: ${customer.customerCode}',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          customer.name,
+                          style: GoogleFonts.poppins(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
+                        if (customer.customerCode != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'Kod: ${customer.customerCode}',
+                            style: GoogleFonts.poppins(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: balanceColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: balanceColor.withValues(alpha: 0.3),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: balanceColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: balanceColor.withValues(alpha: 0.3),
+                    ),
+                    child: Text(
+                      CurrencyHelper.formatCurrency(calculatedBalance, 'TRY'),
+                      style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: balanceColor,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  CurrencyHelper.formatCurrency(customer.balance, 'TRY'),
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: balanceColor,
+                  const SizedBox(width: 8),
+                  Icon(
+                    _isCustomerInfoExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 20),
-          // İletişim bilgileri
-          _buildContactInfo(customer, isDark),
-          const SizedBox(height: 16),
-          // Adres bilgileri
-          if (customer.address != null) ...[
-            _buildAddressInfo(customer, isDark),
-            const SizedBox(height: 16),
-          ],
-          // Kategori ve tarih bilgileri
-          _buildCategoryAndDateInfo(customer, isDark),
+          // Açılır kapanır detay bilgileri
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: _isCustomerInfoExpanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        // İletişim bilgileri
+                        _buildContactInfo(customer, isDark),
+                        const SizedBox(height: 16),
+                        // Adres bilgileri
+                        if (customer.address != null) ...[
+                          _buildAddressInfo(customer, isDark),
+                          const SizedBox(height: 16),
+                        ],
+                        // Kategori ve tarih bilgileri
+                        _buildCategoryAndDateInfo(customer, isDark),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
@@ -331,7 +423,7 @@ class _EnhancedCustomerDetailPageV2State
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: isDark ? Colors.grey[500] : Colors.grey[500],
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
               Text(
@@ -339,7 +431,7 @@ class _EnhancedCustomerDetailPageV2State
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : Colors.grey[800],
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ],
@@ -467,36 +559,52 @@ class _EnhancedCustomerDetailPageV2State
       data: (list) => !mounted ? <dynamic>[] : list,
       orElse: () => <dynamic>[],
     );
+    final paymentTransactionsAsync =
+        ref.watch(customerPaymentTransactionsProvider(customer.id));
+    final paymentTransactionsList = paymentTransactionsAsync.maybeWhen(
+      data: (value) => !mounted ? <PaymentTransaction>[] : value,
+      orElse: () => <PaymentTransaction>[],
+    );
+    final paymentTransactionIds =
+        paymentTransactionsList.map((e) => e.id).toSet();
     final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
-    final paymentsForCustomer = cashState.cashTransactions
+    final paymentsForCustomerRaw = cashState.cashTransactions
         .where((t) => invoiceIds.contains(t.relatedDocumentId))
         .toList();
-    final invoicesCount = invoices.length;
-    final paymentsCount = paymentsForCustomer.length;
-    final transactionsCount = invoicesCount + paymentsCount;
-    final statementCount = transactionsCount;
+    final paymentsForCustomer = paymentsForCustomerRaw.where((t) {
+      final metaId = t.metadata['paymentTransactionId']?.toString();
+      if (metaId != null && paymentTransactionIds.contains(metaId)) {
+        return false;
+      }
+      return true;
+    }).toList();
+
+    final invoicesCount =
+        _invoicesBadgeCount != 0 ? _invoicesBadgeCount : invoices.length;
+    final paymentsCount = _paymentsBadgeCount != 0
+        ? _paymentsBadgeCount
+        : paymentsForCustomer.length + paymentTransactionsList.length;
+    final transactionsCount = _transactionsBadgeCount != 0
+        ? _transactionsBadgeCount
+        : invoicesCount + paymentsCount;
+    final statementCount =
+        _statementBadgeCount != 0 ? _statementBadgeCount : transactionsCount;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: isDark
-              ? [
-                  Colors.grey[850]!,
-                  Colors.grey[800]!,
-                  Colors.grey[850]!,
-                ]
-              : [
-                  Colors.white,
-                  Colors.grey[50]!,
-                  Colors.white,
-                ],
+          colors: [
+            Theme.of(context).colorScheme.surface,
+            Theme.of(context).colorScheme.surfaceContainerHighest,
+            Theme.of(context).colorScheme.surface,
+          ],
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: isDark ? 0.3 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
             spreadRadius: 0,
@@ -510,8 +618,8 @@ class _EnhancedCustomerDetailPageV2State
         ],
         border: Border.all(
           color: isDark
-              ? Colors.grey[700]!.withValues(alpha: 0.3)
-              : Colors.grey[200]!.withValues(alpha: 0.8),
+              ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+              : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
           width: 1,
         ),
       ),
@@ -543,8 +651,8 @@ class _EnhancedCustomerDetailPageV2State
           indicatorSize: TabBarIndicatorSize.tab,
           indicatorPadding: const EdgeInsets.all(6),
           dividerColor: Colors.transparent,
-          labelColor: Colors.white,
-          unselectedLabelColor: isDark ? Colors.grey[400] : Colors.grey[600],
+          labelColor: Theme.of(context).colorScheme.onPrimary,
+          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           labelStyle: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 13,
@@ -617,7 +725,7 @@ class _EnhancedCustomerDetailPageV2State
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Colors.white.withValues(alpha: 0.2)
+                      ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -625,8 +733,8 @@ class _EnhancedCustomerDetailPageV2State
                   icon,
                   size: isSelected ? 22 : 20,
                   color: isSelected
-                      ? Colors.white
-                      : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                      ? Theme.of(context).colorScheme.onPrimary
+                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
               ),
               if ((badgeCount ?? 0) > 0)
@@ -637,11 +745,11 @@ class _EnhancedCustomerDetailPageV2State
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.white : AppColors.primary,
+                      color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
+                          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.15),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -669,8 +777,8 @@ class _EnhancedCustomerDetailPageV2State
               fontSize: isSelected ? 12 : 11,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected
-                  ? Colors.white
-                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               letterSpacing: isSelected ? 0.5 : 0.3,
             ),
             child: Text(
@@ -689,10 +797,12 @@ class _EnhancedCustomerDetailPageV2State
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
 
-    // Tüm işlemler: Faturalar + Ödemeler + İşlemler
+    // Tüm işlemler: Faturalar + Ödemeler + İşlemler + Payment Transactions
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
+    final paymentTransactionsAsync =
+        ref.watch(customerPaymentTransactionsProvider(customer.id));
 
     return FutureBuilder<List<dynamic>>(
       future: _loadCustomerTransactions(customer.id),
@@ -753,48 +863,143 @@ class _EnhancedCustomerDetailPageV2State
           );
         }
 
-        // Tüm işlemleri birleştir: Faturalar + Ödemeler + İşlemler
+        // Tüm işlemleri birleştir: Faturalar + Ödemeler + İşlemler + Payment Transactions
         return invoicesAsync.when(
           data: (invoices) {
             // Widget dispose edildiyse boş widget döndür
             if (!mounted) return const SizedBox.shrink();
 
-            final transactions = transactionSnapshot.data ?? [];
+            final transactionsRaw = transactionSnapshot.data ?? [];
+            final paymentTransactions = paymentTransactionsAsync.maybeWhen(
+              data: (value) => value,
+              orElse: () => <PaymentTransaction>[],
+            );
+
+            final paymentTransactionIds =
+                paymentTransactions.map((e) => e.id).toSet();
             final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
             final payments = cashState.cashTransactions
                 .where((t) => invoiceIds.contains(t.relatedDocumentId))
-                .toList();
+                .where((t) {
+              final metaId =
+                  t.metadata['paymentTransactionId']?.toString();
+              if (metaId != null && paymentTransactionIds.contains(metaId)) {
+                return false;
+              }
+              return true;
+            }).toList();
 
-            // Tüm işlemleri birleştir ve tarihe göre sırala (en yeni en üstte)
-            final allItems = <Map<String, dynamic>>[
-              // Faturalar
-              ...invoices.map((i) => {
+            final invoiceKeys = <String>{};
+            final paymentKeys = <String>{};
+            final paymentTxnKeys = <String>{};
+            final transactionKeys = <String>{};
+            final uniqueKeys = <String>{};
+            final allItems = <Map<String, dynamic>>[];
+
+            void addItem(String key, Map<String, dynamic> item) {
+              if (uniqueKeys.add(key)) {
+                allItems.add(item);
+              }
+            }
+
+            for (final invoice in invoices) {
+              final invoiceId = invoice['id'] as String?;
+              final invoiceNumber = invoice['invoiceNumber']?.toString();
+              final key = 'invoice-${invoiceId ?? invoiceNumber ?? ''}';
+              if (invoiceKeys.add(key)) {
+                addItem(
+                  key,
+                  {
                     'type': 'invoice',
-                    'date': _parseDateTime(i['saleDate']) ??
-                        _parseDateTime(i['invoiceDate']) ??
+                    'date': _parseDateTime(invoice['saleDate']) ??
+                        _parseDateTime(invoice['invoiceDate']) ??
                         DateTime.now(),
-                    'data': i,
-                  }),
-              // Ödemeler
-              ...payments.map((t) => {
+                    'data': invoice,
+                  },
+                );
+              }
+            }
+
+            for (final payment in payments) {
+              final key = 'payment-${payment.id}';
+              if (paymentKeys.add(key)) {
+                addItem(
+                  key,
+                  {
                     'type': 'payment',
-                    'date': t.transactionDate,
-                    'data': t,
-                  }),
-              // İşlemler
-              ...transactions.map((t) => {
+                    'date': payment.transactionDate,
+                    'data': payment,
+                  },
+                );
+              }
+            }
+
+            for (final pt in paymentTransactions) {
+              final key = 'paymentTransaction-${pt.id}';
+              if (paymentTxnKeys.add(key)) {
+                addItem(
+                  key,
+                  {
+                    'type': 'payment_transaction',
+                    'date': pt.transactionDate,
+                    'data': pt,
+                  },
+                );
+              }
+            }
+
+            for (final t in transactionsRaw.whereType<Transaction>()) {
+              final invoiceRef = t.invoiceId;
+              final docNumber = t.documentNumber;
+              if ((invoiceRef != null && invoiceIds.contains(invoiceRef)) ||
+                  (docNumber != null &&
+                      docNumber.isNotEmpty &&
+                      invoiceKeys.contains('invoice-$docNumber')) ||
+                  t.type == TransactionType.invoice ||
+                  t.type == TransactionType.sale) {
+                continue;
+              }
+              final key = 'transaction-${docNumber ?? t.id}';
+              if (transactionKeys.add(key)) {
+                addItem(
+                  key,
+                  {
                     'type': 'transaction',
                     'date': _parseDateTime(t.transactionDate) ?? DateTime.now(),
                     'data': t,
-                  }),
-            ]..sort((a, b) {
-                final dateA = a['date'] as DateTime?;
-                final dateB = b['date'] as DateTime?;
-                if (dateA == null && dateB == null) return 0;
-                if (dateA == null) return 1;
-                if (dateB == null) return -1;
-                return dateB.compareTo(dateA); // En yeni en üstte
-              });
+                  },
+                );
+              }
+            }
+
+            allItems.sort((a, b) {
+              final dateA = a['date'] as DateTime?;
+              final dateB = b['date'] as DateTime?;
+              if (dateA == null && dateB == null) return 0;
+              if (dateA == null) return 1;
+              if (dateB == null) return -1;
+              return dateB.compareTo(dateA); // En yeni en üstte
+            });
+
+            final invoicesCount = invoiceKeys.length;
+            final paymentsCount = paymentKeys.length + paymentTxnKeys.length;
+            final transactionsCount = uniqueKeys.length;
+            final statementCount = transactionsCount;
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              if (_transactionsBadgeCount != transactionsCount ||
+                  _invoicesBadgeCount != invoicesCount ||
+                  _paymentsBadgeCount != paymentsCount ||
+                  _statementBadgeCount != statementCount) {
+                setState(() {
+                  _transactionsBadgeCount = transactionsCount;
+                  _invoicesBadgeCount = invoicesCount;
+                  _paymentsBadgeCount = paymentsCount;
+                  _statementBadgeCount = statementCount;
+                });
+              }
+            });
 
             if (allItems.isEmpty) {
               return Center(
@@ -820,20 +1025,73 @@ class _EnhancedCustomerDetailPageV2State
               );
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: allItems.length,
-              itemBuilder: (context, index) {
-                final item = allItems[index];
-                if (item['type'] == 'invoice') {
-                  return _buildInvoiceTile(item['data'], isDark);
-                } else if (item['type'] == 'payment') {
-                  return _buildPaymentTile(
-                      item['data'] as CashTransaction, isDark);
-                } else {
-                  return _buildTransactionTile(item['data'], isDark);
-                }
-              },
+            return Column(
+              children: [
+                // Tümünü Gör butonu
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        context.push('/customers/${customer.id}/all-transactions');
+                      },
+                      icon: const Icon(Icons.list_alt),
+                      label: Text(
+                        'Tümünü Gör (${allItems.length} işlem)',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                ),
+                // İşlemler listesi
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: allItems.length,
+                    itemBuilder: (context, index) {
+                      final item = allItems[index];
+                      final type = item['type'] as String;
+                      if (type == 'invoice') {
+                        final invoice = item['data'];
+                        return GestureDetector(
+                          onTap: () {
+                            final invoiceId = invoice['id'] as String?;
+                            if (invoiceId != null && invoiceId.isNotEmpty) {
+                              context.push('/sales/detail/$invoiceId');
+                            }
+                          },
+                          child: _buildInvoiceTile(invoice, isDark),
+                        );
+                      } else if (type == 'payment') {
+                        final payment = item['data'] as CashTransaction;
+                        return GestureDetector(
+                          onTap: () => _showPaymentDetail(payment),
+                          child: _buildPaymentTile(payment, isDark),
+                        );
+                      } else if (type == 'payment_transaction') {
+                        final pt = item['data'] as PaymentTransaction;
+                        return GestureDetector(
+                          onTap: () => _showPaymentTransactionDetail(pt),
+                          child: _buildPaymentTransactionTile(pt, isDark),
+                        );
+                      } else {
+                        final txn = item['data'] as Transaction;
+                        return GestureDetector(
+                          onTap: () => _showCustomerTransactionDetail(txn),
+                          child: _buildTransactionTile(txn, isDark),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -1080,6 +1338,9 @@ class _EnhancedCustomerDetailPageV2State
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
+    final paymentTransactionsAsync =
+        ref.watch(customerPaymentTransactionsProvider(customer.id));
+    
     return invoicesAsync.when(
       data: (invoices) {
         // Widget dispose edildiyse boş widget döndür
@@ -1089,15 +1350,25 @@ class _EnhancedCustomerDetailPageV2State
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
-        // Sadece ödemeleri göster (faturalar değil)
-        final paymentItems = payments
-            .map((t) => {
-                  'type': 'payment',
-                  'date': t.transactionDate,
-                  'data': t,
-                })
-            .toList()
-          ..sort((a, b) {
+        
+        final paymentTransactions = paymentTransactionsAsync.maybeWhen(
+          data: (value) => value,
+          orElse: () => <PaymentTransaction>[],
+        );
+        
+        // Sadece ödemeleri göster (faturalar değil) - Cash payments ve Payment Transactions
+        final paymentItems = [
+          ...payments.map((t) => {
+                'type': 'payment',
+                'date': t.transactionDate,
+                'data': t,
+              }),
+          ...paymentTransactions.map((pt) => {
+                'type': 'payment_transaction',
+                'date': pt.transactionDate,
+                'data': pt,
+              }),
+        ]..sort((a, b) {
             final dateA = a['date'] as DateTime?;
             final dateB = b['date'] as DateTime?;
             if (dateA == null && dateB == null) return 0;
@@ -1135,7 +1406,19 @@ class _EnhancedCustomerDetailPageV2State
           itemCount: paymentItems.length,
           itemBuilder: (context, index) {
             final item = paymentItems[index];
-            return _buildPaymentTile(item['data'] as CashTransaction, isDark);
+            if (item['type'] == 'payment') {
+              final payment = item['data'] as CashTransaction;
+              return GestureDetector(
+                onTap: () => _showPaymentDetail(payment),
+                child: _buildPaymentTile(payment, isDark),
+              );
+            } else {
+              final pt = item['data'] as PaymentTransaction;
+              return GestureDetector(
+                onTap: () => _showPaymentTransactionDetail(pt),
+                child: _buildPaymentTransactionTile(pt, isDark),
+              );
+            }
           },
         );
       },
@@ -1367,6 +1650,27 @@ class _EnhancedCustomerDetailPageV2State
     }
   }
 
+  String _getPaymentTypeName(PaymentTransactionType type) {
+    switch (type) {
+      case PaymentTransactionType.cash:
+        return 'Nakit';
+      case PaymentTransactionType.check:
+        return 'Çek';
+      case PaymentTransactionType.promissoryNote:
+        return 'Senet';
+      case PaymentTransactionType.eftTransfer:
+        return 'Havale/EFT';
+      case PaymentTransactionType.creditCard:
+        return 'Kredi Kartı';
+      case PaymentTransactionType.debtReceipt:
+        return 'Borç Fişi';
+      case PaymentTransactionType.creditReceipt:
+        return 'Alacak Fişi';
+      case PaymentTransactionType.accountTransfer:
+        return 'Cari Virman';
+    }
+  }
+
   // Purchase type filtreleme helper metodları
   bool _isPurchaseType(dynamic purchase, String targetType) {
     final type = purchase['type']?.toString() ?? '';
@@ -1528,6 +1832,7 @@ class _EnhancedCustomerDetailPageV2State
                 final date = entry['date'] as DateTime? ?? DateTime.now();
                 final isInvoice = entry['type'] == 'invoice';
                 final isPayment = entry['type'] == 'payment';
+                final isPaymentTransaction = entry['type'] == 'payment_transaction';
 
                 // İşlem adı ve açıklama
                 String transactionName = '';
@@ -1557,6 +1862,46 @@ class _EnhancedCustomerDetailPageV2State
 
                   // Ödeme alacak (müşteri alacaklı)
                   credit = amount;
+                } else if (isPaymentTransaction) {
+                  // Payment Transaction işlemi
+                  final pt = transaction as PaymentTransaction;
+                  // Ödeme türüne göre isim
+                  switch (pt.type) {
+                    case PaymentTransactionType.cash:
+                      transactionName = 'Nakit';
+                      break;
+                    case PaymentTransactionType.check:
+                      transactionName = 'Çek';
+                      break;
+                    case PaymentTransactionType.promissoryNote:
+                      transactionName = 'Senet';
+                      break;
+                    case PaymentTransactionType.eftTransfer:
+                      transactionName = 'Havale/EFT';
+                      break;
+                    case PaymentTransactionType.creditCard:
+                      transactionName = 'Kredi Kartı';
+                      break;
+                    case PaymentTransactionType.debtReceipt:
+                      transactionName = 'Borç Fişi';
+                      break;
+                    case PaymentTransactionType.creditReceipt:
+                      transactionName = 'Alacak Fişi';
+                      break;
+                    case PaymentTransactionType.accountTransfer:
+                      transactionName = 'Cari Virman';
+                      break;
+                  }
+                  description = '${pt.transactionNumber} - ${pt.description ?? ""}';
+                  final amount = pt.amount;
+                  currency = pt.currency;
+
+                  // Direction'a göre borç/alacak
+                  if (pt.direction == PaymentDirection.incoming) {
+                    credit = amount; // Tahsilat - alacak
+                  } else {
+                    debit = amount; // Ödeme - borç
+                  }
                 } else {
                   // Diğer işlemler
                   transactionName = _getTransactionTypeText(transaction.type);
@@ -1789,31 +2134,201 @@ class _EnhancedCustomerDetailPageV2State
 
   // Timestamp'i DateTime'a çevirme
   DateTime? _parseDateTime(dynamic dateValue) {
-    if (dateValue == null) return null;
+    if (dateValue == null || !mounted) return null;
 
-    // Widget dispose edildiyse null döndür
-    if (!mounted) return null;
+    if (dateValue is DateTime) return dateValue;
+    if (dateValue is Timestamp) return dateValue.toDate();
 
-    try {
-      // Eğer zaten DateTime ise
-      if (dateValue is DateTime) {
-        return dateValue;
+    if (dateValue is String) {
+      final formats = [
+        DateFormat('yyyy-MM-ddTHH:mm:ss'),
+        DateFormat('yyyy-MM-dd HH:mm:ss'),
+        DateFormat('dd.MM.yyyy HH:mm'),
+        DateFormat('dd.MM.yyyy'),
+        DateFormat('yyyy-MM-dd'),
+      ];
+      for (final format in formats) {
+        try {
+          return format.parse(dateValue);
+        } catch (_) {}
       }
-
-      // Eğer Timestamp ise
-      if (dateValue.runtimeType.toString().contains('Timestamp')) {
-        return (dateValue as dynamic).toDate();
-      }
-
-      // String ise parse et
-      if (dateValue is String) {
+      try {
         return DateTime.parse(dateValue);
+      } catch (e) {
+        debugPrint('Error parsing date: $e');
+        return null;
       }
+    }
 
-      return null;
-    } catch (e) {
-      debugPrint('Error parsing date: $e');
-      return null;
+    if (dateValue is int) {
+      return DateTime.fromMillisecondsSinceEpoch(dateValue);
+    }
+
+    if (dateValue is double) {
+      return DateTime.fromMillisecondsSinceEpoch(dateValue.toInt());
+    }
+
+    return null;
+  }
+
+  Widget _buildPaymentTransactionTile(PaymentTransaction pt, bool isDark) {
+    // Payment Transaction with detailed type information
+    final color = pt.direction == PaymentDirection.incoming
+        ? Colors.green
+        : Colors.red;
+    
+    // Ödeme türüne göre ikon ve metin
+    String typeText = '';
+    IconData icon = Icons.payment;
+    
+    switch (pt.type) {
+      case PaymentTransactionType.cash:
+        typeText = pt.direction == PaymentDirection.incoming 
+            ? 'Nakit Tahsilat' 
+            : 'Nakit Ödeme';
+        icon = Icons.money;
+        break;
+      case PaymentTransactionType.check:
+        typeText = pt.direction == PaymentDirection.incoming 
+            ? 'Çek Tahsilatı' 
+            : 'Çek Ödemesi';
+        icon = Icons.check_circle_outline;
+        break;
+      case PaymentTransactionType.promissoryNote:
+        typeText = pt.direction == PaymentDirection.incoming 
+            ? 'Senet Tahsilatı' 
+            : 'Senet Ödemesi';
+        icon = Icons.description;
+        break;
+      case PaymentTransactionType.eftTransfer:
+        typeText = pt.direction == PaymentDirection.incoming 
+            ? 'Havale/EFT Tahsilat' 
+            : 'Havale/EFT Ödeme';
+        icon = Icons.account_balance;
+        break;
+      case PaymentTransactionType.creditCard:
+        typeText = 'Kredi Kartı';
+        icon = Icons.credit_card;
+        break;
+      case PaymentTransactionType.debtReceipt:
+        typeText = 'Borç Fişi';
+        icon = Icons.receipt;
+        break;
+      case PaymentTransactionType.creditReceipt:
+        typeText = 'Alacak Fişi';
+        icon = Icons.receipt_long;
+        break;
+      case PaymentTransactionType.accountTransfer:
+        typeText = 'Cari Virman';
+        icon = Icons.swap_horiz;
+        break;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withValues(alpha: 0.1),
+          child: Icon(icon, color: color),
+        ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                typeText,
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                pt.category.name.toUpperCase(),
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              'İşlem No: ${pt.transactionNumber}',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+            ),
+            Text(
+              DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate),
+              style: GoogleFonts.poppins(fontSize: 12),
+            ),
+            if (pt.description != null && pt.description!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  pt.description!,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontStyle: FontStyle.italic,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              CurrencyHelper.formatCurrency(pt.amount, pt.currency),
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: color,
+              ),
+            ),
+            Text(
+              pt.status.name.toUpperCase(),
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                color: _getStatusColor(pt.status),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(PaymentTransactionStatus status) {
+    switch (status) {
+      case PaymentTransactionStatus.pending:
+        return Colors.orange;
+      case PaymentTransactionStatus.completed:
+        return Colors.green;
+      case PaymentTransactionStatus.cancelled:
+        return Colors.red;
+      case PaymentTransactionStatus.approved:
+        return Colors.blue;
+      case PaymentTransactionStatus.rejected:
+        return Colors.red;
+      case PaymentTransactionStatus.reversed:
+        return Colors.purple;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -1873,6 +2388,375 @@ class _EnhancedCustomerDetailPageV2State
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showPaymentDetail(CashTransaction payment) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Ödeme Detayı',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDetailRow('İşlem No', payment.transactionNumber),
+              _buildDetailRow('Tutar',
+                  CurrencyHelper.formatCurrency(payment.amount, payment.currency)),
+              _buildDetailRow('Tarih',
+                  DateFormat('dd.MM.yyyy HH:mm').format(payment.transactionDate)),
+              if (payment.description != null && payment.description!.isNotEmpty)
+                _buildDetailRow('Açıklama', payment.description!),
+              _buildDetailRow('Tip', payment.type.toString()),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _exportPaymentToPDF(payment);
+            },
+            icon: const Icon(Icons.picture_as_pdf, size: 18),
+            label: const Text('PDF İndir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPaymentTransactionDetail(PaymentTransaction pt) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'Tahsilat/Ödeme Detayı',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildDetailRow('İşlem No', pt.transactionNumber),
+              _buildDetailRow('Tip', _getPaymentTypeName(pt.type)),
+              _buildDetailRow(
+                  'Yön', pt.direction == PaymentDirection.incoming ? 'Tahsilat' : 'Ödeme'),
+              _buildDetailRow('Tutar',
+                  CurrencyHelper.formatCurrency(pt.amount, pt.currency)),
+              _buildDetailRow('Tarih',
+                  DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate)),
+              if (pt.dueDate != null)
+                _buildDetailRow('Vade Tarihi',
+                    DateFormat('dd.MM.yyyy').format(pt.dueDate!)),
+              _buildDetailRow('Durum', pt.status.name.toUpperCase()),
+              _buildDetailRow('Kategori', pt.category.name),
+              if (pt.description != null && pt.description!.isNotEmpty)
+                _buildDetailRow('Açıklama', pt.description!),
+              if (pt.referenceNumber != null &&
+                  pt.referenceNumber!.isNotEmpty)
+                _buildDetailRow('Referans', pt.referenceNumber!),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _exportPaymentTransactionToPDF(pt);
+            },
+            icon: const Icon(Icons.picture_as_pdf, size: 18),
+            label: const Text('PDF İndir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCustomerTransactionDetail(Transaction transaction) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          'İşlem Detayı',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (transaction.documentNumber != null &&
+                  transaction.documentNumber!.isNotEmpty)
+                _buildDetailRow('Belge No', transaction.documentNumber!),
+              _buildDetailRow('Tutar',
+                  CurrencyHelper.formatCurrency(transaction.amount, transaction.currency)),
+              _buildDetailRow('Tarih',
+                  DateFormat('dd.MM.yyyy HH:mm').format(transaction.transactionDate)),
+              _buildDetailRow('İşlem Türü', transaction.type.name),
+              _buildDetailRow('Durum', transaction.status.name),
+              if (transaction.reference != null &&
+                  transaction.reference!.isNotEmpty)
+                _buildDetailRow('Referans', transaction.reference!),
+              if (transaction.paymentMethod != null &&
+                  transaction.paymentMethod!.isNotEmpty)
+                _buildDetailRow('Ödeme Yöntemi', transaction.paymentMethod!),
+              if (transaction.description != null &&
+                  transaction.description!.isNotEmpty)
+                _buildDetailRow('Açıklama', transaction.description!),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Kapat'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              _exportCustomerTransactionToPDF(transaction);
+            },
+            icon: const Icon(Icons.picture_as_pdf, size: 18),
+            label: const Text('PDF İndir'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _exportPaymentToPDF(CashTransaction payment) async {
+    final exportService = ExportService();
+    final details = <String, String>{
+      'İşlem No': payment.transactionNumber,
+      'Tarih':
+          DateFormat('dd.MM.yyyy HH:mm').format(payment.transactionDate),
+      'Tutar': _formatPdfCurrency(payment.amount, payment.currency),
+      'Tip': payment.type.toString(),
+      if (payment.description != null && payment.description!.isNotEmpty)
+        'Açıklama': payment.description!,
+    };
+
+    try {
+      final bytes = await exportService.exportTransactionDetailPDF(
+        title: 'Ödeme Detayı',
+        subtitle:
+            'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}',
+        details: details,
+      );
+
+      final fileName =
+          'odeme_${payment.transactionNumber}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob([bytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        web.URL.revokeObjectURL(url);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _exportPaymentTransactionToPDF(PaymentTransaction pt) async {
+    final exportService = ExportService();
+
+    final details = <String, String>{
+      'İşlem No': pt.transactionNumber,
+      'Tip': _getPaymentTypeName(pt.type),
+      'Yön': pt.direction == PaymentDirection.incoming ? 'Tahsilat' : 'Ödeme',
+      'Tutar': _formatPdfCurrency(pt.amount, pt.currency),
+      'Tarih': DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate),
+      'Durum': pt.status.name.toUpperCase(),
+      'Kategori': pt.category.name,
+      if (pt.referenceNumber != null && pt.referenceNumber!.isNotEmpty)
+        'Referans': pt.referenceNumber!,
+      if (pt.description != null && pt.description!.isNotEmpty)
+        'Açıklama': pt.description!,
+    };
+
+    try {
+      final bytes = await exportService.exportTransactionDetailPDF(
+        title: 'Tahsilat/Ödeme Detayı',
+        subtitle:
+            'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}',
+        details: details,
+      );
+
+      final fileName =
+          'payment_transaction_${pt.transactionNumber}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob([bytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        web.URL.revokeObjectURL(url);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _exportCustomerTransactionToPDF(Transaction transaction) async {
+    final exportService = ExportService();
+
+    final details = <String, String>{
+      'İşlem ID': transaction.id,
+      'İşlem Türü': transaction.type.name,
+      'Durum': transaction.status.name,
+      'Tutar':
+          _formatPdfCurrency(transaction.amount, transaction.currency),
+      'Tarih':
+          DateFormat('dd.MM.yyyy HH:mm').format(transaction.transactionDate),
+      if (transaction.dueDate != null)
+        'Vade Tarihi':
+            DateFormat('dd.MM.yyyy').format(transaction.dueDate!),
+      if (transaction.reference != null && transaction.reference!.isNotEmpty)
+        'Referans': transaction.reference!,
+      if (transaction.description != null && transaction.description!.isNotEmpty)
+        'Açıklama': transaction.description!,
+      if (transaction.paymentMethod != null &&
+          transaction.paymentMethod!.isNotEmpty)
+        'Ödeme Yöntemi': transaction.paymentMethod!,
+    };
+
+    if (transaction.metadata != null && transaction.metadata!.isNotEmpty) {
+      details['Ek Bilgiler'] = transaction.metadata!.entries
+          .map((e) => '${e.key}: ${e.value}')
+          .join('\n');
+    }
+
+    try {
+      final bytes = await exportService.exportTransactionDetailPDF(
+        title: 'İşlem Detayı',
+        subtitle:
+            'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}',
+        details: details,
+      );
+
+      final fileName =
+          'transaction_${transaction.id}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob([bytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        web.URL.revokeObjectURL(url);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatPdfCurrency(double amount, String currency) {
+    if (currency.toUpperCase() == 'TRY' ||
+        currency == '₺' ||
+        currency.toUpperCase() == 'TL') {
+      final formatted = NumberFormat.currency(
+        locale: 'tr_TR',
+        symbol: '',
+        decimalDigits: 2,
+      ).format(amount.abs());
+      final prefix = amount < 0 ? '-' : '';
+      return '$prefix$formatted TL';
+    }
+    return CurrencyHelper.formatCurrency(amount, currency);
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(fontSize: 13),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1939,48 +2823,161 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildAccountSummaryCard(Customer customer, bool isDark) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hesap Özeti',
-              style: GoogleFonts.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+    final invoicesAsync =
+        ref.watch(sales.customerInvoicesStreamProvider(customer.id));
+    final cashState = ref.watch(cashManagementNotifierProvider);
+    final paymentTransactionsAsync =
+        ref.watch(customerPaymentTransactionsProvider(customer.id));
+    
+    return invoicesAsync.when(
+      data: (invoices) {
+        if (!mounted) return const SizedBox.shrink();
+
+        final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
+        final payments = cashState.cashTransactions
+            .where((t) => invoiceIds.contains(t.relatedDocumentId))
+            .toList();
+        
+        final paymentTransactions = paymentTransactionsAsync.maybeWhen(
+          data: (value) => value,
+          orElse: () => <PaymentTransaction>[],
+        );
+
+        // Hesap ekstresi toplamlarını hesapla
+        double totalDebit = 0.0;
+        double totalCredit = 0.0;
+
+        // Faturalardan borç
+        for (var invoice in invoices) {
+          final totalAmount =
+              (invoice['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          totalDebit += totalAmount;
+        }
+
+        // Ödemelerden alacak
+        for (var payment in payments) {
+          totalCredit += payment.amount;
+        }
+
+        // Payment transactions'dan
+        for (var pt in paymentTransactions) {
+          if (pt.direction == PaymentDirection.incoming) {
+            totalCredit += pt.amount;
+          } else {
+            totalDebit += pt.amount;
+          }
+        }
+
+        final netBalance = totalCredit - totalDebit;
+
+        return Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Tıklanabilir başlık
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    _isAccountSummaryExpanded = !_isAccountSummaryExpanded;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Hesap Özeti',
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        _isAccountSummaryExpanded
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildSummaryItem(
-                    'Toplam Alacak',
-                    '₺ 25,000.00',
-                    Colors.green,
-                    isDark,
-                  ),
+              // Açılır kapanır içerik
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: _isAccountSummaryExpanded
+                    ? Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Divider(height: 1),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildSummaryItem(
+                                    'Toplam Alacak',
+                                    CurrencyHelper.formatCurrency(totalCredit, 'TRY'),
+                                    Colors.green,
+                                    isDark,
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildSummaryItem(
+                                    'Toplam Borç',
+                                    CurrencyHelper.formatCurrency(totalDebit, 'TRY'),
+                                    Colors.red,
+                                    isDark,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            _buildSummaryItem(
+                              'Net Bakiye',
+                              CurrencyHelper.formatCurrency(netBalance, 'TRY'),
+                              netBalance >= 0 ? Colors.green : Colors.red,
+                              isDark,
+                            ),
+                          ],
+                        ),
+                      )
+                    : const SizedBox.shrink(),
+              ),
+            ],
+          ),
+        );
+      },
+      loading: () => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Hesap Özeti',
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                Expanded(
-                  child: _buildSummaryItem(
-                    'Toplam Borç',
-                    '₺ 15,000.00',
-                    Colors.red,
-                    isDark,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            _buildSummaryItem(
-              'Net Bakiye',
-              CurrencyHelper.formatCurrency(customer.balance, 'TRY'),
-              customer.balance >= 0 ? Colors.green : Colors.red,
-              isDark,
-            ),
-          ],
+              ),
+              const SizedBox(height: 16),
+              const Center(child: CircularProgressIndicator()),
+            ],
+          ),
+        ),
+      ),
+      error: (e, _) => Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Hesap özeti yüklenemedi',
+            style: GoogleFonts.poppins(color: Colors.red),
+          ),
         ),
       ),
     );
@@ -2015,6 +3012,9 @@ class _EnhancedCustomerDetailPageV2State
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
+    final paymentTransactionsAsync =
+        ref.watch(customerPaymentTransactionsProvider(customer.id));
+    
     return invoicesAsync.when(
       data: (invoices) {
         // Widget dispose edildiyse boş widget döndür
@@ -2024,6 +3024,12 @@ class _EnhancedCustomerDetailPageV2State
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
+        
+        final paymentTransactions = paymentTransactionsAsync.maybeWhen(
+          data: (value) => value,
+          orElse: () => <PaymentTransaction>[],
+        );
+        
         final entries = <Map<String, dynamic>>[
           ...invoices.map((i) => {
                 'type': 'invoice',
@@ -2035,6 +3041,11 @@ class _EnhancedCustomerDetailPageV2State
                 'date': t.transactionDate,
                 'data': t,
               }),
+          ...paymentTransactions.map((pt) => {
+                'type': 'payment_transaction',
+                'date': pt.transactionDate,
+                'data': pt,
+              }),
         ]..sort((a, b) {
             final dateA = a['date'] as DateTime?;
             final dateB = b['date'] as DateTime?;
@@ -2044,18 +3055,63 @@ class _EnhancedCustomerDetailPageV2State
             return dateA.compareTo(dateB); // En son en altta (kronolojik sıra)
           });
 
+        // Gösterilecek işlemleri limitle
+        final displayedEntries = entries.take(_transactionLimit).toList();
+        final hasMore = entries.length > _transactionLimit;
+
         return Card(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Başlık ve Export butonu
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  'Detaylı İşlem Listesi',
-                  style: GoogleFonts.poppins(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Detaylı İşlem Listesi',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    if (entries.isNotEmpty)
+                      PopupMenuButton<String>(
+                        icon: const Icon(Icons.download),
+                        tooltip: 'Dışa Aktar',
+                        onSelected: (value) {
+                          if (value == 'excel') {
+                            _exportStatementToExcel(customer, entries);
+                          } else if (value == 'pdf') {
+                            _exportStatementToPDF(customer, entries);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'excel',
+                            child: Row(
+                              children: [
+                                Icon(Icons.table_chart, size: 20),
+                                SizedBox(width: 8),
+                                Text('Excel\'e Aktar'),
+                              ],
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: 'pdf',
+                            child: Row(
+                              children: [
+                                Icon(Icons.picture_as_pdf, size: 20),
+                                SizedBox(width: 8),
+                                Text('PDF\'e Aktar'),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                  ],
                 ),
               ),
               if (entries.isEmpty)
@@ -2069,8 +3125,27 @@ class _EnhancedCustomerDetailPageV2State
                     ),
                   ),
                 )
-              else
-                _buildAccountStatementTable(entries, isDark),
+              else ...[
+                _buildAccountStatementTable(displayedEntries, isDark),
+                if (hasMore)
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Center(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          setState(() {
+                            _transactionLimit += 20;
+                          });
+                        },
+                        icon: const Icon(Icons.add),
+                        label: Text(
+                          'Daha Fazla Göster (${entries.length - _transactionLimit} işlem daha var)',
+                          style: GoogleFonts.poppins(),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ],
           ),
         );
@@ -2089,6 +3164,372 @@ class _EnhancedCustomerDetailPageV2State
 
   // Removed unused legacy helpers: _getTransactionTypeColor, _getTransactionTypeIcon,
   // _getStatusDisplayName, _getStatusColor
+
+  Future<void> _exportStatementToExcel(
+    Customer customer,
+    List<Map<String, dynamic>> entries,
+  ) async {
+    try {
+      // Başlıklar
+      final headers = [
+        'Tarih/Saat',
+        'İşlem Adı',
+        'Açıklama',
+        'Borç',
+        'Alacak',
+        'Bakiye',
+      ];
+
+      // Excel için veri hazırla
+      final data = <List<dynamic>>[];
+      double runningBalance = 0.0;
+      double totalDebit = 0.0;
+      double totalCredit = 0.0;
+
+      for (var entry in entries) {
+        final transaction = entry['data'];
+        final date = entry['date'] as DateTime? ?? DateTime.now();
+        final isInvoice = entry['type'] == 'invoice';
+        final isPayment = entry['type'] == 'payment';
+        final isPaymentTransaction = entry['type'] == 'payment_transaction';
+
+        String transactionName = '';
+        String description = '';
+        double debit = 0.0;
+        double credit = 0.0;
+
+        if (isInvoice) {
+          transactionName = 'Fatura';
+          description = transaction['saleNumber'] ??
+              transaction['invoiceNumber'] ??
+              'N/A';
+          final totalAmount =
+              (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          debit = totalAmount;
+        } else if (isPayment) {
+          transactionName = 'Ödeme';
+          description = transaction.description ?? 'Ödeme';
+          final amount = transaction.amount ?? 0.0;
+          credit = amount;
+        } else if (isPaymentTransaction) {
+          final pt = transaction as PaymentTransaction;
+          switch (pt.type) {
+            case PaymentTransactionType.cash:
+              transactionName = 'Nakit';
+              break;
+            case PaymentTransactionType.check:
+              transactionName = 'Çek';
+              break;
+            case PaymentTransactionType.promissoryNote:
+              transactionName = 'Senet';
+              break;
+            case PaymentTransactionType.eftTransfer:
+              transactionName = 'Havale/EFT';
+              break;
+            case PaymentTransactionType.creditCard:
+              transactionName = 'Kredi Kartı';
+              break;
+            case PaymentTransactionType.debtReceipt:
+              transactionName = 'Borç Fişi';
+              break;
+            case PaymentTransactionType.creditReceipt:
+              transactionName = 'Alacak Fişi';
+              break;
+            case PaymentTransactionType.accountTransfer:
+              transactionName = 'Cari Virman';
+              break;
+          }
+          description = '${pt.transactionNumber} - ${pt.description ?? ""}';
+          final amount = pt.amount;
+          if (pt.direction == PaymentDirection.incoming) {
+            credit = amount;
+          } else {
+            debit = amount;
+          }
+        } else {
+          transactionName = _getTransactionTypeText(transaction.type);
+          description = transaction.description ?? '';
+          final amount = transaction.amount ?? 0.0;
+          if (transaction.type.toString().contains('sale') ||
+              transaction.type.toString().contains('purchase')) {
+            debit = amount;
+          } else {
+            credit = amount;
+          }
+        }
+
+        runningBalance += credit - debit;
+        totalDebit += debit;
+        totalCredit += credit;
+
+        // Format numbers for Turkish locale
+        String formatAmount(double amount) {
+          if (amount == 0) return '-';
+          final parts = amount.abs().toStringAsFixed(2).split('.');
+          final intPart = parts[0];
+          final decPart = parts[1];
+          final formattedInt = intPart.replaceAllMapped(
+            RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]}.',
+          );
+          final formatted = '$formattedInt,$decPart';
+          return '${amount < 0 ? '-' : ''}$formatted TL';
+        }
+
+        data.add([
+          DateFormat('dd.MM.yyyy HH:mm').format(date),
+          transactionName,
+          description,
+          formatAmount(debit),
+          formatAmount(credit),
+          formatAmount(runningBalance),
+        ]);
+      }
+
+      // Özet satırları ekle
+      data.add([]);
+      data.add([
+        '',
+        '',
+        'TOPLAM',
+        formatAmount(totalDebit),
+        formatAmount(totalCredit),
+        formatAmount(totalCredit - totalDebit),
+      ]);
+
+      // Export service kullan
+      final exportService = ExportService();
+      final fileBytes = await exportService.exportToExcel(
+        title: '${customer.name} - Hesap Ekstresi',
+        headers: headers,
+        data: data,
+        sheetName: 'Ekstre',
+      );
+
+      // Dosya adı oluştur
+      final fileName =
+          '${customer.name}_Ekstre_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.xlsx';
+
+      // Web için indirme
+      if (kIsWeb) {
+        final blob = web.Blob([fileBytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        web.URL.revokeObjectURL(url);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Ekstre başarıyla indirildi: $fileName'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  String formatAmount(double amount) {
+    if (amount == 0) return '-';
+    final parts = amount.abs().toStringAsFixed(2).split('.');
+    final intPart = parts[0];
+    final decPart = parts[1];
+    final formattedInt = intPart.replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]}.',
+    );
+    final formatted = '$formattedInt,$decPart';
+    return '${amount < 0 ? '-' : ''}$formatted TL';
+  }
+
+  Future<void> _exportStatementToPDF(
+    Customer customer,
+    List<Map<String, dynamic>> entries,
+  ) async {
+    try {
+      // Başlıklar
+      final headers = [
+        'Tarih/Saat',
+        'İşlem Adı',
+        'Açıklama',
+        'Borç',
+        'Alacak',
+        'Bakiye',
+      ];
+
+      // PDF için veri hazırla
+      final data = <List<dynamic>>[];
+      double runningBalance = 0.0;
+      double totalDebit = 0.0;
+      double totalCredit = 0.0;
+
+      for (var entry in entries) {
+        final transaction = entry['data'];
+        final date = entry['date'] as DateTime? ?? DateTime.now();
+        final isInvoice = entry['type'] == 'invoice';
+        final isPayment = entry['type'] == 'payment';
+        final isPaymentTransaction = entry['type'] == 'payment_transaction';
+
+        String transactionName = '';
+        String description = '';
+        double debit = 0.0;
+        double credit = 0.0;
+
+        if (isInvoice) {
+          transactionName = 'Fatura';
+          description = transaction['saleNumber'] ??
+              transaction['invoiceNumber'] ??
+              'N/A';
+          final totalAmount =
+              (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          debit = totalAmount;
+        } else if (isPayment) {
+          transactionName = 'Ödeme';
+          description = transaction.description ?? 'Ödeme';
+          final amount = transaction.amount ?? 0.0;
+          credit = amount;
+        } else if (isPaymentTransaction) {
+          final pt = transaction as PaymentTransaction;
+          switch (pt.type) {
+            case PaymentTransactionType.cash:
+              transactionName = 'Nakit';
+              break;
+            case PaymentTransactionType.check:
+              transactionName = 'Çek';
+              break;
+            case PaymentTransactionType.promissoryNote:
+              transactionName = 'Senet';
+              break;
+            case PaymentTransactionType.eftTransfer:
+              transactionName = 'Havale/EFT';
+              break;
+            case PaymentTransactionType.creditCard:
+              transactionName = 'Kredi Kartı';
+              break;
+            case PaymentTransactionType.debtReceipt:
+              transactionName = 'Borç Fişi';
+              break;
+            case PaymentTransactionType.creditReceipt:
+              transactionName = 'Alacak Fişi';
+              break;
+            case PaymentTransactionType.accountTransfer:
+              transactionName = 'Cari Virman';
+              break;
+          }
+          description = '${pt.transactionNumber} - ${pt.description ?? ""}';
+          final amount = pt.amount;
+          if (pt.direction == PaymentDirection.incoming) {
+            credit = amount;
+          } else {
+            debit = amount;
+          }
+        } else {
+          transactionName = _getTransactionTypeText(transaction.type);
+          description = transaction.description ?? '';
+          final amount = transaction.amount ?? 0.0;
+          if (transaction.type.toString().contains('sale') ||
+              transaction.type.toString().contains('purchase')) {
+            debit = amount;
+          } else {
+            credit = amount;
+          }
+        }
+
+        runningBalance += credit - debit;
+        totalDebit += debit;
+        totalCredit += credit;
+
+        // Format numbers for Turkish locale
+        String formatAmountLocal(double amount) {
+          if (amount == 0) return '-';
+          final formatted = NumberFormat.currency(
+            locale: 'tr_TR',
+            symbol: '',
+            decimalDigits: 2,
+          ).format(amount.abs());
+          return '$formatted ₺';
+        }
+
+        data.add([
+          DateFormat('dd.MM.yyyy HH:mm').format(date),
+          transactionName,
+          description.length > 40 
+              ? '${description.substring(0, 40)}...' 
+              : description,
+          formatAmountLocal(debit),
+          formatAmountLocal(credit),
+          formatAmountLocal(runningBalance),
+        ]);
+      }
+
+      // Özet bilgileri
+      final summary = {
+        'Toplam Borç':
+            CurrencyHelper.formatCurrency(totalDebit, 'TRY').replaceAll('₺', 'TL'),
+        'Toplam Alacak': CurrencyHelper.formatCurrency(totalCredit, 'TRY')
+            .replaceAll('₺', 'TL'),
+        'Net Bakiye': CurrencyHelper
+            .formatCurrency(totalCredit - totalDebit, 'TRY')
+            .replaceAll('₺', 'TL'),
+      };
+
+      // Export service kullan
+      final exportService = ExportService();
+      final fileBytes = await exportService.exportToPDF(
+        title: '${customer.name} - Hesap Ekstresi',
+        subtitle: 'Müşteri Kodu: ${customer.customerCode ?? "Yok"}\n'
+            'Rapor Tarihi: ${DateFormat('dd.MM.yyyy HH:mm').format(DateTime.now())}',
+        headers: headers,
+        data: data,
+        summary: summary,
+      );
+
+      // Dosya adı oluştur
+      final fileName =
+          '${customer.name}_Ekstre_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      // Web için indirme
+      if (kIsWeb) {
+        final blob = web.Blob([fileBytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        web.URL.revokeObjectURL(url);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('PDF başarıyla indirildi: $fileName'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF export hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   Future<void> _showDeleteConfirmationDialog(Customer customer) async {
     final canDelete = customer.currentBalance == 0.0;
@@ -2216,8 +3657,11 @@ class _EnhancedCustomerDetailPageV2State
           ),
         ),
       ),
-    ).then((_) {
+    ).then((result) {
       // Form kapatıldığında müşteri detaylarını yenile
+      if (result == true && mounted) {
+        setState(() {});
+      }
       ref.invalidate(customerProvider(customer.id));
     });
   }

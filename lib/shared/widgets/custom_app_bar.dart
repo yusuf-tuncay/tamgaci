@@ -120,7 +120,7 @@ class _CustomAppBarState extends State<CustomAppBar>
           : TamgaciConstants.textPrimary,
       elevation: widget.showShadow ? 2 : 0,
       shadowColor: widget.showShadow
-          ? Colors.black.withValues(alpha: 0.1)
+          ? theme.colorScheme.shadow.withValues(alpha: 0.1)
           : Colors.transparent,
       leading: _buildLeadingWidget(context, isDark),
       automaticallyImplyLeading: widget.automaticallyImplyLeading &&

@@ -77,7 +77,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         ref.watch(transactionsByAccountIdProvider(widget.account.id));
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: accountsAsync.when(
         data: (accounts) {
           // Güncel hesap verisini bul
@@ -160,7 +160,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       expandedHeight: 60,
       floating: false,
       pinned: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       elevation: 1,
       title: Text(
         'TAMGACI',
@@ -173,12 +173,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       ),
       centerTitle: true,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 24),
         onPressed: () => context.goNamed('accounts-home'),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
+          icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface, size: 24),
           onPressed: _showMoreOptions,
           tooltip: 'Daha fazla seçenek',
         ),
@@ -747,6 +747,95 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               ),
             ],
           ),
+          // Çek bilgileri
+          if (transaction.type == PaymentTransactionType.check &&
+              transaction.metadata.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.account_balance, 
+                          color: Colors.blue[700], size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Çek Bilgileri',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (transaction.metadata['checkNumber'] != null)
+                    _buildMetadataRow('Çek No', 
+                        transaction.metadata['checkNumber'].toString()),
+                  if (transaction.metadata['bankName'] != null)
+                    _buildMetadataRow('Banka', 
+                        transaction.metadata['bankName'].toString()),
+                  if (transaction.metadata['branchName'] != null)
+                    _buildMetadataRow('Şube', 
+                        transaction.metadata['branchName'].toString()),
+                  if (transaction.metadata['accountNumber'] != null)
+                    _buildMetadataRow('Hesap No', 
+                        transaction.metadata['accountNumber'].toString()),
+                  if (transaction.metadata['iban'] != null)
+                    _buildMetadataRow('IBAN', 
+                        transaction.metadata['iban'].toString()),
+                ],
+              ),
+            ),
+          ],
+          // Senet bilgileri
+          if (transaction.type == PaymentTransactionType.promissoryNote &&
+              transaction.metadata.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.orange[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.description, 
+                          color: Colors.orange[700], size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Senet Bilgileri',
+                        style: GoogleFonts.poppins(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  if (transaction.metadata['noteNumber'] != null)
+                    _buildMetadataRow('Senet No', 
+                        transaction.metadata['noteNumber'].toString()),
+                  if (transaction.metadata['interestRate'] != null)
+                    _buildMetadataRow('Faiz Oranı', 
+                        '${transaction.metadata['interestRate']}%'),
+                ],
+              ),
+            ),
+          ],
           if (transaction.description != null &&
               transaction.description!.isNotEmpty) ...[
             const SizedBox(height: 12),
@@ -766,6 +855,37 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetadataRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(
+              '$label:',
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: Colors.grey[900],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -983,21 +1103,45 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                         final transactionsAsync = ref.watch(
                           transactionsByAccountIdProvider(account.id),
                         );
+                        final paymentTransactionsAsync = ref.watch(
+                          paymentTransactionsByAccountProvider(account.id),
+                        );
 
                         return transactionsAsync.when(
                           data: (transactions) {
-                            if (transactions.isEmpty) {
+                            final paymentTransactions = paymentTransactionsAsync.maybeWhen(
+                              data: (value) => value,
+                              orElse: () => <PaymentTransaction>[],
+                            );
+                            
+                            // Tüm işlemleri birleştir
+                            final allItems = <Map<String, dynamic>>[
+                              ...transactions.map((t) => {
+                                    'type': 'account_transaction',
+                                    'date': t.createdAt,
+                                    'data': t,
+                                  }),
+                              ...paymentTransactions.map((pt) => {
+                                    'type': 'payment_transaction',
+                                    'date': pt.transactionDate,
+                                    'data': pt,
+                                  }),
+                            ]..sort((a, b) => (b['date'] as DateTime)
+                                .compareTo(a['date'] as DateTime));
+                            
+                            if (allItems.isEmpty) {
                               return Center(child: _buildEmptyTransactions());
                             }
-                            // En yeni işlemler üstte olacak şekilde sırala
-                            final sortedTransactions = transactions.toList()
-                              ..sort(
-                                  (a, b) => b.createdAt.compareTo(a.createdAt));
 
                             return Column(
-                              children:
-                                  sortedTransactions.take(5).map((transaction) {
-                                return _buildTransactionItem(transaction);
+                              children: allItems.take(5).map((item) {
+                                if (item['type'] == 'account_transaction') {
+                                  return _buildTransactionItem(
+                                      item['data'] as AccountTransaction);
+                                } else {
+                                  return _buildPaymentTransactionItem(
+                                      item['data'] as PaymentTransaction);
+                                }
                               }).toList(),
                             );
                           },
@@ -1410,6 +1554,136 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+
+  Widget _buildPaymentTransactionItem(PaymentTransaction pt) {
+    // Payment transaction için detaylı tile
+    final isNegative = pt.direction == PaymentDirection.outgoing;
+    
+    String typeText = '';
+    IconData icon = Icons.payment;
+    
+    switch (pt.type) {
+      case PaymentTransactionType.cash:
+        typeText = 'Nakit';
+        icon = Icons.money;
+        break;
+      case PaymentTransactionType.check:
+        typeText = 'Çek';
+        icon = Icons.check_circle_outline;
+        break;
+      case PaymentTransactionType.promissoryNote:
+        typeText = 'Senet';
+        icon = Icons.description;
+        break;
+      case PaymentTransactionType.eftTransfer:
+        typeText = 'Havale/EFT';
+        icon = Icons.account_balance;
+        break;
+      case PaymentTransactionType.creditCard:
+        typeText = 'Kredi Kartı';
+        icon = Icons.credit_card;
+        break;
+      case PaymentTransactionType.debtReceipt:
+        typeText = 'Borç Fişi';
+        icon = Icons.receipt;
+        break;
+      case PaymentTransactionType.creditReceipt:
+        typeText = 'Alacak Fişi';
+        icon = Icons.receipt_long;
+        break;
+      case PaymentTransactionType.accountTransfer:
+        typeText = 'Cari Virman';
+        icon = Icons.swap_horiz;
+        break;
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isNegative ? Colors.red[100] : Colors.green[100],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: isNegative ? Colors.red[600] : Colors.green[600],
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$typeText - ${pt.direction == PaymentDirection.incoming ? "Tahsilat" : "Ödeme"}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[800],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${pt.transactionDate.day}/${pt.transactionDate.month}/${pt.transactionDate.year} ${pt.transactionDate.hour}:${pt.transactionDate.minute.toString().padLeft(2, '0')}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                if (pt.description != null && pt.description!.isNotEmpty)
+                  Text(
+                    pt.description!,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                      fontStyle: FontStyle.italic,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '${isNegative ? "-" : "+"}${NumberFormat.currency(
+                  locale: 'tr_TR',
+                  symbol: pt.currency,
+                  decimalDigits: 2,
+                ).format(pt.amount.abs())}',
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isNegative ? Colors.red[600] : Colors.green[600],
+                ),
+              ),
+              Text(
+                pt.status.name.toUpperCase(),
+                style: GoogleFonts.poppins(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTransactionItem(AccountTransaction transaction) {

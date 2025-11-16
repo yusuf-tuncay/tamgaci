@@ -17,11 +17,14 @@ class WarehouseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        elevation: 2,
-        shadowColor: Colors.black.withValues(alpha: 0.1),
+      child: Builder(
+        builder: (context) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          return Material(
+            color: isDark ? Colors.grey[850] : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            elevation: 2,
+            shadowColor: Colors.black.withValues(alpha: 0.12),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
@@ -45,6 +48,8 @@ class WarehouseCard extends StatelessWidget {
             ),
           ),
         ),
+          );
+        },
       ),
     );
   }

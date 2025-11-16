@@ -16,13 +16,14 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: Material(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(12),
         elevation: 1,
-        shadowColor: Colors.black.withValues(alpha: 0.05),
+        shadowColor: Colors.black.withValues(alpha: 0.12),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
@@ -31,14 +32,14 @@ class ProductCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: _getBorderColor(),
+                color: isDark ? Colors.white12 : _getBorderColor(),
                 width: 1,
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(),
+                _buildHeader(context),
                 const SizedBox(height: 12),
                 _buildProductInfo(),
                 // Varyantlar (varsa)
@@ -48,7 +49,7 @@ class ProductCard extends StatelessWidget {
                   _buildVariantsInfo(),
                 ],
                 const SizedBox(height: 12),
-                _buildBottomInfo(),
+                _buildBottomInfo(context),
               ],
             ),
           ),
@@ -57,7 +58,8 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         _buildProductIcon(),
@@ -71,7 +73,7 @@ class ProductCard extends StatelessWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -82,7 +84,7 @@ class ProductCard extends StatelessWidget {
                   'Kod: ${product.productCode}',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
               ],
@@ -216,7 +218,8 @@ class ProductCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomInfo() {
+  Widget _buildBottomInfo(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         // Warehouse info
@@ -296,7 +299,7 @@ class ProductCard extends StatelessWidget {
                 'KDV Dahil (KDV: ${CurrencyHelper.formatNumber(product.salesTaxAmount)})',
                 style: GoogleFonts.poppins(
                   fontSize: 9,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ] else ...[
@@ -313,7 +316,7 @@ class ProductCard extends StatelessWidget {
                 '+KDV(${CurrencyHelper.formatNumber(product.salesTaxAmount)})',
                 style: GoogleFonts.poppins(
                   fontSize: 9,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],

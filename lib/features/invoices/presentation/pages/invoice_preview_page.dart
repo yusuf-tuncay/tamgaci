@@ -301,7 +301,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                       'Vergi No: ${companyInfo!.taxNumber}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.right,
                     ),
@@ -310,7 +310,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                       'Vergi Dairesi: ${companyInfo!.taxOffice}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.right,
                     ),
@@ -319,7 +319,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                       companyInfo!.fullAddress,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.right,
                     ),
@@ -328,7 +328,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                       companyInfo!.contactInfo,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                       textAlign: TextAlign.right,
                     ),
@@ -624,7 +624,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     children: [
                       Icon(
                         Icons.payment,
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         size: 18,
                       ),
                       const SizedBox(width: 12),
@@ -778,7 +778,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     Text(
                       'Ürün bulunamadı',
                       style: GoogleFonts.poppins(
-                        color: Colors.grey[600],
+                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),

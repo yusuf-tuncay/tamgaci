@@ -1165,11 +1165,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: isDark
-          ? TamgaciConstants.backgroundColorDark
-          : TamgaciConstants.backgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -1193,7 +1192,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       children: [
         Container(
           height: MediaQuery.of(context).size.height,
-          color: Colors.white, // Beyaz arkaplan
+          color: Theme.of(context).scaffoldBackgroundColor,
           child: Row(children: [
             // Sol taraf - Register görseli
             Expanded(
@@ -1342,11 +1341,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                     child: _avatarBytes == null
                                         ? Icon(
                                             Icons.camera_alt_outlined,
-                                            color:
-                                                Theme.of(context).brightness ==
-                                                        Brightness.light
-                                                    ? Colors.black87
-                                                    : Colors.white,
+                                            color: Theme.of(context).colorScheme.onSurface,
                                           )
                                         : null,
                                   ),

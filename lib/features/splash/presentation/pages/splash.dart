@@ -427,15 +427,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     });
 
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: _buildBackgroundDecoration(isDark),
+          decoration: _buildBackgroundDecoration(theme),
           child: _buildSplashContent(),
         ),
       ),
@@ -443,9 +442,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
   }
 
   /// Arka plan dekorasyonunu oluşturan metod
-  BoxDecoration _buildBackgroundDecoration(bool isDark) {
+  BoxDecoration _buildBackgroundDecoration(ThemeData theme) {
     return BoxDecoration(
-      color: isDark ? Colors.black : Colors.white,
+      color: theme.scaffoldBackgroundColor,
     );
   }
 

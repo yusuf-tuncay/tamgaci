@@ -299,13 +299,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -380,16 +380,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF6366F1), // Indigo-500
-            Color(0xFF8B5CF6), // Violet-500
-            Color(0xFF7C3AED), // Violet-600
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6366F1).withValues(alpha: 0.25),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
             blurRadius: 18,
             spreadRadius: 1,
             offset: const Offset(0, 10),
@@ -404,12 +404,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.add_box,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
               size: 24,
             ),
           ),
@@ -426,7 +426,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -436,7 +436,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       : 'Ürün bilgilerini doldurun ve depo seçin',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -2456,35 +2456,27 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   Widget _buildVariantCard(int index, ProductVariant variant) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[850]! : Colors.white;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: variant.stockQuantity > 0
-              ? [
-                  Colors.green.withValues(alpha: 0.03),
-                  Colors.green.withValues(alpha: 0.08)
-                ]
-              : [
-                  Colors.grey.withValues(alpha: 0.03),
-                  Colors.grey.withValues(alpha: 0.08)
-                ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: baseColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: variant.stockQuantity > 0
-              ? Colors.green.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.3),
+              ? Colors.green.withValues(alpha: isDark ? 0.4 : 0.3)
+              : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.3)),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 16,
+            spreadRadius: 1,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -2519,7 +2511,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: isDark ? Colors.white : Colors.grey[800],
                       ),
                     ),
                     const SizedBox(height: 4),

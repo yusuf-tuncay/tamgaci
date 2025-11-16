@@ -166,6 +166,16 @@ class TransactionService {
 
       final userData = userDoc.data() as Map<String, dynamic>;
       final tenantId = userData['tenantId'] as String?;
+      final userCompanyId = (userData['companyId'] as String?)?.trim();
+      final companyId = (transaction.companyId.isNotEmpty
+              ? transaction.companyId
+              : (userCompanyId != null && userCompanyId.isNotEmpty
+                  ? userCompanyId
+                  : tenantId ?? ''))
+          .trim();
+      final createdBy = transaction.createdBy.isNotEmpty
+          ? transaction.createdBy
+          : user.uid;
 
       AppLogger.info('User tenant ID: $tenantId');
 
@@ -196,18 +206,19 @@ class TransactionService {
         paymentMethod: transaction.paymentMethod,
         documentNumber: transaction.documentNumber,
         status: transaction.status,
-        companyId: transaction.companyId,
+        companyId: companyId,
         createdAt: transaction.createdAt,
         updatedAt: transaction.updatedAt,
-        createdBy: transaction.createdBy,
-        updatedBy: transaction.updatedBy,
+        createdBy: createdBy,
+        updatedBy: transaction.updatedBy ?? createdBy,
         metadata: transaction.metadata,
       );
 
       // Multi-tenant data with tenantId and createdBy
       final transactionData = transactionWithId.toFirestore();
       transactionData['tenantId'] = tenantId;
-      transactionData['createdBy'] = user.uid;
+      transactionData['createdBy'] = createdBy;
+      transactionData['companyId'] = companyId;
 
       await docRef.set(transactionData);
 
