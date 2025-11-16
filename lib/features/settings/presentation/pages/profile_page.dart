@@ -266,20 +266,43 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       final ImageSource? source = await showDialog<ImageSource>(
         context: context,
         builder: (BuildContext context) {
+          final isDarkDialog = Theme.of(context).brightness == Brightness.dark;
           return AlertDialog(
-            title: const Text('Fotoğraf Seç'),
+            backgroundColor: isDarkDialog ? Colors.grey[850] : null,
+            title: Text(
+              'Fotoğraf Seç',
+              style: TextStyle(
+                color: isDarkDialog ? Colors.white : Colors.grey[800],
+              ),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 if (!kIsWeb) // Web'de kamera seçeneği yok
                   ListTile(
-                    leading: const Icon(Icons.camera_alt),
-                    title: const Text('Kamera'),
+                    leading: Icon(
+                      Icons.camera_alt,
+                      color: isDarkDialog ? Colors.grey[300] : Colors.grey[700],
+                    ),
+                    title: Text(
+                      'Kamera',
+                      style: TextStyle(
+                        color: isDarkDialog ? Colors.white : Colors.grey[800],
+                      ),
+                    ),
                     onTap: () => Navigator.of(context).pop(ImageSource.camera),
                   ),
                 ListTile(
-                  leading: const Icon(Icons.photo_library),
-                  title: const Text('Galeri'),
+                  leading: Icon(
+                    Icons.photo_library,
+                    color: isDarkDialog ? Colors.grey[300] : Colors.grey[700],
+                  ),
+                  title: Text(
+                    'Galeri',
+                    style: TextStyle(
+                      color: isDarkDialog ? Colors.white : Colors.grey[800],
+                    ),
+                  ),
                   onTap: () => Navigator.of(context).pop(ImageSource.gallery),
                 ),
               ],
@@ -508,21 +531,34 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
+        final isDarkDialog = Theme.of(context).brightness == Brightness.dark;
         return AlertDialog(
-          title: const Row(
+          backgroundColor: isDarkDialog ? Colors.grey[850] : null,
+          title: Row(
             children: [
-              Icon(Icons.upload, color: Colors.orange),
-              SizedBox(width: 8),
-              Text('Yükleme Devam Ediyor'),
+              const Icon(Icons.upload, color: Colors.orange),
+              const SizedBox(width: 8),
+              Text(
+                'Yükleme Devam Ediyor',
+                style: TextStyle(
+                  color: isDarkDialog ? Colors.white : Colors.grey[800],
+                ),
+              ),
             ],
           ),
-          content: const Text(
+          content: Text(
             'Profil fotoğrafınız yükleniyor. Lütfen işlem tamamlanana kadar bekleyin.\n\n'
             'Yükleme tamamlanmadan çıkarsanız fotoğraf kaybolabilir.',
+            style: TextStyle(
+              color: isDarkDialog ? Colors.grey[300] : Colors.grey[600],
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('Tamam'),
             ),
           ],

@@ -610,25 +610,65 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       final controller = TextEditingController(text: numbering);
                       final res = await showDialog<String>(
                         context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text('Numaralandırma Şeması'),
-                          content: TextField(
-                            controller: controller,
-                            decoration: const InputDecoration(
-                              hintText: 'INV-{YYYY}-{####}',
-                              border: OutlineInputBorder(),
+                        builder: (_) {
+                          final isDarkDialog = Theme.of(context).brightness == Brightness.dark;
+                          return AlertDialog(
+                            backgroundColor: isDarkDialog ? Colors.grey[850] : null,
+                            title: Text(
+                              'Numaralandırma Şeması',
+                              style: TextStyle(
+                                color: isDarkDialog ? Colors.white : Colors.grey[800],
+                              ),
                             ),
-                          ),
-                          actions: [
-                            TextButton(
+                            content: TextField(
+                              controller: controller,
+                              style: TextStyle(
+                                color: isDarkDialog ? Colors.white : Colors.grey[800],
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'INV-{YYYY}-{####}',
+                                hintStyle: TextStyle(
+                                  color: isDarkDialog ? Colors.grey[500] : Colors.grey[400],
+                                ),
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: isDarkDialog ? Colors.white12 : Colors.grey[300]!,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: isDarkDialog ? Colors.white12 : Colors.grey[300]!,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    width: 2,
+                                  ),
+                                ),
+                                fillColor: isDarkDialog ? Colors.grey[800] : Colors.grey[50],
+                                filled: true,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
                                 onPressed: () => Navigator.pop(context),
-                                child: const Text('İptal')),
-                            TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(context).colorScheme.primary,
+                                ),
+                                child: const Text('İptal'),
+                              ),
+                              TextButton(
                                 onPressed: () => Navigator.pop(
                                     context, controller.text.trim()),
-                                child: const Text('Kaydet')),
-                          ],
-                        ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: Theme.of(context).colorScheme.primary,
+                                ),
+                                child: const Text('Kaydet'),
+                              ),
+                            ],
+                          );
+                        },
                       );
                       if (res != null && res.isNotEmpty) {
                         notifier.updateNumberingScheme(res);

@@ -645,11 +645,18 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
   void _openManageCategoriesPage() {
     final TextEditingController catCtrl = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Kategoriler'),
+          backgroundColor: isDark ? Colors.grey[850] : null,
+          title: Text(
+            'Kategoriler',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: SizedBox(
             width: 480,
             height: 480,
@@ -661,8 +668,24 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                       Expanded(
                         child: TextField(
                           controller: catCtrl,
-                          decoration: const InputDecoration(
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
+                          decoration: InputDecoration(
                             labelText: 'Yeni kategori adı',
+                            labelStyle: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            filled: true,
+                            fillColor:
+                                isDark ? Colors.grey[800] : Colors.grey[50],
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -733,23 +756,76 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                         TextEditingController(text: name);
                                     final ok = await showDialog<bool>(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Kategori Düzenle'),
+                                      builder: (ctx) {
+                                        final isDarkDialog =
+                                            Theme.of(ctx).brightness ==
+                                                Brightness.dark;
+                                        return AlertDialog(
+                                          backgroundColor: isDarkDialog
+                                              ? Colors.grey[850]
+                                              : null,
+                                          title: Text(
+                                            'Kategori Düzenle',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                          ),
                                         content: TextField(
                                             controller: editCtrl,
-                                            decoration: const InputDecoration(
-                                                labelText: 'Ad')),
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                            decoration: InputDecoration(
+                                              labelText: 'Ad',
+                                              labelStyle: TextStyle(
+                                                color: isDarkDialog
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[600],
+                                              ),
+                                              filled: true,
+                                              fillColor: isDarkDialog
+                                                  ? Colors.grey[800]
+                                                  : Colors.grey[50],
+                                              border: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: isDarkDialog
+                                                      ? Colors.white12
+                                                      : Colors.grey[300]!,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
                                         actions: [
                                           TextButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(false),
-                                              child: const Text('İptal')),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
+                                              child: const Text('İptal'),
+                                            ),
                                           FilledButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(true),
-                                              child: const Text('Kaydet')),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                              ),
+                                              child: const Text('Kaydet'),
+                                            ),
                                         ],
-                                      ),
+                                        );
+                                      },
                                     );
                                     if (ok == true) {
                                       final newName = editCtrl.text.trim();
@@ -767,20 +843,53 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                   onPressed: () async {
                                     final ok = await showDialog<bool>(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Kategori Sil'),
-                                        content: Text('"$name" silinsin mi?'),
+                                      builder: (ctx) {
+                                        final isDarkDialog =
+                                            Theme.of(ctx).brightness ==
+                                                Brightness.dark;
+                                        return AlertDialog(
+                                          backgroundColor: isDarkDialog
+                                              ? Colors.grey[850]
+                                              : null,
+                                          title: Text(
+                                            'Kategori Sil',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                          ),
+                                          content: Text(
+                                            '"$name" silinsin mi?',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.grey[300]
+                                                  : Colors.grey[700],
+                                            ),
+                                          ),
                                         actions: [
                                           TextButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(false),
-                                              child: const Text('Vazgeç')),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
+                                              child: const Text('Vazgeç'),
+                                            ),
                                           FilledButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(true),
-                                              child: const Text('Sil')),
-                                        ],
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                foregroundColor: Colors.white,
                                       ),
+                                              child: const Text('Sil'),
+                                            ),
+                                          ],
+                                        );
+                                      },
                                     );
                                     if (ok == true) await d.reference.delete();
                                   },
@@ -867,11 +976,18 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
   void _openManagePositions() {
     final controller = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Pozisyonlar'),
+          backgroundColor: isDark ? Colors.grey[850] : null,
+          title: Text(
+            'Pozisyonlar',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: SizedBox(
             width: 520,
             height: 420,
@@ -971,26 +1087,76 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                         TextEditingController(text: name);
                                     final ok = await showDialog<bool>(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Pozisyon Düzenle'),
+                                      builder: (ctx) {
+                                        final isDarkDialog =
+                                            Theme.of(ctx).brightness ==
+                                                Brightness.dark;
+                                        return AlertDialog(
+                                          backgroundColor: isDarkDialog
+                                              ? Colors.grey[850]
+                                              : null,
+                                          title: Text(
+                                            'Pozisyon Düzenle',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                          ),
                                         content: TextField(
                                           controller: editCtrl,
-                                          decoration: const InputDecoration(
-                                              labelText: 'Ad'),
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                            decoration: InputDecoration(
+                                              labelText: 'Ad',
+                                              labelStyle: TextStyle(
+                                                color: isDarkDialog
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[600],
+                                              ),
+                                              filled: true,
+                                              fillColor: isDarkDialog
+                                                  ? Colors.grey[800]
+                                                  : Colors.grey[50],
+                                              border: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: isDarkDialog
+                                                      ? Colors.white12
+                                                      : Colors.grey[300]!,
+                                                ),
+                                              ),
+                                            ),
                                         ),
                                         actions: [
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(false),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
                                             child: const Text('İptal'),
                                           ),
                                           FilledButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(true),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                              ),
                                             child: const Text('Kaydet'),
                                           ),
                                         ],
-                                      ),
+                                        );
+                                      },
                                     );
                                     if (ok == true) {
                                       final newName = editCtrl.text.trim();
@@ -1046,22 +1212,53 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
                                     final ok = await showDialog<bool>(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Pozisyon Sil'),
-                                        content: Text('"$name" silinsin mi?'),
+                                      builder: (ctx) {
+                                        final isDarkDialog =
+                                            Theme.of(ctx).brightness ==
+                                                Brightness.dark;
+                                        return AlertDialog(
+                                          backgroundColor: isDarkDialog
+                                              ? Colors.grey[850]
+                                              : null,
+                                          title: Text(
+                                            'Pozisyon Sil',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                          ),
+                                          content: Text(
+                                            '"$name" silinsin mi?',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.grey[300]
+                                                  : Colors.grey[700],
+                                            ),
+                                          ),
                                         actions: [
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(false),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
                                             child: const Text('Vazgeç'),
                                           ),
                                           FilledButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(true),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                foregroundColor: Colors.white,
+                                              ),
                                             child: const Text('Sil'),
                                           ),
                                         ],
-                                      ),
+                                        );
+                                      },
                                     );
                                     if (ok == true) {
                                       // Tekrar kontrol et (güvenlik için)
@@ -1115,11 +1312,18 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
 
   void _openManageDepartments() {
     final controller = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Departmanlar'),
+          backgroundColor: isDark ? Colors.grey[850] : null,
+          title: Text(
+            'Departmanlar',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: SizedBox(
             width: 420,
             height: 420,
@@ -1205,23 +1409,70 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                     final ok = await showDialog<bool>(
                                       context: context,
                                       builder: (ctx) {
+                                        final isDarkDialog =
+                                            Theme.of(ctx).brightness ==
+                                                Brightness.dark;
                                         return AlertDialog(
-                                          title:
-                                              const Text('Departman Düzenle'),
+                                          backgroundColor: isDarkDialog
+                                              ? Colors.grey[850]
+                                              : null,
+                                          title: Text(
+                                            'Departman Düzenle',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                          ),
                                           content: TextField(
                                             controller: editCtrl,
-                                            decoration: const InputDecoration(
-                                                labelText: 'Ad'),
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                            decoration: InputDecoration(
+                                              labelText: 'Ad',
+                                              labelStyle: TextStyle(
+                                                color: isDarkDialog
+                                                    ? Colors.grey[400]
+                                                    : Colors.grey[600],
+                                              ),
+                                              filled: true,
+                                              fillColor: isDarkDialog
+                                                  ? Colors.grey[800]
+                                                  : Colors.grey[50],
+                                              border: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: isDarkDialog
+                                                      ? Colors.white12
+                                                      : Colors.grey[300]!,
+                                                ),
+                                              ),
+                                            ),
                                           ),
                                           actions: [
                                             TextButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(false),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
                                               child: const Text('İptal'),
                                             ),
                                             FilledButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(true),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                              ),
                                               child: const Text('Kaydet'),
                                             ),
                                           ],
@@ -1244,22 +1495,53 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                   onPressed: () async {
                                     final ok = await showDialog<bool>(
                                       context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Departman Sil'),
-                                        content: Text('"$name" silinsin mi?'),
+                                      builder: (ctx) {
+                                        final isDarkDialog =
+                                            Theme.of(ctx).brightness ==
+                                                Brightness.dark;
+                                        return AlertDialog(
+                                          backgroundColor: isDarkDialog
+                                              ? Colors.grey[850]
+                                              : null,
+                                          title: Text(
+                                            'Departman Sil',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
+                                          ),
+                                          content: Text(
+                                            '"$name" silinsin mi?',
+                                            style: TextStyle(
+                                              color: isDarkDialog
+                                                  ? Colors.grey[300]
+                                                  : Colors.grey[700],
+                                            ),
+                                          ),
                                         actions: [
                                           TextButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(false),
+                                              style: TextButton.styleFrom(
+                                                foregroundColor: Theme.of(ctx)
+                                                    .colorScheme
+                                                    .primary,
+                                              ),
                                             child: const Text('Vazgeç'),
                                           ),
                                           FilledButton(
                                             onPressed: () =>
                                                 Navigator.of(ctx).pop(true),
+                                              style: FilledButton.styleFrom(
+                                                backgroundColor: Colors.red,
+                                                foregroundColor: Colors.white,
+                                              ),
                                             child: const Text('Sil'),
                                           ),
                                         ],
-                                      ),
+                                        );
+                                      },
                                     );
                                     if (ok == true) {
                                       await d.reference.delete();
@@ -1774,9 +2056,11 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   }
 
   void _onAddEmployee() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: isDark ? Colors.grey[850] : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -1806,17 +2090,24 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   Widget _buildSearchAndFilters() {
     final double width = MediaQuery.sizeOf(context).width;
     final bool isNarrow = width < 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (isNarrow) {
       return Column(
         children: [
           TextField(
             controller: _searchController,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
             decoration: InputDecoration(
               hintText: 'Personel ara...',
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: Icon(
+                Icons.search,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
               filled: true,
-              fillColor: Colors.grey[100],
+              fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide.none,
@@ -1937,11 +2228,17 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
               flex: 2,
               child: TextField(
                 controller: _searchController,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
                 decoration: InputDecoration(
                   hintText: 'Personel ara...',
-                  prefixIcon: const Icon(Icons.search),
+                  prefixIcon: Icon(
+                    Icons.search,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                   filled: true,
-                  fillColor: Colors.grey[100],
+                  fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                     borderSide: BorderSide.none,
@@ -2102,6 +2399,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                 FloatingActionButton.extended(
                   heroTag: 'fab_add_employee',
                   onPressed: _onAddEmployee,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   icon: const Icon(Icons.person_add),
                   label: const Text('Yeni Personel Ekle'),
                 ),
@@ -2830,9 +3129,15 @@ class _EmployeeListState extends State<_EmployeeList> {
                   style: isArchived
                       ? TextStyle(
                           decoration: TextDecoration.lineThrough,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey[400]
+                              : Colors.grey[600],
                         )
-                      : null,
+                      : TextStyle(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.grey[800],
+                        ),
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2897,24 +3202,28 @@ class _ArchiveHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: onToggle,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: isDark ? Colors.grey[800] : Colors.grey[200],
           borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isDark ? Colors.white12 : Colors.transparent,
+          ),
         ),
         child: Row(
           children: [
             Icon(
               isExpanded ? Icons.expand_less : Icons.expand_more,
-              color: Colors.grey[700],
+              color: isDark ? Colors.grey[400] : Colors.grey[700],
             ),
             const SizedBox(width: 8),
             Icon(
               Icons.archive,
-              color: Colors.grey[700],
+              color: isDark ? Colors.grey[400] : Colors.grey[700],
               size: 20,
             ),
             const SizedBox(width: 8),
@@ -2922,7 +3231,7 @@ class _ArchiveHeader extends StatelessWidget {
               'Arşiv',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: Colors.grey[800],
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
             ),
             const Spacer(),
@@ -2947,13 +3256,13 @@ class _ArchiveHeader extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.grey[400],
+                    color: isDark ? Colors.grey[700] : Colors.grey[400],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '$count',
                     style: TextStyle(
-                      color: Colors.grey[900],
+                      color: isDark ? Colors.white : Colors.grey[900],
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                     ),
@@ -3147,25 +3456,41 @@ class _DepartmentEditDialogState extends State<_DepartmentEditDialog> {
   Future<void> _deleteDepartment() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Departmanı Sil'),
+      builder: (ctx) {
+        final isDarkDialog = Theme.of(ctx).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDarkDialog ? Colors.grey[850] : null,
+          title: Text(
+            'Departmanı Sil',
+            style: TextStyle(
+              color: isDarkDialog ? Colors.white : Colors.grey[800],
+            ),
+          ),
         content: Text(
           '"${widget.departmentName}" departmanını silmek istediğinize emin misiniz?',
+            style: TextStyle(
+              color: isDarkDialog ? Colors.grey[300] : Colors.grey[700],
+            ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(ctx).colorScheme.primary,
+              ),
             child: const Text('Vazgeç'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: FilledButton.styleFrom(
               backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
             ),
             child: const Text('Sil'),
           ),
         ],
-      ),
+        );
+      },
     );
 
     if (confirm != true) return;
@@ -3263,13 +3588,26 @@ class _DepartmentEditDialogState extends State<_DepartmentEditDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: Text('Departman: ${widget.departmentName}'),
+      backgroundColor: isDark ? Colors.grey[850] : null,
+      title: Text(
+        'Departman: ${widget.departmentName}',
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.grey[800],
+        ),
+      ),
       content: SizedBox(
         width: 500,
         height: 600,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+              )
             : SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -3736,11 +4074,23 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       final nextDateStr =
                           '${nextDate.day.toString().padLeft(2, '0')}.${nextDate.month.toString().padLeft(2, '0')}.${nextDate.year}';
 
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
                       return Card(
                         color: isOverdue
-                            ? Colors.red.shade50
-                            : Colors.blue.shade50,
+                            ? (isDark
+                                ? Colors.red[900]!.withValues(alpha: 0.3)
+                                : Colors.red.shade50)
+                            : (isDark
+                                ? Colors.blue[900]!.withValues(alpha: 0.3)
+                                : Colors.blue.shade50),
                         elevation: isOverdue ? 4 : 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isDark ? Colors.white12 : Colors.transparent,
+                          ),
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.all(12),
                           child: Row(
@@ -3813,7 +4163,18 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 12),
-                  Card(
+                  Builder(
+                    builder: (context) {
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
+                      return Card(
+                        color: isDark ? Colors.grey[850] : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isDark ? Colors.white12 : Colors.transparent,
+                          ),
+                        ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Row(
@@ -3821,7 +4182,14 @@ class _EmployeeDetailSheet extends StatelessWidget {
                           Expanded(
                             child: Text(
                               'Personel Bilgileri',
-                              style: Theme.of(context).textTheme.titleMedium,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.grey[800],
+                                      ),
                             ),
                           ),
                           FilledButton.icon(
@@ -3829,7 +4197,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
                               context,
                               name: name,
                               position: position,
-                              salary: '$formattedSalaryAmount $salaryCurrency',
+                                  salary:
+                                      '$formattedSalaryAmount $salaryCurrency',
                               entitlementType: entitlementType,
                               entitlement: entitlement,
                               startDate: startDate,
@@ -3845,10 +4214,24 @@ class _EmployeeDetailSheet extends StatelessWidget {
                         ],
                       ),
                     ),
+                      );
+                    },
                   ),
                   if (docs.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    Card(
+                    Builder(
+                      builder: (context) {
+                        final isDark =
+                            Theme.of(context).brightness == Brightness.dark;
+                        return Card(
+                          color: isDark ? Colors.grey[850] : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color:
+                                  isDark ? Colors.white12 : Colors.transparent,
+                            ),
+                          ),
                       child: Padding(
                         padding: const EdgeInsets.all(12),
                         child: Row(
@@ -3856,7 +4239,14 @@ class _EmployeeDetailSheet extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 'Dökümanlar (${docs.length})',
-                                style: Theme.of(context).textTheme.titleMedium,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.grey[800],
+                                        ),
                               ),
                             ),
                             FilledButton.icon(
@@ -3870,10 +4260,23 @@ class _EmployeeDetailSheet extends StatelessWidget {
                           ],
                         ),
                       ),
+                        );
+                      },
                     ),
                   ],
                   const SizedBox(height: 12),
-                  Card(
+                  Builder(
+                    builder: (context) {
+                      final isDark =
+                          Theme.of(context).brightness == Brightness.dark;
+                      return Card(
+                        color: isDark ? Colors.grey[850] : Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(
+                            color: isDark ? Colors.white12 : Colors.transparent,
+                          ),
+                        ),
                     child: Padding(
                       padding: const EdgeInsets.all(12),
                       child: Column(
@@ -3883,8 +4286,14 @@ class _EmployeeDetailSheet extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text('Hareketler',
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
                                     overflow: TextOverflow.ellipsis),
                               ),
                               IconButton(
@@ -3902,7 +4311,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                     docId: docId,
                                     data: data,
                                   );
-                                  sheet._showExportTransactionsOptions(context);
+                                      sheet._showExportTransactionsOptions(
+                                          context);
                                 },
                               ),
                               const SizedBox(width: 4),
@@ -3923,8 +4333,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
                             currency: salaryCurrency.isNotEmpty
                                 ? salaryCurrency
                                 : 'TRY',
-                            onEditOvertimeTransaction:
-                                (ctx, tId, empId, transId, transData, curr) {
+                                onEditOvertimeTransaction: (ctx, tId, empId,
+                                    transId, transData, curr) {
                               final sheet = _EmployeeDetailSheet(
                                 tenantId: tId,
                                 docId: empId,
@@ -3939,8 +4349,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                 curr,
                               );
                             },
-                            onEditPaymentTransaction:
-                                (ctx, tId, empId, transId, transData, curr) {
+                                onEditPaymentTransaction: (ctx, tId, empId,
+                                    transId, transData, curr) {
                               final sheet = _EmployeeDetailSheet(
                                 tenantId: tId,
                                 docId: empId,
@@ -3969,8 +4379,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                 transData,
                               );
                             },
-                            onPrintTransaction:
-                                (ctx, tId, empId, transId, transData, curr) {
+                                onPrintTransaction: (ctx, tId, empId, transId,
+                                    transData, curr) {
                               final sheet = _EmployeeDetailSheet(
                                 tenantId: tId,
                                 docId: empId,
@@ -3989,6 +4399,8 @@ class _EmployeeDetailSheet extends StatelessWidget {
                         ],
                       ),
                     ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -4293,10 +4705,17 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
   void _handleOvertimeAction(BuildContext context) {
     final name = data['name'] as String? ?? 'Personel';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('$name - Mesai İşlemleri'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          '$name - Mesai İşlemleri',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -4330,6 +4749,9 @@ class _EmployeeDetailSheet extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('İptal'),
           ),
         ],
@@ -4498,12 +4920,19 @@ class _EmployeeDetailSheet extends StatelessWidget {
     hourlyOvertimeRateController.addListener(hourlyOvertimeRateListener);
     // Mesai tutarı read-only olduğu için listener'a gerek yok
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogContext, setState) {
           return AlertDialog(
-            title: const Text('Mesai Ekle'),
+            backgroundColor: isDark ? Colors.grey[850] : null,
+            title: Text(
+              'Mesai Ekle',
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
+            ),
             contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
             content: ConstrainedBox(
               constraints: BoxConstraints(
@@ -4949,12 +5378,19 @@ class _EmployeeDetailSheet extends StatelessWidget {
     hourlyOvertimeRateController.addListener(hourlyOvertimeRateListener);
     // Mesai tutarı read-only olduğu için listener'a gerek yok
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (dialogContext, setState) {
           return AlertDialog(
-            title: const Text('Mesaiden Kes'),
+            backgroundColor: isDark ? Colors.grey[850] : null,
+            title: Text(
+              'Mesaiden Kes',
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
+            ),
             contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
             content: ConstrainedBox(
               constraints: BoxConstraints(
@@ -6322,21 +6758,47 @@ class _EmployeeDetailSheet extends StatelessWidget {
   Future<void> _renameDocument(BuildContext context, int index,
       String currentName, StateSetter setState) async {
     final controller = TextEditingController(text: currentName);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dökümanı Yeniden Adlandır'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dökümanı Yeniden Adlandır',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+          decoration: InputDecoration(
             labelText: 'Yeni Ad',
+            labelStyle: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
             hintText: 'Döküman adını girin',
+            hintStyle: TextStyle(
+              color: isDark ? Colors.grey[500] : Colors.grey[500],
+            ),
+            filled: true,
+            fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+            border: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
+            ),
           ),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Vazgeç'),
           ),
           FilledButton(
@@ -6414,10 +6876,17 @@ class _EmployeeDetailSheet extends StatelessWidget {
     Map? workHours,
     Map? overtime,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('$name - Detaylı Bilgiler'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          '$name - Detaylı Bilgiler',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: SizedBox(
           width: 500,
           child: SingleChildScrollView(
@@ -6565,10 +7034,17 @@ class _EmployeeDetailSheet extends StatelessWidget {
   void _showEmployeeActionDialog(BuildContext context) {
     final name = data['name'] as String? ?? 'Personel';
     final isActive = data['isActive'] as bool? ?? true;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('$name - İşlemler'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          '$name - İşlemler',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -6616,6 +7092,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
   void _showTerminationDialog(BuildContext context) {
     final name = data['name'] as String? ?? 'Personel';
     final selectedDateNotifier = ValueNotifier<DateTime>(DateTime.now());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
@@ -6623,7 +7100,13 @@ class _EmployeeDetailSheet extends StatelessWidget {
         valueListenable: selectedDateNotifier,
         builder: (dialogContext, selectedDate, _) {
           return AlertDialog(
-            title: const Text('İş Çıkışı'),
+            backgroundColor: isDark ? Colors.grey[850] : null,
+            title: Text(
+              'İş Çıkışı',
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -6720,12 +7203,22 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
   void _showTerminationCancelDialog(BuildContext context) {
     final name = data['name'] as String? ?? 'Personel';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('İş Çıkışını İptal Et'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'İş Çıkışını İptal Et',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: Text(
           '$name için iş çıkışını iptal etmek istediğinize emin misiniz? Personel tekrar aktif hale gelecektir.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[700],
+          ),
         ),
         actions: [
           TextButton(
