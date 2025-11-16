@@ -258,7 +258,7 @@ class _EnhancedPurchasesListPageState
 
     return ResponsiveScaffold(
       appBar: CustomAppBar(
-        title: 'Alışlar',
+        showBackButton: false,
         showDrawer: true,
         actions: [
           IconButton(
@@ -299,10 +299,10 @@ class _EnhancedPurchasesListPageState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: isDark ? Colors.white12 : Colors.grey[200]!,
         ),
       ),
       child: LayoutBuilder(
@@ -823,13 +823,18 @@ class _EnhancedPurchasesListPageState
   }
 
   Widget _buildPurchaseRow(Purchase purchase) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final statusColor = _getStatusColor(purchase.status);
 
     return Card(
       elevation: 2,
       margin: EdgeInsets.zero,
+      color: isDark ? Colors.grey[850] : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
       ),
       child: InkWell(
         onTap: () => _navigateToDetail(purchase.id),
@@ -865,7 +870,7 @@ class _EnhancedPurchasesListPageState
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: isDark ? Colors.white : Colors.grey[800],
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -873,7 +878,7 @@ class _EnhancedPurchasesListPageState
                       purchase.supplierName ?? 'Tedarikçi Yok',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
                     ),
                   ],
@@ -886,7 +891,7 @@ class _EnhancedPurchasesListPageState
                   _formatDate(purchase.purchaseDate),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -900,7 +905,7 @@ class _EnhancedPurchasesListPageState
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -935,9 +940,10 @@ class _EnhancedPurchasesListPageState
   }
 
   Color _getStatusColor(PurchaseStatus status) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (status) {
       case PurchaseStatus.draft:
-        return AppColors.textSecondary;
+        return isDark ? Colors.grey[400]! : AppColors.textSecondary;
       case PurchaseStatus.pending:
         return AppColors.warning;
       case PurchaseStatus.confirmed:
@@ -973,15 +979,32 @@ class _EnhancedPurchasesListPageState
 
 
   void _showFilterDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Gelişmiş Filtreler'),
-        content: const Text('Gelişmiş filtre özellikleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Gelişmiş Filtreler',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Gelişmiş filtre özellikleri yakında eklenecek.',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tamam'),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),
@@ -989,16 +1012,32 @@ class _EnhancedPurchasesListPageState
   }
 
   void _showExportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dışa Aktar'),
-        content:
-            const Text('Excel/PDF dışa aktarım özellikleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dışa Aktar',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Excel/PDF dışa aktarım özellikleri yakında eklenecek.',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tamam'),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),
@@ -1020,26 +1059,34 @@ class _EnhancedPurchasesListPageState
       final fileName = 'purchases_export_${DateTime.now().millisecondsSinceEpoch}.xlsx';
 
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       // Başarı mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Excel dosyası oluşturuldu: $fileName'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel dosyası oluşturuldu: $fileName'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
     } catch (e) {
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       // Hata mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Excel oluşturulurken hata: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Excel oluşturulurken hata: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -1057,26 +1104,34 @@ class _EnhancedPurchasesListPageState
       final fileName = await ExcelService.exportCustomersToCSV([]);
 
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       // Başarı mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('CSV dosyası oluşturuldu: $fileName'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('CSV dosyası oluşturuldu: $fileName'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
     } catch (e) {
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       // Hata mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('CSV oluşturulurken hata: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('CSV oluşturulurken hata: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
@@ -1094,39 +1149,64 @@ class _EnhancedPurchasesListPageState
       final fileName = await ExcelService.exportCustomersToPDF([]);
 
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       // Başarı mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('PDF dosyası oluşturuldu: $fileName'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF dosyası oluşturuldu: $fileName'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
+          ),
+        );
+      }
     } catch (e) {
       // Loading'i kapat
-      Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
 
       // Hata mesajı
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('PDF oluşturulurken hata: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulurken hata: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
     }
   }
 
   void _showImportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dosya İçe Aktar'),
-        content: const Text('Bu özellik yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dosya İçe Aktar',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Bu özellik yakında eklenecek.',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tamam'),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),

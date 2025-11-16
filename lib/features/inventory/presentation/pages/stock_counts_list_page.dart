@@ -108,9 +108,6 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
 
     return ResponsiveScaffold(
         appBar: CustomAppBar(
-          title: widget.warehouse != null
-              ? 'Stok Sayımları - ${widget.warehouse!.name}'
-              : 'Tüm Stok Sayımları',
           showBackButton: false,
           showDrawer: true,
           actions: [
@@ -179,41 +176,49 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
                 );
               },
               loading: () => const LoadingWidget(),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Hata: ${error.toString()}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.red[600],
+              error: (error, stack) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 64,
+                        color: isDark ? Colors.red[400] : Colors.red[600],
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        if (widget.warehouse != null) {
-                          ref.invalidate(stockCountsByWarehouseStreamProvider(
-                              widget.warehouse!.id));
-                        } else {
-                          ref.invalidate(allStockCountsStreamProvider);
-                        }
-                      },
-                      child: const Text('Tekrar Dene'),
-                    ),
-                  ],
-                ),
-              ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Hata: ${error.toString()}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: isDark ? Colors.red[400] : Colors.red[600],
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          if (widget.warehouse != null) {
+                            ref.invalidate(stockCountsByWarehouseStreamProvider(
+                                widget.warehouse!.id));
+                          } else {
+                            ref.invalidate(allStockCountsStreamProvider);
+                          }
+                        },
+                        child: const Text('Tekrar Dene'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           )
         ])));
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -221,7 +226,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
           Icon(
             Icons.inventory_outlined,
             size: 80,
-            color: Colors.grey[400],
+            color: isDark ? Colors.grey[500] : Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
@@ -229,7 +234,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
@@ -237,7 +242,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
             'Depo detayından yeni sayım başlatın',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: isDark ? Colors.grey[500] : Colors.grey[500],
             ),
           ),
         ],
@@ -246,9 +251,11 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
   }
 
   Widget _buildStockCountCard(StockCount stockCount) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
+      color: isDark ? Colors.grey[850] : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
@@ -300,7 +307,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
                     stockCount.type.displayName,
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
                 ],
@@ -311,6 +318,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               const SizedBox(height: 4),
@@ -318,19 +326,23 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
                 stockCount.warehouseName,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     DateFormat('dd.MM.yyyy HH:mm').format(stockCount.countDate),
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
                 ],
@@ -373,7 +385,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
                       ? stockCount.countedItemsCount /
                           stockCount.totalItemsCount
                       : 0,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: isDark ? Colors.grey[700] : Colors.grey[200],
                   valueColor: AlwaysStoppedAnimation<Color>(
                     _getStatusColor(stockCount.status),
                   ),
