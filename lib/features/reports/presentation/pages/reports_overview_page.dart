@@ -29,6 +29,11 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
   bool _sortAscending = true;
 
   Widget _buildWelcomeCard(bool isDark, List<Report> reports) {
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
     final totalReports = reports.length;
     final activeReports =
         reports.where((r) => r.status == ReportStatus.generating).length;
@@ -55,7 +60,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -82,7 +87,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: onPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -94,7 +99,7 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -126,14 +131,14 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -143,10 +148,15 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
 
   /// Header içindeki istatistik kartı - banner timer gibi
   Widget _buildHeaderStatCard(String title, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final backgroundColor = onPrimary.withValues(alpha: isDark ? 0.16 : 0.22);
+    final labelColor = onPrimary.withValues(alpha: 0.85);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -157,14 +167,14 @@ class _ReportsOverviewPageState extends ConsumerState<ReportsOverviewPage> {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: onPrimary,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: labelColor,
             ),
           ),
         ],

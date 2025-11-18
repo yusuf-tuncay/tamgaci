@@ -76,22 +76,59 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
   }
 
   void _addCategory1() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
         final controller = TextEditingController();
         return AlertDialog(
-          title: const Text('Kategori 1 - Yeni Kategori Ekle'),
+          backgroundColor: isDark ? Colors.grey[850] : null,
+          title: Text(
+            'Kategori 1 - Yeni Kategori Ekle',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+            decoration: InputDecoration(
               labelText: 'Kategori Adı',
+              labelStyle: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
               hintText: 'Örn: Teknoloji',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
+              ),
+              fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+              filled: true,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('İptal'),
             ),
             TextButton(
@@ -103,6 +140,9 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                   Navigator.pop(context);
                 }
               },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('Ekle'),
             ),
           ],
@@ -112,22 +152,59 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
   }
 
   void _addCategory2() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
         final controller = TextEditingController();
         return AlertDialog(
-          title: const Text('Kategori 2 - Yeni Kategori Ekle'),
+          backgroundColor: isDark ? Colors.grey[850] : null,
+          title: Text(
+            'Kategori 2 - Yeni Kategori Ekle',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+            decoration: InputDecoration(
               labelText: 'Kategori Adı',
+              labelStyle: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
               hintText: 'Örn: Teknoloji',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
+              ),
+              fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+              filled: true,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('İptal'),
             ),
             TextButton(
@@ -139,6 +216,9 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                   Navigator.pop(context);
                 }
               },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('Ekle'),
             ),
           ],
@@ -273,9 +353,10 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.supplierId != null;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: TamgaciConstants.backgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: CustomAppBar(
         title: isEditing ? 'Tedarikçi Düzenle' : 'Yeni Tedarikçi',
         showDrawer: false,
@@ -367,11 +448,12 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
               // Temel Bilgiler Kartı
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: isDark ? Border.all(color: Colors.white12) : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                     ),
@@ -403,7 +485,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? Colors.white : Colors.grey[800],
                             ),
                           ),
                         ],
@@ -432,7 +514,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -471,7 +553,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                       width: 2),
                                 ),
                                 filled: true,
-                                fillColor: Colors.grey[100],
+                                fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
                               ),
                               readOnly: true,
                             ),
@@ -523,7 +605,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -549,7 +631,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         items: _statusOptions.map((status) {
                           return DropdownMenuItem(
@@ -586,7 +668,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         items: _currencyOptions.map((currency) {
                           return DropdownMenuItem(
@@ -627,7 +709,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true, signed: true),
@@ -666,7 +748,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
                         validator: (value) {
@@ -703,7 +785,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         items: [
                           ..._categories1.map((category) {
@@ -757,7 +839,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         items: [
                           ..._categories2.map((category) {
@@ -796,11 +878,12 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
               // İletişim Bilgileri Kartı
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: isDark ? Border.all(color: Colors.white12) : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                     ),
@@ -829,7 +912,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? Colors.white : Colors.grey[800],
                             ),
                           ),
                         ],
@@ -858,7 +941,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         keyboardType: TextInputType.emailAddress,
                         validator: (value) {
@@ -896,7 +979,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         keyboardType: TextInputType.phone,
                       ),
@@ -924,7 +1007,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         maxLines: 3,
                       ),
@@ -937,11 +1020,12 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
               // Vergi Bilgileri Kartı
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: isDark ? Border.all(color: Colors.white12) : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                     ),
@@ -970,7 +1054,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? Colors.white : Colors.grey[800],
                             ),
                           ),
                         ],
@@ -999,7 +1083,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -1026,7 +1110,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                       ),
                     ],
@@ -1038,11 +1122,12 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
               // Banka Bilgileri Kartı
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: isDark ? Border.all(color: Colors.white12) : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                     ),
@@ -1071,7 +1156,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? Colors.white : Colors.grey[800],
                             ),
                           ),
                         ],
@@ -1100,7 +1185,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -1127,7 +1212,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -1157,7 +1242,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         keyboardType: TextInputType.number,
                       ),
@@ -1171,11 +1256,12 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
               // Notlar Kartı
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: isDark ? Border.all(color: Colors.white12) : null,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                       blurRadius: 20,
                       offset: const Offset(0, 4),
                     ),
@@ -1204,7 +1290,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? Colors.white : Colors.grey[800],
                             ),
                           ),
                         ],
@@ -1231,7 +1317,7 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                                 color: TamgaciConstants.primaryColor, width: 2),
                           ),
                           filled: true,
-                          fillColor: Colors.grey[50],
+                          fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
                         ),
                         maxLines: 3,
                       ),
@@ -1258,8 +1344,8 @@ class _CreateSupplierPageState extends ConsumerState<CreateSupplierPage> {
                 child: ElevatedButton(
                   onPressed: _saveForm,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: TamgaciConstants.primaryColor,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),

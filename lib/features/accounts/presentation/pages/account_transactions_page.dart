@@ -101,27 +101,37 @@ class _AccountTransactionsPageState
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red[400],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'İşlemler yüklenirken hata oluştu',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.red[600],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      error.toString(),
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                      textAlign: TextAlign.center,
+                    Builder(
+                      builder: (context) {
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        return Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.error_outline,
+                              size: 64,
+                              color: isDark ? Colors.red[400] : Colors.red[600],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              'İşlemler yüklenirken hata oluştu',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: isDark ? Colors.red[400] : Colors.red[600],
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              error.toString(),
+                              style: GoogleFonts.poppins(
+                                fontSize: 12,
+                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -134,13 +144,16 @@ class _AccountTransactionsPageState
   }
 
   Widget _buildFiltersSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.grey[200]!,
+        ),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -289,34 +302,46 @@ class _AccountTransactionsPageState
               debugPrint('Tarih aralığı InkWell tıklandı');
               _selectDateRange();
             },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey[400]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _startDate != null && _endDate != null
-                          ? '${DateFormat('dd.MM.yyyy').format(_startDate!)} - ${DateFormat('dd.MM.yyyy').format(_endDate!)}'
-                          : 'Tarih Aralığı Seç',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: _startDate != null && _endDate != null
-                            ? Colors.blue[700]
-                            : Colors.grey[600],
-                        fontWeight: _startDate != null && _endDate != null
-                            ? FontWeight.w600
-                            : FontWeight.normal,
-                      ),
+            child: Builder(
+              builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.grey[400]!,
                     ),
+                    borderRadius: BorderRadius.circular(8),
+                    color: isDark ? Colors.grey[800] : Colors.transparent,
                   ),
-                ],
-              ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_today,
+                        size: 20,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _startDate != null && _endDate != null
+                              ? '${DateFormat('dd.MM.yyyy').format(_startDate!)} - ${DateFormat('dd.MM.yyyy').format(_endDate!)}'
+                              : 'Tarih Aralığı Seç',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: _startDate != null && _endDate != null
+                                ? Colors.blue[700]
+                                : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                            fontWeight: _startDate != null && _endDate != null
+                                ? FontWeight.w600
+                                : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ),
@@ -545,6 +570,7 @@ class _AccountTransactionsPageState
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -552,7 +578,7 @@ class _AccountTransactionsPageState
           Icon(
             Icons.receipt_long,
             size: 64,
-            color: Colors.grey[400],
+            color: isDark ? Colors.grey[500] : Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
@@ -560,7 +586,7 @@ class _AccountTransactionsPageState
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
@@ -568,7 +594,7 @@ class _AccountTransactionsPageState
             'Filtreleri değiştirerek tekrar deneyin',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: isDark ? Colors.grey[500] : Colors.grey[500],
             ),
           ),
         ],
@@ -577,6 +603,7 @@ class _AccountTransactionsPageState
   }
 
   Widget _buildTransactionItem(AccountTransaction transaction) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isNegative = transaction.amount < 0;
     final amountColor = isNegative ? Colors.red[600] : Colors.green[600];
     final amountIcon = isNegative ? Icons.arrow_downward : Icons.arrow_upward;
@@ -600,12 +627,14 @@ class _AccountTransactionsPageState
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? Colors.grey[850] : Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: isDark ? Colors.white12 : Colors.grey[200]!,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: Colors.grey.withValues(alpha: isDark ? 0.3 : 0.1),
               spreadRadius: 1,
               blurRadius: 3,
               offset: const Offset(0, 1),
@@ -636,7 +665,7 @@ class _AccountTransactionsPageState
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey[800],
+                      color: isDark ? Colors.white : Colors.grey[800],
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -649,7 +678,7 @@ class _AccountTransactionsPageState
                             .format(transaction.transactionDate),
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -692,7 +721,7 @@ class _AccountTransactionsPageState
                   'Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)} ${widget.account.currency}',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
               ],

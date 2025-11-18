@@ -62,8 +62,10 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
   }
 
   void _showExportOptions() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? Colors.grey[850] : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -73,16 +75,32 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.table_chart),
-              title: const Text('Excel Olarak İndir'),
+              leading: Icon(
+                Icons.table_chart,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              title: Text(
+                'Excel Olarak İndir',
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+              ),
               onTap: () {
                 Navigator.of(context).pop();
                 _exportToExcel();
               },
             ),
             ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: const Text('PDF Olarak İndir'),
+              leading: Icon(
+                Icons.picture_as_pdf,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              title: Text(
+                'PDF Olarak İndir',
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+              ),
               onTap: () {
                 Navigator.of(context).pop();
                 _exportToPDF();
@@ -307,6 +325,11 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
   }
 
   Widget _buildWelcomeCard(List<AccountTransaction> expenses) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
     final isMobile = MediaQuery.of(context).size.width <= 768;
     return Container(
       width: double.infinity,
@@ -322,7 +345,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -346,14 +369,14 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                       style: GoogleFonts.poppins(
                         fontSize: isMobile ? 20 : 24,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: onPrimary,
                       ),
                     ),
                     Text(
                       'Masraf işlemlerinizi yönetin',
                       style: GoogleFonts.poppins(
                         fontSize: isMobile ? 12 : 14,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                       ),
                     ),
                   ],
@@ -432,19 +455,24 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
 
   Widget _buildHeaderStatCard(String title, String value, IconData icon,
       {bool compact = false, bool showIcon = true}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final backgroundColor = onPrimary.withValues(alpha: isDark ? 0.16 : 0.22);
+    final labelColor = onPrimary.withValues(alpha: 0.85);
     return Container(
       padding: EdgeInsets.all(compact ? 10 : 16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: onPrimary.withValues(alpha: 0.2)),
       ),
       child: Column(
         children: [
           if (showIcon) ...[
             Icon(
               icon,
-              color: Colors.white,
+              color: onPrimary,
               size: compact ? 18 : 24,
             ),
             SizedBox(height: compact ? 6 : 8),
@@ -454,14 +482,14 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
             style: GoogleFonts.poppins(
               fontSize: compact ? 16 : 18,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: onPrimary,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: compact ? 10 : 12,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: labelColor,
             ),
             textAlign: TextAlign.center,
           ),
@@ -1218,30 +1246,40 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
   }
 
   void _showExpenseDetail(AccountTransaction expense) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[850] : null,
         title: Text(
           'Masraf Detayı',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildDetailRow('Açıklama', expense.description),
-            _buildDetailRow('Hesap', expense.accountId),
+            _buildDetailRow('Açıklama', expense.description, isDark),
+            _buildDetailRow('Hesap', expense.accountId, isDark),
+            _buildDetailRow('Tutar',
+                CurrencyHelper.formatCurrency(expense.amount, 'TRY'), isDark),
+            _buildDetailRow('Kategori',
+                expense.category.toString().split('.').last, isDark),
             _buildDetailRow(
-                'Tutar', CurrencyHelper.formatCurrency(expense.amount, 'TRY')),
-            _buildDetailRow(
-                'Kategori', expense.category.toString().split('.').last),
-            _buildDetailRow('Tarih',
-                DateFormat('dd.MM.yyyy HH:mm').format(expense.createdAt)),
+                'Tarih',
+                DateFormat('dd.MM.yyyy HH:mm').format(expense.createdAt),
+                isDark),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Kapat'),
           ),
         ],
@@ -1249,7 +1287,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1261,14 +1299,16 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               '$label:',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.poppins(),
+              style: GoogleFonts.poppins(
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
             ),
           ),
         ],

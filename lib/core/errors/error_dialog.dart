@@ -107,7 +107,9 @@ class ErrorDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
       ),

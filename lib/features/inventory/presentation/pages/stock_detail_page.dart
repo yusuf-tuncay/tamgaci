@@ -24,7 +24,6 @@ class StockDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: const CustomAppBar(
-        title: 'Stok Detayı',
         showDrawer: false,
       ),
       drawer: const TamgaciDrawerMenu(),
@@ -63,7 +62,13 @@ class StockDetailPage extends ConsumerWidget {
   Widget _buildStockHeader(Stock stock, bool isDark) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -93,9 +98,7 @@ class StockDetailPage extends ConsumerWidget {
                         style: GoogleFonts.poppins(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: isDark
-                              ? Colors.white
-                              : TamgaciConstants.textPrimary,
+                          color: isDark ? Colors.white : Colors.grey[800],
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -132,7 +135,13 @@ class StockDetailPage extends ConsumerWidget {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -143,7 +152,7 @@ class StockDetailPage extends ConsumerWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -197,7 +206,13 @@ class StockDetailPage extends ConsumerWidget {
   Widget _buildStockStats(Stock stock, bool isDark) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -208,7 +223,7 @@ class StockDetailPage extends ConsumerWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -255,9 +270,7 @@ class StockDetailPage extends ConsumerWidget {
         Icon(
           icon,
           size: 20,
-          color: isDark
-              ? TamgaciConstants.textSecondaryDark
-              : TamgaciConstants.textSecondary,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -278,7 +291,7 @@ class StockDetailPage extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
             ],
@@ -331,7 +344,13 @@ class StockDetailPage extends ConsumerWidget {
   Widget _buildActionButtons(Stock stock, bool isDark, BuildContext context) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -342,7 +361,7 @@ class StockDetailPage extends ConsumerWidget {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -362,8 +381,8 @@ class StockDetailPage extends ConsumerWidget {
                       style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: TamgaciConstants.primaryColor,
-                      foregroundColor: Colors.white,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -460,7 +479,9 @@ class StockDetailPage extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'İptal',
-              style: GoogleFonts.poppins(color: TamgaciConstants.primaryColor),
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
           ElevatedButton(

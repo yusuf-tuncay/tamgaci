@@ -23,15 +23,16 @@ class InventoryPage extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Depo Stok', showDrawer: true),
+      appBar: const CustomAppBar(showDrawer: true),
       drawer: const TamgaciDrawerMenu(),
       body: _buildBody(isDark, ref, context),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Stok işlemi ekleme
         },
-        backgroundColor: TamgaciConstants.primaryColor,
-        child: const Icon(Icons.add, color: Colors.white),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -195,7 +196,7 @@ class InventoryPage extends ConsumerWidget {
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
           ],
@@ -231,7 +232,7 @@ class InventoryPage extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               Row(
@@ -355,8 +356,8 @@ class InventoryPage extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   color: isDark
-                      ? TamgaciConstants.textSecondaryDark
-                      : TamgaciConstants.textSecondary,
+                      ? Colors.grey[400]
+                      : Colors.grey[600],
                 ),
               ),
               Text(
@@ -364,7 +365,7 @@ class InventoryPage extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
             ],

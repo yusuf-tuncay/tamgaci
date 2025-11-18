@@ -123,20 +123,22 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       if (weatherRes.statusCode == 200) {
         final data = json.decode(weatherRes.body) as Map<String, dynamic>;
         if (mounted) {
-          final currentWeather = data['current_weather'] as Map<String, dynamic>?;
+          final currentWeather =
+              data['current_weather'] as Map<String, dynamic>?;
           final hourly = data['hourly'] as Map<String, dynamic>?;
           final daily = data['daily'] as Map<String, dynamic>?;
-          
+
           // Get current hour index for humidity
           int? humidity;
           if (hourly != null && hourly['relativehumidity_2m'] != null) {
-            final humidityList = hourly['relativehumidity_2m'] as List<dynamic>?;
+            final humidityList =
+                hourly['relativehumidity_2m'] as List<dynamic>?;
             if (humidityList != null && humidityList.isNotEmpty) {
               // Get first hour (current hour) humidity
               humidity = (humidityList[0] as num?)?.toInt();
             }
           }
-          
+
           // Get sunrise and sunset times
           DateTime? sunrise;
           DateTime? sunset;
@@ -190,13 +192,13 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               }
             }
           }
-          
+
           // Merge weather data with additional info
           final weatherData = <String, dynamic>{
             if (currentWeather != null) ...currentWeather,
             if (humidity != null) 'humidity': humidity,
           };
-          
+
           setState(() {
             _weather = weatherData.isNotEmpty ? weatherData : null;
             _locationName = locationName;
@@ -389,7 +391,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       final hour = now.hour;
       return hour < 6 || hour >= 20; // 20:00-06:00 arası gece kabul et
     }
-    
+
     // Güneş doğuş ve batış saatlerini bugünün tarihi ile birleştir
     final today = DateTime(now.year, now.month, now.day);
     final todaySunrise = DateTime(
@@ -406,11 +408,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       _sunset!.hour,
       _sunset!.minute,
     );
-    
+
     // Güneş batışından 30 dakika önce ve güneş doğuşundan 30 dakika sonra gece kabul et
     final sunsetWithMargin = todaySunset.subtract(const Duration(minutes: 30));
     final sunriseWithMargin = todaySunrise.add(const Duration(minutes: 30));
-    
+
     // Eğer şu an güneş batışından sonra veya güneş doğuşundan önceyse gece
     if (now.isAfter(sunsetWithMargin)) {
       return true; // Güneş batışından sonra = gece
@@ -418,7 +420,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (now.isBefore(sunriseWithMargin)) {
       return true; // Güneş doğuşundan önce = gece
     }
-    
+
     return false; // Gündüz
   }
 
@@ -428,7 +430,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (_sunrise != null && _sunset != null) {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      
+
       if (isNight) {
         // Gece ise, güneş doğuşuna ne kadar kaldığını göster
         var nextSunrise = DateTime(
@@ -490,16 +492,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     int? humidity,
   ) {
     if (weatherCode == null || temperature == null) return null;
-    
+
     final isNight = _isNightTime();
 
     // Rüzgar hızı kontrolü (km/h cinsinden)
-    final isWindy = windSpeed != null && windSpeed > 30; // 30 km/h üzeri rüzgarlı
-    final isVeryWindy = windSpeed != null && windSpeed > 50; // 50 km/h üzeri çok rüzgarlı
+    final isWindy =
+        windSpeed != null && windSpeed > 30; // 30 km/h üzeri rüzgarlı
+    final isVeryWindy =
+        windSpeed != null && windSpeed > 50; // 50 km/h üzeri çok rüzgarlı
 
     // Nem kontrolü
     final isHumid = humidity != null && humidity > 70; // %70 üzeri nemli
-    final isVeryHumid = humidity != null && humidity > 85; // %85 üzeri çok nemli
+    final isVeryHumid =
+        humidity != null && humidity > 85; // %85 üzeri çok nemli
 
     // Sıcaklık kategorileri
     final isExtremelyHot = temperature >= 40;
@@ -559,9 +564,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     // 2. Kar durumları
     if (isSnowShower) {
-      String message = 'Sağanak kar: Sıcak giyinmeyi ve dikkatli sürüş yapmayı unutmayın.';
+      String message =
+          'Sağanak kar: Sıcak giyinmeyi ve dikkatli sürüş yapmayı unutmayın.';
       if (isExtremelyCold) {
-        message = 'Sağanak kar ve aşırı soğuk: Kalın giysiler ve kapalı alanda kalmayı unutmayın.';
+        message =
+            'Sağanak kar ve aşırı soğuk: Kalın giysiler ve kapalı alanda kalmayı unutmayın.';
       } else if (isVeryCold) {
         message = 'Sağanak kar ve çok soğuk: Sıcak giyinmeyi unutmayın.';
       }
@@ -574,7 +581,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (isSnowing) {
       String message = 'Karlı hava: Sıcak giyinmeyi unutmayın.';
       if (isExtremelyCold) {
-        message = 'Karlı ve aşırı soğuk hava: Kalın giysiler ve sıcak içecekler alın.';
+        message =
+            'Karlı ve aşırı soğuk hava: Kalın giysiler ve sıcak içecekler alın.';
       } else if (isVeryCold) {
         message = 'Karlı ve soğuk hava: Sıcak giyinmeyi unutmayın.';
       }
@@ -628,7 +636,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (isFoggy) {
       String message = 'Sisli hava: Araç kullanırken dikkatli olun.';
       if (isCold || isVeryCold || isExtremelyCold) {
-        message = 'Sisli ve soğuk hava: Araç kullanırken dikkatli olun, sıcak giyinmeyi unutmayın.';
+        message =
+            'Sisli ve soğuk hava: Araç kullanırken dikkatli olun, sıcak giyinmeyi unutmayın.';
       }
       return {
         'message': message,
@@ -1263,7 +1272,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   /// Animasyonlu gece/gündüz göstergesi widget'ı
   Widget _buildDayNightIndicator(bool isDark) {
     final isNight = _isNightTime();
-    
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
       duration: const Duration(milliseconds: 1000),
@@ -1348,7 +1357,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   /// Rüzgar yönünü derece cinsinden metin olarak döndürür
   String _getWindDirection(int? windDirection) {
     if (windDirection == null) return '';
-    
+
     // Rüzgar yönü 0-360 derece arasında
     if (windDirection >= 337.5 || windDirection < 22.5) return 'K';
     if (windDirection >= 22.5 && windDirection < 67.5) return 'KD';
@@ -1358,7 +1367,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     if (windDirection >= 202.5 && windDirection < 247.5) return 'GB';
     if (windDirection >= 247.5 && windDirection < 292.5) return 'B';
     if (windDirection >= 292.5 && windDirection < 337.5) return 'KB';
-    
+
     return '';
   }
 
@@ -1483,7 +1492,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         : 'Deneme süreniz doldu',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -1571,7 +1583,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     'Aboneliğinizi yenileyerek tüm özelliklerden yararlanmaya devam edin',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withValues(alpha: 0.9),
                     ),
                   ),
                 ],
@@ -1666,7 +1681,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       '$remainingDays gün kaldı. Yenilemeyi unutmayın!',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onPrimary
+                            .withValues(alpha: 0.9),
                       ),
                     ),
                   ],
@@ -1892,6 +1910,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   Widget _buildWelcomeCard(bool isDark) {
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
@@ -1905,7 +1927,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -1926,10 +1948,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.1),
+                  color: onPrimary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.25),
+                    color: onPrimary.withValues(alpha: 0.25),
                     width: 1,
                   ),
                 ),
@@ -1974,7 +1996,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.poppins(
                       fontSize: narrow ? 11 : 12,
-                      color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withValues(alpha: 0.9),
                       fontWeight: FontWeight.w500,
                     ),
                   );
@@ -1983,14 +2008,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 Container(
                   height: 1,
                   width: double.infinity,
-                  color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.12),
+                  color: onPrimary.withValues(alpha: 0.14),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Hoş Geldiniz! Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
                   style: GoogleFonts.poppins(
                     fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: secondaryTextColor,
                   ),
                 ),
               ],
@@ -2071,19 +2096,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: _getWeatherGradientColors(
-              _weather != null ? _weather!['weathercode'] as int? : null, isDark),
+              _weather != null ? _weather!['weathercode'] as int? : null,
+              isDark),
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: _getWeatherColors(_weather != null
-              ? _weather!['weathercode'] as int?
-              : null, isDark)['border']!,
+          color: _getWeatherColors(
+              _weather != null ? _weather!['weathercode'] as int? : null,
+              isDark)['border']!,
         ),
         boxShadow: [
           BoxShadow(
-            color: _getWeatherColors(_weather != null
-                ? _weather!['weathercode'] as int?
-                : null, isDark)['shadow']!,
+            color: _getWeatherColors(
+                _weather != null ? _weather!['weathercode'] as int? : null,
+                isDark)['shadow']!,
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -2125,26 +2151,46 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 const SizedBox(height: 4),
                 // Weather Alert (if exists) - Desktop - Entegre uyarı sistemi
                 if (_getIntegratedWeatherAlert(
-                      _weather != null ? _weather!['weathercode'] as int? : null,
-                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
-                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null
+                          ? _weather!['weathercode'] as int?
+                          : null,
+                      _weather != null
+                          ? (_weather!['temperature'] as num?)?.toDouble()
+                          : null,
+                      _weather != null
+                          ? (_weather!['windspeed'] as num?)?.toDouble()
+                          : null,
                       _weather != null ? (_weather!['humidity'] as int?) : null,
                     ) !=
                     null)
                   Text(
                     _getIntegratedWeatherAlert(
-                      _weather != null ? _weather!['weathercode'] as int? : null,
-                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
-                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null
+                          ? _weather!['weathercode'] as int?
+                          : null,
+                      _weather != null
+                          ? (_weather!['temperature'] as num?)?.toDouble()
+                          : null,
+                      _weather != null
+                          ? (_weather!['windspeed'] as num?)?.toDouble()
+                          : null,
                       _weather != null ? (_weather!['humidity'] as int?) : null,
                     )!['message'],
                     style: GoogleFonts.poppins(
                       color: _getAlertColor(
                         _getIntegratedWeatherAlert(
-                          _weather != null ? _weather!['weathercode'] as int? : null,
-                          _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
-                          _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
-                          _weather != null ? (_weather!['humidity'] as int?) : null,
+                          _weather != null
+                              ? _weather!['weathercode'] as int?
+                              : null,
+                          _weather != null
+                              ? (_weather!['temperature'] as num?)?.toDouble()
+                              : null,
+                          _weather != null
+                              ? (_weather!['windspeed'] as num?)?.toDouble()
+                              : null,
+                          _weather != null
+                              ? (_weather!['humidity'] as int?)
+                              : null,
                         )!['type'],
                         isDark,
                       ),
@@ -2175,10 +2221,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         ),
                       ),
                       // Wind Direction
-                      if (_weather != null && _weather!['winddirection'] != null) ...[
+                      if (_weather != null &&
+                          _weather!['winddirection'] != null) ...[
                         const SizedBox(width: 2),
                         Text(
-                          _getWindDirection((_weather!['winddirection'] as num?)?.toInt()),
+                          _getWindDirection(
+                              (_weather!['winddirection'] as num?)?.toInt()),
                           style: GoogleFonts.poppins(
                             color: _getWeatherTextColor(isDark, alpha: 0.85),
                             fontSize: 10,
@@ -2188,8 +2236,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       ],
                     ],
                     // Separator
-                    if (_weather != null && 
-                        _weather!['windspeed'] != null && 
+                    if (_weather != null &&
+                        _weather!['windspeed'] != null &&
                         _weather!['humidity'] != null) ...[
                       const SizedBox(width: 8),
                       Container(
@@ -2321,19 +2369,20 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: _getWeatherGradientColors(
-              _weather != null ? _weather!['weathercode'] as int? : null, isDark),
+              _weather != null ? _weather!['weathercode'] as int? : null,
+              isDark),
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: _getWeatherColors(_weather != null
-              ? _weather!['weathercode'] as int?
-              : null, isDark)['border']!,
+          color: _getWeatherColors(
+              _weather != null ? _weather!['weathercode'] as int? : null,
+              isDark)['border']!,
         ),
         boxShadow: [
           BoxShadow(
-            color: _getWeatherColors(_weather != null
-                ? _weather!['weathercode'] as int?
-                : null, isDark)['shadow']!,
+            color: _getWeatherColors(
+                _weather != null ? _weather!['weathercode'] as int? : null,
+                isDark)['shadow']!,
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -2381,26 +2430,46 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 const SizedBox(height: 2),
                 // Weather Alert (if exists) - Mobile - Entegre uyarı sistemi
                 if (_getIntegratedWeatherAlert(
-                      _weather != null ? _weather!['weathercode'] as int? : null,
-                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
-                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null
+                          ? _weather!['weathercode'] as int?
+                          : null,
+                      _weather != null
+                          ? (_weather!['temperature'] as num?)?.toDouble()
+                          : null,
+                      _weather != null
+                          ? (_weather!['windspeed'] as num?)?.toDouble()
+                          : null,
                       _weather != null ? (_weather!['humidity'] as int?) : null,
                     ) !=
                     null)
                   Text(
                     _getIntegratedWeatherAlert(
-                      _weather != null ? _weather!['weathercode'] as int? : null,
-                      _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
-                      _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
+                      _weather != null
+                          ? _weather!['weathercode'] as int?
+                          : null,
+                      _weather != null
+                          ? (_weather!['temperature'] as num?)?.toDouble()
+                          : null,
+                      _weather != null
+                          ? (_weather!['windspeed'] as num?)?.toDouble()
+                          : null,
                       _weather != null ? (_weather!['humidity'] as int?) : null,
                     )!['message'],
                     style: GoogleFonts.poppins(
                       color: _getAlertColor(
                         _getIntegratedWeatherAlert(
-                          _weather != null ? _weather!['weathercode'] as int? : null,
-                          _weather != null ? (_weather!['temperature'] as num?)?.toDouble() : null,
-                          _weather != null ? (_weather!['windspeed'] as num?)?.toDouble() : null,
-                          _weather != null ? (_weather!['humidity'] as int?) : null,
+                          _weather != null
+                              ? _weather!['weathercode'] as int?
+                              : null,
+                          _weather != null
+                              ? (_weather!['temperature'] as num?)?.toDouble()
+                              : null,
+                          _weather != null
+                              ? (_weather!['windspeed'] as num?)?.toDouble()
+                              : null,
+                          _weather != null
+                              ? (_weather!['humidity'] as int?)
+                              : null,
                         )!['type'],
                         isDark,
                       ),
@@ -2431,10 +2500,12 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                         ),
                       ),
                       // Wind Direction
-                      if (_weather != null && _weather!['winddirection'] != null) ...[
+                      if (_weather != null &&
+                          _weather!['winddirection'] != null) ...[
                         const SizedBox(width: 2),
                         Text(
-                          _getWindDirection((_weather!['winddirection'] as num?)?.toInt()),
+                          _getWindDirection(
+                              (_weather!['winddirection'] as num?)?.toInt()),
                           style: GoogleFonts.poppins(
                             color: _getWeatherTextColor(isDark, alpha: 0.85),
                             fontSize: 8,
@@ -2444,8 +2515,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       ],
                     ],
                     // Separator
-                    if (_weather != null && 
-                        _weather!['windspeed'] != null && 
+                    if (_weather != null &&
+                        _weather!['windspeed'] != null &&
                         _weather!['humidity'] != null) ...[
                       const SizedBox(width: 6),
                       Container(
@@ -2547,47 +2618,63 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     _buildActionCardHorizontal(
                         isMobile ? 'Fatura' : 'Fatura Oluştur',
                         Icons.receipt_long,
-                        isDark ? const Color(0xFF3B82F6) : const Color(0xFF2563EB), () {
+                        isDark
+                            ? const Color(0xFF3B82F6)
+                            : const Color(0xFF2563EB), () {
                       context.pushNamed('invoices-list');
                     }, isDark),
                     const SizedBox(width: 12),
-                    _buildActionCardHorizontal(isMobile ? 'Ürün' : 'Ürün Ekle',
-                        Icons.inventory_2, isDark ? const Color(0xFFF59E0B) : const Color(0xFFD97706), () {
+                    _buildActionCardHorizontal(
+                        isMobile ? 'Ürün' : 'Ürün Ekle',
+                        Icons.inventory_2,
+                        isDark
+                            ? const Color(0xFFF59E0B)
+                            : const Color(0xFFD97706), () {
                       context.pushNamed('create-product');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Müşteri' : 'Müşteri Ekle',
                         Icons.person_add,
-                        isDark ? const Color(0xFF8B5CF6) : const Color(0xFF7C3AED), () {
+                        isDark
+                            ? const Color(0xFF8B5CF6)
+                            : const Color(0xFF7C3AED), () {
                       context.pushNamed('create-customer');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Stok' : 'Stok İşlemi',
                         Icons.warehouse,
-                        isDark ? const Color(0xFF10B981) : const Color(0xFF059669), () {
+                        isDark
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFF059669), () {
                       context.pushNamed('inventory');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Depo' : 'Depo Listesi',
                         Icons.list,
-                        isDark ? const Color(0xFF6366F1) : const Color(0xFF4F46E5), () {
+                        isDark
+                            ? const Color(0xFF6366F1)
+                            : const Color(0xFF4F46E5), () {
                       context.pushNamed('warehouses-home');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Stok Listesi' : 'Stok Listesi',
                         Icons.inventory,
-                        isDark ? const Color(0xFF14B8A6) : const Color(0xFF0D9488), () {
+                        isDark
+                            ? const Color(0xFF14B8A6)
+                            : const Color(0xFF0D9488), () {
                       context.pushNamed('stock-list');
                     }, isDark),
                     const SizedBox(width: 12),
                     _buildActionCardHorizontal(
                         isMobile ? 'Test' : 'Logger Test',
                         Icons.color_lens,
-                        isDark ? const Color(0xFFEC4899) : const Color(0xFFDB2777), () {
+                        isDark
+                            ? const Color(0xFFEC4899)
+                            : const Color(0xFFDB2777), () {
                       context.pushNamed('colorized-logger-test');
                     }, isDark),
                   ],
@@ -2735,25 +2822,32 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
       data: (summary) {
         // Modern renk paleti - light ve dark mode için optimize edilmiş
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        
+
         // Satış - Yeşil tonları
-        final salesColor = isDark ? const Color(0xFF10B981) : const Color(0xFF059669);
+        final salesColor =
+            isDark ? const Color(0xFF10B981) : const Color(0xFF059669);
         // Alış - Turuncu tonları
-        final purchaseColor = isDark ? const Color(0xFFF59E0B) : const Color(0xFFD97706);
+        final purchaseColor =
+            isDark ? const Color(0xFFF59E0B) : const Color(0xFFD97706);
         // Kar - Yeşil, Zarar - Kırmızı
         final profitColor = summary.netProfit >= 0
             ? (isDark ? const Color(0xFF10B981) : const Color(0xFF059669))
             : (isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626));
         // Bakiye - Mavi tonları
-        final balanceColor = isDark ? const Color(0xFF3B82F6) : const Color(0xFF2563EB);
+        final balanceColor =
+            isDark ? const Color(0xFF3B82F6) : const Color(0xFF2563EB);
         // Kritik Stok - Turuncu/Kırmızı tonları
-        final criticalColor = isDark ? const Color(0xFFF97316) : const Color(0xFFEA580C);
+        final criticalColor =
+            isDark ? const Color(0xFFF97316) : const Color(0xFFEA580C);
         // Müşteri - Mor tonları
-        final customerColor = isDark ? const Color(0xFF8B5CF6) : const Color(0xFF7C3AED);
+        final customerColor =
+            isDark ? const Color(0xFF8B5CF6) : const Color(0xFF7C3AED);
         // Tahsilat - Teal tonları
-        final receivablesColor = isDark ? const Color(0xFF14B8A6) : const Color(0xFF0D9488);
+        final receivablesColor =
+            isDark ? const Color(0xFF14B8A6) : const Color(0xFF0D9488);
         // Ödeme - Pembe tonları
-        final payablesColor = isDark ? const Color(0xFFEC4899) : const Color(0xFFDB2777);
+        final payablesColor =
+            isDark ? const Color(0xFFEC4899) : const Color(0xFFDB2777);
 
         final cards = <Widget>[
           DashboardStatsCard(
@@ -2764,8 +2858,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             iconColor: salesColor,
             backgroundColor: salesColor,
             percentageChange: summary.salesGrowthRate,
-            percentageColor:
-                summary.salesGrowthRate >= 0 ? salesColor : (isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626)),
+            percentageColor: summary.salesGrowthRate >= 0
+                ? salesColor
+                : (isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626)),
           ),
           DashboardStatsCard(
             title: 'Toplam Alış',

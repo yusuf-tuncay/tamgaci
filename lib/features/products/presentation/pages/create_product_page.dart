@@ -19,6 +19,7 @@ import '../../../warehouses/domain/entities/warehouse.dart';
 import '../../../warehouses/presentation/providers/warehouse_providers.dart';
 import '../../data/services/firebase_storage_service.dart';
 import '../../../../core/utils/currency_helper.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 
 /// Ürün oluşturma sayfası
 class CreateProductPage extends ConsumerStatefulWidget {
@@ -293,21 +294,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       backgroundColor: isDark
           ? TamgaciConstants.backgroundColorDark
           : TamgaciConstants.backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          widget.productId != null ? 'Ürün Düzenle' : 'Yeni Ürün',
-          style: GoogleFonts.poppins(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 1,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+      appBar: const CustomAppBar(
+        showBackButton: true,
+        showDrawer: false,
       ),
       body: Form(
         key: _formKey,
@@ -448,37 +437,46 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   Widget _buildSaveButton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: isDark ? 0.3 : 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
         ],
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          ),
+        ),
       ),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
           onPressed: _isLoading ? null : _saveProduct,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6366F1),
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
+            elevation: 0,
           ),
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   height: 20,
                   width: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                 )
               : Text(

@@ -183,12 +183,14 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       ),
       centerTitle: true,
       leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Theme.of(context).colorScheme.onSurface, size: 24),
+        icon: Icon(Icons.arrow_back,
+            color: Theme.of(context).colorScheme.onSurface, size: 24),
         onPressed: () => context.goNamed('accounts-home'),
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface, size: 24),
+          icon: Icon(Icons.more_vert,
+              color: Theme.of(context).colorScheme.onSurface, size: 24),
           onPressed: _showMoreOptions,
           tooltip: 'Daha fazla seçenek',
         ),
@@ -201,6 +203,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       child: AnimatedBuilder(
         animation: _fadeAnimation,
         builder: (context, child) {
+          final theme = Theme.of(context);
+          final isDark = theme.brightness == Brightness.dark;
+          final headerTextColor = theme.colorScheme.onPrimary;
+          final secondaryTextColor =
+              headerTextColor.withValues(alpha: isDark ? 0.9 : 0.95);
+          final borderColor = headerTextColor.withValues(alpha: 0.12);
+          final iconBackground =
+              headerTextColor.withValues(alpha: isDark ? 0.15 : 0.2);
+          final iconBorder = headerTextColor.withValues(alpha: 0.25);
           return FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
@@ -220,8 +231,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     ],
                   ),
                   borderRadius: BorderRadius.circular(16),
-                  border:
-                      Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                  border: Border.all(color: borderColor),
                   boxShadow: [
                     BoxShadow(
                       color:
@@ -240,16 +250,16 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
+                        color: iconBackground,
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color: iconBorder,
                           width: 1,
                         ),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.account_balance_wallet_outlined,
-                        color: Colors.white,
+                        color: headerTextColor,
                         size: 24,
                       ),
                     ),
@@ -264,7 +274,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                             style: GoogleFonts.poppins(
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: headerTextColor,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -272,7 +282,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                             account.bankName,
                             style: GoogleFonts.poppins(
                               fontSize: 16,
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: secondaryTextColor,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -281,7 +291,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                             style: GoogleFonts.poppins(
                               fontSize: 20,
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: headerTextColor,
                             ),
                           ),
                         ],
@@ -298,6 +308,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildDetailsSection(Account account) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -309,11 +320,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.transparent,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color:
+                          Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -344,7 +359,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                                 style: GoogleFonts.poppins(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
+                                  color:
+                                      isDark ? Colors.white : Colors.grey[800],
                                 ),
                               ),
                             ),
@@ -352,7 +368,8 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                               _isDetailsExpanded
                                   ? Icons.expand_less
                                   : Icons.expand_more,
-                              color: Colors.grey[600],
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
                             ),
                           ],
                         ),
@@ -402,6 +419,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -413,7 +431,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               label,
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
             ),
           ),
@@ -425,7 +443,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[800],
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
           ),
@@ -490,41 +508,51 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             opacity: _fadeAnimation,
             child: SlideTransition(
               position: _slideAnimation,
-              child: Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+              child: Builder(
+                builder: (context) {
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
+                  return Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.grey[850] : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.transparent,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black
+                              .withValues(alpha: isDark ? 0.3 : 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: asyncValue.when(
-                  data: (transactions) {
-                    if (transactions.isEmpty) {
-                      return _buildPortfolioEmptyState(
-                        icon: icon,
-                        message: emptyMessage,
-                        accentColor: accentColor,
-                      );
-                    }
-                    return _buildPortfolioContent(
-                      title: title,
-                      transactions: transactions,
-                      accentColor: accentColor,
-                      icon: icon,
-                      infoText: infoText,
-                    );
-                  },
-                  loading: () => _buildPortfolioLoading(),
-                  error: (error, stack) =>
-                      _buildPortfolioError(title, error.toString()),
-                ),
+                    child: asyncValue.when(
+                      data: (transactions) {
+                        if (transactions.isEmpty) {
+                          return _buildPortfolioEmptyState(
+                            icon: icon,
+                            message: emptyMessage,
+                            accentColor: accentColor,
+                          );
+                        }
+                        return _buildPortfolioContent(
+                          title: title,
+                          transactions: transactions,
+                          accentColor: accentColor,
+                          icon: icon,
+                          infoText: infoText,
+                        );
+                      },
+                      loading: () => _buildPortfolioLoading(),
+                      error: (error, stack) =>
+                          _buildPortfolioError(title, error.toString()),
+                    ),
+                  );
+                },
               ),
             ),
           );
@@ -592,12 +620,17 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         ),
         if (infoText != null) ...[
           const SizedBox(height: 12),
-          Text(
-            infoText,
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
+          Builder(
+            builder: (context) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return Text(
+                infoText,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              );
+            },
           ),
         ],
         const SizedBox(height: 16),
@@ -680,13 +713,16 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         : 'Belirtilmemiş';
     final statusColor = _mapStatusColor(transaction.status);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: isDark ? Colors.grey[800] : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accentColor.withValues(alpha: 0.12)),
+        border: Border.all(
+          color: isDark ? Colors.white12 : accentColor.withValues(alpha: 0.12),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -699,7 +735,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 style: GoogleFonts.poppins(
                   fontSize: 15,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               Container(
@@ -764,16 +800,20 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: isDark
+                    ? Colors.blue[900]!.withValues(alpha: 0.3)
+                    : Colors.blue[50],
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.blue[200]!),
+                border: Border.all(
+                  color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.account_balance, 
+                      Icon(Icons.account_balance,
                           color: Colors.blue[700], size: 18),
                       const SizedBox(width: 8),
                       Text(
@@ -788,20 +828,20 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                   ),
                   const SizedBox(height: 8),
                   if (transaction.metadata['checkNumber'] != null)
-                    _buildMetadataRow('Çek No', 
+                    _buildMetadataRow('Çek No',
                         transaction.metadata['checkNumber'].toString()),
                   if (transaction.metadata['bankName'] != null)
-                    _buildMetadataRow('Banka', 
-                        transaction.metadata['bankName'].toString()),
+                    _buildMetadataRow(
+                        'Banka', transaction.metadata['bankName'].toString()),
                   if (transaction.metadata['branchName'] != null)
-                    _buildMetadataRow('Şube', 
-                        transaction.metadata['branchName'].toString()),
+                    _buildMetadataRow(
+                        'Şube', transaction.metadata['branchName'].toString()),
                   if (transaction.metadata['accountNumber'] != null)
-                    _buildMetadataRow('Hesap No', 
+                    _buildMetadataRow('Hesap No',
                         transaction.metadata['accountNumber'].toString()),
                   if (transaction.metadata['iban'] != null)
-                    _buildMetadataRow('IBAN', 
-                        transaction.metadata['iban'].toString()),
+                    _buildMetadataRow(
+                        'IBAN', transaction.metadata['iban'].toString()),
                 ],
               ),
             ),
@@ -813,16 +853,20 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange[50],
+                color: isDark
+                    ? Colors.orange[900]!.withValues(alpha: 0.3)
+                    : Colors.orange[50],
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.orange[200]!),
+                border: Border.all(
+                  color: isDark ? Colors.orange[700]! : Colors.orange[200]!,
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.description, 
+                      Icon(Icons.description,
                           color: Colors.orange[700], size: 18),
                       const SizedBox(width: 8),
                       Text(
@@ -837,10 +881,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                   ),
                   const SizedBox(height: 8),
                   if (transaction.metadata['noteNumber'] != null)
-                    _buildMetadataRow('Senet No', 
+                    _buildMetadataRow('Senet No',
                         transaction.metadata['noteNumber'].toString()),
                   if (transaction.metadata['interestRate'] != null)
-                    _buildMetadataRow('Faiz Oranı', 
+                    _buildMetadataRow('Faiz Oranı',
                         '${transaction.metadata['interestRate']}%'),
                 ],
               ),
@@ -852,15 +896,17 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? Colors.grey[800] : Colors.white,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(
+                  color: isDark ? Colors.white12 : Colors.grey[200]!,
+                ),
               ),
               child: Text(
                 transaction.description!,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: Colors.grey[700],
+                  color: isDark ? Colors.grey[300] : Colors.grey[700],
                 ),
               ),
             ),
@@ -871,6 +917,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildMetadataRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -883,7 +930,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
+                color: isDark ? Colors.grey[400] : Colors.grey[700],
               ),
             ),
           ),
@@ -892,7 +939,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               value,
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[900],
+                color: isDark ? Colors.white : Colors.grey[900],
               ),
             ),
           ),
@@ -906,23 +953,30 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     required String label,
     required String value,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[800] : Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.grey[200]!,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
+          Icon(
+            icon,
+            size: 16,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
           const SizedBox(width: 6),
           Text(
             '$label:',
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
           const SizedBox(width: 4),
@@ -931,7 +985,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: isDark ? Colors.white : Colors.grey[800],
             ),
           ),
         ],
@@ -944,6 +998,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     required String message,
     required Color accentColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -954,7 +1009,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           textAlign: TextAlign.center,
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -963,6 +1018,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildPortfolioLoading() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: List.generate(
@@ -971,8 +1027,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           margin: EdgeInsets.only(bottom: index == 2 ? 0 : 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: isDark ? Colors.grey[800] : Colors.grey[100],
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isDark ? Colors.white12 : Colors.transparent,
+            ),
           ),
           child: Row(
             children: [
@@ -980,7 +1039,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: isDark ? Colors.grey[700] : Colors.grey[300],
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
@@ -992,7 +1051,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     Container(
                       height: 14,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: isDark ? Colors.grey[700] : Colors.grey[300],
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
@@ -1001,7 +1060,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       height: 12,
                       width: 120,
                       decoration: BoxDecoration(
-                        color: Colors.grey[300],
+                        color: isDark ? Colors.grey[700] : Colors.grey[300],
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
@@ -1016,6 +1075,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildPortfolioError(String title, String message) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1024,7 +1084,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Colors.red[600],
+            color: isDark ? Colors.red[400] : Colors.red[600],
           ),
         ),
         const SizedBox(height: 8),
@@ -1032,7 +1092,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           message,
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
       ],
@@ -1058,6 +1118,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildTransactionsSection(Account account) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -1070,11 +1131,15 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 margin: const EdgeInsets.all(16),
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark ? Colors.grey[850] : Colors.white,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.transparent,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color:
+                          Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1091,7 +1156,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
+                            color: isDark ? Colors.white : Colors.grey[800],
                           ),
                         ),
                         TextButton(
@@ -1101,7 +1166,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                             style: GoogleFonts.poppins(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue[600],
+                              color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                         ),
@@ -1119,11 +1184,12 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
                         return transactionsAsync.when(
                           data: (transactions) {
-                            final paymentTransactions = paymentTransactionsAsync.maybeWhen(
+                            final paymentTransactions =
+                                paymentTransactionsAsync.maybeWhen(
                               data: (value) => value,
                               orElse: () => <PaymentTransaction>[],
                             );
-                            
+
                             // Tüm işlemleri birleştir
                             final allItems = <Map<String, dynamic>>[
                               ...transactions.map((t) => {
@@ -1138,7 +1204,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                                   }),
                             ]..sort((a, b) => (b['date'] as DateTime)
                                 .compareTo(a['date'] as DateTime));
-                            
+
                             if (allItems.isEmpty) {
                               return Center(child: _buildEmptyTransactions());
                             }
@@ -1172,6 +1238,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildEmptyTransactions() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1181,7 +1248,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           Icon(
             Icons.receipt_long_outlined,
             size: 48,
-            color: Colors.grey[400],
+            color: isDark ? Colors.grey[500] : Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
@@ -1189,7 +1256,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
@@ -1197,7 +1264,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             'Bu hesapta henüz işlem bulunmuyor',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: isDark ? Colors.grey[500] : Colors.grey[500],
             ),
           ),
         ],
@@ -1302,14 +1369,19 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
     VoidCallback? onTap, {
     bool enabled = true,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final accentColor = enabled ? color : Colors.grey[400]!;
-    final textColor = enabled ? Colors.grey[800] : Colors.grey[500];
-    final arrowColor = enabled ? Colors.grey[400] : Colors.grey[300];
+    final textColor = enabled
+        ? (isDark ? Colors.white : Colors.grey[800])
+        : (isDark ? Colors.grey[500] : Colors.grey[500]);
+    final arrowColor = enabled
+        ? (isDark ? Colors.grey[500] : Colors.grey[400])
+        : (isDark ? Colors.grey[600] : Colors.grey[300]);
     return Material(
-      color: Colors.white,
+      color: isDark ? Colors.grey[850] : Colors.white,
       borderRadius: BorderRadius.circular(12),
       elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.1),
+      shadowColor: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
       child: InkWell(
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(12),
@@ -1482,15 +1554,29 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
       return;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hesap Sil'),
-        content: const Text(
-            'Bu hesabı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Hesap Sil',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Bu hesabı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('İptal'),
           ),
           TextButton(
@@ -1498,7 +1584,9 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
               context.pop(); // Dialog'u kapat
               await _performDeleteAccount(account);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Sil'),
           ),
         ],
@@ -1569,10 +1657,10 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   Widget _buildPaymentTransactionItem(PaymentTransaction pt) {
     // Payment transaction için detaylı tile
     final isNegative = pt.direction == PaymentDirection.outgoing;
-    
+
     String typeText = '';
     IconData icon = Icons.payment;
-    
+
     switch (pt.type) {
       case PaymentTransactionType.cash:
         typeText = 'Nakit';
@@ -1608,13 +1696,16 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
         break;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: isDark ? Colors.grey[800] : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.grey[200]!,
+        ),
       ),
       child: Row(
         children: [
@@ -1622,7 +1713,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isNegative ? Colors.red[100] : Colors.green[100],
+              color: isDark
+                  ? (isNegative
+                      ? Colors.red[900]!.withValues(alpha: 0.3)
+                      : Colors.green[900]!.withValues(alpha: 0.3))
+                  : (isNegative ? Colors.red[100] : Colors.green[100]),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -1641,7 +1736,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1649,7 +1744,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                   '${pt.transactionDate.day}/${pt.transactionDate.month}/${pt.transactionDate.year} ${pt.transactionDate.hour}:${pt.transactionDate.minute.toString().padLeft(2, '0')}',
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
                 if (pt.description != null && pt.description!.isNotEmpty)
@@ -1657,7 +1752,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     pt.description!,
                     style: GoogleFonts.poppins(
                       fontSize: 11,
-                      color: Colors.grey[500],
+                      color: isDark ? Colors.grey[500] : Colors.grey[500],
                       fontStyle: FontStyle.italic,
                     ),
                     maxLines: 1,
@@ -1686,7 +1781,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 style: GoogleFonts.poppins(
                   fontSize: 10,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[500],
+                  color: isDark ? Colors.grey[500] : Colors.grey[500],
                 ),
               ),
             ],
@@ -1698,6 +1793,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
 
   Widget _buildTransactionItem(AccountTransaction transaction) {
     // Transaction amount'unu doğru şekilde al
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final amount = transaction.amount;
     final isNegative = amount < 0;
 
@@ -1707,9 +1803,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.grey[50],
+            color: isDark ? Colors.grey[800] : Colors.grey[50],
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(
+              color: isDark ? Colors.white12 : Colors.grey[200]!,
+            ),
           ),
           child: Row(
             children: [
@@ -1717,7 +1815,11 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isNegative ? Colors.red[100] : Colors.green[100],
+                  color: isDark
+                      ? (isNegative
+                          ? Colors.red[900]!.withValues(alpha: 0.3)
+                          : Colors.green[900]!.withValues(alpha: 0.3))
+                      : (isNegative ? Colors.red[100] : Colors.green[100]),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -1736,7 +1838,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: isDark ? Colors.white : Colors.grey[800],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -1744,7 +1846,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                       '${transaction.transactionDate.day}/${transaction.transactionDate.month}/${transaction.transactionDate.year} ${transaction.transactionDate.hour}:${transaction.transactionDate.minute.toString().padLeft(2, '0')}',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
                     ),
                   ],
@@ -1766,7 +1868,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
                     'Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(transaction.balanceAfter)} ${widget.account.currency}',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
                     ),
                   ),
                 ],
@@ -1786,6 +1888,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
   }
 
   Widget _buildErrorTransactions(Object error) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -1793,7 +1896,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
           Icon(
             Icons.error_outline,
             size: 48,
-            color: Colors.red[400],
+            color: isDark ? Colors.red[400] : Colors.red[600],
           ),
           const SizedBox(height: 16),
           Text(
@@ -1801,7 +1904,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: Colors.red[600],
+              color: isDark ? Colors.red[400] : Colors.red[600],
             ),
           ),
           const SizedBox(height: 8),
@@ -1809,7 +1912,7 @@ class _AccountDetailPageState extends ConsumerState<AccountDetailPage>
             error.toString(),
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: isDark ? Colors.grey[400] : Colors.grey[500],
             ),
             textAlign: TextAlign.center,
           ),
@@ -1902,12 +2005,22 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       title: Row(
         children: [
-          Icon(Icons.add_circle_outline, color: Colors.purple[600]),
+          Icon(
+            Icons.add_circle_outline,
+            color: Colors.purple[600],
+          ),
           const SizedBox(width: 8),
-          const Text('Masraf Ekle'),
+          Text(
+            'Masraf Ekle',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
         ],
       ),
       content: SizedBox(
@@ -1921,11 +2034,40 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                 // Masraf Adı
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.grey[800],
+                  ),
+                  decoration: InputDecoration(
                     labelText: 'Masraf Adı *',
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
                     hintText: 'Örn: Ofis malzemeleri',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.label_outline),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.grey[500] : Colors.grey[400],
+                    ),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.label_outline,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                    filled: true,
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -1939,15 +2081,47 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                 // Kategori
                 DropdownButtonFormField<String>(
                   initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Kategori *',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.category_outlined),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
+                  decoration: InputDecoration(
+                    labelText: 'Kategori *',
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.category_outlined,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                    filled: true,
+                  ),
+                  dropdownColor: isDark ? Colors.grey[850] : Colors.white,
                   items: _categories.map((category) {
                     return DropdownMenuItem(
                       value: category,
-                      child: Text(category),
+                      child: Text(
+                        category,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.grey[800],
+                        ),
+                      ),
                     );
                   }).toList(),
                   onChanged: (value) {
@@ -1966,15 +2140,50 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                       flex: 2,
                       child: DropdownButtonFormField<String>(
                         initialValue: _selectedCurrency,
-                        decoration: const InputDecoration(
-                          labelText: 'Para Birimi',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.attach_money),
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.grey[800],
                         ),
+                        decoration: InputDecoration(
+                          labelText: 'Para Birimi',
+                          labelStyle: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color:
+                                  isDark ? Colors.white12 : Colors.grey[300]!,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color:
+                                  isDark ? Colors.white12 : Colors.grey[300]!,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.attach_money,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          fillColor:
+                              isDark ? Colors.grey[800] : Colors.grey[50],
+                          filled: true,
+                        ),
+                        dropdownColor: isDark ? Colors.grey[850] : Colors.white,
                         items: _currencies.map((currency) {
                           return DropdownMenuItem(
                             value: currency,
-                            child: Text(currency),
+                            child: Text(
+                              currency,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.grey[800],
+                              ),
+                            ),
                           );
                         }).toList(),
                         onChanged: (value) {
@@ -1992,17 +2201,53 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                         flex: 3,
                         child: TextFormField(
                           controller: _exchangeRateController,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
                           decoration: InputDecoration(
                             labelText: 'Kur',
+                            labelStyle: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
                             hintText: '29.50',
-                            border: const OutlineInputBorder(),
-                            prefixIcon: const Icon(Icons.swap_horiz),
+                            hintStyle: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[500] : Colors.grey[400],
+                            ),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            prefixIcon: Icon(
+                              Icons.swap_horiz,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
                             suffixText: widget.account.currency,
                             suffixStyle: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
                               fontWeight: FontWeight.w500,
                             ),
+                            fillColor:
+                                isDark ? Colors.grey[800] : Colors.grey[50],
+                            filled: true,
                           ),
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
@@ -2030,17 +2275,49 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                       child: TextFormField(
                         controller: _amountController,
                         focusNode: _amountFocusNode,
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.grey[800],
+                        ),
                         decoration: InputDecoration(
                           labelText: 'Miktar *',
+                          labelStyle: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
                           hintText: '1.000,00',
-                          border: const OutlineInputBorder(),
-                          prefixIcon: const Icon(Icons.money_outlined),
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.grey[500] : Colors.grey[400],
+                          ),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color:
+                                  isDark ? Colors.white12 : Colors.grey[300]!,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color:
+                                  isDark ? Colors.white12 : Colors.grey[300]!,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.money_outlined,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
                           suffixText: _getCurrencySymbol(_selectedCurrency),
                           suffixStyle: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
                             fontWeight: FontWeight.w500,
                           ),
+                          fillColor:
+                              isDark ? Colors.grey[800] : Colors.grey[50],
+                          filled: true,
                         ),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
@@ -2065,37 +2342,56 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                         flex: 2,
                         child: TextFormField(
                           readOnly: true,
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: isDark ? Colors.white : Colors.grey[800],
+                            fontWeight: FontWeight.w500,
+                          ),
                           decoration: InputDecoration(
                             border: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue[300]!),
+                              borderSide: BorderSide(
+                                color: isDark
+                                    ? Colors.blue[700]!
+                                    : Colors.blue[300]!,
+                              ),
                             ),
                             enabledBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: Colors.blue[300]!),
+                              borderSide: BorderSide(
+                                color: isDark
+                                    ? Colors.blue[700]!
+                                    : Colors.blue[300]!,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderSide: BorderSide(
-                                  color: Colors.blue[500]!, width: 2),
+                                color: isDark
+                                    ? Colors.blue[500]!
+                                    : Colors.blue[500]!,
+                                width: 2,
+                              ),
                             ),
                             filled: true,
-                            fillColor: Colors.blue[50],
-                            prefixIcon: Icon(Icons.swap_horiz,
-                                size: 20, color: Colors.blue[600]),
+                            fillColor: isDark
+                                ? Colors.blue[900]!.withValues(alpha: 0.3)
+                                : Colors.blue[50],
+                            prefixIcon: Icon(
+                              Icons.swap_horiz,
+                              size: 20,
+                              color:
+                                  isDark ? Colors.blue[400] : Colors.blue[600],
+                            ),
                             suffixText:
                                 _getCurrencySymbol(widget.account.currency),
                             suffixStyle: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.blue[600],
+                              color:
+                                  isDark ? Colors.blue[400] : Colors.blue[600],
                               fontWeight: FontWeight.w500,
                             ),
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 12,
                               vertical: 16,
                             ),
-                          ),
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            color: Colors.grey[800],
-                            fontWeight: FontWeight.w500,
                           ),
                           controller: TextEditingController(
                             text: _convertedAmount > 0
@@ -2112,11 +2408,40 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                 // Açıklama
                 TextFormField(
                   controller: _descriptionController,
-                  decoration: const InputDecoration(
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.grey[800],
+                  ),
+                  decoration: InputDecoration(
                     labelText: 'Açıklama',
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
                     hintText: 'Masraf hakkında detaylar...',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.description_outlined),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.grey[500] : Colors.grey[400],
+                    ),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.description_outlined,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                    filled: true,
                   ),
                   maxLines: 3,
                   textInputAction: TextInputAction.done,
@@ -2127,30 +2452,35 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: isDark ? Colors.grey[800] : Colors.grey[50],
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[300]!),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.account_balance_wallet,
-                              color: Colors.blue[600], size: 20),
+                          Icon(
+                            Icons.account_balance_wallet,
+                            color: isDark ? Colors.blue[400] : Colors.blue[600],
+                            size: 20,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             'Masraf Eklenecek Hesap',
                             style: GoogleFonts.poppins(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: isDark ? Colors.white : Colors.grey[800],
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
-                      _buildAccountInfoTable(widget.account),
+                      _buildAccountInfoTable(widget.account, isDark),
                     ],
                   ),
                 ),
@@ -2162,21 +2492,26 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
       actions: [
         TextButton(
           onPressed: _isLoading ? null : () => context.pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+          ),
           child: const Text('İptal'),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _saveExpense,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.purple[600],
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                 )
               : const Text('Masraf Ekle'),
@@ -2185,21 +2520,23 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
     );
   }
 
-  Widget _buildAccountInfoTable(Account account) {
+  Widget _buildAccountInfoTable(Account account, bool isDark) {
     return Column(
       children: [
-        _buildInfoRow('Hesap Adı', account.name),
-        _buildInfoRow('Banka', account.bankName),
-        _buildInfoRow('Hesap No', account.accountNumber),
-        _buildInfoRow('Para Birimi', account.currency),
-        _buildInfoRow('Hesap Türü', account.type.displayName),
-        _buildInfoRow('Mevcut Bakiye',
-            '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}'),
+        _buildInfoRow('Hesap Adı', account.name, isDark),
+        _buildInfoRow('Banka', account.bankName, isDark),
+        _buildInfoRow('Hesap No', account.accountNumber, isDark),
+        _buildInfoRow('Para Birimi', account.currency, isDark),
+        _buildInfoRow('Hesap Türü', account.type.displayName, isDark),
+        _buildInfoRow(
+            'Mevcut Bakiye',
+            '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}',
+            isDark),
       ],
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, bool isDark) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 6),
@@ -2211,7 +2548,7 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
               '$label:',
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: Colors.grey[600],
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -2223,7 +2560,7 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
               textAlign: TextAlign.end,
               style: GoogleFonts.poppins(
                 fontSize: 13,
-                color: Colors.grey[800],
+                color: isDark ? Colors.white : Colors.grey[800],
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -2489,7 +2826,7 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Masraf başarıyla eklendi: ${_nameController.text}'),
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
         widget.onExpenseAdded();
@@ -2499,7 +2836,7 @@ class _ExpenseDialogState extends ConsumerState<_ExpenseDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Masraf eklenirken hata oluştu: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -2568,7 +2905,9 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       title: Row(
         children: [
           Icon(Icons.update, color: Colors.green[600]),
@@ -2578,6 +2917,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : Colors.grey[800],
             ),
           ),
         ],
@@ -2595,8 +2935,11 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: isDark ? Colors.grey[800] : Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.transparent,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2606,6 +2949,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        color: isDark ? Colors.white : Colors.grey[800],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -2613,7 +2957,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                       'Mevcut Bakiye: ${NumberFormat('#,##0.00', 'tr_TR').format(widget.account.balance)} ${widget.account.currency}',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                       ),
                     ),
                   ],
@@ -2627,109 +2971,167 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               const SizedBox(height: 8),
-              SegmentedButton<BalanceUpdateType>(
-                segments: [
-                  ButtonSegment<BalanceUpdateType>(
-                    value: BalanceUpdateType.setDirect,
-                    label: SizedBox(
-                      width: 90,
-                      height: 50,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Doğrudan',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+              Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[800] : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.grey[300]!,
+                  ),
+                ),
+                child: SegmentedButton<BalanceUpdateType>(
+                  segments: [
+                    ButtonSegment<BalanceUpdateType>(
+                      value: BalanceUpdateType.setDirect,
+                      label: SizedBox(
+                        width: 90,
+                        height: 50,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Doğrudan',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _updateType ==
+                                        BalanceUpdateType.setDirect
+                                    ? (isDark ? Colors.white : Colors.grey[800])
+                                    : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Gir',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                            Text(
+                              'Gir',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _updateType ==
+                                        BalanceUpdateType.setDirect
+                                    ? (isDark ? Colors.white : Colors.grey[800])
+                                    : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      tooltip: 'Yeni bakiye',
                     ),
-                    tooltip: 'Yeni bakiye',
-                  ),
-                  ButtonSegment<BalanceUpdateType>(
-                    value: BalanceUpdateType.add,
-                    label: SizedBox(
-                      width: 90,
-                      height: 50,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Para',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                    ButtonSegment<BalanceUpdateType>(
+                      value: BalanceUpdateType.add,
+                      label: SizedBox(
+                        width: 90,
+                        height: 50,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Para',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _updateType == BalanceUpdateType.add
+                                    ? (isDark ? Colors.white : Colors.grey[800])
+                                    : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Ekle',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                            Text(
+                              'Ekle',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _updateType == BalanceUpdateType.add
+                                    ? (isDark ? Colors.white : Colors.grey[800])
+                                    : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      tooltip: 'Mevcut + ekle',
                     ),
-                    tooltip: 'Mevcut + ekle',
-                  ),
-                  ButtonSegment<BalanceUpdateType>(
-                    value: BalanceUpdateType.subtract,
-                    label: SizedBox(
-                      width: 90,
-                      height: 50,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Para',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                    ButtonSegment<BalanceUpdateType>(
+                      value: BalanceUpdateType.subtract,
+                      label: SizedBox(
+                        width: 90,
+                        height: 50,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Para',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _updateType == BalanceUpdateType.subtract
+                                    ? (isDark ? Colors.white : Colors.grey[800])
+                                    : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                              ),
                             ),
-                          ),
-                          Text(
-                            'Çıkar',
-                            style: GoogleFonts.poppins(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
+                            Text(
+                              'Çıkar',
+                              style: GoogleFonts.poppins(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: _updateType == BalanceUpdateType.subtract
+                                    ? (isDark ? Colors.white : Colors.grey[800])
+                                    : (isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600]),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
+                      tooltip: 'Mevcut - çıkar',
                     ),
-                    tooltip: 'Mevcut - çıkar',
+                  ],
+                  selected: {_updateType},
+                  onSelectionChanged: (Set<BalanceUpdateType> newSelection) {
+                    setState(() {
+                      _updateType = newSelection.first;
+                      _updateAmountController();
+                    });
+                  },
+                  style: ButtonStyle(
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+                    ),
+                    textStyle: WidgetStateProperty.all(
+                      GoogleFonts.poppins(fontSize: 10),
+                    ),
+                    minimumSize: WidgetStateProperty.all(const Size(90, 50)),
+                    maximumSize: WidgetStateProperty.all(const Size(90, 50)),
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return isDark
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.primaryContainer;
+                      }
+                      return Colors.transparent;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return isDark
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.onPrimaryContainer;
+                      }
+                      return isDark ? Colors.grey[400] : Colors.grey[600];
+                    }),
                   ),
-                ],
-                selected: {_updateType},
-                onSelectionChanged: (Set<BalanceUpdateType> newSelection) {
-                  setState(() {
-                    _updateType = newSelection.first;
-                    _updateAmountController();
-                  });
-                },
-                style: ButtonStyle(
-                  padding: WidgetStateProperty.all(
-                    const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-                  ),
-                  textStyle: WidgetStateProperty.all(
-                    GoogleFonts.poppins(fontSize: 10),
-                  ),
-                  minimumSize: WidgetStateProperty.all(const Size(90, 50)),
-                  maximumSize: WidgetStateProperty.all(const Size(90, 50)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -2740,6 +3142,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               const SizedBox(height: 8),
@@ -2747,15 +3150,41 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 controller: _amountController,
                 focusNode: _amountFocusNode,
                 keyboardType: TextInputType.number,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
                 decoration: InputDecoration(
                   hintText: '0.00',
-                  prefixIcon: const Icon(Icons.attach_money),
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  ),
+                  prefixIcon: Icon(
+                    Icons.attach_money,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                   suffixText: widget.account.currency,
                   suffixStyle: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
-                  border: const OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                  filled: true,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -2782,16 +3211,43 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _descriptionController,
                 maxLines: 2,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
                 decoration: InputDecoration(
                   hintText: _getDescriptionHint(),
-                  prefixIcon: const Icon(Icons.description),
-                  border: const OutlineInputBorder(),
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  ),
+                  prefixIcon: Icon(
+                    Icons.description,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                  filled: true,
                 ),
               ),
               const SizedBox(height: 16),
@@ -2801,9 +3257,13 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: isDark
+                      ? Colors.blue[900]!.withValues(alpha: 0.3)
+                      : Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(
+                    color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -2813,7 +3273,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.blue[800],
+                        color: isDark ? Colors.blue[400] : Colors.blue[800],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -2821,7 +3281,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
                       _getPreviewText(),
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.blue[700],
+                        color: isDark ? Colors.blue[300] : Colors.blue[700],
                       ),
                     ),
                   ],
@@ -2833,7 +3293,10 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          onPressed: _isLoading ? null : () => context.pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+          ),
           child: Text(
             'İptal',
             style: GoogleFonts.poppins(),
@@ -2842,16 +3305,18 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
         ElevatedButton(
           onPressed: _isLoading ? null : _updateBalance,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green[600],
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                 )
               : Text(
@@ -3093,7 +3558,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
       ref.invalidate(transactionsByAccountIdProvider(widget.account.id));
 
       if (mounted) {
-        Navigator.pop(context);
+        context.pop();
         widget.onBalanceUpdated();
 
         // Açıklama varsa göster
@@ -3108,7 +3573,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
               message,
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.green[600],
+            backgroundColor: Theme.of(context).colorScheme.primary,
             duration: const Duration(seconds: 4),
           ),
         );
@@ -3121,7 +3586,7 @@ class _BalanceUpdateDialogState extends ConsumerState<_BalanceUpdateDialog> {
               'Bakiye güncellenemedi: $e',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -3197,7 +3662,9 @@ class _TransactionEditDialogState
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       title: Row(
         children: [
           Icon(Icons.edit, color: Colors.blue[600]),
@@ -3207,6 +3674,7 @@ class _TransactionEditDialogState
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : Colors.grey[800],
             ),
           ),
         ],
@@ -3225,14 +3693,38 @@ class _TransactionEditDialogState
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+                decoration: InputDecoration(
                   hintText: 'İşlem açıklaması...',
-                  border: OutlineInputBorder(),
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  ),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                  filled: true,
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -3249,16 +3741,44 @@ class _TransactionEditDialogState
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               const SizedBox(height: 8),
               TextFormField(
                 controller: _amountController,
                 keyboardType: TextInputType.number,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
                 decoration: InputDecoration(
                   hintText: '0.00',
+                  hintStyle: TextStyle(
+                    color: isDark ? Colors.grey[500] : Colors.grey[400],
+                  ),
                   suffixText: widget.account.currency,
-                  border: const OutlineInputBorder(),
+                  suffixStyle: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  border: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.grey[300]!,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                  filled: true,
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -3287,16 +3807,48 @@ class _TransactionEditDialogState
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey[800],
                           ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _dateController,
                           readOnly: true,
-                          decoration: const InputDecoration(
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
+                          decoration: InputDecoration(
                             hintText: 'GG/AA/YYYY',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
+                            hintStyle: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[500] : Colors.grey[400],
+                            ),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            suffixIcon: Icon(
+                              Icons.calendar_today,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            fillColor:
+                                isDark ? Colors.grey[800] : Colors.grey[50],
+                            filled: true,
                           ),
                           onTap: _selectDate,
                         ),
@@ -3313,16 +3865,48 @@ class _TransactionEditDialogState
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey[800],
                           ),
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _timeController,
                           readOnly: true,
-                          decoration: const InputDecoration(
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
+                          decoration: InputDecoration(
                             hintText: 'SS:DD',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.access_time),
+                            hintStyle: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[500] : Colors.grey[400],
+                            ),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            suffixIcon: Icon(
+                              Icons.access_time,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
+                            fillColor:
+                                isDark ? Colors.grey[800] : Colors.grey[50],
+                            filled: true,
                           ),
                           onTap: _selectTime,
                         ),
@@ -3338,9 +3922,13 @@ class _TransactionEditDialogState
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: isDark
+                      ? Colors.blue[900]!.withValues(alpha: 0.3)
+                      : Colors.blue[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(
+                    color: isDark ? Colors.blue[700]! : Colors.blue[200]!,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -3350,7 +3938,7 @@ class _TransactionEditDialogState
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Colors.blue[800],
+                        color: isDark ? Colors.blue[400] : Colors.blue[800],
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -3358,7 +3946,7 @@ class _TransactionEditDialogState
                       '${NumberFormat('#,##0.00', 'tr_TR').format(widget.transaction.balanceAfter)} ${widget.account.currency}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.blue[700],
+                        color: isDark ? Colors.blue[300] : Colors.blue[700],
                       ),
                     ),
                   ],
@@ -3372,16 +3960,24 @@ class _TransactionEditDialogState
         // Silme Butonu
         TextButton.icon(
           onPressed: _isLoading ? null : _deleteTransaction,
-          icon: Icon(Icons.delete, color: Colors.red[600]),
+          icon: Icon(
+            Icons.delete,
+            color: Theme.of(context).colorScheme.error,
+          ),
           label: Text(
             'Sil',
-            style: GoogleFonts.poppins(color: Colors.red[600]),
+            style: GoogleFonts.poppins(
+              color: Theme.of(context).colorScheme.error,
+            ),
           ),
         ),
         const SizedBox(width: 16),
         // İptal Butonu
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          onPressed: _isLoading ? null : () => context.pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+          ),
           child: Text(
             'İptal',
             style: GoogleFonts.poppins(),
@@ -3391,16 +3987,18 @@ class _TransactionEditDialogState
         ElevatedButton(
           onPressed: _isLoading ? null : _updateTransaction,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue[600],
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                 )
               : Text(
@@ -3476,7 +4074,7 @@ class _TransactionEditDialogState
           .updateTransaction(updatedTransaction);
 
       if (mounted) {
-        Navigator.pop(context);
+        context.pop();
         widget.onTransactionUpdated();
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3485,7 +4083,7 @@ class _TransactionEditDialogState
               'İşlem başarıyla güncellendi',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.green[600],
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -3497,7 +4095,7 @@ class _TransactionEditDialogState
               'İşlem güncellenemedi: $e',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -3511,30 +4109,40 @@ class _TransactionEditDialogState
   }
 
   Future<void> _deleteTransaction() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[850] : null,
         title: Text(
           'İşlemi Sil',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
         ),
         content: Text(
           'Bu işlemi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
-          style: GoogleFonts.poppins(),
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => context.pop(false),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: Text(
               'İptal',
               style: GoogleFonts.poppins(),
             ),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => context.pop(true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
             ),
             child: Text(
               'Sil',
@@ -3556,7 +4164,7 @@ class _TransactionEditDialogState
             .deleteTransaction(widget.transaction.id);
 
         if (mounted) {
-          Navigator.pop(context);
+          context.pop();
           widget.onTransactionUpdated();
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -3565,7 +4173,7 @@ class _TransactionEditDialogState
                 'İşlem başarıyla silindi',
                 style: GoogleFonts.poppins(),
               ),
-              backgroundColor: Colors.green[600],
+              backgroundColor: Theme.of(context).colorScheme.primary,
             ),
           );
         }
@@ -3577,7 +4185,7 @@ class _TransactionEditDialogState
                 'İşlem silinemedi: $e',
                 style: GoogleFonts.poppins(),
               ),
-              backgroundColor: Colors.red[600],
+              backgroundColor: Theme.of(context).colorScheme.error,
             ),
           );
         }
@@ -3675,13 +4283,20 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
   @override
   Widget build(BuildContext context) {
     final accountsAsync = ref.watch(accountsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       title: Row(
         children: [
           Icon(Icons.swap_horiz, color: Colors.orange[600]),
           const SizedBox(width: 8),
-          const Text('Para Transferi'),
+          Text(
+            'Para Transferi',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
         ],
       ),
       content: SizedBox(
@@ -3699,15 +4314,18 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                 ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: isDark ? Colors.grey[800] : Colors.grey[50],
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.grey[200]!,
+                    ),
                   ),
                   child: SizedBox(
                     width: double.infinity,
@@ -3720,6 +4338,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
+                              color: _transferType == TransferType.send
+                                  ? (isDark ? Colors.white : Colors.grey[800])
+                                  : (isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600]),
                             ),
                           ),
                           tooltip: 'Bu hesaptan başka hesaba para gönder',
@@ -3731,6 +4354,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                             style: GoogleFonts.poppins(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
+                              color: _transferType == TransferType.receive
+                                  ? (isDark ? Colors.white : Colors.grey[800])
+                                  : (isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600]),
                             ),
                           ),
                           tooltip: 'Başka hesaptan bu hesaba para al',
@@ -3754,6 +4382,28 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                           GoogleFonts.poppins(fontSize: 12),
                         ),
                         minimumSize: WidgetStateProperty.all(const Size(0, 40)),
+                        backgroundColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return isDark
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .primaryContainer;
+                          }
+                          return Colors.transparent;
+                        }),
+                        foregroundColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return isDark
+                                ? Colors.white
+                                : Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer;
+                          }
+                          return isDark ? Colors.grey[400] : Colors.grey[600];
+                        }),
                       ),
                     ),
                   ),
@@ -3768,6 +4418,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -3784,12 +4435,17 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                       return Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: isDark ? Colors.grey[800] : Colors.grey[100],
                           borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDark ? Colors.white12 : Colors.transparent,
+                          ),
                         ),
                         child: Text(
                           'Transfer edilebilecek başka hesap bulunmuyor\n(Senet/Çek/Pos hesapları transfer edilemez)',
-                          style: GoogleFonts.poppins(color: Colors.grey[600]),
+                          style: GoogleFonts.poppins(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
                           textAlign: TextAlign.center,
                         ),
                       );
@@ -3797,25 +4453,40 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
 
                     return Container(
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(
+                          color: isDark ? Colors.white12 : Colors.grey[300]!,
+                        ),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<Account>(
                           value: _selectedAccount,
+                          dropdownColor:
+                              isDark ? Colors.grey[900] : Colors.white,
+                          style: GoogleFonts.poppins(
+                            fontSize: 12,
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
                           hint: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Row(
                               children: [
-                                Icon(Icons.account_balance,
-                                    color: Colors.grey[600]),
+                                Icon(
+                                  Icons.account_balance,
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   _transferType == TransferType.send
                                       ? 'Hedef hesabı seçin'
                                       : 'Kaynak hesabı seçin',
                                   style: GoogleFonts.poppins(
-                                      color: Colors.grey[600]),
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
+                                  ),
                                 ),
                               ],
                             ),
@@ -3831,7 +4502,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                     Icon(
                                       _getAccountIcon(account.type),
                                       size: 20,
-                                      color: Colors.blue[600],
+                                      color: isDark
+                                          ? Colors.blue[400]
+                                          : Colors.blue[600],
                                     ),
                                     const SizedBox(width: 8),
                                     Expanded(
@@ -3843,14 +4516,20 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                           Text(
                                             account.name,
                                             style: GoogleFonts.poppins(
-                                                fontSize: 12),
+                                              fontSize: 12,
+                                              color: isDark
+                                                  ? Colors.white
+                                                  : Colors.grey[800],
+                                            ),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                           Text(
                                             '${NumberFormat('#,##0.00', 'tr_TR').format(account.balance)} ${account.currency}',
                                             style: GoogleFonts.poppins(
                                               fontSize: 10,
-                                              color: Colors.grey[600],
+                                              color: isDark
+                                                  ? Colors.grey[400]
+                                                  : Colors.grey[600],
                                             ),
                                           ),
                                         ],
@@ -3873,10 +4552,19 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                       ),
                     );
                   },
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) =>
-                      Text('Hesap listesi yüklenemedi: $error'),
+                  loading: () => Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                  error: (error, stack) => Text(
+                    'Hesap listesi yüklenemedi: $error',
+                    style: TextStyle(
+                      color: isDark ? Colors.red[400] : Colors.red[600],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -3886,6 +4574,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -3895,13 +4584,43 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                     hintText: '0,00',
-                    prefixIcon: Icon(_transferType == TransferType.send
-                        ? Icons.arrow_upward
-                        : Icons.arrow_downward),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.grey[500] : Colors.grey[400],
+                    ),
+                    prefixIcon: Icon(
+                      _transferType == TransferType.send
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
                     suffixText: _transferType == TransferType.send
                         ? widget.currentAccount.currency
                         : (_selectedAccount?.currency ?? ''),
-                    border: const OutlineInputBorder(),
+                    suffixStyle: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    border: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: isDark ? Colors.white12 : Colors.grey[300]!,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                    filled: true,
+                  ),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
@@ -3925,9 +4644,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
+                      color: isDark ? Colors.grey[800] : Colors.grey[50],
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[200]!),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.grey[200]!,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -3939,7 +4660,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                               style: GoogleFonts.poppins(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey[800],
+                                color: isDark ? Colors.white : Colors.grey[800],
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -3949,15 +4670,24 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 8, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: Colors.green[100],
+                                  color: isDark
+                                      ? Colors.green[900]!
+                                          .withValues(alpha: 0.3)
+                                      : Colors.green[100],
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.green[300]!),
+                                  border: Border.all(
+                                    color: isDark
+                                        ? Colors.green[700]!
+                                        : Colors.green[300]!,
+                                  ),
                                 ),
                                 child: Text(
                                   'TCMB Kur',
                                   style: GoogleFonts.poppins(
                                     fontSize: 10,
-                                    color: Colors.green[700],
+                                    color: isDark
+                                        ? Colors.green[300]
+                                        : Colors.green[700],
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -3970,7 +4700,8 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.blue[600]!),
+                                    Theme.of(context).colorScheme.primary,
+                                  ),
                                 ),
                               ),
                             ],
@@ -3982,27 +4713,66 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                           controller: _exchangeRateController,
                           keyboardType: const TextInputType.numberWithOptions(
                               decimal: true),
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.grey[800],
+                          ),
                           decoration: InputDecoration(
                             hintText: 'Kuru Gerekli',
+                            hintStyle: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[500] : Colors.grey[400],
+                            ),
                             labelText: 'Döviz Kuru',
+                            labelStyle: TextStyle(
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
                             helperText: _convertedAmount > 0
                                 ? '${NumberFormat('#,##0.00', 'tr_TR').format(_convertedAmount)} ${_transferType == TransferType.send ? _selectedAccount?.currency : widget.currentAccount.currency}'
                                 : 'TCMB\'den otomatik çekilir',
                             helperStyle: GoogleFonts.poppins(
                               fontSize: 12,
                               color: _convertedAmount > 0
-                                  ? Colors.blue[700]
-                                  : Colors.grey[600],
+                                  ? (isDark
+                                      ? Colors.blue[300]
+                                      : Colors.blue[700])
+                                  : (isDark
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600]),
                               fontWeight: FontWeight.w500,
                             ),
-                            prefixIcon: const Icon(Icons.swap_horiz),
+                            prefixIcon: Icon(
+                              Icons.swap_horiz,
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
+                            ),
                             suffixText: widget.currentAccount.currency,
-                            border: const OutlineInputBorder(),
                             suffixStyle: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color:
+                                  isDark ? Colors.grey[400] : Colors.grey[600],
                               fontWeight: FontWeight.w500,
                             ),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color:
+                                    isDark ? Colors.white12 : Colors.grey[300]!,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                            ),
+                            fillColor: isDark ? Colors.grey[700] : Colors.white,
+                            filled: true,
                           ),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
@@ -4024,9 +4794,11 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: isDark ? Colors.grey[800] : Colors.grey[50],
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.grey[200]!,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -4036,17 +4808,48 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[800],
+                          color: isDark ? Colors.white : Colors.grey[800],
                         ),
                       ),
                       const SizedBox(height: 12),
                       TextFormField(
                         controller: _descriptionController,
-                        decoration: const InputDecoration(
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.grey[800],
+                        ),
+                        decoration: InputDecoration(
                           labelText: 'Açıklama',
+                          labelStyle: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
                           hintText: 'Transfer açıklaması...',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.description_outlined),
+                          hintStyle: TextStyle(
+                            color: isDark ? Colors.grey[500] : Colors.grey[400],
+                          ),
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color:
+                                  isDark ? Colors.white12 : Colors.grey[300]!,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color:
+                                  isDark ? Colors.white12 : Colors.grey[300]!,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          prefixIcon: Icon(
+                            Icons.description_outlined,
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
+                          fillColor: isDark ? Colors.grey[700] : Colors.white,
+                          filled: true,
                         ),
                         maxLines: 2,
                       ),
@@ -4062,9 +4865,14 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.orange[50],
+                      color: isDark
+                          ? Colors.orange[900]!.withValues(alpha: 0.25)
+                          : Colors.orange[50],
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange[200]!),
+                      border: Border.all(
+                        color:
+                            isDark ? Colors.orange[700]! : Colors.orange[200]!,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -4074,7 +4882,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                           style: GoogleFonts.poppins(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.orange[800],
+                            color: isDark
+                                ? Colors.orange[300]
+                                : Colors.orange[800],
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -4082,7 +4892,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                           _getTransferPreview(),
                           style: GoogleFonts.poppins(
                             fontSize: 14,
-                            color: Colors.orange[700],
+                            color: isDark
+                                ? Colors.orange[200]
+                                : Colors.orange[700],
                           ),
                         ),
                         // Para birimi uyarısı
@@ -4104,22 +4916,35 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.red[50],
+                                      color: isDark
+                                          ? Colors.red[900]!
+                                              .withValues(alpha: 0.3)
+                                          : Colors.red[50],
                                       borderRadius: BorderRadius.circular(4),
-                                      border:
-                                          Border.all(color: Colors.red[200]!),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? Colors.red[700]!
+                                            : Colors.red[200]!,
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
-                                        Icon(Icons.warning,
-                                            color: Colors.red[600], size: 16),
+                                        Icon(
+                                          Icons.warning,
+                                          color: isDark
+                                              ? Colors.red[300]
+                                              : Colors.red[600],
+                                          size: 16,
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             currencyWarning,
                                             style: GoogleFonts.poppins(
                                               fontSize: 12,
-                                              color: Colors.red[700],
+                                              color: isDark
+                                                  ? Colors.red[200]
+                                                  : Colors.red[700],
                                             ),
                                           ),
                                         ),
@@ -4141,22 +4966,27 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
+          onPressed: _isLoading ? null : () => context.pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+          ),
           child: const Text('İptal'),
         ),
         ElevatedButton(
           onPressed: _isLoading ? null : _executeTransfer,
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange[600],
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           child: _isLoading
-              ? const SizedBox(
+              ? SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Theme.of(context).colorScheme.onPrimary,
+                    ),
                   ),
                 )
               : const Text('Transfer Et'),
@@ -4242,9 +5072,9 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
     if (_selectedAccount == null) {
       debugPrint('Hesap seçilmedi');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen bir hesap seçin'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Lütfen bir hesap seçin'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -4259,7 +5089,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         SnackBar(
           content: Text(
               '${widget.currentAccount.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -4270,7 +5100,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         SnackBar(
           content: Text(
               '${_selectedAccount!.name} hesabına transfer yapılamaz (Senet/Çek/Pos hesabı)'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
       return;
@@ -4290,7 +5120,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(currencyWarning),
-          backgroundColor: Colors.orange,
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
           duration: const Duration(seconds: 5),
         ),
       );
@@ -4502,7 +5332,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
           SnackBar(
             content: Text(
                 'Transfer başarıyla tamamlandı: ${NumberFormat('#,##0.00', 'tr_TR').format(amount)} ${widget.currentAccount.currency}'),
-            backgroundColor: Colors.green,
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
         widget.onTransferCompleted();
@@ -4513,7 +5343,7 @@ class _TransferDialogState extends ConsumerState<_TransferDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Transfer sırasında hata oluştu: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

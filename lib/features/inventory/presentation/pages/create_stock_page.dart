@@ -4,7 +4,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
@@ -76,8 +75,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
     final isEditing = widget.stockId != null;
 
     return Scaffold(
-      appBar: CustomAppBar(
-        title: isEditing ? 'Stok Düzenle' : 'Yeni Stok',
+      appBar: const CustomAppBar(
         showDrawer: false,
       ),
       drawer: const TamgaciDrawerMenu(),
@@ -113,7 +111,13 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
   Widget _buildBasicInfoSection(bool isDark) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -124,7 +128,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -194,7 +198,13 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
   Widget _buildQuantitySection(bool isDark) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -205,7 +215,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -304,7 +314,13 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
   Widget _buildPriceSection(bool isDark) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -315,7 +331,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -374,7 +390,13 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
   Widget _buildLocationSection(bool isDark) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -385,7 +407,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -420,7 +442,13 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
   Widget _buildSettingsSection(bool isDark) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -431,7 +459,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
               style: GoogleFonts.poppins(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 16),
@@ -439,7 +467,7 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
               title: Text(
                 'Aktif',
                 style: GoogleFonts.poppins(
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
               subtitle: Text(
@@ -486,8 +514,8 @@ class _CreateStockPageState extends ConsumerState<CreateStockPage> {
           child: ElevatedButton(
             onPressed: _saveStock,
             style: ElevatedButton.styleFrom(
-              backgroundColor: TamgaciConstants.primaryColor,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

@@ -200,36 +200,46 @@ class _CustomerAllTransactionsPageState
   }
 
   void _showPaymentDetail(CashTransaction payment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[850] : null,
         title: Text(
           'Ödeme Detayı',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
         ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDetailRow('İşlem No', payment.transactionNumber),
+              _buildDetailRow('İşlem No', payment.transactionNumber, isDark),
               _buildDetailRow(
                   'Tutar',
                   CurrencyHelper.formatCurrency(
-                      payment.amount, payment.currency)),
+                      payment.amount, payment.currency),
+                  isDark),
               _buildDetailRow(
                   'Tarih',
                   DateFormat('dd.MM.yyyy HH:mm')
-                      .format(payment.transactionDate)),
+                      .format(payment.transactionDate),
+                  isDark),
               if (payment.description != null)
-                _buildDetailRow('Açıklama', payment.description!),
-              _buildDetailRow('Tip', payment.type.toString()),
+                _buildDetailRow('Açıklama', payment.description!, isDark),
+              _buildDetailRow('Tip', payment.type.toString(), isDark),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Kapat'),
           ),
           ElevatedButton.icon(
@@ -237,6 +247,10 @@ class _CustomerAllTransactionsPageState
               Navigator.pop(context);
               _exportPaymentToPDF(payment);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
             icon: const Icon(Icons.picture_as_pdf, size: 18),
             label: const Text('PDF İndir'),
           ),
@@ -246,44 +260,57 @@ class _CustomerAllTransactionsPageState
   }
 
   void _showPaymentTransactionDetail(PaymentTransaction pt) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[850] : null,
         title: Text(
           'Tahsilat/Ödeme Detayı',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
         ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildDetailRow('İşlem No', pt.transactionNumber),
-              _buildDetailRow('Tip', _getPaymentTypeName(pt.type)),
+              _buildDetailRow('İşlem No', pt.transactionNumber, isDark),
+              _buildDetailRow('Tip', _getPaymentTypeName(pt.type), isDark),
               _buildDetailRow(
                   'Yön',
                   pt.direction == PaymentDirection.incoming
                       ? 'Tahsilat'
-                      : 'Ödeme'),
-              _buildDetailRow('Tutar',
-                  CurrencyHelper.formatCurrency(pt.amount, pt.currency)),
-              _buildDetailRow('Tarih',
-                  DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate)),
+                      : 'Ödeme',
+                  isDark),
+              _buildDetailRow(
+                  'Tutar',
+                  CurrencyHelper.formatCurrency(pt.amount, pt.currency),
+                  isDark),
+              _buildDetailRow(
+                  'Tarih',
+                  DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate),
+                  isDark),
               if (pt.dueDate != null)
                 _buildDetailRow('Vade Tarihi',
-                    DateFormat('dd.MM.yyyy').format(pt.dueDate!)),
-              _buildDetailRow('Durum', pt.status.name.toUpperCase()),
-              _buildDetailRow('Kategori', pt.category.name),
+                    DateFormat('dd.MM.yyyy').format(pt.dueDate!), isDark),
+              _buildDetailRow('Durum', pt.status.name.toUpperCase(), isDark),
+              _buildDetailRow('Kategori', pt.category.name, isDark),
               if (pt.description != null)
-                _buildDetailRow('Açıklama', pt.description!),
+                _buildDetailRow('Açıklama', pt.description!, isDark),
               if (pt.referenceNumber != null)
-                _buildDetailRow('Referans No', pt.referenceNumber!),
+                _buildDetailRow('Referans No', pt.referenceNumber!, isDark),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Kapat'),
           ),
           ElevatedButton.icon(
@@ -291,6 +318,10 @@ class _CustomerAllTransactionsPageState
               Navigator.pop(context);
               _exportPaymentTransactionToPDF(pt);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
             icon: const Icon(Icons.picture_as_pdf, size: 18),
             label: const Text('PDF İndir'),
           ),
@@ -301,12 +332,17 @@ class _CustomerAllTransactionsPageState
 
   void _showTransactionDetail(dynamic transaction) {
     final txn = transaction as Transaction;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? Colors.grey[850] : null,
         title: Text(
           'İşlem Detayı',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -314,25 +350,32 @@ class _CustomerAllTransactionsPageState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (txn.documentNumber != null && txn.documentNumber!.isNotEmpty)
-                _buildDetailRow('Belge No', txn.documentNumber!),
-              _buildDetailRow('Tutar',
-                  CurrencyHelper.formatCurrency(txn.amount, txn.currency)),
-              _buildDetailRow('Tarih',
-                  DateFormat('dd.MM.yyyy HH:mm').format(txn.transactionDate)),
-              _buildDetailRow('İşlem Türü', txn.type.name),
-              _buildDetailRow('Durum', txn.status.name),
+                _buildDetailRow('Belge No', txn.documentNumber!, isDark),
+              _buildDetailRow(
+                  'Tutar',
+                  CurrencyHelper.formatCurrency(txn.amount, txn.currency),
+                  isDark),
+              _buildDetailRow(
+                  'Tarih',
+                  DateFormat('dd.MM.yyyy HH:mm').format(txn.transactionDate),
+                  isDark),
+              _buildDetailRow('İşlem Türü', txn.type.name, isDark),
+              _buildDetailRow('Durum', txn.status.name, isDark),
               if (txn.reference != null && txn.reference!.isNotEmpty)
-                _buildDetailRow('Referans', txn.reference!),
+                _buildDetailRow('Referans', txn.reference!, isDark),
               if (txn.paymentMethod != null && txn.paymentMethod!.isNotEmpty)
-                _buildDetailRow('Ödeme Yöntemi', txn.paymentMethod!),
+                _buildDetailRow('Ödeme Yöntemi', txn.paymentMethod!, isDark),
               if (txn.description != null && txn.description!.isNotEmpty)
-                _buildDetailRow('Açıklama', txn.description!),
+                _buildDetailRow('Açıklama', txn.description!, isDark),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Kapat'),
           ),
           ElevatedButton.icon(
@@ -340,6 +383,10 @@ class _CustomerAllTransactionsPageState
               Navigator.pop(context);
               _exportCustomerTransactionToPDF(txn);
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
             icon: const Icon(Icons.picture_as_pdf, size: 18),
             label: const Text('PDF İndir'),
           ),
@@ -348,7 +395,7 @@ class _CustomerAllTransactionsPageState
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -361,13 +408,17 @@ class _CustomerAllTransactionsPageState
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.poppins(fontSize: 13),
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
             ),
           ),
         ],

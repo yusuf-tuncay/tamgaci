@@ -2627,14 +2627,29 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   }
 
   void _showDeleteDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Satışı Sil'),
-        content: const Text('Bu satışı silmek istediğinizden emin misiniz?'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Satışı Sil',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Bu satışı silmek istediğinizden emin misiniz?',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('İptal'),
           ),
           TextButton(
@@ -2647,7 +2662,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 Navigator.pop(context);
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Sil'),
           ),
         ],
@@ -2943,17 +2960,47 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   Future<void> _showAddAddressDialog({required bool isBilling}) async {
     final controller = TextEditingController();
     final formKey = GlobalKey<FormState>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final added = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isBilling ? 'Yeni Fatura Adresi' : 'Yeni Sevk Adresi'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          isBilling ? 'Yeni Fatura Adresi' : 'Yeni Sevk Adresi',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: Form(
           key: formKey,
           child: TextFormField(
             controller: controller,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+            decoration: InputDecoration(
               labelText: 'Adres',
-              border: OutlineInputBorder(),
+              labelStyle: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+              filled: true,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
             maxLines: 3,
             validator: (v) =>
@@ -2963,6 +3010,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('İptal'),
           ),
           TextButton(
@@ -2971,6 +3021,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 Navigator.pop(context, controller.text.trim());
               }
             },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Ekle'),
           ),
         ],
@@ -3342,8 +3395,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: const Text('Ürün Ekle'),
+      backgroundColor: isDark ? Colors.grey[850] : null,
+      title: Text(
+        'Ürün Ekle',
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.grey[800],
+        ),
+      ),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -3925,8 +3985,15 @@ class _EditItemDialogState extends State<_EditItemDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: const Text('Ürün Düzenle'),
+      backgroundColor: isDark ? Colors.grey[850] : null,
+      title: Text(
+        'Ürün Düzenle',
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.grey[800],
+        ),
+      ),
       content: SizedBox(
         width: 500,
         child: Form(

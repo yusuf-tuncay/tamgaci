@@ -772,7 +772,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                                   : Colors.grey[800],
                                             ),
                                           ),
-                                        content: TextField(
+                                          content: TextField(
                                             controller: editCtrl,
                                             style: TextStyle(
                                               color: isDarkDialog
@@ -799,8 +799,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                               ),
                                             ),
                                           ),
-                                        actions: [
-                                          TextButton(
+                                          actions: [
+                                            TextButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(false),
                                               style: TextButton.styleFrom(
@@ -810,7 +810,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                               ),
                                               child: const Text('İptal'),
                                             ),
-                                          FilledButton(
+                                            FilledButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(true),
                                               style: FilledButton.styleFrom(
@@ -823,7 +823,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                               ),
                                               child: const Text('Kaydet'),
                                             ),
-                                        ],
+                                          ],
                                         );
                                       },
                                     );
@@ -867,8 +867,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                                   : Colors.grey[700],
                                             ),
                                           ),
-                                        actions: [
-                                          TextButton(
+                                          actions: [
+                                            TextButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(false),
                                               style: TextButton.styleFrom(
@@ -878,13 +878,13 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                               ),
                                               child: const Text('Vazgeç'),
                                             ),
-                                          FilledButton(
+                                            FilledButton(
                                               onPressed: () =>
                                                   Navigator.of(ctx).pop(true),
                                               style: FilledButton.styleFrom(
                                                 backgroundColor: Colors.red,
                                                 foregroundColor: Colors.white,
-                                      ),
+                                              ),
                                               child: const Text('Sil'),
                                             ),
                                           ],
@@ -1103,8 +1103,8 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                                   : Colors.grey[800],
                                             ),
                                           ),
-                                        content: TextField(
-                                          controller: editCtrl,
+                                          content: TextField(
+                                            controller: editCtrl,
                                             style: TextStyle(
                                               color: isDarkDialog
                                                   ? Colors.white
@@ -1129,21 +1129,21 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                                 ),
                                               ),
                                             ),
-                                        ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(false),
+                                          ),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(false),
                                               style: TextButton.styleFrom(
                                                 foregroundColor: Theme.of(ctx)
                                                     .colorScheme
                                                     .primary,
                                               ),
-                                            child: const Text('İptal'),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(true),
+                                              child: const Text('İptal'),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(true),
                                               style: FilledButton.styleFrom(
                                                 backgroundColor: Theme.of(ctx)
                                                     .colorScheme
@@ -1152,9 +1152,9 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                                     .colorScheme
                                                     .onPrimary,
                                               ),
-                                            child: const Text('Kaydet'),
-                                          ),
-                                        ],
+                                              child: const Text('Kaydet'),
+                                            ),
+                                          ],
                                         );
                                       },
                                     );
@@ -1236,27 +1236,27 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                                   : Colors.grey[700],
                                             ),
                                           ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(false),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(false),
                                               style: TextButton.styleFrom(
                                                 foregroundColor: Theme.of(ctx)
                                                     .colorScheme
                                                     .primary,
                                               ),
-                                            child: const Text('Vazgeç'),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(true),
+                                              child: const Text('Vazgeç'),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(true),
                                               style: FilledButton.styleFrom(
                                                 backgroundColor: Colors.red,
                                                 foregroundColor: Colors.white,
                                               ),
-                                            child: const Text('Sil'),
-                                          ),
-                                        ],
+                                              child: const Text('Sil'),
+                                            ),
+                                          ],
                                         );
                                       },
                                     );
@@ -1519,27 +1519,27 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                                                   : Colors.grey[700],
                                             ),
                                           ),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(false),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(false),
                                               style: TextButton.styleFrom(
                                                 foregroundColor: Theme.of(ctx)
                                                     .colorScheme
                                                     .primary,
                                               ),
-                                            child: const Text('Vazgeç'),
-                                          ),
-                                          FilledButton(
-                                            onPressed: () =>
-                                                Navigator.of(ctx).pop(true),
+                                              child: const Text('Vazgeç'),
+                                            ),
+                                            FilledButton(
+                                              onPressed: () =>
+                                                  Navigator.of(ctx).pop(true),
                                               style: FilledButton.styleFrom(
                                                 backgroundColor: Colors.red,
                                                 foregroundColor: Colors.white,
                                               ),
-                                            child: const Text('Sil'),
-                                          ),
-                                        ],
+                                              child: const Text('Sil'),
+                                            ),
+                                          ],
                                         );
                                       },
                                     );
@@ -2540,6 +2540,12 @@ class _EmployeesHeader extends StatelessWidget {
 
                 final formattedBalance = formatBalance(totalBalance);
 
+                final theme = Theme.of(context);
+                final isDark = theme.brightness == Brightness.dark;
+                final headerTextColor = theme.colorScheme.onPrimary;
+                final secondaryTextColor =
+                    headerTextColor.withValues(alpha: isDark ? 0.9 : 0.95);
+                final borderColor = headerTextColor.withValues(alpha: 0.12);
                 return Container(
                   padding: EdgeInsets.all(isSmallScreen ? 16 : 20),
                   decoration: BoxDecoration(
@@ -2553,6 +2559,15 @@ class _EmployeesHeader extends StatelessWidget {
                         Color(0xFF1A56D9)
                       ],
                     ),
+                    border: Border.all(color: borderColor),
+                    boxShadow: [
+                      BoxShadow(
+                        color: headerTextColor.withValues(alpha: 0.25),
+                        blurRadius: 18,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2567,14 +2582,15 @@ class _EmployeesHeader extends StatelessWidget {
                               style: GoogleFonts.poppins(
                                 fontSize: 24 * scaleFactor,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: headerTextColor,
                               ),
                             ),
                             Text(
                               'Şirket personellerinizi yönetin.',
                               style: GoogleFonts.poppins(
-                                  fontSize: 14 * scaleFactor,
-                                  color: Colors.white.withValues(alpha: 0.9)),
+                                fontSize: 14 * scaleFactor,
+                                color: secondaryTextColor,
+                              ),
                             ),
                           ],
                         ),
@@ -2588,6 +2604,9 @@ class _EmployeesHeader extends StatelessWidget {
                                 activeCount.toString(),
                                 'Aktif Personel',
                                 centerText: true,
+                                valueColor: headerTextColor,
+                                labelColor:
+                                    headerTextColor.withValues(alpha: 0.85),
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -2596,6 +2615,9 @@ class _EmployeesHeader extends StatelessWidget {
                                 '$formattedBalance $currency',
                                 'Toplam Bakiye',
                                 centerText: false,
+                                valueColor: headerTextColor,
+                                labelColor:
+                                    headerTextColor.withValues(alpha: 0.85),
                               ),
                             ),
                           ],
@@ -2616,12 +2638,28 @@ class _HeaderStatCard extends StatelessWidget {
   final String value;
   final String title;
   final bool centerText;
-  const _HeaderStatCard(this.value, this.title, {this.centerText = false});
+  final Color? valueColor;
+  final Color? labelColor;
+  const _HeaderStatCard(
+    this.value,
+    this.title, {
+    this.centerText = false,
+    this.valueColor,
+    this.labelColor,
+  });
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         final scaleFactor = constraints.maxWidth < 400 ? 0.85 : 1.0;
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final onPrimary = theme.colorScheme.onPrimary;
+        final cardBackground =
+            onPrimary.withValues(alpha: isDark ? 0.16 : 0.22);
+        final valueTextColor = valueColor ?? onPrimary;
+        final labelTextColor =
+            labelColor ?? onPrimary.withValues(alpha: isDark ? 0.85 : 0.9);
 
         return Container(
           padding: EdgeInsets.symmetric(
@@ -2629,7 +2667,7 @@ class _HeaderStatCard extends StatelessWidget {
             vertical: 8 * scaleFactor,
           ),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.24),
+            color: cardBackground,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(
@@ -2640,15 +2678,14 @@ class _HeaderStatCard extends StatelessWidget {
               Text(value,
                   style: GoogleFonts.poppins(
                       fontSize: 18 * scaleFactor,
-                      color: Colors.white,
+                      color: valueTextColor,
                       fontWeight: FontWeight.bold),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   textAlign: centerText ? TextAlign.center : TextAlign.right),
               Text(title,
                   style: GoogleFonts.poppins(
-                      fontSize: 10 * scaleFactor,
-                      color: Colors.white.withValues(alpha: 0.8)),
+                      fontSize: 10 * scaleFactor, color: labelTextColor),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   textAlign: centerText ? TextAlign.center : TextAlign.right),
@@ -3466,29 +3503,29 @@ class _DepartmentEditDialogState extends State<_DepartmentEditDialog> {
               color: isDarkDialog ? Colors.white : Colors.grey[800],
             ),
           ),
-        content: Text(
-          '"${widget.departmentName}" departmanını silmek istediğinize emin misiniz?',
+          content: Text(
+            '"${widget.departmentName}" departmanını silmek istediğinize emin misiniz?',
             style: TextStyle(
               color: isDarkDialog ? Colors.grey[300] : Colors.grey[700],
             ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(ctx).colorScheme.primary,
               ),
-            child: const Text('Vazgeç'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
+              child: const Text('Vazgeç'),
             ),
-            child: const Text('Sil'),
-          ),
-        ],
+            FilledButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Sil'),
+            ),
+          ],
         );
       },
     );
@@ -4175,13 +4212,13 @@ class _EmployeeDetailSheet extends StatelessWidget {
                             color: isDark ? Colors.white12 : Colors.transparent,
                           ),
                         ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Personel Bilgileri',
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Personel Bilgileri',
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
@@ -4190,30 +4227,30 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                             ? Colors.white
                                             : Colors.grey[800],
                                       ),
-                            ),
-                          ),
-                          FilledButton.icon(
-                            onPressed: () => _showEmployeeDetailsDialog(
-                              context,
-                              name: name,
-                              position: position,
+                                ),
+                              ),
+                              FilledButton.icon(
+                                onPressed: () => _showEmployeeDetailsDialog(
+                                  context,
+                                  name: name,
+                                  position: position,
                                   salary:
                                       '$formattedSalaryAmount $salaryCurrency',
-                              entitlementType: entitlementType,
-                              entitlement: entitlement,
-                              startDate: startDate,
-                              birthDate: birthDate,
-                              tc: tc,
-                              email: email,
-                              workHours: workHours,
-                              overtime: overtime,
-                            ),
-                            icon: const Icon(Icons.info_outline),
-                            label: const Text('Bilgileri Görüntüle'),
+                                  entitlementType: entitlementType,
+                                  entitlement: entitlement,
+                                  startDate: startDate,
+                                  birthDate: birthDate,
+                                  tc: tc,
+                                  email: email,
+                                  workHours: workHours,
+                                  overtime: overtime,
+                                ),
+                                icon: const Icon(Icons.info_outline),
+                                label: const Text('Bilgileri Görüntüle'),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
                       );
                     },
                   ),
@@ -4232,13 +4269,13 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                   isDark ? Colors.white12 : Colors.transparent,
                             ),
                           ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'Dökümanlar (${docs.length})',
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Dökümanlar (${docs.length})',
                                     style: Theme.of(context)
                                         .textTheme
                                         .titleMedium
@@ -4247,19 +4284,19 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                               ? Colors.white
                                               : Colors.grey[800],
                                         ),
-                              ),
+                                  ),
+                                ),
+                                FilledButton.icon(
+                                  onPressed: () => _showDocumentsDialog(
+                                    context,
+                                    docs: docs,
+                                  ),
+                                  icon: const Icon(Icons.attach_file),
+                                  label: const Text('Dökümanları Görüntüle'),
+                                ),
+                              ],
                             ),
-                            FilledButton.icon(
-                              onPressed: () => _showDocumentsDialog(
-                                context,
-                                docs: docs,
-                              ),
-                              icon: const Icon(Icons.attach_file),
-                              label: const Text('Dökümanları Görüntüle'),
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
                         );
                       },
                     ),
@@ -4277,15 +4314,15 @@ class _EmployeeDetailSheet extends StatelessWidget {
                             color: isDark ? Colors.white12 : Colors.transparent,
                           ),
                         ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Flexible(
-                                child: Text('Hareketler',
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text('Hareketler',
                                         style: Theme.of(context)
                                             .textTheme
                                             .titleMedium
@@ -4294,111 +4331,111 @@ class _EmployeeDetailSheet extends StatelessWidget {
                                                   ? Colors.white
                                                   : Colors.grey[800],
                                             ),
-                                    overflow: TextOverflow.ellipsis),
+                                        overflow: TextOverflow.ellipsis),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.file_download),
+                                    iconSize: 18,
+                                    padding: const EdgeInsets.all(4),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                    tooltip: 'Dışa Aktar',
+                                    onPressed: () {
+                                      final sheet = _EmployeeDetailSheet(
+                                        tenantId: tenantId,
+                                        docId: docId,
+                                        data: data,
+                                      );
+                                      sheet._showExportTransactionsOptions(
+                                          context);
+                                    },
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Flexible(
+                                    child: _EmployeeBalance(
+                                        tenantId: tenantId,
+                                        docId: docId,
+                                        currency: salaryCurrency.isNotEmpty
+                                            ? salaryCurrency
+                                            : 'TRY'),
+                                  ),
+                                ],
                               ),
-                              IconButton(
-                                icon: const Icon(Icons.file_download),
-                                iconSize: 18,
-                                padding: const EdgeInsets.all(4),
-                                constraints: const BoxConstraints(
-                                  minWidth: 32,
-                                  minHeight: 32,
-                                ),
-                                tooltip: 'Dışa Aktar',
-                                onPressed: () {
+                              const SizedBox(height: 8),
+                              _EmployeeTransactionsList(
+                                tenantId: tenantId,
+                                docId: docId,
+                                currency: salaryCurrency.isNotEmpty
+                                    ? salaryCurrency
+                                    : 'TRY',
+                                onEditOvertimeTransaction: (ctx, tId, empId,
+                                    transId, transData, curr) {
                                   final sheet = _EmployeeDetailSheet(
-                                    tenantId: tenantId,
+                                    tenantId: tId,
+                                    docId: empId,
+                                    data: data,
+                                  );
+                                  sheet._showEditOvertimeTransactionDialog(
+                                    ctx,
+                                    tId,
+                                    empId,
+                                    transId,
+                                    transData,
+                                    curr,
+                                  );
+                                },
+                                onEditPaymentTransaction: (ctx, tId, empId,
+                                    transId, transData, curr) {
+                                  final sheet = _EmployeeDetailSheet(
+                                    tenantId: tId,
+                                    docId: empId,
+                                    data: data,
+                                  );
+                                  sheet._showEditPaymentTransactionDialog(
+                                    ctx,
+                                    tId,
+                                    empId,
+                                    transId,
+                                    transData,
+                                    curr,
+                                  );
+                                },
+                                onDeletePaymentTransaction:
+                                    (ctx, tId, transId, transData) {
+                                  final sheet = _EmployeeDetailSheet(
+                                    tenantId: tId,
                                     docId: docId,
                                     data: data,
                                   );
-                                      sheet._showExportTransactionsOptions(
-                                          context);
+                                  sheet._showDeletePaymentTransactionDialog(
+                                    ctx,
+                                    tId,
+                                    transId,
+                                    transData,
+                                  );
                                 },
-                              ),
-                              const SizedBox(width: 4),
-                              Flexible(
-                                child: _EmployeeBalance(
-                                    tenantId: tenantId,
-                                    docId: docId,
-                                    currency: salaryCurrency.isNotEmpty
-                                        ? salaryCurrency
-                                        : 'TRY'),
+                                onPrintTransaction: (ctx, tId, empId, transId,
+                                    transData, curr) {
+                                  final sheet = _EmployeeDetailSheet(
+                                    tenantId: tId,
+                                    docId: empId,
+                                    data: data,
+                                  );
+                                  sheet._exportSingleTransactionToPDF(
+                                    ctx,
+                                    tId,
+                                    empId,
+                                    transId,
+                                    transData,
+                                    curr,
+                                  );
+                                },
                               ),
                             ],
                           ),
-                          const SizedBox(height: 8),
-                          _EmployeeTransactionsList(
-                            tenantId: tenantId,
-                            docId: docId,
-                            currency: salaryCurrency.isNotEmpty
-                                ? salaryCurrency
-                                : 'TRY',
-                                onEditOvertimeTransaction: (ctx, tId, empId,
-                                    transId, transData, curr) {
-                              final sheet = _EmployeeDetailSheet(
-                                tenantId: tId,
-                                docId: empId,
-                                data: data,
-                              );
-                              sheet._showEditOvertimeTransactionDialog(
-                                ctx,
-                                tId,
-                                empId,
-                                transId,
-                                transData,
-                                curr,
-                              );
-                            },
-                                onEditPaymentTransaction: (ctx, tId, empId,
-                                    transId, transData, curr) {
-                              final sheet = _EmployeeDetailSheet(
-                                tenantId: tId,
-                                docId: empId,
-                                data: data,
-                              );
-                              sheet._showEditPaymentTransactionDialog(
-                                ctx,
-                                tId,
-                                empId,
-                                transId,
-                                transData,
-                                curr,
-                              );
-                            },
-                            onDeletePaymentTransaction:
-                                (ctx, tId, transId, transData) {
-                              final sheet = _EmployeeDetailSheet(
-                                tenantId: tId,
-                                docId: docId,
-                                data: data,
-                              );
-                              sheet._showDeletePaymentTransactionDialog(
-                                ctx,
-                                tId,
-                                transId,
-                                transData,
-                              );
-                            },
-                                onPrintTransaction: (ctx, tId, empId, transId,
-                                    transData, curr) {
-                              final sheet = _EmployeeDetailSheet(
-                                tenantId: tId,
-                                docId: empId,
-                                data: data,
-                              );
-                              sheet._exportSingleTransactionToPDF(
-                                ctx,
-                                tId,
-                                empId,
-                                transId,
-                                transData,
-                                curr,
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
+                        ),
                       );
                     },
                   ),
@@ -4749,9 +4786,6 @@ class _EmployeeDetailSheet extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.primary,
-            ),
             child: const Text('İptal'),
           ),
         ],

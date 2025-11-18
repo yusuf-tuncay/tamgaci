@@ -20,7 +20,8 @@ class ProductVariantsPage extends ConsumerStatefulWidget {
   const ProductVariantsPage({super.key});
 
   @override
-  ConsumerState<ProductVariantsPage> createState() => _ProductVariantsPageState();
+  ConsumerState<ProductVariantsPage> createState() =>
+      _ProductVariantsPageState();
 }
 
 class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
@@ -41,7 +42,8 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
         data: (products) {
           // Varyantlı ürünleri filtrele
           final productsWithVariants = products
-              .where((product) => product.variants != null && product.variants!.isNotEmpty)
+              .where((product) =>
+                  product.variants != null && product.variants!.isNotEmpty)
               .toList();
 
           if (productsWithVariants.isEmpty) {
@@ -65,6 +67,11 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
   }
 
   Widget _buildHeader(bool isDark) {
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -79,7 +86,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -99,7 +106,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: onPrimary,
               letterSpacing: 0.2,
             ),
           ),
@@ -111,7 +118,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -119,14 +126,14 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -178,7 +185,8 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
         decoration: BoxDecoration(
           color: isDark ? Colors.grey[800] : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
+          border:
+              Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -207,8 +215,8 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
     final filteredProducts = products.where((product) {
       final matchesSearch = _searchQuery.isEmpty ||
           product.name.toLowerCase().contains(_searchQuery);
-      final matchesCategory = _selectedCategory == 'Tümü' ||
-          product.category == _selectedCategory;
+      final matchesCategory =
+          _selectedCategory == 'Tümü' || product.category == _selectedCategory;
       return matchesSearch && matchesCategory;
     }).toList();
 
@@ -263,9 +271,10 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha:0.1),
+                    color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -293,7 +302,8 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                   ),
                 ),
                 child: InkWell(
-                  onTap: () => _showVariantEditDialog(context, product, variant, product.variants!.indexOf(variant)),
+                  onTap: () => _showVariantEditDialog(context, product, variant,
+                      product.variants!.indexOf(variant)),
                   borderRadius: BorderRadius.circular(8),
                   child: Row(
                     children: [
@@ -333,7 +343,8 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: variant.stockQuantity > 0
                               ? Colors.green
@@ -442,7 +453,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
     setState(() {
       _categorySearchQuery = '';
     });
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -471,7 +482,7 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
 
   Widget _buildCategoryFilter(bool isDark) {
     final productsAsync = ref.watch(productsStreamProvider);
-    
+
     return productsAsync.when(
       data: (products) {
         final categories = products
@@ -490,7 +501,8 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                 children: [
                   // Arama alanı
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: TextField(
                       decoration: InputDecoration(
                         hintText: 'Kategori ara...',
@@ -544,9 +556,10 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
                             : Colors.grey,
                       ),
                       trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6366F1).withValues(alpha:0.1),
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -577,7 +590,8 @@ class _ProductVariantsPageState extends ConsumerState<ProductVariantsPage> {
     );
   }
 
-  void _showVariantEditDialog(BuildContext context, Product product, ProductVariant variant, int variantIndex) {
+  void _showVariantEditDialog(BuildContext context, Product product,
+      ProductVariant variant, int variantIndex) {
     showDialog(
       context: context,
       builder: (context) => VariantEditDialog(

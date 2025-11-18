@@ -9,8 +9,8 @@ import '../overlays/calculator_overlay.dart';
 
 /// Özel AppBar widget'ı
 class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
-  /// Başlık
-  final String title;
+  /// Başlık (opsiyonel - verilmezse her zaman "TAMGACI" gösterilir)
+  final String? title;
 
   /// Geri butonu gösterilsin mi?
   final bool showBackButton;
@@ -38,7 +38,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
 
   const CustomAppBar({
     super.key,
-    required this.title,
+    this.title,
     this.showBackButton = false,
     this.showDrawer = false,
     this.actions,

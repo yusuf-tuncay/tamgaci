@@ -7,7 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 import '../../../../core/theme/constants.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/widgets/custom_app_bar.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/widgets/loading_widget.dart';
 import '../../../../core/widgets/error_widget.dart' as custom_error;
 import '../../domain/entities/product.dart';
@@ -26,6 +26,15 @@ class ProductDetailPage extends ConsumerWidget {
   });
 
   Widget _buildPremiumHeader(Product product, BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final headerTextColor = theme.colorScheme.onPrimary;
+    final secondaryTextColor =
+        headerTextColor.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = headerTextColor.withValues(alpha: 0.12);
+    final iconBackground =
+        headerTextColor.withValues(alpha: isDark ? 0.18 : 0.22);
+    final subtleTextColor = headerTextColor.withValues(alpha: 0.85);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -40,7 +49,7 @@ class ProductDetailPage extends ConsumerWidget {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -58,12 +67,12 @@ class ProductDetailPage extends ConsumerWidget {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
+              color: iconBackground,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
               _getProductTypeIcon(product.type),
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: headerTextColor,
               size: 24,
             ),
           ),
@@ -78,7 +87,7 @@ class ProductDetailPage extends ConsumerWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onPrimary,
+                    color: headerTextColor,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -86,32 +95,38 @@ class ProductDetailPage extends ConsumerWidget {
                   '${product.type.displayName} • ${product.warehouseName ?? "Depo yok"}',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                    color: secondaryTextColor,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.inventory,
-                        size: 16, color: Colors.white.withValues(alpha: 0.8)),
+                    Icon(
+                      Icons.inventory,
+                      size: 16,
+                      color: subtleTextColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       'Stok: ${product.totalStockQuantity}',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: subtleTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Icon(Icons.attach_money,
-                        size: 16, color: Colors.white.withValues(alpha: 0.8)),
+                    Icon(
+                      Icons.attach_money,
+                      size: 16,
+                      color: subtleTextColor,
+                    ),
                     const SizedBox(width: 4),
                     Text(
                       '₺${product.salesPrice.toStringAsFixed(2)}',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: subtleTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -161,37 +176,9 @@ class ProductDetailPage extends ConsumerWidget {
 
             return Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              appBar: AppBar(
-                title: Text(
-                  product.name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                backgroundColor: Theme.of(context).colorScheme.surface,
-                elevation: 1,
-                leading: IconButton(
-                  icon: Icon(
-                    Icons.arrow_back,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                  onPressed: () {
-                    try {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        // Fallback: Ürünler listesine git
-                        context.go('/products');
-                      }
-                    } catch (e) {
-                      debugPrint('Navigation error: $e');
-                      // Fallback navigation: Ürünler listesine git
-                      context.go('/products');
-                    }
-                  },
-                ),
+              appBar: CustomAppBar(
+                showBackButton: true,
+                showDrawer: false,
                 actions: [
                   IconButton(
                     onPressed: () => _showProductActions(context, product, ref),
@@ -339,10 +326,13 @@ class ProductDetailPage extends ConsumerWidget {
                             return Container(
                               width: 100,
                               height: 100,
-                              color: isDark ? Colors.grey[800] : Colors.grey[300],
+                              color:
+                                  isDark ? Colors.grey[800] : Colors.grey[300],
                               child: Icon(
                                 Icons.broken_image,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                                 size: 32,
                               ),
                             );
@@ -352,7 +342,8 @@ class ProductDetailPage extends ConsumerWidget {
                             return Container(
                               width: 100,
                               height: 100,
-                              color: isDark ? Colors.grey[800] : Colors.grey[200],
+                              color:
+                                  isDark ? Colors.grey[800] : Colors.grey[200],
                               child: const Center(
                                 child: CircularProgressIndicator(),
                               ),
@@ -744,14 +735,19 @@ class ProductDetailPage extends ConsumerWidget {
               const SizedBox(height: 16),
               Builder(
                 builder: (context) {
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                  final isDark =
+                      Theme.of(context).brightness == Brightness.dark;
                   return Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.grey[850] : Colors.blue.withValues(alpha: 0.05),
+                      color: isDark
+                          ? Colors.grey[850]
+                          : Colors.blue.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isDark ? Colors.white12 : Colors.blue.withValues(alpha: 0.2),
+                        color: isDark
+                            ? Colors.white12
+                            : Colors.blue.withValues(alpha: 0.2),
                       ),
                     ),
                     child: Column(
@@ -785,7 +781,9 @@ class ProductDetailPage extends ConsumerWidget {
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                      color: isDark
+                                          ? Colors.grey[400]
+                                          : Colors.grey[700],
                                     ),
                                   ),
                                 ),
@@ -795,7 +793,9 @@ class ProductDetailPage extends ConsumerWidget {
                                     entry.value.toString(),
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      color: isDark ? Colors.grey[300] : Colors.grey[600],
+                                      color: isDark
+                                          ? Colors.grey[300]
+                                          : Colors.grey[600],
                                     ),
                                   ),
                                 ),
@@ -970,7 +970,8 @@ class ProductDetailPage extends ConsumerWidget {
             Icon(
               icon,
               size: 16,
-              color: iconColor ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
+              color:
+                  iconColor ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
             ),
             const SizedBox(width: 8),
           ],

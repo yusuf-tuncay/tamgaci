@@ -36,9 +36,12 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
   @override
   void initState() {
     super.initState();
-    _stockController = TextEditingController(text: widget.variant.stockQuantity.toString());
-    _shelfLocationController = TextEditingController(text: widget.variant.shelfLocation ?? '');
-    _barcodeController = TextEditingController(text: widget.variant.barcode ?? '');
+    _stockController =
+        TextEditingController(text: widget.variant.stockQuantity.toString());
+    _shelfLocationController =
+        TextEditingController(text: widget.variant.shelfLocation ?? '');
+    _barcodeController =
+        TextEditingController(text: widget.variant.barcode ?? '');
   }
 
   @override
@@ -55,6 +58,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Dialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -71,7 +75,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
             const SizedBox(height: 24),
             _buildFormFields(isDark),
             const SizedBox(height: 24),
-            _buildActions(),
+            _buildActions(isDark),
           ],
         ),
       ),
@@ -84,7 +88,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.purple.withValues(alpha:0.1),
+            color: Colors.purple.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(
@@ -103,14 +107,16 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
                 style: GoogleFonts.poppins(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? TamgaciConstants.textPrimaryDark : TamgaciConstants.textPrimary,
+                  color: isDark
+                      ? TamgaciConstants.textPrimaryDark
+                      : TamgaciConstants.textPrimary,
                 ),
               ),
               Text(
                 widget.product.name,
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
                 ),
               ),
             ],
@@ -118,7 +124,10 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
         ),
         IconButton(
           onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.close),
+          icon: Icon(
+            Icons.close,
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
         ),
       ],
     );
@@ -159,7 +168,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
             'Mevcut Stok: ${CurrencyHelper.formatNumber(widget.variant.stockQuantity.toDouble()).replaceAll(',00', '')} adet',
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
         ],
@@ -173,12 +182,40 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
         // Stok Miktarı
         TextFormField(
           controller: _stockController,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
           decoration: InputDecoration(
             labelText: 'Stok Miktarı',
+            labelStyle: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
             hintText: 'Örn: 100',
-            prefixIcon: const Icon(Icons.inventory_2),
+            hintStyle: TextStyle(
+              color: isDark ? Colors.grey[500] : Colors.grey[400],
+            ),
+            prefixIcon: Icon(
+              Icons.inventory_2,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
             ),
             filled: true,
             fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
@@ -199,12 +236,40 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
         // Raf Yeri
         TextFormField(
           controller: _shelfLocationController,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
           decoration: InputDecoration(
             labelText: 'Raf Yeri',
+            labelStyle: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
             hintText: 'Örn: A-1-3',
-            prefixIcon: const Icon(Icons.location_on),
+            hintStyle: TextStyle(
+              color: isDark ? Colors.grey[500] : Colors.grey[400],
+            ),
+            prefixIcon: Icon(
+              Icons.location_on,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
             ),
             filled: true,
             fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
@@ -214,12 +279,40 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
         // Barkod
         TextFormField(
           controller: _barcodeController,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
           decoration: InputDecoration(
             labelText: 'Barkod',
+            labelStyle: TextStyle(
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
             hintText: 'Örn: 1234567890123',
-            prefixIcon: const Icon(Icons.qr_code_2),
+            hintStyle: TextStyle(
+              color: isDark ? Colors.grey[500] : Colors.grey[400],
+            ),
+            prefixIcon: Icon(
+              Icons.qr_code_2,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 2,
+              ),
             ),
             filled: true,
             fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
@@ -229,7 +322,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
     );
   }
 
-  Widget _buildActions() {
+  Widget _buildActions(bool isDark) {
     return Row(
       children: [
         Expanded(
@@ -237,6 +330,9 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
             onPressed: _isLoading ? null : () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 12),
+              side: BorderSide(
+                color: isDark ? Colors.white12 : Colors.grey[300]!,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -245,6 +341,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
               'İptal',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w500,
+                color: isDark ? Colors.grey[300] : Colors.grey[800],
               ),
             ),
           ),
@@ -254,26 +351,28 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
           child: ElevatedButton(
             onPressed: _isLoading ? null : _saveVariant,
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.purple[600],
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
             child: _isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     height: 20,
                     width: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.onPrimary,
+                      ),
                     ),
                   )
                 : Text(
                     'Kaydet',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
-                      color: Colors.white,
                     ),
                   ),
           ),
@@ -299,11 +398,11 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
 
     try {
       final stockQuantity = int.parse(_stockController.text.trim());
-      final shelfLocation = _shelfLocationController.text.trim().isEmpty 
-          ? null 
+      final shelfLocation = _shelfLocationController.text.trim().isEmpty
+          ? null
           : _shelfLocationController.text.trim();
-      final barcode = _barcodeController.text.trim().isEmpty 
-          ? null 
+      final barcode = _barcodeController.text.trim().isEmpty
+          ? null
           : _barcodeController.text.trim();
 
       // Varyantı güncelle
@@ -314,7 +413,8 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
       );
 
       // Ürünün varyantlarını güncelle
-      final updatedVariants = List<ProductVariant>.from(widget.product.variants!);
+      final updatedVariants =
+          List<ProductVariant>.from(widget.product.variants!);
       updatedVariants[widget.variantIndex] = updatedVariant;
 
       final updatedProduct = widget.product.copyWith(
@@ -327,9 +427,9 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Varyant başarıyla güncellendi'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: const Text('Varyant başarıyla güncellendi'),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -338,7 +438,7 @@ class _VariantEditDialogState extends ConsumerState<VariantEditDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Hata: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

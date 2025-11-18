@@ -92,6 +92,11 @@ class _EnhancedPurchasesListPageState
 
   /// Header kartı - istatistikler ve hoş geldin mesajı
   Widget _buildWelcomeCard(List<Purchase> purchases) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
     final totalPurchases = purchases.length;
     final totalAmount = purchases.fold<double>(
         0, (sum, purchase) => sum + (purchase.totalAmount));
@@ -118,7 +123,7 @@ class _EnhancedPurchasesListPageState
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -142,14 +147,14 @@ class _EnhancedPurchasesListPageState
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: onPrimary,
                       ),
                     ),
                     Text(
                       'Alış işlemlerinizi yönetin',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                       ),
                     ),
                   ],
@@ -217,10 +222,15 @@ class _EnhancedPurchasesListPageState
 
   /// Header içindeki istatistik kartı
   Widget _buildHeaderStatCard(String title, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final backgroundColor = onPrimary.withValues(alpha: isDark ? 0.16 : 0.22);
+    final labelColor = onPrimary.withValues(alpha: 0.85);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -231,14 +241,14 @@ class _EnhancedPurchasesListPageState
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: onPrimary,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: labelColor,
             ),
           ),
         ],
@@ -977,7 +987,6 @@ class _EnhancedPurchasesListPageState
     );
   }
 
-
   void _showFilterDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
@@ -1056,7 +1065,8 @@ class _EnhancedPurchasesListPageState
       );
 
       // TODO: Purchases için Excel export implementasyonu
-      final fileName = 'purchases_export_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+      final fileName =
+          'purchases_export_${DateTime.now().millisecondsSinceEpoch}.xlsx';
 
       // Loading'i kapat
       if (context.mounted) {

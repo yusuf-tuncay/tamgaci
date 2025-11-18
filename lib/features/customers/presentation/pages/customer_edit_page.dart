@@ -513,22 +513,29 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
 
     final canDelete = customer.currentBalance == 0.0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     await showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
+          backgroundColor: isDark ? Colors.grey[850] : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          title: const Row(
+          title: Row(
             children: [
               Icon(
                 Icons.warning_amber_rounded,
-                color: Colors.red,
+                color: isDark ? Colors.red[400] : Colors.red,
                 size: 28,
               ),
-              SizedBox(width: 12),
-              Text('Müşteri Sil'),
+              const SizedBox(width: 12),
+              Text(
+                'Müşteri Sil',
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+              ),
             ],
           ),
           content: Column(
@@ -537,28 +544,39 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
             children: [
               Text(
                 '${customer.name} müşterisini silmek istediğinizden emin misiniz?',
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.grey[300] : Colors.grey[800],
+                ),
               ),
               const SizedBox(height: 16),
               if (!canDelete) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
+                    color: isDark
+                        ? Colors.red[900]!.withValues(alpha: 0.3)
+                        : Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border:
-                        Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.red[700]!
+                          : Colors.red.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline,
-                          color: Colors.red, size: 24),
+                      Icon(
+                        Icons.info_outline,
+                        color: isDark ? Colors.red[400] : Colors.red,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Bu müşterinin ${CurrencyHelper.formatCurrency(customer.currentBalance, customer.customerCurrency ?? 'TRY')} bakiyesi var. Bakiye sıfır olmadığı sürece müşteri silinemez.',
-                          style: const TextStyle(
-                            color: Colors.red,
+                          style: TextStyle(
+                            color: isDark ? Colors.red[400] : Colors.red,
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -573,6 +591,9 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('İptal'),
             ),
             if (canDelete)
@@ -582,8 +603,8 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                   await _deleteCustomer();
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -1338,25 +1359,57 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
 
   Future<void> _showCreateCategoryDialog({required int level}) async {
     final nameController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     await showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
+          backgroundColor: isDark ? Colors.grey[850] : null,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
-              'Yeni Kategori (${level == 1 ? 'Kategori 1' : 'Kategori 2'})'),
+            'Yeni Kategori (${level == 1 ? 'Kategori 1' : 'Kategori 2'})',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+            decoration: InputDecoration(
               labelText: 'Kategori Adı',
-              border: OutlineInputBorder(),
+              labelStyle: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+              filled: true,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('İptal'),
             ),
             ElevatedButton(
@@ -1381,7 +1434,7 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('$name kategorisi başarıyla oluşturuldu'),
-                        backgroundColor: Colors.green,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),

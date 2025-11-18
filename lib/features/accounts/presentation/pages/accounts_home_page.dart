@@ -110,6 +110,12 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   Widget _buildWelcomeCard(List<Account> accounts) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -124,7 +130,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -151,7 +157,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: onPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -163,7 +169,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -176,14 +182,14 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -214,15 +220,19 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   Widget _buildStatisticsLoading() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -236,7 +246,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: isDark ? Colors.grey[700] : Colors.grey[200],
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
@@ -249,7 +259,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                       width: double.infinity,
                       height: 16,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: isDark ? Colors.grey[700] : Colors.grey[200],
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -258,7 +268,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                       width: 120,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: Colors.grey[200],
+                        color: isDark ? Colors.grey[700] : Colors.grey[200],
                         borderRadius: BorderRadius.circular(4),
                       ),
                     ),
@@ -273,15 +283,19 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   Widget _buildStatisticsError() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -289,13 +303,16 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
       ),
       child: Row(
         children: [
-          Icon(Icons.error_outline, color: Colors.red[400]),
+          Icon(
+            Icons.error_outline,
+            color: isDark ? Colors.red[400] : Colors.red[600],
+          ),
           const SizedBox(width: 12),
           Text(
             'İstatistikler yüklenemedi',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.red[600],
+              color: isDark ? Colors.red[400] : Colors.red[600],
             ),
           ),
         ],
@@ -304,14 +321,17 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   Widget _buildFiltersSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SliverToBoxAdapter(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? Colors.grey[850] : Colors.white,
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: isDark ? Colors.white12 : Colors.grey[200]!,
+          ),
         ),
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -721,7 +741,9 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                       style: GoogleFonts.poppins(
                         fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.grey[800],
                       ),
                     ),
                     TextButton.icon(
@@ -794,15 +816,19 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.all(32),
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -813,7 +839,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
           Icon(
             Icons.account_balance_outlined,
             size: 64,
-            color: Colors.grey[400],
+            color: isDark ? Colors.grey[500] : Colors.grey[400],
           ),
           const SizedBox(height: 16),
           Text(
@@ -821,7 +847,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
           const SizedBox(height: 8),
@@ -829,7 +855,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             'İlk hesabınızı ekleyerek başlayın',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: isDark ? Colors.grey[500] : Colors.grey[500],
             ),
           ),
           const SizedBox(height: 24),
@@ -841,8 +867,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[600],
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -855,6 +881,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   Widget _buildAccountsLoading() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: List.generate(
         3,
@@ -862,11 +889,14 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
           margin: const EdgeInsets.all(16),
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: isDark ? Colors.grey[850] : Colors.white,
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? Colors.white12 : Colors.transparent,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -880,7 +910,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.grey[200],
+                      color: isDark ? Colors.grey[700] : Colors.grey[200],
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
@@ -893,7 +923,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                           width: double.infinity,
                           height: 16,
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: isDark ? Colors.grey[700] : Colors.grey[200],
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -902,7 +932,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                           width: 120,
                           height: 12,
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: isDark ? Colors.grey[700] : Colors.grey[200],
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -919,15 +949,19 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   Widget _buildAccountsError() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.all(32),
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -938,7 +972,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
           Icon(
             Icons.error_outline,
             size: 64,
-            color: Colors.red[400],
+            color: isDark ? Colors.red[400] : Colors.red[600],
           ),
           const SizedBox(height: 16),
           Text(
@@ -946,7 +980,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.red[600],
+              color: isDark ? Colors.red[400] : Colors.red[600],
             ),
           ),
           const SizedBox(height: 8),
@@ -954,7 +988,7 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             'Lütfen tekrar deneyin',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: Colors.red[500],
+              color: isDark ? Colors.red[400] : Colors.red[500],
             ),
           ),
           const SizedBox(height: 24),
@@ -966,8 +1000,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
               style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
@@ -982,8 +1016,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   Widget _buildFloatingActionButton() {
     return FloatingActionButton.extended(
       onPressed: () => _navigateToCreateAccount(),
-      backgroundColor: Colors.blue[600],
-      foregroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+      foregroundColor: Theme.of(context).colorScheme.onPrimary,
       icon: const Icon(Icons.add),
       label: Text(
         'Hesap Ekle',
@@ -997,15 +1031,32 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _exportToExcel() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Excel\'e Aktar'),
-        content: const Text('Excel dosyası oluşturuluyor...'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Excel\'e Aktar',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Excel dosyası oluşturuluyor...',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tamam'),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),
@@ -1013,15 +1064,32 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _exportToCSV() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('CSV\'ye Aktar'),
-        content: const Text('CSV dosyası oluşturuluyor...'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'CSV\'ye Aktar',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'CSV dosyası oluşturuluyor...',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tamam'),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),
@@ -1029,15 +1097,32 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _exportToPDF() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('PDF\'ye Aktar'),
-        content: const Text('PDF dosyası oluşturuluyor...'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'PDF\'ye Aktar',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'PDF dosyası oluşturuluyor...',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tamam'),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),
@@ -1045,15 +1130,32 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
   }
 
   void _showImportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dosya İçe Aktar'),
-        content: const Text('Dosya seçin ve içe aktarın...'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dosya İçe Aktar',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Dosya seçin ve içe aktarın...',
+          style: GoogleFonts.poppins(
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tamam'),
+            child: Text(
+              'Tamam',
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),

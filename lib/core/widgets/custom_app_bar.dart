@@ -7,7 +7,7 @@ import '../theme/constants.dart';
 
 /// Özelleştirilmiş AppBar widget'ı
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
+  final String? title; // Opsiyonel - verilmezse "TAMGACI" gösterilir
   final bool showBackButton;
   final bool showDrawer;
   final List<Widget>? actions;
@@ -15,7 +15,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   const CustomAppBar({
     super.key,
-    required this.title,
+    this.title,
     this.showBackButton = true,
     this.showDrawer = false,
     this.actions,
@@ -29,7 +29,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
     return AppBar(
       title: Text(
-        title,
+        title ?? 'TAMGACI',
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,

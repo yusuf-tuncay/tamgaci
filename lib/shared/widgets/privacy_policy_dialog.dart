@@ -11,7 +11,9 @@ class PrivacyPolicyDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Dialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
@@ -169,33 +171,40 @@ class PrivacyPolicyDialog extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Footer
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: TamgaciConstants.primaryColor,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Son güncelleme: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
-                              style: GoogleFonts.poppins(
-                                fontSize: 12,
-                                color: TamgaciConstants.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
+                    Builder(
+                      builder: (context) {
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.grey[800] : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isDark ? Colors.white12 : Colors.grey.shade200,
                             ),
                           ),
-                        ],
-                      ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: isDark ? TamgaciConstants.primaryColor : TamgaciConstants.primaryColor,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Son güncelleme: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.grey[400] : TamgaciConstants.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -208,30 +217,35 @@ class PrivacyPolicyDialog extends StatelessWidget {
   }
 
   Widget _buildSection(String title, String content) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: TamgaciConstants.primaryColor,
-            ),
+    return Builder(
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: TamgaciConstants.primaryColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                content,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : TamgaciConstants.textSecondary,
+                  height: 1.6,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            content,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: TamgaciConstants.textSecondary,
-              height: 1.6,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

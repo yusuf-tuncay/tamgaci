@@ -137,6 +137,8 @@ class _InventoryItemsListPageState
     return Scaffold(
       appBar: AppBar(
         title: const Text('Envanter Öğeleri'),
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         actions: [
           if (hasFilters)
             IconButton(

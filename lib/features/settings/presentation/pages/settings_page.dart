@@ -148,6 +148,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Widget _buildWelcomeCard(bool isDark, AppLocalizations l10n) {
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       decoration: BoxDecoration(
@@ -161,7 +165,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
+        border: Border.all(color: onPrimary.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -181,7 +185,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: onPrimary,
               letterSpacing: 0.2,
             ),
           ),
@@ -193,7 +197,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -201,14 +205,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -610,65 +614,25 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       final controller = TextEditingController(text: numbering);
                       final res = await showDialog<String>(
                         context: context,
-                        builder: (_) {
-                          final isDarkDialog = Theme.of(context).brightness == Brightness.dark;
-                          return AlertDialog(
-                            backgroundColor: isDarkDialog ? Colors.grey[850] : null,
-                            title: Text(
-                              'Numaralandırma Şeması',
-                              style: TextStyle(
-                                color: isDarkDialog ? Colors.white : Colors.grey[800],
-                              ),
+                        builder: (_) => AlertDialog(
+                          title: const Text('Numaralandırma Şeması'),
+                          content: TextField(
+                            controller: controller,
+                            decoration: const InputDecoration(
+                              hintText: 'INV-{YYYY}-{####}',
+                              border: OutlineInputBorder(),
                             ),
-                            content: TextField(
-                              controller: controller,
-                              style: TextStyle(
-                                color: isDarkDialog ? Colors.white : Colors.grey[800],
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'INV-{YYYY}-{####}',
-                                hintStyle: TextStyle(
-                                  color: isDarkDialog ? Colors.grey[500] : Colors.grey[400],
-                                ),
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: isDarkDialog ? Colors.white12 : Colors.grey[300]!,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: isDarkDialog ? Colors.white12 : Colors.grey[300]!,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Theme.of(context).colorScheme.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                fillColor: isDarkDialog ? Colors.grey[800] : Colors.grey[50],
-                                filled: true,
-                              ),
-                            ),
-                            actions: [
-                              TextButton(
+                          ),
+                          actions: [
+                            TextButton(
                                 onPressed: () => Navigator.pop(context),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Theme.of(context).colorScheme.primary,
-                                ),
-                                child: const Text('İptal'),
-                              ),
-                              TextButton(
+                                child: const Text('İptal')),
+                            TextButton(
                                 onPressed: () => Navigator.pop(
                                     context, controller.text.trim()),
-                                style: TextButton.styleFrom(
-                                  foregroundColor: Theme.of(context).colorScheme.primary,
-                                ),
-                                child: const Text('Kaydet'),
-                              ),
-                            ],
-                          );
-                        },
+                                child: const Text('Kaydet')),
+                          ],
+                        ),
                       );
                       if (res != null && res.isNotEmpty) {
                         notifier.updateNumberingScheme(res);

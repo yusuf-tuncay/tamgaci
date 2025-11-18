@@ -75,14 +75,18 @@ class _AccountStatisticsCardState extends State<AccountStatisticsCard> {
         ),
     ];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -110,14 +114,17 @@ class _AccountStatisticsCardState extends State<AccountStatisticsCard> {
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Colors.grey[800],
+                        color: isDark ? Colors.white : Colors.grey[800],
                       ),
                     ),
                   ),
                   AnimatedRotation(
                     turns: _isExpanded ? 0.5 : 0,
                     duration: const Duration(milliseconds: 200),
-                    child: const Icon(Icons.expand_more, color: Colors.grey),
+                    child: Icon(
+                      Icons.expand_more,
+                      color: isDark ? Colors.grey[400] : Colors.grey,
+                    ),
                   ),
                 ],
               ),
@@ -306,7 +313,9 @@ class _MetricTile extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey[600],
                   ),
                 ),
               ),
@@ -340,12 +349,15 @@ class _CurrencyTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: isDark ? Colors.grey[800] : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.grey[200]!,
+        ),
       ),
       child: Row(
         children: [
@@ -373,7 +385,7 @@ class _CurrencyTile extends StatelessWidget {
               style: GoogleFonts.poppins(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
+                color: isDark ? Colors.grey[300] : Colors.grey[700],
               ),
             ),
           ),

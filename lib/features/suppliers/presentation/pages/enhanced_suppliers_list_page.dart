@@ -89,6 +89,11 @@ class _EnhancedSuppliersListPageState
   }
 
   Widget _buildWelcomeCard(bool isDark, List<Supplier> suppliers) {
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
     final activeSuppliers = suppliers.where((s) => s.isActive == true).length;
     final totalBalance =
         suppliers.fold<double>(0, (sum, s) => sum + s.currentBalance);
@@ -110,7 +115,7 @@ class _EnhancedSuppliersListPageState
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -137,7 +142,7 @@ class _EnhancedSuppliersListPageState
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: onPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -149,7 +154,7 @@ class _EnhancedSuppliersListPageState
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -202,14 +207,14 @@ class _EnhancedSuppliersListPageState
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -219,10 +224,15 @@ class _EnhancedSuppliersListPageState
 
   /// Header içindeki istatistik kartı - banner timer gibi
   Widget _buildHeaderStatCard(String title, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final backgroundColor = onPrimary.withValues(alpha: isDark ? 0.16 : 0.22);
+    final labelColor = onPrimary.withValues(alpha: 0.85);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -233,14 +243,14 @@ class _EnhancedSuppliersListPageState
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: onPrimary,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: labelColor,
             ),
           ),
         ],
@@ -288,8 +298,8 @@ class _EnhancedSuppliersListPageState
                   'Yeni Tedarikçi',
                   style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
                 ),
-                backgroundColor: TamgaciConstants.primaryColor,
-                foregroundColor: Colors.white,
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
               ),
             ),
           ),
@@ -353,10 +363,10 @@ class _EnhancedSuppliersListPageState
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+          color: isDark ? Colors.white12 : Colors.grey.shade200,
         ),
       ),
       child: Row(
@@ -554,10 +564,10 @@ class _EnhancedSuppliersListPageState
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[800] : Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: isDark ? Colors.grey[700]! : Colors.grey[200]!,
+          color: isDark ? Colors.white12 : Colors.grey[200]!,
         ),
       ),
       child: LayoutBuilder(
@@ -845,23 +855,28 @@ class _EnhancedSuppliersListPageState
                         items: const [
                           DropdownMenuItem(
                             value: 'name',
-                            child: Text('İsim', overflow: TextOverflow.ellipsis),
+                            child:
+                                Text('İsim', overflow: TextOverflow.ellipsis),
                           ),
                           DropdownMenuItem(
                             value: 'contactPerson',
-                            child: Text('İletişim', overflow: TextOverflow.ellipsis),
+                            child: Text('İletişim',
+                                overflow: TextOverflow.ellipsis),
                           ),
                           DropdownMenuItem(
                             value: 'currentBalance',
-                            child: Text('Bakiye', overflow: TextOverflow.ellipsis),
+                            child:
+                                Text('Bakiye', overflow: TextOverflow.ellipsis),
                           ),
                           DropdownMenuItem(
                             value: 'creditLimit',
-                            child: Text('Kredi Limiti', overflow: TextOverflow.ellipsis),
+                            child: Text('Kredi Limiti',
+                                overflow: TextOverflow.ellipsis),
                           ),
                           DropdownMenuItem(
                             value: 'createdAt',
-                            child: Text('Tarih', overflow: TextOverflow.ellipsis),
+                            child:
+                                Text('Tarih', overflow: TextOverflow.ellipsis),
                           ),
                         ],
                         onChanged: (value) {
@@ -1009,8 +1024,16 @@ class _EnhancedSuppliersListPageState
 
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       elevation: 2,
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -1029,7 +1052,7 @@ class _EnhancedSuppliersListPageState
               title,
               style: GoogleFonts.poppins(
                 fontSize: 10,
-                color: AppColors.textSecondary,
+                color: isDark ? Colors.grey[400] : AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1103,10 +1126,10 @@ class _EnhancedSuppliersListPageState
       padding: const EdgeInsets.all(16),
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
+          color: isDark ? Colors.grey[850] : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isDark ? TamgaciConstants.borderColor : Colors.grey.shade200,
+            color: isDark ? Colors.white12 : Colors.grey.shade200,
           ),
         ),
         child: Column(
@@ -1119,6 +1142,11 @@ class _EnhancedSuppliersListPageState
                 borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
+                ),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.grey.shade200,
+                  ),
                 ),
               ),
               child: Row(
@@ -1139,7 +1167,7 @@ class _EnhancedSuppliersListPageState
               itemCount: suppliers.length,
               separatorBuilder: (context, index) => Divider(
                 height: 1,
-                color: isDark ? Colors.grey[700] : Colors.grey[200],
+                color: isDark ? Colors.white12 : Colors.grey[200],
               ),
               itemBuilder: (context, index) {
                 final supplier = suppliers[index];
@@ -1170,12 +1198,13 @@ class _EnhancedSuppliersListPageState
 
   /// Tablo başlığı widget'ı
   Widget _buildTableHeader(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
       style: GoogleFonts.poppins(
         fontSize: 14,
         fontWeight: FontWeight.w600,
-        color: TamgaciConstants.textPrimary,
+        color: isDark ? Colors.white : Colors.grey[800],
       ),
     );
   }
@@ -1514,8 +1543,12 @@ class _EnhancedSuppliersListPageState
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
+      color: isDark ? Colors.grey[850] : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
       ),
       child: InkWell(
         onTap: () => _navigateToDetail(supplier.id),
@@ -1727,6 +1760,7 @@ class _EnhancedSuppliersListPageState
     required String value,
     required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1735,7 +1769,7 @@ class _EnhancedSuppliersListPageState
           style: GoogleFonts.poppins(
             fontSize: 10,
             fontWeight: FontWeight.w400,
-            color: AppColors.textSecondary,
+            color: isDark ? Colors.grey[400] : AppColors.textSecondary,
           ),
         ),
         const SizedBox(height: 2),
@@ -1752,15 +1786,29 @@ class _EnhancedSuppliersListPageState
   }
 
   void _showExportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dışa Aktar'),
-        content:
-            const Text('Excel/PDF dışa aktarım özellikleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dışa Aktar',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Excel/PDF dışa aktarım özellikleri yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -1769,15 +1817,29 @@ class _EnhancedSuppliersListPageState
   }
 
   void _showImportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dosya İçe Aktar'),
-        content: const Text(
-            'Excel/CSV dosya içe aktarım özellikleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dosya İçe Aktar',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Excel/CSV dosya içe aktarım özellikleri yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],

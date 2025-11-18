@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/entities/stock_count.dart';
 import '../providers/stock_count_providers.dart';
 import '../../../warehouses/domain/entities/warehouse.dart';
@@ -86,7 +87,9 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
             backgroundColor: Colors.red[600],
           ),
         );
-        Navigator.of(context).pop();
+        if (context.mounted) {
+          context.pop();
+        }
       }
     }
   }
@@ -107,9 +110,8 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Stok Sayımı - ${widget.warehouse.name}',
-        showBackButton: false,
-        showDrawer: true,
+        showBackButton: true,
+        showDrawer: false,
         actions: [
           if (_stockCount!.status == StockCountStatus.draft ||
               _stockCount!.status == StockCountStatus.inProgress)
@@ -137,12 +139,15 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Widget _buildStockCountHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _getStatusColor().withValues(alpha: 0.1),
         border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
+          bottom: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey[200]!,
+          ),
         ),
       ),
       child: Row(
@@ -162,6 +167,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                 ),
                 Text(
@@ -196,12 +202,15 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Widget _buildSearchAndFilters() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
+          bottom: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey[200]!,
+          ),
         ),
       ),
       child: Column(
@@ -268,6 +277,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Widget _buildStatistics() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final totalItems = _stockCount!.totalItemsCount;
     final countedItems =
         _stockCount!.items.where((item) => item.isCounted).length;
@@ -276,9 +286,11 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
+          bottom: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey[200]!,
+          ),
         ),
       ),
       child: Column(
@@ -291,25 +303,28 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                 totalItems.toString(),
                 Icons.inventory_2,
                 Colors.blue,
+                isDark,
               ),
               _buildStatItem(
                 'Sayılan',
                 countedItems.toString(),
                 Icons.check_circle,
                 Colors.green,
+                isDark,
               ),
               _buildStatItem(
                 'Kalan',
                 (totalItems - countedItems).toString(),
                 Icons.pending,
                 Colors.orange,
+                isDark,
               ),
             ],
           ),
           const SizedBox(height: 12),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.grey[200],
+            backgroundColor: isDark ? Colors.grey[700] : Colors.grey[200],
             valueColor: AlwaysStoppedAnimation<Color>(
               progress == 1.0 ? Colors.green : Colors.blue,
             ),
@@ -321,7 +336,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
             style: GoogleFonts.poppins(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
             ),
           ),
         ],
@@ -334,6 +349,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     String value,
     IconData icon,
     Color color,
+    bool isDark,
   ) {
     return Column(
       children: [
@@ -351,7 +367,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
           label,
           style: GoogleFonts.poppins(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
       ],
@@ -385,12 +401,13 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
     }
 
     if (items.isEmpty) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
       return Center(
         child: Text(
           'Ürün bulunamadı',
           style: GoogleFonts.poppins(
             fontSize: 16,
-            color: Colors.grey[600],
+            color: isDark ? Colors.grey[400] : Colors.grey[600],
           ),
         ),
       );
@@ -407,18 +424,20 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
   }
 
   Widget _buildProductCard(StockCountItem item, int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasVariance =
         item.isCounted && item.variance != null && item.variance != 0;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
+      color: isDark ? Colors.grey[850] : Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
           color: hasVariance
               ? (item.variance! > 0 ? Colors.green : Colors.red)
-              : Colors.grey[200]!,
+              : (isDark ? Colors.white12 : Colors.grey[200]!),
           width: hasVariance ? 2 : 1,
         ),
       ),
@@ -441,6 +460,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                           style: GoogleFonts.poppins(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white : Colors.grey[800],
                           ),
                         ),
                         if (item.variantName != null) ...[
@@ -482,7 +502,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                         'Kod: ${item.productCode}',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                         ),
                       ),
                     if (item.productCode != null && item.barcode != null)
@@ -490,7 +510,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                         ' • ',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                         ),
                       ),
                     if (item.barcode != null)
@@ -498,7 +518,7 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                         'Barkod: ${item.barcode}',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
                         ),
                       ),
                   ],
@@ -687,7 +707,11 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              if (context.mounted) {
+                context.pop();
+              }
+            },
             child: const Text('İptal'),
           ),
           ElevatedButton(
@@ -738,7 +762,9 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                   .read(stockCountOperationsProvider.notifier)
                   .updateStockCount(_stockCount!);
 
-              Navigator.of(context).pop();
+              if (context.mounted) {
+                context.pop();
+              }
             },
             child: const Text('Kaydet'),
           ),
@@ -766,12 +792,18 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                if (context.mounted) {
+                  context.pop();
+                }
+              },
               child: const Text('İptal'),
             ),
             ElevatedButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                if (context.mounted) {
+                  context.pop();
+                }
                 _doCompleteStockCount();
               },
               style: ElevatedButton.styleFrom(
@@ -792,16 +824,18 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
         .read(stockCountOperationsProvider.notifier)
         .completeStockCount(_stockCount!.id);
 
-    if (mounted) {
-      if (success) {
-        Navigator.of(context).pop();
+    if (mounted && success) {
+      if (context.mounted) {
+        context.go('/inventory/stock-counts');
       }
     }
   }
 
   void _showMoreOptions() {
+    if (!mounted || !context.mounted) return;
+    final navigatorContext = context;
     showModalBottomSheet(
-      context: context,
+      context: navigatorContext,
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -812,13 +846,17 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                 leading: const Icon(Icons.cancel, color: Colors.orange),
                 title: Text('İptal Et', style: GoogleFonts.poppins()),
                 onTap: () async {
-                  Navigator.of(context).pop();
+                  if (context.mounted) {
+                    context.pop();
+                  }
                   final success = await ref
                       .read(stockCountOperationsProvider.notifier)
                       .cancelStockCount(_stockCount!.id);
 
                   if (mounted && success) {
-                    Navigator.of(context).pop();
+                    if (context.mounted) {
+                      context.go('/inventory/stock-counts');
+                    }
                   }
                 },
               ),
@@ -826,20 +864,34 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
               leading: const Icon(Icons.delete, color: Colors.red),
               title: Text('Sil', style: GoogleFonts.poppins(color: Colors.red)),
               onTap: () async {
-                Navigator.of(context).pop();
+                // Bottom sheet'i kapat
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
+                
+                // Kısa bir gecikme ekle, bottom sheet'in kapanması için
+                await Future.delayed(const Duration(milliseconds: 200));
+                
+                // Ana context'i kullan (bottom sheet context'i değil)
+                if (!mounted || !navigatorContext.mounted) return;
+                
                 final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
+                  context: navigatorContext,
+                  builder: (dialogContext) => AlertDialog(
                     title: const Text('Stok Sayımını Sil'),
                     content:
                         const Text('Bu işlem geri alınamaz. Emin misiniz?'),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(false);
+                        },
                         child: const Text('İptal'),
                       ),
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop(true);
+                        },
                         style:
                             TextButton.styleFrom(foregroundColor: Colors.red),
                         child: const Text('Sil'),
@@ -848,13 +900,14 @@ class _StockCountPageState extends ConsumerState<StockCountPage> {
                   ),
                 );
 
-                if (confirmed == true && mounted) {
+                if (confirmed == true && mounted && navigatorContext.mounted) {
                   final success = await ref
                       .read(stockCountOperationsProvider.notifier)
                       .deleteStockCount(_stockCount!.id);
 
-                  if (mounted && success) {
-                    Navigator.of(context).pop();
+                  if (mounted && success && navigatorContext.mounted) {
+                    // Silme işlemi başarılı, stok sayımları listesine yönlendir
+                    navigatorContext.go('/inventory/stock-counts');
                   }
                 }
               },

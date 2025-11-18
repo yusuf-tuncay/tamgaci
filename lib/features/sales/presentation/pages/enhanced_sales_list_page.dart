@@ -90,6 +90,17 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
 
   /// Header kartı - istatistikler ve hoş geldin mesajı
   Widget _buildWelcomeCard(List<Sale> sales) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final headerTextColor = theme.colorScheme.onPrimary;
+    final secondaryTextColor =
+        headerTextColor.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = headerTextColor.withValues(alpha: 0.12);
+    final statBackground =
+        headerTextColor.withValues(alpha: isDark ? 0.16 : 0.2);
+    final statValueColor = headerTextColor;
+    final statLabelColor = headerTextColor.withValues(alpha: 0.85);
+
     final totalSales = sales.length;
     final totalAmount =
         sales.fold<double>(0, (sum, sale) => sum + (sale.totalAmount));
@@ -110,7 +121,7 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -134,14 +145,14 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: headerTextColor,
                       ),
                     ),
                     Text(
                       'Satış işlemlerinizi yönetin',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                       ),
                     ),
                   ],
@@ -153,15 +164,37 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _buildHeaderStatCard('Toplam Satış',
-                          CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                      _buildHeaderStatCard(
+                        'Toplam Satış',
+                        CurrencyHelper.formatCurrency(totalAmount, 'TRY'),
+                        backgroundColor: statBackground,
+                        valueColor: statValueColor,
+                        labelColor: statLabelColor,
+                      ),
                       const SizedBox(width: 8),
                       _buildHeaderStatCard(
-                          'Satış Sayısı', totalSales.toString()),
+                        'Satış Sayısı',
+                        totalSales.toString(),
+                        backgroundColor: statBackground,
+                        valueColor: statValueColor,
+                        labelColor: statLabelColor,
+                      ),
                       const SizedBox(width: 8),
-                      _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                      _buildHeaderStatCard(
+                        'Ödenen',
+                        paidSales.toString(),
+                        backgroundColor: statBackground,
+                        valueColor: statValueColor,
+                        labelColor: statLabelColor,
+                      ),
                       const SizedBox(width: 8),
-                      _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
+                      _buildHeaderStatCard(
+                        'Bekleyen',
+                        pendingSales.toString(),
+                        backgroundColor: statBackground,
+                        valueColor: statValueColor,
+                        labelColor: statLabelColor,
+                      ),
                     ],
                   ),
                 ),
@@ -174,14 +207,37 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildHeaderStatCard('Toplam Satış',
-                      CurrencyHelper.formatCurrency(totalAmount, 'TRY')),
+                  _buildHeaderStatCard(
+                    'Toplam Satış',
+                    CurrencyHelper.formatCurrency(totalAmount, 'TRY'),
+                    backgroundColor: statBackground,
+                    valueColor: statValueColor,
+                    labelColor: statLabelColor,
+                  ),
                   const SizedBox(width: 8),
-                  _buildHeaderStatCard('Satış Sayısı', totalSales.toString()),
+                  _buildHeaderStatCard(
+                    'Satış Sayısı',
+                    totalSales.toString(),
+                    backgroundColor: statBackground,
+                    valueColor: statValueColor,
+                    labelColor: statLabelColor,
+                  ),
                   const SizedBox(width: 8),
-                  _buildHeaderStatCard('Ödenen', paidSales.toString()),
+                  _buildHeaderStatCard(
+                    'Ödenen',
+                    paidSales.toString(),
+                    backgroundColor: statBackground,
+                    valueColor: statValueColor,
+                    labelColor: statLabelColor,
+                  ),
                   const SizedBox(width: 8),
-                  _buildHeaderStatCard('Bekleyen', pendingSales.toString()),
+                  _buildHeaderStatCard(
+                    'Bekleyen',
+                    pendingSales.toString(),
+                    backgroundColor: statBackground,
+                    valueColor: statValueColor,
+                    labelColor: statLabelColor,
+                  ),
                 ],
               ),
             ),
@@ -206,11 +262,17 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   }
 
   /// Header içindeki istatistik kartı
-  Widget _buildHeaderStatCard(String title, String value) {
+  Widget _buildHeaderStatCard(
+    String title,
+    String value, {
+    required Color backgroundColor,
+    required Color valueColor,
+    required Color labelColor,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -221,14 +283,14 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: valueColor,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: labelColor,
             ),
           ),
         ],
@@ -966,14 +1028,29 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   }
 
   void _showFilterDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Gelişmiş Filtreler'),
-        content: const Text('Gelişmiş filtre özellikleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Gelişmiş Filtreler',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Gelişmiş filtre özellikleri yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -982,15 +1059,29 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   }
 
   void _showExportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dışa Aktar'),
-        content:
-            const Text('Excel/PDF dışa aktarım özellikleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dışa Aktar',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Excel/PDF dışa aktarım özellikleri yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],

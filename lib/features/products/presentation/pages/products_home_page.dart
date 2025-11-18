@@ -96,6 +96,13 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   }
 
   Widget _buildWelcomeCard(List<Product> products) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final headerTextColor = theme.colorScheme.onPrimary;
+    final secondaryTextColor =
+        headerTextColor.withValues(alpha: isDark ? 0.9 : 0.95);
+    final dividerColor = headerTextColor.withValues(alpha: 0.14);
+    final borderColor = headerTextColor.withValues(alpha: 0.12);
     final totalProducts = products.length;
     final activeProducts = products.where((p) => p.isActive == true).length;
     final categories = products.map((p) => p.category).toSet().length;
@@ -116,9 +123,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color:
-                Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -145,7 +150,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Theme.of(context).colorScheme.onPrimary,
+                        color: headerTextColor,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -157,7 +162,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -206,14 +211,14 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -223,10 +228,15 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
 
   /// Header içindeki istatistik kartı - banner timer gibi
   Widget _buildHeaderStatCard(String title, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final backgroundColor = onPrimary.withValues(alpha: isDark ? 0.16 : 0.22);
+    final labelColor = onPrimary.withValues(alpha: 0.85);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -237,14 +247,14 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: onPrimary,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: labelColor,
             ),
           ),
         ],

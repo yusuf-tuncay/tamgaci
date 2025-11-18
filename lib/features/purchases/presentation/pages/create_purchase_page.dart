@@ -1845,10 +1845,17 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
     if (!mounted) return;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Müşteri Seç'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Müşteri Seç',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: SizedBox(
           width: double.maxFinite,
           height: 300,
@@ -1857,8 +1864,18 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             itemBuilder: (context, index) {
               final customer = customers[index];
               return ListTile(
-                title: Text(customer.name),
-                subtitle: Text(customer.email ?? ''),
+                title: Text(
+                  customer.name,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.grey[800],
+                  ),
+                ),
+                subtitle: Text(
+                  customer.email ?? '',
+                  style: TextStyle(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                ),
                 onTap: () {
                   setState(() {
                     _customerIdController.text = customer.id;
@@ -1873,6 +1890,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Kapat'),
           ),
         ],
@@ -2033,8 +2053,15 @@ class _EditItemDialogState extends State<_EditItemDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: const Text('Ürün Düzenle'),
+      backgroundColor: isDark ? Colors.grey[850] : null,
+      title: Text(
+        'Ürün Düzenle',
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.grey[800],
+        ),
+      ),
       content: SizedBox(
         width: 400,
         child: Column(
@@ -2042,9 +2069,32 @@ class _EditItemDialogState extends State<_EditItemDialog> {
           children: [
             TextFormField(
               controller: TextEditingController(text: _editedItem.productName),
-              decoration: const InputDecoration(
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.grey[800],
+              ),
+              decoration: InputDecoration(
                 labelText: 'Ürün Adı',
-                border: OutlineInputBorder(),
+                labelStyle: TextStyle(
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+                fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+                filled: true,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.grey[300]!,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: isDark ? Colors.white12 : Colors.grey[300]!,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
+                ),
               ),
               enabled: false,
             ),
@@ -2347,8 +2397,15 @@ class _AddItemDialogState extends State<_AddItemDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
-      title: const Text('Ürün Ekle'),
+      backgroundColor: isDark ? Colors.grey[850] : null,
+      title: Text(
+        'Ürün Ekle',
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.grey[800],
+        ),
+      ),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

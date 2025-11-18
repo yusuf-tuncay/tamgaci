@@ -138,15 +138,15 @@ class _LandingPageState extends State<LandingPage>
 
     // Start animations
     if (mounted) {
-      _fadeController.forward();
-      Future.delayed(const Duration(milliseconds: 300), () {
+    _fadeController.forward();
+    Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted && !_slideController.isAnimating) {
-          _slideController.forward();
+      _slideController.forward();
         }
-      });
+    });
       if (mounted) {
-        _floatController.repeat(reverse: true);
-        _pulseController.repeat(reverse: true);
+    _floatController.repeat(reverse: true);
+    _pulseController.repeat(reverse: true);
       }
     }
   }
@@ -776,13 +776,13 @@ class _LandingPageState extends State<LandingPage>
                 ],
               )
             : const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFFF8FAFC),
-                  Color(0xFFE2E8F0),
-                ],
-              ),
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8FAFC),
+            Color(0xFFE2E8F0),
+          ],
+        ),
       ),
       child: Column(
         children: [
@@ -1471,11 +1471,11 @@ class _LandingPageState extends State<LandingPage>
                             children: [
                               Flexible(
                                 child: _buildStatisticItem(
-                                    '1000+', 'Mutlu Müşteri', Icons.people),
+                                  '1000+', 'Mutlu Müşteri', Icons.people),
                               ),
                               Flexible(
                                 child: _buildStatisticItem(
-                                    '50+', 'Ülkede Hizmet', Icons.language),
+                                  '50+', 'Ülkede Hizmet', Icons.language),
                               ),
                             ],
                           ),
@@ -1485,11 +1485,11 @@ class _LandingPageState extends State<LandingPage>
                             children: [
                               Flexible(
                                 child: _buildStatisticItem(
-                                    '99.9%', 'Uptime', Icons.cloud_done),
+                                  '99.9%', 'Uptime', Icons.cloud_done),
                               ),
                               Flexible(
                                 child: _buildStatisticItem(
-                                    '7/24', 'Destek', Icons.support_agent),
+                                  '7/24', 'Destek', Icons.support_agent),
                               ),
                             ],
                           ),
@@ -1500,19 +1500,19 @@ class _LandingPageState extends State<LandingPage>
                         children: [
                           Flexible(
                             child: _buildStatisticItem(
-                                '1000+', 'Mutlu Müşteri', Icons.people),
+                              '1000+', 'Mutlu Müşteri', Icons.people),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                                '50+', 'Ülkede Hizmet', Icons.language),
+                              '50+', 'Ülkede Hizmet', Icons.language),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                                '99.9%', 'Uptime', Icons.cloud_done),
+                              '99.9%', 'Uptime', Icons.cloud_done),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                                '7/24', 'Destek', Icons.support_agent),
+                              '7/24', 'Destek', Icons.support_agent),
                           ),
                         ],
                       ),
@@ -2157,16 +2157,16 @@ class _LandingPageState extends State<LandingPage>
                     if (!_isMobile(context))
                       Flexible(
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Blog ve FAQ Butonları
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Blog ve FAQ Butonları
                             Flexible(
                               child: _buildBannerLinks(),
                             ),
-                            SizedBox(width: _isTablet(context) ? 8 : 12),
-                            // CTA Button - Sağda sabit
-                            _buildBannerCTA(),
-                          ],
+                          SizedBox(width: _isTablet(context) ? 8 : 12),
+                          // CTA Button - Sağda sabit
+                          _buildBannerCTA(),
+                        ],
                         ),
                       )
                     else
@@ -2299,18 +2299,18 @@ class _LandingPageState extends State<LandingPage>
     final user = FirebaseAuth.instance.currentUser;
 
     if (!mounted) return;
-    
+
     if (user != null) {
       // Kullanıcı giriş yapmış - dashboard'a yönlendir
       debugPrint('LandingPage: User is signed in, navigating to dashboard');
       if (mounted) {
-        context.go('/dashboard');
+      context.go('/dashboard');
       }
     } else {
       // Kullanıcı giriş yapmamış - login sayfasına yönlendir
       debugPrint('LandingPage: User is not signed in, navigating to login');
       if (mounted) {
-        context.go('/login');
+      context.go('/login');
       }
     }
   }

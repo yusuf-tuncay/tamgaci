@@ -111,18 +111,85 @@ class _EnhancedSupplierDetailPageState
 
           // Tab bar
           Container(
-            color: isDark ? TamgaciConstants.cardColorDark : Colors.white,
-            child: TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(text: 'Genel Bilgiler'),
-                Tab(text: 'Alışlar'),
-                Tab(text: 'Faturalar'),
-                Tab(text: 'Ödemeler'),
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Theme.of(context).colorScheme.surface,
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
+                  Theme.of(context).colorScheme.surface,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.shadow.withValues(alpha: isDark ? 0.3 : 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                  spreadRadius: 0,
+                ),
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
+                  spreadRadius: 0,
+                ),
               ],
-              labelColor: AppColors.primary,
-              unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
+              border: Border.all(
+                color: isDark
+                    ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+                    : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: TabBar(
+                controller: _tabController,
+                indicator: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.primary,
+                      AppColors.primary.withValues(alpha: 0.8),
+                      AppColors.primary,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorPadding: const EdgeInsets.all(6),
+                dividerColor: Colors.transparent,
+                labelColor: Theme.of(context).colorScheme.onPrimary,
+                unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                labelStyle: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  letterSpacing: 0.5,
+                ),
+                unselectedLabelStyle: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 13,
+                  letterSpacing: 0.3,
+                ),
+                tabs: const [
+                  Tab(text: 'Genel Bilgiler'),
+                  Tab(text: 'Alışlar'),
+                  Tab(text: 'Faturalar'),
+                  Tab(text: 'Ödemeler'),
+                ],
+              ),
             ),
           ),
 
@@ -144,7 +211,8 @@ class _EnhancedSupplierDetailPageState
         onPressed: () => _showQuickActionDialog(supplier),
         icon: const Icon(Icons.add),
         label: const Text('Hızlı İşlem'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
     );
   }
@@ -156,15 +224,22 @@ class _EnhancedSupplierDetailPageState
 
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(TamgaciConstants.radiusLG),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
         border: Border.all(
-          color: AppColors.primary.withValues(alpha: 0.2),
-          width: 1,
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           // Üst kısım - Logo ve temel bilgiler
@@ -197,20 +272,23 @@ class _EnhancedSupplierDetailPageState
                       supplier.name,
                       style: GoogleFonts.poppins(
                         fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    Text(
-                      supplier.contactPerson ?? '',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: AppColors.textSecondary,
+                    if (supplier.contactPerson != null && supplier.contactPerson!.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        supplier.contactPerson!,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
                       ),
-                    ),
-                    if (supplier.supplierCode != null)
+                    ],
+                    if (supplier.supplierCode != null) ...[
+                      const SizedBox(height: 4),
                       Container(
-                        margin: const EdgeInsets.only(top: 4),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -226,6 +304,7 @@ class _EnhancedSupplierDetailPageState
                           ),
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -279,6 +358,7 @@ class _EnhancedSupplierDetailPageState
           // Action buttons
           _buildActionButtons(supplier),
         ],
+      ),
       ),
     );
   }
@@ -388,11 +468,19 @@ class _EnhancedSupplierDetailPageState
 
   Widget _buildFinancialSummaryCard(
       String title, String value, IconData icon, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: isDark 
+            ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+            : color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+        border: Border.all(
+          color: isDark 
+              ? Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)
+              : color.withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         children: [
@@ -411,7 +499,7 @@ class _EnhancedSupplierDetailPageState
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
@@ -524,6 +612,13 @@ class _EnhancedSupplierDetailPageState
   Widget _buildInfoSection(String title, IconData icon, List<Widget> children) {
     return Card(
       elevation: 2,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -531,14 +626,14 @@ class _EnhancedSupplierDetailPageState
           children: [
             Row(
               children: [
-                Icon(icon, color: AppColors.primary, size: 20),
+                Icon(icon, color: Theme.of(context).colorScheme.primary, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   title,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -552,27 +647,33 @@ class _EnhancedSupplierDetailPageState
   }
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.textSecondary),
+          Icon(icon, size: 16, color: isDark ? Colors.grey[400] : Colors.grey[600]),
           const SizedBox(width: 8),
-          Text(
-            '$label: ',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              color: AppColors.textSecondary,
-            ),
-          ),
           Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: 14,
-                color: AppColors.textPrimary,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                Text(
+                  value,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -603,7 +704,7 @@ class _EnhancedSupplierDetailPageState
             Icon(
               type.icon,
               size: 64,
-              color: AppColors.textSecondary,
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 16),
             Text(
@@ -611,7 +712,7 @@ class _EnhancedSupplierDetailPageState
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
             ),
             const SizedBox(height: 8),
@@ -619,7 +720,7 @@ class _EnhancedSupplierDetailPageState
               'Bu tedarikçiye ait ${type.displayName.toLowerCase()} kaydı bulunmuyor.',
               style: GoogleFonts.poppins(
                 fontSize: 14,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
               ),
               textAlign: TextAlign.center,
             ),
@@ -645,6 +746,13 @@ class _EnhancedSupplierDetailPageState
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: typeColor.withValues(alpha: 0.1),
@@ -768,14 +876,29 @@ class _EnhancedSupplierDetailPageState
   }
 
   void _showEditDialog(Supplier supplier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Tedarikçi Düzenle'),
-        content: const Text('Tedarikçi düzenleme formu yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Tedarikçi Düzenle',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Tedarikçi düzenleme formu yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -784,14 +907,29 @@ class _EnhancedSupplierDetailPageState
   }
 
   void _showQuickActionDialog(Supplier supplier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hızlı İşlem'),
-        content: const Text('Hızlı işlem seçenekleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Hızlı İşlem',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Hızlı işlem seçenekleri yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -800,14 +938,29 @@ class _EnhancedSupplierDetailPageState
   }
 
   void _showTransactionDetail(SupplierTransaction transaction) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(transaction.type.displayName),
-        content: const Text('İşlem detayları yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          transaction.type.displayName,
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'İşlem detayları yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -830,14 +983,29 @@ class _EnhancedSupplierDetailPageState
   }
 
   void _showDuplicateDialog(Supplier supplier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Tedarikçi Kopyala'),
-        content: const Text('Tedarikçi kopyalama özelliği yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Tedarikçi Kopyala',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Tedarikçi kopyalama özelliği yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -846,14 +1014,29 @@ class _EnhancedSupplierDetailPageState
   }
 
   void _showExportDialog(Supplier supplier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dışa Aktar'),
-        content: const Text('Dışa aktarım özelliği yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dışa Aktar',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Dışa aktarım özelliği yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -862,15 +1045,29 @@ class _EnhancedSupplierDetailPageState
   }
 
   void _showDeleteDialog(Supplier supplier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Tedarikçi Sil'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Tedarikçi Sil',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: Text(
-            '${supplier.name} tedarikçisini silmek istediğinizden emin misiniz?'),
+          '${supplier.name} tedarikçisini silmek istediğinizden emin misiniz?',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('İptal'),
           ),
           TextButton(
@@ -878,7 +1075,10 @@ class _EnhancedSupplierDetailPageState
               Navigator.of(context).pop();
               // Silme işlemi
             },
-            child: const Text('Sil', style: TextStyle(color: Colors.red)),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Sil'),
           ),
         ],
       ),
@@ -887,10 +1087,12 @@ class _EnhancedSupplierDetailPageState
 
   /// Ödeme form dialog'unu aç
   void _navigateToPaymentForm(Supplier supplier) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
+        backgroundColor: isDark ? Colors.grey[850] : null,
         insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

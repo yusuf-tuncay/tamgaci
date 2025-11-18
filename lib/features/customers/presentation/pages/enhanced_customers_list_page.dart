@@ -126,6 +126,11 @@ class _EnhancedCustomersListPageState
   }
 
   Widget _buildWelcomeCard(bool isDark, List<Customer> customers) {
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
     final activeCustomers = customers.where((c) => c.isActive == true).length;
     final totalBalance = customers.fold<double>(0, (sum, c) => sum + c.balance);
     final totalCreditLimit =
@@ -146,7 +151,7 @@ class _EnhancedCustomersListPageState
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -173,7 +178,7 @@ class _EnhancedCustomersListPageState
                       style: GoogleFonts.poppins(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: onPrimary,
                         letterSpacing: 0.2,
                       ),
                     ),
@@ -185,7 +190,7 @@ class _EnhancedCustomersListPageState
                       overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: secondaryTextColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -238,14 +243,14 @@ class _EnhancedCustomersListPageState
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],
@@ -255,10 +260,15 @@ class _EnhancedCustomersListPageState
 
   /// Header içindeki istatistik kartı - banner timer gibi
   Widget _buildHeaderStatCard(String title, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onPrimary = theme.colorScheme.onPrimary;
+    final backgroundColor = onPrimary.withValues(alpha: isDark ? 0.16 : 0.22);
+    final labelColor = onPrimary.withValues(alpha: 0.85);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -269,14 +279,14 @@ class _EnhancedCustomersListPageState
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: onPrimary,
             ),
           ),
           Text(
             title,
             style: GoogleFonts.poppins(
               fontSize: 10,
-              color: Colors.white.withValues(alpha: 0.8),
+              color: labelColor,
             ),
           ),
         ],
@@ -757,7 +767,10 @@ class _EnhancedCustomersListPageState
             Icon(
               Icons.people_outline,
               size: 64,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6),
             ),
             const SizedBox(height: 16),
             Text(
@@ -768,7 +781,10 @@ class _EnhancedCustomersListPageState
                   : 'Henüz müşteri eklenmemiş',
               style: GoogleFonts.poppins(
                 fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7),
               ),
             ),
             if (_searchQuery.isNotEmpty ||
@@ -1259,14 +1275,20 @@ class _EnhancedCustomersListPageState
                     Icon(
                       Icons.phone,
                       size: 16,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       customer.phone!,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.7),
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -1298,14 +1320,20 @@ class _EnhancedCustomersListPageState
                     Icon(
                       Icons.email,
                       size: 16,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 4),
                     Text(
                       customer.email!,
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.7),
                       ),
                     ),
                   ],
@@ -1636,15 +1664,29 @@ class _EnhancedCustomersListPageState
   }
 
   void _showImportDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dosya İçe Aktar'),
-        content: const Text(
-            'Excel/CSV dosya içe aktarım özellikleri yakında eklenecek.'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Dosya İçe Aktar',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        content: Text(
+          'Excel/CSV dosya içe aktarım özellikleri yakında eklenecek.',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('Tamam'),
           ),
         ],
@@ -1654,10 +1696,12 @@ class _EnhancedCustomersListPageState
 
   /// Tahsilat form dialog'unu aç
   void _navigateToPaymentForm(Customer customer) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => Dialog(
+        backgroundColor: isDark ? Colors.grey[850] : null,
         insetPadding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

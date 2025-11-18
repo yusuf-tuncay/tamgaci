@@ -9,9 +9,16 @@ class ThemeSelectorDialog extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeProvider);
     final themeNotifier = ref.read(themeProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AlertDialog(
-      title: const Text('Tema Seçin'),
+      backgroundColor: isDark ? Colors.grey[850] : null,
+      title: Text(
+        'Tema Seçin',
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.grey[800],
+        ),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -58,6 +65,9 @@ class ThemeSelectorDialog extends ConsumerWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+          ),
           child: const Text('İptal'),
         ),
       ],
@@ -80,7 +90,7 @@ class ThemeSelectorDialog extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isSelected ? color : Colors.grey.withValues(alpha: 0.3),
+            color: isSelected ? color : (Theme.of(context).brightness == Brightness.dark ? Colors.white12 : Colors.grey.withValues(alpha: 0.3)),
             width: isSelected ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),

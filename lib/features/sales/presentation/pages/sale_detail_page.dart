@@ -457,15 +457,29 @@ class _SaleDetailPageState extends ConsumerState<SaleDetailPage> {
     final sale = ref.read(saleNotifierProvider).selectedSale;
     if (sale == null) return;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Satışı Sil'),
+        backgroundColor: isDark ? Colors.grey[850] : null,
+        title: Text(
+          'Satışı Sil',
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
         content: Text(
-            '${sale.saleNumber} numaralı satışı silmek istediğinizden emin misiniz?'),
+          '${sale.saleNumber} numaralı satışı silmek istediğinizden emin misiniz?',
+          style: TextStyle(
+            color: isDark ? Colors.grey[300] : Colors.grey[600],
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
             child: const Text('İptal'),
           ),
           TextButton(
@@ -473,7 +487,9 @@ class _SaleDetailPageState extends ConsumerState<SaleDetailPage> {
               Navigator.pop(context);
               _deleteSale();
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
             child: const Text('Sil'),
           ),
         ],

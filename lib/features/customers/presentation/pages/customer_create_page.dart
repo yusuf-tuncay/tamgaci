@@ -2101,22 +2101,59 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
   }
 
   void _addCategory1() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
         final controller = TextEditingController();
         return AlertDialog(
-          title: const Text('Kategori 1 - Yeni Kategori Ekle'),
+          backgroundColor: isDark ? Colors.grey[850] : null,
+          title: Text(
+            'Kategori 1 - Yeni Kategori Ekle',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+            decoration: InputDecoration(
               labelText: 'Kategori Adı',
+              labelStyle: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
               hintText: 'Örn: Teknoloji',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
+              ),
+              fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+              filled: true,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('İptal'),
             ),
             TextButton(
@@ -2129,6 +2166,9 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   Navigator.pop(context);
                 }
               },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('Ekle'),
             ),
           ],
@@ -2138,22 +2178,59 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
   }
 
   void _addCategory2() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
         final controller = TextEditingController();
         return AlertDialog(
-          title: const Text('Kategori 2 - Yeni Kategori Ekle'),
+          backgroundColor: isDark ? Colors.grey[850] : null,
+          title: Text(
+            'Kategori 2 - Yeni Kategori Ekle',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+          ),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.grey[800],
+            ),
+            decoration: InputDecoration(
               labelText: 'Kategori Adı',
+              labelStyle: TextStyle(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
               hintText: 'Örn: Teknoloji',
+              hintStyle: TextStyle(
+                color: isDark ? Colors.grey[500] : Colors.grey[400],
+              ),
+              fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+              filled: true,
+              border: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.grey[300]!,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('İptal'),
             ),
             TextButton(
@@ -2166,6 +2243,9 @@ class _CustomerCreatePageState extends ConsumerState<CustomerCreatePage> {
                   Navigator.pop(context);
                 }
               },
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
               child: const Text('Ekle'),
             ),
           ],

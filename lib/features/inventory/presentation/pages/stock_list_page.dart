@@ -7,7 +7,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
-import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/empty_state_widget.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/stock_providers.dart';
@@ -24,24 +23,27 @@ class StockListPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: const CustomAppBar(
-        title: 'Stok Listesi',
-        showDrawer: true,
+        showBackButton: true,
+        showDrawer: false,
       ),
-      drawer: const TamgaciDrawerMenu(),
       body: stocksAsync.when(
         data: (stocks) => _buildStockList(stocks, isDark, ref),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child:
-              Text('Hata: $error', style: const TextStyle(color: Colors.red)),
+          child: Text(
+            'Hata: $error',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           context.go('/inventory/stock/create');
         },
-        backgroundColor: TamgaciConstants.primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         child: const Icon(Icons.add),
       ),
     );
@@ -72,7 +74,13 @@ class StockListPage extends ConsumerWidget {
   Widget _buildFilterSection(bool isDark, WidgetRef ref) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -83,7 +91,7 @@ class StockListPage extends ConsumerWidget {
               style: GoogleFonts.poppins(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                color: isDark ? Colors.white : Colors.grey[800],
               ),
             ),
             const SizedBox(height: 12),
@@ -185,7 +193,13 @@ class StockListPage extends ConsumerWidget {
 
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: isDark ? Colors.grey[850] : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
+      ),
       child: InkWell(
         onTap: () {
           Navigator.of(context).pushNamed(
@@ -208,9 +222,7 @@ class StockListPage extends ConsumerWidget {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: isDark
-                            ? Colors.white
-                            : TamgaciConstants.textPrimary,
+                      color: isDark ? Colors.white : Colors.grey[800],
                       ),
                     ),
                   ),
@@ -336,9 +348,7 @@ class StockListPage extends ConsumerWidget {
         Icon(
           icon,
           size: 14,
-          color: isDark
-              ? TamgaciConstants.textSecondaryDark
-              : TamgaciConstants.textSecondary,
+          color: isDark ? Colors.grey[400] : Colors.grey[600],
         ),
         const SizedBox(width: 4),
         Expanded(
@@ -359,7 +369,7 @@ class StockListPage extends ConsumerWidget {
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
-                  color: isDark ? Colors.white : TamgaciConstants.textPrimary,
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -398,7 +408,9 @@ class StockListPage extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'İptal',
-              style: GoogleFonts.poppins(color: TamgaciConstants.primaryColor),
+              style: GoogleFonts.poppins(
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
           ),
           ElevatedButton(

@@ -30,6 +30,11 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
   StockCountStatus? _filterStatus;
 
   Widget _buildWelcomeCard(bool isDark) {
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
@@ -44,7 +49,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -64,7 +69,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
             style: GoogleFonts.poppins(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: onPrimary,
               letterSpacing: 0.2,
             ),
           ),
@@ -76,7 +81,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
             overflow: TextOverflow.ellipsis,
             style: GoogleFonts.poppins(
               fontSize: 12,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -84,14 +89,14 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
           Container(
             height: 1,
             width: double.infinity,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: dividerColor,
           ),
           const SizedBox(height: 8),
           Text(
             'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
             style: GoogleFonts.poppins(
               fontSize: 13,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: secondaryTextColor,
             ),
           ),
         ],

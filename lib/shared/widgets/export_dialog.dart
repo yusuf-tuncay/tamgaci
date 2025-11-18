@@ -41,12 +41,13 @@ class _ExportDialogState extends State<ExportDialog> {
     final isDark = theme.brightness == Brightness.dark;
 
     return AlertDialog(
+      backgroundColor: isDark ? Colors.grey[850] : null,
       title: Text(
         'Dışa Aktar',
         style: GoogleFonts.poppins(
           fontSize: 18,
           fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
+          color: isDark ? Colors.white : AppColors.textPrimary,
         ),
       ),
       content: Column(
@@ -57,7 +58,7 @@ class _ExportDialogState extends State<ExportDialog> {
             'Verilerinizi hangi formatta dışa aktarmak istiyorsunuz?',
             style: GoogleFonts.poppins(
               fontSize: 14,
-              color: AppColors.textSecondary,
+              color: isDark ? Colors.grey[400] : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 20),
@@ -68,14 +69,14 @@ class _ExportDialogState extends State<ExportDialog> {
                   format.toUpperCase(),
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: AppColors.textPrimary,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 subtitle: Text(
                   _getFormatDescription(format),
                   style: GoogleFonts.poppins(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: isDark ? Colors.grey[400] : AppColors.textSecondary,
                   ),
                 ),
                 value: format,
@@ -108,7 +109,7 @@ class _ExportDialogState extends State<ExportDialog> {
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
+                      color: isDark ? Theme.of(context).colorScheme.primary : AppColors.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -121,7 +122,7 @@ class _ExportDialogState extends State<ExportDialog> {
                               entry.key,
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: AppColors.textSecondary,
+                                color: isDark ? Colors.grey[400] : AppColors.textSecondary,
                               ),
                             ),
                             Text(
@@ -129,7 +130,7 @@ class _ExportDialogState extends State<ExportDialog> {
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textPrimary,
+                                color: isDark ? Colors.white : AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -156,7 +157,7 @@ class _ExportDialogState extends State<ExportDialog> {
                   style: GoogleFonts.poppins(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                    color: isDark ? Colors.white : AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -167,7 +168,7 @@ class _ExportDialogState extends State<ExportDialog> {
                       'Sütun Sayısı:',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: isDark ? Colors.grey[400] : AppColors.textSecondary,
                       ),
                     ),
                     Text(
@@ -175,7 +176,7 @@ class _ExportDialogState extends State<ExportDialog> {
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -187,7 +188,7 @@ class _ExportDialogState extends State<ExportDialog> {
                       'Satır Sayısı:',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: AppColors.textSecondary,
+                        color: isDark ? Colors.grey[400] : AppColors.textSecondary,
                       ),
                     ),
                     Text(
@@ -195,7 +196,7 @@ class _ExportDialogState extends State<ExportDialog> {
                       style: GoogleFonts.poppins(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: isDark ? Colors.white : AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -208,18 +209,19 @@ class _ExportDialogState extends State<ExportDialog> {
       actions: [
         TextButton(
           onPressed: _isExporting ? null : () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.primary,
+          ),
           child: Text(
             'İptal',
-            style: GoogleFonts.poppins(
-              color: AppColors.textSecondary,
-            ),
+            style: GoogleFonts.poppins(),
           ),
         ),
         ElevatedButton(
           onPressed: _isExporting ? null : _exportData,
           style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.primary,
-            foregroundColor: Colors.white,
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
           ),
           child: _isExporting
               ? const SizedBox(

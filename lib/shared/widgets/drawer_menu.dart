@@ -425,6 +425,26 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
   Widget _buildHeader(dynamic userProfile) {
     // Silinen modül: user_profile
     final currentUser = ref.watch(currentUserProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final Color headerTextColor = theme.colorScheme.onPrimary;
+    final Color secondaryTextColor =
+        headerTextColor.withValues(alpha: isDark ? 0.85 : 0.9);
+    final Color overlayColor =
+        headerTextColor.withValues(alpha: isDark ? 0.08 : 0.14);
+    final Color overlayBorderColor =
+        headerTextColor.withValues(alpha: isDark ? 0.22 : 0.28);
+    final Color accentIconBackground =
+        headerTextColor.withValues(alpha: isDark ? 0.12 : 0.18);
+    final Color accentIconBorder = headerTextColor.withValues(alpha: 0.35);
+    final Color currencyBackground =
+        headerTextColor.withValues(alpha: isDark ? 0.18 : 0.24);
+    final Color currencySecondaryText = headerTextColor.withValues(alpha: 0.9);
+    final Color infoTileBackground =
+        headerTextColor.withValues(alpha: isDark ? 0.08 : 0.14);
+    final Color infoTileBorder =
+        headerTextColor.withValues(alpha: isDark ? 0.22 : 0.18);
+
     return Container(
       height: 200,
       decoration: BoxDecoration(
@@ -437,7 +457,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             TamgaciConstants.primaryColorDark,
           ],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: headerTextColor.withValues(alpha: 0.12)),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -463,10 +483,10 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.1),
+                          color: accentIconBackground,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
+                            color: accentIconBorder,
                             width: 1,
                           ),
                         ),
@@ -488,7 +508,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.w800,
-                            color: TamgaciConstants.textOnPrimary,
+                            color: headerTextColor,
                             letterSpacing: 0.4,
                           ),
                         ),
@@ -499,8 +519,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.poppins(
                             fontSize: 11,
-                            color: TamgaciConstants.textOnPrimary
-                                .withValues(alpha: 0.9),
+                            color: secondaryTextColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -521,33 +540,50 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color:
-                        TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
+                    color: overlayColor,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color:
-                          TamgaciConstants.textOnPrimary.withValues(alpha: 0.2),
+                      color: overlayBorderColor,
                       width: 1,
                     ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildCurrencyItem('USD', usdRate),
+                      _buildCurrencyItem(
+                        context,
+                        'USD',
+                        usdRate,
+                        textColor: headerTextColor,
+                        backgroundColor: currencyBackground,
+                        secondaryTextColor: currencySecondaryText,
+                      ),
                       Container(
                         width: 1,
                         height: 16,
-                        color: TamgaciConstants.textOnPrimary
-                            .withValues(alpha: 0.3),
+                        color: headerTextColor.withValues(alpha: 0.3),
                       ),
-                      _buildCurrencyItem('EUR', eurRate),
+                      _buildCurrencyItem(
+                        context,
+                        'EUR',
+                        eurRate,
+                        textColor: headerTextColor,
+                        backgroundColor: currencyBackground,
+                        secondaryTextColor: currencySecondaryText,
+                      ),
                     ],
                   ),
                 );
               }),
               const SizedBox(height: 12),
               // Kullanıcı bilgileri
-              _buildCompactUserInfo(currentUser.value),
+              _buildCompactUserInfo(
+                currentUser.value,
+                textColor: headerTextColor,
+                secondaryTextColor: secondaryTextColor,
+                tileBackground: infoTileBackground,
+                tileBorder: infoTileBorder,
+              ),
             ],
           ),
         ),
@@ -557,7 +593,14 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
 
   // _buildWhiteLogo removed (not used)
 
-  Widget _buildCurrencyItem(String currency, double rate) {
+  Widget _buildCurrencyItem(
+    BuildContext context,
+    String currency,
+    double rate, {
+    required Color textColor,
+    required Color backgroundColor,
+    required Color secondaryTextColor,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -565,7 +608,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
           width: 24,
           height: 24,
           decoration: BoxDecoration(
-            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.2),
+            color: backgroundColor,
             borderRadius: BorderRadius.circular(6),
           ),
           child: Center(
@@ -574,7 +617,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
               style: GoogleFonts.poppins(
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
-                color: TamgaciConstants.textOnPrimary,
+                color: textColor,
               ),
             ),
           ),
@@ -583,7 +626,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
         Text(
           '${rate.toStringAsFixed(2)} ₺',
           style: GoogleFonts.poppins(
-            color: TamgaciConstants.textOnPrimary,
+            color: secondaryTextColor,
             fontSize: 14,
             fontWeight: FontWeight.w600,
           ),
@@ -592,7 +635,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     );
   }
 
-  Widget _buildSubscriptionChip() {
+  Widget _buildSubscriptionChip(Color textColor) {
     final container = ProviderScope.containerOf(context, listen: false);
     final userAsync = container.read(currentUserProvider);
     final user = userAsync.value;
@@ -601,15 +644,14 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     }
     final now = DateTime.now();
     String text = '';
-    final theme = Theme.of(context);
-    Color color = theme.colorScheme.onSurface.withValues(alpha: 0.6);
+    Color badgeColor = textColor.withValues(alpha: 0.85);
 
     if (user.subscriptionStatus == auth_domain.SubscriptionStatus.trial &&
         user.trialEndAt != null) {
       final remaining = user.trialEndAt!.difference(now).inDays;
       if (remaining > 0) {
         text = 'Deneme ${remaining}g';
-        color = Colors.orange;
+        badgeColor = Colors.orange;
       }
     } else if (user.subscriptionStatus ==
             auth_domain.SubscriptionStatus.active &&
@@ -617,7 +659,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       final remaining = user.subscriptionEndAt!.difference(now).inDays;
       if (remaining > 0) {
         text = '${remaining}g';
-        color = Colors.green;
+        badgeColor = Colors.green;
       }
     }
 
@@ -626,15 +668,15 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: badgeColor.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.45)),
       ),
       child: Text(
         text,
         style: GoogleFonts.poppins(
           fontSize: 9,
-          color: TamgaciConstants.textOnPrimary,
+          color: Colors.white,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -896,7 +938,13 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
     return result.isEmpty ? 'KU' : result;
   }
 
-  Widget _buildCompactUserInfo(auth_domain.User? user) {
+  Widget _buildCompactUserInfo(
+    auth_domain.User? user, {
+    required Color textColor,
+    required Color secondaryTextColor,
+    required Color tileBackground,
+    required Color tileBorder,
+  }) {
     return InkWell(
       onTap: () {
         // Drawer kapat ve profil sayfasına git
@@ -910,10 +958,10 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.1),
+          color: tileBackground,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.15),
+            color: tileBorder,
             width: 1,
           ),
         ),
@@ -930,7 +978,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: TamgaciConstants.textOnPrimary,
+                      color: textColor,
                     ),
                   ),
                   Row(
@@ -940,14 +988,13 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                           _getCompanyName(user, ref),
                           style: GoogleFonts.poppins(
                             fontSize: 9,
-                            color: TamgaciConstants.textOnPrimary
-                                .withValues(alpha: 0.8),
+                            color: secondaryTextColor,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 6),
-                      _buildSubscriptionChip(),
+                      _buildSubscriptionChip(textColor),
                     ],
                   ),
                 ],
@@ -957,7 +1004,7 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
             Icon(
               Icons.edit_outlined,
               size: 16,
-              color: TamgaciConstants.textOnPrimary.withValues(alpha: 0.9),
+              color: textColor.withValues(alpha: 0.9),
             ),
           ],
         ),

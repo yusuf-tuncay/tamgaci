@@ -8,6 +8,7 @@ import '../../domain/entities/account.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../providers/account_providers.dart';
 import '../providers/account_transaction_providers.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 
 /// Hesap Oluşturma Sayfası
 class CreateAccountPage extends ConsumerStatefulWidget {
@@ -118,8 +119,28 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: _buildAppBar(),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: CustomAppBar(
+        showBackButton: true,
+        showDrawer: false,
+        onBackPressed: () {
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/accounts');
+          }
+        },
+        actions: [
+          IconButton(
+            icon: Icon(
+              Icons.more_vert,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+            onPressed: _showMoreOptions,
+            tooltip: 'Daha fazla seçenek',
+          ),
+        ],
+      ),
       body: AnimatedBuilder(
         animation: _fadeAnimation,
         builder: (context, child) {
@@ -135,31 +156,6 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 1,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
-        onPressed: () => context.pop(),
-      ),
-      title: Text(
-        widget.existingAccount != null ? 'Hesap Düzenle' : 'Yeni Hesap',
-        style: GoogleFonts.poppins(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
-      ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
-          onPressed: _showMoreOptions,
-          tooltip: 'Daha fazla seçenek',
-        ),
-      ],
-    );
-  }
 
   Widget _buildBody() {
     return SingleChildScrollView(
@@ -188,14 +184,18 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
   }
 
   Widget _buildHeaderCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -228,7 +228,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    color: isDark ? Colors.white : Colors.grey[800],
                   ),
                 ),
                 Text(
@@ -237,7 +237,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                       : 'Banka hesabı bilgilerini girin',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                 ),
               ],
@@ -449,12 +449,17 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
               fontWeight: FontWeight.w500,
             ),
           ),
-          subtitle: Text(
-            'Hesap aktif olarak kullanılabilir',
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
+          subtitle: Builder(
+            builder: (context) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return Text(
+                'Hesap aktif olarak kullanılabilir',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              );
+            },
           ),
           value: _isActive,
           onChanged: (value) {
@@ -469,14 +474,18 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
   }
 
   Widget _buildCard(String title, IconData icon, List<Widget> children) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark ? Colors.white12 : Colors.transparent,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -494,7 +503,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
+                  color: isDark ? Colors.white : Colors.grey[800],
                 ),
               ),
             ],
@@ -514,25 +523,37 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
     int maxLines = 1,
     String? Function(String?)? validator,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
+      style: TextStyle(
+        color: isDark ? Colors.white : Colors.grey[800],
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
+        fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+        filled: true,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey[300]!,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey[300]!,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue[400]!),
+          borderSide: BorderSide(
+            color: Colors.blue[400]!,
+          ),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -547,21 +568,33 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
     required void Function(T?) onChanged,
     required String Function(T) itemBuilder,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DropdownButtonFormField<T>(
       initialValue: value,
+      style: TextStyle(
+        color: isDark ? Colors.white : Colors.grey[800],
+      ),
       decoration: InputDecoration(
         labelText: label,
+        fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+        filled: true,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey[300]!,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(
+            color: isDark ? Colors.white12 : Colors.grey[300]!,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue[400]!),
+          borderSide: BorderSide(
+            color: Colors.blue[400]!,
+          ),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
@@ -659,7 +692,7 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
               'Hesap kaydedilemedi: $e',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
@@ -673,8 +706,10 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
   }
 
   void _showMoreOptions() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark ? Colors.grey[850] : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -725,9 +760,16 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
               ListTile(
                 leading:
                     const Icon(Icons.delete_outline, color: Colors.grey),
-                title: Text(
-                  'Bakiyesi olan hesaplar silinemez',
-                  style: GoogleFonts.poppins(color: Colors.grey[600]),
+                title: Builder(
+                  builder: (context) {
+                    final isDark = Theme.of(context).brightness == Brightness.dark;
+                    return Text(
+                      'Bakiyesi olan hesaplar silinemez',
+                      style: GoogleFonts.poppins(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    );
+                  },
                 ),
                 subtitle: Text(
                   'Silmeden önce bakiye, kullanılabilir ve bloke tutarlarını sıfırlayın.',
@@ -844,21 +886,23 @@ class _CreateAccountPageState extends ConsumerState<CreateAccountPage>
       child: ElevatedButton(
         onPressed: _isLoading ? null : _saveAccount,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6366F1),
-          foregroundColor: Colors.white,
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
           elevation: 4,
-          shadowColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
+          shadowColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               )
             : Row(
