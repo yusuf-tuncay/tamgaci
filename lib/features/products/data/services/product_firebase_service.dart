@@ -465,7 +465,7 @@ class ProductFirebaseService {
       images: data[FirebaseFields.productImageUrl] != null
           ? [data[FirebaseFields.productImageUrl]]
           : [],
-      isActive: data['isActive'] ?? true,
+      isActive: (data['isActive'] as bool?) ?? true,
       createdAt: (data[FirebaseFields.createdAt] as Timestamp?)?.toDate() ??
           DateTime.now(),
       updatedAt: (data[FirebaseFields.updatedAt] as Timestamp?)?.toDate() ??

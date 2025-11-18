@@ -34,6 +34,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   bool _showLowStockOnly = false;
   String _sortBy = 'name';
   bool _sortAscending = true;
+  bool _filtersExpanded =
+      false; // Mobil layout için filtreler açık/kapalı durumu
 
   @override
   void initState() {
@@ -105,7 +107,6 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     final borderColor = headerTextColor.withValues(alpha: 0.12);
     final totalProducts = products.length;
     final activeProducts = products.where((p) => p.isActive == true).length;
-    final categories = products.map((p) => p.category).toSet().length;
     final lowStockProducts =
         products.where((p) => p.stockQuantity <= 10).length;
 
@@ -179,8 +180,6 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                       const SizedBox(width: 8),
                       _buildHeaderStatCard('Aktif', activeProducts.toString()),
                       const SizedBox(width: 8),
-                      _buildHeaderStatCard('Kategori', categories.toString()),
-                      const SizedBox(width: 8),
                       _buildHeaderStatCard(
                           'Düşük Stok', lowStockProducts.toString()),
                       if (stockValue != null) ...[
@@ -203,8 +202,6 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                   _buildHeaderStatCard('Toplam', totalProducts.toString()),
                   const SizedBox(width: 8),
                   _buildHeaderStatCard('Aktif', activeProducts.toString()),
-                  const SizedBox(width: 8),
-                  _buildHeaderStatCard('Kategori', categories.toString()),
                   const SizedBox(width: 8),
                   _buildHeaderStatCard(
                       'Düşük Stok', lowStockProducts.toString()),
@@ -360,6 +357,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
   }
 
   Widget _buildFiltersSection() {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -367,13 +366,14 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           return FadeTransition(
             opacity: _fadeAnimation,
             child: SlideTransition(
-                position: _slideAnimation,
-                child: Builder(builder: (context) {
-                  final isDark =
-                      Theme.of(context).brightness == Brightness.dark;
+              position: _slideAnimation,
+              child: Builder(builder: (context) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+
+                // Mobilde açılır kapanır, masaüstünde her zaman açık
+                if (isMobile) {
                   return Container(
                     margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: isDark ? Colors.grey[850] : Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -390,148 +390,194 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                         width: 1,
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: ExpansionTile(
+                      initiallyExpanded: _filtersExpanded,
+                      onExpansionChanged: (expanded) {
+                        setState(() {
+                          _filtersExpanded = expanded;
+                        });
+                      },
+                      title: Text(
+                        'Filtreler',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.grey[800],
+                        ),
+                      ),
                       children: [
-                        Text(
-                          'Filtreler',
-                          style: GoogleFonts.poppins(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : Colors.grey[800],
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: _buildFiltersContent(isDark),
                         ),
-                        const SizedBox(height: 12),
-                        // Arama çubuğu - tam genişlik
-                        _buildSearchField(),
-                        const SizedBox(height: 12),
-                        // Filtreler - iki satır
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildFilterButton(
-                                  'Kategori', _selectedCategory),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _buildFilterButton(
-                                  'Tür', _selectedType?.displayName ?? 'Tümü'),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // İkinci satır: Sıralama ve Export/Import
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildFilterButton('Sırala', 'İsim'),
-                            ),
-                            const SizedBox(width: 8),
-                            IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _sortAscending = !_sortAscending;
-                                });
-                              },
-                              icon: Icon(
-                                _sortAscending
-                                    ? Icons.arrow_upward
-                                    : Icons.arrow_downward,
-                              ),
-                              tooltip: _sortAscending ? 'Artan' : 'Azalan',
-                            ),
-                            const SizedBox(width: 8),
-                            // Export/Import butonları
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  onPressed: _exportToExcel,
-                                  icon: const Icon(Icons.table_chart),
-                                  tooltip: 'Excel\'e Aktar',
-                                  style: IconButton.styleFrom(
-                                    backgroundColor:
-                                        Colors.green.withValues(alpha: 0.1),
-                                    foregroundColor: Colors.green,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  onPressed: _exportToCSV,
-                                  icon: const Icon(Icons.description),
-                                  tooltip: 'CSV\'ye Aktar',
-                                  style: IconButton.styleFrom(
-                                    backgroundColor:
-                                        Colors.blue.withValues(alpha: 0.1),
-                                    foregroundColor: Colors.blue,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  onPressed: _exportToPDF,
-                                  icon: const Icon(Icons.picture_as_pdf),
-                                  tooltip: 'PDF\'ye Aktar',
-                                  style: IconButton.styleFrom(
-                                    backgroundColor:
-                                        Colors.red.withValues(alpha: 0.1),
-                                    foregroundColor: Colors.red,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                IconButton(
-                                  onPressed: _showImportDialog,
-                                  icon: const Icon(Icons.upload_file),
-                                  tooltip: 'Dosya İçe Aktar',
-                                  style: IconButton.styleFrom(
-                                    backgroundColor:
-                                        Colors.orange.withValues(alpha: 0.1),
-                                    foregroundColor: Colors.orange,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        if (_showLowStockOnly)
-                          Container(
-                            margin: const EdgeInsets.only(top: 12),
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.warning,
-                                    color: Colors.orange[600], size: 16),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Sadece düşük stoklu ürünler gösteriliyor',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 12,
-                                    color: Colors.orange[600],
-                                  ),
-                                ),
-                                const Spacer(),
-                                GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      _showLowStockOnly = false;
-                                    });
-                                  },
-                                  child: Icon(Icons.close,
-                                      color: Colors.orange[600], size: 16),
-                                ),
-                              ],
-                            ),
-                          ),
                       ],
                     ),
                   );
-                })),
+                }
+
+                // Masaüstünde her zaman açık
+                return Container(
+                  margin: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey[850] : Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black12,
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Filtreler',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isDark ? Colors.white : Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildFiltersContent(isDark),
+                    ],
+                  ),
+                );
+              }),
+            ),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildFiltersContent(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Arama çubuğu - tam genişlik
+        _buildSearchField(),
+        const SizedBox(height: 12),
+        // Filtreler - iki satır
+        Row(
+          children: [
+            Expanded(
+              child: _buildFilterButton('Kategori', _selectedCategory),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildFilterButton(
+                  'Tür', _selectedType?.displayName ?? 'Tümü'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        // İkinci satır: Sıralama ve Export/Import
+        Row(
+          children: [
+            Expanded(
+              child: _buildFilterButton('Sırala', 'İsim'),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _sortAscending = !_sortAscending;
+                });
+              },
+              icon: Icon(
+                _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+              ),
+              tooltip: _sortAscending ? 'Artan' : 'Azalan',
+            ),
+            const SizedBox(width: 8),
+            // Export/Import butonları
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                IconButton(
+                  onPressed: _exportToExcel,
+                  icon: const Icon(Icons.table_chart),
+                  tooltip: 'Excel\'e Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.green.withValues(alpha: 0.1),
+                    foregroundColor: Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: _exportToCSV,
+                  icon: const Icon(Icons.description),
+                  tooltip: 'CSV\'ye Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.blue.withValues(alpha: 0.1),
+                    foregroundColor: Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: _exportToPDF,
+                  icon: const Icon(Icons.picture_as_pdf),
+                  tooltip: 'PDF\'ye Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.red.withValues(alpha: 0.1),
+                    foregroundColor: Colors.red,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  onPressed: _showImportDialog,
+                  icon: const Icon(Icons.upload_file),
+                  tooltip: 'Dosya İçe Aktar',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                    foregroundColor: Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        if (_showLowStockOnly)
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning, color: Colors.orange[600], size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Sadece düşük stoklu ürünler gösteriliyor',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: Colors.orange[600],
+                  ),
+                ),
+                const Spacer(),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _showLowStockOnly = false;
+                    });
+                  },
+                  child: Icon(Icons.close, color: Colors.orange[600], size: 16),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

@@ -154,11 +154,11 @@ class ProductEntity {
           ? List<String>.from(data['linkedProducts'])
           : null,
       notes: data['notes'],
-      isActive: data['isActive'] ?? true,
+      isActive: (data['isActive'] as bool?) ?? true,
       createdBy: data['createdBy'] ?? '',
       updatedBy: data['updatedBy'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }
 

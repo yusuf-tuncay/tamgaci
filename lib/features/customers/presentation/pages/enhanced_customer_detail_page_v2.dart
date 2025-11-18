@@ -98,7 +98,14 @@ class _EnhancedCustomerDetailPageV2State
     final customersAsync = ref.watch(customersProvider);
 
     return ResponsiveScaffold(
-      appBar: const CustomAppBar(title: 'Müşteri Detayı', showBackButton: true, showDrawer: false),
+      appBar: CustomAppBar(
+        title: 'Müşteri Detayı',
+        showBackButton: true,
+        showDrawer: false,
+        onBackPressed: () {
+          context.go('/customers');
+        },
+      ),
       drawerContent: const TamgaciDrawerMenu(),
       persistentOnLarge: false,
       body: customersAsync.when(
@@ -161,7 +168,7 @@ class _EnhancedCustomerDetailPageV2State
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
 
-    // Hesap ekstresinden net bakiyeyi hesapla
+    // Hesap ekstresinden net bakiyeyi hesapla (açılış bakiyesi dahil)
     double calculatedBalance = customer.balance;
     
     if (invoicesAsync.hasValue && paymentTransactionsAsync.hasValue) {
@@ -174,6 +181,15 @@ class _EnhancedCustomerDetailPageV2State
 
       double totalDebit = 0.0;
       double totalCredit = 0.0;
+
+      // Açılış bakiyesini hesaba kat
+      if (customer.openingBalance != null && customer.openingBalance != 0) {
+        if (customer.openingBalance! > 0) {
+          totalCredit += customer.openingBalance!;
+        } else {
+          totalDebit += customer.openingBalance!.abs();
+        }
+      }
 
       // Faturalardan borç
       for (var invoice in invoices) {
@@ -2255,7 +2271,7 @@ class _EnhancedCustomerDetailPageV2State
           ),
         );
       },
-    );
+          );
   }
 
   // Purchase tile widget
@@ -3343,6 +3359,59 @@ class _EnhancedCustomerDetailPageV2State
             if (dateB == null) return -1;
             return dateA.compareTo(dateB); // En eski en üstte (kronolojik sıra)
           });
+
+        // Ekstreden son bakiyeyi hesapla ve müşteri bakiyesine yansıt
+        double finalBalance = 0.0;
+        for (var entry in entries) {
+          final transaction = entry['data'];
+          final isInvoice = entry['type'] == 'invoice';
+          final isPayment = entry['type'] == 'payment';
+          final isPaymentTransaction = entry['type'] == 'payment_transaction';
+          final isOpeningBalance = entry['type'] == 'opening_balance';
+
+          double debit = 0.0;
+          double credit = 0.0;
+
+          if (isOpeningBalance) {
+            final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+            if (openingBalance > 0) {
+              credit = openingBalance;
+            } else if (openingBalance < 0) {
+              debit = openingBalance.abs();
+            }
+          } else if (isInvoice) {
+            final totalAmount = (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            debit = totalAmount;
+          } else if (isPayment) {
+            final amount = (transaction as CashTransaction).amount;
+            credit = amount;
+          } else if (isPaymentTransaction) {
+            final pt = transaction as PaymentTransaction;
+            if (pt.direction == PaymentDirection.incoming) {
+              credit = pt.amount;
+            } else {
+              debit = pt.amount;
+            }
+          }
+
+          finalBalance += credit - debit;
+        }
+
+        // Hesaplanan bakiyeyi müşteri entity'sine yansıt (sadece farklıysa)
+        if ((finalBalance - customer.balance).abs() > 0.01) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
+            try {
+              await ref.read(customerRepositoryProvider).updateCustomerBalance(
+                customer.id,
+                finalBalance,
+              );
+              // Müşteri listesini yenile
+              ref.invalidate(customersProvider);
+            } catch (e) {
+              debugPrint('Bakiye güncellenirken hata: $e');
+            }
+          });
+        }
 
         // Gösterilecek işlemleri limitle
         final displayedEntries = entries.take(_transactionLimit).toList();

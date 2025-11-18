@@ -949,64 +949,64 @@ class _WarehouseDetailPageState extends ConsumerState<WarehouseDetailPage>
                   final colorScheme = theme.colorScheme;
                   
                   return Container(
-                    margin: const EdgeInsets.all(16),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
                       color: isDark 
                           ? colorScheme.surfaceContainerHighest 
                           : colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
                           color: isDark 
                               ? Colors.black.withValues(alpha: 0.3)
                               : Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                       border: Border.all(
                         color: colorScheme.outlineVariant,
                         width: 1,
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Depo İşlemleri',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Depo İşlemleri',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                             color: colorScheme.onSurface,
-                          ),
-                        ),
-                    const SizedBox(height: 16),
-                        _buildActionButton(
-                          'Ürün Getir',
-                          'Başka depodan ürün getir',
-                          Icons.input,
-                          colorScheme.primary,
-                          () => _transferProductToWarehouse(),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildActionButton(
-                          'Ürün Gönder',
-                          'Bu depodan başka depoya ürün gönder',
-                          Icons.output,
-                          colorScheme.tertiary,
-                          () => _transferProductFromWarehouse(),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildActionButton(
-                          'Stok Sayımı',
-                          'Depo stok sayımı yap',
-                          Icons.inventory,
-                          colorScheme.secondary,
-                          () => _performStockCount(),
-                        ),
-                      ],
+                      ),
                     ),
+                    const SizedBox(height: 16),
+                    _buildActionButton(
+                      'Ürün Getir',
+                      'Başka depodan ürün getir',
+                      Icons.input,
+                          colorScheme.primary,
+                      () => _transferProductToWarehouse(),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
+                      'Ürün Gönder',
+                      'Bu depodan başka depoya ürün gönder',
+                      Icons.output,
+                          colorScheme.tertiary,
+                      () => _transferProductFromWarehouse(),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildActionButton(
+                      'Stok Sayımı',
+                      'Depo stok sayımı yap',
+                      Icons.inventory,
+                          colorScheme.secondary,
+                      () => _performStockCount(),
+                    ),
+                  ],
+                ),
                   );
                 },
               ),

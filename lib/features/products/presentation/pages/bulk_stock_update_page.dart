@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/entities/product.dart';
 import '../providers/product_providers.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/loading_widget.dart';
+import '../../../../core/widgets/lifecycle_mixin.dart';
 
 /// Toplu Stok Güncelleme Sayfası
 class BulkStockUpdatePage extends ConsumerStatefulWidget {
@@ -21,7 +23,8 @@ class BulkStockUpdatePage extends ConsumerStatefulWidget {
       _BulkStockUpdatePageState();
 }
 
-class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
+class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage>
+    with ConsumerLifecycleMixin {
   final Map<String, TextEditingController> _stockControllers = {};
   final Map<String, bool> _selectedProducts = {};
   final TextEditingController _searchController = TextEditingController();
@@ -40,15 +43,29 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!mounted) {
+      return const SizedBox.shrink();
+    }
+
     final productsAsync = widget.warehouseId != null
         ? ref.watch(productsByWarehouseStreamProvider(widget.warehouseId!))
         : ref.watch(productsStreamProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (!mounted) {
+      return const SizedBox.shrink();
+    }
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       appBar: CustomAppBar(
         title: 'Toplu Stok Güncelleme',
         showBackButton: true,
         showDrawer: false,
+        onBackPressed: () {
+          GoRouter.of(context).go('/products');
+        },
         actions: [
           if (_selectedProducts.values.any((selected) => selected))
             IconButton(
@@ -63,62 +80,128 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
           _buildSearchAndSelectAll(),
           _buildSelectedCount(),
           Expanded(
-            child: productsAsync.when(
-              data: (products) {
-                var filteredProducts = products;
-
-                // Arama filtresi
-                if (_searchQuery.isNotEmpty) {
-                  filteredProducts = products.where((product) {
-                    return product.name
-                            .toLowerCase()
-                            .contains(_searchQuery.toLowerCase()) ||
-                        (product.productCode
-                                ?.toLowerCase()
-                                .contains(_searchQuery.toLowerCase()) ??
-                            false) ||
-                        (product.barcode?.contains(_searchQuery) ?? false);
-                  }).toList();
+            child: Builder(
+              builder: (context) {
+                if (!mounted) {
+                  return const SizedBox.shrink();
                 }
 
-                if (filteredProducts.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'Ürün bulunamadı',
-                      style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
+                try {
+                  return productsAsync.when(
+                    data: (products) {
+                      if (!mounted) {
+                        return const SizedBox.shrink();
+                      }
+
+                      try {
+                        var filteredProducts = products;
+
+                        // Arama filtresi
+                        if (_searchQuery.isNotEmpty) {
+                          filteredProducts = products.where((product) {
+                            return product.name
+                                    .toLowerCase()
+                                    .contains(_searchQuery.toLowerCase()) ||
+                                (product.productCode
+                                        ?.toLowerCase()
+                                        .contains(_searchQuery.toLowerCase()) ??
+                                    false) ||
+                                (product.barcode?.contains(_searchQuery) ?? false);
+                          }).toList();
+                        }
+
+                        if (filteredProducts.isEmpty) {
+                          if (!mounted) return const SizedBox.shrink();
+                          return Center(
+                            child: Text(
+                              'Ürün bulunamadı',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          );
+                        }
+
+                        if (!mounted) return const SizedBox.shrink();
+
+                        return ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filteredProducts.length,
+                          itemBuilder: (context, index) {
+                            if (!mounted) return const SizedBox.shrink();
+                            try {
+                              return _buildProductCard(filteredProducts[index]);
+                            } catch (e) {
+                              if (e.toString().contains('disposed') ||
+                                  e.toString().contains('EngineFlutterView')) {
+                                return const SizedBox.shrink();
+                              }
+                              rethrow;
+                            }
+                          },
+                        );
+                      } catch (e) {
+                        if (e.toString().contains('disposed') ||
+                            e.toString().contains('EngineFlutterView')) {
+                          return const SizedBox.shrink();
+                        }
+                        rethrow;
+                      }
+                    },
+                    loading: () {
+                      if (!mounted) return const SizedBox.shrink();
+                      try {
+                        return const LoadingWidget();
+                      } catch (e) {
+                        if (e.toString().contains('disposed') ||
+                            e.toString().contains('EngineFlutterView')) {
+                          return const SizedBox.shrink();
+                        }
+                        rethrow;
+                      }
+                    },
+                    error: (error, stack) {
+                      if (!mounted) return const SizedBox.shrink();
+                      try {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: colorScheme.error,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Hata: ${error.toString()}',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: colorScheme.error,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        );
+                      } catch (e) {
+                        if (e.toString().contains('disposed') ||
+                            e.toString().contains('EngineFlutterView')) {
+                          return const SizedBox.shrink();
+                        }
+                        rethrow;
+                      }
+                    },
                   );
+                } catch (e) {
+                  if (e.toString().contains('disposed') ||
+                      e.toString().contains('EngineFlutterView')) {
+                    return const SizedBox.shrink();
+                  }
+                  rethrow;
                 }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: filteredProducts.length,
-                  itemBuilder: (context, index) {
-                    return _buildProductCard(filteredProducts[index]);
-                  },
-                );
               },
-              loading: () => const LoadingWidget(),
-              error: (error, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Hata: ${error.toString()}',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        color: Colors.red[600],
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ],
@@ -127,12 +210,24 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
   }
 
   Widget _buildSearchAndSelectAll() {
+    if (!mounted) {
+      return const SizedBox.shrink();
+    }
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colorScheme.surface,
         border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!),
+          bottom: BorderSide(
+            color: isDark
+                ? colorScheme.outlineVariant
+                : colorScheme.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
       ),
       child: Column(
@@ -146,7 +241,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                   ? IconButton(
                       icon: const Icon(Icons.clear),
                       onPressed: () {
-                        setState(() {
+                        safeSetState(() {
                           _searchController.clear();
                           _searchQuery = '';
                         });
@@ -160,7 +255,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             onChanged: (value) {
-              setState(() {
+              safeSetState(() {
                 _searchQuery = value;
               });
             },
@@ -171,11 +266,12 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
               'Tümünü Seç',
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
               ),
             ),
             value: _selectAll,
             onChanged: (value) {
-              setState(() {
+              safeSetState(() {
                 _selectAll = value ?? false;
                 final productsAsync = widget.warehouseId != null
                     ? ref.read(
@@ -183,8 +279,12 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                     : ref.read(productsStreamProvider);
 
                 productsAsync.whenData((products) {
-                  for (var product in products) {
-                    _selectedProducts[product.id] = _selectAll;
+                  if (mounted) {
+                    safeSetState(() {
+                      for (var product in products) {
+                        _selectedProducts[product.id] = _selectAll;
+                      }
+                    });
                   }
                 });
               });
@@ -199,24 +299,35 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
   }
 
   Widget _buildSelectedCount() {
+    if (!mounted) {
+      return const SizedBox.shrink();
+    }
+
     final selectedCount =
         _selectedProducts.values.where((selected) => selected).length;
 
     if (selectedCount == 0) return const SizedBox.shrink();
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.blue[50],
+      color: colorScheme.primaryContainer,
       child: Row(
         children: [
-          Icon(Icons.check_circle, color: Colors.blue[700], size: 20),
+          Icon(
+            Icons.check_circle,
+            color: colorScheme.onPrimaryContainer,
+            size: 20,
+          ),
           const SizedBox(width: 8),
           Text(
             '$selectedCount ürün seçildi',
             style: GoogleFonts.poppins(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Colors.blue[700],
+              color: colorScheme.onPrimaryContainer,
             ),
           ),
         ],
@@ -225,6 +336,12 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
   }
 
   Widget _buildProductCard(Product product) {
+    if (!mounted) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     // Controller'ı oluştur veya al
     if (!_stockControllers.containsKey(product.id)) {
       _stockControllers[product.id] = TextEditingController(
@@ -235,15 +352,21 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
     // Seçim durumunu oluştur
     _selectedProducts.putIfAbsent(product.id, () => false);
 
+    final isSelected = _selectedProducts[product.id] ?? false;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
+      color: colorScheme.surface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color:
-              _selectedProducts[product.id]! ? Colors.blue : Colors.grey[200]!,
-          width: _selectedProducts[product.id]! ? 2 : 1,
+          color: isSelected
+              ? colorScheme.primary
+              : isDark
+                  ? colorScheme.outlineVariant
+                  : colorScheme.outlineVariant.withValues(alpha: 0.5),
+          width: isSelected ? 2 : 1,
         ),
       ),
       child: Padding(
@@ -256,7 +379,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                 Checkbox(
                   value: _selectedProducts[product.id],
                   onChanged: (value) {
-                    setState(() {
+                    safeSetState(() {
                       _selectedProducts[product.id] = value ?? false;
                       if (!value!) {
                         _selectAll = false;
@@ -273,6 +396,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                         style: GoogleFonts.poppins(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                       if (product.productCode != null) ...[
@@ -281,7 +405,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                           'Kod: ${product.productCode}',
                           style: GoogleFonts.poppins(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -297,7 +421,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                 style: GoogleFonts.poppins(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Colors.purple[700],
+                  color: colorScheme.tertiary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -307,19 +431,23 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                 final variantKey = '${product.id}_variant_$variantIndex';
 
                 if (!_stockControllers.containsKey(variantKey)) {
-                  _stockControllers[variantKey] = TextEditingController(
-                    text: variant.stockQuantity.toString(),
-                  );
+                  if (mounted) {
+                    _stockControllers[variantKey] = TextEditingController(
+                      text: variant.stockQuantity.toString(),
+                    );
+                  }
                 }
+
+                if (!mounted) return const SizedBox.shrink();
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.purple.withValues(alpha: 0.05),
+                    color: colorScheme.tertiaryContainer.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: Colors.purple.withValues(alpha: 0.2),
+                      color: colorScheme.tertiary.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -330,6 +458,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -394,7 +523,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
                     'Mevcut Stok: ${product.totalStockQuantity}',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const Spacer(),
@@ -453,6 +582,8 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
   }
 
   Future<void> _saveChanges() async {
+    if (!mounted) return;
+
     // Seçili ürünleri al
     final selectedProductIds = _selectedProducts.entries
         .where((entry) => entry.value)
@@ -460,6 +591,7 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
         .toList();
 
     if (selectedProductIds.isEmpty) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Lütfen en az bir ürün seçin'),
@@ -470,24 +602,40 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
     }
 
     // Onay dialogu göster
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: colorScheme.surface,
         title: Text(
           'Stok Güncelleme',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         content: Text(
           '${selectedProductIds.length} ürünün stoğu güncellenecek. Onaylıyor musunuz?',
-          style: GoogleFonts.poppins(),
+          style: GoogleFonts.poppins(
+            color: colorScheme.onSurface,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('İptal'),
+            child: Text(
+              'İptal',
+              style: TextStyle(color: colorScheme.onSurface),
+            ),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+            ),
             child: const Text('Onayla'),
           ),
         ],
@@ -496,19 +644,25 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
 
     if (confirmed != true || !mounted) return;
 
-    setState(() {
+    safeSetState(() {
       _isSaving = true;
     });
 
     try {
+      if (!mounted) return;
+
       final productsAsync = widget.warehouseId != null
           ? await ref.read(
               productsByWarehouseStreamProvider(widget.warehouseId!).future)
           : await ref.read(productsStreamProvider.future);
 
+      if (!mounted) return;
+
       int updatedCount = 0;
 
       for (var productId in selectedProductIds) {
+        if (!mounted) break;
+
         final product =
             productsAsync.firstWhere((p) => p.id == productId, orElse: () {
           throw Exception('Ürün bulunamadı: $productId');
@@ -543,35 +697,46 @@ class _BulkStockUpdatePageState extends ConsumerState<BulkStockUpdatePage> {
         updatedCount++;
       }
 
-      // İstatistikleri güncelle
+      if (!mounted) return;
+
+      // İstatistikleri ve ürün listesini güncelle
       ref.invalidate(productStatisticsProvider);
+      if (widget.warehouseId != null) {
+        ref.invalidate(productsByWarehouseStreamProvider(widget.warehouseId!));
+      } else {
+        ref.invalidate(productsStreamProvider);
+      }
 
       if (mounted) {
-        setState(() {
+        safeSetState(() {
           _isSaving = false;
           _selectedProducts.clear();
           _selectAll = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('$updatedCount ürün başarıyla güncellendi'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$updatedCount ürün başarıyla güncellendi'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       }
     } catch (error) {
       if (mounted) {
-        setState(() {
+        safeSetState(() {
           _isSaving = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Hata: $error'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Hata: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

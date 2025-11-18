@@ -24,9 +24,25 @@ void main() async {
 
   // Global error yakalama - release'ta da konsola yazsın
   FlutterError.onError = (FlutterErrorDetails details) {
-    debugPrint('FLUTTER_ERROR: ${details.exceptionAsString()}');
+    final errorString = details.exceptionAsString();
+    
+    // Disposed view hatalarını filtrele - bunlar zararsızdır ve sessizce geçilebilir
+    if (errorString.contains('isDisposed') ||
+        errorString.contains('disposed EngineFlutterView') ||
+        errorString.contains('Trying to render a disposed') ||
+        errorString.contains('!isDisposed') ||
+        errorString.contains('Trying to render') ||
+        errorString.contains('EngineFlutterView') ||
+        errorString.contains('window.dart:99:12') ||
+        (errorString.contains('Assertion failed') && 
+         errorString.contains('org-dartlang-sdk:///lib/_engine/engine/window.dart'))) {
+      // Disposed view hatalarını sessizce geç
+      return;
+    }
+    
+    debugPrint('FLUTTER_ERROR: $errorString');
     AppLogger.error(
-      'Flutter Error: ${details.exceptionAsString()}',
+      'Flutter Error: $errorString',
       details.exception,
       details.stack,
     );

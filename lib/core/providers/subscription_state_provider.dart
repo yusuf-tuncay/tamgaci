@@ -48,12 +48,25 @@ class SubscriptionState {
 /// Global abonelik durumu notifier'ı
 class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   final FirestoreSubscriptionService _subscriptionService;
+  StreamSubscription<DocumentSnapshot>? _userListener;
+  StreamSubscription<DocumentSnapshot>? _subscriptionUpdatesListener;
 
   SubscriptionStateNotifier(this._subscriptionService)
       : super(const SubscriptionState());
 
+  @override
+  void dispose() {
+    _userListener?.cancel();
+    _subscriptionUpdatesListener?.cancel();
+    _userListener = null;
+    _subscriptionUpdatesListener = null;
+    super.dispose();
+  }
+
   /// Kullanıcının abonelik durumunu kontrol et ve cache'le
   Future<void> checkUserSubscription(String userId) async {
+    if (!mounted) return; // StateNotifier dispose edilmişse işlem yapma
+    
     try {
       // Cache kontrolü - 2 dakika cache süresi
       if (state.lastChecked != null) {
@@ -65,11 +78,13 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         }
       }
 
+      if (!mounted) return;
       state = state.copyWith(isLoading: true, error: null);
 
       final result =
           await _subscriptionService.checkUserSubscriptionStatus(userId);
 
+      if (!mounted) return;
       state = state.copyWith(
         subscriptionResult: result,
         isLoading: false,
@@ -77,6 +92,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         error: null,
       );
     } catch (e) {
+      if (!mounted) return;
       debugPrint('❌ SubscriptionStateNotifier: Subscription check failed: $e');
 
       state = state.copyWith(
@@ -116,7 +132,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Real-time abonelik güncellemelerini dinle
   void listenToSubscriptionUpdates(String userId) {
     // Listener zaten başlatılmışsa tekrar başlatma
-    if (state.subscriptionResult != null && state.lastChecked != null) {
+    if (_userListener != null || _subscriptionUpdatesListener != null) {
       debugPrint(
           '🔔 SubscriptionStateNotifier: Listener already active for user: $userId');
       return;
@@ -125,12 +141,18 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
     debugPrint(
         '🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
 
+    // Önceki listener'ları temizle
+    _userListener?.cancel();
+    _subscriptionUpdatesListener?.cancel();
+
     // Kullanıcı verilerini dinle (asıl abonelik verisi burada)
-    FirebaseFirestore.instance
+    _userListener = FirebaseFirestore.instance
         .collection('users')
         .doc(userId)
         .snapshots()
         .listen((snapshot) {
+      if (!mounted) return; // StateNotifier dispose edilmişse işlem yapma
+      
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
 
@@ -142,6 +164,8 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
             data.containsKey('subscriptionPlan');
 
         if (hasSubscriptionFields) {
+          if (!mounted) return;
+          
           debugPrint(
               '🔔 SubscriptionStateNotifier: User data updated for user: $userId');
           debugPrint(
@@ -156,19 +180,24 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         }
       }
     }, onError: (error) {
+      if (!mounted) return;
       debugPrint(
           '❌ SubscriptionStateNotifier: Users collection listener error: $error');
     });
 
     // Ek olarak subscription_updates collection'ını da dinle
-    FirebaseFirestore.instance
+    _subscriptionUpdatesListener = FirebaseFirestore.instance
         .collection('subscription_updates')
         .doc(userId)
         .snapshots()
         .listen((snapshot) {
+      if (!mounted) return; // StateNotifier dispose edilmişse işlem yapma
+      
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         if (data['status'] == 'updated') {
+          if (!mounted) return;
+          
           // Sadece gerçek güncellemelerde logla
           debugPrint(
               '🔔 SubscriptionStateNotifier: Real-time update received for user: $userId');
@@ -181,6 +210,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         }
       }
     }, onError: (error) {
+      if (!mounted) return;
       debugPrint(
           '❌ SubscriptionStateNotifier: Subscription updates listener error: $error');
     });
@@ -189,6 +219,15 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
     // Real-time listener'lar zaten tüm değişiklikleri yakalıyor
     debugPrint(
         '🔔 SubscriptionStateNotifier: Using only real-time listeners (no periodic timer)');
+  }
+
+  /// Listener'ları durdur
+  void stopListeners() {
+    debugPrint('🔔 SubscriptionStateNotifier: Stopping all listeners');
+    _userListener?.cancel();
+    _subscriptionUpdatesListener?.cancel();
+    _userListener = null;
+    _subscriptionUpdatesListener = null;
   }
 }
 

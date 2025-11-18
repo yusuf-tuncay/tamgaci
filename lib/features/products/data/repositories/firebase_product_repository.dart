@@ -280,7 +280,7 @@ class FirebaseProductRepository implements ProductRepository {
           .collection('products')
           .doc(id)
           .update({
-        'criticalStockQuantity': quantity,
+        'stockQuantity': quantity,
         'updatedAt': FieldValue.serverTimestamp(),
         'updatedBy': _uid(),
       });
