@@ -6,6 +6,7 @@ import '../../../payment_collection/presentation/providers/payment_collection_pr
 import '../../data/repositories/firebase_account_transaction_repository.dart';
 import '../../domain/entities/account_transaction.dart';
 import '../../domain/repositories/account_transaction_repository.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 const _portfolioKeySeparator = '::';
 
@@ -29,6 +30,7 @@ String buildAccountPortfolioKey({
 /// Account Transaction Repository Provider
 final accountTransactionRepositoryProvider =
     Provider<AccountTransactionRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseAccountTransactionRepository();
 });
 

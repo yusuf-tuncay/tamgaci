@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../domain/entities/warehouse.dart';
 import '../providers/warehouse_providers.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
+import '../../../../core/theme/constants.dart';
 
 /// Depo Oluşturma/Düzenleme Sayfası
 class CreateWarehousePage extends ConsumerStatefulWidget {
@@ -126,8 +128,14 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: isDark 
+          ? colorScheme.surface 
+          : Colors.grey[50],
       appBar: _buildAppBar(),
       body: AnimatedBuilder(
         animation: _animationController,
@@ -145,24 +153,16 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 1,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.black87, size: 24),
-        onPressed: () => Navigator.pop(context),
-      ),
-      title: Text(
-        widget.existingWarehouse != null ? 'Depo Düzenle' : 'Yeni Depo',
-        style: GoogleFonts.poppins(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Colors.black87,
-        ),
-      ),
+    return CustomAppBar(
+      showBackButton: true,
+      showDrawer: false,
       actions: [
         IconButton(
-          icon: const Icon(Icons.more_vert, color: Colors.black87, size: 24),
+          icon: Icon(
+            Icons.more_vert,
+            color: Theme.of(context).colorScheme.onSurface,
+            size: 24,
+          ),
           onPressed: _showMoreOptions,
           tooltip: 'Daha fazla seçenek',
         ),
@@ -178,6 +178,8 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            _buildHeaderCard(),
+            const SizedBox(height: 20),
             _buildBasicInfoCard(),
             const SizedBox(height: 16),
             _buildLocationInfoCard(),
@@ -196,15 +198,92 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
     );
   }
 
-  Widget _buildBasicInfoCard() {
+  Widget _buildHeaderCard() {
+    final isEditing = widget.existingWarehouse != null;
+    
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            TamgaciConstants.primaryColor.withValues(alpha: 0.8),
+          ],
+        ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.warehouse,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isEditing ? 'Depo Düzenle' : 'Yeni Depo',
+                  style: GoogleFonts.poppins(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isEditing
+                      ? 'Depo bilgilerini güncelleyin'
+                      : 'Yeni bir depo oluşturun',
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBasicInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -213,14 +292,79 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Temel Bilgiler',
-            style: GoogleFonts.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Temel Bilgiler',
+                  style: GoogleFonts.poppins(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+              ),
+              if (widget.existingWarehouse?.isDefault == true)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.star,
+                        size: 16,
+                        color: colorScheme.onPrimaryContainer,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Varsayılan Depo',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
           ),
+          if (widget.existingWarehouse?.isDefault == true) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: colorScheme.primary.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Bu varsayılan depodur. Varsayılan depo silinemez ancak bilgileri düzenlenebilir.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           TextFormField(
             controller: _nameController,
@@ -306,7 +450,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
               'Depo aktif durumda',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
             value: _isActive,
@@ -322,14 +466,22 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   Widget _buildLocationInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -343,7 +495,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -430,14 +582,22 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   Widget _buildContactInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -451,7 +611,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -490,7 +650,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[700],
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
           const SizedBox(height: 12),
@@ -540,14 +700,22 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   Widget _buildCapacityInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -561,7 +729,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -601,14 +769,22 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   Widget _buildAdditionalInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -622,7 +798,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
             style: GoogleFonts.poppins(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -643,27 +819,31 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   Widget _buildSaveButton() {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _saveWarehouse,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6366F1),
-          foregroundColor: Colors.white,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           elevation: 4,
-          shadowColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
+          shadowColor: colorScheme.primary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    colorScheme.onPrimary,
+                  ),
                 ),
               )
             : Row(
@@ -685,8 +865,15 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
   }
 
   void _showMoreOptions() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     showModalBottomSheet(
       context: context,
+      backgroundColor: isDark 
+          ? colorScheme.surfaceContainerHighest 
+          : colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -837,7 +1024,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
                   : 'Depo başarıyla oluşturuldu',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.green[600],
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -849,7 +1036,7 @@ class _CreateWarehousePageState extends ConsumerState<CreateWarehousePage>
               'Hata: $e',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

@@ -971,12 +971,20 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
       },
       child: ListView.builder(
         controller: _scrollController,
-        padding: TamgaciConstants.paddingMedium(context),
+        padding: EdgeInsets.only(
+          left: TamgaciConstants.paddingMedium(context).left,
+          right: TamgaciConstants.paddingMedium(context).right,
+          top: TamgaciConstants.paddingMedium(context).top,
+          bottom: 0,
+        ),
         itemCount: filteredExpenses.length,
         itemBuilder: (context, index) {
           final expense = filteredExpenses[index];
+          final isLastItem = index == filteredExpenses.length - 1;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(
+              bottom: isLastItem ? 16 : 12,
+            ),
             child: _buildExpenseRow(expense, isDark),
           );
         },

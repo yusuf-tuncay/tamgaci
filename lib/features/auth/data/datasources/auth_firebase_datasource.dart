@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:tamgaci/features/auth/data/models/user_model.dart';
 import 'package:tamgaci/features/auth/domain/entities/user.dart';
 import 'package:tamgaci/core/errors/failures.dart';
+import 'package:tamgaci/features/accounts/data/services/account_initialization_service.dart';
 
 /// Auth Firebase datasource
 /// Firebase Authentication ve Firestore işlemleri için datasource
@@ -196,6 +197,15 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
           'updatedAt': FieldValue.serverTimestamp(),
           'isActive': true,
         });
+
+        // Varsayılan hesapları oluştur (best-effort, hata olsa bile kayıt devam eder)
+        try {
+          final accountService = AccountInitializationService();
+          await accountService.initializeDefaultAccounts();
+          debugPrint('✅ Varsayılan hesaplar oluşturuldu');
+        } catch (e) {
+          debugPrint('⚠️ Varsayılan hesaplar oluşturulamadı (kayıt devam ediyor): $e');
+        }
       } on FirebaseException catch (_) {
         // Firestore izni yoksa kayıt Auth tarafında tamamlanmıştır.
       }
@@ -341,6 +351,15 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         'updatedAt': FieldValue.serverTimestamp(),
         'isActive': true,
       });
+
+      // Varsayılan hesapları oluştur (best-effort, hata olsa bile işlem devam eder)
+      try {
+        final accountService = AccountInitializationService();
+        await accountService.initializeDefaultAccounts();
+        debugPrint('✅ Varsayılan hesaplar oluşturuldu');
+      } catch (e) {
+        debugPrint('⚠️ Varsayılan hesaplar oluşturulamadı: $e');
+      }
     } catch (e) {
       debugPrint('⚠️ Failed to create missing user document: $e');
     }

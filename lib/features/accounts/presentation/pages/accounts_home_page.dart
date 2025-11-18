@@ -14,6 +14,18 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../core/services/firebase/firebase_auth_service.dart';
 import '../../../../core/theme/constants.dart';
 
+/// Özel hesap grupları için enum
+enum SpecialAccountGroup {
+  pos('POS', '💳'),
+  check('Çek', '📝'),
+  promissory('Senet', '📄'),
+  other('Diğer', '📋');
+
+  const SpecialAccountGroup(this.displayName, this.icon);
+  final String displayName;
+  final String icon;
+}
+
 /// Hesaplar Ana Sayfası - Premium Tasarım
 class AccountsHomePage extends ConsumerStatefulWidget {
   const AccountsHomePage({super.key});
@@ -729,6 +741,9 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
             return _buildEmptyState();
           }
 
+          // Hesapları kategorilere göre grupla
+          final groupedAccounts = _groupAccountsByType(filteredAccounts);
+
           return Column(
             children: [
               Padding(
@@ -757,23 +772,8 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
                   ],
                 ),
               ),
-              ...filteredAccounts.map(
-                (account) => AnimatedBuilder(
-                  animation: _fadeAnimation,
-                  builder: (context, child) {
-                    return FadeTransition(
-                      opacity: _fadeAnimation,
-                      child: SlideTransition(
-                        position: _slideAnimation,
-                        child: AccountCard(
-                          account: account,
-                          onTap: () => _navigateToAccountDetail(account),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              // Kategorilere göre gruplanmış hesapları göster
+              ..._buildGroupedAccounts(groupedAccounts),
               const SizedBox(height: 100), // FAB için boşluk
             ],
           );
@@ -813,6 +813,187 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
 
       return true;
     }).toList();
+  }
+
+  /// POS hesabı mı?
+  bool _isPosAccount(Account account) {
+    final normalized = account.name.toLowerCase();
+    return normalized.contains('pos') ||
+        normalized.contains('point of sale') ||
+        account.accountNumber.toUpperCase().contains('POS');
+  }
+
+  /// Hesapları kategorilere göre grupla
+  Map<String, List<Account>> _groupAccountsByType(List<Account> accounts) {
+    final Map<String, List<Account>> grouped = {};
+
+    for (final account in accounts) {
+      // "Diğer" kategorisindeki hesapları özel gruplara ayır
+      if (account.type == AccountType.other) {
+        if (account.isCheckAccount) {
+          _addToGroup(grouped, 'check', account);
+        } else if (account.isPromissoryAccount) {
+          _addToGroup(grouped, 'promissory', account);
+        } else if (_isPosAccount(account)) {
+          _addToGroup(grouped, 'pos', account);
+        } else {
+          _addToGroup(grouped, 'other', account);
+        }
+      } else {
+        // Diğer kategorileri normal şekilde grupla
+        _addToGroup(grouped, account.type.name, account);
+      }
+    }
+
+    // Her kategori içindeki hesapları isme göre sırala
+    for (final key in grouped.keys) {
+      grouped[key]!.sort((a, b) => a.name.compareTo(b.name));
+    }
+
+    return grouped;
+  }
+
+  /// Gruba hesap ekle
+  void _addToGroup(
+      Map<String, List<Account>> grouped, String key, Account account) {
+    if (!grouped.containsKey(key)) {
+      grouped[key] = [];
+    }
+    grouped[key]!.add(account);
+  }
+
+  /// Gruplanmış hesapları öncelik sırasına göre göster
+  List<Widget> _buildGroupedAccounts(
+      Map<String, List<Account>> groupedAccounts) {
+    final List<Widget> widgets = [];
+
+    // Kategori sıralaması
+    final categoryOrder = [
+      'cash',
+      'checking',
+      'savings',
+      'creditCard',
+      'credit',
+      'investment',
+      'foreign',
+      'pos', // POS ayrı grup
+      'check', // Çek ayrı grup
+      'promissory', // Senet ayrı grup
+      'other', // Diğer (geri kalan)
+    ];
+
+    // Öncelik sırasına göre ekle
+    for (final categoryKey in categoryOrder) {
+      if (groupedAccounts.containsKey(categoryKey)) {
+        widgets.add(
+            _buildAccountGroup(categoryKey, groupedAccounts[categoryKey]!));
+      }
+    }
+
+    // Öncelik listesinde olmayan kategorileri sona ekle
+    for (final entry in groupedAccounts.entries) {
+      if (!categoryOrder.contains(entry.key)) {
+        widgets.add(_buildAccountGroup(entry.key, entry.value));
+      }
+    }
+
+    return widgets;
+  }
+
+  /// Kategori başlığı ve hesapları göster
+  Widget _buildAccountGroup(String groupKey, List<Account> accounts) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
+    // Grup bilgilerini al
+    String displayName;
+    String icon;
+
+    if (groupKey == 'pos') {
+      displayName = SpecialAccountGroup.pos.displayName;
+      icon = SpecialAccountGroup.pos.icon;
+    } else if (groupKey == 'check') {
+      displayName = SpecialAccountGroup.check.displayName;
+      icon = SpecialAccountGroup.check.icon;
+    } else if (groupKey == 'promissory') {
+      displayName = SpecialAccountGroup.promissory.displayName;
+      icon = SpecialAccountGroup.promissory.icon;
+    } else if (groupKey == 'other') {
+      displayName = SpecialAccountGroup.other.displayName;
+      icon = SpecialAccountGroup.other.icon;
+    } else {
+      // Normal AccountType için
+      try {
+        final type = AccountType.values.firstWhere((e) => e.name == groupKey);
+        displayName = type.displayName;
+        icon = type.icon;
+      } catch (e) {
+        displayName = 'Diğer';
+        icon = '📋';
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Kategori başlığı
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Text(
+                icon,
+                style: const TextStyle(fontSize: 20),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                displayName,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${accounts.length}',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Kategori içindeki hesaplar
+        ...accounts.map(
+          (account) => AnimatedBuilder(
+            animation: _fadeAnimation,
+            builder: (context, child) {
+              return FadeTransition(
+                opacity: _fadeAnimation,
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: AccountCard(
+                    account: account,
+                    onTap: () => _navigateToAccountDetail(account),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8), // Kategoriler arası boşluk
+      ],
+    );
   }
 
   Widget _buildEmptyState() {

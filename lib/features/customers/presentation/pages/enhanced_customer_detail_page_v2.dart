@@ -1749,6 +1749,13 @@ class _EnhancedCustomerDetailPageV2State
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
 
+    // Mobil için kompakt görünüm, masaüstü için tablo
+    final isMobile = TamgaciConstants.isMobile(context);
+    
+    if (isMobile) {
+      return _buildMobileStatementList(entries, isDark);
+    }
+
     double runningBalance = 0.0;
 
     return !mounted
@@ -1835,6 +1842,7 @@ class _EnhancedCustomerDetailPageV2State
                 final isInvoice = entry['type'] == 'invoice';
                 final isPayment = entry['type'] == 'payment';
                 final isPaymentTransaction = entry['type'] == 'payment_transaction';
+                final isOpeningBalance = entry['type'] == 'opening_balance';
 
                 // İşlem adı ve açıklama
                 String transactionName = '';
@@ -1843,7 +1851,20 @@ class _EnhancedCustomerDetailPageV2State
                 double credit = 0.0;
                 String currency = 'TRY';
 
-                if (isInvoice) {
+                if (isOpeningBalance) {
+                  // Açılış bakiyesi işlemi
+                  transactionName = 'Açılış Bakiyesi';
+                  description = 'Müşteri kayıt açılış bakiyesi';
+                  final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+                  currency = transaction['currency'] ?? 'TRY';
+                  
+                  // Açılış bakiyesi pozitifse alacak, negatifse borç
+                  if (openingBalance > 0) {
+                    credit = openingBalance;
+                  } else if (openingBalance < 0) {
+                    debit = openingBalance.abs();
+                  }
+                } else if (isInvoice) {
                   // Fatura işlemi
                   transactionName = 'Fatura';
                   description = transaction['saleNumber'] ??
@@ -1988,6 +2009,253 @@ class _EnhancedCustomerDetailPageV2State
               }).toList(),
             ),
           );
+  }
+
+  // Mobil için kompakt hesap ekstresi listesi
+  Widget _buildMobileStatementList(
+      List<Map<String, dynamic>> entries, bool isDark) {
+    if (!mounted) return const SizedBox.shrink();
+
+    double runningBalance = 0.0;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: entries.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        if (!mounted) return const SizedBox.shrink();
+
+        final entry = entries[index];
+        final transaction = entry['data'];
+        final date = entry['date'] as DateTime? ?? DateTime.now();
+        final isInvoice = entry['type'] == 'invoice';
+        final isPayment = entry['type'] == 'payment';
+        final isPaymentTransaction = entry['type'] == 'payment_transaction';
+        final isOpeningBalance = entry['type'] == 'opening_balance';
+
+        // İşlem adı ve açıklama
+        String transactionName = '';
+        String description = '';
+        double debit = 0.0;
+        double credit = 0.0;
+        String currency = 'TRY';
+
+        if (isOpeningBalance) {
+          transactionName = 'Açılış Bakiyesi';
+          description = 'Müşteri kayıt açılış bakiyesi';
+          final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+          currency = transaction['currency'] ?? 'TRY';
+          if (openingBalance > 0) {
+            credit = openingBalance;
+          } else if (openingBalance < 0) {
+            debit = openingBalance.abs();
+          }
+        } else if (isInvoice) {
+          transactionName = 'Fatura';
+          description = transaction['saleNumber'] ??
+              transaction['invoiceNumber'] ??
+              'N/A';
+          final totalAmount =
+              (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          currency = transaction['currencyCode'] ?? 'TRY';
+          debit = totalAmount;
+        } else if (isPayment) {
+          transactionName = 'Ödeme';
+          description = transaction.description ?? 'Ödeme';
+          final amount = transaction.amount ?? 0.0;
+          currency = transaction.currency ?? 'TRY';
+          credit = amount;
+        } else if (isPaymentTransaction) {
+          final pt = transaction as PaymentTransaction;
+          switch (pt.type) {
+            case PaymentTransactionType.cash:
+              transactionName = 'Nakit';
+              break;
+            case PaymentTransactionType.check:
+              transactionName = 'Çek';
+              break;
+            case PaymentTransactionType.promissoryNote:
+              transactionName = 'Senet';
+              break;
+            case PaymentTransactionType.eftTransfer:
+              transactionName = 'Havale/EFT';
+              break;
+            case PaymentTransactionType.creditCard:
+              transactionName = 'Kredi Kartı';
+              break;
+            case PaymentTransactionType.debtReceipt:
+              transactionName = 'Borç Fişi';
+              break;
+            case PaymentTransactionType.creditReceipt:
+              transactionName = 'Alacak Fişi';
+              break;
+            case PaymentTransactionType.accountTransfer:
+              transactionName = 'Cari Virman';
+              break;
+          }
+          description = '${pt.transactionNumber} - ${pt.description ?? ""}';
+          final amount = pt.amount;
+          currency = pt.currency;
+          if (pt.direction == PaymentDirection.incoming) {
+            credit = amount;
+          } else {
+            debit = amount;
+          }
+        } else {
+          transactionName = _getTransactionTypeText(transaction.type);
+          description = transaction.description ?? '';
+          final amount = transaction.amount ?? 0.0;
+          currency = transaction.currency ?? 'TRY';
+          if (transaction.type.toString().contains('sale') ||
+              transaction.type.toString().contains('purchase')) {
+            debit = amount;
+          } else {
+            credit = amount;
+          }
+        }
+
+        // Bakiye hesaplama
+        runningBalance += credit - debit;
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isDark
+                ? colorScheme.surfaceContainerHighest
+                : colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.3),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Üst satır: Tarih ve İşlem Adı
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      transactionName,
+                      style: GoogleFonts.poppins(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    DateFormat('dd.MM.yyyy').format(date),
+                    style: GoogleFonts.poppins(
+                      fontSize: 11,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              // Açıklama
+              if (description.isNotEmpty)
+                Text(
+                  description,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              const SizedBox(height: 8),
+              // Alt satır: Borç, Alacak ve Bakiye
+              Row(
+                children: [
+                  // Borç
+                  if (debit > 0) ...[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Borç',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            CurrencyHelper.formatCurrency(debit, currency),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // Alacak
+                  if (credit > 0) ...[
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Alacak',
+                            style: GoogleFonts.poppins(
+                              fontSize: 10,
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            CurrencyHelper.formatCurrency(credit, currency),
+                            style: GoogleFonts.poppins(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  // Bakiye (her zaman göster)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Bakiye',
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          CurrencyHelper.formatCurrency(runningBalance, currency),
+                          style: GoogleFonts.poppins(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: runningBalance >= 0 ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   // Purchase tile widget
@@ -3032,7 +3300,23 @@ class _EnhancedCustomerDetailPageV2State
           orElse: () => <PaymentTransaction>[],
         );
         
-        final entries = <Map<String, dynamic>>[
+        final entries = <Map<String, dynamic>>[];
+        
+        // Açılış bakiyesi varsa ekle (en eski tarihli işlem olarak)
+        if (customer.openingBalance != null && customer.openingBalance != 0) {
+          final openingBalanceDate = customer.createdAt.subtract(const Duration(days: 1));
+          entries.add({
+            'type': 'opening_balance',
+            'date': openingBalanceDate,
+            'data': {
+              'openingBalance': customer.openingBalance,
+              'currency': customer.customerCurrency ?? 'TRY',
+            },
+          });
+        }
+        
+        // Diğer işlemleri ekle
+        entries.addAll([
           ...invoices.map((i) => {
                 'type': 'invoice',
                 'date': i['invoiceDate'] ?? DateTime.now(),
@@ -3048,13 +3332,16 @@ class _EnhancedCustomerDetailPageV2State
                 'date': pt.transactionDate,
                 'data': pt,
               }),
-        ]..sort((a, b) {
+        ]);
+        
+        // Tarihe göre sırala (en eski en üstte)
+        entries.sort((a, b) {
             final dateA = a['date'] as DateTime?;
             final dateB = b['date'] as DateTime?;
             if (dateA == null && dateB == null) return 0;
             if (dateA == null) return 1;
             if (dateB == null) return -1;
-            return dateA.compareTo(dateB); // En son en altta (kronolojik sıra)
+            return dateA.compareTo(dateB); // En eski en üstte (kronolojik sıra)
           });
 
         // Gösterilecek işlemleri limitle
@@ -3194,13 +3481,23 @@ class _EnhancedCustomerDetailPageV2State
         final isInvoice = entry['type'] == 'invoice';
         final isPayment = entry['type'] == 'payment';
         final isPaymentTransaction = entry['type'] == 'payment_transaction';
+        final isOpeningBalance = entry['type'] == 'opening_balance';
 
         String transactionName = '';
         String description = '';
         double debit = 0.0;
         double credit = 0.0;
 
-        if (isInvoice) {
+        if (isOpeningBalance) {
+          transactionName = 'Açılış Bakiyesi';
+          description = 'Müşteri kayıt açılış bakiyesi';
+          final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+          if (openingBalance > 0) {
+            credit = openingBalance;
+          } else if (openingBalance < 0) {
+            debit = openingBalance.abs();
+          }
+        } else if (isInvoice) {
           transactionName = 'Fatura';
           description = transaction['saleNumber'] ??
               transaction['invoiceNumber'] ??
@@ -3383,13 +3680,23 @@ class _EnhancedCustomerDetailPageV2State
         final isInvoice = entry['type'] == 'invoice';
         final isPayment = entry['type'] == 'payment';
         final isPaymentTransaction = entry['type'] == 'payment_transaction';
+        final isOpeningBalance = entry['type'] == 'opening_balance';
 
         String transactionName = '';
         String description = '';
         double debit = 0.0;
         double credit = 0.0;
 
-        if (isInvoice) {
+        if (isOpeningBalance) {
+          transactionName = 'Açılış Bakiyesi';
+          description = 'Müşteri kayıt açılış bakiyesi';
+          final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+          if (openingBalance > 0) {
+            credit = openingBalance;
+          } else if (openingBalance < 0) {
+            debit = openingBalance.abs();
+          }
+        } else if (isInvoice) {
           transactionName = 'Fatura';
           description = transaction['saleNumber'] ??
               transaction['invoiceNumber'] ??

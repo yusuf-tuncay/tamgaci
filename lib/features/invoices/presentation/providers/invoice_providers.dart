@@ -11,6 +11,7 @@ import 'package:tamgaci/features/invoices/data/repositories/invoice_firebase_rep
 import '../../domain/entities/invoice.dart';
 import '../../domain/entities/invoice_item.dart';
 import '../../data/models/invoice_status.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 const List<Invoice> _mockInvoices = [];
 
@@ -18,6 +19,7 @@ const List<Invoice> _mockInvoices = [];
 
 /// Invoice repository provider - Firebase implementation (no mocks)
 final invoiceRepositoryProvider = Provider<InvoiceRepository>((ref) {
+  ref.watch(authProvider);
   return InvoiceFirebaseRepository();
 });
 

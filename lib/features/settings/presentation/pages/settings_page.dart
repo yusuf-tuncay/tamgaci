@@ -17,6 +17,8 @@ import '../../../../l10n/generated/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/constants.dart';
 import '../../../company/presentation/pages/company_settings_page.dart';
+import '../../../products/domain/entities/product.dart';
+import '../../../products/presentation/providers/product_providers.dart';
 
 /// Ayarlar Sayfası
 class SettingsPage extends ConsumerStatefulWidget {
@@ -51,12 +53,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               icon: Icons.business,
               description: "Firma adı, vergi bilgileri, adres ve iletişim",
               isDark: isDark,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const CompanySettingsPage(),
-                ),
-              ),
+              onTap: () => _showCompanyInfoSheet(context, isDark),
             ),
             const SizedBox(height: 16),
 
@@ -111,7 +108,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               icon: Icons.style_outlined,
               description: "Ürün varyantları ve özelliklerini yönetin",
               isDark: isDark,
-              onTap: () => context.goNamed('product-variants'),
+              onTap: () => _showProductVariantSheet(context, isDark),
             ),
             const SizedBox(height: 16),
 
@@ -260,6 +257,247 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  Widget _buildSheetHeader({
+    required BuildContext sheetContext,
+    required bool isDark,
+    required IconData icon,
+    required String title,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            color: Theme.of(context).colorScheme.primary,
+            size: 24,
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            onPressed: () => Navigator.pop(sheetContext),
+            icon: Icon(
+              Icons.close,
+              color: isDark ? Colors.white : Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVariantSheetEmptyState(
+      BuildContext sheetContext, BuildContext parentContext, bool isDark) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.layers_clear,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurface.withValues(
+                  alpha: isDark ? 0.7 : 0.5,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Henüz varyantlı ürün eklenmemiş',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Yeni varyantlar oluşturmak için detaylı görünüme geçebilirsiniz.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
+                ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.pop(sheetContext);
+              parentContext.goNamed('product-variants');
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Varyant Oluştur'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVariantStatsWrap({
+    required bool isDark,
+    required int productCount,
+    required int variantCount,
+    required int categoryCount,
+  }) {
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: [
+        _buildVariantStatChip(
+          label: 'Varyantlı Ürün',
+          value: productCount.toString(),
+          icon: Icons.inventory_2,
+          color: Colors.blue,
+          isDark: isDark,
+        ),
+        _buildVariantStatChip(
+          label: 'Toplam Varyant',
+          value: variantCount.toString(),
+          icon: Icons.category_outlined,
+          color: Colors.purple,
+          isDark: isDark,
+        ),
+        _buildVariantStatChip(
+          label: 'Kategori',
+          value: categoryCount.toString(),
+          icon: Icons.label_outline,
+          color: Colors.teal,
+          isDark: isDark,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildVariantStatChip({
+    required String label,
+    required String value,
+    required IconData icon,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Container(
+      width: 160,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.2 : 0.12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.7),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVariantQuickTile({
+    required Product product,
+    required bool isDark,
+  }) {
+    final variantCount = product.variants?.length ?? 0;
+    final badgeColor =
+        Theme.of(context).colorScheme.primary.withValues(alpha: 0.12);
+    final badgeTextColor = Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: isDark ? 0.3 : 0.6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: badgeColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.style,
+              color: badgeTextColor,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.name,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  product.category ?? 'Kategori belirtilmemiş',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.7),
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$variantCount adet',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              Text(
+                'Varyant',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSimpleLanguageSelector(bool isDark, AppLocalizations l10n) {
     final currentLocale = ref.watch(localeProvider);
     final localeNotifier = ref.read(localeProvider.notifier);
@@ -348,18 +586,24 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     required bool isDark,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final backgroundColor = isSelected
+        ? colorScheme.primary.withValues(alpha: 0.12)
+        : colorScheme.surfaceContainerHighest
+            .withValues(alpha: isDark ? 0.5 : 0.7);
+    final labelColor = isSelected ? colorScheme.primary : colorScheme.onSurface;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.blue.withValues(alpha: 0.1)
-              : (isDark ? Colors.grey[700] : Colors.grey[100]),
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? Colors.blue : Colors.transparent,
+            color: isSelected ? colorScheme.primary : Colors.transparent,
             width: 2,
           ),
         ),
@@ -367,9 +611,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           children: [
             Icon(
               icon,
-              color: isSelected
-                  ? Colors.blue
-                  : (isDark ? Colors.white : Colors.black),
+              color: labelColor,
               size: 20,
             ),
             const SizedBox(width: 12),
@@ -379,14 +621,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected
-                      ? Colors.blue
-                      : (isDark ? Colors.white : Colors.black),
+                  color: labelColor,
                 ),
               ),
             ),
             if (isSelected)
-              const Icon(Icons.check_circle, color: Colors.blue, size: 20),
+              Icon(Icons.check_circle, color: colorScheme.primary, size: 20),
           ],
         ),
       ),
@@ -458,7 +698,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           context.go('/settings/profile');
         }),
         const SizedBox(height: 8),
-        _buildActionButton("Firma Bilgilerini Düzenle", isDark, () {}),
+        _buildActionButton("Firma Bilgilerini Düzenle", isDark, () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => const CompanySettingsPage(),
+            ),
+          );
+        }),
         const SizedBox(height: 8),
         _buildSwitchSetting("Vergi Numarası Görünür", true, isDark, (value) {}),
         const SizedBox(height: 8),
@@ -1092,6 +1338,48 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   // Modal Fonksiyonları
+
+  void _showCompanyInfoSheet(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            _buildSheetHeader(
+              sheetContext: sheetContext,
+              isDark: isDark,
+              icon: Icons.business,
+              title: "Firma Bilgileri",
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildSimpleSection(
+                      title: "Hızlı Ayarlar",
+                      icon: Icons.tune,
+                      isDark: isDark,
+                      child: _buildCompanyInfoSettings(isDark),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showGeneralSettings(
       BuildContext context, bool isDark, AppLocalizations l10n) {
     showModalBottomSheet(
@@ -1312,6 +1600,126 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                       child: _buildDateTimeFormatSettings(isDark),
                     ),
                   ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showProductVariantSheet(BuildContext context, bool isDark) {
+    final parentContext = context;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[900] : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            _buildSheetHeader(
+              sheetContext: sheetContext,
+              isDark: isDark,
+              icon: Icons.style_outlined,
+              title: "Ürün Varyantları",
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Consumer(
+                  builder: (context, ref, _) {
+                    final productsAsync = ref.watch(productsStreamProvider);
+                    return productsAsync.when(
+                      data: (products) {
+                        final productsWithVariants = products
+                            .where((product) =>
+                                product.variants != null &&
+                                product.variants!.isNotEmpty)
+                            .toList();
+                        if (productsWithVariants.isEmpty) {
+                          return _buildVariantSheetEmptyState(
+                              sheetContext, parentContext, isDark);
+                        }
+                        final totalVariants = productsWithVariants.fold<int>(
+                          0,
+                          (sum, product) => sum + product.variants!.length,
+                        );
+                        final distinctCategories = productsWithVariants
+                            .map((e) => e.category ?? 'Diğer')
+                            .toSet()
+                            .length;
+                        final recentProducts =
+                            productsWithVariants.take(5).toList();
+                        return SingleChildScrollView(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _buildVariantStatsWrap(
+                                isDark: isDark,
+                                productCount: productsWithVariants.length,
+                                variantCount: totalVariants,
+                                categoryCount: distinctCategories,
+                              ),
+                              const SizedBox(height: 20),
+                              Text(
+                                "Son Varyantlı Ürünler",
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                    ),
+                              ),
+                              const SizedBox(height: 12),
+                              ...recentProducts.map(
+                                (product) => Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 6),
+                                  child: _buildVariantQuickTile(
+                                    product: product,
+                                    isDark: isDark,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              FilledButton.icon(
+                                onPressed: () {
+                                  Navigator.pop(sheetContext);
+                                  parentContext.goNamed('product-variants');
+                                },
+                                icon: const Icon(Icons.open_in_full),
+                                label: const Text("Detaylı Varyant Yönetimi"),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      loading: () => const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                      error: (error, stack) => Center(
+                        child: Text(
+                          'Varyantlar yüklenemedi: $error',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .error
+                                        .withValues(alpha: 0.9),
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

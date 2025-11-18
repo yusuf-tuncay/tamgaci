@@ -269,6 +269,24 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
     }
 
+    // Product Categories
+    match /tenants/{tenantId}/product_categories/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    // Product Brands
+    match /tenants/{tenantId}/product_brands/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) && 
+                       request.resource.data.createdBy == userId();
+      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
     // Users
     match /users/{uid} {
       allow read: if isSignedIn() && (uid == userId() || isAdmin());

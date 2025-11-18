@@ -10,10 +10,12 @@ import '../../domain/services/payment_collection_service.dart';
 import '../../data/repositories/simple_payment_transaction_repository.dart';
 import '../models/payment_collection_state.dart';
 import '../models/payment_transaction_form_model.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// PaymentTransactionRepository provider
 final paymentTransactionRepositoryProvider =
     Provider<PaymentTransactionRepository>((ref) {
+  ref.watch(authProvider);
   return SimplePaymentTransactionRepository();
 });
 

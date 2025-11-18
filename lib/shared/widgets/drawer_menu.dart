@@ -1460,8 +1460,10 @@ class _TamgaciDrawerMenuState extends ConsumerState<TamgaciDrawerMenu> {
                 }
               } catch (_) {}
               try {
+                await ref.read(authProvider.notifier).signOut();
+              } catch (_) {
                 await FirebaseAuthService.signOut();
-              } catch (_) {}
+              }
               if (mounted) {
                 context.goNamed('login');
               }

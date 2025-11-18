@@ -13,6 +13,7 @@ import 'package:tamgaci/features/sales/domain/usecases/delete_sale_usecase.dart'
 import 'package:tamgaci/features/sales/domain/usecases/get_sales_statistics_usecase.dart';
 import 'package:tamgaci/features/sales/domain/usecases/duplicate_sale_usecase.dart';
 import 'package:tamgaci/features/sales/presentation/notifiers/sale_notifier.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Firebase Firestore instance provider
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
@@ -32,6 +33,7 @@ final saleFirebaseDataSourceProvider = Provider<SaleFirebaseDataSource>((ref) {
 
 /// Sale Repository provider
 final saleRepositoryProvider = Provider<SaleRepositoryImpl>((ref) {
+  ref.watch(authProvider);
   final dataSource = ref.watch(saleFirebaseDataSourceProvider);
   return SaleRepositoryImpl(dataSource: dataSource);
 });

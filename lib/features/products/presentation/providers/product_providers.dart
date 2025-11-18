@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../data/repositories/firebase_product_repository.dart';
 import '../../data/repositories/firebase_price_list_repository.dart';
 import '../../data/repositories/firebase_tax_rule_repository.dart';
@@ -11,9 +13,11 @@ import '../../domain/repositories/product_attribute_repository.dart';
 import '../../domain/entities/price_list.dart';
 import '../../domain/entities/tax_rule.dart';
 import '../../domain/entities/product_attribute.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Ürün repository provider'ı - Firebase only
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseProductRepository();
 });
 
@@ -153,6 +157,178 @@ final productNotifierProvider =
 final productCategoriesStreamProvider = StreamProvider<List<String>>((ref) {
   final repository = ref.watch(productRepositoryProvider);
   return repository.getCategories();
+});
+
+/// Ürün kategorileri provider'ı (Firebase'den)
+final productCategoriesProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  try {
+    final fs = FirebaseFirestore.instance;
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+
+    if (user == null) {
+      return [];
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await fs.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      return [];
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      return [];
+    }
+
+    final snap = await fs
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('product_categories')
+        .where('isActive', isEqualTo: true)
+        .get();
+    
+    // İstemci tarafında sırala
+    final categories = snap.docs
+        .map((d) => d.data()['name'] as String)
+        .toList()
+      ..sort();
+
+    return categories;
+  } catch (e) {
+    return [];
+  }
+});
+
+/// Ürün markaları provider'ı (Firebase'den)
+final productBrandsProvider = FutureProvider.autoDispose<List<String>>((ref) async {
+  try {
+    final fs = FirebaseFirestore.instance;
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+
+    if (user == null) {
+      return [];
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await fs.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      return [];
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      return [];
+    }
+
+    final snap = await fs
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('product_brands')
+        .where('isActive', isEqualTo: true)
+        .get();
+    
+    // İstemci tarafında sırala
+    final brands = snap.docs
+        .map((d) => d.data()['name'] as String)
+        .toList()
+      ..sort();
+
+    return brands;
+  } catch (e) {
+    return [];
+  }
+});
+
+/// Yeni ürün kategorisi oluşturma provider'ı
+final createProductCategoryProvider = FutureProvider.autoDispose.family<String, String>((ref, name) async {
+  try {
+    final fs = FirebaseFirestore.instance;
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await fs.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      throw Exception('User document not found');
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      throw Exception('Tenant ID not found');
+    }
+
+    final now = DateTime.now();
+    final doc = await fs
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('product_categories')
+        .add({
+      'name': name,
+      'isActive': true,
+      'createdAt': Timestamp.fromDate(now),
+      'updatedAt': Timestamp.fromDate(now),
+      'createdBy': user.uid,
+      'updatedBy': user.uid,
+    });
+    return doc.id;
+  } catch (e) {
+    rethrow;
+  }
+});
+
+/// Yeni ürün markası oluşturma provider'ı
+final createProductBrandProvider = FutureProvider.autoDispose.family<String, String>((ref, name) async {
+  try {
+    final fs = FirebaseFirestore.instance;
+    final auth = FirebaseAuth.instance;
+    final user = auth.currentUser;
+
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    // Kullanıcının tenant ID'sini al
+    final userDoc = await fs.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
+      throw Exception('User document not found');
+    }
+
+    final userData = userDoc.data() as Map<String, dynamic>;
+    final tenantId = userData['tenantId'] as String?;
+
+    if (tenantId == null || tenantId.isEmpty) {
+      throw Exception('Tenant ID not found');
+    }
+
+    final now = DateTime.now();
+    final doc = await fs
+        .collection('tenants')
+        .doc(tenantId)
+        .collection('product_brands')
+        .add({
+      'name': name,
+      'isActive': true,
+      'createdAt': Timestamp.fromDate(now),
+      'updatedAt': Timestamp.fromDate(now),
+      'createdBy': user.uid,
+      'updatedBy': user.uid,
+    });
+    return doc.id;
+  } catch (e) {
+    rethrow;
+  }
 });
 
 /// Ürün arama provider'ı

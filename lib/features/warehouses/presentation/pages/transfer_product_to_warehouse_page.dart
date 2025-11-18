@@ -41,16 +41,18 @@ class _TransferProductToWarehousePageState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final warehousesAsync = ref.watch(warehousesProvider);
     final productsAsync = ref.watch(productsStreamProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -58,22 +60,25 @@ class _TransferProductToWarehousePageState
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: colorScheme.onSurface,
           ),
         ),
         actions: [
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                ),
               ),
             )
           else
             IconButton(
-              icon: const Icon(Icons.save, color: Colors.black87),
+              icon: Icon(Icons.save, color: colorScheme.onSurface),
               onPressed: _saveTransfer,
               tooltip: 'Kaydet',
             ),
@@ -179,18 +184,30 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildTransferInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,19 +217,19 @@ class _TransferProductToWarehousePageState
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.warehouse, color: Colors.blue[600], size: 20),
+              Icon(Icons.warehouse, color: colorScheme.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Hedef Depo: ${widget.targetWarehouse.name}',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -220,14 +237,14 @@ class _TransferProductToWarehousePageState
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.location_on, color: Colors.grey[600], size: 20),
+              Icon(Icons.location_on, color: colorScheme.onSurfaceVariant, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   widget.targetWarehouse.address,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -239,18 +256,30 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildFormCard(List<Warehouse> availableWarehouses, List<Product> products) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +289,7 @@ class _TransferProductToWarehousePageState
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -277,6 +306,9 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildWarehouseDropdown(List<Warehouse> warehouses) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,7 +317,7 @@ class _TransferProductToWarehousePageState
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -294,22 +326,22 @@ class _TransferProductToWarehousePageState
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6366F1)),
+              borderSide: BorderSide(color: colorScheme.primary),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: Text(
             'Kaynak depo seçin',
-            style: GoogleFonts.poppins(color: Colors.grey[500]),
+            style: GoogleFonts.poppins(color: colorScheme.onSurfaceVariant),
           ),
           items: warehouses.map((warehouse) {
             return DropdownMenuItem<Warehouse>(
@@ -337,6 +369,9 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildProductDropdown(List<Product> products) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -345,7 +380,7 @@ class _TransferProductToWarehousePageState
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -354,21 +389,21 @@ class _TransferProductToWarehousePageState
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF6366F1)),
+              borderSide: BorderSide(color: colorScheme.primary),
             ),
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: Text(
             'Ürün seçin',
-            style: GoogleFonts.poppins(color: Colors.grey[500]),
+            style: GoogleFonts.poppins(color: colorScheme.onSurfaceVariant),
           ),
           items: products.map((product) {
             return DropdownMenuItem<Product>(
@@ -380,6 +415,7 @@ class _TransferProductToWarehousePageState
                     product.name,
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w500,
+                      color: colorScheme.onSurface,
                     ),
                   ),
                   if (product.productCode != null)
@@ -387,7 +423,7 @@ class _TransferProductToWarehousePageState
                       'Kod: ${product.productCode}',
                       style: GoogleFonts.poppins(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                 ],
@@ -411,6 +447,9 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildQuantityField() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return TextFormField(
       controller: _quantityController,
       keyboardType: TextInputType.number,
@@ -418,15 +457,15 @@ class _TransferProductToWarehousePageState
         labelText: 'Miktar *',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF6366F1)),
+          borderSide: BorderSide(color: colorScheme.primary),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
@@ -444,6 +483,9 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildNotesField() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return TextFormField(
       controller: _notesController,
       maxLines: 3,
@@ -451,15 +493,15 @@ class _TransferProductToWarehousePageState
         labelText: 'Notlar',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF6366F1)),
+          borderSide: BorderSide(color: colorScheme.primary),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
@@ -467,27 +509,30 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildSaveButton() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _saveTransfer,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6366F1),
-          foregroundColor: Colors.white,
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
           elevation: 4,
-          shadowColor: const Color(0xFF6366F1).withValues(alpha: 0.3),
+          shadowColor: colorScheme.primary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onPrimary),
                 ),
               )
             : Row(
@@ -509,17 +554,20 @@ class _TransferProductToWarehousePageState
   }
 
   Widget _buildErrorState(Object error) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+          Icon(Icons.error_outline, size: 64, color: colorScheme.error),
           const SizedBox(height: 16),
           Text(
             'Hata: $error',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.red[600],
+              color: colorScheme.error,
             ),
             textAlign: TextAlign.center,
           ),
@@ -574,7 +622,7 @@ class _TransferProductToWarehousePageState
               'Transfer başarıyla oluşturuldu',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.green[600],
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
         Navigator.pop(context);
@@ -587,7 +635,7 @@ class _TransferProductToWarehousePageState
               'Transfer oluşturulamadı: $e',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

@@ -4,9 +4,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/product_movement.dart';
 import '../../data/repositories/firebase_product_movement_repository.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Ürün hareketleri repository provider'ı
-final productMovementRepositoryProvider = Provider<FirebaseProductMovementRepository>((ref) {
+final productMovementRepositoryProvider =
+    Provider<FirebaseProductMovementRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseProductMovementRepository();
 });
 

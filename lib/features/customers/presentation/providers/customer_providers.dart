@@ -6,6 +6,7 @@ import '../../domain/entities/customer_enums.dart';
 import '../../domain/entities/customer_category.dart';
 import '../../domain/repositories/customer_repository.dart';
 import '../../data/repositories/firebase_customer_repository.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -13,6 +14,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 /// Customer repository provider - Firebase only
 final customerRepositoryProvider = Provider<CustomerRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseCustomerRepository();
 });
 

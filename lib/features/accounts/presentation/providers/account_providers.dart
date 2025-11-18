@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/firebase_account_repository.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/repositories/account_repository.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Account Repository Provider
 final accountRepositoryProvider = Provider<AccountRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseAccountRepository();
 });
 

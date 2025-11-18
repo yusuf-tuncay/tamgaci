@@ -73,10 +73,6 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   final List<File> _selectedImages = [];
   final List<Uint8List> _selectedImageBytes = [];
 
-  // Dinamik kategori ve marka listeleri
-  final List<String> _customCategories = [];
-  final List<String> _customBrands = [];
-
   // Özel özellikler (Custom Attributes)
   final Map<String, String> _customAttributes = {};
 
@@ -210,30 +206,123 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   Future<void> _pickImages() async {
     try {
+      // Fotoğraf sınırları
+      const int maxImageCount = 10; // Maksimum fotoğraf sayısı
+      const int maxImageSizeMB = 5; // Maksimum fotoğraf boyutu (MB)
+      const int maxImageSizeBytes =
+          maxImageSizeMB * 1024 * 1024; // Byte'a çevir
+
+      // Mevcut fotoğraf sayısını kontrol et
+      final currentImageCount =
+          kIsWeb ? _selectedImageBytes.length : _selectedImages.length;
+
+      if (currentImageCount >= maxImageCount) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Maksimum $maxImageCount fotoğraf ekleyebilirsiniz. Lütfen mevcut fotoğraflardan bazılarını silin.',
+              ),
+              backgroundColor: Theme.of(context).colorScheme.error,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        return;
+      }
+
       final ImagePicker picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage();
 
       if (images.isNotEmpty && mounted) {
+        // Kalan fotoğraf kapasitesini hesapla
+        final remainingSlots = maxImageCount - currentImageCount;
+        final imagesToProcess = images.take(remainingSlots).toList();
+
+        if (images.length > remainingSlots) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Maksimum $maxImageCount fotoğraf ekleyebilirsiniz. Sadece ilk $remainingSlots fotoğraf eklendi.',
+                ),
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 3),
+              ),
+            );
+          }
+        }
+
         // Tüm işlemleri tek seferde yap
         if (kIsWeb) {
           final List<Uint8List> newBytes = [];
-          for (final image in images) {
+          final List<String> oversizedImages = [];
+
+          for (final image in imagesToProcess) {
             final bytes = await image.readAsBytes();
+
+            // Boyut kontrolü
+            if (bytes.length > maxImageSizeBytes) {
+              oversizedImages.add(image.name);
+              continue;
+            }
+
             newBytes.add(bytes);
           }
 
-          if (mounted) {
+          // Boyut aşımı uyarısı
+          if (oversizedImages.isNotEmpty && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${oversizedImages.length} fotoğraf ${maxImageSizeMB}MB\'dan büyük olduğu için eklenmedi: ${oversizedImages.take(3).join(", ")}${oversizedImages.length > 3 ? "..." : ""}',
+                ),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+
+          if (newBytes.isNotEmpty && mounted) {
             setState(() {
               _selectedImageBytes.addAll(newBytes);
             });
           }
         } else {
           final List<File> newFiles = [];
-          for (final image in images) {
-            newFiles.add(File(image.path));
+          final List<String> oversizedImages = [];
+
+          for (final image in imagesToProcess) {
+            final file = File(image.path);
+            final fileSize = await file.length();
+
+            // Boyut kontrolü
+            if (fileSize > maxImageSizeBytes) {
+              oversizedImages.add(image.name);
+              continue;
+            }
+
+            newFiles.add(file);
           }
 
-          if (mounted) {
+          // Boyut aşımı uyarısı
+          if (oversizedImages.isNotEmpty && mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${oversizedImages.length} fotoğraf ${maxImageSizeMB}MB\'dan büyük olduğu için eklenmedi: ${oversizedImages.take(3).join(", ")}${oversizedImages.length > 3 ? "..." : ""}',
+                ),
+                backgroundColor: Theme.of(context).colorScheme.error,
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 4),
+              ),
+            );
+          }
+
+          if (newFiles.isNotEmpty && mounted) {
             setState(() {
               _selectedImages.addAll(newFiles);
             });
@@ -242,6 +331,16 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
       }
     } catch (e) {
       debugPrint('Fotoğraf seçilirken hata: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Fotoğraf seçilirken bir hata oluştu: $e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -375,7 +474,9 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           ],
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
+        border: Border.all(
+            color:
+                Theme.of(context).colorScheme.outline.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
             color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
@@ -393,7 +494,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2),
+              color: Theme.of(context)
+                  .colorScheme
+                  .onPrimary
+                  .withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -425,7 +529,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       : 'Ürün bilgilerini doldurun ve depo seçin',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.9),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onPrimary
+                        .withValues(alpha: 0.9),
                   ),
                 ),
               ],
@@ -444,7 +551,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         color: Theme.of(context).colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: isDark ? 0.3 : 0.1),
+            color: Theme.of(context)
+                .colorScheme
+                .shadow
+                .withValues(alpha: isDark ? 0.3 : 0.1),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -934,6 +1044,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   Widget _buildStockSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1060,7 +1174,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                           : 'Stok miktarını girin',
                       prefixIcon: const Icon(Icons.inventory),
                       filled: _hasVariants,
-                      fillColor: _hasVariants ? Colors.grey[200] : null,
+                      fillColor: _hasVariants
+                          ? (isDark
+                              ? colorScheme.surfaceContainerHighest
+                              : Colors.grey[200])
+                          : null,
                     ),
                     keyboardType: TextInputType.number,
                     readOnly: _hasVariants, // Varyantlı ürünlerde sadece okunur
@@ -1113,6 +1231,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   Widget _buildImageSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1121,14 +1243,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.photo_library, color: Colors.blue[600]),
+                Icon(Icons.photo_library, color: colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Ürün Fotoğrafları',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -1139,20 +1261,52 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _pickImages,
+                onPressed: (kIsWeb
+                            ? _selectedImageBytes.length
+                            : _selectedImages.length) >=
+                        10
+                    ? null
+                    : _pickImages,
                 icon: const Icon(Icons.add_photo_alternate),
                 label: const Text('Fotoğraf Ekle'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[50],
-                  foregroundColor: Colors.blue[700],
+                  backgroundColor: isDark
+                      ? colorScheme.primaryContainer
+                      : colorScheme.primaryContainer.withValues(alpha: 0.1),
+                  foregroundColor: colorScheme.onPrimaryContainer,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: Colors.blue[200]!),
+                    side: BorderSide(
+                      color: isDark
+                          ? colorScheme.outline
+                          : colorScheme.primary.withValues(alpha: 0.3),
+                    ),
                   ),
                 ),
               ),
+            ),
+            const SizedBox(height: 8),
+            // Bilgilendirme metni
+            Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Maksimum 10 fotoğraf, her biri en fazla 5MB olabilir.',
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(height: 16),
@@ -1162,11 +1316,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 ? _selectedImageBytes.isNotEmpty
                 : _selectedImages.isNotEmpty)) ...[
               Text(
-                'Seçilen Fotoğraflar (${kIsWeb ? _selectedImageBytes.length : _selectedImages.length})',
+                'Seçilen Fotoğraflar (${kIsWeb ? _selectedImageBytes.length : _selectedImages.length}/10)',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[700],
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 12),
@@ -1194,9 +1348,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                       return Container(
                                         width: 100,
                                         height: 100,
-                                        color: Colors.grey[300],
+                                        color: isDark
+                                            ? colorScheme
+                                                .surfaceContainerHighest
+                                            : Colors.grey[300],
                                         child: Icon(Icons.broken_image,
-                                            color: Colors.grey[600]),
+                                            color:
+                                                colorScheme.onSurfaceVariant),
                                       );
                                     },
                                   )
@@ -1209,9 +1367,13 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                       return Container(
                                         width: 100,
                                         height: 100,
-                                        color: Colors.grey[300],
+                                        color: isDark
+                                            ? colorScheme
+                                                .surfaceContainerHighest
+                                            : Colors.grey[300],
                                         child: Icon(Icons.broken_image,
-                                            color: Colors.grey[600]),
+                                            color:
+                                                colorScheme.onSurfaceVariant),
                                       );
                                     },
                                   ),
@@ -1245,23 +1407,28 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: isDark
+                      ? colorScheme.surfaceContainerHighest
+                      : Colors.grey[50],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(
+                    color:
+                        isDark ? colorScheme.outlineVariant : Colors.grey[200]!,
+                  ),
                 ),
                 child: Column(
                   children: [
                     Icon(
                       Icons.photo_library_outlined,
                       size: 48,
-                      color: Colors.grey[400],
+                      color: colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Henüz fotoğraf eklenmedi',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
-                        color: Colors.grey[600],
+                        color: colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -1332,26 +1499,32 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   // Helper methods
   Widget _buildCustomAttributesSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.withValues(alpha: 0.05),
+        color: colorScheme.primaryContainer.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.tune, color: Colors.blue[700], size: 20),
+              Icon(Icons.tune, color: colorScheme.primary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Özel Özellikler',
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.blue[700],
+                  color: colorScheme.primary,
                 ),
               ),
               const Spacer(),
@@ -1360,7 +1533,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Özellik Ekle'),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.blue[700],
+                  foregroundColor: colorScheme.primary,
                 ),
               ),
             ],
@@ -1371,7 +1544,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               'Henüz özel özellik eklenmedi. "Özellik Ekle" butonuna tıklayarak özellikler ekleyebilirsiniz.',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: colorScheme.onSurfaceVariant,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -1382,9 +1555,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: isDark
+                      ? colorScheme.surfaceContainerHighest
+                      : colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[300]!),
+                  border: Border.all(
+                    color:
+                        isDark ? colorScheme.outlineVariant : Colors.grey[300]!,
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -1397,7 +1575,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                             style: GoogleFonts.poppins(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: Colors.grey[800],
+                              color: colorScheme.onSurface,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -1405,7 +1583,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                             entry.value,
                             style: GoogleFonts.poppins(
                               fontSize: 12,
-                              color: Colors.grey[600],
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -1413,7 +1591,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, size: 20),
-                      color: Colors.red[400],
+                      color: colorScheme.error,
                       onPressed: () => _removeAttribute(entry.key),
                       tooltip: 'Sil',
                     ),
@@ -1430,13 +1608,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   void _showAddAttributeDialog() {
     final keyController = TextEditingController();
     final valueController = TextEditingController();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
         title: Text(
           'Yeni Özellik Ekle',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1479,8 +1665,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
             ),
             child: const Text('Ekle'),
           ),
@@ -1496,6 +1682,10 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   Widget _buildVariantSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1566,27 +1756,28 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.blue.withValues(alpha: 0.05),
-                        Colors.purple.withValues(alpha: 0.05)
+                        colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        colorScheme.secondaryContainer.withValues(alpha: 0.3)
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                        color: Colors.blue.withValues(alpha: 0.2), width: 2),
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                        width: 2),
                   ),
                   child: Row(
                     children: [
                       Icon(Icons.info_outline,
-                          color: Colors.blue[600], size: 24),
+                          color: colorScheme.primary, size: 24),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Henüz varyant tipi eklenmedi. "Tip Ekle" butonuna tıklayarak varyant tiplerini ekleyin (örn: Renk, Beden)',
                           style: GoogleFonts.poppins(
                             fontSize: 13,
-                            color: Colors.grey[700],
+                            color: colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ),
@@ -1601,19 +1792,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.indigo.withValues(alpha: 0.05),
-                          Colors.purple.withValues(alpha: 0.05)
+                          colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          colorScheme.secondaryContainer.withValues(alpha: 0.3)
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: Colors.indigo.withValues(alpha: 0.3),
+                          color: colorScheme.primary.withValues(alpha: 0.3),
                           width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
+                          color: isDark
+                              ? Colors.black.withValues(alpha: 0.3)
+                              : Colors.black.withValues(alpha: 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -1628,12 +1821,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.blue,
+                                color: colorScheme.primary,
                                 borderRadius: BorderRadius.circular(8),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.category,
-                                color: Colors.white,
+                                color: colorScheme.onPrimary,
                                 size: 20,
                               ),
                             ),
@@ -1644,7 +1837,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                 style: GoogleFonts.poppins(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.grey[800],
+                                  color: colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -1653,11 +1846,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.blue,
+                                color: colorScheme.primary,
                                 borderRadius: BorderRadius.circular(20),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.blue.withValues(alpha: 0.3),
+                                    color: colorScheme.primary
+                                        .withValues(alpha: 0.3),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
@@ -1666,14 +1860,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.tag,
-                                      color: Colors.white, size: 14),
+                                  Icon(Icons.tag,
+                                      color: colorScheme.onPrimary, size: 14),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${entry.value.length}',
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      color: Colors.white,
+                                      color: colorScheme.onPrimary,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
@@ -1683,7 +1877,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                             const SizedBox(width: 8),
                             IconButton(
                               icon: const Icon(Icons.delete_outline, size: 20),
-                              color: Colors.red[400],
+                              color: colorScheme.error,
                               onPressed: () => _removeVariantType(entry.key),
                               tooltip: 'Tipi Sil',
                             ),
@@ -1699,14 +1893,17 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
+                                  color: isDark
+                                      ? colorScheme.surfaceContainerHighest
+                                      : colorScheme.surface,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                      color:
-                                          Colors.blue.withValues(alpha: 0.3)),
+                                      color: colorScheme.primary
+                                          .withValues(alpha: 0.3)),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.1),
+                                      color: colorScheme.primary
+                                          .withValues(alpha: 0.1),
                                       blurRadius: 2,
                                       offset: const Offset(0, 1),
                                     ),
@@ -1720,7 +1917,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
-                                        color: Colors.grey[800],
+                                        color: colorScheme.onSurface,
                                       ),
                                     ),
                                     const SizedBox(width: 8),
@@ -1730,7 +1927,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                       child: Icon(
                                         Icons.close,
                                         size: 18,
-                                        color: Colors.red[400],
+                                        color: colorScheme.error,
                                       ),
                                     ),
                                   ],
@@ -1745,11 +1942,12 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 8),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue,
+                                  color: colorScheme.primary,
                                   borderRadius: BorderRadius.circular(8),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.blue.withValues(alpha: 0.3),
+                                      color: colorScheme.primary
+                                          .withValues(alpha: 0.3),
                                       blurRadius: 4,
                                       offset: const Offset(0, 2),
                                     ),
@@ -1758,15 +1956,15 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.add,
-                                        size: 16, color: Colors.white),
+                                    Icon(Icons.add,
+                                        size: 16, color: colorScheme.onPrimary),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Ekle',
                                       style: GoogleFonts.poppins(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        color: colorScheme.onPrimary,
                                       ),
                                     ),
                                   ],
@@ -1787,8 +1985,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                   icon: const Icon(Icons.auto_awesome),
                   label: const Text('Varyant Kombinasyonlarını Oluştur'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green[600],
-                    foregroundColor: Colors.white,
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
                   ),
                 ),
               ],
@@ -1841,221 +2039,472 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   Widget _buildCategoryDropdown() {
-    // Varsayılan kategoriler
-    final defaultCategories = [
-      'Elektronik',
-      'Giyim',
-      'Ev & Yaşam',
-      'Spor & Outdoor',
-      'Kitap & Dergi',
-      'Oyuncak',
-      'Kozmetik',
-      'Gıda & İçecek',
-      'Otomotiv',
-      'Diğer'
-    ];
+    return Consumer(
+      builder: (context, ref, _) {
+        final categoriesAsync = ref.watch(productCategoriesProvider);
+        return categoriesAsync.when(
+          data: (categories) {
+            if (categories.isEmpty) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Kategori bulunamadı',
+                        style: GoogleFonts.poppins(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _showCreateCategoryDialog(ref),
+                    icon: const Icon(Icons.add),
+                    tooltip: 'Yeni kategori ekle',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ],
+              );
+            }
 
-    // Tüm kategorileri birleştir (varsayılan + özel)
-    final allCategories = [...defaultCategories, ..._customCategories];
-
-    return DropdownButtonFormField<String>(
-      initialValue:
-          _categoryController.text.isNotEmpty ? _categoryController.text : null,
-      decoration: const InputDecoration(
-        labelText: 'Kategori *',
-        border: OutlineInputBorder(),
-        hintText: 'Kategori seçin veya yeni oluşturun',
-        prefixIcon: Icon(Icons.category),
-      ),
-      isExpanded: true,
-      items: [
-        ...allCategories.map((category) => DropdownMenuItem(
-              value: category,
-              child: Text(
-                category,
-                overflow: TextOverflow.ellipsis,
-              ),
-            )),
-        const DropdownMenuItem(
-          value: 'NEW_CATEGORY',
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add, size: 16),
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Yeni Kategori Oluştur',
-                  overflow: TextOverflow.ellipsis,
+            return Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _categoryController.text.isNotEmpty
+                        ? _categoryController.text
+                        : null,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Kategori *',
+                      border: OutlineInputBorder(),
+                      hintText: 'Seçiniz',
+                      prefixIcon: Icon(Icons.category),
+                    ),
+                    selectedItemBuilder: (BuildContext context) {
+                      return [
+                        const Text('Seçiniz'),
+                        ...categories.map((category) {
+                          return Text(
+                            category,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          );
+                        }),
+                      ];
+                    },
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Seçiniz'),
+                      ),
+                      ...categories.map((category) {
+                        return DropdownMenuItem<String?>(
+                          value: category,
+                          child: Text(
+                            category,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        );
+                      }),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _categoryController.text = value ?? '';
+                      });
+                    },
+                    validator: (value) {
+                      if (_categoryController.text.trim().isEmpty) {
+                        return 'Kategori seçimi zorunludur';
+                      }
+                      return null;
+                    },
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => _showCreateCategoryDialog(ref),
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Yeni kategori ekle',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => const LinearProgressIndicator(),
+          error: (error, stack) => Text(
+            'Kategori yüklenemedi: $error',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+            ),
           ),
-        ),
-      ],
-      onChanged: (value) {
-        if (value == 'NEW_CATEGORY') {
-          _showCreateCategoryDialog();
-        } else if (value != null) {
-          _categoryController.text = value;
-        }
-      },
-      validator: (value) {
-        if (_categoryController.text.trim().isEmpty) {
-          return 'Kategori seçimi zorunludur';
-        }
-        return null;
+        );
       },
     );
   }
 
   Widget _buildBrandDropdown() {
-    // Varsayılan markalar
-    final defaultBrands = [
-      'Apple',
-      'Samsung',
-      'Nike',
-      'Adidas',
-      'Sony',
-      'LG',
-      'Xiaomi',
-      'Huawei',
-      'Diğer'
-    ];
+    return Consumer(
+      builder: (context, ref, _) {
+        final brandsAsync = ref.watch(productBrandsProvider);
+        return brandsAsync.when(
+          data: (brands) {
+            if (brands.isEmpty) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Marka bulunamadı',
+                        style: GoogleFonts.poppins(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _showCreateBrandDialog(ref),
+                    icon: const Icon(Icons.add),
+                    tooltip: 'Yeni marka ekle',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ],
+              );
+            }
 
-    // Tüm markaları birleştir (varsayılan + özel)
-    final allBrands = [...defaultBrands, ..._customBrands];
+            return Row(
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String?>(
+                    initialValue: _brandController.text.isNotEmpty
+                        ? _brandController.text
+                        : null,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Marka *',
+                      border: OutlineInputBorder(),
+                      hintText: 'Seçiniz',
+                      prefixIcon: Icon(Icons.branding_watermark),
+                    ),
+                    selectedItemBuilder: (BuildContext context) {
+                      return [
+                        const Text('Seçiniz'),
+                        ...brands.map((brand) {
+                          return Text(
+                            brand,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          );
+                        }),
+                      ];
+                    },
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('Seçiniz'),
+                      ),
+                      ...brands.map((brand) {
+                        return DropdownMenuItem<String?>(
+                          value: brand,
+                          child: Text(
+                            brand,
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        );
+                      }),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _brandController.text = value ?? '';
+                      });
+                    },
+                    validator: (value) {
+                      if (_brandController.text.trim().isEmpty) {
+                        return 'Marka seçimi zorunludur';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: () => _showCreateBrandDialog(ref),
+                  icon: const Icon(Icons.add),
+                  tooltip: 'Yeni marka ekle',
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+            );
+          },
+          loading: () => const LinearProgressIndicator(),
+          error: (error, stack) => Text(
+            'Marka yüklenemedi: $error',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-    return DropdownButtonFormField<String>(
-      initialValue:
-          _brandController.text.isNotEmpty ? _brandController.text : null,
-      decoration: const InputDecoration(
-        labelText: 'Marka *',
-        border: OutlineInputBorder(),
-        hintText: 'Marka seçin veya yeni oluşturun',
-        prefixIcon: Icon(Icons.branding_watermark),
-      ),
-      isExpanded: true,
-      items: [
-        ...allBrands.map((brand) => DropdownMenuItem(
-              value: brand,
-              child: Text(
-                brand,
-                overflow: TextOverflow.ellipsis,
+  Future<void> _showCreateCategoryDialog(WidgetRef ref) async {
+    final nameController = TextEditingController();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
+    await showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark
+              ? colorScheme.surfaceContainerHighest
+              : colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Yeni Kategori',
+            style: TextStyle(
+              color: colorScheme.onSurface,
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: TextField(
+              controller: nameController,
+              style: TextStyle(
+                color: colorScheme.onSurface,
               ),
-            )),
-        const DropdownMenuItem(
-          value: 'NEW_BRAND',
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add, size: 16),
-              SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  'Yeni Marka Oluştur',
-                  overflow: TextOverflow.ellipsis,
+              decoration: InputDecoration(
+                labelText: 'Kategori Adı',
+                labelStyle: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                fillColor: isDark
+                    ? colorScheme.surfaceContainerHighest
+                    : colorScheme.surfaceContainerLowest,
+                filled: true,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colorScheme.outlineVariant,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colorScheme.outlineVariant,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                  ),
                 ),
               ),
-            ],
+              autofocus: true,
+            ),
           ),
-        ),
-      ],
-      onChanged: (value) {
-        if (value == 'NEW_BRAND') {
-          _showCreateBrandDialog();
-        } else if (value != null) {
-          _brandController.text = value;
-        }
-      },
-      validator: (value) {
-        if (_brandController.text.trim().isEmpty) {
-          return 'Marka seçimi zorunludur';
-        }
-        return null;
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
+
+                try {
+                  await ref.read(createProductCategoryProvider(name).future);
+
+                  // Provider'ı yenile
+                  ref.invalidate(productCategoriesProvider);
+
+                  // Yeni oluşturulan kategoriyi seç
+                  setState(() {
+                    _categoryController.text = name;
+                  });
+
+                  if (mounted) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('$name kategorisi başarıyla oluşturuldu'),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Hata: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
+                }
+              },
+              child: const Text('Oluştur'),
+            ),
+          ],
+        );
       },
     );
   }
 
-  void _showCreateCategoryDialog() {
-    final controller = TextEditingController();
-    showDialog(
+  Future<void> _showCreateBrandDialog(WidgetRef ref) async {
+    final nameController = TextEditingController();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
+    await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Yeni Kategori Oluştur'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Kategori Adı',
-            border: OutlineInputBorder(),
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: isDark
+              ? colorScheme.surfaceContainerHighest
+              : colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
+          title: Text(
+            'Yeni Marka',
+            style: TextStyle(
+              color: colorScheme.onSurface,
+            ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                final newCategory = controller.text.trim();
-                _categoryController.text = newCategory;
+          content: SingleChildScrollView(
+            child: TextField(
+              controller: nameController,
+              style: TextStyle(
+                color: colorScheme.onSurface,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Marka Adı',
+                labelStyle: TextStyle(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                fillColor: isDark
+                    ? colorScheme.surfaceContainerHighest
+                    : colorScheme.surfaceContainerLowest,
+                filled: true,
+                border: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colorScheme.outlineVariant,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colorScheme.outlineVariant,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ),
+              autofocus: true,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.primary,
+              ),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final name = nameController.text.trim();
+                if (name.isEmpty) return;
 
-                // Yeni kategoriyi listeye ekle
-                if (!_customCategories.contains(newCategory)) {
+                try {
+                  await ref.read(createProductBrandProvider(name).future);
+
+                  // Provider'ı yenile
+                  ref.invalidate(productBrandsProvider);
+
+                  // Yeni oluşturulan markayı seç
                   setState(() {
-                    _customCategories.add(newCategory);
+                    _brandController.text = name;
                   });
+
+                  if (mounted) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('$name markası başarıyla oluşturuldu'),
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.of(ctx).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Hata: $e'),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                  }
                 }
-
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Oluştur'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCreateBrandDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Yeni Marka Oluştur'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(
-            labelText: 'Marka Adı',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('İptal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                final newBrand = controller.text.trim();
-                _brandController.text = newBrand;
-
-                // Yeni markayı listeye ekle
-                if (!_customBrands.contains(newBrand)) {
-                  setState(() {
-                    _customBrands.add(newBrand);
-                  });
-                }
-
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Oluştur'),
-          ),
-        ],
-      ),
+              },
+              child: const Text('Oluştur'),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -2292,13 +2741,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   // Varyant metodları
   void _showAddVariantTypeDialog() {
     final typeController = TextEditingController();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
         title: Text(
           'Varyant Tipi Ekle',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         content: TextField(
           controller: typeController,
@@ -2328,8 +2785,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
             ),
             child: const Text('Ekle'),
           ),
@@ -2340,13 +2797,21 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
 
   void _showAddVariantOptionDialog(String type) {
     final optionController = TextEditingController();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
         title: Text(
           '$type Seçeneği Ekle',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
         ),
         content: TextField(
           controller: optionController,
@@ -2379,8 +2844,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
-              foregroundColor: Colors.white,
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
             ),
             child: const Text('Ekle'),
           ),
@@ -2454,24 +2919,28 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
   }
 
   Widget _buildVariantCard(int index, ProductVariant variant) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey[850]! : Colors.white;
-    
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: baseColor,
+        color:
+            isDark ? colorScheme.surfaceContainerHighest : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: variant.stockQuantity > 0
               ? Colors.green.withValues(alpha: isDark ? 0.4 : 0.3)
-              : (isDark ? Colors.white12 : Colors.grey.withValues(alpha: 0.3)),
+              : colorScheme.outlineVariant,
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.12),
             blurRadius: 16,
             spreadRadius: 1,
             offset: const Offset(0, 8),
@@ -2489,12 +2958,14 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 decoration: BoxDecoration(
                   color: variant.stockQuantity > 0
                       ? Colors.green
-                      : Colors.grey[400],
+                      : colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.dashboard_customize,
-                  color: Colors.white,
+                  color: variant.stockQuantity > 0
+                      ? Colors.white
+                      : colorScheme.onSurface,
                   size: 20,
                 ),
               ),
@@ -2509,7 +2980,7 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : Colors.grey[800],
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -2522,14 +2993,15 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.1),
+                            color: colorScheme.secondaryContainer
+                                .withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             '${attr.key}: ${attr.value}',
                             style: GoogleFonts.poppins(
                               fontSize: 10,
-                              color: Colors.purple[700],
+                              color: colorScheme.onSecondaryContainer,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -2596,9 +3068,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
                     prefixIcon:
-                        Icon(Icons.qr_code_2, color: Colors.purple[600]),
+                        Icon(Icons.qr_code_2, color: colorScheme.secondary),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: isDark
+                        ? colorScheme.surfaceContainerHighest
+                        : Colors.white,
                     hintText: 'Manuel girin veya üretin',
                   ),
                   onChanged: (value) {
@@ -2618,8 +3092,8 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                 icon: const Icon(Icons.auto_awesome, size: 18),
                 label: const Text('Üret'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
-                  foregroundColor: Colors.white,
+                  backgroundColor: colorScheme.secondary,
+                  foregroundColor: colorScheme.onSecondary,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
@@ -2638,9 +3112,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
                     prefixIcon:
-                        Icon(Icons.inventory_2, color: Colors.blue[600]),
+                        Icon(Icons.inventory_2, color: colorScheme.primary),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: isDark
+                        ? colorScheme.surfaceContainerHighest
+                        : Colors.white,
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
@@ -2662,9 +3138,11 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
                     contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 12),
                     prefixIcon:
-                        Icon(Icons.location_on, color: Colors.orange[600]),
+                        Icon(Icons.location_on, color: colorScheme.tertiary),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: isDark
+                        ? colorScheme.surfaceContainerHighest
+                        : Colors.white,
                     hintText: 'A-1-2',
                   ),
                   onChanged: (value) {

@@ -9,6 +9,13 @@ import '../../../../features/invoices/presentation/providers/invoice_providers.d
 import '../../../../features/customers/presentation/providers/customer_providers.dart';
 import '../../../../features/suppliers/presentation/providers/supplier_providers.dart';
 import '../../../../features/products/presentation/providers/product_providers.dart';
+import '../../../../features/purchases/presentation/providers/purchase_providers.dart';
+import '../../../../features/purchases/domain/entities/purchase.dart';
+import '../../../../features/accounts/presentation/providers/account_providers.dart';
+import '../../../../features/accounts/domain/entities/account.dart';
+import '../../../../features/invoices/domain/entities/invoice.dart';
+import '../../../../core/providers/currency_providers.dart';
+import '../../../../core/domain/entities/currency.dart';
 // Silinen modül: payments
 
 import '../../data/services/date_time_service.dart';
@@ -34,134 +41,210 @@ final currencyChartDataProvider =
 /// Dashboard özet verileri için provider
 final dashboardSummaryProvider = FutureProvider<DashboardSummary>((ref) async {
   try {
-    // Silinen modül: income
-    // Silinen modül: expenses
-    // final invoicesAsync = await ref.read(invoicesProvider.future);
-    final customersAsync = await ref.read(customersProvider.future);
-    final suppliersAsync = await ref.read(suppliersProvider.future);
-    final productsAsync = await ref.read(productsStreamProvider.future);
-    // Silinen modül: payments
+    final invoices = await ref.watch(invoicesProvider.future);
+    final customers = await ref.watch(customersProvider.future);
+    final suppliers = await ref.watch(suppliersProvider.future);
+    final products = await ref.watch(productsStreamProvider.future);
 
-    // Silinen modüller nedeniyle tarih hesaplamaları kullanılmıyor
+    final purchaseRepository = ref.watch(purchaseRepositoryProvider);
+    final purchases =
+        await purchaseRepository.getAllPurchases(includeItems: false);
 
-    // Silinen modül: income
-    final currentMonthIncomes = <dynamic>[];
+    final accounts = await ref.watch(accountsProvider.future);
 
-    // Silinen modül: expenses
-    final currentMonthExpenses = <dynamic>[];
+    List<Currency> exchangeRates = [];
+    try {
+      exchangeRates = await ref.watch(exchangeRatesProvider.future);
+    } catch (_) {
+      exchangeRates = [];
+    }
+    final fxRateMap = <String, double>{'TRY': 1.0};
+    for (final rate in exchangeRates) {
+      fxRateMap[rate.code.toUpperCase()] = rate.exchangeRate;
+    }
 
-    // Silinen modül: payments
-    final currentMonthPayments = <dynamic>[];
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final startOfNextMonth = DateTime(now.year, now.month + 1, 1);
+    final startOfLastMonth = DateTime(now.year, now.month - 1, 1);
 
-    // Silinen modül: payments
-    final lastMonthPayments = <dynamic>[];
+    final double totalSales = _sumInvoiceAmounts(invoices);
+    final double totalPurchases = _sumPurchaseAmounts(purchases);
 
-    // Silinen modül: income
-    final lastMonthIncomes = <dynamic>[];
-
-    // Bekleyen faturalar
-    // final pendingInvoices = invoicesAsync
-    //     .where(
-    //       (invoice) =>
-    //           invoice.status.toString().contains('sent') ||
-    //           invoice.status.toString().contains('unpaid'),
-    //     )
-    //     .toList();
-
-    // Toplam hesaplamalar
-    final currentMonthIncomeTotal = currentMonthIncomes.fold<double>(
-      0,
-      (sum, income) => sum + income.amount,
-    );
-    final currentMonthExpenseTotal = currentMonthExpenses.fold<double>(
-      0,
-      (sum, expense) => sum + expense.amount,
-    );
-    final lastMonthIncomeTotal = lastMonthIncomes.fold<double>(
-      0,
-      (sum, income) => sum + income.amount,
+    final double monthlySales = _sumInvoiceAmounts(
+      invoices.where(
+        (invoice) =>
+            _isWithinRange(invoice.invoiceDate, startOfMonth, startOfNextMonth),
+      ),
     );
 
-    // Tahsilat toplamları
-    final currentMonthPaymentTotal = currentMonthPayments.fold<double>(
-      0,
-      (sum, payment) => sum + payment.amount,
-    );
-    final lastMonthPaymentTotal = lastMonthPayments.fold<double>(
-      0,
-      (sum, payment) => sum + payment.amount,
+    final double lastMonthSales = _sumInvoiceAmounts(
+      invoices.where(
+        (invoice) =>
+            _isWithinRange(invoice.invoiceDate, startOfLastMonth, startOfMonth),
+      ),
     );
 
-    // Yüzde değişim hesaplamaları
-    final incomeChangePercent = lastMonthIncomeTotal > 0
-        ? ((currentMonthIncomeTotal - lastMonthIncomeTotal) /
-            lastMonthIncomeTotal *
-            100)
-        : 0.0;
-    // final expenseChangePercent = lastMonthExpenseTotal > 0
-    //     ? ((currentMonthExpenseTotal - lastMonthExpenseTotal) /
-    //         lastMonthExpenseTotal *
-    //         100)
-    //     : 0.0;
+    final double salesGrowthRate =
+        _calculateGrowth(monthlySales, lastMonthSales);
 
-    final netProfit = currentMonthIncomeTotal - currentMonthExpenseTotal;
+    final double monthlyPurchases = _sumPurchaseAmounts(
+      purchases.where((purchase) => _isWithinRange(
+          purchase.purchaseDate, startOfMonth, startOfNextMonth)),
+    );
 
-    // Tahsilat büyüme oranı
-    final paymentGrowthRate = lastMonthPaymentTotal > 0
-        ? ((currentMonthPaymentTotal - lastMonthPaymentTotal) /
-            lastMonthPaymentTotal *
-            100)
-        : 0.0;
+    final double lastMonthPurchases = _sumPurchaseAmounts(
+      purchases.where((purchase) => _isWithinRange(
+          purchase.purchaseDate, startOfLastMonth, startOfMonth)),
+    );
+
+    final double purchaseGrowthRate =
+        _calculateGrowth(monthlyPurchases, lastMonthPurchases);
+
+    final double monthlyNetProfit = monthlySales - monthlyPurchases;
+    final double lastMonthNetProfit = lastMonthSales - lastMonthPurchases;
+    final double netProfitGrowthRate =
+        _calculateGrowth(monthlyNetProfit, lastMonthNetProfit);
+
+    final double pendingReceivables = _sumInvoiceAmounts(
+      invoices.where((invoice) => !invoice.isPaid),
+    );
+
+    final double lastMonthPendingReceivables = _sumInvoiceAmounts(
+      invoices.where(
+        (invoice) =>
+            !invoice.isPaid &&
+            _isWithinRange(invoice.invoiceDate, startOfLastMonth, startOfMonth),
+      ),
+    );
+
+    final double receivablesGrowthRate =
+        _calculateGrowth(pendingReceivables, lastMonthPendingReceivables);
+
+    final double paymentsThisMonth = _sumInvoiceAmounts(
+      invoices.where(
+        (invoice) =>
+            invoice.isPaid &&
+            _isWithinRange(invoice.invoiceDate, startOfMonth, startOfNextMonth),
+      ),
+    );
+
+    final double paymentsLastMonth = _sumInvoiceAmounts(
+      invoices.where(
+        (invoice) =>
+            invoice.isPaid &&
+            _isWithinRange(invoice.invoiceDate, startOfLastMonth, startOfMonth),
+      ),
+    );
+
+    final double paymentGrowthRate =
+        _calculateGrowth(paymentsThisMonth, paymentsLastMonth);
+
+    final double pendingPayables = purchases
+        .where((purchase) =>
+            purchase.paymentStatus != PurchasePaymentStatus.paid)
+        .fold(0, (sum, purchase) => sum + purchase.totalAmount);
+
+    final double lastMonthPendingPayables = purchases
+        .where((purchase) =>
+            purchase.paymentStatus != PurchasePaymentStatus.paid &&
+            _isWithinRange(
+                purchase.purchaseDate, startOfLastMonth, startOfMonth))
+        .fold(0, (sum, purchase) => sum + purchase.totalAmount);
+
+    final double payablesGrowthRate =
+        _calculateGrowth(pendingPayables, lastMonthPendingPayables);
+
+    final double totalIncome = totalSales;
+    final double totalExpenses = totalPurchases;
+
+    final Map<String, double> balanceByCurrency = {};
+    for (final account in accounts) {
+      final currency = (account.currency.isNotEmpty)
+          ? account.currency.toUpperCase()
+          : 'TRY';
+      balanceByCurrency[currency] =
+          (balanceByCurrency[currency] ?? 0.0) + account.balance;
+    }
+
+    double cashBalance = 0.0;
+    double bankBalance = 0.0;
+    double totalBalance = 0.0;
+
+    for (final account in accounts) {
+      final converted =
+          _convertToTry(account.balance, account.currency, fxRateMap);
+      totalBalance += converted;
+      if (account.type == AccountType.cash) {
+        cashBalance += converted;
+      } else {
+        bankBalance += converted;
+      }
+    }
+
+    final criticalStockCount =
+        products.where((product) => product.isLowStock).length;
+
+    final newCustomersThisMonth = customers
+        .where((customer) => !customer.createdAt.isBefore(startOfMonth))
+        .length;
+
+    final lastMonthNewCustomers = customers
+        .where((customer) =>
+            _isWithinRange(customer.createdAt, startOfLastMonth, startOfMonth))
+        .length;
+
+    final double customerGrowthRate = _calculateGrowth(
+      newCustomersThisMonth.toDouble(),
+      lastMonthNewCustomers.toDouble(),
+    );
+
+    final newSuppliersThisMonth = suppliers
+        .where((supplier) => !supplier.createdAt.isBefore(startOfMonth))
+        .length;
+
+    final lastMonthNewSuppliers = suppliers
+        .where((supplier) =>
+            _isWithinRange(supplier.createdAt, startOfLastMonth, startOfMonth))
+        .length;
+
+    final double supplierGrowthRate = _calculateGrowth(
+      newSuppliersThisMonth.toDouble(),
+      lastMonthNewSuppliers.toDouble(),
+    );
 
     return DashboardSummary(
-      totalSales: currentMonthIncomeTotal,
-      totalPurchases: currentMonthExpenseTotal,
-      totalIncome: currentMonthIncomeTotal,
-      totalExpenses: currentMonthExpenseTotal,
-      netProfit: netProfit,
-      cashBalance: 50000.0, // Mock data
-      bankBalance: 75000.0, // Mock data
-      totalBalance: 125000.0, // Mock data
-      criticalStockCount: 5,
-      pendingReceivables: 25000.0, // Mock data
-      pendingPayables: 15000.0, // Mock data
-      monthlySales: currentMonthIncomeTotal,
-      lastMonthSales: lastMonthIncomeTotal,
-      salesGrowthRate: incomeChangePercent,
-      totalCustomers: customersAsync.length,
-      totalSuppliers: suppliersAsync.length,
-      totalProducts: productsAsync.length,
-      newCustomersThisMonth: 3, // Mock data
-      newSuppliersThisMonth: 2, // Mock data
-      // Tahsilat verileri
-      totalPayments: currentMonthPaymentTotal,
+      totalSales: totalSales,
+      totalPurchases: totalPurchases,
+      totalIncome: totalIncome,
+      totalExpenses: totalExpenses,
+      netProfit: monthlyNetProfit,
+      cashBalance: cashBalance,
+      bankBalance: bankBalance,
+      totalBalance: totalBalance,
+      criticalStockCount: criticalStockCount,
+      pendingReceivables: pendingReceivables,
+      pendingPayables: pendingPayables,
+      monthlySales: monthlySales,
+      lastMonthSales: lastMonthSales,
+      salesGrowthRate: salesGrowthRate,
+      totalCustomers: customers.length,
+      totalSuppliers: suppliers.length,
+      totalProducts: products.length,
+      newCustomersThisMonth: newCustomersThisMonth,
+      newSuppliersThisMonth: newSuppliersThisMonth,
+      totalPayments: paymentsThisMonth,
       paymentGrowthRate: paymentGrowthRate,
+      balanceByCurrency: balanceByCurrency,
+      purchaseGrowthRate: purchaseGrowthRate,
+      netProfitGrowthRate: netProfitGrowthRate,
+      receivablesGrowthRate: receivablesGrowthRate,
+      payablesGrowthRate: payablesGrowthRate,
+      customerGrowthRate: customerGrowthRate,
+      supplierGrowthRate: supplierGrowthRate,
     );
-  } catch (e) {
-    // Hata durumunda test verileri döndür
-    return const DashboardSummary(
-      totalSales: 125000.0,
-      totalPurchases: 85000.0,
-      totalIncome: 125000.0,
-      totalExpenses: 85000.0,
-      netProfit: 40000.0,
-      cashBalance: 50000.0,
-      bankBalance: 75000.0,
-      totalBalance: 125000.0,
-      criticalStockCount: 5,
-      pendingReceivables: 25000.0,
-      pendingPayables: 15000.0,
-      monthlySales: 125000.0,
-      lastMonthSales: 110000.0,
-      salesGrowthRate: 15.5,
-      totalCustomers: 12,
-      totalSuppliers: 8,
-      totalProducts: 45,
-      newCustomersThisMonth: 3,
-      newSuppliersThisMonth: 2,
-      totalPayments: 0.0,
-      paymentGrowthRate: 0.0,
-    );
+  } catch (_) {
+    return DashboardSummary.empty();
   }
 });
 
@@ -406,4 +489,51 @@ class MonthlyChartData {
 
   String get formattedProfit =>
       NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(profit);
+}
+
+bool _isWithinRange(DateTime value, DateTime start, DateTime endExclusive) {
+  return !value.isBefore(start) && value.isBefore(endExclusive);
+}
+
+double _sumInvoiceAmounts(Iterable<Invoice> invoices) {
+  return invoices.fold<double>(
+    0.0,
+    (sum, invoice) => sum + invoice.totalAmount,
+  );
+}
+
+double _sumPurchaseAmounts(Iterable<Purchase> purchases) {
+  return purchases.fold<double>(
+    0.0,
+    (sum, purchase) => sum + purchase.totalAmount,
+  );
+}
+
+double _convertToTry(
+  double amount,
+  String currencyCode,
+  Map<String, double> fxRates,
+) {
+  if (amount == 0) return 0.0;
+  final normalized = currencyCode.isNotEmpty
+      ? currencyCode.toUpperCase()
+      : 'TRY';
+  if (normalized == 'TRY') {
+    return amount;
+  }
+  final rate = fxRates[normalized];
+  if (rate == null || rate <= 0) {
+    return amount;
+  }
+  return amount * rate;
+}
+
+double _calculateGrowth(double current, double previous) {
+  if (previous == 0) {
+    if (current == 0) {
+      return 0.0;
+    }
+    return 100.0;
+  }
+  return ((current - previous) / previous) * 100;
 }

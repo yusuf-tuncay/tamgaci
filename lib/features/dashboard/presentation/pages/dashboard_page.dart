@@ -16,6 +16,7 @@ import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../core/guards/subscription_guard.dart';
 import '../../../../core/providers/subscription_state_provider.dart';
+import '../../../../core/utils/currency_helper.dart';
 
 import 'package:go_router/go_router.dart';
 import '../../../../core/providers/currency_providers.dart';
@@ -2848,6 +2849,21 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         // Ödeme - Pembe tonları
         final payablesColor =
             isDark ? const Color(0xFFEC4899) : const Color(0xFFDB2777);
+        const positiveTrendColor = Colors.white;
+        final negativeTrendColor =
+            isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626);
+
+        double salesGrowth = _safeDouble(() => summary.salesGrowthRate);
+        double purchaseGrowth = _safeDouble(() => summary.purchaseGrowthRate);
+        double profitGrowth = _safeDouble(() => summary.netProfitGrowthRate);
+        double receivablesGrowth =
+            _safeDouble(() => summary.receivablesGrowthRate);
+        double payablesGrowth = _safeDouble(() => summary.payablesGrowthRate);
+        double customerGrowth = _safeDouble(() => summary.customerGrowthRate);
+        double supplierGrowth = _safeDouble(() => summary.supplierGrowthRate);
+        double paymentGrowth = _safeDouble(() => summary.paymentGrowthRate);
+        final balanceSubtitle =
+            _buildBalanceSubtitle(summary.balanceByCurrency ?? const {});
 
         final cards = <Widget>[
           DashboardStatsCard(
@@ -2857,10 +2873,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.trending_up,
             iconColor: salesColor,
             backgroundColor: salesColor,
-            percentageChange: summary.salesGrowthRate,
-            percentageColor: summary.salesGrowthRate >= 0
-                ? salesColor
-                : (isDark ? const Color(0xFFEF4444) : const Color(0xFFDC2626)),
+            percentageChange: salesGrowth,
+            percentageColor:
+                salesGrowth >= 0 ? positiveTrendColor : negativeTrendColor,
           ),
           DashboardStatsCard(
             title: 'Toplam Alış',
@@ -2869,6 +2884,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.shopping_cart,
             iconColor: purchaseColor,
             backgroundColor: purchaseColor,
+            percentageChange: purchaseGrowth,
+            percentageColor:
+                purchaseGrowth >= 0 ? positiveTrendColor : negativeTrendColor,
           ),
           DashboardStatsCard(
             title: 'Net Kar/Zarar',
@@ -2877,11 +2895,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.account_balance_wallet,
             iconColor: profitColor,
             backgroundColor: profitColor,
+            percentageChange: profitGrowth,
+            percentageColor:
+                profitGrowth >= 0 ? positiveTrendColor : negativeTrendColor,
           ),
           DashboardStatsCard(
             title: 'Toplam Bakiye',
             value: summary.totalBalance,
             currency: 'TRY',
+            subtitle: balanceSubtitle,
             icon: Icons.account_balance,
             iconColor: balanceColor,
             backgroundColor: balanceColor,
@@ -2903,6 +2925,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.people,
             iconColor: customerColor,
             backgroundColor: customerColor,
+            percentageChange: customerGrowth,
+            percentageColor:
+                customerGrowth >= 0 ? positiveTrendColor : negativeTrendColor,
           ),
           DashboardStatsCard(
             title: 'Bekleyen Tahsilat',
@@ -2911,6 +2936,10 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.download,
             iconColor: receivablesColor,
             backgroundColor: receivablesColor,
+            percentageChange: receivablesGrowth,
+            percentageColor: receivablesGrowth >= 0
+                ? negativeTrendColor
+                : positiveTrendColor,
           ),
           DashboardStatsCard(
             title: 'Bekleyen Ödeme',
@@ -2919,6 +2948,34 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             icon: Icons.upload,
             iconColor: payablesColor,
             backgroundColor: payablesColor,
+            percentageChange: payablesGrowth,
+            percentageColor:
+                payablesGrowth >= 0 ? negativeTrendColor : positiveTrendColor,
+          ),
+          DashboardStatsCard(
+            title: 'Toplam Ödeme',
+            value: summary.totalPayments,
+            currency: 'TRY',
+            icon: Icons.payments,
+            iconColor: receivablesColor,
+            backgroundColor: receivablesColor.withValues(alpha: 0.9),
+            percentageChange: paymentGrowth,
+            percentageColor:
+                paymentGrowth >= 0 ? positiveTrendColor : negativeTrendColor,
+          ),
+          DashboardStatsCard(
+            title: 'Toplam Tedarikçi',
+            value: summary.totalSuppliers.toDouble(),
+            currency: '',
+            subtitle: 'firma',
+            icon: Icons.store,
+            iconColor: supplierGrowth >= 0 ? customerColor : negativeTrendColor,
+            backgroundColor:
+                (supplierGrowth >= 0 ? customerColor : payablesColor)
+                    .withValues(alpha: 0.9),
+            percentageChange: supplierGrowth,
+            percentageColor:
+                supplierGrowth >= 0 ? positiveTrendColor : negativeTrendColor,
           ),
         ];
 
@@ -2926,6 +2983,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         return LayoutBuilder(
           builder: (context, constraints) {
             final isMobile = constraints.maxWidth < 768;
+            // Masaüstünde kritik stok kartını gösterme (4. index'te, 0-based)
+            final displayCards = isMobile
+                ? cards
+                : cards
+                    .asMap()
+                    .entries
+                    .where((entry) => entry.key != 4)
+                    .map((entry) => entry.value)
+                    .toList();
+
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -2935,8 +3002,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                 crossAxisSpacing: 12,
                 childAspectRatio: isMobile ? 1.2 : 1.1,
               ),
-              itemCount: cards.length,
-              itemBuilder: (context, index) => cards[index],
+              itemCount: displayCards.length,
+              itemBuilder: (context, index) => displayCards[index],
             );
           },
         );
@@ -2949,6 +3016,33 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ),
       ),
     );
+  }
+
+  double _safeDouble(double Function() getter) {
+    try {
+      final value = getter();
+      if (value.isNaN || value.isInfinite) {
+        return 0;
+      }
+      return value;
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  String? _buildBalanceSubtitle(Map<String, double> balanceByCurrency) {
+    if (balanceByCurrency.isEmpty) return null;
+    final entries = balanceByCurrency.entries
+        .where((entry) => entry.value.abs() > 0.01)
+        .toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    if (entries.isEmpty) return null;
+    return entries
+        .map(
+          (entry) =>
+              '${entry.key}: ${CurrencyHelper.formatCurrency(entry.value, entry.key)}',
+        )
+        .join('\n');
   }
 
   /// Son aktiviteler bölümü

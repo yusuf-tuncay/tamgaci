@@ -105,30 +105,41 @@ class _BlogPageState extends State<BlogPage> {
   /// Gösterilecek blog kartlarını döndürür (pagination ile)
   List<Map<String, dynamic>> _getDisplayedPosts() {
     final filteredPosts = _getFilteredPosts();
-    
+
     // Arama yapıldığında tüm sonuçları göster
     if (_searchQuery.isNotEmpty) {
       return filteredPosts;
     }
-    
+
     // Arama yoksa pagination uygula
     if (_displayedCount >= filteredPosts.length) {
       return filteredPosts;
     }
-    
+
     return filteredPosts.sublist(0, _displayedCount);
   }
 
   @override
   Widget build(BuildContext context) {
     final categories = _getCategories();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = colorScheme.surface;
+    final surfaceVariant = colorScheme.surfaceContainerHighest;
+    final subtleTextColor =
+        colorScheme.onSurface.withValues(alpha: isDark ? 0.8 : 0.7);
+    final chipInactiveColor =
+        isDark ? surfaceVariant.withValues(alpha: 0.6) : surfaceVariant;
+    final chipBorderColor =
+        colorScheme.outline.withValues(alpha: isDark ? 0.5 : 0.3);
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E3A8A)),
+          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
           onPressed: () => context.go('/'),
         ),
         title: Text(
@@ -136,7 +147,7 @@ class _BlogPageState extends State<BlogPage> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E3A8A),
+            color: colorScheme.onSurface,
           ),
         ),
         centerTitle: false,
@@ -166,7 +177,8 @@ class _BlogPageState extends State<BlogPage> {
                   Text(
                     'TAMGACI BLOG',
                     style: GoogleFonts.poppins(
-                      fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
+                      fontSize:
+                          MediaQuery.of(context).size.width > 768 ? 56 : 40,
                       fontWeight: FontWeight.w800,
                       color: Colors.white,
                     ),
@@ -176,7 +188,8 @@ class _BlogPageState extends State<BlogPage> {
                   Text(
                     'Ön muhasebe, iş yönetimi ve dijital dönüşüm hakkında güncel içerikler',
                     style: GoogleFonts.poppins(
-                      fontSize: MediaQuery.of(context).size.width > 768 ? 20 : 16,
+                      fontSize:
+                          MediaQuery.of(context).size.width > 768 ? 20 : 16,
                       fontWeight: FontWeight.w400,
                       color: Colors.white.withValues(alpha: 0.9),
                     ),
@@ -190,7 +203,7 @@ class _BlogPageState extends State<BlogPage> {
 
             // Arama ve TabBar Section
             Container(
-              color: Colors.white,
+              color: surfaceColor,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -201,10 +214,10 @@ class _BlogPageState extends State<BlogPage> {
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
+                        color: chipInactiveColor,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: const Color(0xFFE2E8F0),
+                          color: chipBorderColor,
                           width: 1,
                         ),
                       ),
@@ -213,18 +226,18 @@ class _BlogPageState extends State<BlogPage> {
                         decoration: InputDecoration(
                           hintText: 'Blog yazılarında ara...',
                           hintStyle: GoogleFonts.poppins(
-                            color: const Color(0xFF94A3B8),
+                            color: subtleTextColor,
                             fontSize: 14,
                           ),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Color(0xFF64748B),
-                          ),
+                          prefixIcon: Icon(Icons.search,
+                              color: colorScheme.onSurfaceVariant
+                                  .withValues(alpha: 0.8)),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(
+                                  icon: Icon(
                                     Icons.clear,
-                                    color: Color(0xFF64748B),
+                                    color: colorScheme.onSurfaceVariant
+                                        .withValues(alpha: 0.8),
                                   ),
                                   onPressed: () {
                                     _searchController.clear();
@@ -239,7 +252,7 @@ class _BlogPageState extends State<BlogPage> {
                         ),
                         style: GoogleFonts.poppins(
                           fontSize: 14,
-                          color: const Color(0xFF1E3A8A),
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -247,7 +260,7 @@ class _BlogPageState extends State<BlogPage> {
 
                   // TabBar - Pill Style
                   Container(
-                    color: Colors.white,
+                    color: surfaceColor,
                     padding: EdgeInsets.symmetric(
                       horizontal:
                           MediaQuery.of(context).size.width > 768 ? 24 : 16,
@@ -261,7 +274,7 @@ class _BlogPageState extends State<BlogPage> {
 
                           return Padding(
                             padding: const EdgeInsets.only(right: 12),
-                              child: GestureDetector(
+                            child: GestureDetector(
                               onTap: () {
                                 if (!mounted) return;
                                 setState(() {
@@ -279,20 +292,20 @@ class _BlogPageState extends State<BlogPage> {
                                 ),
                                 decoration: BoxDecoration(
                                   color: isSelected
-                                      ? const Color(0xFF3B82F6)
-                                      : const Color(0xFFF1F5F9),
+                                      ? colorScheme.primary
+                                      : chipInactiveColor,
                                   borderRadius: BorderRadius.circular(25),
                                   border: Border.all(
                                     color: isSelected
-                                        ? const Color(0xFF3B82F6)
-                                        : const Color(0xFFE2E8F0),
+                                        ? colorScheme.primary
+                                        : chipBorderColor,
                                     width: 1.5,
                                   ),
                                   boxShadow: isSelected
                                       ? [
                                           BoxShadow(
-                                            color: const Color(0xFF3B82F6)
-                                                .withValues(alpha: 0.3),
+                                            color: colorScheme.primary
+                                                .withValues(alpha: 0.35),
                                             blurRadius: 8,
                                             offset: const Offset(0, 4),
                                           ),
@@ -307,8 +320,8 @@ class _BlogPageState extends State<BlogPage> {
                                         ? FontWeight.w600
                                         : FontWeight.w500,
                                     color: isSelected
-                                        ? Colors.white
-                                        : const Color(0xFF64748B),
+                                        ? colorScheme.onPrimary
+                                        : subtleTextColor,
                                   ),
                                 ),
                               ),
@@ -339,10 +352,10 @@ class _BlogPageState extends State<BlogPage> {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.search_off,
                                   size: 64,
-                                  color: Color(0xFF94A3B8),
+                                  color: subtleTextColor,
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
@@ -350,7 +363,7 @@ class _BlogPageState extends State<BlogPage> {
                                   style: GoogleFonts.poppins(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w600,
-                                    color: const Color(0xFF64748B),
+                                    color: subtleTextColor,
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -358,7 +371,7 @@ class _BlogPageState extends State<BlogPage> {
                                   'Farklı bir arama terimi veya kategori deneyin',
                                   style: GoogleFonts.poppins(
                                     fontSize: 14,
-                                    color: const Color(0xFF94A3B8),
+                                    color: subtleTextColor,
                                   ),
                                 ),
                               ],
@@ -367,8 +380,7 @@ class _BlogPageState extends State<BlogPage> {
                         )
                       : (MediaQuery.of(context).size.width > 768
                           ? _buildBlogPostsGrid(context, _getDisplayedPosts())
-                          : _buildBlogPostsList(
-                              context, _getDisplayedPosts())),
+                          : _buildBlogPostsList(context, _getDisplayedPosts())),
 
                   // Daha Fazla Yükle Butonu (sadece arama yapılmadığında ve daha fazla kart varsa)
                   if (_getFilteredPosts().isNotEmpty &&
@@ -380,8 +392,8 @@ class _BlogPageState extends State<BlogPage> {
                         child: ElevatedButton(
                           onPressed: _loadMorePosts,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF3B82F6),
-                            foregroundColor: Colors.white,
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 40,
                               vertical: 16,
@@ -520,6 +532,94 @@ class _BlogPageState extends State<BlogPage> {
     final summaryMaxLines =
         useMobileSizes ? 10 : (isInGrid ? 6 : (isMobile ? 8 : 10));
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = colorScheme.surface;
+    final placeholderColor =
+        colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.7 : 1);
+    final textColor = colorScheme.onSurface;
+    final bodyTextColor =
+        colorScheme.onSurface.withValues(alpha: isDark ? 0.85 : 0.75);
+    final iconColor =
+        colorScheme.onSurfaceVariant.withValues(alpha: isDark ? 0.85 : 0.7);
+    final shadowColor = isDark
+        ? Colors.black.withValues(alpha: 0.45)
+        : Colors.black.withValues(alpha: 0.08);
+
+    Widget buildFooter() {
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Flexible(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.calendar_today, size: 14, color: iconColor),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    post['date'] as String,
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: bodyTextColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Icon(Icons.remove_red_eye, size: 14, color: iconColor),
+                const SizedBox(width: 3),
+                Text(
+                  _formatViewCount(viewCount),
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    color: bodyTextColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.arrow_forward_ios,
+              size: 14, color: colorScheme.primary.withValues(alpha: 0.9)),
+        ],
+      );
+    }
+
+    Widget buildBody({required bool expandSummary}) {
+      final summaryText = Text(
+        summary,
+        style: GoogleFonts.poppins(
+          fontSize: summaryFontSize,
+          color: bodyTextColor,
+          height: 1.4,
+        ),
+        maxLines: summaryMaxLines,
+        overflow: TextOverflow.ellipsis,
+      );
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            post['title'] as String,
+            style: GoogleFonts.poppins(
+              fontSize: titleFontSize,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: isInGrid ? 6 : 8),
+          expandSummary ? Expanded(child: summaryText) : summaryText,
+          SizedBox(height: isInGrid ? 8 : 12),
+          buildFooter(),
+        ],
+      );
+    }
+
     return GestureDetector(
       onTap: () {
         if (slug.isNotEmpty) {
@@ -530,13 +630,13 @@ class _BlogPageState extends State<BlogPage> {
         cursor: SystemMouseCursors.click,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                color: shadowColor,
+                blurRadius: 18,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -552,7 +652,7 @@ class _BlogPageState extends State<BlogPage> {
                 child: Container(
                   height: imageHeight,
                   width: double.infinity,
-                  color: const Color(0xFFE2E8F0),
+                  color: placeholderColor,
                   child: imageUrl != null && imageUrl.isNotEmpty
                       ? Image.network(
                           imageUrl,
@@ -566,7 +666,7 @@ class _BlogPageState extends State<BlogPage> {
                                     ? loadingProgress.cumulativeBytesLoaded /
                                         loadingProgress.expectedTotalBytes!
                                     : null,
-                                color: const Color(0xFF3B82F6),
+                                color: colorScheme.primary,
                               ),
                             );
                           },
@@ -574,7 +674,7 @@ class _BlogPageState extends State<BlogPage> {
                             child: Icon(
                               post['icon'] as IconData,
                               size: 50,
-                              color: const Color(0xFF3B82F6),
+                              color: colorScheme.primary,
                             ),
                           ),
                         )
@@ -582,7 +682,7 @@ class _BlogPageState extends State<BlogPage> {
                           child: Icon(
                             post['icon'] as IconData,
                             size: 50,
-                            color: const Color(0xFF3B82F6),
+                            color: colorScheme.primary,
                           ),
                         ),
                 ),
@@ -593,173 +693,12 @@ class _BlogPageState extends State<BlogPage> {
                   ? Expanded(
                       child: Padding(
                         padding: EdgeInsets.all(contentPadding),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Title
-                            Text(
-                              post['title'] as String,
-                              style: GoogleFonts.poppins(
-                                fontSize: titleFontSize,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF1E3A8A),
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: isInGrid ? 6 : 8),
-                            // Summary
-                            Expanded(
-                              child: Text(
-                                summary,
-                                style: GoogleFonts.poppins(
-                                  fontSize: summaryFontSize,
-                                  color: const Color(0xFF64748B),
-                                  height: 1.4,
-                                ),
-                                maxLines: summaryMaxLines,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            SizedBox(height: isInGrid ? 8 : 12),
-                            // Footer - en alt
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // Sol taraf - Tarih ve görüntülenme
-                                Flexible(
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.calendar_today,
-                                        size: 14,
-                                        color: Color(0xFF64748B),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Flexible(
-                                        child: Text(
-                                          post['date'] as String,
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: const Color(0xFF64748B),
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-                                      const Icon(
-                                        Icons.remove_red_eye,
-                                        size: 14,
-                                        color: Color(0xFF64748B),
-                                      ),
-                                      const SizedBox(width: 3),
-                                      Text(
-                                        _formatViewCount(viewCount),
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          color: const Color(0xFF64748B),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                // Sağ taraf - Git ikonu
-                                const Icon(
-                                  Icons.arrow_forward_ios,
-                                  size: 14,
-                                  color: Color(0xFF3B82F6),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        child: buildBody(expandSummary: true),
                       ),
                     )
                   : Padding(
                       padding: EdgeInsets.all(contentPadding),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Title
-                          Text(
-                            post['title'] as String,
-                            style: GoogleFonts.poppins(
-                              fontSize: titleFontSize,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E3A8A),
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: isInGrid ? 6 : 8),
-                          // Summary
-                          Text(
-                            summary,
-                            style: GoogleFonts.poppins(
-                              fontSize: summaryFontSize,
-                              color: const Color(0xFF64748B),
-                              height: 1.4,
-                            ),
-                            maxLines: summaryMaxLines,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: isInGrid ? 8 : 12),
-                          // Footer - en alt
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Sol taraf - Tarih ve görüntülenme
-                              Flexible(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(
-                                      Icons.calendar_today,
-                                      size: 14,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Flexible(
-                                      child: Text(
-                                        post['date'] as String,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          color: const Color(0xFF64748B),
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const Icon(
-                                      Icons.remove_red_eye,
-                                      size: 14,
-                                      color: Color(0xFF64748B),
-                                    ),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      _formatViewCount(viewCount),
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: const Color(0xFF64748B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              // Sağ taraf - Git ikonu
-                              const Icon(
-                                Icons.arrow_forward_ios,
-                                size: 14,
-                                color: Color(0xFF3B82F6),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                      child: buildBody(expandSummary: false),
                     ),
             ],
           ),
@@ -841,12 +780,14 @@ class _BlogPageState extends State<BlogPage> {
 
   /// SEO Content Section
   Widget _buildSEOContent(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       padding: EdgeInsets.all(
         MediaQuery.of(context).size.width > 768 ? 60 : 40,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -857,7 +798,7 @@ class _BlogPageState extends State<BlogPage> {
             style: GoogleFonts.poppins(
               fontSize: MediaQuery.of(context).size.width > 768 ? 36 : 28,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 30),
@@ -865,7 +806,7 @@ class _BlogPageState extends State<BlogPage> {
             'Tamgaci, kurumsal ve KOBİ işletmelerin ön muhasebe ihtiyaçlarını karşılamak için tasarlanmış modern bir bulut tabanlı çözümdür. İşletmenizin tüm finansal işlemlerini tek bir platformda yönetebilir, fatura kesebilir, stok takibi yapabilir ve detaylı raporlar alabilirsiniz.',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: const Color(0xFF64748B),
+              color: colorScheme.onSurface.withValues(alpha: 0.75),
               height: 1.8,
             ),
           ),
@@ -875,7 +816,7 @@ class _BlogPageState extends State<BlogPage> {
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -883,7 +824,7 @@ class _BlogPageState extends State<BlogPage> {
             'Günümüz iş dünyasında dijital dönüşüm artık bir lüks değil, zorunluluktur. Geleneksel yöntemlerle yapılan muhasebe işlemleri hem zaman kaybına hem de hata riskine neden olmaktadır. Tamgaci ile tüm süreçlerinizi dijitalleştirerek verimliliğinizi artırabilir, zaman ve maliyet tasarrufu sağlayabilirsiniz.',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: const Color(0xFF64748B),
+              color: colorScheme.onSurface.withValues(alpha: 0.75),
               height: 1.8,
             ),
           ),
@@ -893,7 +834,7 @@ class _BlogPageState extends State<BlogPage> {
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
@@ -901,7 +842,7 @@ class _BlogPageState extends State<BlogPage> {
             'Bulut tabanlı ön muhasebe yazılımı kullanmanın birçok avantajı vardır. Her yerden erişim imkanı, otomatik yedekleme, güvenli veri saklama ve sürekli güncellemeler bunlardan bazılarıdır. Tamgaci, tüm bu avantajları tek bir platformda sunarak işletmenizin dijital dönüşüm yolculuğunda yanınızda olur.',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: const Color(0xFF64748B),
+              color: colorScheme.onSurface.withValues(alpha: 0.75),
               height: 1.8,
             ),
           ),

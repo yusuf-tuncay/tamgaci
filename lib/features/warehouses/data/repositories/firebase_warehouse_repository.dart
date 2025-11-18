@@ -187,12 +187,14 @@ class FirebaseWarehouseRepository implements WarehouseRepository {
         throw Exception('User not authenticated');
       }
 
+      // Yeni depo oluşturulurken isDefault false olmalı (varsayılan depo sadece sistem tarafından oluşturulabilir)
       final warehouseWithTenant = warehouse.copyWith(
         tenantId: tenantId,
         createdBy: userId,
         updatedBy: userId,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        isDefault: false, // Kullanıcı tarafından oluşturulan depolar varsayılan olamaz
       );
 
       final warehouseEntity =
@@ -220,10 +222,29 @@ class FirebaseWarehouseRepository implements WarehouseRepository {
         throw Exception('User not authenticated');
       }
 
+      // Mevcut depo bilgilerini al
+      final warehouseDoc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('warehouses')
+          .doc(warehouse.id)
+          .get();
+
+      if (!warehouseDoc.exists) {
+        throw Exception('Depo bulunamadı');
+      }
+
+      final existingWarehouseData = warehouseDoc.data() as Map<String, dynamic>;
+      final existingIsDefault = existingWarehouseData['isDefault'] as bool? ?? false;
+
+      // Varsayılan depo için isDefault değiştirilemez
+      final finalIsDefault = existingIsDefault ? true : warehouse.isDefault;
+
       final warehouseWithTenant = warehouse.copyWith(
         tenantId: tenantId,
         updatedBy: userId,
         updatedAt: DateTime.now(),
+        isDefault: finalIsDefault, // Varsayılan depo korunur
       );
 
       final warehouseEntity =

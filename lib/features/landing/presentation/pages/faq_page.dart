@@ -18,12 +18,16 @@ class _FAQPageState extends State<FAQPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final surfaceColor = colorScheme.surface;
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E3A8A)),
+          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
           onPressed: () => context.go('/'),
         ),
         title: Text(
@@ -31,7 +35,7 @@ class _FAQPageState extends State<FAQPage> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E3A8A),
+            color: colorScheme.onSurface,
           ),
         ),
         centerTitle: false,
@@ -88,6 +92,7 @@ class _FAQPageState extends State<FAQPage> {
               padding: EdgeInsets.all(
                 MediaQuery.of(context).size.width > 768 ? 80 : 40,
               ),
+              color: surfaceColor,
               child: Column(
                 children: [
                   // FAQ Accordion
@@ -132,25 +137,41 @@ class _FAQPageState extends State<FAQPage> {
   ) {
     final isExpanded = _expandedIndex == index;
     final isMobile = MediaQuery.of(context).size.width <= 768;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = colorScheme.surface;
+    final borderColor = isExpanded
+        ? colorScheme.primary
+        : colorScheme.outline.withValues(alpha: isDark ? 0.5 : 0.3);
+    final iconBackground = isExpanded
+        ? colorScheme.primary
+        : colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.6 : 1);
+    final iconColor =
+        isExpanded ? colorScheme.onPrimary : colorScheme.onSurfaceVariant;
+    final answerColor =
+        colorScheme.onSurface.withValues(alpha: isDark ? 0.85 : 0.75);
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isExpanded ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0),
+          color: borderColor,
           width: isExpanded ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.4)
+                : Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        data: theme.copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
           tilePadding: EdgeInsets.all(isMobile ? 20 : 24),
           childrenPadding: EdgeInsets.fromLTRB(
@@ -163,14 +184,12 @@ class _FAQPageState extends State<FAQPage> {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: isExpanded
-                  ? const Color(0xFF3B82F6)
-                  : const Color(0xFFE2E8F0),
+              color: iconBackground,
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.help_outline,
-              color: isExpanded ? Colors.white : const Color(0xFF64748B),
+              color: iconColor,
               size: 20,
             ),
           ),
@@ -179,13 +198,12 @@ class _FAQPageState extends State<FAQPage> {
             style: GoogleFonts.poppins(
               fontSize: isMobile ? 16 : 18,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF1E3A8A),
+              color: colorScheme.onSurface,
             ),
           ),
           trailing: Icon(
             isExpanded ? Icons.remove_circle : Icons.add_circle,
-            color:
-                isExpanded ? const Color(0xFF3B82F6) : const Color(0xFF64748B),
+            color: isExpanded ? colorScheme.primary : iconColor,
           ),
           initiallyExpanded: false,
           onExpansionChanged: (expanded) {
@@ -200,7 +218,7 @@ class _FAQPageState extends State<FAQPage> {
                 answer,
                 style: GoogleFonts.poppins(
                   fontSize: isMobile ? 14 : 16,
-                  color: const Color(0xFF64748B),
+                  color: answerColor,
                   height: 1.8,
                 ),
               ),
@@ -287,12 +305,14 @@ class _FAQPageState extends State<FAQPage> {
 
   /// SEO Content Section
   Widget _buildSEOContent(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     return Container(
       padding: EdgeInsets.all(
         MediaQuery.of(context).size.width > 768 ? 60 : 40,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -303,7 +323,7 @@ class _FAQPageState extends State<FAQPage> {
             style: GoogleFonts.poppins(
               fontSize: MediaQuery.of(context).size.width > 768 ? 36 : 28,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 30),
@@ -311,7 +331,7 @@ class _FAQPageState extends State<FAQPage> {
             'Tamgacı, kurumsal ve KOBİ işletmelerin ön muhasebe ihtiyaçlarını karşılamak için geliştirilmiş modern bir bulut tabanlı yazılımdır. Web, mobil ve masaüstü platformlarında kullanılabilen Tamgacı, işletmenizin tüm finansal işlemlerini tek bir platformda yönetmenize olanak tanır.',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: const Color(0xFF64748B),
+              color: colorScheme.onSurface.withValues(alpha: 0.75),
               height: 1.8,
             ),
           ),
@@ -321,18 +341,19 @@ class _FAQPageState extends State<FAQPage> {
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
-          _buildFeatureList(),
+          _buildFeatureList(context),
         ],
       ),
     );
   }
 
   /// Feature List
-  Widget _buildFeatureList() {
+  Widget _buildFeatureList(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     final features = [
       'Fatura yönetimi ve e-fatura entegrasyonu',
       'Stok takibi ve envanter yönetimi',
@@ -355,8 +376,8 @@ class _FAQPageState extends State<FAQPage> {
                 margin: const EdgeInsets.only(top: 6, right: 12),
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3B82F6),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -365,7 +386,7 @@ class _FAQPageState extends State<FAQPage> {
                   feature,
                   style: GoogleFonts.poppins(
                     fontSize: 16,
-                    color: const Color(0xFF64748B),
+                    color: colorScheme.onSurface.withValues(alpha: 0.75),
                     height: 1.6,
                   ),
                 ),
@@ -514,6 +535,7 @@ class _ContactDialogState extends State<ContactDialog> {
   }
 
   Future<void> _submitForm() async {
+    final colorScheme = Theme.of(context).colorScheme;
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -524,7 +546,7 @@ class _ContactDialogState extends State<ContactDialog> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(emailOrPhoneError),
-          backgroundColor: Colors.red,
+          backgroundColor: colorScheme.error,
         ),
       );
       return;
@@ -544,10 +566,11 @@ class _ContactDialogState extends State<ContactDialog> {
 
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
+        SnackBar(
+          content: const Text(
+              'Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız.'),
+          backgroundColor: colorScheme.primary,
+          duration: const Duration(seconds: 3),
         ),
       );
 
@@ -558,11 +581,49 @@ class _ContactDialogState extends State<ContactDialog> {
   @override
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width <= 768;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final subtleText =
+        colorScheme.onSurface.withValues(alpha: isDark ? 0.85 : 0.7);
+    final fieldFill =
+        colorScheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.4 : 0.7);
+    final borderColor =
+        colorScheme.outline.withValues(alpha: isDark ? 0.5 : 0.3);
+    final inputBorder = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: borderColor),
+    );
+
+    InputDecoration buildDecoration({
+      required String label,
+      String? hint,
+      IconData? icon,
+      bool alignWithHint = false,
+    }) {
+      return InputDecoration(
+        labelText: label,
+        hintText: hint,
+        labelStyle: TextStyle(color: subtleText),
+        hintStyle: TextStyle(color: subtleText.withValues(alpha: 0.85)),
+        alignLabelWithHint: alignWithHint,
+        prefixIcon:
+            icon != null ? Icon(icon, color: colorScheme.primary) : null,
+        border: inputBorder,
+        enabledBorder: inputBorder,
+        focusedBorder: inputBorder.copyWith(
+          borderSide: BorderSide(color: colorScheme.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: fieldFill,
+      );
+    }
 
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
+      backgroundColor: colorScheme.surface,
       child: Container(
         width: isMobile ? double.infinity : 600,
         padding: EdgeInsets.all(isMobile ? 24 : 32),
@@ -573,7 +634,6 @@ class _ContactDialogState extends State<ContactDialog> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -582,31 +642,26 @@ class _ContactDialogState extends State<ContactDialog> {
                       style: GoogleFonts.poppins(
                         fontSize: isMobile ? 24 : 28,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E3A8A),
+                        color: colorScheme.onSurface,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: Icon(Icons.close,
+                          color: colorScheme.onSurfaceVariant),
                       onPressed: () => Navigator.of(context).pop(),
-                      color: const Color(0xFF64748B),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-
-                // Name and Surname Row
                 Row(
                   children: [
                     Expanded(
                       child: TextFormField(
                         controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Ad',
-                          hintText: 'Adınız',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: const Icon(Icons.person_outline),
+                        decoration: buildDecoration(
+                          label: 'Ad',
+                          hint: 'Adınız',
+                          icon: Icons.person_outline,
                         ),
                         style: GoogleFonts.poppins(),
                       ),
@@ -615,13 +670,10 @@ class _ContactDialogState extends State<ContactDialog> {
                     Expanded(
                       child: TextFormField(
                         controller: _surnameController,
-                        decoration: InputDecoration(
-                          labelText: 'Soyad',
-                          hintText: 'Soyadınız',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          prefixIcon: const Icon(Icons.person_outline),
+                        decoration: buildDecoration(
+                          label: 'Soyad',
+                          hint: 'Soyadınız',
+                          icon: Icons.person_outline,
                         ),
                         style: GoogleFonts.poppins(),
                       ),
@@ -629,35 +681,25 @@ class _ContactDialogState extends State<ContactDialog> {
                   ],
                 ),
                 const SizedBox(height: 20),
-
-                // Email
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'E-posta',
-                    hintText: 'ornek@email.com',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    prefixIcon: const Icon(Icons.email_outlined),
+                  decoration: buildDecoration(
+                    label: 'E-posta',
+                    hint: 'ornek@email.com',
+                    icon: Icons.email_outlined,
                   ),
                   validator: _validateEmail,
                   style: GoogleFonts.poppins(),
                 ),
                 const SizedBox(height: 20),
-
-                // Phone
                 TextFormField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Telefon',
-                    hintText: '0555 123 45 67',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    prefixIcon: const Icon(Icons.phone_outlined),
+                  decoration: buildDecoration(
+                    label: 'Telefon',
+                    hint: '0555 123 45 67',
+                    icon: Icons.phone_outlined,
                   ),
                   validator: _validatePhone,
                   style: GoogleFonts.poppins(),
@@ -668,24 +710,19 @@ class _ContactDialogState extends State<ContactDialog> {
                     '* E-posta veya telefon numarasından en az birisi gereklidir',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: const Color(0xFF64748B),
+                      color: subtleText,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Message
                 TextFormField(
                   controller: _messageController,
                   maxLines: 5,
-                  decoration: InputDecoration(
-                    labelText: 'Mesaj *',
-                    hintText: 'Mesajınızı buraya yazınız...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    alignLabelWithHint: true,
+                  decoration: buildDecoration(
+                    label: 'Mesaj *',
+                    hint: 'Mesajınızı buraya yazınız...',
+                    alignWithHint: true,
                   ),
                   validator: _validateMessage,
                   style: GoogleFonts.poppins(),
@@ -697,34 +734,32 @@ class _ContactDialogState extends State<ContactDialog> {
                     '* Zorunlu alan',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: const Color(0xFF64748B),
+                      color: subtleText,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Submit Button
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton(
+                  child: FilledButton(
                     onPressed: _isSubmitting ? null : _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3B82F6),
-                      foregroundColor: Colors.white,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: colorScheme.primary,
+                      foregroundColor: colorScheme.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 0,
                     ),
                     child: _isSubmitting
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  colorScheme.onPrimary),
                             ),
                           )
                         : Text(

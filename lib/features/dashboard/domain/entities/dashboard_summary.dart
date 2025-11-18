@@ -66,6 +66,27 @@ class DashboardSummary {
   /// Tahsilat büyüme oranı (%)
   final double paymentGrowthRate;
 
+  /// Alış büyüme oranı (%)
+  final double purchaseGrowthRate;
+
+  /// Net kar büyüme oranı (%)
+  final double netProfitGrowthRate;
+
+  /// Para birimine göre toplam bakiyeler
+  final Map<String, double>? balanceByCurrency;
+
+  /// Bekleyen tahsilat değişim oranı (%)
+  final double receivablesGrowthRate;
+
+  /// Bekleyen ödeme değişim oranı (%)
+  final double payablesGrowthRate;
+
+  /// Müşteri büyüme oranı (%)
+  final double customerGrowthRate;
+
+  /// Tedarikçi büyüme oranı (%)
+  final double supplierGrowthRate;
+
   const DashboardSummary({
     required this.totalSales,
     required this.totalPurchases,
@@ -88,6 +109,13 @@ class DashboardSummary {
     required this.newSuppliersThisMonth,
     required this.totalPayments,
     required this.paymentGrowthRate,
+    required this.balanceByCurrency,
+    required this.purchaseGrowthRate,
+    required this.netProfitGrowthRate,
+    required this.receivablesGrowthRate,
+    required this.payablesGrowthRate,
+    required this.customerGrowthRate,
+    required this.supplierGrowthRate,
   });
 
   /// DashboardSummary kopyalama metodu
@@ -113,6 +141,13 @@ class DashboardSummary {
     int? newSuppliersThisMonth,
     double? totalPayments,
     double? paymentGrowthRate,
+    Map<String, double>? balanceByCurrency,
+    double? purchaseGrowthRate,
+    double? netProfitGrowthRate,
+    double? receivablesGrowthRate,
+    double? payablesGrowthRate,
+    double? customerGrowthRate,
+    double? supplierGrowthRate,
   }) {
     return DashboardSummary(
       totalSales: totalSales ?? this.totalSales,
@@ -138,6 +173,14 @@ class DashboardSummary {
           newSuppliersThisMonth ?? this.newSuppliersThisMonth,
       totalPayments: totalPayments ?? this.totalPayments,
       paymentGrowthRate: paymentGrowthRate ?? this.paymentGrowthRate,
+      balanceByCurrency: balanceByCurrency ?? this.balanceByCurrency,
+      purchaseGrowthRate: purchaseGrowthRate ?? this.purchaseGrowthRate,
+      netProfitGrowthRate: netProfitGrowthRate ?? this.netProfitGrowthRate,
+      receivablesGrowthRate:
+          receivablesGrowthRate ?? this.receivablesGrowthRate,
+      payablesGrowthRate: payablesGrowthRate ?? this.payablesGrowthRate,
+      customerGrowthRate: customerGrowthRate ?? this.customerGrowthRate,
+      supplierGrowthRate: supplierGrowthRate ?? this.supplierGrowthRate,
     );
   }
 
@@ -165,6 +208,13 @@ class DashboardSummary {
       newSuppliersThisMonth: 0,
       totalPayments: 0.0,
       paymentGrowthRate: 0.0,
+      balanceByCurrency: {},
+      purchaseGrowthRate: 0.0,
+      netProfitGrowthRate: 0.0,
+      receivablesGrowthRate: 0.0,
+      payablesGrowthRate: 0.0,
+      customerGrowthRate: 0.0,
+      supplierGrowthRate: 0.0,
     );
   }
 
@@ -203,7 +253,15 @@ class DashboardSummary {
         other.newCustomersThisMonth == newCustomersThisMonth &&
         other.newSuppliersThisMonth == newSuppliersThisMonth &&
         other.totalPayments == totalPayments &&
-        other.paymentGrowthRate == paymentGrowthRate;
+        other.paymentGrowthRate == paymentGrowthRate &&
+        _mapEquals(other.balanceByCurrency ?? const {},
+            balanceByCurrency ?? const {}) &&
+        other.purchaseGrowthRate == purchaseGrowthRate &&
+        other.netProfitGrowthRate == netProfitGrowthRate &&
+        other.receivablesGrowthRate == receivablesGrowthRate &&
+        other.payablesGrowthRate == payablesGrowthRate &&
+        other.customerGrowthRate == customerGrowthRate &&
+        other.supplierGrowthRate == supplierGrowthRate;
   }
 
   @override
@@ -230,6 +288,22 @@ class DashboardSummary {
       newSuppliersThisMonth,
       totalPayments,
       paymentGrowthRate,
+      balanceByCurrency ?? const {},
+      purchaseGrowthRate,
+      netProfitGrowthRate,
+      receivablesGrowthRate,
+      payablesGrowthRate,
+      customerGrowthRate,
+      supplierGrowthRate,
     ]);
   }
+}
+
+bool _mapEquals(Map<String, double> a, Map<String, double> b) {
+  if (a.length != b.length) return false;
+  for (final entry in a.entries) {
+    if (!b.containsKey(entry.key)) return false;
+    if (b[entry.key] != entry.value) return false;
+  }
+  return true;
 }

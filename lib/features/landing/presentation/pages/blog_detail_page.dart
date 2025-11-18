@@ -37,15 +37,20 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
     }
     _recognizers.clear();
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceColor = colorScheme.surface;
+
     final blogPost = _getBlogPostBySlug(widget.slug);
 
     if (blogPost == null) {
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: surfaceColor,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1E3A8A)),
+            icon: Icon(Icons.arrow_back, color: colorScheme.primary),
             onPressed: () => context.go('/blog'),
           ),
           title: Text(
@@ -53,7 +58,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
             style: GoogleFonts.poppins(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: const Color(0xFF1E3A8A),
+              color: colorScheme.onSurface,
             ),
           ),
         ),
@@ -65,10 +70,10 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: surfaceColor,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E3A8A)),
+          icon: Icon(Icons.arrow_back, color: colorScheme.primary),
           onPressed: () => context.go('/blog'),
         ),
         title: Text(
@@ -76,7 +81,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
           style: GoogleFonts.poppins(
             fontSize: 24,
             fontWeight: FontWeight.w700,
-            color: const Color(0xFF1E3A8A),
+            color: colorScheme.onSurface,
           ),
         ),
         centerTitle: false,
@@ -164,6 +169,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
               padding: EdgeInsets.all(
                 MediaQuery.of(context).size.width > 768 ? 80 : 40,
               ),
+              color: surfaceColor,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -178,7 +184,9 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: isDark
+                                ? Colors.black.withValues(alpha: 0.45)
+                                : Colors.black.withValues(alpha: 0.12),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -191,12 +199,12 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: const Color(0xFFE2E8F0),
+                              color: colorScheme.surfaceContainerHighest,
                               child: Center(
                                 child: Icon(
                                   blogPost['icon'] as IconData,
                                   size: 80,
-                                  color: const Color(0xFF3B82F6),
+                                  color: colorScheme.primary,
                                 ),
                               ),
                             );
@@ -204,9 +212,12 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
-                              color: const Color(0xFFE2E8F0),
-                              child: const Center(
-                                child: CircularProgressIndicator(),
+                              color: colorScheme.surfaceContainerHighest,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      colorScheme.primary),
+                                ),
                               ),
                             );
                           },
@@ -229,8 +240,8 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                     child: ElevatedButton(
                       onPressed: () => context.go('/blog'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF3B82F6),
-                        foregroundColor: Colors.white,
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 40, vertical: 16),
                         shape: RoundedRectangleBorder(
@@ -283,22 +294,25 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
     String text,
     List<TapGestureRecognizer> recognizers,
   ) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     final baseStyle = GoogleFonts.poppins(
       fontSize: 18,
-      color: const Color(0xFF64748B),
+      color: colorScheme.onSurface.withValues(alpha: 0.8),
       height: 1.8,
     );
 
     final headingStyle = GoogleFonts.poppins(
       fontSize: 24,
-      color: const Color(0xFF1E3A8A),
+      color: colorScheme.onSurface,
       height: 1.6,
       fontWeight: FontWeight.w700,
     );
 
     final linkStyle = GoogleFonts.poppins(
       fontSize: 18,
-      color: const Color(0xFF3B82F6),
+      color: colorScheme.primary,
       height: 1.8,
       decoration: TextDecoration.underline,
       fontWeight: FontWeight.w600,
@@ -342,6 +356,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                   '• ',
                   style: baseStyle.copyWith(
                     fontWeight: FontWeight.bold,
+                    color: colorScheme.primary,
                   ),
                 ),
                 Expanded(

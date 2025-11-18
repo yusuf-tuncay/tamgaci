@@ -7,8 +7,6 @@ import '../providers/warehouse_providers.dart';
 import '../providers/warehouse_transfer_providers.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../products/presentation/providers/product_providers.dart';
-import '../../../cash_management/domain/entities/cash_account.dart';
-import '../../../cash_management/presentation/providers/cash_management_providers.dart';
 
 /// Ürün Gönderme Sayfası (Bu depodan başka depoya)
 class TransferProductFromWarehousePage extends ConsumerStatefulWidget {
@@ -32,7 +30,6 @@ class _TransferProductFromWarehousePageState
 
   Warehouse? _selectedToWarehouse;
   Product? _selectedProduct;
-  CashAccount? _selectedCashAccount;
   bool _isLoading = false;
 
   @override
@@ -44,17 +41,18 @@ class _TransferProductFromWarehousePageState
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final warehousesAsync = ref.watch(warehousesProvider);
     final productsAsync = ref.watch(productsStreamProvider);
-    final cashAccountsAsync = ref.watch(cashAccountsStreamProvider);
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: colorScheme.onSurface),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
@@ -62,22 +60,25 @@ class _TransferProductFromWarehousePageState
           style: GoogleFonts.poppins(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: colorScheme.onSurface,
           ),
         ),
         actions: [
           if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
               child: SizedBox(
                 width: 20,
                 height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+                ),
               ),
             )
           else
             IconButton(
-              icon: const Icon(Icons.save, color: Colors.black87),
+              icon: Icon(Icons.save, color: colorScheme.onSurface),
               onPressed: _saveTransfer,
               tooltip: 'Kaydet',
             ),
@@ -85,12 +86,7 @@ class _TransferProductFromWarehousePageState
       ),
       body: warehousesAsync.when(
         data: (warehouses) => productsAsync.when(
-          data: (products) => cashAccountsAsync.when(
-            data: (cashAccounts) =>
-                _buildBody(warehouses, products, cashAccounts),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => _buildErrorState(error),
-          ),
+          data: (products) => _buildBody(warehouses, products),
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, stack) => _buildErrorState(error),
         ),
@@ -100,8 +96,7 @@ class _TransferProductFromWarehousePageState
     );
   }
 
-  Widget _buildBody(List<Warehouse> warehouses, List<Product> products,
-      List<CashAccount> cashAccounts) {
+  Widget _buildBody(List<Warehouse> warehouses, List<Product> products) {
     // Kaynak depo hariç diğer depoları filtrele
     final availableWarehouses =
         warehouses.where((w) => w.id != widget.sourceWarehouse.id).toList();
@@ -117,7 +112,7 @@ class _TransferProductFromWarehousePageState
             const SizedBox(height: 20),
             _buildTransferInfoCard(),
             const SizedBox(height: 20),
-            _buildFormCard(availableWarehouses, products, cashAccounts),
+            _buildFormCard(availableWarehouses, products),
             const SizedBox(height: 20),
             _buildSaveButton(),
           ],
@@ -189,18 +184,30 @@ class _TransferProductFromWarehousePageState
   }
 
   Widget _buildTransferInfoCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,19 +217,19 @@ class _TransferProductFromWarehousePageState
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.warehouse, color: Colors.orange[600], size: 20),
+              Icon(Icons.warehouse, color: colorScheme.tertiary, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Kaynak Depo: ${widget.sourceWarehouse.name}',
                 style: GoogleFonts.poppins(
                   fontSize: 14,
-                  color: Colors.grey[700],
+                  color: colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -230,14 +237,14 @@ class _TransferProductFromWarehousePageState
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.location_on, color: Colors.grey[600], size: 20),
+              Icon(Icons.location_on, color: colorScheme.onSurfaceVariant, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   widget.sourceWarehouse.address,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -249,19 +256,31 @@ class _TransferProductFromWarehousePageState
   }
 
   Widget _buildFormCard(List<Warehouse> availableWarehouses,
-      List<Product> products, List<CashAccount> cashAccounts) {
+      List<Product> products) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark 
+            ? colorScheme.surfaceContainerHighest 
+            : colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: isDark 
+                ? Colors.black.withValues(alpha: 0.3)
+                : Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
+        border: Border.all(
+          color: colorScheme.outlineVariant,
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -271,15 +290,13 @@ class _TransferProductFromWarehousePageState
             style: GoogleFonts.poppins(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.grey[800],
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 16),
           _buildWarehouseDropdown(availableWarehouses),
           const SizedBox(height: 16),
           _buildProductDropdown(products),
-          const SizedBox(height: 16),
-          _buildCashAccountDropdown(cashAccounts),
           const SizedBox(height: 16),
           _buildQuantityField(),
           const SizedBox(height: 16),
@@ -290,6 +307,9 @@ class _TransferProductFromWarehousePageState
   }
 
   Widget _buildWarehouseDropdown(List<Warehouse> warehouses) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -298,7 +318,7 @@ class _TransferProductFromWarehousePageState
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -307,22 +327,22 @@ class _TransferProductFromWarehousePageState
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+              borderSide: BorderSide(color: colorScheme.tertiary),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: Text(
             'Hedef depo seçin',
-            style: GoogleFonts.poppins(color: Colors.grey[500]),
+            style: GoogleFonts.poppins(color: colorScheme.onSurfaceVariant),
           ),
           items: warehouses.map((warehouse) {
             return DropdownMenuItem<Warehouse>(
@@ -350,6 +370,9 @@ class _TransferProductFromWarehousePageState
   }
 
   Widget _buildProductDropdown(List<Product> products) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -358,7 +381,7 @@ class _TransferProductFromWarehousePageState
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -367,22 +390,22 @@ class _TransferProductFromWarehousePageState
           decoration: InputDecoration(
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
+              borderSide: BorderSide(color: colorScheme.outlineVariant),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+              borderSide: BorderSide(color: colorScheme.tertiary),
             ),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           ),
           hint: Text(
             'Ürün seçin',
-            style: GoogleFonts.poppins(color: Colors.grey[500]),
+            style: GoogleFonts.poppins(color: colorScheme.onSurfaceVariant),
           ),
           items: products.map((product) {
             return DropdownMenuItem<Product>(
@@ -397,6 +420,7 @@ class _TransferProductFromWarehousePageState
                       product.name,
                       style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w500,
+                        color: colorScheme.onSurface,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -405,7 +429,7 @@ class _TransferProductFromWarehousePageState
                         'Kod: ${product.productCode}',
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: colorScheme.onSurfaceVariant,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -430,67 +454,10 @@ class _TransferProductFromWarehousePageState
     );
   }
 
-  Widget _buildCashAccountDropdown(List<CashAccount> cashAccounts) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Kasa *',
-          style: GoogleFonts.poppins(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[700],
-          ),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<CashAccount>(
-          initialValue: _selectedCashAccount,
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey[300]!),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFFF59E0B)),
-            ),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          ),
-          hint: Text(
-            'Kasa seçin',
-            style: GoogleFonts.poppins(color: Colors.grey[500]),
-          ),
-          items: cashAccounts.map((cashAccount) {
-            return DropdownMenuItem<CashAccount>(
-              value: cashAccount,
-              child: Text(
-                cashAccount.name,
-                style: GoogleFonts.poppins(),
-              ),
-            );
-          }).toList(),
-          onChanged: (CashAccount? value) {
-            setState(() {
-              _selectedCashAccount = value;
-            });
-          },
-          validator: (value) {
-            if (value == null) {
-              return 'Kasa seçiniz';
-            }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
   Widget _buildQuantityField() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return TextFormField(
       controller: _quantityController,
       keyboardType: TextInputType.number,
@@ -498,15 +465,15 @@ class _TransferProductFromWarehousePageState
         labelText: 'Miktar *',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+          borderSide: BorderSide(color: colorScheme.tertiary),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
@@ -524,6 +491,9 @@ class _TransferProductFromWarehousePageState
   }
 
   Widget _buildNotesField() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return TextFormField(
       controller: _notesController,
       maxLines: 3,
@@ -531,15 +501,15 @@ class _TransferProductFromWarehousePageState
         labelText: 'Notlar',
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFFF59E0B)),
+          borderSide: BorderSide(color: colorScheme.tertiary),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
@@ -547,27 +517,30 @@ class _TransferProductFromWarehousePageState
   }
 
   Widget _buildSaveButton() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
         onPressed: _isLoading ? null : _saveTransfer,
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF59E0B),
-          foregroundColor: Colors.white,
+          backgroundColor: colorScheme.tertiary,
+          foregroundColor: colorScheme.onTertiary,
           elevation: 4,
-          shadowColor: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+          shadowColor: colorScheme.tertiary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
         child: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 20,
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(colorScheme.onTertiary),
                 ),
               )
             : Row(
@@ -589,17 +562,20 @@ class _TransferProductFromWarehousePageState
   }
 
   Widget _buildErrorState(Object error) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+          Icon(Icons.error_outline, size: 64, color: colorScheme.error),
           const SizedBox(height: 16),
           Text(
             'Hata: $error',
             style: GoogleFonts.poppins(
               fontSize: 16,
-              color: Colors.red[600],
+              color: colorScheme.error,
             ),
             textAlign: TextAlign.center,
           ),
@@ -618,9 +594,7 @@ class _TransferProductFromWarehousePageState
 
   Future<void> _saveTransfer() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedToWarehouse == null ||
-        _selectedProduct == null ||
-        _selectedCashAccount == null) {
+    if (_selectedToWarehouse == null || _selectedProduct == null) {
       return;
     }
 
@@ -658,7 +632,7 @@ class _TransferProductFromWarehousePageState
               'Transfer başarıyla oluşturuldu',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.green[600],
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
         Navigator.pop(context);
@@ -671,7 +645,7 @@ class _TransferProductFromWarehousePageState
               'Transfer oluşturulamadı: $e',
               style: GoogleFonts.poppins(),
             ),
-            backgroundColor: Colors.red[600],
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }

@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/firebase_stock_count_repository.dart';
 import '../../domain/entities/stock_count.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Stock Count Repository Provider
 final stockCountRepositoryProvider = Provider<FirebaseStockCountRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseStockCountRepository();
 });
 

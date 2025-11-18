@@ -6493,8 +6493,28 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
         return StatefulBuilder(
           builder: (dialogContext, setState) {
+            final theme = Theme.of(dialogContext);
+            final colorScheme = theme.colorScheme;
+            final isDark = theme.brightness == Brightness.dark;
+            final textColor = colorScheme.onSurface.withValues(alpha: 0.8);
+            final borderColor = colorScheme.onSurface.withValues(alpha: 0.12);
+            final inputBorder = OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: borderColor),
+            );
+            final fillColor = colorScheme.surfaceContainerHighest
+                .withValues(alpha: isDark ? 0.45 : 0.7);
             return AlertDialog(
-              title: const Text('Manuel Hak Ediş Ekle'),
+              backgroundColor: colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              title: Text(
+                'Manuel Hak Ediş Ekle',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               contentPadding: const EdgeInsets.fromLTRB(24.0, 20.0, 24.0, 24.0),
               content: ConstrainedBox(
                 constraints: BoxConstraints(
@@ -6506,16 +6526,31 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('$name için manuel hak ediş ekle'),
+                      Text(
+                        '$name için manuel hak ediş ekle',
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: textColor),
+                      ),
                       const SizedBox(height: 16),
                       // Otomatik hak ediş açma/kapama
-                      Card(
-                        color: Colors.grey[50],
+                      Container(
+                        decoration: BoxDecoration(
+                          color: fillColor,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: borderColor),
+                        ),
                         child: SwitchListTile(
-                          title: const Text('Otomatik Hak Ediş'),
-                          subtitle: const Text(
+                          title: Text(
+                            'Otomatik Hak Ediş',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          subtitle: Text(
                             'Otomatik hak ediş oluşturmayı aç/kapat',
-                            style: TextStyle(fontSize: 12),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: textColor),
                           ),
                           value: autoEntitlementEnabled,
                           onChanged: (value) {
@@ -6523,6 +6558,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                               autoEntitlementEnabled = value;
                             });
                           },
+                          activeThumbColor: colorScheme.primary,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -6545,15 +6581,26 @@ class _EmployeeDetailSheet extends StatelessWidget {
                           }
                         },
                         child: InputDecorator(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Tarih',
-                            border: OutlineInputBorder(),
-                            suffixIcon: Icon(Icons.calendar_today),
+                            labelStyle: TextStyle(color: textColor),
+                            border: inputBorder,
+                            enabledBorder: inputBorder,
+                            focusedBorder: inputBorder.copyWith(
+                              borderSide: BorderSide(
+                                  color: colorScheme.primary, width: 2),
+                            ),
+                            suffixIcon: Icon(Icons.calendar_today,
+                                color: colorScheme.primary),
+                            filled: true,
+                            fillColor: fillColor,
                           ),
                           child: Text(
                             dateController.text.isEmpty
                                 ? 'Tarih seçin'
                                 : dateController.text,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(color: colorScheme.onSurface),
                           ),
                         ),
                       ),
@@ -6564,9 +6611,21 @@ class _EmployeeDetailSheet extends StatelessWidget {
                         focusNode: amountFocusNode,
                         decoration: InputDecoration(
                           labelText: 'Tutar ($currency)',
-                          border: const OutlineInputBorder(),
+                          labelStyle: TextStyle(color: textColor),
+                          border: inputBorder,
+                          enabledBorder: inputBorder,
+                          focusedBorder: inputBorder.copyWith(
+                            borderSide: BorderSide(
+                                color: colorScheme.primary, width: 2),
+                          ),
                           hintText: 'Örn: 10000,00',
+                          hintStyle: TextStyle(
+                            color: colorScheme.onSurface.withValues(alpha: 0.5),
+                          ),
+                          filled: true,
+                          fillColor: fillColor,
                         ),
+                        style: TextStyle(color: colorScheme.onSurface),
                         keyboardType: const TextInputType.numberWithOptions(
                             decimal: true),
                         inputFormatters: [
@@ -6582,10 +6641,22 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       // Not
                       TextFormField(
                         controller: noteController,
-                        decoration: const InputDecoration(
+                        style: TextStyle(color: colorScheme.onSurface),
+                        decoration: InputDecoration(
                           labelText: 'Not (Opsiyonel)',
-                          border: OutlineInputBorder(),
+                          labelStyle: TextStyle(color: textColor),
                           hintText: 'Hak ediş açıklaması...',
+                          hintStyle: TextStyle(
+                              color:
+                                  colorScheme.onSurface.withValues(alpha: 0.5)),
+                          border: inputBorder,
+                          enabledBorder: inputBorder,
+                          focusedBorder: inputBorder.copyWith(
+                            borderSide: BorderSide(
+                                color: colorScheme.primary, width: 2),
+                          ),
+                          filled: true,
+                          fillColor: fillColor,
                         ),
                         maxLines: 3,
                       ),
@@ -6603,7 +6674,10 @@ class _EmployeeDetailSheet extends StatelessWidget {
                     dateController.dispose();
                     Navigator.of(ctx).pop();
                   },
-                  child: const Text('Vazgeç'),
+                  child: Text(
+                    'Vazgeç',
+                    style: TextStyle(color: colorScheme.primary),
+                  ),
                 ),
                 FilledButton(
                   onPressed: () async {
@@ -6615,9 +6689,9 @@ class _EmployeeDetailSheet extends StatelessWidget {
 
                     if (amount <= 0) {
                       ScaffoldMessenger.of(dialogContext).showSnackBar(
-                        const SnackBar(
-                          content: Text('Tutar 0\'dan büyük olmalıdır'),
-                          backgroundColor: Colors.red,
+                        SnackBar(
+                          content: const Text('Tutar 0\'dan büyük olmalıdır'),
+                          backgroundColor: colorScheme.error,
                         ),
                       );
                       return;
@@ -6669,7 +6743,7 @@ class _EmployeeDetailSheet extends StatelessWidget {
                             content: Text(
                               'Hak ediş eklendi (${amount.toStringAsFixed(2)} $currency)${autoEntitlementEnabled ? '' : '\nOtomatik hak ediş kapatıldı'}',
                             ),
-                            backgroundColor: Colors.green,
+                            backgroundColor: colorScheme.primary,
                           ),
                         );
                       }
@@ -6684,12 +6758,16 @@ class _EmployeeDetailSheet extends StatelessWidget {
                         ScaffoldMessenger.of(dialogContext).showSnackBar(
                           SnackBar(
                             content: Text('Hata: $e'),
-                            backgroundColor: Colors.red,
+                            backgroundColor: colorScheme.error,
                           ),
                         );
                       }
                     }
                   },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                  ),
                   child: const Text('Ekle'),
                 ),
               ],
@@ -6910,15 +6988,23 @@ class _EmployeeDetailSheet extends StatelessWidget {
     Map? workHours,
     Map? overtime,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final sectionTitleStyle =
+        theme.textTheme.titleMedium?.copyWith(color: colorScheme.onSurface);
+    final bodyStyle = theme.textTheme.bodyMedium
+        ?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.8));
+    final dividerColor = colorScheme.onSurface.withValues(alpha: 0.08);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: isDark ? Colors.grey[850] : null,
+        backgroundColor: colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           '$name - Detaylı Bilgiler',
-          style: TextStyle(
-            color: isDark ? Colors.white : Colors.grey[800],
+          style: theme.textTheme.titleLarge?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
           ),
         ),
         content: SizedBox(
@@ -6999,16 +7085,14 @@ class _EmployeeDetailSheet extends StatelessWidget {
                 ),
                 if (workHours != null && workHours.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    'Çalışma Saatleri',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('Çalışma Saatleri', style: sectionTitleStyle),
                   const SizedBox(height: 8),
                   ListView.separated(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: workHours.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, __) =>
+                        Divider(height: 1, color: dividerColor),
                     itemBuilder: (context, index) {
                       final day = workHours.keys.elementAt(index);
                       final v = (workHours[day] as Map?) ?? const {};
@@ -7016,18 +7100,17 @@ class _EmployeeDetailSheet extends StatelessWidget {
                       final end = v['end']?.toString() ?? '';
                       return ListTile(
                         dense: true,
-                        leading: const Icon(Icons.schedule),
-                        title: Text('$day: $start - $end'),
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(Icons.schedule,
+                            color: colorScheme.primary, size: 20),
+                        title: Text('$day: $start - $end', style: bodyStyle),
                       );
                     },
                   ),
                 ],
                 if (overtime != null && (overtime['enabled'] == true)) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    'Fazla Mesai',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                  Text('Fazla Mesai', style: sectionTitleStyle),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 12,
@@ -7058,7 +7141,10 @@ class _EmployeeDetailSheet extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Kapat'),
+            child: Text(
+              'Kapat',
+              style: TextStyle(color: colorScheme.primary),
+            ),
           ),
         ],
       ),
@@ -8057,16 +8143,21 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final labelStyle = Theme.of(context)
-        .textTheme
-        .bodySmall
-        ?.copyWith(color: Colors.grey[700]);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark
+        ? colorScheme.onSurface.withValues(alpha: 0.08)
+        : colorScheme.primary.withValues(alpha: 0.06);
+    final borderColor = colorScheme.onSurface.withValues(alpha: 0.12);
+    final labelStyle = theme.textTheme.bodySmall
+        ?.copyWith(color: colorScheme.onSurface.withValues(alpha: 0.7));
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: borderColor),
         borderRadius: BorderRadius.circular(999),
-        color: Colors.grey[50],
+        color: bgColor,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -8074,7 +8165,10 @@ class _InfoTile extends StatelessWidget {
           Text('$label: ', style: labelStyle),
           Text(
             value,
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
           ),
         ],
       ),

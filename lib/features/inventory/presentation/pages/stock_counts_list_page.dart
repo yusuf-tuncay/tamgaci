@@ -153,6 +153,7 @@ class _StockCountsListPageState extends ConsumerState<StockCountsListPage> {
           ],
         ),
         drawerContent: const TamgaciDrawerMenu(),
+        persistentOnLarge: false,
         body: SingleChildScrollView(
             child: Column(children: [
           _buildWelcomeCard(isDark),

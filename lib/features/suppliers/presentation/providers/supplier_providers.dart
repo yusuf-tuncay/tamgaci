@@ -6,11 +6,13 @@ import '../../domain/entities/supplier.dart';
 import '../../domain/entities/supplier_enums.dart';
 import '../../domain/repositories/supplier_repository.dart';
 import '../../data/repositories/firebase_supplier_repository.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 // ========== BASE PROVIDERS ==========
 
 /// Supplier repository provider - Firebase only
 final supplierRepositoryProvider = Provider<SupplierRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseSupplierRepository();
 });
 

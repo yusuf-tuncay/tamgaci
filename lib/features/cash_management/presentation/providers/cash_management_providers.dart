@@ -22,6 +22,7 @@ import 'package:tamgaci/features/cash_management/domain/usecases/duplicate_cash_
 import 'package:tamgaci/features/cash_management/presentation/notifiers/cash_management_notifier.dart';
 import 'package:tamgaci/features/cash_management/presentation/states/cash_management_state.dart';
 import 'package:tamgaci/features/cash_management/domain/entities/cash_account.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Firebase Firestore instance provider
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
@@ -52,6 +53,7 @@ final cashTransactionFirebaseDataSourceProvider =
 /// Cash Account Repository provider
 final cashAccountRepositoryProvider =
     Provider<CashAccountRepositoryImpl>((ref) {
+  ref.watch(authProvider);
   final dataSource = ref.watch(cashAccountFirebaseDataSourceProvider);
   return CashAccountRepositoryImpl(dataSource: dataSource);
 });
@@ -59,6 +61,7 @@ final cashAccountRepositoryProvider =
 /// Cash Transaction Repository provider
 final cashTransactionRepositoryProvider =
     Provider<CashTransactionRepositoryImpl>((ref) {
+  ref.watch(authProvider);
   final dataSource = ref.watch(cashTransactionFirebaseDataSourceProvider);
   return CashTransactionRepositoryImpl(dataSource: dataSource);
 });

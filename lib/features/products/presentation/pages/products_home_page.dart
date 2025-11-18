@@ -95,7 +95,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     );
   }
 
-  Widget _buildWelcomeCard(List<Product> products) {
+  Widget _buildWelcomeCard(List<Product> products, {double? stockValue}) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final headerTextColor = theme.colorScheme.onPrimary;
@@ -183,6 +183,11 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                       const SizedBox(width: 8),
                       _buildHeaderStatCard(
                           'Düşük Stok', lowStockProducts.toString()),
+                      if (stockValue != null) ...[
+                        const SizedBox(width: 8),
+                        _buildHeaderStatCard('Stok Değeri',
+                            '₺${CurrencyHelper.formatNumber(stockValue)}'),
+                      ],
                     ],
                   ),
                 ),
@@ -203,6 +208,11 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
                   const SizedBox(width: 8),
                   _buildHeaderStatCard(
                       'Düşük Stok', lowStockProducts.toString()),
+                  if (stockValue != null) ...[
+                    const SizedBox(width: 8),
+                    _buildHeaderStatCard('Stok Değeri',
+                        '₺${CurrencyHelper.formatNumber(stockValue)}'),
+                  ],
                 ],
               ),
             ),
@@ -273,7 +283,11 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
           child: Column(
             children: [
               // Header card
-              _buildWelcomeCard(productsAsync.value ?? []),
+              _buildWelcomeCard(
+                productsAsync.value ?? [],
+                stockValue:
+                    statisticsAsync.value?['totalStockValue']?.toDouble(),
+              ),
               const SizedBox(height: 8),
               // Arama ve filtreler
               _buildSearchAndFilters(),
@@ -303,7 +317,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
       children: [
         CustomScrollView(
           slivers: [
-            _buildHeaderSection(),
+            _buildHeaderSection(statisticsAsync),
             _buildStatisticsSection(statisticsAsync),
             _buildFiltersSection(),
             _buildProductsSection(productsAsync),
@@ -318,7 +332,7 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
     );
   }
 
-  Widget _buildHeaderSection() {
+  Widget _buildHeaderSection(AsyncValue<Map<String, dynamic>> statisticsAsync) {
     return SliverToBoxAdapter(
       child: AnimatedBuilder(
         animation: _fadeAnimation,
@@ -328,7 +342,10 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
             child: SlideTransition(
               position: _slideAnimation,
               child: _buildWelcomeCard(
-                  []), // Boş liste, mobilde istatistikler ayrı gösterilecek
+                [], // Boş liste, mobilde istatistikler ayrı gösterilecek
+                stockValue:
+                    statisticsAsync.value?['totalStockValue']?.toDouble(),
+              ),
             ),
           );
         },
@@ -338,139 +355,8 @@ class _ProductsHomePageState extends ConsumerState<ProductsHomePage>
 
   Widget _buildStatisticsSection(
       AsyncValue<Map<String, dynamic>> statisticsAsync) {
-    return SliverToBoxAdapter(
-      child: AnimatedBuilder(
-        animation: _fadeAnimation,
-        builder: (context, child) {
-          return FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                child: statisticsAsync.when(
-                  data: (stats) => _buildStatisticsCards(stats),
-                  loading: () => _buildLoadingStatistics(),
-                  error: (error, stack) => _buildErrorStatistics(),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildStatisticsCards(Map<String, dynamic> stats) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            'Toplam Ürün',
-            stats['totalProducts']?.toString() ?? '0',
-            Icons.inventory,
-            Colors.blue,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            'Stok Değeri',
-            '₺${CurrencyHelper.formatNumber((stats['totalStockValue'] ?? 0).toDouble())}',
-            Icons.attach_money,
-            Colors.green,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color color) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 16,
-            spreadRadius: 1,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(
-          color: isDark ? Colors.white12 : Colors.black12,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              const Spacer(),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: GoogleFonts.poppins(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.grey[800],
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoadingStatistics() {
-    return Row(
-      children: [
-        Expanded(
-            child: _buildStatCard(
-                'Toplam Ürün', '...', Icons.inventory, Colors.blue)),
-        const SizedBox(width: 12),
-        Expanded(
-            child: _buildStatCard(
-                'Stok Değeri', '...', Icons.attach_money, Colors.green)),
-      ],
-    );
-  }
-
-  Widget _buildErrorStatistics() {
-    return Row(
-      children: [
-        Expanded(
-            child: _buildStatCard(
-                'Toplam Ürün', '0', Icons.inventory, Colors.blue)),
-        const SizedBox(width: 12),
-        Expanded(
-            child: _buildStatCard(
-                'Stok Değeri', '₺0', Icons.attach_money, Colors.green)),
-      ],
-    );
+    // İstatistik kartları kaldırıldı - boş widget döndür
+    return const SliverToBoxAdapter(child: SizedBox.shrink());
   }
 
   Widget _buildFiltersSection() {

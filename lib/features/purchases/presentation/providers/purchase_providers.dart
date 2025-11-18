@@ -13,6 +13,7 @@ import 'package:tamgaci/features/purchases/domain/usecases/get_purchases_statist
 import 'package:tamgaci/features/purchases/domain/usecases/duplicate_purchase_usecase.dart';
 import 'package:tamgaci/features/purchases/presentation/notifiers/purchase_notifier.dart';
 import 'package:tamgaci/features/purchases/presentation/states/purchase_state.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Firebase Firestore instance provider
 final firestoreProvider = Provider<FirebaseFirestore>((ref) {
@@ -34,6 +35,7 @@ final purchaseFirebaseDataSourceProvider =
 
 /// Purchase Repository provider
 final purchaseRepositoryProvider = Provider<PurchaseRepositoryImpl>((ref) {
+  ref.watch(authProvider);
   final dataSource = ref.watch(purchaseFirebaseDataSourceProvider);
   return PurchaseRepositoryImpl(dataSource: dataSource);
 });
@@ -108,6 +110,7 @@ final purchaseNotifierProvider =
 /// Customer purchases stream provider
 final customerPurchasesStreamProvider =
     StreamProvider.family<List<dynamic>, String>((ref, customerId) async* {
+  ref.watch(authProvider);
   try {
     final firestore = ref.watch(firestoreProvider);
     final auth = ref.watch(firebaseAuthProvider);

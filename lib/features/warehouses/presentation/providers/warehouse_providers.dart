@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/firebase_warehouse_repository.dart';
+import '../../data/services/warehouse_initialization_service.dart';
 import '../../domain/entities/warehouse.dart';
 import '../../domain/repositories/warehouse_repository.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../../core/utils/logger.dart';
 
 /// Warehouse Repository Provider
 final warehouseRepositoryProvider = Provider<WarehouseRepository>((ref) {
+  ref.watch(authProvider);
   return FirebaseWarehouseRepository();
 });
 
@@ -76,6 +80,10 @@ class WarehouseNotifier extends StateNotifier<AsyncValue<List<Warehouse>>> {
       state = const AsyncValue.loading();
       final warehouses = await _repository.getWarehouses();
       state = AsyncValue.data(warehouses);
+      
+      // Varsayılan depo kontrolü - eğer varsayılan depo yoksa oluştur
+      // Not: _ensureDefaultWarehouseExists kendi içinde state'i günceller, bu yüzden burada await etmeden çağırıyoruz
+      _ensureDefaultWarehouseExists();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -90,8 +98,35 @@ class WarehouseNotifier extends StateNotifier<AsyncValue<List<Warehouse>>> {
       state = const AsyncValue.loading();
       await _repository.createWarehouse(warehouse);
       await _loadWarehouses(); // Refresh list
+      
+      // Varsayılan depo kontrolü - eğer varsayılan depo yoksa oluştur
+      await _ensureDefaultWarehouseExists();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> _ensureDefaultWarehouseExists() async {
+    try {
+      // Mevcut state'ten depoları kontrol et (ekstra repository çağrısı yapmadan)
+      final currentState = state;
+      if (currentState.hasValue) {
+        final warehouses = currentState.value!;
+        final hasDefaultWarehouse = warehouses.any((w) => w.isDefault);
+        
+        if (!hasDefaultWarehouse) {
+          // Varsayılan depo yoksa oluştur
+          final warehouseService = WarehouseInitializationService();
+          await warehouseService.createDefaultWarehouseForUser();
+          
+          // Listeyi yenile (sadece varsayılan depo oluşturulduysa)
+          final updatedWarehouses = await _repository.getWarehouses();
+          state = AsyncValue.data(updatedWarehouses);
+        }
+      }
+    } catch (e) {
+      // Hata durumunda sessizce devam et
+      AppLogger.error('Error ensuring default warehouse exists', e);
     }
   }
 
@@ -110,6 +145,9 @@ class WarehouseNotifier extends StateNotifier<AsyncValue<List<Warehouse>>> {
       state = const AsyncValue.loading();
       await _repository.deleteWarehouse(id);
       await _loadWarehouses(); // Refresh list
+      
+      // Varsayılan depo kontrolü - eğer varsayılan depo yoksa oluştur
+      await _ensureDefaultWarehouseExists();
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }

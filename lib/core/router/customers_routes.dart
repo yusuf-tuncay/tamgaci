@@ -4,7 +4,7 @@
 import 'package:go_router/go_router.dart';
 import '../../core/guards/subscription_guard.dart';
 import '../../features/customers/presentation/pages/enhanced_customers_list_page.dart';
-import '../../features/customers/presentation/pages/customer_create_page.dart';
+import '../../features/customers/presentation/pages/create_customers_page.dart';
 import '../../features/customers/presentation/pages/enhanced_customer_detail_page_v2.dart';
 import '../../features/customers/presentation/pages/customer_all_transactions_page.dart';
 
@@ -29,7 +29,7 @@ class CustomersRoutes {
           builder: (context, state) => const SubscriptionGuard(
             allowTrial: true,
             allowExpired: false,
-            child: CustomerCreatePage(),
+            child: CreateCustomerPage(),
           ),
         ),
 

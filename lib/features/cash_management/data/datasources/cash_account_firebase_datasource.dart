@@ -456,13 +456,41 @@ class CashAccountFirebaseDataSource {
     }
   }
 
-  /// Tüm nakit hesapları stream olarak getirir
+  /// Tüm nakit hesapları stream olarak getirir - Multi-tenant
   Stream<List<CashAccountModel>> watchAllCashAccounts() {
     try {
+      // Kullanıcının tenant ID'sini al
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      // Tenant ID'yi almak için user document'ini oku
       return _firestore
-          .collection('cash_accounts')
-          .orderBy('createdAt', descending: true)
+          .collection('users')
+          .doc(user.uid)
           .snapshots()
+          .asyncMap((userDoc) async {
+            if (!userDoc.exists) {
+              throw Exception('User document not found');
+            }
+
+            final userData = userDoc.data();
+            final tenantId = userData?['tenantId'] as String?;
+
+            if (tenantId == null || tenantId.isEmpty) {
+              throw Exception('No tenant ID found for user');
+            }
+
+            // Multi-tenant collection path
+            return _firestore
+                .collection('tenants')
+                .doc(tenantId)
+                .collection('cash_accounts')
+                .orderBy('createdAt', descending: true)
+                .snapshots();
+          })
+          .asyncExpand((querySnapshot) => querySnapshot)
           .map((snapshot) => snapshot.docs
               .map((doc) => CashAccountModel.fromFirestore(doc))
               .toList());

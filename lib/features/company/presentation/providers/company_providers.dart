@@ -4,6 +4,7 @@ import '../../data/repositories/company_repository_impl.dart';
 import '../../domain/usecases/get_company_info_usecase.dart';
 import '../../domain/usecases/save_company_info_usecase.dart';
 import '../../domain/entities/company_info.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 
 /// Firebase data source provider
 final companyFirebaseDataSourceProvider =
@@ -13,6 +14,7 @@ final companyFirebaseDataSourceProvider =
 
 /// Repository provider
 final companyRepositoryProvider = Provider<CompanyRepositoryImpl>((ref) {
+  ref.watch(authProvider);
   final dataSource = ref.watch(companyFirebaseDataSourceProvider);
   return CompanyRepositoryImpl(dataSource);
 });
