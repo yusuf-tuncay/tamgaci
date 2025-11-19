@@ -228,7 +228,7 @@ class FirebaseCustomerEntity {
       customerCurrency: data['customerCurrency'],
       maturityDays: (data['maturityDays'] as num?)?.toInt(),
       fixedDiscountRate: (data['fixedDiscountRate'] as num?)?.toDouble(),
-      isTaxExempt: data['isTaxExempt'] ?? false,
+      isTaxExempt: (data['isTaxExempt'] as bool?) ?? false,
       bankDetails: data['bankDetails'],
       specialPriceListId: data['specialPriceListId'],
       openAccountRiskLimit: (data['openAccountRiskLimit'] as num?)?.toDouble(),
@@ -239,12 +239,12 @@ class FirebaseCustomerEntity {
               (e as Map<String, dynamic>).map((k, v) => MapEntry(k, v))))
           .toList(),
       notes: data['notes'],
-      isActive: data['isActive'] ?? true,
+      isActive: (data['isActive'] as bool?) ?? true,
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       createdBy: data['createdBy'],
       updatedBy: data['updatedBy'],
-      isSupplier: data['isSupplier'] ?? false,
+      isSupplier: (data['isSupplier'] as bool?) ?? false,
       supplierCode: data['supplierCode'],
       supplierCreditLimit: (data['supplierCreditLimit'] ?? 0.0).toDouble(),
       supplierCurrentBalance:

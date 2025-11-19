@@ -38,6 +38,8 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
   String _sortBy = 'createdAt';
   bool _sortAscending = false; // En yeni önce
   DateTimeRange? _dateRange;
+  bool _filtersExpanded =
+      false; // Mobil layout için filtreler açık/kapalı durumu
 
   // Export debounce
   bool _isExporting = false;
@@ -499,9 +501,13 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
   }
 
   Widget _buildSearchAndFilters(bool isDark) {
+    final isMobile = MediaQuery.of(context).size.width <= 768;
+
     return Container(
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      padding: isMobile
+          ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4)
+          : const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[800] : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -514,7 +520,269 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
           if (constraints.maxWidth > 768) {
             return _buildDesktopFilters();
           } else {
-            return _buildMobileFilters();
+            return ExpansionTile(
+              initiallyExpanded: _filtersExpanded,
+              onExpansionChanged: (expanded) {
+                setState(() {
+                  _filtersExpanded = expanded;
+                });
+              },
+              tilePadding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              childrenPadding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              collapsedIconColor: isDark ? Colors.grey[400] : Colors.grey[600],
+              iconColor: isDark ? Colors.grey[400] : Colors.grey[600],
+              title: Text(
+                'Arama ve Filtreler',
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.white : Colors.grey[800],
+                ),
+              ),
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.5,
+                      ),
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              // Arama çubuğu - tam genişlik
+                              TextField(
+                                controller: _searchController,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _searchQuery = value.toLowerCase();
+                                  });
+                                },
+                                decoration: InputDecoration(
+                                  hintText: 'Masraf ara...',
+                                  prefixIcon: const Icon(Icons.search),
+                                  suffixIcon: _searchQuery.isNotEmpty
+                                      ? IconButton(
+                                          icon: const Icon(Icons.clear),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            setState(() {
+                                              _searchQuery = '';
+                                            });
+                                          },
+                                        )
+                                      : null,
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 12,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              // İlk satır: Hesap ve Kategori
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Consumer(
+                                      builder: (context, ref, child) {
+                                        final accountsAsync = ref.watch(accountsProvider);
+                                        return accountsAsync.when(
+                                          data: (accounts) {
+                                            final isValidSelection = accounts.any((account) =>
+                                                    account.id == _selectedAccountId) ||
+                                                _selectedAccountId == 'all';
+                                            return DropdownButtonFormField<String>(
+                                              value:
+                                                  isValidSelection ? _selectedAccountId : 'all',
+                                              decoration: InputDecoration(
+                                                labelText: 'Hesap',
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                ),
+                                                contentPadding: const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 12,
+                                                ),
+                                                isDense: true,
+                                              ),
+                                              items: [
+                                                const DropdownMenuItem(
+                                                  value: 'all',
+                                                  child: Text('Tüm Hesaplar'),
+                                                ),
+                                                ...accounts.map((account) => DropdownMenuItem(
+                                                      value: account.id,
+                                                      child: Text(account.name),
+                                                    )),
+                                              ],
+                                              onChanged: (value) {
+                                                if (value != null && mounted) {
+                                                  setState(() {
+                                                    _selectedAccountId = value;
+                                                  });
+                                                }
+                                              },
+                                            );
+                                          },
+                                          loading: () => DropdownButtonFormField<String>(
+                                            value: 'all',
+                                            decoration: InputDecoration(
+                                              labelText: 'Hesap',
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 12,
+                                              ),
+                                              isDense: true,
+                                            ),
+                                            items: const [
+                                              DropdownMenuItem(
+                                                value: 'all',
+                                                child: Text('Yükleniyor...'),
+                                              ),
+                                            ],
+                                            onChanged: null,
+                                          ),
+                                          error: (error, stackTrace) =>
+                                              DropdownButtonFormField<String>(
+                                            value: 'all',
+                                            decoration: InputDecoration(
+                                              labelText: 'Hesap',
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              contentPadding: const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 12,
+                                              ),
+                                              isDense: true,
+                                            ),
+                                            items: const [
+                                              DropdownMenuItem(
+                                                value: 'all',
+                                                child: Text('Hata oluştu'),
+                                              ),
+                                            ],
+                                            onChanged: null,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: DropdownButtonFormField<String>(
+                                      value: _selectedCategory,
+                                      decoration: InputDecoration(
+                                        labelText: 'Kategori',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 12,
+                                        ),
+                                        isDense: true,
+                                      ),
+                                      items: _categories.map((category) {
+                                        return DropdownMenuItem(
+                                          value: category,
+                                          child: Text(category),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _selectedCategory = value!;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              // Tarih aralığı seçici (tam genişlik)
+                              _buildDateRangeControl(),
+                              const SizedBox(height: 10),
+                              // İkinci satır: Sıralama ve Export
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: DropdownButtonFormField<String>(
+                                      value: _getSortDisplayName(_sortBy),
+                                      decoration: InputDecoration(
+                                        labelText: 'Sırala',
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        contentPadding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 12,
+                                        ),
+                                        isDense: true,
+                                      ),
+                                      items: _sortOptions.map((key) {
+                                        return DropdownMenuItem(
+                                          value: _getSortDisplayName(key),
+                                          child: Text(_getSortDisplayName(key)),
+                                        );
+                                      }).toList(),
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _sortBy = _getSortKeyFromDisplayName(value!);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        _sortAscending = !_sortAscending;
+                                      });
+                                    },
+                                    icon: Icon(
+                                      _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                                    ),
+                                    tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                                    constraints: const BoxConstraints(
+                                      minWidth: 40,
+                                      minHeight: 40,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  IconButton(
+                                    onPressed: _showExportOptions,
+                                    icon: const Icon(Icons.file_download),
+                                    tooltip: 'Dışa Aktar',
+                                    constraints: const BoxConstraints(
+                                      minWidth: 40,
+                                      minHeight: 40,
+                                    ),
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            );
           }
         },
       ),
@@ -693,221 +961,6 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
           tooltip: 'Dışa Aktar',
         ),
       ],
-    );
-  }
-
-  Widget _buildMobileFilters() {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Arama çubuğu - tam genişlik
-          TextField(
-            controller: _searchController,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value.toLowerCase();
-              });
-            },
-            decoration: InputDecoration(
-              hintText: 'Masraf ara...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _searchQuery.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() {
-                          _searchQuery = '';
-                        });
-                      },
-                    )
-                  : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 12,
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // İlk satır: Hesap ve Kategori
-          Row(
-            children: [
-              Expanded(
-                child: Consumer(
-                  builder: (context, ref, child) {
-                    final accountsAsync = ref.watch(accountsProvider);
-                    return accountsAsync.when(
-                      data: (accounts) {
-                        // Seçili hesap geçerli mi kontrol et
-                        final isValidSelection = accounts.any((account) =>
-                                account.id == _selectedAccountId) ||
-                            _selectedAccountId == 'all';
-                        return DropdownButtonFormField<String>(
-                          initialValue:
-                              isValidSelection ? _selectedAccountId : 'all',
-                          decoration: InputDecoration(
-                            labelText: 'Hesap',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                          ),
-                          items: [
-                            const DropdownMenuItem(
-                              value: 'all',
-                              child: Text('Tüm Hesaplar'),
-                            ),
-                            ...accounts.map((account) => DropdownMenuItem(
-                                  value: account.id,
-                                  child: Text(account.name),
-                                )),
-                          ],
-                          onChanged: (value) {
-                            if (value != null && mounted) {
-                              setState(() {
-                                _selectedAccountId = value;
-                              });
-                            }
-                          },
-                        );
-                      },
-                      loading: () => DropdownButtonFormField<String>(
-                        initialValue: 'all',
-                        decoration: InputDecoration(
-                          labelText: 'Hesap',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'all',
-                            child: Text('Yükleniyor...'),
-                          ),
-                        ],
-                        onChanged: null,
-                      ),
-                      error: (error, stackTrace) =>
-                          DropdownButtonFormField<String>(
-                        initialValue: 'all',
-                        decoration: InputDecoration(
-                          labelText: 'Hesap',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'all',
-                            child: Text('Hata oluştu'),
-                          ),
-                        ],
-                        onChanged: null,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedCategory,
-                  decoration: InputDecoration(
-                    labelText: 'Kategori',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                  items: _categories.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value!;
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Tarih aralığı seçici (tam genişlik)
-          SizedBox(width: double.infinity, child: _buildDateRangeControl()),
-          const SizedBox(height: 12),
-          // İkinci satır: Sıralama ve Export
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _getSortDisplayName(_sortBy),
-                  decoration: InputDecoration(
-                    labelText: 'Sırala',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                  items: _sortOptions.map((key) {
-                    return DropdownMenuItem(
-                      value: _getSortDisplayName(key),
-                      child: Text(_getSortDisplayName(key)),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _sortBy = _getSortKeyFromDisplayName(value!);
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _sortAscending = !_sortAscending;
-                  });
-                },
-                icon: Icon(
-                  _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
-                ),
-                tooltip: _sortAscending ? 'Artan' : 'Azalan',
-              ),
-              const SizedBox(width: 12),
-              IconButton(
-                onPressed: _showExportOptions,
-                icon: const Icon(Icons.file_download),
-                tooltip: 'Dışa Aktar',
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 

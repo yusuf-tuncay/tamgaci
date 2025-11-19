@@ -49,6 +49,7 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   ];
   String _sortBy = 'Ad Soyad';
   bool _sortAscending = true;
+  bool _filtersExpanded = false; // Mobil layout için filtreler açık/kapalı durumu
 
   // Multitenant
   String? _tenantId;
@@ -2090,9 +2091,11 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
   Widget _buildSearchAndFilters() {
     final double width = MediaQuery.sizeOf(context).width;
     final bool isNarrow = width < 900;
+    final isMobile = width <= 768;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (isNarrow) {
+    if (isNarrow && !isMobile) {
+      // Tablet layout - iki satır
       return Column(
         children: [
           TextField(
@@ -2215,6 +2218,167 @@ class _EmployeesListPageState extends State<EmployeesListPage> {
                 tooltip: 'Dışa Aktar',
               ),
             ],
+          ),
+        ],
+      );
+    }
+
+    if (isMobile) {
+      // Mobile - açılır kapanır (arama da içinde)
+      return ExpansionTile(
+        initiallyExpanded: _filtersExpanded,
+        onExpansionChanged: (expanded) {
+          setState(() {
+            _filtersExpanded = expanded;
+          });
+        },
+        tilePadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        childrenPadding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        collapsedIconColor: isDark ? Colors.grey[400] : Colors.grey[600],
+        iconColor: isDark ? Colors.grey[400] : Colors.grey[600],
+        title: Text(
+          'Arama ve Filtreler',
+          style: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.grey[800],
+          ),
+        ),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Arama çubuğu - tam genişlik
+                TextField(
+                  controller: _searchController,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.grey[800],
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Personel ara...',
+                    prefixIcon: Icon(
+                      Icons.search,
+                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Filtreler
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedDepartment,
+                        decoration: InputDecoration(
+                          labelText: 'Departman',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                        isExpanded: true,
+                        items: _departments
+                            .map((d) => DropdownMenuItem(
+                                  value: d,
+                                  child: Text(
+                                    d,
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ))
+                            .toList(),
+                        onChanged: (v) => setState(() => _selectedDepartment = v!),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Departman Ekle',
+                      onPressed: _openManageDepartments,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedCategory,
+                        decoration: InputDecoration(
+                          labelText: 'Kategori',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                        items: _categories
+                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _selectedCategory = v!),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      tooltip: 'Kategori Ekle',
+                      onPressed: _openManageCategoriesPage,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _sortBy,
+                        decoration: InputDecoration(
+                          labelText: 'Sırala',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                        items: _sortOptions
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                            .toList(),
+                        onChanged: (v) => setState(() => _sortBy = v!),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () =>
+                          setState(() => _sortAscending = !_sortAscending),
+                      icon: Icon(
+                          _sortAscending ? Icons.arrow_upward : Icons.arrow_downward),
+                      tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                    ),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      onPressed: _showExportOptions,
+                      icon: const Icon(Icons.file_download),
+                      tooltip: 'Dışa Aktar',
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       );
