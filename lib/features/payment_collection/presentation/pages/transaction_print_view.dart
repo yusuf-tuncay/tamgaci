@@ -2,7 +2,16 @@
 // lib/features/payment_collection/presentation/pages/transaction_print_view.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
 import '../../domain/entities/payment_transaction.dart';
 import '../../domain/entities/payment_enums.dart';
 import '../providers/payment_collection_providers.dart';
@@ -99,7 +108,10 @@ class _TransactionPrintViewState extends ConsumerState<TransactionPrintView> {
           child: Container(
             width: 600,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: theme.colorScheme.surface,
+              border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.3),
+              ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.1),
@@ -310,14 +322,16 @@ class _TransactionPrintViewState extends ConsumerState<TransactionPrintView> {
   }
 
   Widget _buildSection(String title, List<Widget> children) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: theme.colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -327,6 +341,7 @@ class _TransactionPrintViewState extends ConsumerState<TransactionPrintView> {
   }
 
   Widget _buildInfoRow(String label, String value) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -336,11 +351,19 @@ class _TransactionPrintViewState extends ConsumerState<TransactionPrintView> {
             width: 120,
             child: Text(
               '$label:',
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: theme.colorScheme.onSurface,
+              ),
             ),
           ),
           Expanded(
-            child: Text(value),
+            child: Text(
+              value,
+              style: TextStyle(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
           ),
         ],
       ),
@@ -436,16 +459,193 @@ class _TransactionPrintViewState extends ConsumerState<TransactionPrintView> {
   }
 
   void _printDocument(PaymentTransaction transaction) {
-    // Yazdırma işlemi
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Yazdırma işlemi başlatılıyor...')),
-    );
+    // Yazdırma işlemi - şimdilik PDF indirme ile aynı
+    _downloadPDF(transaction);
   }
 
-  void _downloadPDF(PaymentTransaction transaction) {
-    // PDF indirme işlemi
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('PDF indirme işlemi başlatılıyor...')),
+  Future<void> _downloadPDF(PaymentTransaction transaction) async {
+    try {
+      // Loading göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: 16),
+                Text('PDF oluşturuluyor...'),
+              ],
+            ),
+            duration: Duration(seconds: 30),
+          ),
+        );
+      }
+
+      // PDF oluştur
+      final pdf = pw.Document();
+      
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+          build: (pw.Context context) {
+            return [
+              // Başlık
+              pw.Text(
+                'TAMGACI',
+                style: pw.TextStyle(
+                  fontSize: 24,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 8),
+              pw.Text(
+                'Tahsilat ve Odeme Belgesi',
+                style: pw.TextStyle(
+                  fontSize: 18,
+                  fontWeight: pw.FontWeight.bold,
+                ),
+              ),
+              pw.SizedBox(height: 30),
+              
+              // İşlem Bilgileri
+              pw.Text(
+                'Islem Bilgileri',
+                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 8),
+              _buildPDFInfoRow('Islem No', transaction.transactionNumber),
+              _buildPDFInfoRow('Tarih', _formatDate(transaction.transactionDate)),
+              _buildPDFInfoRow('Tur', _getTransactionTypeText(transaction.type)),
+              _buildPDFInfoRow('Kategori', _getCategoryText(transaction.category)),
+              _buildPDFInfoRow('Yon', _getDirectionText(transaction.direction)),
+              _buildPDFInfoRow('Durum', _getStatusText(transaction.status)),
+              pw.SizedBox(height: 20),
+              
+              // Tutar Bilgileri
+              pw.Text(
+                'Tutar Bilgileri',
+                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 8),
+              _buildPDFInfoRow('Tutar', '${transaction.amount} ${transaction.currency}'),
+              _buildPDFInfoRow('Para Birimi', transaction.currency),
+              pw.SizedBox(height: 20),
+              
+              // Açıklama
+              if (transaction.description != null) ...[
+                pw.Text(
+                  'Aciklama',
+                  style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Text(transaction.description!),
+                pw.SizedBox(height: 20),
+              ],
+              
+              // Footer
+              pw.SizedBox(height: 30),
+              pw.Divider(),
+              pw.SizedBox(height: 10),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text(
+                    'Belge Tarihi: ${_formatDate(DateTime.now())}',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                  pw.Text(
+                    'Sayfa ${context.pageNumber}/${context.pagesCount}',
+                    style: const pw.TextStyle(fontSize: 10),
+                  ),
+                ],
+              ),
+            ];
+          },
+        ),
+      );
+
+      // PDF'i kaydet
+      final bytes = await pdf.save();
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'Islem_${transaction.transactionNumber}_$timestamp.pdf';
+
+      if (kIsWeb) {
+        // Web'de indirme
+        final blob = web.Blob([bytes.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        web.URL.revokeObjectURL(url);
+      } else {
+        // Mobil'de kaydet
+        final directory = await getDownloadsDirectory();
+        if (directory == null) {
+          throw Exception('Downloads klasörü bulunamadı');
+        }
+        final filePath = path.join(directory.path, fileName);
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              kIsWeb 
+                ? 'PDF indirildi: $fileName'
+                : 'PDF kaydedildi: $fileName',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('=== PDF OLUŞTURMA HATASI ===');
+      debugPrint('Hata: $e');
+      debugPrint('Stack trace: $stackTrace');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturma hatası: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  pw.Widget _buildPDFInfoRow(String label, String value) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(vertical: 2),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.SizedBox(
+            width: 120,
+            child: pw.Text(
+              '$label:',
+              style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+            ),
+          ),
+          pw.Expanded(
+            child: pw.Text(value),
+          ),
+        ],
+      ),
     );
   }
 }

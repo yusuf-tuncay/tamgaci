@@ -8,7 +8,7 @@ import '../../../../core/utils/logger.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/custom_text_field.dart';
 import '../../../../shared/widgets/custom_dropdown.dart';
-import '../../../../shared/widgets/custom_button.dart';
+import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../domain/entities/customer_enums.dart';
 import '../../domain/entities/customer_branch.dart';
 import '../providers/customer_providers.dart';
@@ -17,6 +17,9 @@ import '../../../../core/services/firebase/firebase_auth_service.dart';
 import '../../../../core/utils/currency_helper.dart';
 import '../../../../core/widgets/formatted_text_field.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
+import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/theme/constants.dart';
 
 class CustomerEditPage extends ConsumerStatefulWidget {
   final String customerId;
@@ -68,6 +71,12 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
   bool _isLoading = false;
   bool _isInitialized = false;
   bool _isDeleting = false;
+
+  // System info
+  DateTime? _createdAt;
+  DateTime? _updatedAt;
+  String? _createdBy;
+  String? _updatedBy;
 
   // Animation controllers
   late AnimationController _fadeController;
@@ -213,6 +222,12 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
       if (customer.branches != null) {
         _branches.addAll(customer.branches!);
       }
+
+      // Sistem bilgilerini yükle
+      _createdAt = customer.createdAt;
+      _updatedAt = customer.updatedAt;
+      _createdBy = customer.createdBy;
+      _updatedBy = customer.updatedBy;
 
       setState(() {
         _isInitialized = true;
@@ -619,22 +634,33 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     if (_isLoading && !_isInitialized) {
       return Scaffold(
-        backgroundColor: Colors.grey[50],
-        appBar: AppBar(
-          title: const Text('Müşteri Düzenle'),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          foregroundColor: Colors.black87,
+        backgroundColor: theme.colorScheme.surface,
+        appBar: CustomAppBar(
+          title: 'Müşteri Düzenle',
+          showBackButton: true,
+          showDrawer: false,
+          onBackPressed: () {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          },
         ),
-        body: const Center(
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Müşteri bilgileri yükleniyor...'),
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                'Müşteri bilgileri yükleniyor...',
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
             ],
           ),
         ),
@@ -642,12 +668,16 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Müşteri Düzenle'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        foregroundColor: Colors.black87,
+      backgroundColor: theme.colorScheme.surface,
+      appBar: CustomAppBar(
+        title: 'Müşteri Düzenle',
+        showBackButton: true,
+        showDrawer: false,
+        onBackPressed: () {
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop();
+          }
+        },
         actions: [
           if (_isLoading)
             const Padding(
@@ -660,389 +690,462 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
             ),
         ],
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header Card
-                  _buildHeaderCard(),
-                  const SizedBox(height: 24),
-
-                  // Genel Bilgiler
-                  _buildSectionCard(
-                    title: 'Genel Bilgiler',
-                    icon: Icons.person_outline,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1200),
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CustomTextField(
-                        controller: _nameController,
-                        label: 'Müşteri Adı / Ünvan *',
-                        hint: 'Müşteri adını girin',
-                        validator: (value) =>
-                            Validators.required(value, 'Müşteri adı'),
-                      ),
-                      const SizedBox(height: 16),
-                      _buildReadOnlyField(
-                        label: 'Müşteri Kodu',
-                        value: _customerCodeController.text.isNotEmpty
-                            ? _customerCodeController.text
-                            : 'Otomatik oluşturulacak',
-                        icon: Icons.badge_outlined,
-                        subtitle: 'Bu alan otomatik oluşturulur',
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
+                      // Header Card
+                      _buildHeaderCard(),
+                      const SizedBox(height: 24),
+
+                      // Genel Bilgiler
+                      _buildSectionCard(
+                        title: 'Genel Bilgiler',
+                        icon: Icons.person_outline,
                         children: [
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _phoneController,
-                              label: 'Telefon Numarası',
-                              hint: '0555 123 45 67',
-                              keyboardType: TextInputType.phone,
-                              validator: (value) => value?.isNotEmpty == true
-                                  ? Validators.phone(value)
-                                  : null,
-                            ),
+                          CustomTextField(
+                            controller: _nameController,
+                            label: 'Müşteri Adı / Ünvan *',
+                            hint: 'Müşteri adını girin',
+                            validator: (value) =>
+                                Validators.required(value, 'Müşteri adı'),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _emailController,
-                              label: 'E-posta Adresi',
-                              hint: 'ornek@email.com',
-                              keyboardType: TextInputType.emailAddress,
-                              validator: (value) => value?.isNotEmpty == true
-                                  ? Validators.email(value)
-                                  : null,
-                            ),
+                          const SizedBox(height: 16),
+                          _buildReadOnlyField(
+                            label: 'Müşteri Kodu',
+                            value: _customerCodeController.text.isNotEmpty
+                                ? _customerCodeController.text
+                                : 'Otomatik oluşturulacak',
+                            icon: Icons.badge_outlined,
+                            subtitle: 'Bu alan otomatik oluşturulur',
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _phoneController,
+                                  label: 'Telefon Numarası',
+                                  hint: '0555 123 45 67',
+                                  keyboardType: TextInputType.phone,
+                                  validator: (value) =>
+                                      value?.isNotEmpty == true
+                                          ? Validators.phone(value)
+                                          : null,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _emailController,
+                                  label: 'E-posta Adresi',
+                                  hint: 'ornek@email.com',
+                                  keyboardType: TextInputType.emailAddress,
+                                  validator: (value) =>
+                                      value?.isNotEmpty == true
+                                          ? Validators.email(value)
+                                          : null,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Vergi Bilgileri
-                  _buildSectionCard(
-                    title: 'Vergi Bilgileri',
-                    icon: Icons.receipt_long_outlined,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _taxNumberController,
-                              label: 'Vergi Numarası / T.C. Kimlik No',
-                              hint: '1234567890',
-                              validator: (value) => value?.isNotEmpty == true
-                                  ? Validators.taxNumber(value)
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _taxOfficeController,
-                              label: 'Vergi Dairesi',
-                              hint: 'Kadıköy Vergi Dairesi',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      CheckboxListTile(
-                        title: const Text('Vergiden Muaf'),
-                        value: _isTaxExempt,
-                        onChanged: (value) {
-                          setState(() {
-                            _isTaxExempt = value ?? false;
-                          });
-                        },
-                        contentPadding: EdgeInsets.zero,
-                        activeColor: Theme.of(context).primaryColor,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Adres Bilgileri
-                  _buildSectionCard(
-                    title: 'Adres Bilgileri',
-                    icon: Icons.location_on_outlined,
-                    children: [
-                      CustomTextField(
-                        controller: _addressController,
-                        label: 'Açık Adres',
-                        hint: 'Mahalle, sokak, bina no, daire no',
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _cityController,
-                              label: 'Şehir',
-                              hint: 'İstanbul',
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _countryController,
-                              label: 'Ülke',
-                              hint: 'Türkiye',
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _postalCodeController,
-                              label: 'Posta Kodu',
-                              hint: '34000',
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Kategori / Sınıflandırma
-                  _buildSectionCard(
-                    title: 'Kategori / Sınıflandırma',
-                    icon: Icons.category_outlined,
-                    children: [
-                      _buildCategoriesRow(),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomDropdown<CustomerType>(
-                              value: _customerType,
-                              label: 'Müşteri Tipi',
-                              items: CustomerType.values,
-                              itemBuilder: (type) => Text(type.displayName),
-                              onChanged: (value) {
-                                setState(() {
-                                  _customerType = value!;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomDropdown<CustomerStatus>(
-                              value: _status,
-                              label: 'Durum',
-                              items: CustomerStatus.values,
-                              itemBuilder: (status) => Text(status.displayName),
-                              onChanged: (value) {
-                                setState(() {
-                                  _status = value!;
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Finansal Bilgiler
-                  _buildSectionCard(
-                    title: 'Finansal Bilgiler',
-                    icon: Icons.account_balance_wallet_outlined,
-                    children: [
-                      // Para Birimi - Sadece Okunur (Güzel Görünüm)
-                      _buildReadOnlyField(
-                        label: 'Para Birimi',
-                        value: _currency,
-                        icon: Icons.currency_exchange,
-                        subtitle: 'Bu alan değiştirilemez',
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Açılış Bakiyesi - Sadece Okunur (Güzel Görünüm)
-                      _buildReadOnlyField(
-                        label: 'Açılış Bakiyesi',
-                        value: _openingBalanceController.text.isNotEmpty
-                            ? '${_openingBalanceController.text} $_currency'
-                            : '0,00 $_currency',
-                        icon: Icons.account_balance,
-                        subtitle: 'Bu alan değiştirilemez',
                       ),
                       const SizedBox(height: 20),
 
-                      // Düzenlenebilir Alanlar
-                      Row(
+                      // Vergi Bilgileri
+                      _buildSectionCard(
+                        title: 'Vergi Bilgileri',
+                        icon: Icons.receipt_long_outlined,
                         children: [
-                          Expanded(
-                            child: AutoFormattedTextField(
-                              label: 'Kredi Limiti *',
-                              hint: '0,00',
-                              controller: _creditLimitController,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true, signed: false),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.allow(
-                                    RegExp(r'[0-9.,]')),
-                              ],
-                              formatter: (raw) {
-                                return _formatMoneyTyping(raw,
-                                    allowNegative: false);
-                              },
-                              validator: (value) =>
-                                  Validators.required(value, 'Kredi limiti'),
-                            ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _taxNumberController,
+                                  label: 'Vergi Numarası / T.C. Kimlik No',
+                                  hint: '1234567890',
+                                  validator: (value) =>
+                                      value?.isNotEmpty == true
+                                          ? Validators.taxNumber(value)
+                                          : null,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _taxOfficeController,
+                                  label: 'Vergi Dairesi',
+                                  hint: 'Kadıköy Vergi Dairesi',
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _maturityDaysController,
-                              label: 'Ödeme Vadesi (Gün) *',
-                              hint: '30',
-                              keyboardType: TextInputType.number,
-                              validator: (value) => value?.isNotEmpty == true
-                                  ? Validators.integer(value)
-                                  : Validators.required(value, 'Ödeme vadesi'),
-                            ),
+                          const SizedBox(height: 16),
+                          CheckboxListTile(
+                            title: const Text('Vergiden Muaf'),
+                            value: _isTaxExempt,
+                            onChanged: (value) {
+                              setState(() {
+                                _isTaxExempt = value ?? false;
+                              });
+                            },
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: TamgaciConstants.primaryColor,
+                            checkColor: Colors.white,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      AutoFormattedTextField(
-                        label: 'Sabit İskonto Oranı (%) *',
-                        hint: '0,00',
-                        controller: _fixedDiscountRateController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                      const SizedBox(height: 20),
+
+                      // Adres Bilgileri
+                      _buildSectionCard(
+                        title: 'Adres Bilgileri',
+                        icon: Icons.location_on_outlined,
+                        children: [
+                          CustomTextField(
+                            controller: _addressController,
+                            label: 'Açık Adres',
+                            hint: 'Mahalle, sokak, bina no, daire no',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _cityController,
+                                  label: 'Şehir',
+                                  hint: 'İstanbul',
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _countryController,
+                                  label: 'Ülke',
+                                  hint: 'Türkiye',
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _postalCodeController,
+                                  label: 'Posta Kodu',
+                                  hint: '34000',
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
-                        formatter: (raw) {
-                          return _formatMoneyTyping(raw, allowNegative: false);
-                        },
-                        validator: (value) =>
-                            Validators.required(value, 'Sabit iskonto oranı'),
                       ),
+                      const SizedBox(height: 20),
+
+                      // Kategori / Sınıflandırma
+                      _buildSectionCard(
+                        title: 'Kategori / Sınıflandırma',
+                        icon: Icons.category_outlined,
+                        children: [
+                          _buildCategoriesRow(),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomDropdown<CustomerType>(
+                                  value: _customerType,
+                                  label: 'Müşteri Tipi',
+                                  items: CustomerType.values,
+                                  itemBuilder: (type) => Text(type.displayName),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _customerType = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomDropdown<CustomerStatus>(
+                                  value: _status,
+                                  label: 'Durum',
+                                  items: CustomerStatus.values,
+                                  itemBuilder: (status) =>
+                                      Text(status.displayName),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _status = value!;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Finansal Bilgiler
+                      _buildSectionCard(
+                        title: 'Finansal Bilgiler',
+                        icon: Icons.account_balance_wallet_outlined,
+                        children: [
+                          // Para Birimi - Sadece Okunur (Güzel Görünüm)
+                          _buildReadOnlyField(
+                            label: 'Para Birimi',
+                            value: _currency,
+                            icon: Icons.currency_exchange,
+                            subtitle: 'Bu alan değiştirilemez',
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Açılış Bakiyesi - Sadece Okunur (Güzel Görünüm)
+                          _buildReadOnlyField(
+                            label: 'Açılış Bakiyesi',
+                            value: _openingBalanceController.text.isNotEmpty
+                                ? '${_openingBalanceController.text} $_currency'
+                                : '0,00 $_currency',
+                            icon: Icons.account_balance,
+                            subtitle: 'Bu alan değiştirilemez',
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Düzenlenebilir Alanlar
+                          Row(
+                            children: [
+                              Expanded(
+                                child: AutoFormattedTextField(
+                                  label: 'Kredi Limiti *',
+                                  hint: '0,00',
+                                  controller: _creditLimitController,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true, signed: false),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                        RegExp(r'[0-9.,]')),
+                                  ],
+                                  formatter: (raw) {
+                                    return _formatMoneyTyping(raw,
+                                        allowNegative: false);
+                                  },
+                                  validator: (value) => Validators.required(
+                                      value, 'Kredi limiti'),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _maturityDaysController,
+                                  label: 'Ödeme Vadesi (Gün) *',
+                                  hint: '30',
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) =>
+                                      value?.isNotEmpty == true
+                                          ? Validators.integer(value)
+                                          : Validators.required(
+                                              value, 'Ödeme vadesi'),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          AutoFormattedTextField(
+                            label: 'Sabit İskonto Oranı (%) *',
+                            hint: '0,00',
+                            controller: _fixedDiscountRateController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                                decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[0-9.,]')),
+                            ],
+                            formatter: (raw) {
+                              return _formatMoneyTyping(raw,
+                                  allowNegative: false);
+                            },
+                            validator: (value) => Validators.required(
+                                value, 'Sabit iskonto oranı'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Ek Bilgiler
+                      _buildSectionCard(
+                        title: 'Ek Bilgiler',
+                        icon: Icons.info_outline,
+                        children: [
+                          CustomTextField(
+                            controller: _bankDetailsController,
+                            label: 'Banka Bilgileri',
+                            hint: 'Banka adı, IBAN, hesap numarası',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _authorizedPersonNameController,
+                                  label: 'Yetkili Kişi Adı',
+                                  hint: 'Ad Soyad',
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: CustomTextField(
+                                  controller: _authorizedPersonPhoneController,
+                                  label: 'Yetkili Kişi Telefonu',
+                                  hint: '0555 123 45 67',
+                                  keyboardType: TextInputType.phone,
+                                  validator: (value) =>
+                                      value?.isNotEmpty == true
+                                          ? Validators.phone(value)
+                                          : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          CustomTextField(
+                            controller: _notesController,
+                            label: 'Notlar',
+                            hint: 'Müşteriyle ilgili önemli bilgiler',
+                            maxLines: 4,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Sistem Bilgileri
+                      _buildSectionCard(
+                        title: 'Sistem Bilgileri',
+                        icon: Icons.settings_outlined,
+                        children: [
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              // Mobilde tek sütun, masaüstünde iki sütun
+                              if (constraints.maxWidth < 600) {
+                                return Column(
+                                  children: [
+                                    _buildReadOnlyField(
+                                      label: 'Oluşturulma Tarihi',
+                                      value: _createdAt != null
+                                          ? DateFormat('dd.MM.yyyy HH:mm')
+                                              .format(_createdAt!)
+                                          : 'Yükleniyor...',
+                                      icon: Icons.calendar_today,
+                                      subtitle: 'Bu alan değiştirilemez',
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildReadOnlyField(
+                                      label: 'Güncellenme Tarihi',
+                                      value: _updatedAt != null
+                                          ? DateFormat('dd.MM.yyyy HH:mm')
+                                              .format(_updatedAt!)
+                                          : 'Yükleniyor...',
+                                      icon: Icons.update,
+                                      subtitle: 'Bu alan değiştirilemez',
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildReadOnlyField(
+                                      label: 'Oluşturan Kişi',
+                                      value: _createdBy ?? 'Sistem',
+                                      icon: Icons.person_add,
+                                      subtitle: 'Bu alan değiştirilemez',
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _buildReadOnlyField(
+                                      label: 'Güncelleyen Kişi',
+                                      value: _updatedBy ?? 'Sistem',
+                                      icon: Icons.person_outline,
+                                      subtitle: 'Bu alan değiştirilemez',
+                                    ),
+                                  ],
+                                );
+                              }
+                              return Column(
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _buildReadOnlyField(
+                                          label: 'Oluşturulma Tarihi',
+                                          value: _createdAt != null
+                                              ? DateFormat('dd.MM.yyyy HH:mm')
+                                                  .format(_createdAt!)
+                                              : 'Yükleniyor...',
+                                          icon: Icons.calendar_today,
+                                          subtitle: 'Bu alan değiştirilemez',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: _buildReadOnlyField(
+                                          label: 'Güncellenme Tarihi',
+                                          value: _updatedAt != null
+                                              ? DateFormat('dd.MM.yyyy HH:mm')
+                                                  .format(_updatedAt!)
+                                              : 'Yükleniyor...',
+                                          icon: Icons.update,
+                                          subtitle: 'Bu alan değiştirilemez',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: _buildReadOnlyField(
+                                          label: 'Oluşturan Kişi',
+                                          value: _createdBy ?? 'Sistem',
+                                          icon: Icons.person_add,
+                                          subtitle: 'Bu alan değiştirilemez',
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: _buildReadOnlyField(
+                                          label: 'Güncelleyen Kişi',
+                                          value: _updatedBy ?? 'Sistem',
+                                          icon: Icons.person_outline,
+                                          subtitle: 'Bu alan değiştirilemez',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      _buildBranchesCard(),
+                      const SizedBox(height: 32),
+
+                      // Action Buttons
+                      _buildActionButtons(),
+                      const SizedBox(height: 32),
                     ],
                   ),
-                  const SizedBox(height: 20),
-
-                  // Ek Bilgiler
-                  _buildSectionCard(
-                    title: 'Ek Bilgiler',
-                    icon: Icons.info_outline,
-                    children: [
-                      CustomTextField(
-                        controller: _bankDetailsController,
-                        label: 'Banka Bilgileri',
-                        hint: 'Banka adı, IBAN, hesap numarası',
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _authorizedPersonNameController,
-                              label: 'Yetkili Kişi Adı',
-                              hint: 'Ad Soyad',
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: CustomTextField(
-                              controller: _authorizedPersonPhoneController,
-                              label: 'Yetkili Kişi Telefonu',
-                              hint: '0555 123 45 67',
-                              keyboardType: TextInputType.phone,
-                              validator: (value) => value?.isNotEmpty == true
-                                  ? Validators.phone(value)
-                                  : null,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      CustomTextField(
-                        controller: _notesController,
-                        label: 'Notlar',
-                        hint: 'Müşteriyle ilgili önemli bilgiler',
-                        maxLines: 4,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Sistem Bilgileri
-                  _buildSectionCard(
-                    title: 'Sistem Bilgileri',
-                    icon: Icons.settings_outlined,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildReadOnlyField(
-                              label: 'Oluşturulma Tarihi',
-                              value: 'Sistem tarafından belirlenir',
-                              icon: Icons.calendar_today,
-                              subtitle: 'Bu alan değiştirilemez',
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildReadOnlyField(
-                              label: 'Güncellenme Tarihi',
-                              value: 'Sistem tarafından belirlenir',
-                              icon: Icons.update,
-                              subtitle: 'Bu alan değiştirilemez',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildReadOnlyField(
-                              label: 'Oluşturan Kişi',
-                              value: 'Sistem',
-                              icon: Icons.person_add,
-                              subtitle: 'Bu alan değiştirilemez',
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildReadOnlyField(
-                              label: 'Güncelleyen Kişi',
-                              value: 'Sistem',
-                              icon: Icons.person_outline,
-                              subtitle: 'Bu alan değiştirilemez',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  _buildBranchesCard(),
-                  const SizedBox(height: 32),
-
-                  // Action Buttons
-                  _buildActionButtons(),
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
             ),
           ),
@@ -1052,71 +1155,91 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
   }
 
   Widget _buildHeaderCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final onPrimary = theme.colorScheme.onPrimary;
+    final secondaryTextColor = onPrimary.withValues(alpha: isDark ? 0.9 : 0.95);
+    final borderColor = onPrimary.withValues(alpha: 0.12);
+    final dividerColor = onPrimary.withValues(alpha: 0.14);
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).primaryColor,
-            Theme.of(context).primaryColor.withValues(alpha: 0.8),
-          ],
+        gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [
+            TamgaciConstants.primaryColor,
+            Color(0xFF4C6EF5),
+            TamgaciConstants.primaryColorDark,
+          ],
         ),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: TamgaciConstants.primaryColor.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: 1,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Başlık ve açıklama
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.edit_outlined,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Müşteri Düzenleme',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: onPrimary,
+                        letterSpacing: 0.2,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       _nameController.text.isNotEmpty
                           ? _nameController.text
-                          : 'Müşteri bilgileri yükleniyor...',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 14,
+                          : 'Müşteri bilgilerini düzenleyin',
+                      maxLines: 1,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: secondaryTextColor,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            height: 1,
+            width: double.infinity,
+            color: dividerColor,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Bugün: ${DateFormat('dd MMMM yyyy, EEEE', 'tr_TR').format(DateTime.now())}',
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              color: secondaryTextColor,
+            ),
           ),
         ],
       ),
@@ -1128,44 +1251,47 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
     required IconData icon,
     required List<Widget> children,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outline.withValues(alpha: 0.2)
+              : Colors.transparent,
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
+              Icon(
+                icon,
+                color: TamgaciConstants.primaryColor,
+                size: 24,
               ),
               const SizedBox(width: 12),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
             ],
@@ -1190,8 +1316,12 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 8),
-                    Text('Kategori 1 yüklenemedi: $e',
-                        style: const TextStyle(color: Colors.red)),
+                    Text(
+                      'Kategori 1 yüklenemedi: $e',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ],
                 ),
                 data: (list) {
@@ -1202,12 +1332,19 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Kategori bulunamadı',
-                              style: TextStyle(color: Colors.grey),
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
                             ),
                           ),
                         ),
@@ -1277,8 +1414,12 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 8),
-                    Text('Kategori 2 yüklenemedi: $e',
-                        style: const TextStyle(color: Colors.red)),
+                    Text(
+                      'Kategori 2 yüklenemedi: $e',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
                   ],
                 ),
                 data: (list) {
@@ -1289,12 +1430,19 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Text(
+                            child: Text(
                               'Kategori bulunamadı',
-                              style: TextStyle(color: Colors.grey),
+                              style: TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withValues(alpha: 0.6),
+                              ),
                             ),
                           ),
                         ),
@@ -1466,44 +1614,47 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
   }
 
   Widget _buildBranchesCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outline.withValues(alpha: 0.2)
+              : Colors.transparent,
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.business_outlined,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
+              const Icon(
+                Icons.business_outlined,
+                color: TamgaciConstants.primaryColor,
+                size: 24,
               ),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Şubeler',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
               const Spacer(),
@@ -1633,37 +1784,96 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
   }
 
   Widget _buildActionButtons() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(
+          color: isDark
+              ? theme.colorScheme.outline.withValues(alpha: 0.2)
+              : Colors.transparent,
+        ),
+        boxShadow: isDark
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: Column(
         children: [
           Row(
             children: [
               Expanded(
-                child: CustomButton(
-                  text: 'İptal',
-                  onPressed: () => Navigator.of(context).pop(),
-                  variant: ButtonVariant.outlined,
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close, size: 20),
+                    label: const Text(
+                      'İptal',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      elevation: isDark ? 4 : 2,
+                      shadowColor: Colors.orange.withValues(alpha: 0.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 flex: 2,
-                child: CustomButton(
-                  text: 'Güncelle',
-                  onPressed: _isLoading ? null : _updateCustomer,
-                  isLoading: _isLoading,
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _updateCustomer,
+                    icon: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Icon(Icons.check, size: 20),
+                    label: Text(
+                      _isLoading ? 'Güncelleniyor...' : 'Güncelle',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      elevation: isDark ? 4 : 2,
+                      shadowColor: Colors.green.withValues(alpha: 0.4),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -1671,20 +1881,38 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
+            height: 48,
+            child: ElevatedButton.icon(
               onPressed: _isDeleting ? null : _showDeleteConfirmationDialog,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: const BorderSide(color: Colors.red),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isDeleting
+              icon: _isDeleting
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white,
+                        ),
+                      ),
                     )
-                  : const Text('Müşteriyi Sil'),
+                  : const Icon(Icons.delete_outline, size: 20),
+              label: Text(
+                _isDeleting ? 'Siliniyor...' : 'Müşteriyi Sil',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.error,
+                foregroundColor: theme.colorScheme.onError,
+                elevation: isDark ? 4 : 2,
+                shadowColor: theme.colorScheme.error.withValues(alpha: 0.4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
             ),
           ),
         ],
@@ -1699,13 +1927,20 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
     required IconData icon,
     String? subtitle,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
+        color: isDark
+            ? theme.colorScheme.surfaceContainerHighest
+            : Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey[300]!,
+          color: isDark
+              ? theme.colorScheme.outline.withValues(alpha: 0.2)
+              : Colors.grey[300]!,
           width: 1,
         ),
       ),
@@ -1716,33 +1951,48 @@ class _CustomerEditPageState extends ConsumerState<CustomerEditPage>
             children: [
               Icon(
                 icon,
-                color: Colors.grey[600],
+                color: isDark
+                    ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
+                    : Colors.grey[600],
                 size: 20,
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.grey[600],
-                      fontWeight: FontWeight.w500,
-                    ),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: isDark
+                            ? theme.colorScheme.onSurface.withValues(alpha: 0.7)
+                            : Colors.grey[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
-                ),
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 4),
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey[500],
+                    color: isDark
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.5)
+                        : Colors.grey[500],
                     fontStyle: FontStyle.italic,
                   ),
             ),

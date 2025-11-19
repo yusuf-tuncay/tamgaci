@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -12,11 +12,21 @@ import '../../domain/entities/invoice_item.dart';
 import 'package:tamgaci/core/widgets/disposed_view_suppressor.dart';
 import 'package:tamgaci/core/errors/smart_error_suppressor.dart';
 import '../../../company/presentation/providers/company_providers.dart';
+import '../../../company/domain/entities/company_info.dart';
 import '../../../products/presentation/providers/product_providers.dart';
 import '../../../products/domain/entities/product.dart';
 import '../../../customers/presentation/providers/customer_providers.dart';
 import '../../../customers/domain/entities/customer.dart';
 import '../../../../core/services/utils/exchange_rate_service.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
+import 'dart:io';
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 
 /// Fatura önizleme sayfası
 class InvoicePreviewPage extends ConsumerStatefulWidget {
@@ -39,6 +49,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     with ConsumerDisposedViewSuppressorMixin, SmartErrorSuppressorMixin {
   bool _isEditing = false;
   final _formKey = GlobalKey<FormState>();
+  
+  // PDF için logo ve font cache
+  static pw.MemoryImage? _cachedTamgaciLogo;
+  static pw.MemoryImage? _cachedCompanyLogo;
+  static pw.Font? _cachedRobotoFont;
+  static pw.Font? _cachedRobotoBoldFont;
 
   // Güncellenmiş invoice'ı tut
   late Invoice _currentInvoice;
@@ -172,6 +188,15 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
         appBar: CustomAppBar(
           title: 'Fatura Önizleme',
           showBackButton: true,
+          onBackPressed: widget.isFromSale
+              ? () {
+                  // Fatura satıştan oluşturulduysa müşteri detay ekranına dön
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context).pushNamed(
+                    '/customers/detail/${_currentInvoice.customerId}',
+                  );
+                }
+              : null, // null ise varsayılan geri davranışı kullanılır
           actions: [
             if (widget.isEditable) ...[
               IconButton(
@@ -181,17 +206,10 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               ),
             ],
             IconButton(
-              onPressed: _printInvoice,
-              icon: const Icon(Icons.print),
-              tooltip: 'Yazdır',
+              onPressed: _downloadPDF,
+              icon: const Icon(Icons.download),
+              tooltip: 'PDF İndir',
             ),
-            if (widget.isFromSale) ...[
-              IconButton(
-                onPressed: _saveInvoice,
-                icon: const Icon(Icons.save_alt),
-                tooltip: 'Faturayı Kaydet',
-              ),
-            ],
           ],
         ),
         body: SingleChildScrollView(
@@ -350,7 +368,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     'Muhasebe Yazılımı',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -371,7 +389,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     'Muhasebe Yazılımı',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ],
@@ -433,12 +451,13 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           return const SizedBox.shrink();
         }
 
+        final theme = Theme.of(context);
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.3)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,7 +479,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   'Vergi No: $taxNumber',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -471,7 +490,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   'Vergi Dairesi: $taxOffice',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -482,7 +501,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   customerAddress,
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -493,7 +512,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   'Tel: $phone',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -504,7 +523,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   'E-posta: $email',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -515,7 +534,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   'Web: $website',
                   style: GoogleFonts.poppins(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -598,9 +617,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -633,7 +652,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[700],
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       const Spacer(),
@@ -688,7 +707,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       children: [
         Icon(
           icon,
-          color: Colors.grey[600],
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           size: 18,
         ),
         const SizedBox(width: 12),
@@ -697,7 +716,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           style: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Colors.grey[700],
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const Spacer(),
@@ -705,7 +724,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           value,
           style: GoogleFonts.poppins(
             fontSize: 14,
-            color: Colors.grey[800],
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -763,16 +782,16 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
                 ),
                 child: Column(
                   children: [
                     Icon(
                       Icons.inventory_2_outlined,
                       size: 48,
-                      color: Colors.grey[400],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -788,10 +807,10 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               )
             else
               Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
+            ),
                 child: _isEditing
                     ? _buildEditableItemsTable()
                     : _buildReadOnlyItemsTable(),
@@ -825,7 +844,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   Widget _buildReadOnlyItemsTable() {
     return Table(
       border: TableBorder.all(
-        color: Colors.grey[200]!,
+        color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         width: 0.5,
       ),
       columnWidths: const {
@@ -855,7 +874,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           final item = entry.value;
           return TableRow(
             decoration: BoxDecoration(
-              color: index.isEven ? Colors.white : Colors.grey[50],
+              color: index.isEven 
+                  ? Theme.of(context).colorScheme.surface 
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
             ),
             children: [
               _buildTableCell(item.productName),
@@ -913,9 +934,14 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           final index = entry.key;
           return Container(
             decoration: BoxDecoration(
-              color: index.isEven ? Colors.white : Colors.grey[50],
+              color: index.isEven 
+                  ? Theme.of(context).colorScheme.surface 
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               border: Border(
-                bottom: BorderSide(color: Colors.grey[200]!, width: 0.5),
+                bottom: BorderSide(
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2), 
+                  width: 0.5,
+                ),
               ),
             ),
             child: Row(
@@ -1007,7 +1033,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                  icon: Icon(Icons.delete, color: Theme.of(context).colorScheme.error, size: 20),
                   onPressed: () => _removeItem(index),
                 ),
               ],
@@ -1323,7 +1349,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           loading: () => Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Row(
@@ -1337,7 +1363,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 Text(
                   'Ürünler yükleniyor...',
                   style: GoogleFonts.poppins(
-                      fontSize: 12, color: Colors.grey[600]),
+                      fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
                 ),
               ],
             ),
@@ -1345,12 +1371,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           error: (error, stack) => Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.red[300]!),
+              border: Border.all(color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5)),
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
               'Ürünler yüklenemedi',
-              style: GoogleFonts.poppins(fontSize: 12, color: Colors.red[600]),
+              style: GoogleFonts.poppins(fontSize: 12, color: Theme.of(context).colorScheme.error),
             ),
           ),
         );
@@ -1423,9 +1449,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue[200]!),
+            border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
           ),
           child: Column(
             children: [
@@ -1435,7 +1461,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[700],
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 12),
@@ -1570,7 +1596,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               Column(
@@ -1581,14 +1607,14 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.green[700],
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   Text(
                     '(${convertedTotal.toStringAsFixed(2)})',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: Colors.green[600],
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -1616,7 +1642,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               Text(
@@ -1624,7 +1650,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 style: GoogleFonts.poppins(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],
@@ -1644,10 +1670,11 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     bool isTax = false,
     bool isInfo = false,
   }) {
+    final theme = Theme.of(context);
     Color? textColor;
-    if (isDiscount) textColor = Colors.red[600];
-    if (isTax) textColor = Colors.green[600];
-    if (isInfo) textColor = Colors.blue[600];
+    if (isDiscount) textColor = theme.colorScheme.error;
+    if (isTax) textColor = theme.colorScheme.primary;
+    if (isInfo) textColor = theme.colorScheme.primary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -1714,9 +1741,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey[50],
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
               ),
               child: Column(
                 children: [
@@ -1838,11 +1865,11 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                   // Genel toplam bölümü
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[50],
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue[200]!),
-                    ),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
+            ),
                     child: Column(
                       children: [
                         // Toplam ürün miktarı
@@ -1927,7 +1954,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           style: GoogleFonts.poppins(
             fontSize: isTotal ? 16 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isTotal ? Colors.grey[800] : Colors.grey[700],
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         Text(
@@ -1935,7 +1962,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           style: GoogleFonts.poppins(
             fontSize: isTotal ? 18 : 14,
             fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isTotal ? AppColors.primary : Colors.grey[800],
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -1989,16 +2016,16 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[50],
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(
                       Icons.note,
-                      color: Colors.grey[600],
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                       size: 18,
                     ),
                     const SizedBox(width: 12),
@@ -2008,8 +2035,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           color: widget.invoice.notes != null
-                              ? Colors.grey[800]
-                              : Colors.grey[500],
+                              ? Theme.of(context).colorScheme.onSurface
+                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                           fontStyle: widget.invoice.notes != null
                               ? FontStyle.normal
                               : FontStyle.italic,
@@ -2044,7 +2071,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               'Bu fatura TAMGACI muhasebe yazılımı ile oluşturulmuştur.',
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: Colors.grey[600],
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
               ),
               textAlign: TextAlign.center,
             ),
@@ -2156,107 +2183,568 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     }
   }
 
-  void _printInvoice() {
-    // Yazdırma seçenekleri dialog'u
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Yazdırma Seçenekleri',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+  Future<void> _downloadPDF() async {
+    try {
+      debugPrint('=== PDF İNDİRME BAŞLADI ===');
+      
+      // Loading göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  'PDF oluşturuluyor...',
+                  style: GoogleFonts.poppins(),
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 30),
+          ),
+        );
+      }
+
+      // Company bilgilerini al (async olarak bekle)
+      final companyInfoAsync = ref.read(companyInfoStreamProvider);
+      CompanyInfo? companyInfo;
+      await companyInfoAsync.when(
+        data: (info) async => companyInfo = info,
+        loading: () async {},
+        error: (_, __) async {},
+      );
+
+      // Logoları ve fontları yükle
+      debugPrint('Logo ve font yükleme başlıyor...');
+      try {
+        await _ensureTamgaciLogoLoaded();
+        debugPrint('TAMGACI logo yüklendi');
+      } catch (e) {
+        debugPrint('TAMGACI logo yükleme hatası: $e');
+      }
+      
+      try {
+        if (companyInfo?.logoUrl != null && companyInfo!.logoUrl!.isNotEmpty) {
+          await _ensureCompanyLogoLoaded(companyInfo!.logoUrl);
+          debugPrint('Firma logo yüklendi');
+        }
+      } catch (e) {
+        debugPrint('Firma logo yükleme hatası: $e');
+      }
+      
+      try {
+        await _ensureRobotoFontLoaded();
+        debugPrint('Font yükleme tamamlandı');
+      } catch (e) {
+        debugPrint('Font yükleme hatası: $e');
+        // Font yüklenemezse devam et, varsayılan font kullanılacak
+      }
+      
+      debugPrint('PDF oluşturma başlıyor...');
+
+      // PDF oluştur
+      final pdf = pw.Document();
+      final customerCurrency = _getCustomerCurrency();
+
+      pdf.addPage(
+        pw.MultiPage(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(40),
+          footer: (pw.Context context) {
+            return _buildPDFFooter(context);
+          },
+          build: (pw.Context context) {
+            return [
+              // Header
+              _buildPDFHeader(companyInfo),
+              pw.SizedBox(height: 30),
+              
+              // Customer Info
+              _buildPDFCustomerInfo(),
+              pw.SizedBox(height: 20),
+              
+              // Invoice Details
+              _buildPDFInvoiceDetails(),
+              pw.SizedBox(height: 20),
+              
+              // Items Table
+              _buildPDFItemsTable(),
+              pw.SizedBox(height: 20),
+              
+              // Totals
+              _buildPDFTotals(customerCurrency),
+              pw.SizedBox(height: 20),
+              
+              // Notes
+              if (_currentInvoice.notes != null && _currentInvoice.notes!.isNotEmpty)
+                _buildPDFNotes(),
+            ];
+          },
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      );
+
+      // PDF'i kaydet
+      final bytes = await pdf.save();
+      final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+      final fileName = 'Fatura_${_currentInvoice.invoiceNumber}_$timestamp.pdf';
+
+      if (kIsWeb) {
+        // Web'de indirme
+        final uint8List = Uint8List.fromList(bytes);
+        final blob = web.Blob([uint8List.buffer.toJS].toJS);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.HTMLAnchorElement()
+          ..href = url
+          ..download = fileName
+          ..style.display = 'none';
+        web.document.body?.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        web.URL.revokeObjectURL(url);
+      } else {
+        // Mobil'de kaydet
+        final directory = await getDownloadsDirectory();
+        if (directory == null) {
+          throw Exception('Downloads klasörü bulunamadı');
+        }
+        final filePath = path.join(directory.path, fileName);
+        final file = File(filePath);
+        await file.writeAsBytes(bytes);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              kIsWeb 
+                ? 'PDF indirildi: $fileName'
+                : 'PDF kaydedildi: $fileName',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e, stackTrace) {
+      debugPrint('=== PDF OLUŞTURMA HATASI ===');
+      debugPrint('Hata: $e');
+      debugPrint('Stack trace: $stackTrace');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'PDF oluşturma hatası: $e',
+              style: GoogleFonts.poppins(),
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  pw.Widget _buildPDFHeader(CompanyInfo? companyInfo) {
+    return pw.Row(
+      mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        // Sol taraf: Firma logosu ve adı
+        pw.Row(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
-            ListTile(
-              leading: const Icon(Icons.print, color: Colors.blue),
-              title: Text('PDF Olarak Kaydet', style: GoogleFonts.poppins()),
-              subtitle: Text('Faturayı PDF dosyası olarak kaydedin',
-                  style: GoogleFonts.poppins(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(context);
-                _saveAsPDF();
-              },
+            if (_cachedCompanyLogo != null) ...[
+              pw.Container(
+                width: 60,
+                height: 60,
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: PdfColors.grey300),
+                  borderRadius: pw.BorderRadius.circular(4),
+                ),
+                child: pw.Image(
+                  _cachedCompanyLogo!,
+                  fit: pw.BoxFit.contain,
+                ),
+              ),
+              pw.SizedBox(width: 12),
+            ],
+            // Firma adı ve bilgileri - firma bilgisi varsa göster
+            if (companyInfo != null && companyInfo.name.isNotEmpty)
+              pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text(
+                    _convertTurkishChars(companyInfo.name),
+                    style: pw.TextStyle(
+                      fontSize: 24,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.blue700,
+                      font: _cachedRobotoBoldFont,
+                    ),
+                  ),
+                  if (companyInfo.taxNumber != null && companyInfo.taxNumber!.isNotEmpty) ...[
+                    pw.SizedBox(height: 4),
+                    pw.Text(
+                      _convertTurkishChars('Vergi No: ${companyInfo.taxNumber}'),
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        font: _cachedRobotoFont,
+                      ),
+                    ),
+                  ],
+                  if (companyInfo.taxOffice != null && companyInfo.taxOffice!.isNotEmpty) ...[
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      _convertTurkishChars('Vergi Dairesi: ${companyInfo.taxOffice}'),
+                      style: pw.TextStyle(
+                        fontSize: 12,
+                        font: _cachedRobotoFont,
+                      ),
+                    ),
+                  ],
+                  if (companyInfo.fullAddress.isNotEmpty) ...[
+                    pw.SizedBox(height: 2),
+                    pw.Text(
+                      _convertTurkishChars(companyInfo.fullAddress),
+                      style: pw.TextStyle(
+                        fontSize: 11,
+                        font: _cachedRobotoFont,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+          ],
+        ),
+        // Sağ taraf: Fatura bilgileri
+        pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.end,
+          children: [
+            pw.Text(
+              _convertTurkishChars('FATURA'),
+              style: pw.TextStyle(
+                fontSize: 28,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.blue700,
+                font: _cachedRobotoBoldFont,
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.share, color: Colors.green),
-              title: Text('Paylaş', style: GoogleFonts.poppins()),
-              subtitle: Text('Faturayı paylaşın',
-                  style: GoogleFonts.poppins(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(context);
-                _shareInvoice();
-              },
+            pw.SizedBox(height: 8),
+            pw.Text(
+              _convertTurkishChars('Fatura No: ${_currentInvoice.invoiceNumber}'),
+              style: pw.TextStyle(
+                fontSize: 16,
+                fontWeight: pw.FontWeight.bold,
+                font: _cachedRobotoBoldFont,
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.email, color: Colors.orange),
-              title: Text('E-posta Gönder', style: GoogleFonts.poppins()),
-              subtitle: Text('Faturayı e-posta ile gönderin',
-                  style: GoogleFonts.poppins(fontSize: 12)),
-              onTap: () {
-                Navigator.pop(context);
-                _sendEmail();
-              },
+            pw.Text(
+              _convertTurkishChars('Tarih: ${DateFormat('dd.MM.yyyy').format(_currentInvoice.invoiceDate)}'),
+              style: pw.TextStyle(
+                fontSize: 14,
+                font: _cachedRobotoFont,
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('İptal', style: GoogleFonts.poppins()),
+      ],
+    );
+  }
+
+  pw.Widget _buildPDFCustomerInfo() {
+    final customerName = _customerNameController.text.isNotEmpty
+        ? _customerNameController.text
+        : (_currentInvoice.customerName ?? '');
+    
+    if (customerName.isEmpty) {
+      return pw.SizedBox.shrink();
+    }
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            customerName,
+            style: pw.TextStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColors.blue700,
+              font: _cachedRobotoBoldFont,
+            ),
+          ),
+          if (_customerTaxNumberController.text.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            pw.Text(
+              'Vergi No: ${_customerTaxNumberController.text}',
+              style: pw.TextStyle(
+                fontSize: 12,
+                font: _cachedRobotoFont,
+              ),
+            ),
+          ],
+          if (_customerAddressController.text.isNotEmpty) ...[
+            pw.SizedBox(height: 4),
+            pw.Text(
+              _customerAddressController.text,
+              style: pw.TextStyle(
+                fontSize: 12,
+                font: _cachedRobotoFont,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPDFInvoiceDetails() {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.grey100,
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                _convertTurkishChars('Fatura Tarihi:'),
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+              pw.Text(
+                _convertTurkishChars(DateFormat('dd.MM.yyyy').format(_currentInvoice.invoiceDate)),
+                style: pw.TextStyle(font: _cachedRobotoFont),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                _convertTurkishChars('Vade Tarihi:'),
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+              pw.Text(
+                _convertTurkishChars(_currentInvoice.dueDate != null
+                    ? DateFormat('dd.MM.yyyy').format(_currentInvoice.dueDate!)
+                    : 'Belirtilmemiş'),
+                style: pw.TextStyle(font: _cachedRobotoFont),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                _convertTurkishChars('Ödeme Durumu:'),
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+              pw.Text(
+                _convertTurkishChars(_currentInvoice.isPaid ? 'Ödendi' : 'Beklemede'),
+                style: pw.TextStyle(
+                  color: _currentInvoice.isPaid ? PdfColors.green700 : PdfColors.orange700,
+                  font: _cachedRobotoFont,
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  void _saveAsPDF() {
-    // PDF kaydetme işlemi
-    if (kIsWeb) {
-      // Web'de PDF oluşturma
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('PDF kaydetme için Ctrl+S tuşlarını kullanın'),
-          backgroundColor: Colors.green,
+  pw.Widget _buildPDFItemsTable() {
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey300),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(3),
+        1: const pw.FlexColumnWidth(1),
+        2: const pw.FlexColumnWidth(1.5),
+        3: const pw.FlexColumnWidth(1.5),
+        4: const pw.FlexColumnWidth(1.5),
+      },
+      children: [
+        // Header
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+          children: [
+            _buildPDFTableCell('Ürün Adı', isHeader: true),
+            _buildPDFTableCell('Miktar', isHeader: true),
+            _buildPDFTableCell('Birim Fiyat', isHeader: true),
+            _buildPDFTableCell('KDV', isHeader: true),
+            _buildPDFTableCell('Toplam', isHeader: true),
+          ],
         ),
-      );
-    } else {
-      // Mobil'de PDF kaydetme
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mobil PDF kaydetme özelliği yakında eklenecek'),
-          backgroundColor: Colors.blue,
-        ),
-      );
-    }
+        // Items
+        ..._currentInvoice.items.map((item) {
+          return pw.TableRow(
+            children: [
+              _buildPDFTableCell(item.productName),
+              _buildPDFTableCell(item.quantity.toString()),
+              _buildPDFTableCell(
+                CurrencyHelper.formatCurrency(item.unitPrice, item.currencyCode),
+              ),
+              _buildPDFTableCell('${item.taxRate.toStringAsFixed(1)}%'),
+              _buildPDFTableCell(
+                CurrencyHelper.formatCurrency(item.lineTotal, item.currencyCode),
+              ),
+            ],
+          );
+        }),
+      ],
+    );
   }
 
-  void _shareInvoice() {
-    // Paylaşım işlevselliği
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Paylaşım özelliği yakında eklenecek'),
-        backgroundColor: Colors.green,
+  pw.Widget _buildPDFTableCell(String text, {bool isHeader = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(8),
+      child: pw.Text(
+        _convertTurkishChars(text),
+        style: pw.TextStyle(
+          fontSize: isHeader ? 12 : 10,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+          font: isHeader ? _cachedRobotoBoldFont : _cachedRobotoFont,
+        ),
       ),
     );
   }
 
-  void _sendEmail() {
-    // E-posta gönderme işlevselliği
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('E-posta gönderme özelliği yakında eklenecek'),
-        backgroundColor: Colors.orange,
+  pw.Widget _buildPDFTotals(String customerCurrency) {
+    final subtotal = _currentInvoice.subtotal;
+    final taxAmount = _currentInvoice.taxAmount;
+    final total = _currentInvoice.totalAmount;
+
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.grey100,
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.end,
+        children: [
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'Ara Toplam:',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+              pw.Text(
+                CurrencyHelper.formatCurrency(subtotal, customerCurrency),
+                style: pw.TextStyle(font: _cachedRobotoFont),
+              ),
+            ],
+          ),
+          pw.SizedBox(height: 8),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'KDV:',
+                style: pw.TextStyle(
+                  fontWeight: pw.FontWeight.bold,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+              pw.Text(
+                CurrencyHelper.formatCurrency(taxAmount, customerCurrency),
+                style: pw.TextStyle(font: _cachedRobotoFont),
+              ),
+            ],
+          ),
+          pw.Divider(),
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text(
+                'GENEL TOPLAM:',
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue700,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+              pw.Text(
+                CurrencyHelper.formatCurrency(total, customerCurrency),
+                style: pw.TextStyle(
+                  fontSize: 16,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue700,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPDFNotes() {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(12),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColors.grey300),
+        borderRadius: pw.BorderRadius.circular(4),
+      ),
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            'Notlar:',
+            style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+          ),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            _currentInvoice.notes!,
+            style: const pw.TextStyle(fontSize: 12),
+          ),
+        ],
       ),
     );
   }
 
   /// Ödeme durumu rengini döndürür
   Color _getPaymentStatusColor(bool isPaid) {
+    final theme = Theme.of(context);
     if (isPaid) {
-      return Colors.green.shade100;
+      return theme.colorScheme.primaryContainer;
     } else {
-      return Colors.orange.shade100;
+      return theme.colorScheme.errorContainer;
     }
   }
 
@@ -2271,58 +2759,159 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
 
   /// Ödeme durumu metin rengini döndürür
   Color _getPaymentStatusTextColor(bool isPaid) {
+    final theme = Theme.of(context);
     if (isPaid) {
-      return Colors.green.shade700;
+      return theme.colorScheme.onPrimaryContainer;
     } else {
-      return Colors.orange.shade700;
+      return theme.colorScheme.onErrorContainer;
     }
   }
 
-  void _saveInvoice() async {
+
+  // TAMGACI logosu yükleme
+  Future<void> _ensureTamgaciLogoLoaded() async {
+    if (_cachedTamgaciLogo != null) return;
+
+    final List<String> logoPaths = [
+      'assets/images/logos/256x256logorenkli.png',
+      'assets/images/logos/512x512logo.png',
+      'assets/images/logos/192x192logo.png',
+    ];
+
+    for (String logoPath in logoPaths) {
+      try {
+        final logoData = await rootBundle.load(logoPath);
+        final logoBytes = logoData.buffer.asUint8List();
+        _cachedTamgaciLogo = pw.MemoryImage(logoBytes);
+        return;
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+
+  // Firma logosu yükleme
+  Future<void> _ensureCompanyLogoLoaded(String? logoUrl) async {
+    if (logoUrl == null || logoUrl.isEmpty) {
+      _cachedCompanyLogo = null;
+      return;
+    }
+
     try {
-      if (_isEditing) {
-        // Düzenleme modunda - mevcut faturayı güncelle
-        // Invoice repository ile güncelleme işlemi
-        // final updatedInvoice = widget.invoice.copyWith(
-        //   customerName: _customerNameController.text,
-        //   customerAddress: _customerAddressController.text,
-        //   notes: _notesController.text,
-        //   updatedAt: DateTime.now(),
-        // );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fatura güncellendi'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        // Yeni fatura olarak kaydet
-        // Invoice repository ile kaydetme işlemi
-        // final newInvoice = widget.invoice.copyWith(
-        //   id: '', // Yeni ID oluşturulacak
-        //   invoiceNumber: null, // Yeni fatura numarası oluşturulacak
-        //   customerName: _customerNameController.text,
-        //   customerAddress: _customerAddressController.text,
-        //   notes: _notesController.text,
-        //   createdAt: DateTime.now(),
-        //   updatedAt: DateTime.now(),
-        // );
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fatura kaydedildi'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      final response = await http.get(Uri.parse(logoUrl));
+      if (response.statusCode == 200) {
+        final logoBytes = response.bodyBytes;
+        _cachedCompanyLogo = pw.MemoryImage(logoBytes);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Hata: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _cachedCompanyLogo = null;
     }
+  }
+
+  // Roboto font yükleme
+  Future<void> _ensureRobotoFontLoaded() async {
+    if (_cachedRobotoFont != null && _cachedRobotoBoldFont != null) return;
+
+    try {
+      // Sadece mobil için font yükleme yap
+      // Web'de varsayılan font kullan (sorun çıkarıyor)
+      if (!kIsWeb) {
+        try {
+          // Mobil'de asset'ten yükle
+          final regularFontData = await rootBundle.load('assets/fonts/Roboto-Regular.ttf');
+          final boldFontData = await rootBundle.load('assets/fonts/Roboto-Bold.ttf');
+          
+          _cachedRobotoFont = pw.Font.ttf(regularFontData);
+          _cachedRobotoBoldFont = pw.Font.ttf(boldFontData);
+          debugPrint('Roboto font başarıyla yüklendi (Mobile)');
+        } catch (e) {
+          debugPrint('Mobile font yükleme hatası: $e');
+          // Font yükleme başarısız, varsayılan font kullanılacak
+        }
+      } else {
+        debugPrint('Web platformu - varsayılan font kullanılıyor (Türkçe karakterler ASCII\'ye dönüştürülecek)');
+        // Web'de font yüklemeyi atla, varsayılan fontları kullan
+        // _convertTurkishChars fonksiyonu Türkçe karakterleri dönüştürecek
+      }
+    } catch (e) {
+      // Font yükleme başarısız, varsayılan font kullanılacak
+      debugPrint('Font yükleme hatası: $e');
+    }
+  }
+
+  // Türkçe karakterleri dönüştür (font yoksa veya web'de)
+  String _convertTurkishChars(String text) {
+    // Web'de veya font yoksa ASCII'ye dönüştür
+    // Mobil'de font yüklüyse, orijinal metni kullan
+    if (!kIsWeb && _cachedRobotoFont != null) {
+      return text; // Mobil'de font varsa, orijinal Türkçe karakterleri kullan
+    }
+    
+    // Web'de veya font yoksa ASCII'ye dönüştür
+    return text
+        .replaceAll('ç', 'c')
+        .replaceAll('Ç', 'C')
+        .replaceAll('ğ', 'g')
+        .replaceAll('Ğ', 'G')
+        .replaceAll('ı', 'i')
+        .replaceAll('İ', 'I')
+        .replaceAll('ö', 'o')
+        .replaceAll('Ö', 'O')
+        .replaceAll('ş', 's')
+        .replaceAll('Ş', 'S')
+        .replaceAll('ü', 'u')
+        .replaceAll('Ü', 'U');
+  }
+
+  // PDF Footer (TAMGACI logosu ve yazısı)
+  pw.Widget _buildPDFFooter(pw.Context context) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(10),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          // Sol taraf: TAMGACI branding
+          pw.Row(
+            children: [
+              if (_cachedTamgaciLogo != null) ...[
+                pw.Container(
+                  width: 20,
+                  height: 20,
+                  child: pw.Image(_cachedTamgaciLogo!),
+                ),
+                pw.SizedBox(width: 8),
+              ],
+              pw.Text(
+                _convertTurkishChars('TAMGACI'),
+                style: pw.TextStyle(
+                  fontSize: 8,
+                  fontWeight: pw.FontWeight.bold,
+                  color: PdfColors.blue800,
+                  font: _cachedRobotoBoldFont,
+                ),
+              ),
+              pw.SizedBox(width: 6),
+              pw.Text(
+                _convertTurkishChars('Muhasebe ve İş Yönetim Sistemi'),
+                style: pw.TextStyle(
+                  fontSize: 6,
+                  color: PdfColors.grey600,
+                  font: _cachedRobotoFont,
+                ),
+              ),
+            ],
+          ),
+          // Sağ taraf: Sayfa numarası
+          pw.Text(
+            '${context.pageNumber}/${context.pagesCount}',
+            style: pw.TextStyle(
+              fontSize: 8,
+              color: PdfColors.grey600,
+              font: _cachedRobotoFont,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

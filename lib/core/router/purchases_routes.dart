@@ -25,11 +25,22 @@ class PurchasesRoutes {
         GoRoute(
           path: '/purchases/create',
           name: 'create-purchase',
-          builder: (context, state) => const SubscriptionGuard(
-            allowTrial: true,
-            allowExpired: false,
-            child: CreatePurchasePage(),
-          ),
+          builder: (context, state) {
+            final supplierId = state.uri.queryParameters['supplierId'];
+            final supplierName = state.uri.queryParameters['supplierName'];
+            final customerId = state.uri.queryParameters['customerId'];
+            final customerName = state.uri.queryParameters['customerName'];
+            return SubscriptionGuard(
+              allowTrial: true,
+              allowExpired: false,
+              child: CreatePurchasePage(
+                supplierId: supplierId,
+                supplierName: supplierName,
+                customerId: customerId,
+                customerName: customerName,
+              ),
+            );
+          },
         ),
 
         GoRoute(

@@ -161,14 +161,7 @@ service cloud.firestore {
     }
 
     match /tenants/{tenantId}/payment_transactions/{id} {
-      allow get, list: if isSignedIn() && isTenantMember(tenantId);
-      allow create: if isSignedIn() && isTenantMember(tenantId) && 
-                       request.resource.data.tenantId == tenantId &&
-                       request.resource.data.createdBy == userId();
-      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      // Realtime listener için gerekli izinler
-      allow read: if isSignedIn() && isTenantMember(tenantId);
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
     }
 
     match /tenants/{tenantId}/cash_accounts/{id} {
@@ -202,14 +195,7 @@ service cloud.firestore {
     }
 
     match /tenants/{tenantId}/accountTransactions/{id} {
-      allow get, list: if isSignedIn() && isTenantMember(tenantId);
-      allow create: if isSignedIn() && isTenantMember(tenantId) && 
-                       request.resource.data.tenantId == tenantId &&
-                       request.resource.data.createdBy == userId();
-      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      // Realtime listener için gerekli izinler
-      allow read: if isSignedIn() && isTenantMember(tenantId);
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
     }
 
     // Warehouses collection rules
@@ -347,12 +333,7 @@ service cloud.firestore {
     }
     
     match /tenants/{tenantId}/stock_movements/{id} {
-      allow get, list: if isSignedIn() && isTenantMember(tenantId);
-      allow create: if isSignedIn() && isTenantMember(tenantId) && 
-                       request.resource.data.tenantId == tenantId &&
-                       request.resource.data.createdBy == userId();
-      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
     }
     
     // Stock Counts - Stok sayımları
@@ -367,25 +348,10 @@ service cloud.firestore {
 
     // Transactions collection rules
     match /tenants/{tenantId}/transactions/{id} {
-      allow get, list: if isSignedIn() && isTenantMember(tenantId);
-      allow create: if isSignedIn() && isTenantMember(tenantId) && 
-                       request.resource.data.tenantId == tenantId &&
-                       request.resource.data.createdBy == userId();
-      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      // Realtime listener için gerekli izinler
-      allow read: if isSignedIn() && isTenantMember(tenantId);
+      allow read, write: if isSignedIn() && isTenantMember(tenantId);
     }
 
-    // Stock movements collection rules
-    match /tenants/{tenantId}/stock_movements/{id} {
-      allow get, list: if isSignedIn() && isTenantMember(tenantId);
-      allow create: if isSignedIn() && isTenantMember(tenantId) && 
-                       request.resource.data.tenantId == tenantId &&
-                       request.resource.data.createdBy == userId();
-      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-    }
+    // Stock movements collection rules (duplicate - removed, using the one above)
 
     // Cash accounts collection rules
     match /tenants/{tenantId}/cash_accounts/{id} {
@@ -395,6 +361,15 @@ service cloud.firestore {
                        request.resource.data.createdBy == userId();
       allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
       allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+    }
+
+    // Top-level cash_transactions (geçici - development için)
+    // TODO: Multi-tenant path'e geçir: tenants/{tenantId}/cash_transactions
+    // Query için gerekli izinler
+    match /cash_transactions/{id} {
+      allow read, write: if isSignedIn();
+      // Query için list izni
+      allow list: if isSignedIn();
     }
 
     // Products collection rules

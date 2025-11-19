@@ -20,6 +20,17 @@ import 'package:tamgaci/core/utils/logger.dart';
 import 'package:tamgaci/features/cash_management/domain/entities/cash_transaction.dart'
     as cm;
 import 'package:tamgaci/features/cash_management/presentation/providers/cash_management_providers.dart';
+import 'package:tamgaci/features/accounts/presentation/providers/account_providers.dart';
+import 'package:tamgaci/features/accounts/domain/entities/account.dart'
+    as accounts;
+import 'package:tamgaci/features/accounts/domain/entities/account_transaction.dart'
+    as account_txn;
+import 'package:tamgaci/features/accounts/presentation/providers/account_transaction_providers.dart';
+import 'package:tamgaci/features/payment_collection/domain/entities/payment_transaction.dart';
+import 'package:tamgaci/features/payment_collection/domain/entities/payment_enums.dart';
+import 'package:tamgaci/features/payment_collection/presentation/providers/payment_collection_providers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
 // import 'package:tamgaci/features/sales/presentation/widgets/sale_form_widget.dart';
 // import 'package:tamgaci/core/theme/app_theme.dart';
 import 'package:tamgaci/core/widgets/loading_widget.dart';
@@ -95,6 +106,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   double? _paymentAmount; // Ödenecek miktar
   final _paymentAmountController = TextEditingController();
   final _paymentAmountFocusNode = FocusNode();
+  String? _selectedPaymentAccountId; // Ödeme için seçilen hesap ID'si
 
   // Addresses
   String? _billingAddress;
@@ -108,7 +120,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   double _taxRate = 18.0;
   String? _selectedWarehouseId;
   final _interestRateController = TextEditingController();
-  List<_InstallmentItem> _installments = [];
+  final List<_InstallmentItem> _installments = [];
   String _infoCurrencyCode = 'TRY';
   String _baseCurrencyCode = 'TRY';
   int _moneyDecimals = 2;
@@ -203,7 +215,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     super.dispose();
   }
 
-  Widget _buildPaymentCard() {
+  Widget _buildPaymentTypeCard() {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -211,247 +223,384 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Ödeme / Tahsilat',
+              'Ödeme Tipi',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: 'Vadeli', // Varsayılan olarak vadeli
-                    items: const [
-                      DropdownMenuItem(value: 'Peşin', child: Text('Peşin')),
-                      DropdownMenuItem(value: 'Vadeli', child: Text('Vadeli')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Ödeme Tipi',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (v) {
-                      setState(() {
-                        _isCashPayment = v == 'Peşin';
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    initialValue: _paymentMethod,
-                    items: const [
-                      DropdownMenuItem(value: 'Nakit', child: Text('Nakit')),
-                      DropdownMenuItem(value: 'Banka', child: Text('Banka')),
-                      DropdownMenuItem(
-                          value: 'Kredi Kartı', child: Text('Kredi Kartı')),
-                      DropdownMenuItem(value: 'Çek', child: Text('Çek')),
-                      DropdownMenuItem(value: 'Senet', child: Text('Senet')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'Ödeme Şekli',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (v) {
-                      if (v == null) return;
-                      setState(() {
-                        _paymentMethod = v;
-                      });
-                    },
-                  ),
-                ),
-                // Payment currency and FX moved below on a separate line to avoid overflow
+            DropdownButtonFormField<String>(
+              initialValue: _isCashPayment ? 'Peşin' : 'Vadeli',
+              items: const [
+                DropdownMenuItem(value: 'Peşin', child: Text('Peşin')),
+                DropdownMenuItem(value: 'Vadeli', child: Text('Vadeli')),
               ],
+              decoration: const InputDecoration(
+                labelText: 'Ödeme Tipi',
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (v) {
+                setState(() {
+                  _isCashPayment = v == 'Peşin';
+                  // Ödeme tipi değiştiğinde hesap seçimini sıfırla
+                  if (!_isCashPayment) {
+                    _selectedPaymentAccountId = null;
+                  }
+                });
+              },
             ),
-            const SizedBox(height: 12),
-            Consumer(builder: (context, ref, _) {
-              final settingsAsync = ref.watch(settingsProvider);
-              return settingsAsync.when(
-                data: (s) {
-                  final appCcy = s.currency.name.toUpperCase() == 'TRY'
-                      ? 'TRY'
-                      : s.currency.name.toUpperCase();
-                  final options = <String>['TRY', 'USD', 'EUR', 'GBP'];
-                  if (!options.contains(appCcy)) options.add(appCcy);
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        initialValue: _paymentCurrencyCode.isNotEmpty
-                            ? _paymentCurrencyCode
-                            : null,
-                        decoration: const InputDecoration(
-                          labelText: 'Ödeme Para Birimi',
-                          border: OutlineInputBorder(),
-                        ),
-                        items: options
-                            .map((c) => DropdownMenuItem(
-                                  value: c,
-                                  child:
-                                      Text(c, overflow: TextOverflow.ellipsis),
-                                ))
-                            .toList(),
-                        onChanged: (v) {
-                          if (v == null) return;
-                          setState(() => _paymentCurrencyCode = v);
-                        },
-                      ),
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        controller: _paymentAmountController,
-                        focusNode: _paymentAmountFocusNode,
-                        decoration: const InputDecoration(
-                          labelText: 'Ödenecek Miktar (Opsiyonel)',
-                          border: OutlineInputBorder(),
-                          hintText: 'Boş bırakılabilir',
-                        ),
-                        keyboardType: TextInputType.number,
-                        inputFormatters: [
-                          _PaymentAmountFormatter(),
-                        ],
-                        onChanged: (value) {
-                          if (value.trim().isEmpty) {
-                            setState(() => _paymentAmount = null);
-                          } else {
-                            // Nokta ve virgülü koruyarak parse et
-                            String cleanValue =
-                                value.replaceAll(RegExp(r'[^\d.,]'), '');
-
-                            // Virgülü nokta ile değiştir (double.parse için)
-                            cleanValue = cleanValue.replaceAll(',', '.');
-
-                            if (cleanValue.isNotEmpty) {
-                              final parsed = double.tryParse(cleanValue);
-                              setState(() => _paymentAmount = parsed);
-                            }
-                          }
-                        },
-                        onTapOutside: (event) {
-                          // Focus kaybedildiğinde küsüratsız sayılara ,00 ekle
-                          final currentText = _paymentAmountController.text;
-                          if (currentText.isNotEmpty &&
-                              !currentText.contains(',')) {
-                            // Sadece rakamlar varsa ve virgül yoksa ,00 ekle
-                            final cleanValue =
-                                currentText.replaceAll(RegExp(r'[^\d]'), '');
-                            if (cleanValue.isNotEmpty) {
-                              final number = int.tryParse(cleanValue);
-                              if (number != null) {
-                                final formatter =
-                                    NumberFormat('#,##0', 'tr_TR');
-                                final formatted = formatter.format(number);
-                                _paymentAmountController.text = '$formatted,00';
-                                setState(
-                                    () => _paymentAmount = number.toDouble());
-                              }
-                            }
-                          }
-                        },
-                      ),
-                    ],
-                  );
-                },
-                loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
-              );
-            }),
-            if (_isCashPayment) ...[
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _paymentAmountController,
-                focusNode: _paymentAmountFocusNode,
-                decoration: const InputDecoration(
-                  labelText: 'Ödeme Miktarı',
-                  border: OutlineInputBorder(),
-                  prefixText: '₺',
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  _paymentAmount = double.tryParse(value);
-                },
-              ),
-            ],
-            if (!_isCashPayment) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: _selectDueDate,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Vade Tarihi',
-                          border: OutlineInputBorder(),
-                        ),
-                        child: Text(_dueDate != null
-                            ? _formatDate(_dueDate!)
-                            : 'Seçiniz'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Taksit Sayısı (opsiyonel)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      onChanged: (v) => _installmentCount = int.tryParse(v),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _interestRateController,
-                      decoration: const InputDecoration(
-                        labelText: 'Aylık Faiz (%) (opsiyonel)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  ElevatedButton.icon(
-                    onPressed: _calculateInstallmentPlan,
-                    icon: const Icon(Icons.calculate_outlined),
-                    label: const Text('Planı Hesapla'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (_installments.isNotEmpty) ...[
-                const Text('Taksit Planı',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _installments.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final it = _installments[index];
-                    return ListTile(
-                      dense: true,
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(
-                          '${index + 1}. Taksit - ${_formatDate(it.dueDate)}'),
-                      trailing: Text(_formatMoney(it.amount)),
-                      subtitle: Text(
-                          'Anapara: ${_formatMoney(it.principal)} • Faiz: ${_formatMoney(it.interestAmount)}'),
-                    );
-                  },
-                ),
-              ],
-            ],
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPaymentCard() {
+    return Consumer(
+      builder: (context, ref, _) {
+        // Hesaplarım modülünden aktif hesapları al
+        final accountsAsync = ref.watch(activeAccountsProvider);
+
+        return accountsAsync.when(
+          data: (accountsList) {
+            // Ödeme şekline göre hesapları filtrele
+            List<accounts.Account> filteredAccounts =
+                accountsList.where((account) {
+              // Aktif olmayan hesapları filtrele
+              if (!account.isActive ||
+                  account.status != accounts.AccountStatus.active) {
+                return false;
+              }
+
+              // Çek ve Senet hesaplarını hiç gösterme
+              if (account.isCheckAccount || account.isPromissoryAccount) {
+                return false;
+              }
+
+              // Ödeme şekline göre filtrele
+              if (_paymentMethod == 'Nakit') {
+                // Sadece nakit kasalar
+                return account.type == accounts.AccountType.cash;
+              } else if (_paymentMethod == 'Banka') {
+                // EFT/Havale için banka hesapları (vadesiz ve vadeli)
+                return account.type == accounts.AccountType.checking ||
+                    account.type == accounts.AccountType.savings;
+              } else if (_paymentMethod == 'Kredi Kartı') {
+                // POS hesabı kontrolü (name içinde "pos" geçen veya creditCard type)
+                final normalizedName = account.name.toLowerCase();
+                return account.type == accounts.AccountType.creditCard ||
+                    normalizedName.contains('pos');
+              }
+
+              // Diğer durumlar için false dön (listelenmemeli)
+              return false;
+            }).toList();
+
+            // Eğer filtrelenmiş hesap yoksa ve ödeme şekli seçilmişse, kullanıcıya bilgi ver
+            final hasNoAccounts = filteredAccounts.isEmpty;
+
+            return Consumer(
+              builder: (context, ref, _) {
+                final settingsAsync = ref.watch(settingsProvider);
+                return settingsAsync.when(
+                  data: (s) {
+                    final appCcy = s.currency.name.toUpperCase() == 'TRY'
+                        ? 'TRY'
+                        : s.currency.name.toUpperCase();
+                    final options = <String>['TRY', 'USD', 'EUR', 'GBP'];
+                    if (!options.contains(appCcy)) options.add(appCcy);
+
+                    return Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Ödeme / Tahsilat',
+                              style: TextStyle(
+                                  fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: _paymentMethod,
+                                    items: const [
+                                      DropdownMenuItem(
+                                          value: 'Nakit', child: Text('Nakit')),
+                                      DropdownMenuItem(
+                                          value: 'Banka',
+                                          child: Text('EFT/Havale')),
+                                      DropdownMenuItem(
+                                          value: 'Kredi Kartı',
+                                          child: Text('Kredi Kartı')),
+                                    ],
+                                    decoration: const InputDecoration(
+                                      labelText: 'Ödeme Şekli',
+                                      border: OutlineInputBorder(),
+                                      isDense: true,
+                                      contentPadding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 16),
+                                    ),
+                                    isExpanded: true,
+                                    selectedItemBuilder: (context) {
+                                      return const [
+                                        Text('Nakit',
+                                            overflow: TextOverflow.ellipsis),
+                                        Text('EFT/Havale',
+                                            overflow: TextOverflow.ellipsis),
+                                        Text('Kredi Kartı',
+                                            overflow: TextOverflow.ellipsis),
+                                      ];
+                                    },
+                                    onChanged: (v) {
+                                      if (v == null) return;
+                                      setState(() {
+                                        _paymentMethod = v;
+                                        // Ödeme şekli değiştiğinde hesap seçimini sıfırla
+                                        _selectedPaymentAccountId = null;
+                                      });
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: hasNoAccounts
+                                      ? TextFormField(
+                                          enabled: false,
+                                          decoration: InputDecoration(
+                                            labelText: 'Hesap *',
+                                            border: const OutlineInputBorder(),
+                                            helperText: _paymentMethod ==
+                                                    'Banka'
+                                                ? 'Banka hesabı bulunamadı'
+                                                : _paymentMethod == 'Nakit'
+                                                    ? 'Nakit kasa bulunamadı'
+                                                    : _paymentMethod ==
+                                                            'Kredi Kartı'
+                                                        ? 'POS hesabı bulunamadı'
+                                                        : 'Hesap bulunamadı',
+                                            helperStyle: TextStyle(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .error,
+                                            ),
+                                            isDense: true,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 16),
+                                          ),
+                                        )
+                                      : DropdownButtonFormField<String>(
+                                          initialValue:
+                                              _selectedPaymentAccountId,
+                                          items:
+                                              filteredAccounts.map((account) {
+                                            return DropdownMenuItem<String>(
+                                              value: account.id,
+                                              child: SizedBox(
+                                                width: double.infinity,
+                                                child: Text(
+                                                  '${account.name} (${account.currency.toUpperCase()})',
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                          decoration: const InputDecoration(
+                                            labelText: 'Hesap *',
+                                            border: OutlineInputBorder(),
+                                            helperText:
+                                                'Ödeme için hesap seçiniz',
+                                            isDense: true,
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                    horizontal: 12,
+                                                    vertical: 16),
+                                          ),
+                                          isExpanded: true,
+                                          menuMaxHeight: 300,
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return 'Lütfen bir hesap seçiniz';
+                                            }
+                                            return null;
+                                          },
+                                          selectedItemBuilder: (context) {
+                                            return filteredAccounts
+                                                .map((account) {
+                                              return Align(
+                                                alignment: AlignmentDirectional
+                                                    .centerStart,
+                                                child: Text(
+                                                  '${account.name} (${account.currency.toUpperCase()})',
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                  style: const TextStyle(
+                                                      fontSize: 16),
+                                                ),
+                                              );
+                                            }).toList();
+                                          },
+                                          onChanged: (v) {
+                                            if (v == null) return;
+                                            setState(() {
+                                              _selectedPaymentAccountId = v;
+                                              // Nakit ödeme şeklinde, seçilen hesabın para birimini ödeme para birimi olarak ayarla
+                                              if (_paymentMethod == 'Nakit' &&
+                                                  filteredAccounts.isNotEmpty) {
+                                                final selectedAccount =
+                                                    filteredAccounts.firstWhere(
+                                                  (account) => account.id == v,
+                                                  orElse: () =>
+                                                      filteredAccounts.first,
+                                                );
+                                                _paymentCurrencyCode =
+                                                    selectedAccount.currency
+                                                        .toUpperCase();
+                                              }
+                                            });
+                                          },
+                                        ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                DropdownButtonFormField<String>(
+                                  initialValue: _paymentCurrencyCode.isNotEmpty
+                                      ? _paymentCurrencyCode
+                                      : null,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ödeme Para Birimi',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: options
+                                      .map((c) => DropdownMenuItem(
+                                            value: c,
+                                            child: Text(c,
+                                                overflow:
+                                                    TextOverflow.ellipsis),
+                                          ))
+                                      .toList(),
+                                  onChanged: (v) {
+                                    if (v == null) return;
+                                    // Nakit ödeme şeklinde, ödeme para birimi değiştiğinde o para birimindeki hesabı otomatik seç
+                                    if (_paymentMethod == 'Nakit' &&
+                                        filteredAccounts.isNotEmpty) {
+                                      final matchingAccount =
+                                          filteredAccounts.firstWhere(
+                                        (account) =>
+                                            account.currency.toUpperCase() ==
+                                            v.toUpperCase(),
+                                        orElse: () => filteredAccounts.first,
+                                      );
+                                      setState(() {
+                                        _paymentCurrencyCode = v;
+                                        _selectedPaymentAccountId =
+                                            matchingAccount.id;
+                                      });
+                                    } else {
+                                      setState(() {
+                                        _paymentCurrencyCode = v;
+                                      });
+                                    }
+                                  },
+                                ),
+                                const SizedBox(height: 8),
+                                TextFormField(
+                                  controller: _paymentAmountController,
+                                  focusNode: _paymentAmountFocusNode,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Ödenecek Miktar (Opsiyonel)',
+                                    border: OutlineInputBorder(),
+                                    hintText: 'Boş bırakılabilir',
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    _PaymentAmountFormatter(),
+                                  ],
+                                  onChanged: (value) {
+                                    if (value.trim().isEmpty) {
+                                      setState(() => _paymentAmount = null);
+                                    } else {
+                                      // Nokta ve virgülü koruyarak parse et
+                                      String cleanValue = value.replaceAll(
+                                          RegExp(r'[^\d.,]'), '');
+
+                                      // Virgülü nokta ile değiştir (double.parse için)
+                                      cleanValue =
+                                          cleanValue.replaceAll(',', '.');
+
+                                      if (cleanValue.isNotEmpty) {
+                                        final parsed =
+                                            double.tryParse(cleanValue);
+                                        setState(() => _paymentAmount = parsed);
+                                      }
+                                    }
+                                  },
+                                  onTapOutside: (event) {
+                                    // Focus kaybedildiğinde küsüratsız sayılara ,00 ekle
+                                    final currentText =
+                                        _paymentAmountController.text;
+                                    if (currentText.isNotEmpty &&
+                                        !currentText.contains(',')) {
+                                      // Sadece rakamlar varsa ve virgül yoksa ,00 ekle
+                                      final cleanValue = currentText.replaceAll(
+                                          RegExp(r'[^\d]'), '');
+                                      if (cleanValue.isNotEmpty) {
+                                        final number = int.tryParse(cleanValue);
+                                        if (number != null) {
+                                          final formatter =
+                                              NumberFormat('#,##0', 'tr_TR');
+                                          final formatted =
+                                              formatter.format(number);
+                                          _paymentAmountController.text =
+                                              '$formatted,00';
+                                          setState(() => _paymentAmount =
+                                              number.toDouble());
+                                        }
+                                      }
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                  loading: () => const LoadingWidget(),
+                  error: (error, stack) => core_widgets.ErrorWidget(
+                    error: error.toString(),
+                    onRetry: () {},
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Card(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          ),
+          error: (error, stack) => Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text('Hesaplar yüklenirken hata oluştu: $error'),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -505,7 +654,14 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         appBar: CustomAppBar(
           title: 'TAMGACI',
           showBackButton: true,
-          onBackPressed: () => context.pop(),
+          onBackPressed: () {
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              // Eğer pop yapılamıyorsa müşteri listesine git
+              context.go('/customers');
+            }
+          },
           actions: [
             if (isEditing)
               IconButton(
@@ -550,7 +706,13 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                   const SizedBox(height: 16.0),
                   _buildSummaryCard(),
                   const SizedBox(height: 16.0),
-                  _buildPaymentCard(),
+                  // Ödeme tipi seçimi
+                  _buildPaymentTypeCard(),
+                  // Ödeme kartı sadece peşin ödeme seçildiğinde gösterilir
+                  if (_isCashPayment) ...[
+                    const SizedBox(height: 16.0),
+                    _buildPaymentCard(),
+                  ],
                 ],
               ),
             ),
@@ -911,7 +1073,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   }
 
   Widget _buildItemsCard() {
+    final theme = Theme.of(context);
+
     return Card(
+      color: theme.colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -920,11 +1085,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Satış Ürünleri',
                   style: TextStyle(
                     fontSize: 18.0,
                     fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 TextButton.icon(
@@ -936,10 +1102,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             ),
             const SizedBox(height: 16.0),
             if (_items.isEmpty)
-              const Center(
+              Center(
                 child: Text(
                   'Henüz ürün eklenmedi',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.6)),
                 ),
               )
             else
@@ -953,15 +1121,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   Widget _buildProductsTable() {
     // Aynı ürün, aynı para birimi ve aynı birim fiyat olan ürünleri birleştir
     final mergedItems = _mergeIdenticalItems(_items);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Card(
+      color: theme.colorScheme.surface,
       child: Column(
         children: [
           // Tablo başlığı
           Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: isDark
+                  ? theme.colorScheme.surfaceContainerHighest
+                  : Colors.grey.shade100,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8.0),
                 topRight: Radius.circular(8.0),
@@ -969,23 +1142,36 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             ),
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final theme = Theme.of(context);
                 if (constraints.maxWidth < 600) {
                   // Küçük ekran için basit başlık
-                  return const Row(
+                  return Row(
                     children: [
                       Expanded(
                           child: Text('Ürün',
-                              style: TextStyle(fontWeight: FontWeight.bold))),
-                      SizedBox(width: 8),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.onSurface,
+                              ))),
+                      const SizedBox(width: 8),
                       Text('Miktar',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(width: 8),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          )),
+                      const SizedBox(width: 8),
                       Text('Birim',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(width: 8),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          )),
+                      const SizedBox(width: 8),
                       Text('Toplam',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(width: 40),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          )),
+                      const SizedBox(width: 40),
                     ],
                   );
                 } else {
@@ -1024,11 +1210,13 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   }
 
   Widget _buildTableHeader(String title) {
+    final theme = Theme.of(context);
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontWeight: FontWeight.bold,
         fontSize: 14,
+        color: theme.colorScheme.onSurface,
       ),
     );
   }
@@ -1095,6 +1283,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   }
 
   Widget _buildSmallScreenRow(SaleItem item, int index) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         // Ürün bilgileri
@@ -1104,9 +1293,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             children: [
               Text(
                 item.productName ?? item.productId,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
+                  color: theme.colorScheme.onSurface,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1116,7 +1306,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 Text(
                   item.productDescription!,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 11,
                   ),
                   maxLines: 1,
@@ -1131,7 +1321,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         // Miktar
         Text(
           item.quantity.toStringAsFixed(0),
-          style: const TextStyle(fontSize: 12),
+          style: TextStyle(
+            fontSize: 12,
+            color: theme.colorScheme.onSurface,
+          ),
         ),
 
         const SizedBox(width: 8),
@@ -1139,7 +1332,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         // Birim Fiyat
         Text(
           _formatMoney(item.unitPrice, currency: item.currency),
-          style: const TextStyle(fontSize: 12),
+          style: TextStyle(
+            fontSize: 12,
+            color: theme.colorScheme.onSurface,
+          ),
         ),
 
         const SizedBox(width: 8),
@@ -1147,10 +1343,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         // Toplam
         Text(
           _formatMoney(item.totalAmount, currency: item.currency),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
-            color: Colors.green,
+            color: Colors.green.shade600,
           ),
         ),
 
@@ -1159,7 +1355,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         // Silme butonu
         IconButton(
           onPressed: () => _removeItem(index),
-          icon: const Icon(Icons.delete, color: Colors.red, size: 16),
+          icon: Icon(Icons.delete, color: theme.colorScheme.error, size: 16),
           tooltip: 'Ürünü Sil',
           constraints: const BoxConstraints(),
           padding: const EdgeInsets.all(4.0),
@@ -1169,6 +1365,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   }
 
   Widget _buildLargeScreenRow(SaleItem item, int index) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         // Ürün Adı
@@ -1179,9 +1376,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             children: [
               Text(
                 item.productName ?? item.productId,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
+                  color: theme.colorScheme.onSurface,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -1191,7 +1389,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 Text(
                   item.productDescription!,
                   style: TextStyle(
-                    color: Colors.grey.shade600,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     fontSize: 12,
                   ),
                   maxLines: 1,
@@ -1206,7 +1404,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           flex: 2,
           child: Text(
             '${item.quantity.toStringAsFixed(0)} adet',
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ),
 
@@ -1215,7 +1416,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           flex: 2,
           child: Text(
             _formatMoney(item.unitPrice, currency: item.currency),
-            style: const TextStyle(fontSize: 14),
+            style: TextStyle(
+              fontSize: 14,
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ),
 
@@ -1227,13 +1431,16 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             children: [
               Text(
                 _formatMoney(item.taxAmount, currency: item.currency),
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
               Text(
                 '%${item.taxRate.toStringAsFixed(0)}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -1248,13 +1455,16 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             children: [
               Text(
                 _formatMoney(item.discountAmount, currency: item.currency),
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.colorScheme.onSurface,
+                ),
               ),
               Text(
                 '%${item.discountRate.toStringAsFixed(0)}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade600,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -1266,10 +1476,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           flex: 2,
           child: Text(
             _formatMoney(item.totalAmount, currency: item.currency),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Colors.green,
+              color: Colors.green.shade600,
             ),
           ),
         ),
@@ -1277,7 +1487,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         // Silme butonu
         IconButton(
           onPressed: () => _removeItem(index),
-          icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+          icon: Icon(Icons.delete, color: theme.colorScheme.error, size: 20),
           tooltip: 'Ürünü Sil',
           constraints: const BoxConstraints(),
           padding: const EdgeInsets.all(8.0),
@@ -1287,10 +1497,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   }
 
   Widget _buildSummaryCard() {
+    final theme = Theme.of(context);
     if (_items.isEmpty) {
-      return const Card(
+      return Card(
+        color: theme.colorScheme.surface,
         child: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1299,13 +1511,16 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 style: TextStyle(
                   fontSize: 18.0,
                   fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurface,
                 ),
               ),
-              SizedBox(height: 16.0),
+              const SizedBox(height: 16.0),
               Center(
                 child: Text(
                   'Henüz ürün eklenmedi',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                 ),
               ),
             ],
@@ -1338,10 +1553,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
 
       // Bu para birimi için hesaplamalar
       final subtotal = items.fold(
-          0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
+          0.0, (total, item) => total + (item.unitPrice * item.quantity));
       final totalDiscount =
-          items.fold(0.0, (sum, item) => sum + item.discountAmount);
-      final totalTax = items.fold(0.0, (sum, item) => sum + item.taxAmount);
+          items.fold(0.0, (total, item) => total + item.discountAmount);
+      final totalTax = items.fold(0.0, (total, item) => total + item.taxAmount);
       final total = subtotal - totalDiscount + totalTax;
 
       currencyCards.add(_buildCurrencySummaryCard(
@@ -1390,10 +1605,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
 
       // Bu para birimi için hesaplamalar
       final subtotal = items.fold(
-          0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
+          0.0, (total, item) => total + (item.unitPrice * item.quantity));
       final totalDiscount =
-          items.fold(0.0, (sum, item) => sum + item.discountAmount);
-      final totalTax = items.fold(0.0, (sum, item) => sum + item.taxAmount);
+          items.fold(0.0, (total, item) => total + item.discountAmount);
+      final totalTax = items.fold(0.0, (total, item) => total + item.taxAmount);
       final total = subtotal - totalDiscount + totalTax;
 
       // Bu para biriminin ödeme para birimindeki karşılığını hesapla
@@ -1467,6 +1682,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     required Function(double) onTotalCalculated,
     required List<SaleItem> items,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return FutureBuilder<double?>(
       future: _convertToTargetCurrencyWithProductRate(
           total, currency, paymentCurrency, items),
@@ -1481,6 +1699,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         }
 
         return Card(
+          color: theme.colorScheme.surface,
           margin: const EdgeInsets.only(bottom: 16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1490,9 +1709,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 // Para birimi başlığı
                 Text(
                   'Para Birimi: $currency',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
+                    color: TamgaciConstants.primaryColor,
                     fontSize: 16,
                   ),
                 ),
@@ -1522,7 +1741,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                     'Kur: 1 $currency = ${(totalInPaymentCurrency / total).toStringAsFixed(4)} $paymentCurrency',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 8.0),
@@ -1532,18 +1751,25 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 Container(
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: isDark
+                        ? Colors.green.shade900.withValues(alpha: 0.3)
+                        : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: Colors.green.shade200),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.green.shade700
+                          : Colors.green.shade200,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Toplam:',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       Column(
@@ -1554,7 +1780,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: Colors.green.shade700,
+                              color: Colors.green.shade600,
                             ),
                           ),
                           if (currency != paymentCurrency) ...[
@@ -1563,7 +1789,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                               '(${_formatMoney(totalInPaymentCurrency, currency: paymentCurrency)})',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey.shade600,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -1634,6 +1861,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     required Function(double) onTotalCalculated,
     required List<SaleItem> items,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return FutureBuilder<double?>(
       future: _convertToTargetCurrencyWithProductRate(
           total, currency, 'TRY', items),
@@ -1648,6 +1878,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         }
 
         return Card(
+          color: theme.colorScheme.surface,
           margin: const EdgeInsets.only(bottom: 16.0),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -1657,9 +1888,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 // Para birimi başlığı
                 Text(
                   'Para Birimi: $currency',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
+                    color: TamgaciConstants.primaryColor,
                     fontSize: 16,
                   ),
                 ),
@@ -1689,7 +1920,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                     'Kur: 1 $currency = ${(totalInTRY / total).toStringAsFixed(4)} TRY',
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey.shade600,
+                      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 8.0),
@@ -1699,18 +1930,25 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 Container(
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: isDark
+                        ? Colors.green.shade900.withValues(alpha: 0.3)
+                        : Colors.green.shade50,
                     borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: Colors.green.shade200),
+                    border: Border.all(
+                      color: isDark
+                          ? Colors.green.shade700
+                          : Colors.green.shade200,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Toplam:',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       Column(
@@ -1721,7 +1959,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: Colors.green.shade700,
+                              color: Colors.green.shade600,
                             ),
                           ),
                           if (currency != 'TRY') ...[
@@ -1730,7 +1968,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                               '(${_formatMoney(totalInTRY, currency: 'TRY')})',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey.shade600,
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.6),
                               ),
                             ),
                           ],
@@ -1749,12 +1988,18 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
 
   Widget _buildSummaryRow(String label, String value,
       {bool isNegative = false, bool isPositive = false}) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
+          Text(
+            label,
+            style: TextStyle(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
           Text(
             value,
             style: TextStyle(
@@ -1763,7 +2008,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                   ? Colors.red.shade600
                   : isPositive
                       ? Colors.green.shade600
-                      : Colors.black87,
+                      : theme.colorScheme.onSurface,
             ),
           ),
         ],
@@ -1774,9 +2019,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   Widget _buildGrandTotalCardWithPaymentCurrency(
       double totalInPaymentCurrency, String paymentCurrency) {
     // Toplam ürün miktarını hesapla
-    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+    final totalQuantity =
+        _items.fold(0.0, (total, item) => total + item.quantity);
+    final theme = Theme.of(context);
 
     return Card(
+      color: theme.colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -1785,20 +2033,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Toplam ürün miktarı:',
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   totalQuantity.toStringAsFixed(0),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -1810,10 +2058,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
               children: [
                 Text(
                   'GENEL TOPLAM ($paymentCurrency):',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.black87,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 Text(
@@ -1822,7 +2070,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.green.shade700,
+                    color: Colors.green.shade600,
                   ),
                 ),
               ],
@@ -1835,9 +2083,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
 
   Widget _buildGrandTotalCard(double totalInTRY) {
     // Toplam ürün miktarını hesapla
-    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+    final totalQuantity =
+        _items.fold(0.0, (total, item) => total + item.quantity);
+    final theme = Theme.of(context);
 
     return Card(
+      color: theme.colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -1846,20 +2097,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Toplam ürün miktarı:',
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   totalQuantity.toStringAsFixed(0),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
                     fontSize: 14,
-                    color: Colors.black87,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
               ],
@@ -1869,12 +2120,12 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'GENEL TOPLAM (TRY):',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.black87,
+                    color: theme.colorScheme.onSurface,
                   ),
                 ),
                 Text(
@@ -1882,7 +2133,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
-                    color: Colors.green.shade700,
+                    color: Colors.green.shade600,
                   ),
                 ),
               ],
@@ -2074,6 +2325,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         }
       });
       if (_selectedWarehouseId == null) {
+        // Loading dialog'u kapat
+        if (mounted && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Lütfen bir depo seçiniz')),
         );
@@ -2081,9 +2336,19 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       }
     }
 
-    final subtotalTry = _items.fold(0.0, (sum, item) => sum + item.totalAmount);
-    final taxAmountTry = subtotalTry * (_taxRate / 100);
-    final totalTry = subtotalTry + taxAmountTry - _discountAmount;
+    // Her ürünün totalAmount'ı zaten KDV dahil
+    // O yüzden KDV hariç ara toplamı ve KDV tutarını ayrı hesaplıyoruz
+    double subtotalTryBeforeTax = 0.0;
+    double taxAmountTry = 0.0;
+
+    for (final item in _items) {
+      // Her ürün için: brüt - indirim = net
+      final itemSubtotal = item.quantity * item.unitPrice - item.discountAmount;
+      subtotalTryBeforeTax += itemSubtotal;
+      taxAmountTry += item.taxAmount;
+    }
+
+    final totalTry = subtotalTryBeforeTax + taxAmountTry - _discountAmount;
 
     // Exchange rate cache - Tek seferde çek
     double totalBase = totalTry;
@@ -2133,9 +2398,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       dueDate: _dueDate,
       items: _items,
       subtotal: _baseCurrencyCode == 'TRY'
-          ? subtotalTry
+          ? subtotalTryBeforeTax
           : ExchangeRateService()
-              .convertCurrency(subtotalTry, 'TRY', _baseCurrencyCode),
+              .convertCurrency(subtotalTryBeforeTax, 'TRY', _baseCurrencyCode),
       taxRate: _taxRate,
       taxAmount: _baseCurrencyCode == 'TRY'
           ? taxAmountTry
@@ -2184,6 +2449,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       await Future.wait(stockMovements);
 
       // Ekstre ve müşteri bakiyesi için fatura işlemi kaydı (şirket para biriminde)
+      // NOT: İşlem tutarı olarak KDV dahil toplam (totalBase) kaydedilir
+      // Çünkü müşteri borcu KDV dahil tutardır
       try {
         final transactionService = TransactionService();
         final now = DateTime.now();
@@ -2192,7 +2459,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           customerId: _customerIdController.text,
           supplierId: null,
           type: TransactionType.invoice,
-          amount: totalBase,
+          amount: totalBase, // KDV dahil toplam - müşteri bu tutarı ödemeli
           currency: _baseCurrencyCode,
           description: 'Satış faturası',
           reference: _saleNumberController.text,
@@ -2211,6 +2478,14 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             'totalTry': totalTry,
             'baseCurrency': _baseCurrencyCode,
             'paymentCurrency': _paymentCurrencyCode,
+            'subtotal': _baseCurrencyCode == 'TRY'
+                ? subtotalTryBeforeTax
+                : ExchangeRateService().convertCurrency(
+                    subtotalTryBeforeTax, 'TRY', _baseCurrencyCode),
+            'taxAmount': _baseCurrencyCode == 'TRY'
+                ? taxAmountTry
+                : ExchangeRateService()
+                    .convertCurrency(taxAmountTry, 'TRY', _baseCurrencyCode),
           },
         );
         await transactionService.createTransaction(t);
@@ -2280,25 +2555,48 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
               'Error creating payment transaction for sale: $saleId', e);
         }
 
-        // 2) Nakit yönetimi: uygun kasayı bul ve gelir işlemi oluştur
+        // 2) Nakit yönetimi: seçilen hesabı kullan veya uygun hesabı bul ve gelir işlemi oluştur
         try {
-          // Kasaları çek
-          final notifier = ref.read(cashManagementNotifierProvider.notifier);
-          await notifier.getCashAccounts();
-          final state = ref.read(cashManagementNotifierProvider);
-          final accounts = state.cashAccounts;
+          // Hesaplarım modülünden hesapları al
+          final accountsList = await ref.read(activeAccountsProvider.future);
 
-          // Öncelik: ödeme para birimi ile aynı olan kasa → yoksa base para birimli kasa
-          final target = accounts.firstWhere(
-            (a) => a.currency.toUpperCase() == paymentCurrency.toUpperCase(),
-            orElse: () => accounts.firstWhere(
-              (a) =>
-                  a.currency.toUpperCase() == _baseCurrencyCode.toUpperCase(),
-              orElse: () => accounts.isNotEmpty
-                  ? accounts.first
-                  : throw Exception('Kasa bulunamadı'),
-            ),
-          );
+          // Seçilen hesap varsa onu kullan, yoksa uygun hesabı bul
+          accounts.Account? target;
+          if (_selectedPaymentAccountId != null) {
+            target = accountsList.firstWhere(
+              (a) => a.id == _selectedPaymentAccountId,
+              orElse: () => throw Exception('Seçilen hesap bulunamadı'),
+            );
+          } else {
+            // Öncelik: ödeme para birimi ile aynı olan hesap → yoksa base para birimli hesap
+            try {
+              target = accountsList.firstWhere(
+                (a) =>
+                    a.currency.toUpperCase() == paymentCurrency.toUpperCase() &&
+                    a.isActive &&
+                    a.status == accounts.AccountStatus.active,
+              );
+            } catch (_) {
+              try {
+                target = accountsList.firstWhere(
+                  (a) =>
+                      a.currency.toUpperCase() ==
+                          _baseCurrencyCode.toUpperCase() &&
+                      a.isActive &&
+                      a.status == accounts.AccountStatus.active,
+                );
+              } catch (_) {
+                final activeAccounts = accountsList
+                    .where((a) =>
+                        a.isActive && a.status == accounts.AccountStatus.active)
+                    .toList();
+                if (activeAccounts.isEmpty) {
+                  throw Exception('Aktif hesap bulunamadı');
+                }
+                target = activeAccounts.first;
+              }
+            }
+          }
 
           final amountInAccountCurrency =
               target.currency.toUpperCase() == paymentCurrency.toUpperCase()
@@ -2313,7 +2611,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             type: cm.CashTransactionType.income,
             category: cm.CashTransactionCategory.sales,
             status: cm.CashTransactionStatus.completed,
-            fromAccountId: target.id,
+            fromAccountId: target.id, // Account ID'si kullanılıyor
             toAccountId: null,
             amount: amountInAccountCurrency,
             currency: target.currency,
@@ -2340,6 +2638,165 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           await useCase.call(trx);
           AppLogger.info(
               'Cash transaction created successfully for sale: $saleId');
+
+          // 3) PaymentTransaction oluştur (ödemeler modülüne)
+          try {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .get();
+              final tenantId = userDoc.data()?['tenantId'] as String? ?? '';
+
+              // PaymentMethod enum'ını belirle
+              PaymentTransactionType paymentType;
+              switch (_paymentMethod) {
+                case 'Nakit':
+                  paymentType = PaymentTransactionType.cash;
+                  break;
+                case 'Kredi Kartı':
+                  paymentType = PaymentTransactionType.creditCard;
+                  break;
+                case 'EFT/Havale':
+                case 'Banka':
+                  paymentType = PaymentTransactionType.eftTransfer;
+                  break;
+                case 'Çek':
+                  paymentType = PaymentTransactionType.check;
+                  break;
+                case 'Senet':
+                  paymentType = PaymentTransactionType.promissoryNote;
+                  break;
+                default:
+                  paymentType = PaymentTransactionType.cash;
+              }
+
+              final paymentTransaction = PaymentTransaction(
+                id: '',
+                transactionNumber: '',
+                type: paymentType,
+                category: PaymentTransactionCategory.customerPayment,
+                status: PaymentTransactionStatus.completed,
+                direction: PaymentDirection.incoming,
+                amount: amountInAccountCurrency,
+                currency: target.currency,
+                transactionDate: now,
+                dueDate: null,
+                description:
+                    'Satış tahsilatı ${_saleNumberController.text} ($paymentCurrency)',
+                referenceNumber: _saleNumberController.text,
+                notes: null,
+                customerId: customerId,
+                supplierId: null,
+                accountId: target.id,
+                targetAccountId: null,
+                paymentMethodId: '', // PaymentMethod henüz aktif değil
+                paymentSourceId: null,
+                relatedDocumentId: saleId,
+                relatedDocumentType: 'sale',
+                attachments: const [],
+                metadata: {
+                  'baseCurrency': _baseCurrencyCode,
+                  'paymentCurrency': paymentCurrency,
+                  'fxToBase': fxRate,
+                  'amountInBase': paymentAmountInBase,
+                },
+                companyId: '',
+                tenantId: tenantId,
+                isActive: true,
+                createdAt: now,
+                updatedAt: now,
+                createdBy: user.uid,
+                updatedBy: null,
+              );
+
+              await ref
+                  .read(paymentTransactionRepositoryProvider)
+                  .createTransaction(paymentTransaction);
+              AppLogger.info(
+                  'PaymentTransaction created successfully for sale: $saleId');
+            }
+          } catch (e) {
+            AppLogger.error(
+                'Error creating PaymentTransaction for sale: $saleId', e);
+          }
+
+          // 4) AccountTransaction oluştur (hesaplar modülüne) ve hesap bakiyesini güncelle
+          try {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .get();
+              final tenantId = userDoc.data()?['tenantId'] as String? ?? '';
+
+              // Hesap bakiyesini al
+              final accountDoc = await FirebaseFirestore.instance
+                  .collection('tenants')
+                  .doc(tenantId)
+                  .collection('accounts')
+                  .doc(target.id)
+                  .get();
+
+              if (accountDoc.exists) {
+                final accountData = accountDoc.data()!;
+                final currentBalance =
+                    (accountData['balance'] as num?)?.toDouble() ?? 0.0;
+                final newBalance = currentBalance + amountInAccountCurrency;
+
+                // AccountTransaction oluştur
+                final accountTransaction = account_txn.AccountTransaction(
+                  id: '',
+                  accountId: target.id,
+                  fromAccountId: null,
+                  toAccountId: null,
+                  type: account_txn.TransactionType.income,
+                  category: account_txn.TransactionCategory.cash,
+                  amount: amountInAccountCurrency,
+                  debitAmount: null,
+                  creditAmount: amountInAccountCurrency,
+                  balanceAfter: newBalance,
+                  description:
+                      'Satış tahsilatı ${_saleNumberController.text} ($paymentCurrency)',
+                  reference: _saleNumberController.text,
+                  transactionDate: now,
+                  userId: user.uid,
+                  notes: null,
+                  isReconciled: false,
+                  reconciledAt: null,
+                  reconciledBy: null,
+                  tenantId: tenantId,
+                  createdBy: user.uid,
+                  updatedBy: user.uid,
+                  createdAt: now,
+                  updatedAt: now,
+                );
+
+                // AccountTransaction'ı oluştur ve hesap bakiyesini güncelle
+                await ref
+                    .read(accountTransactionNotifierProvider.notifier)
+                    .createTransaction(accountTransaction);
+
+                // Hesap bakiyesini güncelle
+                await accountDoc.reference.update({
+                  'balance': newBalance,
+                  'availableBalance': newBalance -
+                      ((accountData['blockedAmount'] as num?)?.toDouble() ??
+                          0.0),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                  'updatedBy': user.uid,
+                });
+
+                AppLogger.info(
+                    'AccountTransaction created and balance updated successfully for sale: $saleId');
+              }
+            }
+          } catch (e) {
+            AppLogger.error(
+                'Error creating AccountTransaction for sale: $saleId', e);
+          }
         } catch (e) {
           AppLogger.error(
               'Error creating cash transaction for sale: $saleId', e);
@@ -2395,25 +2852,49 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           await transactionService.createTransaction(payTxn);
         } catch (_) {}
 
-        // 2) Nakit yönetimi: uygun kasayı bul ve gelir işlemi oluştur
+        // 2) Nakit yönetimi: seçilen hesabı kullan veya uygun hesabı bul ve gelir işlemi oluştur
         try {
-          // Kasaları çek
-          final notifier = ref.read(cashManagementNotifierProvider.notifier);
-          await notifier.getCashAccounts();
-          final state = ref.read(cashManagementNotifierProvider);
-          final accounts = state.cashAccounts;
-          // Öncelik: ödeme para birimi ile aynı olan kasa → yoksa base para birimli kasa
-          final target = accounts.firstWhere(
-            (a) =>
-                a.currency.toUpperCase() == _paymentCurrencyCode.toUpperCase(),
-            orElse: () => accounts.firstWhere(
-              (a) =>
-                  a.currency.toUpperCase() == _baseCurrencyCode.toUpperCase(),
-              orElse: () => accounts.isNotEmpty
-                  ? accounts.first
-                  : throw Exception('Kasa bulunamadı'),
-            ),
-          );
+          // Hesaplarım modülünden hesapları al
+          final accountsList = await ref.read(activeAccountsProvider.future);
+
+          // Seçilen hesap varsa onu kullan, yoksa uygun hesabı bul
+          accounts.Account? target;
+          if (_selectedPaymentAccountId != null) {
+            target = accountsList.firstWhere(
+              (a) => a.id == _selectedPaymentAccountId,
+              orElse: () => throw Exception('Seçilen hesap bulunamadı'),
+            );
+          } else {
+            // Öncelik: ödeme para birimi ile aynı olan hesap → yoksa base para birimli hesap
+            try {
+              target = accountsList.firstWhere(
+                (a) =>
+                    a.currency.toUpperCase() ==
+                        _paymentCurrencyCode.toUpperCase() &&
+                    a.isActive &&
+                    a.status == accounts.AccountStatus.active,
+              );
+            } catch (_) {
+              try {
+                target = accountsList.firstWhere(
+                  (a) =>
+                      a.currency.toUpperCase() ==
+                          _baseCurrencyCode.toUpperCase() &&
+                      a.isActive &&
+                      a.status == accounts.AccountStatus.active,
+                );
+              } catch (_) {
+                final activeAccounts = accountsList
+                    .where((a) =>
+                        a.isActive && a.status == accounts.AccountStatus.active)
+                    .toList();
+                if (activeAccounts.isEmpty) {
+                  throw Exception('Aktif hesap bulunamadı');
+                }
+                target = activeAccounts.first;
+              }
+            }
+          }
 
           final amountInAccountCurrency = target.currency.toUpperCase() ==
                   _paymentCurrencyCode.toUpperCase()
@@ -2452,52 +2933,238 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             updatedBy: null,
           );
           await useCase.call(trx);
-        } catch (_) {}
+          AppLogger.info(
+              'Cash transaction created successfully for sale: $saleId');
+
+          // 3) PaymentTransaction oluştur (ödemeler modülüne)
+          try {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .get();
+              final tenantId = userDoc.data()?['tenantId'] as String? ?? '';
+
+              // PaymentMethod enum'ını belirle
+              PaymentTransactionType paymentType;
+              switch (_paymentMethod) {
+                case 'Nakit':
+                  paymentType = PaymentTransactionType.cash;
+                  break;
+                case 'Kredi Kartı':
+                  paymentType = PaymentTransactionType.creditCard;
+                  break;
+                case 'EFT/Havale':
+                case 'Banka':
+                  paymentType = PaymentTransactionType.eftTransfer;
+                  break;
+                case 'Çek':
+                  paymentType = PaymentTransactionType.check;
+                  break;
+                case 'Senet':
+                  paymentType = PaymentTransactionType.promissoryNote;
+                  break;
+                default:
+                  paymentType = PaymentTransactionType.cash;
+              }
+
+              final paymentTransaction = PaymentTransaction(
+                id: '',
+                transactionNumber: '',
+                type: paymentType,
+                category: PaymentTransactionCategory.customerPayment,
+                status: PaymentTransactionStatus.completed,
+                direction: PaymentDirection.incoming,
+                amount: amountInAccountCurrency,
+                currency: target.currency,
+                transactionDate: now,
+                dueDate: null,
+                description:
+                    'Satış tahsilatı ${_saleNumberController.text} ($_paymentCurrencyCode)',
+                referenceNumber: _saleNumberController.text,
+                notes: null,
+                customerId: customerId,
+                supplierId: null,
+                accountId: target.id,
+                targetAccountId: null,
+                paymentMethodId: '', // PaymentMethod henüz aktif değil
+                paymentSourceId: null,
+                relatedDocumentId: saleId,
+                relatedDocumentType: 'sale',
+                attachments: const [],
+                metadata: {
+                  'baseCurrency': _baseCurrencyCode,
+                  'paymentCurrency': _paymentCurrencyCode,
+                  'fxToBase': fxRate,
+                  'amountInBase': totalBase,
+                },
+                companyId: '',
+                tenantId: tenantId,
+                isActive: true,
+                createdAt: now,
+                updatedAt: now,
+                createdBy: user.uid,
+                updatedBy: null,
+              );
+
+              await ref
+                  .read(paymentTransactionRepositoryProvider)
+                  .createTransaction(paymentTransaction);
+              AppLogger.info(
+                  'PaymentTransaction created successfully for sale: $saleId');
+            }
+          } catch (e) {
+            AppLogger.error(
+                'Error creating PaymentTransaction for sale: $saleId', e);
+          }
+
+          // 4) AccountTransaction oluştur (hesaplar modülüne) ve hesap bakiyesini güncelle
+          try {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .get();
+              final tenantId = userDoc.data()?['tenantId'] as String? ?? '';
+
+              // Hesap bakiyesini al
+              final accountDoc = await FirebaseFirestore.instance
+                  .collection('tenants')
+                  .doc(tenantId)
+                  .collection('accounts')
+                  .doc(target.id)
+                  .get();
+
+              if (accountDoc.exists) {
+                final accountData = accountDoc.data()!;
+                final currentBalance =
+                    (accountData['balance'] as num?)?.toDouble() ?? 0.0;
+                final newBalance = currentBalance + amountInAccountCurrency;
+
+                // AccountTransaction oluştur
+                final accountTransaction = account_txn.AccountTransaction(
+                  id: '',
+                  accountId: target.id,
+                  fromAccountId: null,
+                  toAccountId: null,
+                  type: account_txn.TransactionType.income,
+                  category: account_txn.TransactionCategory.cash,
+                  amount: amountInAccountCurrency,
+                  debitAmount: null,
+                  creditAmount: amountInAccountCurrency,
+                  balanceAfter: newBalance,
+                  description:
+                      'Satış tahsilatı ${_saleNumberController.text} ($_paymentCurrencyCode)',
+                  reference: _saleNumberController.text,
+                  transactionDate: now,
+                  userId: user.uid,
+                  notes: null,
+                  isReconciled: false,
+                  reconciledAt: null,
+                  reconciledBy: null,
+                  tenantId: tenantId,
+                  createdBy: user.uid,
+                  updatedBy: user.uid,
+                  createdAt: now,
+                  updatedAt: now,
+                );
+
+                // AccountTransaction'ı oluştur ve hesap bakiyesini güncelle
+                await ref
+                    .read(accountTransactionNotifierProvider.notifier)
+                    .createTransaction(accountTransaction);
+
+                // Hesap bakiyesini güncelle
+                await accountDoc.reference.update({
+                  'balance': newBalance,
+                  'availableBalance': newBalance -
+                      ((accountData['blockedAmount'] as num?)?.toDouble() ??
+                          0.0),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                  'updatedBy': user.uid,
+                });
+
+                AppLogger.info(
+                    'AccountTransaction created and balance updated successfully for sale: $saleId');
+              }
+            }
+          } catch (e) {
+            AppLogger.error(
+                'Error creating AccountTransaction for sale: $saleId', e);
+          }
+        } catch (e) {
+          AppLogger.error(
+              'Error creating cash transaction for sale: $saleId', e);
+        }
       }
     }
 
     try {
+      String saleId;
       if (widget.saleId != null) {
-        notifier.updateSale(sale);
-        await afterSave(sale.id);
+        await notifier.updateSale(sale);
+        saleId = sale.id;
       } else {
-        notifier.createSale(sale);
-        await afterSave(_saleNumberController.text);
+        await notifier.createSale(sale);
+        saleId = _saleNumberController.text;
       }
 
-      // Loading dialog'u kapat
-      if (mounted) {
-        Navigator.of(context).pop(); // Loading dialog'u kapat
+      // afterSave içindeki hatalar satış kaydını engellememeli
+      try {
+        await afterSave(saleId);
+      } catch (e) {
+        AppLogger.error('Error in afterSave (non-critical): $e');
+        // afterSave hataları kritik değil, satış kaydı başarılı oldu
       }
 
-      // Fatura önizleme sayfasına yönlendir
-      final invoice = UnifiedInvoiceConverter.convertSaleToInvoice(sale);
+      // Loading dialog'u güvenli bir şekilde kapat (microtask ile)
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => InvoicePreviewPage(
-              invoice: invoice,
-              isEditable: true,
-              isFromSale: true,
-            ),
-          ),
-        );
+        Future.microtask(() {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(); // Loading dialog'u kapat
+          }
+
+          // Fatura önizleme sayfasına yönlendir
+          if (mounted) {
+            final invoice = UnifiedInvoiceConverter.convertSaleToInvoice(sale);
+            // GoRouter ile uyumlu navigation
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => InvoicePreviewPage(
+                  invoice: invoice,
+                  isEditable: true,
+                  isFromSale: true,
+                ),
+              ),
+            );
+          }
+        });
       }
     } catch (e) {
-      // Loading dialog'u kapat
+      // Loading dialog'u güvenli bir şekilde kapat (microtask ile)
       if (mounted) {
-        Navigator.of(context).pop(); // Loading dialog'u kapat
-      }
+        Future.microtask(() {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(); // Loading dialog'u kapat
+          }
 
-      // Hata mesajı göster
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Satış kaydedilirken hata oluştu: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+          // Hata mesajı göster
+          if (mounted) {
+            final errorMessage = e.toString().contains('permission-denied')
+                ? 'Satış kaydedilemedi: Yetki hatası. Lütfen Firestore güvenlik kurallarını kontrol edin.'
+                : 'Satış kaydedilirken hata oluştu: ${e.toString()}';
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        });
       }
 
       AppLogger.error('Error saving sale: $e');
@@ -2533,9 +3200,19 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       ),
     );
 
-    final subtotalTry = _items.fold(0.0, (sum, item) => sum + item.totalAmount);
-    final taxAmountTry = subtotalTry * (_taxRate / 100);
-    final totalTry = subtotalTry + taxAmountTry - _discountAmount;
+    // Her ürünün totalAmount'ı zaten KDV dahil
+    // O yüzden KDV hariç ara toplamı ve KDV tutarını ayrı hesaplıyoruz
+    double subtotalTryBeforeTax = 0.0;
+    double taxAmountTry = 0.0;
+
+    for (final item in _items) {
+      // Her ürün için: brüt - indirim = net
+      final itemSubtotal = item.quantity * item.unitPrice - item.discountAmount;
+      subtotalTryBeforeTax += itemSubtotal;
+      taxAmountTry += item.taxAmount;
+    }
+
+    final totalTry = subtotalTryBeforeTax + taxAmountTry - _discountAmount;
 
     double totalBase = totalTry;
     if (_baseCurrencyCode != 'TRY') {
@@ -2560,9 +3237,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       dueDate: _dueDate,
       items: _items,
       subtotal: _baseCurrencyCode == 'TRY'
-          ? subtotalTry
+          ? subtotalTryBeforeTax
           : ExchangeRateService()
-              .convertCurrency(subtotalTry, 'TRY', _baseCurrencyCode),
+              .convertCurrency(subtotalTryBeforeTax, 'TRY', _baseCurrencyCode),
       taxRate: _taxRate,
       taxAmount: _baseCurrencyCode == 'TRY'
           ? taxAmountTry
@@ -2582,44 +3259,57 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     try {
       final notifier = ref.read(saleNotifierProvider.notifier);
       if (widget.saleId != null) {
-        notifier.updateSale(sale);
+        await notifier.updateSale(sale);
       } else {
-        notifier.createSale(sale);
+        await notifier.createSale(sale);
       }
 
-      // Loading dialog'u kapat
+      // Loading dialog'u güvenli bir şekilde kapat (microtask ile)
       if (mounted) {
-        Navigator.of(context).pop(); // Loading dialog'u kapat
-      }
+        Future.microtask(() {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(); // Loading dialog'u kapat
+          }
 
-      // Fatura önizleme sayfasına yönlendir
-      final invoice = UnifiedInvoiceConverter.convertSaleToInvoice(sale);
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => InvoicePreviewPage(
-              invoice: invoice,
-              isEditable: true,
-              isFromSale: true,
-            ),
-          ),
-        );
+          // Fatura önizleme sayfasına yönlendir
+          if (mounted) {
+            final invoice = UnifiedInvoiceConverter.convertSaleToInvoice(sale);
+            // GoRouter ile uyumlu navigation
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => InvoicePreviewPage(
+                  invoice: invoice,
+                  isEditable: true,
+                  isFromSale: true,
+                ),
+              ),
+            );
+          }
+        });
       }
     } catch (e) {
-      // Loading dialog'u kapat
+      // Loading dialog'u güvenli bir şekilde kapat (microtask ile)
       if (mounted) {
-        Navigator.of(context).pop(); // Loading dialog'u kapat
-      }
+        Future.microtask(() {
+          if (mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(); // Loading dialog'u kapat
+          }
 
-      // Hata mesajı göster
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Taslak kaydedilirken hata oluştu: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+          // Hata mesajı göster
+          if (mounted) {
+            final errorMessage = e.toString().contains('permission-denied')
+                ? 'Taslak kaydedilemedi: Yetki hatası. Lütfen Firestore güvenlik kurallarını kontrol edin.'
+                : 'Taslak kaydedilirken hata oluştu: ${e.toString()}';
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 5),
+              ),
+            );
+          }
+        });
       }
 
       AppLogger.error('Error saving sale draft: $e');
@@ -2674,62 +3364,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-  }
-
-  void _calculateInstallmentPlan() {
-    _installments = [];
-    if (_isCashPayment) {
-      setState(() {});
-      return;
-    }
-    final count = (_installmentCount ?? 0) <= 0 ? 1 : _installmentCount!;
-    final startDate = _dueDate ?? _selectedDate;
-
-    final gross =
-        _items.fold(0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
-    final totalDiscount =
-        _items.fold(0.0, (sum, item) => sum + item.discountAmount);
-    final subtotal = gross - totalDiscount;
-    final taxAmount = _items.fold(0.0, (sum, item) => sum + item.taxAmount);
-    final total = subtotal + taxAmount - _discountAmount;
-
-    final monthlyRate =
-        double.tryParse(_interestRateController.text.replaceAll(',', '.'));
-
-    if (monthlyRate == null || monthlyRate <= 0) {
-      final installment = (total / count);
-      for (int i = 0; i < count; i++) {
-        final due =
-            DateTime(startDate.year, startDate.month + i, startDate.day);
-        _installments.add(_InstallmentItem(
-          dueDate: due,
-          amount: installment,
-          principal: installment,
-          interestAmount: 0,
-        ));
-      }
-    } else {
-      final r = monthlyRate / 100.0;
-      final n = count;
-      final principal = total;
-      final annuity =
-          principal * (r * math.pow(1 + r, n)) / (math.pow(1 + r, n) - 1);
-      double remaining = principal;
-      for (int i = 0; i < n; i++) {
-        final interest = remaining * r;
-        final principalPart = annuity - interest;
-        remaining -= principalPart;
-        final due =
-            DateTime(startDate.year, startDate.month + i, startDate.day);
-        _installments.add(_InstallmentItem(
-          dueDate: due,
-          amount: annuity,
-          principal: principalPart,
-          interestAmount: interest,
-        ));
-      }
-    }
-    setState(() {});
   }
 
   Future<void> _initSaleNumber() async {
@@ -3090,7 +3724,11 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     final symbols = {'TRY': '₺', 'USD': '\$', 'EUR': '€', 'GBP': '£'};
     final sym = symbols[c] ?? '';
     final v = _roundMoney(value);
-    return '$sym${v.toStringAsFixed(_moneyDecimals)}';
+    // Türkçe formatı: 1.000,00
+    final formatter = NumberFormat('#,##0', 'tr_TR')
+      ..minimumFractionDigits = _moneyDecimals
+      ..maximumFractionDigits = _moneyDecimals;
+    return '$sym${formatter.format(v)}';
   }
 }
 
@@ -4308,7 +4946,9 @@ class _EditItemDialogState extends State<_EditItemDialog> {
     final symbols = {'TRY': '₺', 'USD': '\$', 'EUR': '€', 'GBP': '£'};
     final sym = symbols[c] ?? '';
     final v = _roundMoney(value);
-    return '$sym${v.toStringAsFixed(2)}';
+    // Türkçe formatı: 1.000,00
+    final formatter = NumberFormat('#,##0.00', 'tr_TR');
+    return '$sym${formatter.format(v)}';
   }
 
   double _roundMoney(double value) {

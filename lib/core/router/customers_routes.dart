@@ -7,6 +7,7 @@ import '../../features/customers/presentation/pages/enhanced_customers_list_page
 import '../../features/customers/presentation/pages/create_customers_page.dart';
 import '../../features/customers/presentation/pages/enhanced_customer_detail_page_v2.dart';
 import '../../features/customers/presentation/pages/customer_all_transactions_page.dart';
+import '../../features/customers/presentation/pages/customer_edit_page.dart';
 
 /// Customers routes
 class CustomersRoutes {
@@ -34,14 +35,31 @@ class CustomersRoutes {
         ),
 
         GoRoute(
-          path: '/customers/detail/:id',
-          name: 'customer-detail',
+          path: '/customers/edit/:id',
+          name: 'edit-customer',
           builder: (context, state) {
             final id = state.pathParameters['id']!;
             return SubscriptionGuard(
               allowTrial: true,
               allowExpired: false,
-              child: EnhancedCustomerDetailPageV2(customerId: id),
+              child: CustomerEditPage(customerId: id),
+            );
+          },
+        ),
+
+        GoRoute(
+          path: '/customers/detail/:id',
+          name: 'customer-detail',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            final tabIndex = state.uri.queryParameters['tab'];
+            return SubscriptionGuard(
+              allowTrial: true,
+              allowExpired: false,
+              child: EnhancedCustomerDetailPageV2(
+                customerId: id,
+                initialTabIndex: tabIndex != null ? int.tryParse(tabIndex) : null,
+              ),
             );
           },
         ),

@@ -127,6 +127,18 @@ class _EnhancedCustomersListPageState
     return filtered;
   }
 
+  String _getCustomerCurrency(Customer customer) {
+    final primary = customer.customerCurrency?.trim();
+    if (primary != null && primary.isNotEmpty) {
+      return primary.toUpperCase();
+    }
+    final balanceCurrency = customer.balanceCurrency.trim();
+    if (balanceCurrency.isNotEmpty) {
+      return balanceCurrency.toUpperCase();
+    }
+    return 'TRY';
+  }
+
   Widget _buildWelcomeCard(bool isDark, List<Customer> customers) {
     final theme = Theme.of(context);
     final onPrimary = theme.colorScheme.onPrimary;
@@ -1134,7 +1146,10 @@ class _EnhancedCustomersListPageState
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    CurrencyHelper.formatCurrency(customer.balance, 'TRY'),
+                    CurrencyHelper.formatCurrency(
+                      customer.balance,
+                      _getCustomerCurrency(customer),
+                    ),
                     style: GoogleFonts.poppins(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -1264,7 +1279,10 @@ class _EnhancedCustomersListPageState
                       ),
                     ),
                     child: Text(
-                      CurrencyHelper.formatCurrency(customer.balance, 'TRY'),
+                  CurrencyHelper.formatCurrency(
+                    customer.balance,
+                    _getCustomerCurrency(customer),
+                  ),
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -1428,7 +1446,7 @@ class _EnhancedCustomersListPageState
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      context.go(
+                      context.push(
                           '/sales/create?customerId=${customer.id}&customerName=${Uri.encodeComponent(customer.name)}');
                     },
                     icon: const Icon(Icons.sell),
@@ -1463,7 +1481,8 @@ class _EnhancedCustomersListPageState
                   child: ElevatedButton.icon(
                     onPressed: () {
                       Navigator.pop(context);
-                      // Hesap ekstresi
+                      // Hesap ekstresi tab'ına git (tab index 3)
+                      context.go('/customers/detail/${customer.id}?tab=3');
                     },
                     icon: const Icon(Icons.receipt_long),
                     label: const Text('Hesap Ekstresi'),

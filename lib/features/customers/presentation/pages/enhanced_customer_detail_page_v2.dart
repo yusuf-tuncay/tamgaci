@@ -35,10 +35,12 @@ import 'dart:js_interop';
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
   final String customerId;
+  final int? initialTabIndex;
 
   const EnhancedCustomerDetailPageV2({
     super.key,
     required this.customerId,
+    this.initialTabIndex,
   });
 
   @override
@@ -78,6 +80,12 @@ class _EnhancedCustomerDetailPageV2State
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
+        // Eğer initialTabIndex belirtilmişse, tab'ı değiştir
+        if (widget.initialTabIndex != null &&
+            widget.initialTabIndex! >= 0 &&
+            widget.initialTabIndex! < 4) {
+          _tabController.animateTo(widget.initialTabIndex!);
+        }
       }
     });
   }
@@ -158,6 +166,18 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
+  String _customerCurrencyCode(Customer customer) {
+    final primary = customer.customerCurrency?.trim();
+    if (primary != null && primary.isNotEmpty) {
+      return primary.toUpperCase();
+    }
+    final balanceCurrency = customer.balanceCurrency.trim();
+    if (balanceCurrency.isNotEmpty) {
+      return balanceCurrency.toUpperCase();
+    }
+    return 'TRY';
+  }
+
   Widget _buildCustomerInfoCard(Customer customer, bool isDark) {
     // Widget dispose edildiyse boş widget döndür
     if (!mounted) return const SizedBox.shrink();
@@ -215,6 +235,7 @@ class _EnhancedCustomerDetailPageV2State
       calculatedBalance = totalCredit - totalDebit;
     }
 
+    final currencyCode = _customerCurrencyCode(customer);
     final balanceColor = calculatedBalance > 0
         ? Colors.green
         : calculatedBalance < 0
@@ -303,7 +324,8 @@ class _EnhancedCustomerDetailPageV2State
                       ),
                     ),
                     child: Text(
-                      CurrencyHelper.formatCurrency(calculatedBalance, 'TRY'),
+                    CurrencyHelper.formatCurrency(
+                        calculatedBalance, currencyCode),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -484,7 +506,9 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Alış Yap',
               color: Colors.orange,
               onTap: () {
-                context.go('/purchases/create');
+                context.push(
+                  '/purchases/create?customerId=${customer.id}&customerName=${Uri.encodeComponent(customer.name)}',
+                );
               },
             ),
           ),
@@ -504,7 +528,7 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Düzenle',
               color: Colors.grey,
               onTap: () {
-                context.go('/customers/edit');
+                context.push('/customers/edit/${customer.id}');
               },
             ),
           ),
@@ -3115,6 +3139,7 @@ class _EnhancedCustomerDetailPageV2State
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
     
+    final currencyCode = _customerCurrencyCode(customer);
     return invoicesAsync.when(
       data: (invoices) {
         if (!mounted) return const SizedBox.shrink();
@@ -3207,7 +3232,8 @@ class _EnhancedCustomerDetailPageV2State
                                 Expanded(
                                   child: _buildSummaryItem(
                                     'Toplam Alacak',
-                                    CurrencyHelper.formatCurrency(totalCredit, 'TRY'),
+                                    CurrencyHelper.formatCurrency(
+                                        totalCredit, currencyCode),
                                     Colors.green,
                                     isDark,
                                   ),
@@ -3215,7 +3241,8 @@ class _EnhancedCustomerDetailPageV2State
                                 Expanded(
                                   child: _buildSummaryItem(
                                     'Toplam Borç',
-                                    CurrencyHelper.formatCurrency(totalDebit, 'TRY'),
+                                    CurrencyHelper.formatCurrency(
+                                        totalDebit, currencyCode),
                                     Colors.red,
                                     isDark,
                                   ),
@@ -3225,7 +3252,8 @@ class _EnhancedCustomerDetailPageV2State
                             const SizedBox(height: 12),
                             _buildSummaryItem(
                               'Net Bakiye',
-                              CurrencyHelper.formatCurrency(netBalance, 'TRY'),
+                              CurrencyHelper.formatCurrency(
+                                  netBalance, currencyCode),
                               netBalance >= 0 ? Colors.green : Colors.red,
                               isDark,
                             ),
@@ -3326,7 +3354,7 @@ class _EnhancedCustomerDetailPageV2State
             'date': openingBalanceDate,
             'data': {
               'openingBalance': customer.openingBalance,
-              'currency': customer.customerCurrency ?? 'TRY',
+              'currency': _customerCurrencyCode(customer),
             },
           });
         }
@@ -3544,6 +3572,9 @@ class _EnhancedCustomerDetailPageV2State
       double totalDebit = 0.0;
       double totalCredit = 0.0;
 
+      final currencyCode = _customerCurrencyCode(customer);
+      final currencySymbol = CurrencyHelper.getCurrencySymbol(currencyCode);
+
       for (var entry in entries) {
         final transaction = entry['data'];
         final date = entry['date'] as DateTime? ?? DateTime.now();
@@ -3641,7 +3672,8 @@ class _EnhancedCustomerDetailPageV2State
             (Match m) => '${m[1]}.',
           );
           final formatted = '$formattedInt,$decPart';
-          return '${amount < 0 ? '-' : ''}$formatted TL';
+          final sign = amount < 0 ? '-' : '';
+          return '$sign$formatted $currencySymbol';
         }
 
         data.add([
@@ -3743,6 +3775,9 @@ class _EnhancedCustomerDetailPageV2State
       double totalDebit = 0.0;
       double totalCredit = 0.0;
 
+      final currencyCode = _customerCurrencyCode(customer);
+      final currencySymbol = CurrencyHelper.getCurrencySymbol(currencyCode);
+
       for (var entry in entries) {
         final transaction = entry['data'];
         final date = entry['date'] as DateTime? ?? DateTime.now();
@@ -3837,7 +3872,8 @@ class _EnhancedCustomerDetailPageV2State
             symbol: '',
             decimalDigits: 2,
           ).format(amount.abs());
-          return '$formatted ₺';
+          final sign = amount < 0 ? '-' : '';
+          return '$sign$formatted $currencySymbol';
         }
 
         data.add([
@@ -3854,13 +3890,11 @@ class _EnhancedCustomerDetailPageV2State
 
       // Özet bilgileri
       final summary = {
-        'Toplam Borç':
-            CurrencyHelper.formatCurrency(totalDebit, 'TRY').replaceAll('₺', 'TL'),
-        'Toplam Alacak': CurrencyHelper.formatCurrency(totalCredit, 'TRY')
-            .replaceAll('₺', 'TL'),
-        'Net Bakiye': CurrencyHelper
-            .formatCurrency(totalCredit - totalDebit, 'TRY')
-            .replaceAll('₺', 'TL'),
+        'Toplam Borç': CurrencyHelper.formatCurrency(totalDebit, currencyCode),
+        'Toplam Alacak':
+            CurrencyHelper.formatCurrency(totalCredit, currencyCode),
+        'Net Bakiye': CurrencyHelper.formatCurrency(
+            totalCredit - totalDebit, currencyCode),
       };
 
       // Export service kullan

@@ -551,7 +551,8 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                       child: SingleChildScrollView(
                         physics: const BouncingScrollPhysics(),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -594,21 +595,28 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                   Expanded(
                                     child: Consumer(
                                       builder: (context, ref, child) {
-                                        final accountsAsync = ref.watch(accountsProvider);
+                                        final accountsAsync =
+                                            ref.watch(accountsProvider);
                                         return accountsAsync.when(
                                           data: (accounts) {
-                                            final isValidSelection = accounts.any((account) =>
-                                                    account.id == _selectedAccountId) ||
-                                                _selectedAccountId == 'all';
-                                            return DropdownButtonFormField<String>(
-                                              value:
-                                                  isValidSelection ? _selectedAccountId : 'all',
+                                            final isValidSelection =
+                                                accounts.any((account) =>
+                                                        account.id ==
+                                                        _selectedAccountId) ||
+                                                    _selectedAccountId == 'all';
+                                            return DropdownButtonFormField<
+                                                String>(
+                                              initialValue: isValidSelection
+                                                  ? _selectedAccountId
+                                                  : 'all',
                                               decoration: InputDecoration(
                                                 labelText: 'Hesap',
                                                 border: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.circular(8),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
                                                 ),
-                                                contentPadding: const EdgeInsets.symmetric(
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
                                                   horizontal: 12,
                                                   vertical: 12,
                                                 ),
@@ -619,7 +627,8 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                                   value: 'all',
                                                   child: Text('Tüm Hesaplar'),
                                                 ),
-                                                ...accounts.map((account) => DropdownMenuItem(
+                                                ...accounts.map((account) =>
+                                                    DropdownMenuItem(
                                                       value: account.id,
                                                       child: Text(account.name),
                                                     )),
@@ -633,14 +642,17 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                               },
                                             );
                                           },
-                                          loading: () => DropdownButtonFormField<String>(
-                                            value: 'all',
+                                          loading: () =>
+                                              DropdownButtonFormField<String>(
+                                            initialValue: 'all',
                                             decoration: InputDecoration(
                                               labelText: 'Hesap',
                                               border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              contentPadding: const EdgeInsets.symmetric(
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
                                                 horizontal: 12,
                                                 vertical: 12,
                                               ),
@@ -656,13 +668,15 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                           ),
                                           error: (error, stackTrace) =>
                                               DropdownButtonFormField<String>(
-                                            value: 'all',
+                                            initialValue: 'all',
                                             decoration: InputDecoration(
                                               labelText: 'Hesap',
                                               border: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(8),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
-                                              contentPadding: const EdgeInsets.symmetric(
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
                                                 horizontal: 12,
                                                 vertical: 12,
                                               ),
@@ -683,13 +697,15 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: DropdownButtonFormField<String>(
-                                      value: _selectedCategory,
+                                      initialValue: _selectedCategory,
                                       decoration: InputDecoration(
                                         labelText: 'Kategori',
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
-                                        contentPadding: const EdgeInsets.symmetric(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 12,
                                         ),
@@ -719,13 +735,16 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                 children: [
                                   Expanded(
                                     child: DropdownButtonFormField<String>(
-                                      value: _getSortDisplayName(_sortBy),
+                                      initialValue:
+                                          _getSortDisplayName(_sortBy),
                                       decoration: InputDecoration(
                                         labelText: 'Sırala',
                                         border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
                                         ),
-                                        contentPadding: const EdgeInsets.symmetric(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
                                           horizontal: 12,
                                           vertical: 12,
                                         ),
@@ -739,7 +758,8 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                       }).toList(),
                                       onChanged: (value) {
                                         setState(() {
-                                          _sortBy = _getSortKeyFromDisplayName(value!);
+                                          _sortBy = _getSortKeyFromDisplayName(
+                                              value!);
                                         });
                                       },
                                     ),
@@ -752,9 +772,12 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
                                       });
                                     },
                                     icon: Icon(
-                                      _sortAscending ? Icons.arrow_upward : Icons.arrow_downward,
+                                      _sortAscending
+                                          ? Icons.arrow_upward
+                                          : Icons.arrow_downward,
                                     ),
-                                    tooltip: _sortAscending ? 'Artan' : 'Azalan',
+                                    tooltip:
+                                        _sortAscending ? 'Artan' : 'Azalan',
                                     constraints: const BoxConstraints(
                                       minWidth: 40,
                                       minHeight: 40,
