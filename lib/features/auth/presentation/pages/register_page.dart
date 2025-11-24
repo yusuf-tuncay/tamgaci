@@ -31,6 +31,189 @@ class RegisterPage extends ConsumerStatefulWidget {
   ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
+class _SearchableDropdownField extends StatefulWidget {
+  const _SearchableDropdownField({
+    required this.labelText,
+    required this.options,
+    required this.onSelected,
+    this.value,
+    this.hintText,
+    this.prefixIcon,
+    this.enabled = true,
+    this.allowClear = false,
+  });
+
+  final String labelText;
+  final String? hintText;
+  final IconData? prefixIcon;
+  final List<String> options;
+  final String? value;
+  final ValueChanged<String?> onSelected;
+  final bool enabled;
+  final bool allowClear;
+
+  @override
+  State<_SearchableDropdownField> createState() =>
+      _SearchableDropdownFieldState();
+}
+
+class _SearchableDropdownFieldState extends State<_SearchableDropdownField> {
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value ?? '');
+    _focusNode = FocusNode();
+    _focusNode.addListener(() {
+      if (_focusNode.hasFocus && widget.enabled) {
+        _refreshOptions();
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _SearchableDropdownField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value &&
+        (widget.value ?? '') != _controller.text) {
+      _controller.text = widget.value ?? '';
+      _controller.selection =
+          TextSelection.collapsed(offset: _controller.text.length);
+    }
+    if (widget.enabled != oldWidget.enabled && widget.enabled) {
+      _refreshOptions();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _refreshOptions() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final value = _controller.value;
+      _controller.value = value.copyWith(
+        text: value.text,
+        selection: TextSelection.collapsed(offset: value.text.length),
+        composing: TextRange.empty,
+      );
+    });
+  }
+
+  Iterable<String> _filterOptions(TextEditingValue editingValue) {
+    if (!widget.enabled) {
+      return const Iterable<String>.empty();
+    }
+    final query = editingValue.text.toLowerCase().trim();
+    if (query.isEmpty) {
+      return widget.options;
+    }
+    return widget.options.where(
+      (option) => option.toLowerCase().contains(query),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final suffixIcon = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (widget.allowClear &&
+            (_controller.text.isNotEmpty || widget.value != null))
+          IconButton(
+            tooltip: 'Seçimi temizle',
+            icon: const Icon(Icons.close),
+            onPressed: widget.enabled
+                ? () {
+                    _controller.clear();
+                    widget.onSelected(null);
+                    _refreshOptions();
+                  }
+                : null,
+          ),
+        IconButton(
+          tooltip: 'Listede gezin',
+          icon: const Icon(Icons.arrow_drop_down),
+          onPressed: widget.enabled
+              ? () {
+                  if (!_focusNode.hasFocus) {
+                    _focusNode.requestFocus();
+                  }
+                  _refreshOptions();
+                }
+              : null,
+        ),
+      ],
+    );
+
+    return RawAutocomplete<String>(
+      focusNode: _focusNode,
+      textEditingController: _controller,
+      optionsBuilder: _filterOptions,
+      displayStringForOption: (option) => option,
+      onSelected: (selection) {
+        widget.onSelected(selection);
+      },
+      fieldViewBuilder:
+          (context, textEditingController, focusNode, onFieldSubmitted) {
+        return TextFormField(
+          controller: textEditingController,
+          focusNode: focusNode,
+          enabled: widget.enabled,
+          decoration: InputDecoration(
+            labelText: widget.labelText,
+            hintText: widget.hintText,
+            prefixIcon:
+                widget.prefixIcon != null ? Icon(widget.prefixIcon) : null,
+            suffixIcon: suffixIcon,
+            border: const OutlineInputBorder(),
+          ),
+        );
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        final entries = options.toList();
+        if (entries.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxHeight: 320,
+                minWidth: 200,
+              ),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: entries.length,
+                itemBuilder: (context, index) {
+                  final option = entries[index];
+                  return ListTile(
+                    dense: true,
+                    title: Text(option),
+                    onTap: () => onSelected(option),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
@@ -1341,7 +1524,9 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                     child: _avatarBytes == null
                                         ? Icon(
                                             Icons.camera_alt_outlined,
-                                            color: Theme.of(context).colorScheme.onSurface,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface,
                                           )
                                         : null,
                                   ),
@@ -1763,71 +1948,48 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: DropdownButtonFormField<String>(
-                                          isExpanded: true,
-                                          initialValue: _selectedCity,
-                                          items: _cities
-                                              .map((c) => DropdownMenuItem(
-                                                    value: c,
-                                                    child: Text(c,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        softWrap: false),
-                                                  ))
-                                              .toList(),
-                                          selectedItemBuilder: (context) =>
-                                              _cities
-                                                  .map((c) => Align(
-                                                        alignment: Alignment
-                                                            .centerLeft,
-                                                        child: Text(c,
-                                                            overflow:
-                                                                TextOverflow
-                                                                    .ellipsis,
-                                                            softWrap: false),
-                                                      ))
-                                                  .toList(),
-                                          onChanged: (v) {
+                                        child: _SearchableDropdownField(
+                                          labelText: 'İl',
+                                          hintText: 'İl seçin veya yazın',
+                                          prefixIcon: Icons.location_city,
+                                          value: _selectedCity,
+                                          options: _cities,
+                                          allowClear: true,
+                                          enabled: _cities.isNotEmpty,
+                                          onSelected: (value) {
                                             setState(() {
-                                              _selectedCity = v;
+                                              _selectedCity = value;
                                               _selectedDistrict = null;
-                                              _cityController.text = v ?? '';
+                                              _cityController.text =
+                                                  value ?? '';
                                               _districtController.clear();
                                             });
                                           },
-                                          decoration: const InputDecoration(
-                                            labelText: 'İl',
-                                            prefixIcon:
-                                                Icon(Icons.location_city),
-                                            border: OutlineInputBorder(),
-                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
-                                        child: DropdownButtonFormField<String>(
-                                          initialValue: _selectedDistrict,
-                                          items: (_selectedCity != null)
+                                        child: _SearchableDropdownField(
+                                          labelText: 'İlçe',
+                                          hintText: _selectedCity == null
+                                              ? 'Önce il seçin'
+                                              : 'İlçe seçin veya yazın',
+                                          prefixIcon: Icons.map_outlined,
+                                          value: _selectedDistrict,
+                                          options: _selectedCity != null
                                               ? (_districtsByCity[
-                                                          _selectedCity!] ??
-                                                      [])
-                                                  .map((d) => DropdownMenuItem(
-                                                      value: d, child: Text(d)))
-                                                  .toList()
+                                                      _selectedCity!] ??
+                                                  [])
                                               : const [],
-                                          onChanged: (v) {
+                                          allowClear: true,
+                                          enabled: _selectedCity != null,
+                                          onSelected: (value) {
                                             setState(() {
-                                              _selectedDistrict = v;
+                                              _selectedDistrict = value;
                                               _districtController.text =
-                                                  v ?? '';
+                                                  value ?? '';
                                             });
                                           },
-                                          decoration: const InputDecoration(
-                                            labelText: 'İlçe',
-                                            prefixIcon:
-                                                Icon(Icons.map_outlined),
-                                            border: OutlineInputBorder(),
-                                          ),
                                         ),
                                       ),
                                     ],
@@ -2511,63 +2673,46 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   Row(
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField<String>(
-                          isExpanded: true,
-                          initialValue: _selectedCity,
-                          items: _cities
-                              .map((c) => DropdownMenuItem(
-                                    value: c,
-                                    child: Text(c,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false),
-                                  ))
-                              .toList(),
-                          selectedItemBuilder: (context) => _cities
-                              .map((c) => Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(c,
-                                        overflow: TextOverflow.ellipsis,
-                                        softWrap: false),
-                                  ))
-                              .toList(),
-                          onChanged: (v) {
+                        child: _SearchableDropdownField(
+                          labelText: 'İl',
+                          hintText: 'İl seçin veya yazın',
+                          prefixIcon: Icons.location_city,
+                          value: _selectedCity,
+                          options: _cities,
+                          allowClear: true,
+                          enabled: _cities.isNotEmpty,
+                          onSelected: (value) {
                             setState(() {
-                              _selectedCity = v;
+                              _selectedCity = value;
                               _selectedDistrict = null;
-                              _cityController.text = v ?? '';
+                              _cityController.text = value ?? '';
                               _districtController.clear();
                               // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
                             });
                           },
-                          decoration: const InputDecoration(
-                            labelText: 'İl',
-                            prefixIcon: Icon(Icons.location_city),
-                            border: OutlineInputBorder(),
-                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _selectedDistrict,
-                          items: (_selectedCity != null)
+                        child: _SearchableDropdownField(
+                          labelText: 'İlçe',
+                          hintText: _selectedCity == null
+                              ? 'Önce il seçin'
+                              : 'İlçe seçin veya yazın',
+                          prefixIcon: Icons.map_outlined,
+                          value: _selectedDistrict,
+                          options: _selectedCity != null
                               ? (_districtsByCity[_selectedCity!] ?? [])
-                                  .map((d) => DropdownMenuItem(
-                                      value: d, child: Text(d)))
-                                  .toList()
                               : const [],
-                          onChanged: (v) {
+                          allowClear: true,
+                          enabled: _selectedCity != null,
+                          onSelected: (value) {
                             setState(() {
-                              _selectedDistrict = v;
-                              _districtController.text = v ?? '';
+                              _selectedDistrict = value;
+                              _districtController.text = value ?? '';
                               // Vergi dairesini koru; kullanıcı tekrar seçmek zorunda kalmasın
                             });
                           },
-                          decoration: const InputDecoration(
-                            labelText: 'İlçe',
-                            prefixIcon: Icon(Icons.map_outlined),
-                            border: OutlineInputBorder(),
-                          ),
                         ),
                       ),
                     ],

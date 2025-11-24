@@ -6,6 +6,7 @@ import 'package:tamgaci/core/providers/theme_provider.dart';
 import 'package:tamgaci/core/providers/locale_provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:tamgaci/l10n/generated/app_localizations.dart';
+import 'package:tamgaci/shared/widgets/keyboard_scroll_wrapper.dart';
 
 class TamgaciApp extends ConsumerWidget {
   const TamgaciApp({super.key});
@@ -16,7 +17,7 @@ class TamgaciApp extends ConsumerWidget {
     // Web'de provider initialization gecikmesi olabilir, bu yüzden try-catch ile koru
     ThemeMode themeMode = ThemeMode.system;
     Locale? locale;
-    
+
     try {
       themeMode = ref.watch(themeProvider);
       locale = ref.watch(localeProvider);
@@ -86,6 +87,11 @@ class TamgaciApp extends ConsumerWidget {
 
       /// Scaffold messenger key
       scaffoldMessengerKey: GlobalKey<ScaffoldMessengerState>(),
+
+      /// Wrap entire app with keyboard scroll handler
+      builder: (context, child) => KeyboardScrollWrapper(
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }
