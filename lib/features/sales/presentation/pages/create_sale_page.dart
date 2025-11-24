@@ -10,7 +10,6 @@ import 'package:tamgaci/features/products/domain/entities/product.dart';
 import 'package:tamgaci/features/customers/domain/entities/customer_branch.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tamgaci/core/services/business/inventory_service.dart';
-import 'package:tamgaci/features/inventory/presentation/providers/warehouse_providers.dart';
 import 'package:tamgaci/features/settings/presentation/providers/settings_providers.dart';
 import 'package:tamgaci/core/services/utils/exchange_rate_service.dart';
 import 'package:intl/intl.dart';
@@ -135,9 +134,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     if (widget.saleId != null) {
       _loadSale();
     }
-    _initSaleNumber();
     // Varsayılan KDV oranını ve şirket para birimini ayarlardan çek
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Satış numarasını oluştur
+      _initSaleNumber();
       final settings = ref.read(settingsProvider);
       settings.whenData((s) {
         final defaultTax = double.tryParse(
@@ -187,19 +187,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           _customerNameController.text = cname;
         }
       }
-    });
-    // Varsayılan depo seçimi
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final warehousesAsync = ref.read(warehousesProvider);
-      warehousesAsync.whenData((warehouses) {
-        if (_selectedWarehouseId == null && warehouses.isNotEmpty) {
-          final def = warehouses.firstWhere(
-            (w) => w.isDefault,
-            orElse: () => warehouses.first,
-          );
-          setState(() => _selectedWarehouseId = def.id);
-        }
-      });
     });
   }
 
@@ -798,8 +785,13 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                                 child: Text(type.displayName),
                               ))
                           .toList(),
-                      onChanged: (value) =>
-                          setState(() => _selectedType = value!),
+                      onChanged: (value) async {
+                        if (value != null) {
+                          setState(() => _selectedType = value);
+                          // Satış türü değiştiğinde numarayı zorla yeniden oluştur
+                          await _initSaleNumber(force: true);
+                        }
+                      },
                     ),
                   ),
                 ],
@@ -944,34 +936,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16.0),
-            // Depo seçimi
-            Consumer(builder: (context, ref, _) {
-              final warehousesAsync = ref.watch(activeWarehousesProvider);
-              return warehousesAsync.when(
-                data: (warehouses) {
-                  return DropdownButtonFormField<String>(
-                    initialValue: _selectedWarehouseId ??
-                        (warehouses.isNotEmpty ? warehouses.first.id : null),
-                    decoration: const InputDecoration(
-                      labelText: 'Depo',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: warehouses
-                        .map((w) => DropdownMenuItem<String>(
-                              value: w.id,
-                              child: Text(w.code != null && w.code!.isNotEmpty
-                                  ? '${w.name} (${w.code})'
-                                  : w.name),
-                            ))
-                        .toList(),
-                    onChanged: (v) => setState(() => _selectedWarehouseId = v),
-                  );
-                },
-                loading: () => const LinearProgressIndicator(minHeight: 2),
-                error: (e, _) => Text('Depolar yüklenemedi: $e'),
-              );
-            }),
             const SizedBox(height: 16.0),
             Row(
               children: [
@@ -2338,29 +2302,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       ),
     );
 
-    // Depo otomatik seçimi (yoksa)
-    if (_selectedWarehouseId == null) {
-      final warehousesAsync = ref.read(warehousesProvider);
-      warehousesAsync.whenData((warehouses) {
-        if (warehouses.isNotEmpty) {
-          final def = warehouses.firstWhere(
-            (w) => w.isDefault,
-            orElse: () => warehouses.first,
-          );
-          _selectedWarehouseId = def.id;
-        }
-      });
-      if (_selectedWarehouseId == null) {
-        // Loading dialog'u kapat
-        if (mounted && Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lütfen bir depo seçiniz')),
-        );
-        return;
-      }
-    }
+    // Depo seçimi artık zorunlu değil
 
     // Her ürünün totalAmount'ı zaten KDV dahil
     // O yüzden KDV hariç ara toplamı ve KDV tutarını ayrı hesaplıyoruz
@@ -2805,15 +2747,15 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                     .read(accountTransactionNotifierProvider.notifier)
                     .createTransaction(accountTransaction);
 
-                // Hesap bakiyesini güncelle
-                await accountDoc.reference.update({
-                  'balance': newBalance,
-                  'availableBalance': newBalance -
-                      ((accountData['blockedAmount'] as num?)?.toDouble() ??
-                          0.0),
-                  'updatedAt': FieldValue.serverTimestamp(),
-                  'updatedBy': user.uid,
-                });
+                // Hesap bakiyesini AccountNotifier üzerinden güncelle
+                await ref
+                    .read(accountNotifierProvider.notifier)
+                    .updateAccountBalance(target.id, newBalance);
+
+                // Account provider'larını invalidate et
+                ref.invalidate(accountsProvider);
+                ref.invalidate(accountByIdProvider(target.id));
+                ref.invalidate(accountStatisticsProvider);
 
                 AppLogger.info(
                     'AccountTransaction created and balance updated successfully for sale: $saleId');
@@ -3102,15 +3044,15 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                     .read(accountTransactionNotifierProvider.notifier)
                     .createTransaction(accountTransaction);
 
-                // Hesap bakiyesini güncelle
-                await accountDoc.reference.update({
-                  'balance': newBalance,
-                  'availableBalance': newBalance -
-                      ((accountData['blockedAmount'] as num?)?.toDouble() ??
-                          0.0),
-                  'updatedAt': FieldValue.serverTimestamp(),
-                  'updatedBy': user.uid,
-                });
+                // Hesap bakiyesini AccountNotifier üzerinden güncelle
+                await ref
+                    .read(accountNotifierProvider.notifier)
+                    .updateAccountBalance(target.id, newBalance);
+
+                // Account provider'larını invalidate et
+                ref.invalidate(accountsProvider);
+                ref.invalidate(accountByIdProvider(target.id));
+                ref.invalidate(accountStatisticsProvider);
 
                 AppLogger.info(
                     'AccountTransaction created and balance updated successfully for sale: $saleId');
@@ -3392,17 +3334,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
-  Future<void> _initSaleNumber() async {
+  Future<void> _initSaleNumber({bool force = false}) async {
     if (widget.saleId != null) return; // editing mode uses existing number
     try {
       final repo = ref.read(saleRepositoryProvider);
       final generated = await repo.generateSaleNumber(_selectedType);
-      if (mounted && _saleNumberController.text.isEmpty) {
-        setState(() {
-          _saleNumberController.text = generated;
-        });
+      if (mounted) {
+        if (force || _saleNumberController.text.isEmpty) {
+          setState(() {
+            _saleNumberController.text = generated;
+          });
+        }
       }
-    } catch (_) {
+    } catch (e, stackTrace) {
+      AppLogger.error('Satış numarası oluşturulurken hata', e, stackTrace);
       // Fallback: leave empty and let user fill
     }
   }
@@ -3846,10 +3791,17 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
             );
           },
           onSelected: (Product p) {
+            // Eğer ürün KDV dahil ise, KDV hariç fiyatı kullan
+            // Çünkü satış sayfasında KDV tekrar eklenecek
+            final priceToUse =
+                p.salesTaxInclusive == TaxInclusiveOption.inclusive
+                    ? p.salesPriceWithoutTax
+                    : p.salesPrice;
+
             widget.onSelected(
               p.id,
               p.name,
-              p.salesPrice,
+              priceToUse,
               p.salesTaxRate, // Ürünün gerçek KDV oranı
               p.salesCurrency,
             );

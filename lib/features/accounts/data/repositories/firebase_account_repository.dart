@@ -301,6 +301,24 @@ class FirebaseAccountRepository implements AccountRepository {
   Future<void> updateAccountBalance(String accountId, double newBalance) async {
     try {
       final tenantId = await _tenantId();
+
+      // Mevcut hesap bilgilerini al (blockedAmount için)
+      final accountDoc = await _firestore
+          .collection('tenants')
+          .doc(tenantId)
+          .collection('accounts')
+          .doc(accountId)
+          .get();
+
+      if (!accountDoc.exists) {
+        throw Exception('Account not found: $accountId');
+      }
+
+      final accountData = accountDoc.data()!;
+      final blockedAmount =
+          (accountData['blockedAmount'] as num?)?.toDouble() ?? 0.0;
+      final availableBalance = newBalance - blockedAmount;
+
       await _firestore
           .collection('tenants')
           .doc(tenantId)
@@ -308,11 +326,13 @@ class FirebaseAccountRepository implements AccountRepository {
           .doc(accountId)
           .update({
         'balance': newBalance,
+        'availableBalance': availableBalance,
         'updatedAt': FieldValue.serverTimestamp(),
         'updatedBy': _uid() ?? 'system',
       });
 
-      AppLogger.info('Account balance updated: $accountId -> $newBalance');
+      AppLogger.info(
+          'Account balance updated: $accountId -> $newBalance (available: $availableBalance)');
     } catch (e) {
       AppLogger.error('Error updating account balance', e);
       rethrow;

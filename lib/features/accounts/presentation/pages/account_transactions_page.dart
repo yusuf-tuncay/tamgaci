@@ -103,7 +103,8 @@ class _AccountTransactionsPageState
                   children: [
                     Builder(
                       builder: (context) {
-                        final isDark = Theme.of(context).brightness == Brightness.dark;
+                        final isDark =
+                            Theme.of(context).brightness == Brightness.dark;
                         return Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -117,7 +118,8 @@ class _AccountTransactionsPageState
                               'İşlemler yüklenirken hata oluştu',
                               style: GoogleFonts.poppins(
                                 fontSize: 16,
-                                color: isDark ? Colors.red[400] : Colors.red[600],
+                                color:
+                                    isDark ? Colors.red[400] : Colors.red[600],
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -125,7 +127,9 @@ class _AccountTransactionsPageState
                               error.toString(),
                               style: GoogleFonts.poppins(
                                 fontSize: 12,
-                                color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                color: isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600],
                               ),
                               textAlign: TextAlign.center,
                             ),
@@ -306,7 +310,8 @@ class _AccountTransactionsPageState
               builder: (context) {
                 final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: isDark ? Colors.white12 : Colors.grey[400]!,
@@ -331,7 +336,9 @@ class _AccountTransactionsPageState
                             fontSize: 14,
                             color: _startDate != null && _endDate != null
                                 ? Colors.blue[700]
-                                : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                                : (isDark
+                                    ? Colors.grey[400]
+                                    : Colors.grey[600]),
                             fontWeight: _startDate != null && _endDate != null
                                 ? FontWeight.w600
                                 : FontWeight.normal,
@@ -1652,7 +1659,8 @@ class _TransactionEditDialogState
 
       await ref
           .read(accountTransactionNotifierProvider.notifier)
-          .deleteTransaction(widget.transaction.id);
+          .deleteTransaction(
+              widget.transaction.id, widget.transaction.accountId);
 
       await ref
           .read(accountNotifierProvider.notifier)

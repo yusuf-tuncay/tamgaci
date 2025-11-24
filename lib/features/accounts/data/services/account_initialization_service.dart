@@ -36,285 +36,267 @@ class AccountInitializationService {
 
       AppLogger.info('Tenant ID: $tenantId');
 
-      // Varsayılan hesapları kontrol et
-      final existingAccounts = await _firestore
-          .collection('tenants')
-          .doc(tenantId)
-          .collection('accounts')
-          .get();
+      final tenantDocRef = _firestore.collection('tenants').doc(tenantId);
+      final tenantSnapshot = await tenantDocRef.get();
+      final alreadyInitialized =
+          tenantSnapshot.data()?['defaultAccountsInitialized'] as bool? ??
+              false;
 
-      AppLogger.info('Mevcut hesap sayısı: ${existingAccounts.docs.length}');
-
-      if (existingAccounts.docs.isNotEmpty) {
-        AppLogger.info('Varsayılan hesaplar zaten mevcut, isDefault alanı güncelleniyor...');
-        // Mevcut varsayılan hesapların isDefault alanını güncelle
-        await _updateDefaultAccountsFlag(tenantId);
+      if (alreadyInitialized) {
+        AppLogger.info(
+            'Varsayılan hesaplar daha önce oluşturulmuş, işlem yapılmadı');
         return;
       }
 
-      // Varsayılan hesapları oluştur
-      await _createDefaultAccounts(tenantId, user.uid);
+      // Koleksiyonda herhangi bir hesap varsa tekrar oluşturma
+      final existingAccountsSnapshot =
+          await tenantDocRef.collection('accounts').limit(1).get();
+
+      if (existingAccountsSnapshot.docs.isNotEmpty) {
+        AppLogger.info(
+            'Tenant için hesaplar zaten mevcut, varsayılan oluşturma atlandı');
+        await tenantDocRef.set(
+          {
+            'defaultAccountsInitialized': true,
+            'defaultAccountsInitializedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+        return;
+      }
+
+      await _createDefaultAccounts(
+        tenantDocRef: tenantDocRef,
+        tenantId: tenantId,
+        userId: user.uid,
+      );
 
       AppLogger.info('Varsayılan hesaplar başarıyla oluşturuldu');
-    } catch (e) {
-      AppLogger.error('Varsayılan hesaplar oluşturulurken hata', e);
+    } on FirebaseException catch (e) {
+      AppLogger.error(
+          'Varsayılan hesaplar oluşturulurken Firestore hatası: code=${e.code}, message=${e.message}',
+          e);
+      rethrow;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+          'Varsayılan hesaplar oluşturulurken beklenmeyen hata', e, stackTrace);
+      rethrow;
     }
   }
 
-  /// Mevcut varsayılan hesapların isDefault alanını güncelle
-  Future<void> _updateDefaultAccountsFlag(String tenantId) async {
+  Future<void> _createDefaultAccounts({
+    required DocumentReference<Map<String, dynamic>> tenantDocRef,
+    required String tenantId,
+    required String userId,
+  }) async {
+    AppLogger.info(
+        '_createDefaultAccounts başlatılıyor: tenantId=$tenantId, userId=$userId');
+
     try {
-      // Varsayılan hesap isimleri listesi
-      final defaultAccountNames = [
-        'Nakit Kasa',
-        'Kredi Kartı',
-        'Çek Hesabı',
-        'Senet Hesabı',
-        'POS Hesabı',
-        'USD Kasa',
-        'EUR Kasa',
-      ];
+      int createdCount = 0;
+      int skippedCount = 0;
 
-      // Tüm hesapları al
-      final accountsSnapshot = await _firestore
-          .collection('tenants')
-          .doc(tenantId)
-          .collection('accounts')
-          .get();
+      await _firestore.runTransaction((transaction) async {
+        AppLogger.info('Transaction başladı');
 
-      final batch = _firestore.batch();
-      int updatedCount = 0;
+        final tenantSnapshot = await transaction.get(tenantDocRef);
+        final alreadyInitialized =
+            tenantSnapshot.data()?['defaultAccountsInitialized'] as bool? ??
+                false;
 
-      for (final doc in accountsSnapshot.docs) {
-        final data = doc.data();
-        final accountName = data['name'] as String? ?? '';
+        if (alreadyInitialized) {
+          AppLogger.info(
+              'Zaten initialize edilmiş, transaction sonlandırılıyor');
+          return;
+        }
 
-        // Eğer hesap varsayılan hesap isimlerinden biriyse ve isDefault false ise güncelle
-        if (defaultAccountNames.contains(accountName)) {
-          final currentIsDefault = data['isDefault'] as bool? ?? false;
-          if (!currentIsDefault) {
-            batch.update(doc.reference, {
-              'isDefault': true,
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
-            updatedCount++;
-            AppLogger.info('Hesap güncellendi: $accountName (isDefault: true)');
+        AppLogger.info(
+            '${_defaultAccountDefinitions.length} varsayılan hesap kontrol ediliyor');
+
+        // ÖNCE: Tüm read işlemlerini yap (Firestore transaction kuralı)
+        final accountSnapshots =
+            <String, DocumentSnapshot<Map<String, dynamic>>>{};
+        for (final template in _defaultAccountDefinitions) {
+          final docRef =
+              tenantDocRef.collection('accounts').doc(template.documentId);
+          final accountSnapshot = await transaction.get(docRef);
+          accountSnapshots[template.documentId] = accountSnapshot;
+        }
+
+        // SONRA: Tüm write işlemlerini yap
+        for (final template in _defaultAccountDefinitions) {
+          final accountSnapshot = accountSnapshots[template.documentId]!;
+
+          // Sadece yoksa oluştur
+          if (!accountSnapshot.exists) {
+            AppLogger.info('Hesap oluşturuluyor: ${template.name}');
+
+            final account = template.toAccount(tenantId, userId);
+            final accountEntity = FirebaseAccountEntity.fromDomain(account);
+            final firestoreData = accountEntity.toFirestore();
+
+            final docRef =
+                tenantDocRef.collection('accounts').doc(template.documentId);
+            transaction.set(docRef, firestoreData);
+            createdCount++;
+          } else {
+            AppLogger.info('Hesap zaten mevcut, atlanıyor: ${template.name}');
+            skippedCount++;
           }
         }
-      }
 
-      if (updatedCount > 0) {
-        await batch.commit();
-        AppLogger.info('$updatedCount varsayılan hesap güncellendi');
-      } else {
-        AppLogger.info('Güncellenecek varsayılan hesap bulunamadı');
-      }
-    } catch (e) {
-      AppLogger.error('Varsayılan hesaplar güncellenirken hata', e);
+        AppLogger.info('Tenant flag güncelleniyor');
+        transaction.set(
+          tenantDocRef,
+          {
+            'defaultAccountsInitialized': true,
+            'defaultAccountsInitializedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+
+        AppLogger.info(
+            'Transaction commit ediliyor: $createdCount yeni, $skippedCount zaten mevcut');
+      });
+
+      AppLogger.info(
+          'Transaction başarılı: $createdCount yeni hesap oluşturuldu, $skippedCount zaten mevcuttu');
+    } on FirebaseException catch (e) {
+      AppLogger.error(
+          'Firestore transaction hatası: code=${e.code}, message=${e.message}',
+          e);
+      rethrow;
+    } catch (e, stackTrace) {
+      AppLogger.error(
+          'Varsayılan hesaplar oluşturulurken beklenmeyen hata', e, stackTrace);
+      rethrow;
     }
-  }
-
-  /// Varsayılan hesapları oluştur
-  Future<void> _createDefaultAccounts(String tenantId, String userId) async {
-    final now = DateTime.now();
-    final accounts = [
-      // Nakit Kasası
-      Account(
-        id: '',
-        name: 'Nakit Kasa',
-        accountNumber: 'CASH-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'Nakit Kasa',
-        branchName: '',
-        currency: 'TRY',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.cash,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'Ana nakit kasa hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-
-      // Kredi Kartı
-      Account(
-        id: '',
-        name: 'Kredi Kartı',
-        accountNumber: 'CC-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'Kredi Kartı',
-        branchName: '',
-        currency: 'TRY',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.credit,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'Kredi kartı hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-
-      // Çek Hesabı
-      Account(
-        id: '',
-        name: 'Çek Hesabı',
-        accountNumber: 'CHECK-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'Çek Hesabı',
-        branchName: '',
-        currency: 'TRY',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.other,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'Çek işlemleri hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-
-      // Senet Hesabı
-      Account(
-        id: '',
-        name: 'Senet Hesabı',
-        accountNumber: 'PROM-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'Senet Hesabı',
-        branchName: '',
-        currency: 'TRY',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.other,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'Senet işlemleri hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-
-      // POS Hesabı
-      Account(
-        id: '',
-        name: 'POS Hesabı',
-        accountNumber: 'POS-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'POS Hesabı',
-        branchName: '',
-        currency: 'TRY',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.other,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'POS işlemleri hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-
-      // USD Kasa
-      Account(
-        id: '',
-        name: 'USD Kasa',
-        accountNumber: 'USD-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'USD Kasa',
-        branchName: '',
-        currency: 'USD',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.cash,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'USD nakit kasa hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-
-      // EUR Kasa
-      Account(
-        id: '',
-        name: 'EUR Kasa',
-        accountNumber: 'EUR-001',
-        iban: '',
-        swiftCode: '',
-        bankName: 'EUR Kasa',
-        branchName: '',
-        currency: 'EUR',
-        balance: 0.0,
-        availableBalance: 0.0,
-        blockedAmount: 0.0,
-        type: AccountType.cash,
-        status: AccountStatus.active,
-        isActive: true,
-        isDefault: true, // Varsayılan hesap
-        description: 'EUR nakit kasa hesabı',
-        notes: 'Otomatik oluşturulan varsayılan hesap',
-        tenantId: tenantId,
-        createdBy: userId,
-        updatedBy: userId,
-        createdAt: now,
-        updatedAt: now,
-      ),
-    ];
-
-    // Hesapları Firestore'a kaydet
-    final batch = _firestore.batch();
-    for (final account in accounts) {
-      final accountEntity = FirebaseAccountEntity.fromDomain(account);
-      final docRef = _firestore
-          .collection('tenants')
-          .doc(tenantId)
-          .collection('accounts')
-          .doc();
-
-      batch.set(docRef, accountEntity.toFirestore());
-    }
-
-    await batch.commit();
-    AppLogger.info('${accounts.length} varsayılan hesap oluşturuldu');
   }
 }
+
+class _DefaultAccountDefinition {
+  final String key;
+  final String name;
+  final String accountNumber;
+  final AccountType type;
+  final String currency;
+  final String bankName;
+  final String description;
+  final String notes;
+
+  const _DefaultAccountDefinition({
+    required this.key,
+    required this.name,
+    required this.accountNumber,
+    required this.type,
+    required this.currency,
+    required this.bankName,
+    required this.description,
+    required this.notes,
+  });
+
+  String get documentId => 'default_account_$key';
+
+  Account toAccount(String tenantId, String userId) {
+    final now = DateTime.now();
+    return Account(
+      id: documentId,
+      name: name,
+      accountNumber: accountNumber,
+      iban: '',
+      swiftCode: '',
+      bankName: bankName,
+      branchName: '',
+      currency: currency,
+      balance: 0.0,
+      availableBalance: 0.0,
+      blockedAmount: 0.0,
+      type: type,
+      status: AccountStatus.active,
+      isActive: true,
+      isDefault: true,
+      description: description,
+      notes: notes,
+      tenantId: tenantId,
+      createdBy: userId,
+      updatedBy: userId,
+      createdAt: now,
+      updatedAt: now,
+    );
+  }
+}
+
+const List<_DefaultAccountDefinition> _defaultAccountDefinitions = [
+  _DefaultAccountDefinition(
+    key: 'cash_try',
+    name: 'Nakit Kasa',
+    accountNumber: 'CASH-001',
+    type: AccountType.cash,
+    currency: 'TRY',
+    bankName: 'Nakit Kasa',
+    description: 'Ana nakit kasa hesabı',
+    notes: 'Otomatik oluşturulan varsayılan hesap',
+  ),
+  _DefaultAccountDefinition(
+    key: 'credit_card',
+    name: 'Kredi Kartı',
+    accountNumber: 'CC-001',
+    type: AccountType.credit,
+    currency: 'TRY',
+    bankName: 'Kredi Kartı',
+    description: 'Kredi kartı hesabı',
+    notes: 'Otomatik oluşturulan varsayılan hesap',
+  ),
+  _DefaultAccountDefinition(
+    key: 'check_tr',
+    name: 'Çek Hesabı',
+    accountNumber: 'CHECK-001',
+    type: AccountType.other,
+    currency: 'TRY',
+    bankName: 'Çek Hesabı',
+    description: 'Çek işlemleri hesabı',
+    notes: 'Otomatik oluşturulan varsayılan hesap',
+  ),
+  _DefaultAccountDefinition(
+    key: 'promissory_tr',
+    name: 'Senet Hesabı',
+    accountNumber: 'PROM-001',
+    type: AccountType.other,
+    currency: 'TRY',
+    bankName: 'Senet Hesabı',
+    description: 'Senet işlemleri hesabı',
+    notes: 'Otomatik oluşturulan varsayılan hesap',
+  ),
+  _DefaultAccountDefinition(
+    key: 'pos_tr',
+    name: 'POS Hesabı',
+    accountNumber: 'POS-001',
+    type: AccountType.other,
+    currency: 'TRY',
+    bankName: 'POS Hesabı',
+    description: 'POS işlemleri hesabı',
+    notes: 'Otomatik oluşturulan varsayılan hesap',
+  ),
+  _DefaultAccountDefinition(
+    key: 'cash_usd',
+    name: 'USD Kasa',
+    accountNumber: 'USD-001',
+    type: AccountType.cash,
+    currency: 'USD',
+    bankName: 'USD Kasa',
+    description: 'USD nakit kasa hesabı',
+    notes: 'Otomatik oluşturulan varsayılan hesap',
+  ),
+  _DefaultAccountDefinition(
+    key: 'cash_eur',
+    name: 'EUR Kasa',
+    accountNumber: 'EUR-001',
+    type: AccountType.cash,
+    currency: 'EUR',
+    bankName: 'EUR Kasa',
+    description: 'EUR nakit kasa hesabı',
+    notes: 'Otomatik oluşturulan varsayılan hesap',
+  ),
+];

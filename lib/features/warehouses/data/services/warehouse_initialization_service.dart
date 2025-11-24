@@ -35,60 +35,10 @@ class WarehouseInitializationService {
         return;
       }
 
-      // Bu tenant için zaten varsayılan depo var mı kontrol et
-      final existingWarehouses = await _firestore
-          .collection('tenants')
-          .doc(tenantId)
-          .collection('warehouses')
-          .where('isDefault', isEqualTo: true)
-          .get();
-
-      if (existingWarehouses.docs.isNotEmpty) {
-        await _ensureSingleDefaultWarehouse(
-          tenantId,
-          existingWarehouses.docs,
-        );
-        AppLogger.info(
-            'Default warehouse already exists for tenant: $tenantId');
-        return;
-      }
-
-      // Varsayılan depo oluştur
-      final defaultWarehouse = Warehouse(
-        id: 'default_warehouse',
-        name: 'Ana Depo',
-        description: 'Sistem tarafından oluşturulan varsayılan depo',
-        type: WarehouseType.main,
-        status: WarehouseStatus.active,
-        address: 'Adres bilgisi ekleyin',
-        city: 'Şehir',
-        isActive: true,
-        isDefault: true,
-        createdBy: user.uid,
-        createdAt: DateTime.now(),
-        updatedBy: user.uid,
-        updatedAt: DateTime.now(),
+      await _createDefaultWarehouseIfNeeded(
         tenantId: tenantId,
+        createdBy: user.uid,
       );
-
-      final docRef = _firestore
-          .collection('tenants')
-          .doc(tenantId)
-          .collection('warehouses')
-          .doc(defaultWarehouse.id);
-
-      if ((await docRef.get()).exists) {
-        AppLogger.info(
-            'Default warehouse document already exists for tenant: $tenantId');
-        return;
-      }
-
-      final warehouseEntity =
-          FirebaseWarehouseEntity.fromDomain(defaultWarehouse);
-
-      await docRef.set(warehouseEntity.toFirestore());
-      AppLogger.info(
-          'Default warehouse created successfully for user: ${user.uid}');
     } catch (e) {
       AppLogger.error('Error creating default warehouse', e);
       // Hata durumunda sessizce devam et, kullanıcı deneyimini bozmasın
@@ -105,56 +55,10 @@ class WarehouseInitializationService {
         final tenantId = userData['tenantId'] as String?;
 
         if (tenantId != null && tenantId.isNotEmpty) {
-          // Bu tenant için varsayılan depo var mı kontrol et
-          final existingWarehouses = await _firestore
-              .collection('tenants')
-              .doc(tenantId)
-              .collection('warehouses')
-              .where('isDefault', isEqualTo: true)
-              .get();
-
-          if (existingWarehouses.docs.isEmpty) {
-            // Varsayılan depo oluştur
-            final defaultWarehouse = Warehouse(
-              id: 'default_warehouse',
-              name: 'Ana Depo',
-              description: 'Sistem tarafından oluşturulan varsayılan depo',
-              type: WarehouseType.main,
-              status: WarehouseStatus.active,
-              address: 'Adres bilgisi ekleyin',
-              city: 'Şehir',
-              isActive: true,
-              isDefault: true,
-              createdBy: userDoc.id,
-              createdAt: DateTime.now(),
-              updatedBy: userDoc.id,
-              updatedAt: DateTime.now(),
-              tenantId: tenantId,
-            );
-
-            final docRef = _firestore
-                .collection('tenants')
-                .doc(tenantId)
-                .collection('warehouses')
-                .doc(defaultWarehouse.id);
-
-            if ((await docRef.get()).exists) {
-              AppLogger.info(
-                  'Default warehouse document already exists for tenant: $tenantId');
-              continue;
-            }
-
-            final warehouseEntity =
-                FirebaseWarehouseEntity.fromDomain(defaultWarehouse);
-
-            await docRef.set(warehouseEntity.toFirestore());
-            AppLogger.info('Default warehouse created for tenant: $tenantId');
-          } else {
-            await _ensureSingleDefaultWarehouse(
-              tenantId,
-              existingWarehouses.docs,
-            );
-          }
+          await _createDefaultWarehouseIfNeeded(
+            tenantId: tenantId,
+            createdBy: userDoc.id,
+          );
         }
       }
 
@@ -164,29 +68,106 @@ class WarehouseInitializationService {
     }
   }
 
-  Future<void> _ensureSingleDefaultWarehouse(
-    String tenantId,
-    List<QueryDocumentSnapshot<Map<String, dynamic>>> docs,
-  ) async {
-    if (docs.length <= 1) return;
+  Future<void> _createDefaultWarehouseIfNeeded({
+    required String tenantId,
+    required String createdBy,
+  }) async {
+    final tenantDocRef = _firestore.collection('tenants').doc(tenantId);
+    final tenantSnapshot = await tenantDocRef.get();
+    final alreadyInitialized =
+        tenantSnapshot.data()?['defaultWarehouseInitialized'] as bool? ?? false;
 
-    final docToKeep = docs.firstWhere(
-      (doc) => doc.id == 'default_warehouse',
-      orElse: () => docs.first,
-    );
-
-    for (final doc in docs) {
-      if (doc.id == docToKeep.id) continue;
-      try {
-        await doc.reference.delete();
-        AppLogger.info(
-            'Removed duplicate default warehouse ${doc.id} for tenant $tenantId');
-      } catch (e) {
-        AppLogger.error(
-          'Error removing duplicate default warehouse for tenant $tenantId',
-          e,
-        );
-      }
+    if (alreadyInitialized) {
+      AppLogger.info(
+          'Default warehouse already marked for tenant: $tenantId, skipping');
+      return;
     }
+
+    final warehouseDocRef =
+        tenantDocRef.collection('warehouses').doc('default_warehouse');
+    final warehouseSnapshot = await warehouseDocRef.get();
+
+    if (warehouseSnapshot.exists) {
+      await _markWarehouseInitialized(tenantDocRef);
+      AppLogger.info(
+          'Default warehouse already exists for tenant: $tenantId (flag updated)');
+      return;
+    }
+
+    await _firestore.runTransaction((transaction) async {
+      final latestTenantSnapshot = await transaction.get(tenantDocRef);
+      final flagSet = latestTenantSnapshot
+              .data()?['defaultWarehouseInitialized'] as bool? ??
+          false;
+
+      if (flagSet) {
+        AppLogger.info(
+            'Transaction detected initialized flag for tenant: $tenantId');
+        return;
+      }
+
+      final latestWarehouseSnapshot = await transaction.get(warehouseDocRef);
+      if (latestWarehouseSnapshot.exists) {
+        transaction.set(
+          tenantDocRef,
+          {
+            'defaultWarehouseInitialized': true,
+            'defaultWarehouseInitializedAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
+        return;
+      }
+
+      final defaultWarehouse = _buildDefaultWarehouse(tenantId, createdBy);
+      final warehouseEntity =
+          FirebaseWarehouseEntity.fromDomain(defaultWarehouse);
+
+      transaction.set(warehouseDocRef, warehouseEntity.toFirestore());
+      transaction.set(
+        tenantDocRef,
+        {
+          'defaultWarehouseInitialized': true,
+          'defaultWarehouseInitializedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
+    });
+
+    AppLogger.info('Default warehouse created for tenant: $tenantId');
+  }
+
+  Future<void> _markWarehouseInitialized(
+      DocumentReference<Map<String, dynamic>> tenantDocRef) async {
+    await tenantDocRef.set(
+      {
+        'defaultWarehouseInitialized': true,
+        'defaultWarehouseInitializedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
+  }
+
+  Warehouse _buildDefaultWarehouse(String tenantId, String createdBy) {
+    final now = DateTime.now();
+    return Warehouse(
+      id: 'default_warehouse',
+      name: 'Ana Depo',
+      description: 'Sistem tarafından oluşturulan varsayılan depo',
+      type: WarehouseType.main,
+      status: WarehouseStatus.active,
+      address: 'Adres bilgisi ekleyin',
+      city: 'Şehir',
+      isActive: true,
+      isDefault: true,
+      createdBy: createdBy,
+      createdAt: now,
+      updatedBy: createdBy,
+      updatedAt: now,
+      tenantId: tenantId,
+    );
   }
 }

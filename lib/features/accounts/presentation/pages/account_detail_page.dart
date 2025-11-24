@@ -4161,7 +4161,8 @@ class _TransactionEditDialogState
       try {
         await ref
             .read(accountTransactionNotifierProvider.notifier)
-            .deleteTransaction(widget.transaction.id);
+            .deleteTransaction(
+                widget.transaction.id, widget.transaction.accountId);
 
         if (mounted) {
           context.pop();

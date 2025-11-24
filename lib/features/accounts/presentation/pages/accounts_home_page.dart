@@ -7,7 +7,6 @@ import '../../domain/entities/account.dart';
 import '../providers/account_providers.dart';
 import '../widgets/account_card.dart';
 import '../widgets/account_statistics_card.dart';
-import '../../data/services/account_initialization_service.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
@@ -74,10 +73,10 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
 
     _animationController.forward();
 
-    // TenantId oluştur (eğer yoksa) ve varsayılan hesapları oluştur
+    // TenantId oluştur (eğer yoksa)
+    // Varsayılan hesaplar account_providers.dart içinde otomatik oluşturuluyor
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await FirebaseAuthService.createTenantIdForCurrentUser();
-      _initializeDefaultAccounts();
     });
   }
 
@@ -1386,17 +1385,6 @@ class _AccountsHomePageState extends ConsumerState<AccountsHomePage>
 
   void _navigateToAccountDetail(Account account) {
     context.goNamed('account-detail', pathParameters: {'id': account.id});
-  }
-
-  /// Varsayılan hesapları oluştur
-  Future<void> _initializeDefaultAccounts() async {
-    try {
-      final service = AccountInitializationService();
-      await service.initializeDefaultAccounts();
-    } catch (e) {
-      // Hata durumunda sessizce devam et
-      debugPrint('Varsayılan hesaplar oluşturulamadı: $e');
-    }
   }
 
   void _refreshAccounts() {

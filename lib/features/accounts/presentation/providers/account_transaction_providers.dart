@@ -179,15 +179,16 @@ final transactionStatisticsProvider =
 final accountTransactionNotifierProvider = StateNotifierProvider<
     AccountTransactionNotifier, AsyncValue<List<AccountTransaction>>>((ref) {
   return AccountTransactionNotifier(
-      ref.read(accountTransactionRepositoryProvider));
+      ref.read(accountTransactionRepositoryProvider), ref);
 });
 
 /// Account Transaction Notifier
 class AccountTransactionNotifier
     extends StateNotifier<AsyncValue<List<AccountTransaction>>> {
   final AccountTransactionRepository _repository;
+  final Ref _ref;
 
-  AccountTransactionNotifier(this._repository)
+  AccountTransactionNotifier(this._repository, this._ref)
       : super(const AsyncValue.loading()) {
     _loadTransactions();
   }
@@ -205,6 +206,10 @@ class AccountTransactionNotifier
     try {
       await _repository.createTransaction(transaction);
       _loadTransactions();
+      // İlgili provider'ları invalidate et
+      _ref.invalidate(transactionsByAccountIdProvider(transaction.accountId));
+      _ref.invalidate(transactionsProvider);
+      _ref.invalidate(transactionStatisticsProvider);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
@@ -214,15 +219,23 @@ class AccountTransactionNotifier
     try {
       await _repository.updateTransaction(transaction);
       _loadTransactions();
+      // İlgili provider'ları invalidate et
+      _ref.invalidate(transactionsByAccountIdProvider(transaction.accountId));
+      _ref.invalidate(transactionsProvider);
+      _ref.invalidate(transactionStatisticsProvider);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  Future<void> deleteTransaction(String id) async {
+  Future<void> deleteTransaction(String id, String accountId) async {
     try {
       await _repository.deleteTransaction(id);
       _loadTransactions();
+      // İlgili provider'ları invalidate et
+      _ref.invalidate(transactionsByAccountIdProvider(accountId));
+      _ref.invalidate(transactionsProvider);
+      _ref.invalidate(transactionStatisticsProvider);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
     }

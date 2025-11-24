@@ -594,44 +594,94 @@ class SaleFirebaseDataSourceImpl implements SaleFirebaseDataSource {
       final month = now.month.toString().padLeft(2, '0');
       final day = now.day.toString().padLeft(2, '0');
 
-      // Bugünkü satış sayısını al
+      // Bugünkü aynı türdeki satış sayısını al
       final startOfDay = DateTime(year, now.month, now.day);
       final endOfDay = DateTime(year, now.month, now.day, 23, 59, 59);
 
       final col = await _tenantSales();
-      final snapshot = await col
-          .where('createdAt',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('createdAt', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-          .get();
 
-      final count = snapshot.docs.length + 1;
-      final countStr = count.toString().padLeft(4, '0');
+      // Önce composite index ile deneyelim
+      try {
+        final snapshot = await col
+            .where('type', isEqualTo: type.name)
+            .where('createdAt',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+            .where('createdAt',
+                isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+            .get();
 
-      // Satış türüne göre prefix
-      String prefix;
-      switch (type) {
-        case SaleType.sale:
-          prefix = 'SAL';
-          break;
-        case SaleType.invoice:
-          prefix = 'FAT';
-          break;
-        case SaleType.proforma:
-          prefix = 'PRO';
-          break;
-        case SaleType.waybill:
-          prefix = 'IRS';
-          break;
-        case SaleType.receipt:
-          prefix = 'FIS';
-          break;
-        case SaleType.estimate:
-          prefix = 'TEK';
-          break;
+        final count = snapshot.docs.length + 1;
+        final countStr = count.toString().padLeft(4, '0');
+
+        // Satış türüne göre prefix
+        String prefix;
+        switch (type) {
+          case SaleType.sale:
+            prefix = 'SAL';
+            break;
+          case SaleType.invoice:
+            prefix = 'FAT';
+            break;
+          case SaleType.proforma:
+            prefix = 'PRO';
+            break;
+          case SaleType.waybill:
+            prefix = 'IRS';
+            break;
+          case SaleType.receipt:
+            prefix = 'FIS';
+            break;
+          case SaleType.estimate:
+            prefix = 'TEK';
+            break;
+        }
+
+        return '$prefix$year$month$day$countStr';
+      } on FirebaseException catch (e) {
+        // Composite index hatası alınırsa, fallback olarak tüm satışları çekip filtrele
+        if (e.code == 'failed-precondition' ||
+            e.message?.contains('index') == true) {
+          final allSnapshot = await col
+              .where('createdAt',
+                  isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+              .where('createdAt',
+                  isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+              .get();
+
+          final filteredDocs = allSnapshot.docs
+              .where((doc) => doc.data()['type'] == type.name)
+              .toList();
+
+          final count = filteredDocs.length + 1;
+          final countStr = count.toString().padLeft(4, '0');
+
+          // Satış türüne göre prefix
+          String prefix;
+          switch (type) {
+            case SaleType.sale:
+              prefix = 'SAL';
+              break;
+            case SaleType.invoice:
+              prefix = 'FAT';
+              break;
+            case SaleType.proforma:
+              prefix = 'PRO';
+              break;
+            case SaleType.waybill:
+              prefix = 'IRS';
+              break;
+            case SaleType.receipt:
+              prefix = 'FIS';
+              break;
+            case SaleType.estimate:
+              prefix = 'TEK';
+              break;
+          }
+
+          return '$prefix$year$month$day$countStr';
+        }
+        rethrow;
       }
-
-      return '$prefix$year$month$day$countStr';
     } catch (e) {
       throw DatabaseFailure(
           'Satış numarası oluşturulurken bir hata oluştu: ${e.toString()}');
