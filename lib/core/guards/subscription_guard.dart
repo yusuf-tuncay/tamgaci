@@ -125,7 +125,13 @@ class SubscriptionGuard extends ConsumerWidget {
         }
       },
       loading: () => loadingWidget ?? _buildLoadingWidget(),
-      error: (error, stack) => errorWidget ?? _buildErrorWidget(error),
+      error: (error, stack) {
+        final errorText = error.toString();
+        if (errorText.contains('AuthenticationFailure')) {
+          return _buildRedirectToLogin(context);
+        }
+        return errorWidget ?? _buildErrorWidget(context, errorText);
+      },
     );
   }
 
@@ -262,20 +268,38 @@ class SubscriptionGuard extends ConsumerWidget {
   }
 
   /// Hata widget'ı
-  Widget _buildErrorWidget(Object error) {
+  Widget _buildErrorWidget(BuildContext context, String error) {
+    final scheme = Theme.of(context).colorScheme;
+    final textColor = scheme.onSurface;
     return Scaffold(
-      body: Center(
+      body: Container(
+        width: double.infinity,
+        color: scheme.surface,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            Icon(Icons.error_outline, size: 56, color: scheme.error),
             const SizedBox(height: 16),
-            Text('Hata: $error'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                // Ana sayfaya dön
-              },
+            Text(
+              'Hata',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(color: textColor, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              error,
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: textColor.withValues(alpha: 0.8)),
+            ),
+            const SizedBox(height: 24),
+            FilledButton(
+              onPressed: () => context.go('/'),
               child: const Text('Ana Sayfaya Dön'),
             ),
           ],
