@@ -10,6 +10,7 @@ import '../../../../core/theme/constants.dart';
 import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../inventory/presentation/providers/warehouse_providers.dart';
 import '../../../inventory/domain/entities/warehouse.dart';
+import '../../../../core/services/business/inventory_service.dart';
 import '../../../purchases/presentation/providers/purchase_providers.dart';
 import '../../../purchases/domain/entities/purchase.dart';
 import '../../../products/domain/entities/product.dart';
@@ -23,11 +24,23 @@ import '../../../../core/utils/currency_helper.dart';
 import 'package:tamgaci/features/invoices/domain/entities/invoice.dart' as inv;
 import 'package:tamgaci/features/invoices/domain/entities/invoice_item.dart'
     as inv_item;
-import 'package:tamgaci/features/invoices/presentation/providers/invoice_providers.dart';
+import 'package:tamgaci/features/invoices/presentation/providers/invoice_providers.dart'
+    as invoice_providers;
 import 'package:tamgaci/features/invoices/data/models/invoice_status.dart'
     as inv_status;
 import 'package:tamgaci/features/invoices/presentation/pages/invoice_preview_page.dart';
 import 'package:tamgaci/core/services/unified_invoice_converter.dart';
+import '../../../../core/utils/logger.dart';
+import 'package:tamgaci/core/services/business/transaction_service.dart'
+    as transaction_service;
+import 'package:tamgaci/features/accounts/presentation/providers/account_providers.dart';
+import 'package:tamgaci/features/accounts/domain/entities/account.dart'
+    as account_entity;
+import 'package:tamgaci/features/accounts/domain/entities/account_transaction.dart'
+    as account_txn;
+import 'package:tamgaci/features/accounts/presentation/providers/account_transaction_providers.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Yeni alış oluşturma sayfası
 class CreatePurchasePage extends ConsumerStatefulWidget {
@@ -509,12 +522,14 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                             controller: _descriptionController,
                             label: 'Açıklama',
                             maxLines: 3,
+                            required: false,
                           ),
                           const SizedBox(height: 16),
                           _buildTextField(
                             controller: _notesController,
                             label: 'Notlar',
                             maxLines: 3,
+                            required: false,
                           ),
                         ],
                       ),
@@ -608,6 +623,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     required String label,
     int maxLines = 1,
     bool enabled = true,
+    bool required = true,
   }) {
     return TextFormField(
       controller: controller,
@@ -619,12 +635,14 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
         ),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return '$label gereklidir';
-        }
-        return null;
-      },
+      validator: required
+          ? (value) {
+              if (value == null || value.isEmpty) {
+                return '$label gereklidir';
+              }
+              return null;
+            }
+          : null,
     );
   }
 
@@ -784,12 +802,95 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           .read(purchaseNotifierProvider.notifier)
           .createPurchase(purchase);
 
-      // Faturalar modülüne senkronizasyon (direction: purchase)
+      // Alış listesini yeniden yükle (purchase ID'yi almak için)
+      await ref.read(purchaseNotifierProvider.notifier).getPurchases();
+
+      // Oluşturulan purchase'ı bul (ID'yi almak için)
+      final purchases = ref.read(purchaseNotifierProvider).purchases;
+      Purchase purchaseWithId = purchase;
       try {
-        await _syncInvoiceWithPurchase(purchase);
-      } catch (_) {}
-      // Silinen modül: notifications - taksit hatırlatma özelliği kaldırıldı
-      // if _receiveToInventory and _selectedWarehouse != null, create stock movements (future step)
+        final createdPurchase = purchases.firstWhere(
+          (p) => p.purchaseNumber == purchase.purchaseNumber,
+        );
+        // Purchase ID'yi güncelle
+        if (createdPurchase.id.isNotEmpty) {
+          purchaseWithId = purchase.copyWith(id: createdPurchase.id);
+        }
+      } catch (e) {
+        AppLogger.warning(
+            'Could not find created purchase by number, using original purchase');
+      }
+
+      // Alış kaydedildikten sonra ilgili provider'ları invalidate et ve yenile
+      ref.invalidate(purchaseNotifierProvider);
+      ref.invalidate(invoice_providers.invoicesProvider);
+      ref.invalidate(invoice_providers.invoicesStreamProvider);
+      if (_customerIdController.text.isNotEmpty) {
+        ref.invalidate(
+            customerPurchasesStreamProvider(_customerIdController.text));
+        // Müşteri provider'ını da invalidate et
+        ref.invalidate(customerProvider(_customerIdController.text));
+      }
+
+      // Faturalar modülüne senkronizasyon (direction: purchase)
+      // Hata olsa bile alış kaydı başarılı sayılmalı
+      try {
+        await _syncInvoiceWithPurchase(purchaseWithId);
+      } catch (e) {
+        AppLogger.warning('Invoice sync failed (non-critical): $e');
+        // Invoice hatası alış kaydını engellememeli
+      }
+
+      // İade alışı ise stoklara giriş yap
+      if (_purchaseType == PurchaseType.returnPurchase &&
+          _selectedWarehouse != null) {
+        try {
+          final inventory = InventoryService();
+          final stockMovements = _items
+              .where((item) =>
+                  item.productId != null && item.productId!.isNotEmpty)
+              .map((item) async {
+            try {
+              final movement = StockMovement(
+                id: '',
+                productId: item.productId!,
+                warehouseId: _selectedWarehouse!.id,
+                type: StockMovementType.returnIn, // İade girişi
+                quantity: item.quantity.round(),
+                reason: 'Satıştan İade',
+                reference: purchaseWithId.purchaseNumber,
+                notes: 'İade alışı',
+                createdBy: 'system',
+                createdAt: DateTime.now(),
+              );
+              await inventory.recordStockMovement(movement);
+              AppLogger.info(
+                  'Stock movement recorded for return purchase product: ${item.productId}');
+            } catch (e) {
+              AppLogger.error(
+                  'Error recording stock movement for product: ${item.productId}',
+                  e);
+            }
+          }).toList();
+
+          // Tüm stok hareketlerini paralel olarak çalıştır
+          await Future.wait(stockMovements);
+        } catch (e) {
+          AppLogger.error(
+              'Error recording stock movements for return purchase', e);
+        }
+      }
+
+      // Normal alış için transaction oluştur (iade alışı hariç)
+      if (_purchaseType != PurchaseType.returnPurchase) {
+        try {
+          await _createPurchaseTransactions(purchaseWithId);
+        } catch (e) {
+          AppLogger.error('Error creating transactions for purchase', e);
+          // Transaction hatası alış kaydını engellememeli
+        }
+      }
+
       if (mounted) {
         final scheme = Theme.of(context).colorScheme;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -834,13 +935,152 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     }
   }
 
+  Future<void> _createPurchaseTransactions(Purchase purchase) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final tenantId = userDoc.data()?['tenantId'] as String? ?? '';
+
+      // Varsayılan hesabı bul (TRY para birimli nakit kasa)
+      final accounts = await ref.read(accountsProvider.future);
+
+      if (accounts.isEmpty) {
+        AppLogger.warning('No accounts found for purchase transaction');
+        return;
+      }
+
+      // Önce TRY para birimli nakit kasayı bul
+      final targetAccount = accounts.firstWhere(
+        (acc) =>
+            acc.currency == 'TRY' &&
+            acc.type == account_entity.AccountType.cash,
+        orElse: () => accounts.firstWhere(
+          (acc) => acc.currency == purchase.currency,
+          orElse: () => accounts.first,
+        ),
+      );
+
+      final now = DateTime.now();
+      final amount = purchase.totalAmount;
+
+      // TransactionService ile müşteri transaction'ı oluştur
+      try {
+        final transactionService = transaction_service.TransactionService();
+        final transaction = transaction_service.Transaction(
+          id: '',
+          customerId: '', // Alış için customer yok
+          supplierId: purchase.supplierId,
+          type: transaction_service.TransactionType.expense,
+          amount: amount,
+          currency: purchase.currency,
+          description: 'Alış ödemesi ${purchase.purchaseNumber}',
+          reference: purchase.purchaseNumber,
+          transactionDate: purchase.purchaseDate,
+          dueDate: purchase.dueDate,
+          invoiceId: null,
+          paymentMethod: null,
+          documentNumber: purchase.purchaseNumber,
+          status: transaction_service.TransactionStatus.completed,
+          companyId: tenantId, // companyId gerekli
+          createdAt: now,
+          updatedAt: now,
+          createdBy: user.uid,
+          updatedBy: user.uid,
+          metadata: {'purchaseId': purchase.id},
+        );
+
+        await transactionService.createTransaction(transaction);
+        AppLogger.info(
+            'Transaction created for purchase: ${purchase.purchaseNumber}');
+      } catch (e) {
+        AppLogger.error('Error creating Transaction for purchase', e);
+      }
+
+      // AccountTransaction oluştur
+      try {
+        final accountDoc = await FirebaseFirestore.instance
+            .collection('tenants')
+            .doc(tenantId)
+            .collection('accounts')
+            .doc(targetAccount.id)
+            .get();
+
+        if (accountDoc.exists) {
+          final accountData = accountDoc.data()!;
+          final currentBalance =
+              (accountData['balance'] as num?)?.toDouble() ?? 0.0;
+          final newBalance = currentBalance - amount; // Alış için çıkış
+
+          // AccountTransaction oluştur
+          final accountTransaction = account_txn.AccountTransaction(
+            id: '',
+            accountId: targetAccount.id,
+            fromAccountId: null,
+            toAccountId: null,
+            type: account_txn.TransactionType.expense,
+            category: account_txn.TransactionCategory.other,
+            amount: amount,
+            debitAmount: amount,
+            creditAmount: null,
+            balanceAfter: newBalance,
+            description:
+                'Alış ödemesi ${purchase.purchaseNumber} (${purchase.currency})',
+            reference: purchase.purchaseNumber,
+            transactionDate: now,
+            userId: user.uid,
+            notes: null,
+            isReconciled: false,
+            reconciledAt: null,
+            reconciledBy: null,
+            tenantId: tenantId,
+            createdBy: user.uid,
+            updatedBy: user.uid,
+            createdAt: now,
+            updatedAt: now,
+          );
+
+          // AccountTransaction'ı oluştur ve hesap bakiyesini güncelle
+          await ref
+              .read(accountTransactionNotifierProvider.notifier)
+              .createTransaction(accountTransaction);
+
+          // Hesap bakiyesini AccountNotifier üzerinden güncelle
+          await ref
+              .read(accountNotifierProvider.notifier)
+              .updateAccountBalance(targetAccount.id, newBalance);
+
+          // Account provider'larını invalidate et
+          ref.invalidate(accountsProvider);
+          ref.invalidate(accountByIdProvider(targetAccount.id));
+          ref.invalidate(accountStatisticsProvider);
+          ref.invalidate(transactionsByAccountIdProvider(targetAccount.id));
+          ref.invalidate(transactionsProvider);
+          ref.invalidate(transactionStatisticsProvider);
+
+          AppLogger.info(
+              'AccountTransaction created and balance updated successfully for purchase: ${purchase.purchaseNumber}');
+        }
+      } catch (e) {
+        AppLogger.error('Error creating AccountTransaction for purchase', e);
+      }
+    } catch (e) {
+      AppLogger.error('Error in _createPurchaseTransactions', e);
+      rethrow;
+    }
+  }
+
   Future<void> _syncInvoiceWithPurchase(Purchase purchase) async {
     // documentType eşlemesi: normal alış -> invoice, satıştan iade alışı -> returnPurchase (invoice altında not)
     final documentType = purchase.type == PurchaseType.returnPurchase
         ? 'invoice' // İade alışını da purchase faturası olarak kaydediyoruz
         : 'invoice';
 
-    final repo = ref.read(invoiceRepositoryProvider);
+    final repo = ref.read(invoice_providers.invoiceRepositoryProvider);
     final existing = await repo.getInvoiceByNumber(purchase.purchaseNumber,
         includeItems: true);
 
@@ -1116,10 +1356,14 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             ),
             const SizedBox(height: 16.0),
             if (_items.isEmpty)
-              const Center(
+              Center(
                 child: Text(
                   'Henüz ürün eklenmedi',
-                  style: TextStyle(color: Colors.grey),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey[400]
+                        : Colors.grey,
+                  ),
                 ),
               )
             else
@@ -1133,6 +1377,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   Widget _buildProductsTable() {
     // Aynı ürün, aynı para birimi ve aynı birim fiyat olan ürünleri birleştir
     final mergedItems = _mergeIdenticalItems(_items);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       child: Column(
@@ -1141,7 +1386,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           Container(
             padding: const EdgeInsets.all(12.0),
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: isDark ? Colors.grey[800] : Colors.grey.shade100,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(8.0),
                 topRight: Radius.circular(8.0),
@@ -1204,11 +1449,13 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildTableHeader(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontWeight: FontWeight.bold,
         fontSize: 14,
+        color: isDark ? Colors.white : Colors.black87,
       ),
     );
   }
@@ -1264,6 +1511,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildSmallScreenRow(_PurchaseItemForm item, int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(12.0),
       child: Column(
@@ -1274,7 +1522,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
               Expanded(
                 child: Text(
                   item.productName,
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
               ),
               IconButton(
@@ -1331,6 +1582,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   }
 
   Widget _buildLargeScreenRow(_PurchaseItemForm item, int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
     return Container(
       padding: const EdgeInsets.all(12.0),
       child: Row(
@@ -1339,26 +1592,39 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             flex: 3,
             child: Text(
               item.productName,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: textColor,
+              ),
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(item.quantity.toStringAsFixed(0)),
+            child: Text(
+              item.quantity.toStringAsFixed(0),
+              style: TextStyle(color: textColor),
+            ),
           ),
           Expanded(
             flex: 2,
             child: Text(
-                CurrencyHelper.formatCurrency(item.unitPrice, item.currency)),
+              CurrencyHelper.formatCurrency(item.unitPrice, item.currency),
+              style: TextStyle(color: textColor),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: Text('${item.taxRate.toStringAsFixed(1)}%'),
+            child: Text(
+              '${item.taxRate.toStringAsFixed(1)}%',
+              style: TextStyle(color: textColor),
+            ),
           ),
           Expanded(
             flex: 2,
-            child: Text(CurrencyHelper.formatCurrency(
-                item.discountAmount, item.currency)),
+            child: Text(
+              CurrencyHelper.formatCurrency(item.discountAmount, item.currency),
+              style: TextStyle(color: textColor),
+            ),
           ),
           Expanded(
             flex: 2,
@@ -1966,8 +2232,13 @@ class _PurchaseItemForm {
   void applyProduct(Product p) {
     productId = p.id;
     productName = p.name;
-    unitPrice = p.purchasePrice ?? 0;
-    unitPriceController.text = (p.purchasePrice ?? 0).toStringAsFixed(2);
+    // Eğer ürün KDV dahil ise, KDV hariç fiyatı kullan
+    // Çünkü alış sayfasında KDV tekrar eklenecek
+    final priceToUse = p.purchaseTaxInclusive == TaxInclusiveOption.inclusive
+        ? (p.purchasePriceWithoutTax ?? p.purchasePrice ?? 0)
+        : (p.purchasePrice ?? 0);
+    unitPrice = priceToUse;
+    unitPriceController.text = priceToUse.toStringAsFixed(2);
     taxRate = p.salesTaxRate;
     taxRateController.text = p.salesTaxRate.toStringAsFixed(2);
     currency = p.purchaseCurrency ?? p.salesCurrency;
@@ -2570,19 +2841,30 @@ class _AddItemDialogState extends State<_AddItemDialog> {
               Container(
                 padding: const EdgeInsets.all(12.0),
                 decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
+                  color: isDark
+                      ? Colors.blue.shade900.withValues(alpha: 0.3)
+                      : Colors.blue.shade50,
                   borderRadius: BorderRadius.circular(8.0),
-                  border: Border.all(color: Colors.blue.shade200),
+                  border: Border.all(
+                    color: isDark ? Colors.blue.shade700 : Colors.blue.shade200,
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.info, color: Colors.blue.shade600, size: 20),
+                    Icon(
+                      Icons.info,
+                      color:
+                          isDark ? Colors.blue.shade300 : Colors.blue.shade600,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8.0),
                     Expanded(
                       child: Text(
                         'Para birimi: $_lineCurrencyCode (İlk ürünün kur bilgisi kullanılıyor)',
                         style: TextStyle(
-                          color: Colors.blue.shade800,
+                          color: isDark
+                              ? Colors.blue.shade200
+                              : Colors.blue.shade800,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -2949,10 +3231,12 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
             );
           },
           optionsViewBuilder: (context, onSelected, options) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
             return Align(
               alignment: Alignment.topLeft,
               child: Material(
                 elevation: 4,
+                color: isDark ? Colors.grey[850] : Colors.white,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxHeight: 200),
                   child: ListView.builder(
@@ -2963,9 +3247,17 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                       final product = options.elementAt(index);
                       return ListTile(
                         dense: true,
-                        title: Text(product.name),
+                        title: Text(
+                          product.name,
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
                         subtitle: Text(
                           'Kod: ${product.productCode ?? 'N/A'} | SKU: ${product.sku ?? 'N/A'}',
+                          style: TextStyle(
+                            color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          ),
                         ),
                         trailing: Text(
                           CurrencyHelper.formatCurrency(
@@ -2975,6 +3267,9 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
                             widget.purchaseType == PurchaseType.purchase
                                 ? (product.purchaseCurrency ?? 'TRY')
                                 : (product.salesCurrency),
+                          ),
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.black87,
                           ),
                         ),
                         onTap: () async {
@@ -2987,13 +3282,27 @@ class _ProductQuickPickerState extends ConsumerState<_ProductQuickPicker> {
 
                           if (widget.purchaseType == PurchaseType.purchase) {
                             // Normal Alış: Alış fiyatı kullan
-                            originalPrice = product.purchasePrice ?? 0.0;
-                            finalPrice = product.purchasePrice ?? 0.0;
+                            // Eğer ürün KDV dahil ise, KDV hariç fiyatı kullan
+                            // Çünkü alış sayfasında KDV tekrar eklenecek
+                            final basePrice = product.purchaseTaxInclusive ==
+                                    TaxInclusiveOption.inclusive
+                                ? (product.purchasePriceWithoutTax ??
+                                    product.purchasePrice ??
+                                    0.0)
+                                : (product.purchasePrice ?? 0.0);
+                            originalPrice = basePrice;
+                            finalPrice = basePrice;
                             currency = product.purchaseCurrency ?? 'TRY';
                           } else {
                             // İade Alışı: Satış fiyatı kullan
-                            originalPrice = product.salesPrice;
-                            finalPrice = product.salesPrice;
+                            // Eğer ürün KDV dahil ise, KDV hariç fiyatı kullan
+                            // Çünkü alış sayfasında KDV tekrar eklenecek
+                            final basePrice = product.salesTaxInclusive ==
+                                    TaxInclusiveOption.inclusive
+                                ? product.salesPriceWithoutTax
+                                : product.salesPrice;
+                            originalPrice = basePrice;
+                            finalPrice = basePrice;
                             currency = product.salesCurrency;
                           }
                           double customerDiscountRate = 0.0;

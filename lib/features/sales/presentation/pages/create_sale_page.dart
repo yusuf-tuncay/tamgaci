@@ -25,6 +25,8 @@ import 'package:tamgaci/features/accounts/domain/entities/account.dart'
 import 'package:tamgaci/features/accounts/domain/entities/account_transaction.dart'
     as account_txn;
 import 'package:tamgaci/features/accounts/presentation/providers/account_transaction_providers.dart';
+import 'package:tamgaci/features/invoices/presentation/providers/invoice_providers.dart'
+    as invoice_providers;
 import 'package:tamgaci/features/payment_collection/domain/entities/payment_transaction.dart';
 import 'package:tamgaci/features/payment_collection/domain/entities/payment_enums.dart';
 import 'package:tamgaci/features/payment_collection/presentation/providers/payment_collection_providers.dart';
@@ -131,6 +133,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
   @override
   void initState() {
     super.initState();
+    // Vade tarihini varsayılan olarak bugünün tarihi yap
+    _dueDate = DateTime.now();
     if (widget.saleId != null) {
       _loadSale();
     }
@@ -2388,82 +2392,127 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     final notifier = ref.read(saleNotifierProvider.notifier);
     final inventory = InventoryService();
     Future<void> afterSave(String saleId) async {
-      // Paralel stok hareketleri - Future.wait ile hızlandır
-      final stockMovements = _items.map((item) async {
-        try {
-          final movement = StockMovement(
-            id: '',
-            productId: item.productId,
-            warehouseId: _selectedWarehouseId!,
-            type: StockMovementType.stockOut,
-            quantity: item.quantity.round(),
-            reason: 'Satış',
-            reference: saleId,
-            notes: 'Satış hareketi',
-            createdBy: 'system',
-            createdAt: DateTime.now(),
-          );
-          await inventory.recordStockMovement(movement);
-          AppLogger.info(
-              'Stock movement recorded for product: ${item.productId}');
-        } catch (e) {
-          AppLogger.error(
-              'Error recording stock movement for product: ${item.productId}',
-              e);
-        }
-      }).toList();
+      // Depo seçilmişse stok hareketlerini kaydet
+      if (_selectedWarehouseId != null) {
+        // Paralel stok hareketleri - Future.wait ile hızlandır
+        final stockMovements = _items.map((item) async {
+          try {
+            final movement = StockMovement(
+              id: '',
+              productId: item.productId,
+              warehouseId: _selectedWarehouseId!,
+              type: StockMovementType.stockOut,
+              quantity: item.quantity.round(),
+              reason: 'Satış',
+              reference: saleId,
+              notes: 'Satış hareketi',
+              createdBy: 'system',
+              createdAt: DateTime.now(),
+            );
+            await inventory.recordStockMovement(movement);
+            AppLogger.info(
+                'Stock movement recorded for product: ${item.productId}');
+          } catch (e) {
+            AppLogger.error(
+                'Error recording stock movement for product: ${item.productId}',
+                e);
+          }
+        }).toList();
 
-      // Tüm stok hareketlerini paralel olarak çalıştır
-      await Future.wait(stockMovements);
+        // Tüm stok hareketlerini paralel olarak çalıştır
+        await Future.wait(stockMovements);
+      } else {
+        AppLogger.info('Depo seçilmediği için stok hareketi kaydedilmedi');
+      }
 
-      // Ekstre ve müşteri bakiyesi için fatura işlemi kaydı (şirket para biriminde)
+      // Ekstre ve müşteri bakiyesi için işlem kaydı (şirket para biriminde)
+      // NOT: Proformalar ekstreye eklenmez ve bakiyeyi etkilemez
       // NOT: İşlem tutarı olarak KDV dahil toplam (totalBase) kaydedilir
       // Çünkü müşteri borcu KDV dahil tutardır
-      try {
-        final transactionService = TransactionService();
-        final now = DateTime.now();
-        final t = Transaction(
-          id: '',
-          customerId: _customerIdController.text,
-          supplierId: null,
-          type: TransactionType.invoice,
-          amount: totalBase, // KDV dahil toplam - müşteri bu tutarı ödemeli
-          currency: _baseCurrencyCode,
-          description: 'Satış faturası',
-          reference: _saleNumberController.text,
-          transactionDate: now,
-          dueDate: _dueDate,
-          invoiceId: saleId,
-          paymentMethod: _paymentMethod,
-          documentNumber: _saleNumberController.text,
-          status: TransactionStatus.completed,
-          companyId: '',
-          createdAt: now,
-          updatedAt: now,
-          createdBy: 'system',
-          updatedBy: null,
-          metadata: {
-            'totalTry': totalTry,
-            'baseCurrency': _baseCurrencyCode,
-            'paymentCurrency': _paymentCurrencyCode,
-            'subtotal': _baseCurrencyCode == 'TRY'
-                ? subtotalTryBeforeTax
-                : ExchangeRateService().convertCurrency(
-                    subtotalTryBeforeTax, 'TRY', _baseCurrencyCode),
-            'taxAmount': _baseCurrencyCode == 'TRY'
-                ? taxAmountTry
-                : ExchangeRateService()
-                    .convertCurrency(taxAmountTry, 'TRY', _baseCurrencyCode),
-          },
-        );
-        await transactionService.createTransaction(t);
-        AppLogger.info('Transaction created successfully for sale: $saleId');
-      } catch (e) {
-        AppLogger.error('Error creating transaction for sale: $saleId', e);
+      if (_selectedType != SaleType.proforma) {
+        try {
+          final transactionService = TransactionService();
+          final now = DateTime.now();
+
+          // Satış tipine göre açıklama belirle
+          String description;
+          TransactionType transactionType;
+          switch (_selectedType) {
+            case SaleType.waybill:
+              description = 'İrsaliye';
+              transactionType = TransactionType
+                  .invoice; // İrsaliye de fatura gibi işlem görür
+              break;
+            case SaleType.invoice:
+              description = 'Fatura';
+              transactionType = TransactionType.invoice;
+              break;
+            case SaleType.sale:
+              description = 'Satış';
+              transactionType = TransactionType.sale;
+              break;
+            case SaleType.receipt:
+              description = 'Fiş';
+              transactionType = TransactionType.invoice;
+              break;
+            case SaleType.estimate:
+              description = 'Teklif';
+              transactionType = TransactionType.invoice;
+              break;
+            case SaleType.proforma:
+              // Buraya gelmemeli ama yine de kontrol
+              return;
+          }
+
+          final t = Transaction(
+            id: '',
+            customerId: _customerIdController.text,
+            supplierId: null,
+            type: transactionType,
+            amount: totalBase, // KDV dahil toplam - müşteri bu tutarı ödemeli
+            currency: _baseCurrencyCode,
+            description: description,
+            reference: _saleNumberController.text,
+            transactionDate: now,
+            dueDate: _dueDate,
+            invoiceId: saleId,
+            paymentMethod: _paymentMethod,
+            documentNumber: _saleNumberController.text,
+            status: TransactionStatus.completed,
+            companyId: '',
+            createdAt: now,
+            updatedAt: now,
+            createdBy: 'system',
+            updatedBy: null,
+            metadata: {
+              'totalTry': totalTry,
+              'baseCurrency': _baseCurrencyCode,
+              'paymentCurrency': _paymentCurrencyCode,
+              'subtotal': _baseCurrencyCode == 'TRY'
+                  ? subtotalTryBeforeTax
+                  : ExchangeRateService().convertCurrency(
+                      subtotalTryBeforeTax, 'TRY', _baseCurrencyCode),
+              'taxAmount': _baseCurrencyCode == 'TRY'
+                  ? taxAmountTry
+                  : ExchangeRateService()
+                      .convertCurrency(taxAmountTry, 'TRY', _baseCurrencyCode),
+            },
+          );
+          await transactionService.createTransaction(t);
+          AppLogger.info('Transaction created successfully for sale: $saleId');
+        } catch (e) {
+          AppLogger.error('Error creating transaction for sale: $saleId', e);
+        }
+      } else {
+        AppLogger.info(
+            'Proforma için transaction oluşturulmadı (bakiye etkilemez)');
       }
 
       // Ödeme miktarı girilmişse tahsilat kaydı oluştur
-      if (_paymentAmount != null && _paymentAmount! > 0) {
+      // Proformalar için ödeme kaydı oluşturulmaz (bakiye etkilemez)
+      if (_paymentAmount != null &&
+          _paymentAmount! > 0 &&
+          _selectedType != SaleType.proforma) {
         double fxRate = 1.0;
         if (_paymentCurrencyCode.isNotEmpty &&
             _paymentCurrencyCode != _baseCurrencyCode) {
@@ -2495,7 +2544,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             type: TransactionType.payment,
             amount: paymentAmountInBase,
             currency: _baseCurrencyCode,
-            description: 'Satış tahsilatı ($paymentCurrency)',
+            description: _getPaymentDescription(
+                _selectedType, _saleNumberController.text, paymentCurrency),
             reference: _saleNumberController.text,
             transactionDate: now,
             dueDate: null,
@@ -2583,8 +2633,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             toAccountId: null,
             amount: amountInAccountCurrency,
             currency: target.currency,
-            description:
-                'Satış tahsilatı ${_saleNumberController.text} ($paymentCurrency)',
+            description: _getPaymentDescription(
+                _selectedType, _saleNumberController.text, paymentCurrency),
             reference: _saleNumberController.text,
             relatedDocumentId: saleId,
             relatedDocumentType: 'sale',
@@ -2714,6 +2764,29 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                     (accountData['balance'] as num?)?.toDouble() ?? 0.0;
                 final newBalance = currentBalance + amountInAccountCurrency;
 
+                // Satış tipine göre açıklama belirle
+                String descriptionPrefix;
+                switch (_selectedType) {
+                  case SaleType.waybill:
+                    descriptionPrefix = 'İrsaliye tahsilatı';
+                    break;
+                  case SaleType.invoice:
+                    descriptionPrefix = 'Fatura tahsilatı';
+                    break;
+                  case SaleType.sale:
+                    descriptionPrefix = 'Satış tahsilatı';
+                    break;
+                  case SaleType.receipt:
+                    descriptionPrefix = 'Fiş tahsilatı';
+                    break;
+                  case SaleType.estimate:
+                    descriptionPrefix = 'Teklif tahsilatı';
+                    break;
+                  case SaleType.proforma:
+                    descriptionPrefix = 'Proforma tahsilatı';
+                    break;
+                }
+
                 // AccountTransaction oluştur
                 final accountTransaction = account_txn.AccountTransaction(
                   id: '',
@@ -2727,7 +2800,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                   creditAmount: amountInAccountCurrency,
                   balanceAfter: newBalance,
                   description:
-                      'Satış tahsilatı ${_saleNumberController.text} ($paymentCurrency)',
+                      '$descriptionPrefix ${_saleNumberController.text} ($paymentCurrency)',
                   reference: _saleNumberController.text,
                   transactionDate: now,
                   userId: user.uid,
@@ -2772,7 +2845,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       }
 
       // Peşin ödemeyse: müşteri ekstresine payment ve nakit yönetime kasa geliri
-      if (_isCashPayment) {
+      // Proformalar için ödeme kaydı oluşturulmaz (bakiye etkilemez)
+      if (_isCashPayment && _selectedType != SaleType.proforma) {
         double fxRate = 1.0;
         if (_paymentCurrencyCode != _baseCurrencyCode) {
           await ExchangeRateService().getExchangeRate(_paymentCurrencyCode);
@@ -2794,7 +2868,8 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             type: TransactionType.payment,
             amount: totalBase, // defter base currency
             currency: _baseCurrencyCode,
-            description: 'Satış tahsilatı ($_paymentCurrencyCode)',
+            description: _getPaymentDescription(_selectedType,
+                _saleNumberController.text, _paymentCurrencyCode),
             reference: _saleNumberController.text,
             transactionDate: now,
             dueDate: null,
@@ -3011,6 +3086,29 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                     (accountData['balance'] as num?)?.toDouble() ?? 0.0;
                 final newBalance = currentBalance + amountInAccountCurrency;
 
+                // Satış tipine göre açıklama belirle
+                String descriptionPrefix;
+                switch (_selectedType) {
+                  case SaleType.waybill:
+                    descriptionPrefix = 'İrsaliye tahsilatı';
+                    break;
+                  case SaleType.invoice:
+                    descriptionPrefix = 'Fatura tahsilatı';
+                    break;
+                  case SaleType.sale:
+                    descriptionPrefix = 'Satış tahsilatı';
+                    break;
+                  case SaleType.receipt:
+                    descriptionPrefix = 'Fiş tahsilatı';
+                    break;
+                  case SaleType.estimate:
+                    descriptionPrefix = 'Teklif tahsilatı';
+                    break;
+                  case SaleType.proforma:
+                    descriptionPrefix = 'Proforma tahsilatı';
+                    break;
+                }
+
                 // AccountTransaction oluştur
                 final accountTransaction = account_txn.AccountTransaction(
                   id: '',
@@ -3024,7 +3122,7 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                   creditAmount: amountInAccountCurrency,
                   balanceAfter: newBalance,
                   description:
-                      'Satış tahsilatı ${_saleNumberController.text} ($_paymentCurrencyCode)',
+                      '$descriptionPrefix ${_saleNumberController.text} ($_paymentCurrencyCode)',
                   reference: _saleNumberController.text,
                   transactionDate: now,
                   userId: user.uid,
@@ -3077,6 +3175,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       } else {
         await notifier.createSale(sale);
         saleId = _saleNumberController.text;
+      }
+
+      // Satış kaydedildikten sonra ilgili provider'ları invalidate et ve yenile
+      ref.invalidate(saleNotifierProvider);
+      // Satış listesini yeniden yükle
+      await ref.read(saleNotifierProvider.notifier).getSales();
+      ref.invalidate(invoice_providers.invoicesProvider);
+      ref.invalidate(invoice_providers.invoicesStreamProvider);
+      if (_customerIdController.text.isNotEmpty) {
+        ref.invalidate(invoice_providers
+            .customerInvoicesStreamProvider(_customerIdController.text));
+        // Müşteri detay ekranındaki satış listesi için
+        ref.invalidate(
+            customerInvoicesStreamProvider(_customerIdController.text));
       }
 
       // afterSave içindeki hatalar satış kaydını engellememeli
@@ -3232,6 +3344,20 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         await notifier.createSale(sale);
       }
 
+      // Satış kaydedildikten sonra ilgili provider'ları invalidate et ve yenile
+      ref.invalidate(saleNotifierProvider);
+      // Satış listesini yeniden yükle
+      await ref.read(saleNotifierProvider.notifier).getSales();
+      ref.invalidate(invoice_providers.invoicesProvider);
+      ref.invalidate(invoice_providers.invoicesStreamProvider);
+      if (_customerIdController.text.isNotEmpty) {
+        ref.invalidate(invoice_providers
+            .customerInvoicesStreamProvider(_customerIdController.text));
+        // Müşteri detay ekranındaki satış listesi için
+        ref.invalidate(
+            customerInvoicesStreamProvider(_customerIdController.text));
+      }
+
       // Loading dialog'u güvenli bir şekilde kapat (microtask ile)
       if (mounted) {
         Future.microtask(() {
@@ -3332,6 +3458,33 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  /// Satış tipine göre tahsilat açıklaması döndürür
+  String _getPaymentDescription(
+      SaleType type, String saleNumber, String currency) {
+    String prefix;
+    switch (type) {
+      case SaleType.waybill:
+        prefix = 'İrsaliye tahsilatı';
+        break;
+      case SaleType.invoice:
+        prefix = 'Fatura tahsilatı';
+        break;
+      case SaleType.sale:
+        prefix = 'Satış tahsilatı';
+        break;
+      case SaleType.receipt:
+        prefix = 'Fiş tahsilatı';
+        break;
+      case SaleType.estimate:
+        prefix = 'Teklif tahsilatı';
+        break;
+      case SaleType.proforma:
+        prefix = 'Proforma tahsilatı';
+        break;
+    }
+    return '$prefix $saleNumber ($currency)';
   }
 
   Future<void> _initSaleNumber({bool force = false}) async {

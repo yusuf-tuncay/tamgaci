@@ -611,10 +611,10 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
         // ignore reload errors and continue with current data
       }
 
-      final refreshedUser = _firebaseAuth.currentUser;
-      if (refreshedUser == null) {
-        return null;
-      }
+        final refreshedUser = _firebaseAuth.currentUser;
+        if (refreshedUser == null) {
+          return null;
+        }
 
       try {
         final userDoc =

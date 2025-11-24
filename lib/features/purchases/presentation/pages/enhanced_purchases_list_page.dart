@@ -75,6 +75,10 @@ class _EnhancedPurchasesListPageState
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    // Alışları yükle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(purchaseNotifierProvider.notifier).getPurchases();
+    });
   }
 
   @override

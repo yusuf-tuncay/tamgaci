@@ -73,6 +73,10 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    // Satışları yükle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(saleNotifierProvider.notifier).getSales();
+    });
   }
 
   @override
@@ -837,6 +841,10 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
 
   List<Sale> _applyFilters(List<Sale> sales, String searchQuery) {
     List<Sale> filtered = List.from(sales);
+
+    // Proforma satışları filtrele (gösterilmez)
+    filtered =
+        filtered.where((sale) => sale.type != SaleType.proforma).toList();
 
     // Arama filtresi
     if (searchQuery.isNotEmpty) {

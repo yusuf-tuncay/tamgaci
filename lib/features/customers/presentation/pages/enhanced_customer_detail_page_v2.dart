@@ -55,7 +55,8 @@ class _EnhancedCustomerDetailPageV2State
   // ignore: unused_field
   int _selectedTabIndex = 0;
   final bool _hasLoadedTransactions = false;
-  bool _isCustomerInfoExpanded = false; // Müşteri bilgileri açılır/kapanır kontrolü
+  bool _isCustomerInfoExpanded =
+      false; // Müşteri bilgileri açılır/kapanır kontrolü
   bool _isAccountSummaryExpanded = true; // Hesap özeti açılır/kapanır kontrolü
   int _transactionLimit = 20; // Gösterilecek işlem sayısı
   int _transactionsBadgeCount = 0;
@@ -190,7 +191,7 @@ class _EnhancedCustomerDetailPageV2State
 
     // Hesap ekstresinden net bakiyeyi hesapla (açılış bakiyesi dahil)
     double calculatedBalance = customer.balance;
-    
+
     if (invoicesAsync.hasValue && paymentTransactionsAsync.hasValue) {
       final invoices = invoicesAsync.value ?? [];
       final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
@@ -213,8 +214,7 @@ class _EnhancedCustomerDetailPageV2State
 
       // Faturalardan borç
       for (var invoice in invoices) {
-        final totalAmount =
-            (invoice['totalAmount'] as num?)?.toDouble() ?? 0.0;
+        final totalAmount = (invoice['totalAmount'] as num?)?.toDouble() ?? 0.0;
         totalDebit += totalAmount;
       }
 
@@ -306,7 +306,10 @@ class _EnhancedCustomerDetailPageV2State
                             'Kod: ${customer.customerCode}',
                             style: GoogleFonts.poppins(
                               fontSize: 14,
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.7),
                             ),
                           ),
                         ],
@@ -324,8 +327,8 @@ class _EnhancedCustomerDetailPageV2State
                       ),
                     ),
                     child: Text(
-                    CurrencyHelper.formatCurrency(
-                        calculatedBalance, currencyCode),
+                      CurrencyHelper.formatCurrency(
+                          calculatedBalance, currencyCode),
                       style: GoogleFonts.poppins(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -461,7 +464,10 @@ class _EnhancedCustomerDetailPageV2State
                 label,
                 style: GoogleFonts.poppins(
                   fontSize: 12,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.6),
                 ),
               ),
               Text(
@@ -646,7 +652,10 @@ class _EnhancedCustomerDetailPageV2State
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(context).colorScheme.shadow.withValues(alpha: isDark ? 0.3 : 0.1),
+            color: Theme.of(context)
+                .colorScheme
+                .shadow
+                .withValues(alpha: isDark ? 0.3 : 0.1),
             blurRadius: 20,
             offset: const Offset(0, 8),
             spreadRadius: 0,
@@ -660,8 +669,14 @@ class _EnhancedCustomerDetailPageV2State
         ],
         border: Border.all(
           color: isDark
-              ? Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
-              : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.8),
+              ? Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.3)
+              : Theme.of(context)
+                  .colorScheme
+                  .surfaceContainerHighest
+                  .withValues(alpha: 0.8),
           width: 1,
         ),
       ),
@@ -694,7 +709,8 @@ class _EnhancedCustomerDetailPageV2State
           indicatorPadding: const EdgeInsets.all(6),
           dividerColor: Colors.transparent,
           labelColor: Theme.of(context).colorScheme.onPrimary,
-          unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+          unselectedLabelColor:
+              Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
           labelStyle: GoogleFonts.poppins(
             fontWeight: FontWeight.w600,
             fontSize: 13,
@@ -719,7 +735,7 @@ class _EnhancedCustomerDetailPageV2State
             ),
             _buildPremiumTab(
               icon: Icons.receipt_long_rounded,
-              label: 'Faturalar',
+              label: 'Satışlar / Alışlar',
               isSelected: _selectedTabIndex == 1,
               isDark: isDark,
               badgeCount: invoicesCount,
@@ -767,7 +783,10 @@ class _EnhancedCustomerDetailPageV2State
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.2)
+                      ? Theme.of(context)
+                          .colorScheme
+                          .onPrimary
+                          .withValues(alpha: 0.2)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -776,7 +795,10 @@ class _EnhancedCustomerDetailPageV2State
                   size: isSelected ? 22 : 20,
                   color: isSelected
                       ? Theme.of(context).colorScheme.onPrimary
-                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      : Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
                 ),
               ),
               if ((badgeCount ?? 0) > 0)
@@ -787,11 +809,16 @@ class _EnhancedCustomerDetailPageV2State
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.primary,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.15),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .shadow
+                              .withValues(alpha: 0.15),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
@@ -820,7 +847,10 @@ class _EnhancedCustomerDetailPageV2State
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected
                   ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7),
               letterSpacing: isSelected ? 0.5 : 0.3,
             ),
             child: Text(
@@ -923,8 +953,7 @@ class _EnhancedCustomerDetailPageV2State
             final payments = cashState.cashTransactions
                 .where((t) => invoiceIds.contains(t.relatedDocumentId))
                 .where((t) {
-              final metaId =
-                  t.metadata['paymentTransactionId']?.toString();
+              final metaId = t.metadata['paymentTransactionId']?.toString();
               if (metaId != null && paymentTransactionIds.contains(metaId)) {
                 return false;
               }
@@ -1076,7 +1105,8 @@ class _EnhancedCustomerDetailPageV2State
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        context.push('/customers/${customer.id}/all-transactions');
+                        context
+                            .push('/customers/${customer.id}/all-transactions');
                       },
                       icon: const Icon(Icons.list_alt),
                       label: Text(
@@ -1382,7 +1412,7 @@ class _EnhancedCustomerDetailPageV2State
     final cashState = ref.watch(cashManagementNotifierProvider);
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
-    
+
     return invoicesAsync.when(
       data: (invoices) {
         // Widget dispose edildiyse boş widget döndür
@@ -1392,12 +1422,12 @@ class _EnhancedCustomerDetailPageV2State
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
-        
+
         final paymentTransactions = paymentTransactionsAsync.maybeWhen(
           data: (value) => value,
           orElse: () => <PaymentTransaction>[],
         );
-        
+
         // Sadece ödemeleri göster (faturalar değil) - Cash payments ve Payment Transactions
         final paymentItems = [
           ...payments.map((t) => {
@@ -1791,7 +1821,7 @@ class _EnhancedCustomerDetailPageV2State
 
     // Mobil için kompakt görünüm, masaüstü için tablo
     final isMobile = TamgaciConstants.isMobile(context);
-    
+
     if (isMobile) {
       return _buildMobileStatementList(entries, isDark);
     }
@@ -1881,7 +1911,8 @@ class _EnhancedCustomerDetailPageV2State
                 final date = entry['date'] as DateTime? ?? DateTime.now();
                 final isInvoice = entry['type'] == 'invoice';
                 final isPayment = entry['type'] == 'payment';
-                final isPaymentTransaction = entry['type'] == 'payment_transaction';
+                final isPaymentTransaction =
+                    entry['type'] == 'payment_transaction';
                 final isOpeningBalance = entry['type'] == 'opening_balance';
 
                 // İşlem adı ve açıklama
@@ -1895,9 +1926,11 @@ class _EnhancedCustomerDetailPageV2State
                   // Açılış bakiyesi işlemi
                   transactionName = 'Açılış Bakiyesi';
                   description = 'Müşteri kayıt açılış bakiyesi';
-                  final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+                  final openingBalance =
+                      (transaction['openingBalance'] as num?)?.toDouble() ??
+                          0.0;
                   currency = transaction['currency'] ?? 'TRY';
-                  
+
                   // Açılış bakiyesi pozitifse alacak, negatifse borç
                   if (openingBalance > 0) {
                     credit = openingBalance;
@@ -1955,7 +1988,8 @@ class _EnhancedCustomerDetailPageV2State
                       transactionName = 'Cari Virman';
                       break;
                   }
-                  description = '${pt.transactionNumber} - ${pt.description ?? ""}';
+                  description =
+                      '${pt.transactionNumber} - ${pt.description ?? ""}';
                   final amount = pt.amount;
                   currency = pt.currency;
 
@@ -2085,7 +2119,8 @@ class _EnhancedCustomerDetailPageV2State
         if (isOpeningBalance) {
           transactionName = 'Açılış Bakiyesi';
           description = 'Müşteri kayıt açılış bakiyesi';
-          final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+          final openingBalance =
+              (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
           currency = transaction['currency'] ?? 'TRY';
           if (openingBalance > 0) {
             credit = openingBalance;
@@ -2279,11 +2314,13 @@ class _EnhancedCustomerDetailPageV2State
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          CurrencyHelper.formatCurrency(runningBalance, currency),
+                          CurrencyHelper.formatCurrency(
+                              runningBalance, currency),
                           style: GoogleFonts.poppins(
                             fontSize: 13,
                             fontWeight: FontWeight.bold,
-                            color: runningBalance >= 0 ? Colors.green : Colors.red,
+                            color:
+                                runningBalance >= 0 ? Colors.green : Colors.red,
                           ),
                         ),
                       ],
@@ -2295,7 +2332,7 @@ class _EnhancedCustomerDetailPageV2State
           ),
         );
       },
-          );
+    );
   }
 
   // Purchase tile widget
@@ -2483,36 +2520,35 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildPaymentTransactionTile(PaymentTransaction pt, bool isDark) {
     // Payment Transaction with detailed type information
-    final color = pt.direction == PaymentDirection.incoming
-        ? Colors.green
-        : Colors.red;
-    
+    final color =
+        pt.direction == PaymentDirection.incoming ? Colors.green : Colors.red;
+
     // Ödeme türüne göre ikon ve metin
     String typeText = '';
     IconData icon = Icons.payment;
-    
+
     switch (pt.type) {
       case PaymentTransactionType.cash:
-        typeText = pt.direction == PaymentDirection.incoming 
-            ? 'Nakit Tahsilat' 
+        typeText = pt.direction == PaymentDirection.incoming
+            ? 'Nakit Tahsilat'
             : 'Nakit Ödeme';
         icon = Icons.money;
         break;
       case PaymentTransactionType.check:
-        typeText = pt.direction == PaymentDirection.incoming 
-            ? 'Çek Tahsilatı' 
+        typeText = pt.direction == PaymentDirection.incoming
+            ? 'Çek Tahsilatı'
             : 'Çek Ödemesi';
         icon = Icons.check_circle_outline;
         break;
       case PaymentTransactionType.promissoryNote:
-        typeText = pt.direction == PaymentDirection.incoming 
-            ? 'Senet Tahsilatı' 
+        typeText = pt.direction == PaymentDirection.incoming
+            ? 'Senet Tahsilatı'
             : 'Senet Ödemesi';
         icon = Icons.description;
         break;
       case PaymentTransactionType.eftTransfer:
-        typeText = pt.direction == PaymentDirection.incoming 
-            ? 'Havale/EFT Tahsilat' 
+        typeText = pt.direction == PaymentDirection.incoming
+            ? 'Havale/EFT Tahsilat'
             : 'Havale/EFT Ödeme';
         icon = Icons.account_balance;
         break;
@@ -2716,11 +2752,16 @@ class _EnhancedCustomerDetailPageV2State
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildDetailRow('İşlem No', payment.transactionNumber),
-              _buildDetailRow('Tutar',
-                  CurrencyHelper.formatCurrency(payment.amount, payment.currency)),
-              _buildDetailRow('Tarih',
-                  DateFormat('dd.MM.yyyy HH:mm').format(payment.transactionDate)),
-              if (payment.description != null && payment.description!.isNotEmpty)
+              _buildDetailRow(
+                  'Tutar',
+                  CurrencyHelper.formatCurrency(
+                      payment.amount, payment.currency)),
+              _buildDetailRow(
+                  'Tarih',
+                  DateFormat('dd.MM.yyyy HH:mm')
+                      .format(payment.transactionDate)),
+              if (payment.description != null &&
+                  payment.description!.isNotEmpty)
                 _buildDetailRow('Açıklama', payment.description!),
               _buildDetailRow('Tip', payment.type.toString()),
             ],
@@ -2760,7 +2801,10 @@ class _EnhancedCustomerDetailPageV2State
               _buildDetailRow('İşlem No', pt.transactionNumber),
               _buildDetailRow('Tip', _getPaymentTypeName(pt.type)),
               _buildDetailRow(
-                  'Yön', pt.direction == PaymentDirection.incoming ? 'Tahsilat' : 'Ödeme'),
+                  'Yön',
+                  pt.direction == PaymentDirection.incoming
+                      ? 'Tahsilat'
+                      : 'Ödeme'),
               _buildDetailRow('Tutar',
                   CurrencyHelper.formatCurrency(pt.amount, pt.currency)),
               _buildDetailRow('Tarih',
@@ -2772,8 +2816,7 @@ class _EnhancedCustomerDetailPageV2State
               _buildDetailRow('Kategori', pt.category.name),
               if (pt.description != null && pt.description!.isNotEmpty)
                 _buildDetailRow('Açıklama', pt.description!),
-              if (pt.referenceNumber != null &&
-                  pt.referenceNumber!.isNotEmpty)
+              if (pt.referenceNumber != null && pt.referenceNumber!.isNotEmpty)
                 _buildDetailRow('Referans', pt.referenceNumber!),
             ],
           ),
@@ -2812,10 +2855,14 @@ class _EnhancedCustomerDetailPageV2State
               if (transaction.documentNumber != null &&
                   transaction.documentNumber!.isNotEmpty)
                 _buildDetailRow('Belge No', transaction.documentNumber!),
-              _buildDetailRow('Tutar',
-                  CurrencyHelper.formatCurrency(transaction.amount, transaction.currency)),
-              _buildDetailRow('Tarih',
-                  DateFormat('dd.MM.yyyy HH:mm').format(transaction.transactionDate)),
+              _buildDetailRow(
+                  'Tutar',
+                  CurrencyHelper.formatCurrency(
+                      transaction.amount, transaction.currency)),
+              _buildDetailRow(
+                  'Tarih',
+                  DateFormat('dd.MM.yyyy HH:mm')
+                      .format(transaction.transactionDate)),
               _buildDetailRow('İşlem Türü', transaction.type.name),
               _buildDetailRow('Durum', transaction.status.name),
               if (transaction.reference != null &&
@@ -2852,8 +2899,7 @@ class _EnhancedCustomerDetailPageV2State
     final exportService = ExportService();
     final details = <String, String>{
       'İşlem No': payment.transactionNumber,
-      'Tarih':
-          DateFormat('dd.MM.yyyy HH:mm').format(payment.transactionDate),
+      'Tarih': DateFormat('dd.MM.yyyy HH:mm').format(payment.transactionDate),
       'Tutar': _formatPdfCurrency(payment.amount, payment.currency),
       'Tip': payment.type.toString(),
       if (payment.description != null && payment.description!.isNotEmpty)
@@ -2883,7 +2929,8 @@ class _EnhancedCustomerDetailPageV2State
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              content:
+                  Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -2941,7 +2988,8 @@ class _EnhancedCustomerDetailPageV2State
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              content:
+                  Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -2966,16 +3014,15 @@ class _EnhancedCustomerDetailPageV2State
       'İşlem ID': transaction.id,
       'İşlem Türü': transaction.type.name,
       'Durum': transaction.status.name,
-      'Tutar':
-          _formatPdfCurrency(transaction.amount, transaction.currency),
+      'Tutar': _formatPdfCurrency(transaction.amount, transaction.currency),
       'Tarih':
           DateFormat('dd.MM.yyyy HH:mm').format(transaction.transactionDate),
       if (transaction.dueDate != null)
-        'Vade Tarihi':
-            DateFormat('dd.MM.yyyy').format(transaction.dueDate!),
+        'Vade Tarihi': DateFormat('dd.MM.yyyy').format(transaction.dueDate!),
       if (transaction.reference != null && transaction.reference!.isNotEmpty)
         'Referans': transaction.reference!,
-      if (transaction.description != null && transaction.description!.isNotEmpty)
+      if (transaction.description != null &&
+          transaction.description!.isNotEmpty)
         'Açıklama': transaction.description!,
       if (transaction.paymentMethod != null &&
           transaction.paymentMethod!.isNotEmpty)
@@ -3011,7 +3058,8 @@ class _EnhancedCustomerDetailPageV2State
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              content:
+                  Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -3138,7 +3186,7 @@ class _EnhancedCustomerDetailPageV2State
     final cashState = ref.watch(cashManagementNotifierProvider);
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
-    
+
     final currencyCode = _customerCurrencyCode(customer);
     return invoicesAsync.when(
       data: (invoices) {
@@ -3148,7 +3196,7 @@ class _EnhancedCustomerDetailPageV2State
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
-        
+
         final paymentTransactions = paymentTransactionsAsync.maybeWhen(
           data: (value) => value,
           orElse: () => <PaymentTransaction>[],
@@ -3328,7 +3376,7 @@ class _EnhancedCustomerDetailPageV2State
     final cashState = ref.watch(cashManagementNotifierProvider);
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
-    
+
     return invoicesAsync.when(
       data: (invoices) {
         // Widget dispose edildiyse boş widget döndür
@@ -3338,17 +3386,18 @@ class _EnhancedCustomerDetailPageV2State
         final payments = cashState.cashTransactions
             .where((t) => invoiceIds.contains(t.relatedDocumentId))
             .toList();
-        
+
         final paymentTransactions = paymentTransactionsAsync.maybeWhen(
           data: (value) => value,
           orElse: () => <PaymentTransaction>[],
         );
-        
+
         final entries = <Map<String, dynamic>>[];
-        
+
         // Açılış bakiyesi varsa ekle (en eski tarihli işlem olarak)
         if (customer.openingBalance != null && customer.openingBalance != 0) {
-          final openingBalanceDate = customer.createdAt.subtract(const Duration(days: 1));
+          final openingBalanceDate =
+              customer.createdAt.subtract(const Duration(days: 1));
           entries.add({
             'type': 'opening_balance',
             'date': openingBalanceDate,
@@ -3358,7 +3407,7 @@ class _EnhancedCustomerDetailPageV2State
             },
           });
         }
-        
+
         // Diğer işlemleri ekle
         entries.addAll([
           ...invoices.map((i) => {
@@ -3377,16 +3426,16 @@ class _EnhancedCustomerDetailPageV2State
                 'data': pt,
               }),
         ]);
-        
+
         // Tarihe göre sırala (en eski en üstte)
         entries.sort((a, b) {
-            final dateA = a['date'] as DateTime?;
-            final dateB = b['date'] as DateTime?;
-            if (dateA == null && dateB == null) return 0;
-            if (dateA == null) return 1;
-            if (dateB == null) return -1;
-            return dateA.compareTo(dateB); // En eski en üstte (kronolojik sıra)
-          });
+          final dateA = a['date'] as DateTime?;
+          final dateB = b['date'] as DateTime?;
+          if (dateA == null && dateB == null) return 0;
+          if (dateA == null) return 1;
+          if (dateB == null) return -1;
+          return dateA.compareTo(dateB); // En eski en üstte (kronolojik sıra)
+        });
 
         // Ekstreden son bakiyeyi hesapla ve müşteri bakiyesine yansıt
         double finalBalance = 0.0;
@@ -3401,14 +3450,16 @@ class _EnhancedCustomerDetailPageV2State
           double credit = 0.0;
 
           if (isOpeningBalance) {
-            final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+            final openingBalance =
+                (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
             if (openingBalance > 0) {
               credit = openingBalance;
             } else if (openingBalance < 0) {
               debit = openingBalance.abs();
             }
           } else if (isInvoice) {
-            final totalAmount = (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
             debit = totalAmount;
           } else if (isPayment) {
             final amount = (transaction as CashTransaction).amount;
@@ -3430,9 +3481,9 @@ class _EnhancedCustomerDetailPageV2State
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             try {
               await ref.read(customerRepositoryProvider).updateCustomerBalance(
-                customer.id,
-                finalBalance,
-              );
+                    customer.id,
+                    finalBalance,
+                  );
               // Müşteri listesini yenile
               ref.invalidate(customersProvider);
             } catch (e) {
@@ -3591,7 +3642,8 @@ class _EnhancedCustomerDetailPageV2State
         if (isOpeningBalance) {
           transactionName = 'Açılış Bakiyesi';
           description = 'Müşteri kayıt açılış bakiyesi';
-          final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+          final openingBalance =
+              (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
           if (openingBalance > 0) {
             credit = openingBalance;
           } else if (openingBalance < 0) {
@@ -3794,7 +3846,8 @@ class _EnhancedCustomerDetailPageV2State
         if (isOpeningBalance) {
           transactionName = 'Açılış Bakiyesi';
           description = 'Müşteri kayıt açılış bakiyesi';
-          final openingBalance = (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
+          final openingBalance =
+              (transaction['openingBalance'] as num?)?.toDouble() ?? 0.0;
           if (openingBalance > 0) {
             credit = openingBalance;
           } else if (openingBalance < 0) {
@@ -3879,8 +3932,8 @@ class _EnhancedCustomerDetailPageV2State
         data.add([
           DateFormat('dd.MM.yyyy HH:mm').format(date),
           transactionName,
-          description.length > 40 
-              ? '${description.substring(0, 40)}...' 
+          description.length > 40
+              ? '${description.substring(0, 40)}...'
               : description,
           formatAmountLocal(debit),
           formatAmountLocal(credit),

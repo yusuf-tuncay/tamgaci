@@ -1684,8 +1684,8 @@ class _LandingPageState extends State<LandingPage>
     final isTablet = _isTablet(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final double minHeightMobile = 230;
-    final double minHeightTablet = 260;
+    double minHeightMobile = 230;
+    double minHeightTablet = 260;
 
     return ConstrainedBox(
       constraints: BoxConstraints(
