@@ -5,6 +5,7 @@ import 'package:tamgaci/features/auth/data/models/user_model.dart';
 import 'package:tamgaci/features/auth/domain/entities/user.dart';
 import 'package:tamgaci/core/errors/failures.dart';
 import 'package:tamgaci/features/accounts/data/services/account_initialization_service.dart';
+import 'package:tamgaci/features/warehouses/data/services/warehouse_initialization_service.dart';
 
 /// Auth Firebase datasource
 /// Firebase Authentication ve Firestore işlemleri için datasource
@@ -204,7 +205,17 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
           await accountService.initializeDefaultAccounts();
           debugPrint('✅ Varsayılan hesaplar oluşturuldu');
         } catch (e) {
-          debugPrint('⚠️ Varsayılan hesaplar oluşturulamadı (kayıt devam ediyor): $e');
+          debugPrint(
+              '⚠️ Varsayılan hesaplar oluşturulamadı (kayıt devam ediyor): $e');
+        }
+
+        try {
+          final warehouseService = WarehouseInitializationService();
+          await warehouseService.createDefaultWarehouseForUser();
+          debugPrint('✅ Varsayılan depo oluşturuldu');
+        } catch (e) {
+          debugPrint(
+              '⚠️ Varsayılan depo oluşturulamadı (kayıt devam ediyor): $e');
         }
       } on FirebaseException catch (_) {
         // Firestore izni yoksa kayıt Auth tarafında tamamlanmıştır.
@@ -595,27 +606,67 @@ class AuthFirebaseDataSourceImpl implements AuthFirebaseDataSource {
       }
 
       try {
-        // Kullanıcı token'ını yenile
         await firebaseUser.reload();
-        final refreshedUser = _firebaseAuth.currentUser;
+      } catch (_) {
+        // ignore reload errors and continue with current data
+      }
 
-        if (refreshedUser == null) {
-          return null;
-        }
+      final refreshedUser = _firebaseAuth.currentUser;
+      if (refreshedUser == null) {
+        return null;
+      }
 
+      try {
         final userDoc =
             await _firestore.collection('users').doc(refreshedUser.uid).get();
 
         if (!userDoc.exists) {
-          return null;
+          // Kullanıcı dokümanı eksikse oluştur
+          return await _createMissingUserDocument(refreshedUser);
         }
 
         return UserModel.fromFirestore(userDoc);
+      } on FirebaseException catch (e) {
+        debugPrint(
+            '⚠️ authStateChanges Firestore error, falling back to auth data: ${e.message ?? e.code}');
+        return _userModelFromFirebaseUser(refreshedUser);
       } catch (e) {
-        // Auth hatası durumunda null döndür
-        return null;
+        debugPrint(
+            '⚠️ authStateChanges unexpected error, falling back to auth data: $e');
+        return _userModelFromFirebaseUser(refreshedUser);
       }
     });
+  }
+
+  UserModel _userModelFromFirebaseUser(firebase_auth.User user) {
+    final displayName = user.displayName ?? '';
+    final hasSpace = displayName.contains(' ');
+    return UserModel(
+      id: user.uid,
+      email: user.email ?? '',
+      name: hasSpace ? displayName.split(' ').first : displayName,
+      surname: hasSpace ? displayName.split(' ').skip(1).join(' ') : '',
+      phone: user.phoneNumber,
+      phoneE164: user.phoneNumber,
+      phoneCountry: null,
+      phoneDialCode: null,
+      role: UserRole.user,
+      status: UserStatus.active,
+      tenantId: 'default_tenant_${user.uid.substring(0, 8)}',
+      createdAt: user.metadata.creationTime ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+      isEmailVerified: user.emailVerified,
+      isTwoFactorEnabled: false,
+      taxId: null,
+      taxOffice: null,
+      billingAddress: null,
+      subscriptionStatus: SubscriptionStatus.trial,
+      subscriptionPlan: SubscriptionPlan.none,
+      trialStartAt: DateTime.now(),
+      trialEndAt: DateTime.now().add(const Duration(days: 30)),
+      subscriptionStartAt: null,
+      subscriptionEndAt: null,
+    );
   }
 
   @override

@@ -693,28 +693,40 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       child: Column(
         children: [
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderCard(),
-                  const SizedBox(height: 16.0),
-                  _buildBasicInfoCard(),
-                  const SizedBox(height: 16.0),
-                  _buildItemsCard(),
-                  const SizedBox(height: 16.0),
-                  _buildSummaryCard(),
-                  const SizedBox(height: 16.0),
-                  // Ödeme tipi seçimi
-                  _buildPaymentTypeCard(),
-                  // Ödeme kartı sadece peşin ödeme seçildiğinde gösterilir
-                  if (_isCashPayment) ...[
-                    const SizedBox(height: 16.0),
-                    _buildPaymentCard(),
-                  ],
-                ],
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isLargeScreen = TamgaciConstants.isDesktop(context) ||
+                    TamgaciConstants.isWideDesktop(context);
+                final maxWidth = isLargeScreen ? 1100.0 : null;
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: maxWidth ?? constraints.maxWidth,
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeaderCard(),
+                          const SizedBox(height: 16.0),
+                          _buildBasicInfoCard(),
+                          const SizedBox(height: 16.0),
+                          _buildItemsCard(),
+                          const SizedBox(height: 16.0),
+                          _buildSummaryCard(),
+                          const SizedBox(height: 16.0),
+                          _buildPaymentTypeCard(),
+                          if (_isCashPayment) ...[
+                            const SizedBox(height: 16.0),
+                            _buildPaymentCard(),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           _buildBottomActions(),
@@ -2160,42 +2172,56 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Ana Kaydet Butonu (Alış yap modülü ile tutarlı)
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saveSale,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(TamgaciConstants.radiusMD),
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLargeScreen = TamgaciConstants.isDesktop(context) ||
+              TamgaciConstants.isWideDesktop(context);
+          final maxWidth = isLargeScreen ? 1100.0 : null;
+          return Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: maxWidth ?? constraints.maxWidth,
               ),
-              child: Text(
-                widget.saleId != null ? 'Satışı Güncelle' : 'Satışı Kaydet',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _saveSale,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(TamgaciConstants.radiusMD),
+                        ),
+                      ),
+                      child: Text(
+                        widget.saleId != null
+                            ? 'Satışı Güncelle'
+                            : 'Satışı Kaydet',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _saveSaleDraft,
+                      icon: const Icon(Icons.save_as),
+                      label: const Text('Taslak Olarak Kaydet'),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          // Taslak Kaydet Butonu (Alış yap modülü ile tutarlı)
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _saveSaleDraft,
-              icon: const Icon(Icons.save_as),
-              label: const Text('Taslak Olarak Kaydet'),
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

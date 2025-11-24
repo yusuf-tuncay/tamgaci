@@ -239,313 +239,337 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         ],
       ),
       // No drawer on create page, use back button for navigation
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          padding: TamgaciConstants.paddingMedium(context),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Temel Bilgiler
-              _buildSectionCard(
-                'Temel Bilgiler',
-                Icons.info_outline,
-                [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 16),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant),
-                      borderRadius: BorderRadius.circular(8),
-                      color: Theme.of(context).colorScheme.surface,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.receipt_long,
-                            color: AppColors.primary, size: 20),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            '${_purchaseType == PurchaseType.returnPurchase ? 'İade Alış' : 'Normal Alış'} Numarası: ',
-                            style: GoogleFonts.poppins(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface
-                                  .withValues(alpha: 0.7),
-                              fontSize: 14,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            _purchaseNumberController.text,
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w600,
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontSize: 14,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                            textAlign: TextAlign.right,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildPurchaseTypeSelector(),
-                  const SizedBox(height: 16),
-                  _buildCustomerSelector(),
-                  const SizedBox(height: 16),
-                  _buildDateField(
-                    label: 'Alış Tarihi',
-                    value: _purchaseDate,
-                    onChanged: (date) {
-                      if (date != null) {
-                        setState(() {
-                          _purchaseDate = date;
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Açıklama ve Notlar
-              _buildSectionCard(
-                'Açıklama ve Notlar',
-                Icons.note_outlined,
-                [
-                  _buildTextField(
-                    controller: _descriptionController,
-                    label: 'Açıklama',
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildTextField(
-                    controller: _notesController,
-                    label: 'Notlar',
-                    maxLines: 3,
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Ödeme Bilgileri - Sadece normal alış için göster
-              if (_purchaseType == PurchaseType.purchase) ...[
-                _buildSectionCard(
-                  'Ödeme Bilgileri',
-                  Icons.payment,
-                  [
-                    _buildCurrencyAndFxRow(),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _paymentTermsController,
-                      label: 'Ödeme Koşulları',
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _shippingCostController,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
-                        labelText: 'Kargo (Nakliye) Tutarı',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Consumer(builder: (context, ref, _) {
-                            final asyncWarehouses =
-                                ref.watch(warehousesProvider);
-                            return asyncWarehouses.when(
-                              data: (list) {
-                                // unique values and safe initial
-                                final items = <DropdownMenuItem<String>>[
-                                  const DropdownMenuItem(
-                                    value: 'no_stock',
-                                    child: Text('Stoksuz Ürün'),
-                                  ),
-                                  for (final w in list)
-                                    DropdownMenuItem(
-                                        value: w.id,
-                                        child: Text(
-                                            w.code != null && w.code!.isNotEmpty
-                                                ? '${w.name} (${w.code})'
-                                                : w.name)),
-                                ];
-                                String? value = _selectedWarehouse?.id;
-                                final values =
-                                    items.map((e) => e.value).toSet();
-                                if (value != null && !values.contains(value)) {
-                                  value = 'no_stock';
-                                }
-                                return DropdownButtonFormField<String>(
-                                  initialValue: value,
-                                  decoration:
-                                      const InputDecoration(labelText: 'Depo'),
-                                  isExpanded: true,
-                                  items: items,
-                                  onChanged: (id) async {
-                                    if (id == 'no_stock') {
-                                      setState(() {
-                                        _selectedWarehouse = null;
-                                        _receiveToInventory = false;
-                                      });
-                                    } else {
-                                      final list = await ref
-                                          .read(warehousesProvider.future);
-                                      setState(() {
-                                        _selectedWarehouse = list.firstWhere(
-                                            (w) => w.id == id,
-                                            orElse: () => list.first);
-                                        _receiveToInventory = true;
-                                      });
-                                    }
-                                  },
-                                );
-                              },
-                              loading: () => const LinearProgressIndicator(),
-                              error: (e, _) => DropdownButtonFormField<String>(
-                                initialValue: 'no_stock',
-                                decoration:
-                                    const InputDecoration(labelText: 'Depo'),
-                                items: const [
-                                  DropdownMenuItem(
-                                    value: 'no_stock',
-                                    child: Text('Stoksuz Ürün'),
-                                  ),
-                                ],
-                                onChanged: (_) {},
-                              ),
-                            );
-                          }),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: CheckboxListTile(
-                            value: _receiveToInventory,
-                            onChanged: (v) =>
-                                setState(() => _receiveToInventory = v ?? true),
-                            dense: true,
-                            title: const Text('Teslim al (stok girişi)'),
-                            contentPadding: EdgeInsets.zero,
-                            controlAffinity: ListTileControlAffinity.leading,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLargeScreen = TamgaciConstants.isDesktop(context) ||
+              TamgaciConstants.isWideDesktop(context);
+          final maxWidth = isLargeScreen ? 1100.0 : null;
+          final padding = TamgaciConstants.paddingMedium(context);
+          return Form(
+            key: _formKey,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: maxWidth ?? constraints.maxWidth,
                 ),
-                const SizedBox(height: 24),
-              ],
-
-              // Vade ve Taksitler - Sadece normal alış için göster
-              if (_purchaseType == PurchaseType.purchase) ...[
-                const SizedBox(height: 24),
-                _buildSectionCard(
-                  'Vade ve Taksitler',
-                  Icons.schedule,
-                  [
-                    SwitchListTile(
-                      value: _isInstallmentPurchase,
-                      onChanged: (v) =>
-                          setState(() => _isInstallmentPurchase = v),
-                      title: const Text('Vadeli (taksitli) alış'),
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    if (_isInstallmentPurchase) ...[
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: OutlinedButton.icon(
-                          onPressed: () => setState(
-                              () => _installments.add(_InstallmentForm())),
-                          icon: const Icon(Icons.add),
-                          label: const Text('Taksit Ekle'),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Column(
-                        children: [
-                          for (int i = 0; i < _installments.length; i++)
-                            _buildInstallmentRow(i),
-                          if (_installments.isEmpty)
-                            Text('Henüz taksit eklenmedi',
-                                style: GoogleFonts.poppins(
-                                    color: AppColors.textSecondary)),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: padding,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Temel Bilgiler
+                      _buildSectionCard(
+                        'Temel Bilgiler',
+                        Icons.info_outline,
+                        [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 16),
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant),
+                              borderRadius: BorderRadius.circular(8),
+                              color: Theme.of(context).colorScheme.surface,
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.receipt_long,
+                                    color: AppColors.primary, size: 20),
+                                const SizedBox(width: 8),
+                                Flexible(
+                                  child: Text(
+                                    '${_purchaseType == PurchaseType.returnPurchase ? 'İade Alış' : 'Normal Alış'} Numarası: ',
+                                    style: GoogleFonts.poppins(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.7),
+                                      fontSize: 14,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    _purchaseNumberController.text,
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.w600,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface,
+                                      fontSize: 14,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildPurchaseTypeSelector(),
+                          const SizedBox(height: 16),
+                          _buildCustomerSelector(),
+                          const SizedBox(height: 16),
+                          _buildDateField(
+                            label: 'Alış Tarihi',
+                            value: _purchaseDate,
+                            onChanged: (date) {
+                              if (date != null) {
+                                setState(() {
+                                  _purchaseDate = date;
+                                });
+                              }
+                            },
+                          ),
                         ],
                       ),
+
+                      const SizedBox(height: 24),
+
+                      // Ödeme Bilgileri - Sadece normal alış için göster
+                      if (_purchaseType == PurchaseType.purchase) ...[
+                        _buildSectionCard(
+                          'Ödeme Bilgileri',
+                          Icons.payment,
+                          [
+                            _buildCurrencyAndFxRow(),
+                            const SizedBox(height: 16),
+                            _buildTextField(
+                              controller: _paymentTermsController,
+                              label: 'Ödeme Koşulları',
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _shippingCostController,
+                              keyboardType: TextInputType.number,
+                              decoration: const InputDecoration(
+                                labelText: 'Kargo (Nakliye) Tutarı',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Consumer(builder: (context, ref, _) {
+                                    final asyncWarehouses =
+                                        ref.watch(warehousesProvider);
+                                    return asyncWarehouses.when(
+                                      data: (list) {
+                                        // unique values and safe initial
+                                        final items =
+                                            <DropdownMenuItem<String>>[
+                                          const DropdownMenuItem(
+                                            value: 'no_stock',
+                                            child: Text('Stoksuz Ürün'),
+                                          ),
+                                          for (final w in list)
+                                            DropdownMenuItem(
+                                                value: w.id,
+                                                child: Text(w.code != null &&
+                                                        w.code!.isNotEmpty
+                                                    ? '${w.name} (${w.code})'
+                                                    : w.name)),
+                                        ];
+                                        String? value = _selectedWarehouse?.id;
+                                        final values =
+                                            items.map((e) => e.value).toSet();
+                                        if (value != null &&
+                                            !values.contains(value)) {
+                                          value = 'no_stock';
+                                        }
+                                        return DropdownButtonFormField<String>(
+                                          initialValue: value,
+                                          decoration: const InputDecoration(
+                                              labelText: 'Depo'),
+                                          isExpanded: true,
+                                          items: items,
+                                          onChanged: (id) async {
+                                            if (id == 'no_stock') {
+                                              setState(() {
+                                                _selectedWarehouse = null;
+                                                _receiveToInventory = false;
+                                              });
+                                            } else {
+                                              final list = await ref.read(
+                                                  warehousesProvider.future);
+                                              setState(() {
+                                                _selectedWarehouse =
+                                                    list.firstWhere(
+                                                        (w) => w.id == id,
+                                                        orElse: () =>
+                                                            list.first);
+                                                _receiveToInventory = true;
+                                              });
+                                            }
+                                          },
+                                        );
+                                      },
+                                      loading: () =>
+                                          const LinearProgressIndicator(),
+                                      error: (e, _) =>
+                                          DropdownButtonFormField<String>(
+                                        initialValue: 'no_stock',
+                                        decoration: const InputDecoration(
+                                            labelText: 'Depo'),
+                                        items: const [
+                                          DropdownMenuItem(
+                                            value: 'no_stock',
+                                            child: Text('Stoksuz Ürün'),
+                                          ),
+                                        ],
+                                        onChanged: (_) {},
+                                      ),
+                                    );
+                                  }),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: CheckboxListTile(
+                                    value: _receiveToInventory,
+                                    onChanged: (v) => setState(
+                                        () => _receiveToInventory = v ?? true),
+                                    dense: true,
+                                    title:
+                                        const Text('Teslim al (stok girişi)'),
+                                    contentPadding: EdgeInsets.zero,
+                                    controlAffinity:
+                                        ListTileControlAffinity.leading,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Vade ve Taksitler - Sadece normal alış için göster
+                      if (_purchaseType == PurchaseType.purchase) ...[
+                        const SizedBox(height: 24),
+                        _buildSectionCard(
+                          'Vade ve Taksitler',
+                          Icons.schedule,
+                          [
+                            SwitchListTile(
+                              value: _isInstallmentPurchase,
+                              onChanged: (v) =>
+                                  setState(() => _isInstallmentPurchase = v),
+                              title: const Text('Vadeli (taksitli) alış'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            if (_isInstallmentPurchase) ...[
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => setState(() =>
+                                      _installments.add(_InstallmentForm())),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Taksit Ekle'),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Column(
+                                children: [
+                                  for (int i = 0; i < _installments.length; i++)
+                                    _buildInstallmentRow(i),
+                                  if (_installments.isEmpty)
+                                    Text('Henüz taksit eklenmedi',
+                                        style: GoogleFonts.poppins(
+                                            color: AppColors.textSecondary)),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+
+                      // Alış Ürünleri
+                      _buildItemsCard(),
+
+                      const SizedBox(height: 24),
+
+                      // Özet Bölümü
+                      _buildSummaryCard(),
+
+                      const SizedBox(height: 24),
+
+                      _buildSectionCard(
+                        'Açıklama ve Notlar',
+                        Icons.note_outlined,
+                        [
+                          _buildTextField(
+                            controller: _descriptionController,
+                            label: 'Açıklama',
+                            maxLines: 3,
+                          ),
+                          const SizedBox(height: 16),
+                          _buildTextField(
+                            controller: _notesController,
+                            label: 'Notlar',
+                            maxLines: 3,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      SizedBox(
+                        width: double.infinity,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            ElevatedButton(
+                              onPressed: _isSaving ? null : _savePurchase,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(
+                                      TamgaciConstants.radiusMD),
+                                ),
+                              ),
+                              child: Text(
+                                widget.purchaseId != null
+                                    ? 'Alışı Güncelle'
+                                    : 'Alışı Kaydet',
+                                style: GoogleFonts.poppins(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _isSaving
+                              ? null
+                              : () {
+                                  setState(() => _isDraft = true);
+                                  _savePurchase();
+                                },
+                          icon: const Icon(Icons.save_as),
+                          label: const Text('Taslak Olarak Kaydet'),
+                        ),
+                      ),
                     ],
-                  ],
-                ),
-              ],
-
-              // Alış Ürünleri
-              _buildItemsCard(),
-
-              const SizedBox(height: 24),
-
-              // Özet Bölümü
-              _buildSummaryCard(),
-
-              const SizedBox(height: 24),
-
-              // Toplam ve Kaydet
-              SizedBox(
-                width: double.infinity,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ElevatedButton(
-                      onPressed: _isSaving ? null : _savePurchase,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(TamgaciConstants.radiusMD),
-                        ),
-                      ),
-                      child: Text(
-                        widget.purchaseId != null
-                            ? 'Alışı Güncelle'
-                            : 'Alışı Kaydet',
-                        style: GoogleFonts.poppins(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _isSaving
-                      ? null
-                      : () {
-                          setState(() => _isDraft = true);
-                          _savePurchase();
-                        },
-                  icon: const Icon(Icons.save_as),
-                  label: const Text('Taslak Olarak Kaydet'),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

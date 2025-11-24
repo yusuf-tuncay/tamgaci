@@ -400,72 +400,62 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
             children: [
               // Form alanları
               Expanded(
-                child: SingleChildScrollView(
-                  padding: TamgaciConstants.pagePadding(context),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (formState.errorMessage != null)
-                        _buildErrorMessage(formState.errorMessage!),
-
-                      if (formState.successMessage != null)
-                        _buildSuccessMessage(formState.successMessage!),
-
-                      _buildHeaderCard(),
-
-                      // Müşteri tipi seçimi
-                      _buildCustomerTypeSelection(),
-
-                      const SizedBox(height: TamgaciConstants.spaceLG),
-
-                      // Temel bilgiler
-                      _buildBasicInfoSection(),
-
-                      const SizedBox(height: TamgaciConstants.spaceLG),
-
-                      // İletişim bilgileri
-                      _buildContactInfoSection(),
-
-                      // Vergi bilgileri - Sadece kurumsal müşteri için
-                      if (_selectedType == CustomerType.company) ...[
-                        const SizedBox(height: TamgaciConstants.spaceLG),
-                        _buildTaxInfoSection(),
-                      ],
-
-                      const SizedBox(height: TamgaciConstants.spaceLG),
-
-                      // Adres bilgileri
-                      _buildAddressInfoSection(),
-
-                      const SizedBox(height: TamgaciConstants.spaceLG),
-
-                      // Finansal bilgiler
-                      _buildFinancialInfoSection(),
-
-                      const SizedBox(height: TamgaciConstants.spaceLG),
-
-                      // Sınıflandırma
-                      _buildClassificationSection(),
-
-                      // Yetkili Kişi ve Şubeler - Sadece kurumsal müşteri için
-                      if (_selectedType == CustomerType.company) ...[
-                        const SizedBox(height: TamgaciConstants.spaceLG),
-                        _buildAuthorizedPersonSection(),
-                        const SizedBox(height: TamgaciConstants.spaceLG),
-                        _buildBranchesSection(),
-                      ],
-
-                      const SizedBox(height: TamgaciConstants.spaceLG),
-
-                      // Notlar
-                      _buildNotesSection(),
-
-                      const SizedBox(height: TamgaciConstants.spaceXL),
-
-                      // Kaydet butonu
-                      _buildSaveButton(),
-                    ],
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isLargeScreen = TamgaciConstants.isDesktop(context) ||
+                        TamgaciConstants.isWideDesktop(context);
+                    final maxWidth = isLargeScreen ? 1100.0 : null;
+                    final horizontalPadding =
+                        TamgaciConstants.pagePadding(context);
+                    return Center(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxWidth: maxWidth ?? constraints.maxWidth,
+                        ),
+                        child: SingleChildScrollView(
+                          padding: horizontalPadding,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (formState.errorMessage != null)
+                                _buildErrorMessage(formState.errorMessage!),
+                              if (formState.successMessage != null)
+                                _buildSuccessMessage(formState.successMessage!),
+                              _buildHeaderCard(),
+                              _buildCustomerTypeSelection(),
+                              const SizedBox(height: TamgaciConstants.spaceLG),
+                              _buildBasicInfoSection(),
+                              const SizedBox(height: TamgaciConstants.spaceLG),
+                              _buildContactInfoSection(),
+                              if (_selectedType == CustomerType.company) ...[
+                                const SizedBox(
+                                    height: TamgaciConstants.spaceLG),
+                                _buildTaxInfoSection(),
+                              ],
+                              const SizedBox(height: TamgaciConstants.spaceLG),
+                              _buildAddressInfoSection(),
+                              const SizedBox(height: TamgaciConstants.spaceLG),
+                              _buildFinancialInfoSection(),
+                              const SizedBox(height: TamgaciConstants.spaceLG),
+                              _buildClassificationSection(),
+                              if (_selectedType == CustomerType.company) ...[
+                                const SizedBox(
+                                    height: TamgaciConstants.spaceLG),
+                                _buildAuthorizedPersonSection(),
+                                const SizedBox(
+                                    height: TamgaciConstants.spaceLG),
+                                _buildBranchesSection(),
+                              ],
+                              const SizedBox(height: TamgaciConstants.spaceLG),
+                              _buildNotesSection(),
+                              const SizedBox(height: TamgaciConstants.spaceXL),
+                              _buildSaveButton(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],

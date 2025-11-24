@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/repositories/firebase_account_repository.dart';
+import '../../data/services/account_initialization_service.dart';
+import '../../../../core/utils/logger.dart';
 import '../../domain/entities/account.dart';
 import '../../domain/repositories/account_repository.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
@@ -112,7 +114,23 @@ class AccountNotifier extends StateNotifier<AsyncValue<List<Account>>> {
   Future<void> _loadAccounts() async {
     try {
       state = const AsyncValue.loading();
-      final accounts = await _repository.getAccounts();
+      var accounts = await _repository.getAccounts();
+
+      if (accounts.isEmpty) {
+        AppLogger.info(
+            'AccountNotifier: No accounts found, attempting to seed defaults.');
+        try {
+          final initializer = AccountInitializationService();
+          await initializer.initializeDefaultAccounts();
+          accounts = await _repository.getAccounts();
+          AppLogger.info(
+              'AccountNotifier: Default accounts initialization completed. Account count: ${accounts.length}');
+        } catch (e) {
+          AppLogger.error(
+              'AccountNotifier: Failed to initialize default accounts', e);
+        }
+      }
+
       state = AsyncValue.data(accounts);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);

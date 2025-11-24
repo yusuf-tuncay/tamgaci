@@ -397,64 +397,56 @@ class _CreateProductPageState extends ConsumerState<CreateProductPage> {
         showBackButton: true,
         showDrawer: false,
       ),
-      body: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            // Premium Header
-            _buildPremiumHeader(),
-
-            // Form Content
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Temel Bilgiler
-                    _buildSectionTitle('Temel Bilgiler'),
-                    _buildBasicInfoSection(),
-
-                    const SizedBox(height: 24),
-
-                    // Fiyat ve Vergi Bilgileri
-                    _buildSectionTitle('Fiyat ve Vergi Bilgileri'),
-                    _buildPricingSection(),
-
-                    const SizedBox(height: 24),
-
-                    // Varyant Bilgileri
-                    _buildSectionTitle('Varyant Bilgileri'),
-                    _buildVariantSection(),
-
-                    const SizedBox(height: 24),
-
-                    // Stok ve Depo Bilgileri
-                    _buildSectionTitle('Stok ve Depo Bilgileri'),
-                    _buildStockSection(),
-
-                    const SizedBox(height: 24),
-
-                    // Ek Bilgiler
-                    _buildSectionTitle('Ek Bilgiler'),
-                    _buildAdditionalInfoSection(),
-
-                    const SizedBox(height: 24),
-
-                    // Fotoğraflar
-                    _buildSectionTitle('Ürün Fotoğrafları'),
-                    _buildImageSection(),
-
-                    const SizedBox(height: 100), // Save button için boşluk
-                  ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLargeScreen = TamgaciConstants.isDesktop(context) ||
+              TamgaciConstants.isWideDesktop(context);
+          final maxWidth = isLargeScreen ? 1100.0 : null;
+          return Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                _buildPremiumHeader(),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: maxWidth ?? constraints.maxWidth,
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionTitle('Temel Bilgiler'),
+                            _buildBasicInfoSection(),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('Fiyat ve Vergi Bilgileri'),
+                            _buildPricingSection(),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('Varyant Bilgileri'),
+                            _buildVariantSection(),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('Stok ve Depo Bilgileri'),
+                            _buildStockSection(),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('Ek Bilgiler'),
+                            _buildAdditionalInfoSection(),
+                            const SizedBox(height: 24),
+                            _buildSectionTitle('Ürün Fotoğrafları'),
+                            _buildImageSection(),
+                            const SizedBox(height: 16),
+                            _buildSaveButton(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-
-            // Save Button
-            _buildSaveButton(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
