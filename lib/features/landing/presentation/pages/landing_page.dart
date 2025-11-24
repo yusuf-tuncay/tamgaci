@@ -868,12 +868,14 @@ class _LandingPageState extends State<LandingPage>
     required String description,
     required Color color,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final shouldExpandWidth = screenWidth <= 768;
 
     return Container(
-      width: isMobile ? double.infinity : null,
+      width: shouldExpandWidth ? double.infinity : null,
       padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 32 : 40)),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.white,
@@ -952,98 +954,172 @@ class _LandingPageState extends State<LandingPage>
       ),
       child: Column(
         children: [
-          Text(
-            'Tüm Platformlarda',
-            style: GoogleFonts.poppins(
-              fontSize: MediaQuery.of(context).size.width > 768 ? 56 : 40,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
+          Builder(
+            builder: (context) {
+              final width = MediaQuery.of(context).size.width;
+              final double fontSize = width > 1024
+                  ? 56
+                  : width > 768
+                      ? 48
+                      : width > 480
+                          ? 40
+                          : 32;
+              return Text(
+                'Tüm Platformlarda',
+                style: GoogleFonts.poppins(
+                  fontSize: fontSize,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              );
+            },
           ),
           SizedBox(
               height: _isMobile(context) ? 30 : (_isTablet(context) ? 40 : 50)),
           // Mobil için dikey düzen, tablet ve desktop için yatay
-          _isMobile(context)
-              ? Column(
-                  children: [
-                    _buildPlatformCard(
-                      icon: Icons.web,
-                      title: 'Web',
-                      description: 'Tüm Tarayıcılar',
-                      color: Colors.white,
-                      onTap: () => _launchWebApp(),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildPlatformCard(
-                      icon: Icons.phone_android,
-                      title: 'Android',
-                      description: 'Google Play',
-                      color: const Color.fromARGB(255, 62, 255, 184),
-                      onTap: () => _launchGooglePlay(),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildPlatformCard(
-                      icon: Icons.phone_iphone,
-                      title: 'iOS',
-                      description: 'App Store',
-                      color: const Color.fromARGB(255, 101, 219, 255),
-                      onTap: () => _launchAppStore(),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildPlatformCard(
-                      icon: Icons.desktop_windows,
-                      title: 'Windows',
-                      description: 'Masaüstü',
-                      color: const Color.fromARGB(255, 248, 179, 122),
-                      onTap: () => _launchWindowsApp(),
-                    ),
-                  ],
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.web,
-                        title: 'Web',
-                        description: 'Tüm Tarayıcılar',
-                        color: Colors.white,
-                        onTap: () => _launchWebApp(),
-                      ),
-                    ),
-                    SizedBox(width: _isTablet(context) ? 12 : 20),
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.phone_android,
-                        title: 'Android',
-                        description: 'Google Play',
-                        color: const Color.fromARGB(255, 62, 255, 184),
-                        onTap: () => _launchGooglePlay(),
-                      ),
-                    ),
-                    SizedBox(width: _isTablet(context) ? 12 : 20),
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.phone_iphone,
-                        title: 'iOS',
-                        description: 'App Store',
-                        color: const Color.fromARGB(255, 101, 219, 255),
-                        onTap: () => _launchAppStore(),
-                      ),
-                    ),
-                    SizedBox(width: _isTablet(context) ? 12 : 20),
-                    Flexible(
-                      child: _buildPlatformCard(
-                        icon: Icons.desktop_windows,
-                        title: 'Windows',
-                        description: 'Masaüstü',
-                        color: const Color.fromARGB(255, 248, 179, 122),
-                        onTap: () => _launchWindowsApp(),
-                      ),
-                    ),
-                  ],
+          Builder(
+            builder: (context) {
+              final cards = [
+                _buildPlatformCard(
+                  icon: Icons.web,
+                  title: 'Web',
+                  description: 'Tüm Tarayıcılar',
+                  color: Colors.white,
+                  onTap: () => _launchWebApp(),
                 ),
+                _buildPlatformCard(
+                  icon: Icons.phone_android,
+                  title: 'Android',
+                  description: 'Google Play',
+                  color: const Color.fromARGB(255, 62, 255, 184),
+                  onTap: () => _launchGooglePlay(),
+                ),
+                _buildPlatformCard(
+                  icon: Icons.phone_iphone,
+                  title: 'iOS',
+                  description: 'App Store',
+                  color: const Color.fromARGB(255, 101, 219, 255),
+                  onTap: () => _launchAppStore(),
+                ),
+                _buildPlatformCard(
+                  icon: Icons.desktop_windows,
+                  title: 'Windows',
+                  description: 'Masaüstü',
+                  color: const Color.fromARGB(255, 248, 179, 122),
+                  onTap: () => _launchWindowsApp(),
+                ),
+              ];
+
+              if (_isMobile(context)) {
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    const spacing = 16.0;
+                    final double availableWidth = constraints.maxWidth;
+                    if (availableWidth < 360) {
+                      return Column(
+                        children: cards
+                            .map(
+                              (card) => Padding(
+                                padding: const EdgeInsets.only(bottom: 20),
+                                child: card,
+                              ),
+                            )
+                            .toList(),
+                      );
+                    }
+                    final double cardWidth =
+                        ((availableWidth - spacing) / 2).clamp(140, 220);
+
+                    return Wrap(
+                      spacing: spacing,
+                      runSpacing: 20,
+                      alignment: WrapAlignment.center,
+                      children: cards
+                          .map(
+                            (card) => SizedBox(
+                              width: cardWidth,
+                              child: card,
+                            ),
+                          )
+                          .toList(),
+                    );
+                  },
+                );
+              }
+
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final isMediumWidth =
+                      constraints.maxWidth >= 500 && constraints.maxWidth < 800;
+                  final spacing = isMediumWidth
+                      ? 20.0
+                      : (_isTablet(context) ? 16.0 : 24.0);
+                  final minWidth = isMediumWidth
+                      ? 180.0
+                      : (_isTablet(context) ? 170.0 : 180.0);
+                  final maxWidth = isMediumWidth ? 220.0 : 240.0;
+                  final availableWidth = constraints.maxWidth;
+                  final rowCardWidth =
+                      (availableWidth - spacing * (cards.length - 1)) /
+                          cards.length;
+
+                  if (rowCardWidth >= minWidth * 0.85) {
+                    final cardWidth =
+                        rowCardWidth.clamp(minWidth * 0.9, maxWidth);
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: cards
+                          .map(
+                            (card) => Padding(
+                              padding: EdgeInsets.only(
+                                right: card == cards.last ? 0 : spacing,
+                              ),
+                              child: SizedBox(
+                                width: cardWidth,
+                                child: card,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  }
+
+                  final maxColumns =
+                      availableWidth ~/ (minWidth + spacing);
+                  final columns = maxColumns.clamp(2, cards.length);
+                  final calculatedWidth = (availableWidth -
+                          spacing * (columns - 1)) /
+                      columns;
+                  final cardWidth =
+                      calculatedWidth.clamp(minWidth * 0.8, maxWidth);
+
+                  return Align(
+                    alignment: Alignment.center,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth:
+                            columns * cardWidth + spacing * (columns - 1),
+                      ),
+                      child: Wrap(
+                        spacing: spacing,
+                        runSpacing: 28,
+                        alignment: WrapAlignment.center,
+                        children: cards
+                            .map(
+                              (card) => SizedBox(
+                                width: cardWidth,
+                                child: card,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ],
       ),
     );
@@ -1057,7 +1133,11 @@ class _LandingPageState extends State<LandingPage>
     required Color color,
     required VoidCallback onTap,
   }) {
-    final isMobile = MediaQuery.of(context).size.width <= 768;
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width <= 768;
+    final isTablet =
+        size.width > 768 && size.width < 1024;
+    final isSmallMobile = size.width < 360;
 
     return AnimatedBuilder(
       animation: _floatAnimation,
@@ -1067,8 +1147,15 @@ class _LandingPageState extends State<LandingPage>
           child: GestureDetector(
             onTap: onTap,
             child: Container(
-              width: isMobile ? double.infinity : 200,
-              padding: EdgeInsets.all(isMobile ? 24 : 40),
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(
+                horizontal: isMobile
+                    ? (isSmallMobile ? 18 : 22)
+                    : (isTablet ? 30 : 34),
+                vertical: isMobile
+                    ? (isSmallMobile ? 20 : 24)
+                    : (isTablet ? 32 : 36),
+              ),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
@@ -1087,33 +1174,54 @@ class _LandingPageState extends State<LandingPage>
               child: Column(
                 children: [
                   Container(
-                    width: isMobile ? 60 : 80,
-                    height: isMobile ? 60 : 80,
+                    width: isMobile
+                        ? (isSmallMobile ? 48 : 56)
+                        : (isTablet ? 68 : 72),
+                    height: isMobile
+                        ? (isSmallMobile ? 48 : 56)
+                        : (isTablet ? 68 : 72),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       color: color.withValues(alpha: 0.2),
                     ),
                     child: Icon(
                       icon,
-                      size: isMobile ? 30 : 40,
+                      size: isMobile
+                          ? (isSmallMobile ? 24 : 28)
+                          : (isTablet ? 32 : 36),
                       color: color,
                     ),
                   ),
-                  SizedBox(height: isMobile ? 16 : 24),
+                  SizedBox(
+                      height:
+                          isMobile ? (isSmallMobile ? 10 : 14) : (isTablet ? 16 : 18)),
                   Text(
                     title,
                     style: GoogleFonts.poppins(
-                      fontSize: isMobile ? 18 : 20,
+                      fontSize: isMobile
+                          ? (isSmallMobile ? 14 : 16)
+                          : (isTablet ? 17 : 18),
                       fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    description,
-                    style: GoogleFonts.poppins(
-                      fontSize: isMobile ? 12 : 14,
-                      color: Colors.white.withValues(alpha: 0.8),
+                  SizedBox(height: isMobile ? 6 : 10),
+                  SizedBox(
+                    height: isMobile ? 16 : 20,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        description,
+                        style: GoogleFonts.poppins(
+                          fontSize: isMobile
+                              ? (isSmallMobile ? 11 : 12)
+                              : 14,
+                          height: 1.2,
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
                 ],
