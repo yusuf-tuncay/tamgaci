@@ -323,7 +323,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             fontWeight: FontWeight.w500,
             color: isDark
                 ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8)
-                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                : Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7),
           ),
         ),
       ],
@@ -534,6 +537,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) {
+      _showErrorSnackBar('Lütfen e-posta ve şifrenizi kontrol edin.');
       return;
     }
 
@@ -580,14 +584,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_friendlyAuthMessage(e)),
-            backgroundColor: Colors.red,
-          ),
-        );
+        _showErrorSnackBar(_friendlyAuthMessage(e));
       }
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    final scheme = Theme.of(context).colorScheme;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(color: scheme.onError)),
+        backgroundColor: scheme.error,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   String _friendlyAuthMessage(Object e) {
@@ -699,7 +710,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.2),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .shadow
+                          .withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),

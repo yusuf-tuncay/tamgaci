@@ -271,6 +271,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     // Auto-detect by locale; try to refine by geolocation asynchronously
     final locale = Localizations.localeOf(context);
     final countryCode = (locale.countryCode ?? 'TR').toUpperCase();
+
     try {
       final country = Country.parse(countryCode);
       _selectedCountry = country.countryCode;
@@ -653,7 +654,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   /// Kayıt işlemi
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
     if (!_agreeToTerms) {
       _showErrorSnackBar('Kullanım şartlarını kabul etmelisiniz');
       return;
@@ -666,10 +666,28 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       return;
     }
 
-    // Input validation
-    final validationError = _validateInputs();
-    if (validationError != null) {
-      _showErrorSnackBar(validationError);
+    String? forcedErrorMessage;
+    String? validationError;
+
+    String? resolveValidationError() {
+      validationError ??= _validateInputs();
+      return validationError;
+    }
+
+    void showValidationError() {
+      _showErrorSnackBar(
+        resolveValidationError() ?? 'Lütfen formdaki hataları düzeltin.',
+      );
+    }
+
+    final formState = _formKey.currentState;
+    if (formState == null || !formState.validate()) {
+      showValidationError();
+      return;
+    }
+
+    if (resolveValidationError() != null) {
+      showValidationError();
       return;
     }
 
@@ -713,6 +731,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         final errorMessage = e.toString().toLowerCase();
         if (errorMessage.contains('email-already-in-use') ||
             errorMessage.contains('email adresi zaten kullanılıyor')) {
+          forcedErrorMessage =
+              'Bu e-posta adresi zaten kayıtlı. Lütfen giriş yapmayı deneyin veya farklı bir e-posta kullanın.';
           debugPrint('🔍 Attempting to sign in with existing user...');
 
           // Try to sign in with existing user
@@ -897,7 +917,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       debugPrint('❌ Error type: ${e.runtimeType}');
 
       if (mounted) {
-        _showErrorSnackBar(_getDetailedErrorMessage(e));
+        final message = forcedErrorMessage ?? _getDetailedErrorMessage(e);
+        _showErrorSnackBar(message);
       }
     } finally {
       // Always reset registration state
@@ -961,12 +982,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       if (postalCode.isEmpty) return 'Posta kodu zorunludur';
     }
 
-    // Phone validation if provided
+    // Phone validation
     final localDigits = _phoneController.text.trim();
-    if (localDigits.isNotEmpty) {
-      if (localDigits.length < 7) return 'Telefon numarası çok kısa';
-      if (!RegExp(r'^[0-9]+$').hasMatch(localDigits)) {
-        return 'Telefon numarası sadece rakam içermelidir';
+    if (localDigits.isEmpty) {
+      return 'Telefon numarası zorunludur';
+    }
+    if (!RegExp(r'^[0-9]+$').hasMatch(localDigits)) {
+      return 'Telefon numarası sadece rakam içermelidir';
+    }
+    if (_selectedCountry == 'TR') {
+      if (localDigits.length != 10) {
+        return 'Türkiye için telefon numarası 10 haneli olmalıdır';
+      }
+    } else {
+      if (localDigits.length < 7 || localDigits.length > 15) {
+        return 'Telefon numarası 7-15 hane arasında olmalıdır';
       }
     }
 

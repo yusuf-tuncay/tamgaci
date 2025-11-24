@@ -38,23 +38,14 @@ class _KeyboardScrollWrapperState extends State<KeyboardScrollWrapper> {
     if (_isTextFieldFocused()) return false;
 
     double? targetOffset;
-
-    final keysPressed = HardwareKeyboard.instance.logicalKeysPressed;
-    final shiftPressed = keysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
-        keysPressed.contains(LogicalKeyboardKey.shiftRight);
-
-    if (event.logicalKey == LogicalKeyboardKey.arrowDown ||
-        event.logicalKey == LogicalKeyboardKey.keyJ) {
+    if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
       targetOffset = _lastVerticalPosition!.pixels + _lineScrollDelta;
-    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp ||
-        event.logicalKey == LogicalKeyboardKey.keyK) {
+    } else if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
       targetOffset = _lastVerticalPosition!.pixels - _lineScrollDelta;
-    } else if (event.logicalKey == LogicalKeyboardKey.pageDown ||
-        (event.logicalKey == LogicalKeyboardKey.space && !shiftPressed)) {
+    } else if (event.logicalKey == LogicalKeyboardKey.pageDown) {
       targetOffset =
           _lastVerticalPosition!.pixels + _pageExtent * _pageScrollFactor;
-    } else if (event.logicalKey == LogicalKeyboardKey.pageUp ||
-        (event.logicalKey == LogicalKeyboardKey.space && shiftPressed)) {
+    } else if (event.logicalKey == LogicalKeyboardKey.pageUp) {
       targetOffset =
           _lastVerticalPosition!.pixels - _pageExtent * _pageScrollFactor;
     } else if (event.logicalKey == LogicalKeyboardKey.home) {
@@ -114,4 +105,3 @@ class _KeyboardScrollWrapperState extends State<KeyboardScrollWrapper> {
     );
   }
 }
-
