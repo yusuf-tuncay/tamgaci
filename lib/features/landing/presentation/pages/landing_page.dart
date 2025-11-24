@@ -586,14 +586,18 @@ class _LandingPageState extends State<LandingPage>
           position: _slideAnimation,
           child: Column(
             children: [
-              // Main title
-              Text(
-                'TAMGACI',
-                style: GoogleFonts.poppins(
-                  fontSize: MediaQuery.of(context).size.width < 1000 ? 64 : 72,
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                  letterSpacing: 2,
+              // Main title (responsive, prevents wrap on fold devices)
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  'TAMGACI',
+                  style: GoogleFonts.poppins(
+                    fontSize:
+                        MediaQuery.of(context).size.width < 1000 ? 64 : 72,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 2,
+                  ),
                 ),
               ),
 
@@ -939,6 +943,7 @@ class _LandingPageState extends State<LandingPage>
   /// Platform section
   Widget _buildPlatformSection() {
     return Container(
+      width: double.infinity,
       padding:
           EdgeInsets.all(MediaQuery.of(context).size.width > 768 ? 80 : 40),
       decoration: const BoxDecoration(
@@ -1016,20 +1021,8 @@ class _LandingPageState extends State<LandingPage>
                   builder: (context, constraints) {
                     const spacing = 16.0;
                     final double availableWidth = constraints.maxWidth;
-                    if (availableWidth < 360) {
-                      return Column(
-                        children: cards
-                            .map(
-                              (card) => Padding(
-                                padding: const EdgeInsets.only(bottom: 20),
-                                child: card,
-                              ),
-                            )
-                            .toList(),
-                      );
-                    }
                     final double cardWidth =
-                        ((availableWidth - spacing) / 2).clamp(140, 220);
+                        ((availableWidth - spacing) / 2).clamp(120, 260);
 
                     return Wrap(
                       spacing: spacing,
@@ -1051,7 +1044,27 @@ class _LandingPageState extends State<LandingPage>
               return LayoutBuilder(
                 builder: (context, constraints) {
                   final isMediumWidth =
-                      constraints.maxWidth >= 500 && constraints.maxWidth < 800;
+                      constraints.maxWidth >= 500 && constraints.maxWidth < 840;
+                  if (_isTablet(context)) {
+                    const tabletSpacing = 20.0;
+                    final double cardWidth =
+                        ((constraints.maxWidth - tabletSpacing) / 2)
+                            .clamp(190, 280);
+
+                    return Wrap(
+                      spacing: tabletSpacing,
+                      runSpacing: 24,
+                      alignment: WrapAlignment.center,
+                      children: cards
+                          .map(
+                            (card) => SizedBox(
+                              width: cardWidth,
+                              child: card,
+                            ),
+                          )
+                          .toList(),
+                    );
+                  }
                   final spacing = isMediumWidth
                       ? 20.0
                       : (_isTablet(context) ? 16.0 : 24.0);
@@ -1350,7 +1363,7 @@ class _LandingPageState extends State<LandingPage>
                               color: isDark ? Colors.white : const Color(0xFF1E3A8A),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                           Text(
                             'Kurumsal ve KOBİ işletmelerin dijital dönüşüm sürecinde yanlarında olmaktan gurur duyuyoruz. '
                             'Modern teknoloji ve kullanıcı dostu tasarım anlayışımızla, işletmenizin verimliliğini artıracak '
@@ -1361,7 +1374,7 @@ class _LandingPageState extends State<LandingPage>
                               height: 1.8,
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                           Text(
                             '2015 yılından beri teknoloji sektöründe faaliyet gösteren ekibimiz, işletmelerin dijitalleşme '
                             'ihtiyaçlarına çözüm üretmek için sürekli kendini geliştirmektedir. TAMGACI, bu deneyimin '
@@ -1466,75 +1479,89 @@ class _LandingPageState extends State<LandingPage>
           const SizedBox(height: 80),
 
           // Misyon, Vizyon, Değerler Kartları
-          (isTablet || isDesktop)
-              ? Row(
+          Builder(
+            builder: (context) {
+              final cardData = _aboutCardData();
+
+              final double? mobileMinHeight = _isMobile(context)
+                  ? _calculateMobileAboutCardMinHeight(isDark, cardData)
+                  : null;
+              final double? tabletTopRowMinHeight = _isTablet(context)
+                  ? _calculateTabletAboutCardMinHeight(isDark, cardData.take(2).toList())
+                  : null;
+
+              if (isDesktop) {
+                return Row(
                   children: [
-                    Expanded(
-                      child: _buildAboutCard(
-                        icon: Icons.flag,
-                        title: 'Misyonumuz',
-                        description:
-                            'İşletmelerin finansal yönetim süreçlerini dijitalleştirerek, onların büyümesine ve '
-                            'başarısına katkıda bulunmak. Her işletmenin erişebileceği, kullanımı kolay ve '
-                            'güvenilir ön muhasebe çözümleri sunmak.',
-                        color: const Color(0xFF3B82F6),
+                    for (int i = 0; i < cardData.length; i++) ...[
+                      Expanded(
+                        child: _buildAboutCard(
+                          icon: cardData[i].icon,
+                          title: cardData[i].title,
+                          description: cardData[i].description,
+                          color: cardData[i].color,
+                        ),
                       ),
-                    ),
-                    SizedBox(width: isTablet ? 20 : 30),
-                    Expanded(
-                      child: _buildAboutCard(
-                        icon: Icons.visibility,
-                        title: 'Vizyonumuz',
-                        description:
-                            'Türkiye\'nin önde gelen bulut tabanlı ön muhasebe platformu olmak ve işletmelerin '
-                            'dijital dönüşüm yolculuğunda güvenilir bir partner olarak yanlarında yer almak.',
-                        color: const Color(0xFF2563EB),
-                      ),
-                    ),
-                    SizedBox(width: isTablet ? 20 : 30),
-                    Expanded(
-                      child: _buildAboutCard(
-                        icon: Icons.favorite,
-                        title: 'Değerlerimiz',
-                        description:
-                            'Müşteri odaklılık, inovasyon, güvenilirlik ve sürekli gelişim değerlerimizle, '
-                            'her işletmenin ihtiyacına özel çözümler üretmek için çalışıyoruz.',
-                        color: const Color(0xFF0EA5E9),
-                      ),
-                    ),
+                      if (i != cardData.length - 1)
+                        SizedBox(width: isTablet ? 20 : 30),
+                    ],
                   ],
-                )
-              : Column(
+                );
+              }
+
+              if (isTablet) {
+                return Column(
                   children: [
-                    _buildAboutCard(
-                      icon: Icons.flag,
-                      title: 'Misyonumuz',
-                      description:
-                          'İşletmelerin finansal yönetim süreçlerini dijitalleştirerek, onların büyümesine ve '
-                          'başarısına katkıda bulunmak. Her işletmenin erişebileceği, kullanımı kolay ve '
-                          'güvenilir ön muhasebe çözümleri sunmak.',
-                      color: const Color(0xFF3B82F6),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildAboutCard(
+                            icon: cardData[0].icon,
+                            title: cardData[0].title,
+                            description: cardData[0].description,
+                            color: cardData[0].color,
+                            minHeight: tabletTopRowMinHeight,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: _buildAboutCard(
+                            icon: cardData[1].icon,
+                            title: cardData[1].title,
+                            description: cardData[1].description,
+                            color: cardData[1].color,
+                            minHeight: tabletTopRowMinHeight,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
                     _buildAboutCard(
-                      icon: Icons.visibility,
-                      title: 'Vizyonumuz',
-                      description:
-                          'Türkiye\'nin önde gelen bulut tabanlı ön muhasebe platformu olmak ve işletmelerin '
-                          'dijital dönüşüm yolculuğunda güvenilir bir partner olarak yanlarında yer almak.',
-                      color: const Color(0xFF2563EB),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildAboutCard(
-                      icon: Icons.favorite,
-                      title: 'Değerlerimiz',
-                      description:
-                          'Müşteri odaklılık, inovasyon, güvenilirlik ve sürekli gelişim değerlerimizle, '
-                          'her işletmenin ihtiyacına özel çözümler üretmek için çalışıyoruz.',
-                      color: const Color(0xFF0EA5E9),
+                      icon: cardData[2].icon,
+                      title: cardData[2].title,
+                      description: cardData[2].description,
+                      color: cardData[2].color,
                     ),
                   ],
-                ),
+                );
+              }
+
+              return Column(
+                children: [
+                  for (int i = 0; i < cardData.length; i++) ...[
+                    _buildAboutCard(
+                      icon: cardData[i].icon,
+                      title: cardData[i].title,
+                      description: cardData[i].description,
+                      color: cardData[i].color,
+                      minHeight: mobileMinHeight,
+                    ),
+                    if (i != cardData.length - 1) const SizedBox(height: 24),
+                  ],
+                ],
+              );
+            },
+          ),
 
           const SizedBox(height: 80),
 
@@ -1561,45 +1588,50 @@ class _LandingPageState extends State<LandingPage>
             ),
             child: Column(
               children: [
-                Text(
-                  'Rakamlarla Biz',
-                  style: GoogleFonts.poppins(
-                    fontSize: isMobile ? 32 : (isTablet ? 36 : 40),
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    'Rakamlarla Biz',
+                    style: GoogleFonts.poppins(
+                      fontSize: isMobile ? 28 : (isTablet ? 36 : 40),
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 50),
                 isMobile
                     ? Column(
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Flexible(
-                                child: _buildStatisticItem(
-                                  '1000+', 'Mutlu Müşteri', Icons.people),
-                              ),
-                              Flexible(
-                                child: _buildStatisticItem(
-                                  '50+', 'Ülkede Hizmet', Icons.language),
-                              ),
-                            ],
+                          _buildStatisticRow(
+                            left: _buildStatisticItem(
+                              '1000+',
+                              'Mutlu Müşteri',
+                              Icons.people,
+                              compact: true,
+                            ),
+                            right: _buildStatisticItem(
+                              '50+',
+                              'Ülkede Hizmet',
+                              Icons.language,
+                              compact: true,
+                            ),
                           ),
-                          const SizedBox(height: 30),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              Flexible(
-                                child: _buildStatisticItem(
-                                  '99.9%', 'Uptime', Icons.cloud_done),
-                              ),
-                              Flexible(
-                                child: _buildStatisticItem(
-                                  '7/24', 'Destek', Icons.support_agent),
-                              ),
-                            ],
+                          const SizedBox(height: 24),
+                          _buildStatisticRow(
+                            left: _buildStatisticItem(
+                              '99.9%',
+                              'Uptime',
+                              Icons.cloud_done,
+                              compact: true,
+                            ),
+                            right: _buildStatisticItem(
+                              '7/24',
+                              'Destek',
+                              Icons.support_agent,
+                              compact: true,
+                            ),
                           ),
                         ],
                       )
@@ -1608,19 +1640,27 @@ class _LandingPageState extends State<LandingPage>
                         children: [
                           Flexible(
                             child: _buildStatisticItem(
-                              '1000+', 'Mutlu Müşteri', Icons.people),
+                              '1000+', 'Mutlu Müşteri', Icons.people,
+                              isTabletLayout: _isTablet(context),
+                            ),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                              '50+', 'Ülkede Hizmet', Icons.language),
+                              '50+', 'Ülkede Hizmet', Icons.language,
+                              isTabletLayout: _isTablet(context),
+                            ),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                              '99.9%', 'Uptime', Icons.cloud_done),
+                              '99.9%', 'Uptime', Icons.cloud_done,
+                              isTabletLayout: _isTablet(context),
+                            ),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                              '7/24', 'Destek', Icons.support_agent),
+                              '7/24', 'Destek', Icons.support_agent,
+                              isTabletLayout: _isTablet(context),
+                            ),
                           ),
                         ],
                       ),
@@ -1638,102 +1678,298 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String description,
     required Color color,
+    double? minHeight,
   }) {
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 30 : (isTablet ? 35 : 40)),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: isDark
-            ? Border.all(color: Colors.white12, width: 1)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+    final double minHeightMobile = 230;
+    final double minHeightTablet = 260;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: minHeight ??
+            (isMobile ? minHeightMobile : (isTablet ? minHeightTablet : 0)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: isMobile ? 50 : (isTablet ? 55 : 60),
-            height: isMobile ? 50 : (isTablet ? 55 : 60),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.2),
-                  color.withValues(alpha: 0.1),
-                ],
+      child: Container(
+        padding: EdgeInsets.all(isMobile ? 30 : (isTablet ? 35 : 40)),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[850] : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: isDark
+              ? Border.all(color: Colors.white12, width: 1)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: isMobile ? 50 : (isTablet ? 55 : 60),
+              height: isMobile ? 50 : (isTablet ? 55 : 60),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                gradient: LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.2),
+                    color.withValues(alpha: 0.1),
+                  ],
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: isMobile ? 25 : (isTablet ? 28 : 30),
+                color: color,
               ),
             ),
-            child: Icon(
-              icon,
-              size: isMobile ? 25 : (isTablet ? 28 : 30),
-              color: color,
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: isMobile ? 19 : (isTablet ? 22 : 24),
+                fontWeight: FontWeight.w700,
+                color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: isMobile ? 20 : (isTablet ? 22 : 24),
-              fontWeight: FontWeight.w700,
-              color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+            const SizedBox(height: 16),
+            Text(
+              description,
+              style: GoogleFonts.poppins(
+                fontSize: isMobile ? 13 : (isTablet ? 15 : 16),
+                color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                height: 1.65,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            description,
-            style: GoogleFonts.poppins(
-              fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
-              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
-              height: 1.7,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
+  List<_AboutCardInfo> _aboutCardData() => const [
+        _AboutCardInfo(
+          icon: Icons.flag,
+          title: 'Misyonumuz',
+          description:
+              'İşletmelerin finansal yönetim süreçlerini dijitalleştirerek, onların büyümesine ve '
+              'başarısına katkıda bulunmak. Her işletmenin erişebileceği, kullanımı kolay ve '
+              'güvenilir ön muhasebe çözümleri sunmak.',
+          color: Color(0xFF3B82F6),
+        ),
+        _AboutCardInfo(
+          icon: Icons.visibility,
+          title: 'Vizyonumuz',
+          description:
+              'Türkiye\'nin önde gelen bulut tabanlı ön muhasebe platformu olmak ve işletmelerin '
+              'dijital dönüşüm yolculuğunda güvenilir bir partner olarak yanlarında yer almak.',
+          color: Color(0xFF2563EB),
+        ),
+        _AboutCardInfo(
+          icon: Icons.favorite,
+          title: 'Değerlerimiz',
+          description:
+              'Müşteri odaklılık, inovasyon, güvenilirlik ve sürekli gelişim değerlerimizle, '
+              'her işletmenin ihtiyacına özel çözümler üretmek için çalışıyoruz. İş ortaklarımızla '
+              'uzun soluklu ilişkiler kurarken etik değerlere bağlı kalıyor ve topluma fayda sağlayan '
+              'teknoloji çözümleri geliştirmeyi hedefliyoruz.',
+          color: Color(0xFF0EA5E9),
+        ),
+      ];
+
+  double _calculateMobileAboutCardMinHeight(
+    bool isDark,
+    List<_AboutCardInfo> cards,
+  ) {
+    const double containerPadding = 40;
+    const double cardPadding = 30;
+    const double iconHeight = 50;
+    const double spacingAfterIcon = 24;
+    const double spacingBetweenTexts = 16;
+
+    final double availableWidth =
+        MediaQuery.of(context).size.width - (containerPadding * 2);
+    final double textWidth = availableWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 19,
+      fontWeight: FontWeight.w700,
+      color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+    );
+
+    final descriptionStyle = GoogleFonts.poppins(
+      fontSize: 13,
+      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+      height: 1.65,
+    );
+
+    final double titleHeight =
+        _measureTextHeight(cards.first.title, titleStyle, textWidth);
+
+    final double maxDescriptionHeight = cards
+        .map(
+          (card) =>
+              _measureTextHeight(card.description, descriptionStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        titleHeight +
+        spacingBetweenTexts +
+        maxDescriptionHeight;
+  }
+
+  double _measureTextHeight(
+    String text,
+    TextStyle style,
+    double maxWidth,
+  ) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: TextDirection.ltr,
+      maxLines: null,
+    )..layout(maxWidth: maxWidth);
+
+    return painter.height;
+  }
+
+  double _calculateTabletAboutCardMinHeight(
+    bool isDark,
+    List<_AboutCardInfo> cards,
+  ) {
+    if (cards.isEmpty) return 0;
+
+    const double containerHorizontalPadding = 50; // tablet padding
+    const double cardPadding = 35;
+    const double iconHeight = 55;
+    const double spacingAfterIcon = 24;
+    const double spacingBetweenTexts = 16;
+    const double cardSpacing = 20; // between two cards
+
+    final double availableWidth =
+        MediaQuery.of(context).size.width - (containerHorizontalPadding * 2);
+    final double cardWidth = (availableWidth - cardSpacing) / 2;
+    final double textWidth = cardWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 22,
+      fontWeight: FontWeight.w700,
+      color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+    );
+
+    final descriptionStyle = GoogleFonts.poppins(
+      fontSize: 15,
+      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+      height: 1.7,
+    );
+
+    final double maxTitleHeight = cards
+        .map((card) => _measureTextHeight(card.title, titleStyle, textWidth))
+        .reduce(math.max);
+
+    final double maxDescriptionHeight = cards
+        .map(
+          (card) =>
+              _measureTextHeight(card.description, descriptionStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        maxTitleHeight +
+        spacingBetweenTexts +
+        maxDescriptionHeight;
+  }
+
   /// Statistic item widget
-  Widget _buildStatisticItem(String number, String label, IconData icon) {
-    final isMobile = _isMobile(context);
-    final isTablet = _isTablet(context);
+  Widget _buildStatisticItem(
+    String number,
+    String label,
+    IconData icon, {
+    bool compact = false,
+    bool isTabletLayout = false,
+  }) {
+    final bool isMobile = _isMobile(context);
+    final bool isDesktop = _isDesktopSize(context);
+
+    double responsiveValue({
+      required double compactValue,
+      required double mobileValue,
+      required double tabletValue,
+      required double desktopValue,
+    }) {
+      if (compact) return compactValue;
+      if (isTabletLayout && !isDesktop) return tabletValue;
+      return isMobile ? mobileValue : desktopValue;
+    }
 
     return Column(
       children: [
         Icon(
           icon,
-          size: isMobile ? 32 : (isTablet ? 36 : 40),
+          size: responsiveValue(
+            compactValue: 26,
+            mobileValue: 32,
+            tabletValue: 34,
+            desktopValue: 40,
+          ),
           color: Colors.white.withValues(alpha: 0.9),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Text(
           number,
           style: GoogleFonts.poppins(
-            fontSize: isMobile ? 36 : (isTablet ? 42 : 48),
+            fontSize: responsiveValue(
+              compactValue: 28,
+              mobileValue: 34,
+              tabletValue: 38,
+              desktopValue: 48,
+            ),
             fontWeight: FontWeight.w800,
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           label,
           style: GoogleFonts.poppins(
-            fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
+            fontSize: responsiveValue(
+              compactValue: 12,
+              mobileValue: 14,
+              tabletValue: 14,
+              desktopValue: 16,
+            ),
             fontWeight: FontWeight.w500,
             color: Colors.white.withValues(alpha: 0.9),
           ),
           textAlign: TextAlign.center,
         ),
+      ],
+    );
+  }
+
+  Widget _buildStatisticRow({
+    required Widget left,
+    required Widget right,
+  }) {
+    return Row(
+      children: [
+        Expanded(child: left),
+        const SizedBox(width: 16),
+        Expanded(child: right),
       ],
     );
   }
@@ -2544,6 +2780,20 @@ class _LandingPageState extends State<LandingPage>
       },
     );
   }
+}
+
+class _AboutCardInfo {
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+
+  const _AboutCardInfo({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+  });
 }
 
 /// Feedback Dialog Widget - Öneri, İstek, Şikayet Formu
