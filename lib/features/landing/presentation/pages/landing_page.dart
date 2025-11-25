@@ -2252,9 +2252,7 @@ class _LandingPageState extends State<LandingPage>
           icon,
           size: responsiveValue(
             compactValue: 22,
-            mobileValue: isTinyMobile
-                ? 26
-                : (isSmallMobile ? 30 : 32),
+            mobileValue: isTinyMobile ? 26 : (isSmallMobile ? 30 : 32),
             tabletValue: 30,
             desktopValue: 40,
           ),
@@ -2266,9 +2264,7 @@ class _LandingPageState extends State<LandingPage>
           style: GoogleFonts.poppins(
             fontSize: responsiveValue(
               compactValue: 24,
-              mobileValue: isTinyMobile
-                  ? 28
-                  : (isSmallMobile ? 32 : 34),
+              mobileValue: isTinyMobile ? 28 : (isSmallMobile ? 32 : 34),
               tabletValue: 34,
               desktopValue: 48,
             ),
@@ -2282,9 +2278,7 @@ class _LandingPageState extends State<LandingPage>
           style: GoogleFonts.poppins(
             fontSize: responsiveValue(
               compactValue: 11,
-              mobileValue: isTinyMobile
-                  ? 11
-                  : (isSmallMobile ? 13 : 14),
+              mobileValue: isTinyMobile ? 11 : (isSmallMobile ? 13 : 14),
               tabletValue: 13,
               desktopValue: 16,
             ),
@@ -2590,62 +2584,6 @@ class _LandingPageState extends State<LandingPage>
         ),
       ),
     );
-  }
-
-  double _calculateMobileContactCardMinHeight(
-    List<Map<String, dynamic>> cards, {
-    bool isTopRow = false,
-  }) {
-    if (cards.isEmpty) return 0;
-
-    const double containerHorizontalPadding = 40; // mobile padding
-    const double cardPadding = 24;
-    const double iconHeight = 60;
-    const double spacingAfterIcon = 16;
-    const double spacingBetweenTexts = 12;
-    const double cardSpacing = 16; // between cards in top row
-
-    final double availableWidth =
-        MediaQuery.of(context).size.width - (containerHorizontalPadding * 2);
-
-    // İlk iki kart yan yana ise, her birinin genişliği (availableWidth - cardSpacing) / 2
-    // Tek kart ise, genişlik availableWidth
-    final double cardWidth =
-        isTopRow ? (availableWidth - cardSpacing) / 2 : availableWidth;
-    final double textWidth = cardWidth - (cardPadding * 2);
-
-    final titleStyle = GoogleFonts.poppins(
-      fontSize: 18,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    );
-
-    final valueStyle = GoogleFonts.poppins(
-      fontSize: 14,
-      color: Colors.white.withValues(alpha: 0.8),
-      height: 1.4,
-    );
-
-    final double maxTitleHeight = cards
-        .map((card) =>
-            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
-        .reduce(math.max);
-
-    final double maxValueHeight = cards
-        .map(
-          (card) => _measureTextHeight(
-              card['value'] as String, valueStyle, textWidth),
-        )
-        .reduce(math.max);
-
-    const double verticalPadding = cardPadding * 2;
-
-    return verticalPadding +
-        iconHeight +
-        spacingAfterIcon +
-        maxTitleHeight +
-        spacingBetweenTexts +
-        maxValueHeight;
   }
 
   double _calculateTabletContactCardMinHeight(
