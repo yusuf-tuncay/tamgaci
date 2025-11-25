@@ -654,6 +654,7 @@ class _LandingPageState extends State<LandingPage>
                     text: 'Hemen Başla',
                     onPressed: () => _launchWebApp(),
                     isPrimary: true,
+                    expand: true,
                   ),
                   const SizedBox(height: 16),
                   // Secondary button
@@ -661,6 +662,35 @@ class _LandingPageState extends State<LandingPage>
                     text: 'Mobil Uygulamalar',
                     onPressed: () => _scrollToPlatforms(),
                     isPrimary: false,
+                    expand: true,
+                  ),
+                ],
+              );
+            }
+
+            // Orta genişlikte ekranlar (Surface Duo gibi) için özel düzen
+            if (constraints.maxWidth < 720) {
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Primary button
+                  Expanded(
+                    child: _buildProfessionalButton(
+                      text: 'Hemen Başla',
+                      onPressed: () => _launchWebApp(),
+                      isPrimary: true,
+                      compact: true,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Secondary button
+                  Expanded(
+                    child: _buildProfessionalButton(
+                      text: 'Mobil Uygulamalar',
+                      onPressed: () => _scrollToPlatforms(),
+                      isPrimary: false,
+                      compact: true,
+                    ),
                   ),
                 ],
               );
@@ -700,6 +730,8 @@ class _LandingPageState extends State<LandingPage>
     required String text,
     required VoidCallback onPressed,
     required bool isPrimary,
+    bool expand = false,
+    bool compact = false,
   }) {
     return GestureDetector(
       onTap: onPressed,
@@ -709,7 +741,11 @@ class _LandingPageState extends State<LandingPage>
           return Transform.scale(
             scale: isPrimary ? _pulseAnimation.value : 1.0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              width: expand ? double.infinity : null,
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 16 : 32,
+                vertical: compact ? 14 : 16,
+              ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(50),
                 gradient: isPrimary
@@ -739,22 +775,28 @@ class _LandingPageState extends State<LandingPage>
                   ),
                 ],
               ),
+              alignment: expand ? Alignment.center : null,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    text,
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: isPrimary ? Colors.white : Colors.white,
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: GoogleFonts.poppins(
+                        fontSize: compact ? 14 : 16,
+                        fontWeight: FontWeight.w600,
+                        color: isPrimary ? Colors.white : Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: compact ? 6 : 8),
                   Icon(
                     isPrimary ? Icons.arrow_forward : Icons.download,
                     color: isPrimary ? Colors.white : Colors.white,
-                    size: 18,
+                    size: compact ? 16 : 18,
                   ),
                 ],
               ),
@@ -2188,6 +2230,9 @@ class _LandingPageState extends State<LandingPage>
     bool isTabletLayout = false,
   }) {
     final bool isMobile = _isMobile(context);
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmallMobile = width < 380;
+    final bool isTinyMobile = width < 340;
     final bool isDesktop = _isDesktopSize(context);
 
     double responsiveValue({
@@ -2206,9 +2251,11 @@ class _LandingPageState extends State<LandingPage>
         Icon(
           icon,
           size: responsiveValue(
-            compactValue: 26,
-            mobileValue: 32,
-            tabletValue: 34,
+            compactValue: 22,
+            mobileValue: isTinyMobile
+                ? 26
+                : (isSmallMobile ? 30 : 32),
+            tabletValue: 30,
             desktopValue: 40,
           ),
           color: Colors.white.withValues(alpha: 0.9),
@@ -2218,9 +2265,11 @@ class _LandingPageState extends State<LandingPage>
           number,
           style: GoogleFonts.poppins(
             fontSize: responsiveValue(
-              compactValue: 28,
-              mobileValue: 34,
-              tabletValue: 38,
+              compactValue: 24,
+              mobileValue: isTinyMobile
+                  ? 28
+                  : (isSmallMobile ? 32 : 34),
+              tabletValue: 34,
               desktopValue: 48,
             ),
             fontWeight: FontWeight.w800,
@@ -2232,9 +2281,11 @@ class _LandingPageState extends State<LandingPage>
           label,
           style: GoogleFonts.poppins(
             fontSize: responsiveValue(
-              compactValue: 12,
-              mobileValue: 14,
-              tabletValue: 14,
+              compactValue: 11,
+              mobileValue: isTinyMobile
+                  ? 11
+                  : (isSmallMobile ? 13 : 14),
+              tabletValue: 13,
               desktopValue: 16,
             ),
             fontWeight: FontWeight.w500,
@@ -2263,6 +2314,10 @@ class _LandingPageState extends State<LandingPage>
   Widget _buildContactSection() {
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
+
+    final width = MediaQuery.of(context).size.width;
+    final isSmallMobile = width < 380;
+    final isTinyMobile = width < 340;
 
     return Container(
       key: _contactSectionKey,
@@ -2310,41 +2365,32 @@ class _LandingPageState extends State<LandingPage>
                           'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
                     };
 
-                    // İlk iki kart için yükseklik hesaplaması
-                    final mobileTopRowMinHeight =
-                        _calculateMobileContactCardMinHeight(
-                      [
-                        card1Data,
-                        card2Data,
-                      ],
-                      isTopRow: true,
-                    );
-
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildContactCard(
-                                icon: card1Data['icon'] as IconData,
-                                title: card1Data['title'] as String,
-                                value: card1Data['value'] as String,
-                                onTap: () => _launchEmail(),
-                                minHeight: mobileTopRowMinHeight,
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: _buildContactCard(
+                                  icon: card1Data['icon'] as IconData,
+                                  title: card1Data['title'] as String,
+                                  value: card1Data['value'] as String,
+                                  onTap: () => _launchEmail(),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _buildContactCard(
-                                icon: card2Data['icon'] as IconData,
-                                title: card2Data['title'] as String,
-                                value: card2Data['value'] as String,
-                                onTap: () => _launchPhone(),
-                                minHeight: mobileTopRowMinHeight,
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildContactCard(
+                                  icon: card2Data['icon'] as IconData,
+                                  title: card2Data['title'] as String,
+                                  value: card2Data['value'] as String,
+                                  onTap: () => _launchPhone(),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                         const SizedBox(height: 20),
                         _buildContactCard(
@@ -2436,11 +2482,16 @@ class _LandingPageState extends State<LandingPage>
             width: isMobile ? double.infinity : (isTablet ? 400 : 500),
             child: ElevatedButton.icon(
               onPressed: () => _showFeedbackDialog(context),
-              icon: const Icon(Icons.feedback_outlined, size: 24),
+              icon: Icon(
+                Icons.feedback_outlined,
+                size: isSmallMobile ? 20 : 24,
+              ),
               label: Text(
                 'Öneri, İstek veya Şikayet',
                 style: GoogleFonts.poppins(
-                  fontSize: isMobile ? 16 : 18,
+                  fontSize: isTinyMobile
+                      ? 13
+                      : (isSmallMobile ? 14 : (isMobile ? 16 : 18)),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -2448,8 +2499,12 @@ class _LandingPageState extends State<LandingPage>
                 backgroundColor: Colors.white,
                 foregroundColor: const Color(0xFF1E3A8A),
                 padding: EdgeInsets.symmetric(
-                  vertical: isMobile ? 16 : 20,
-                  horizontal: isMobile ? 24 : 32,
+                  vertical: isTinyMobile
+                      ? 10
+                      : (isSmallMobile ? 12 : (isMobile ? 16 : 20)),
+                  horizontal: isTinyMobile
+                      ? 16
+                      : (isSmallMobile ? 20 : (isMobile ? 24 : 32)),
                 ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -2476,67 +2531,62 @@ class _LandingPageState extends State<LandingPage>
 
     return GestureDetector(
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minHeight: minHeight ?? 0,
-        ),
-        child: Container(
-          width: isMobile ? double.infinity : (isTablet ? 220 : 300),
-          padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 30 : 40)),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-              width: 1,
+      child: Container(
+        width: isMobile ? double.infinity : (isTablet ? 220 : 300),
+        padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 30 : 40)),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withValues(alpha: 0.3),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: isMobile ? 60 : 80,
+              height: isMobile ? 60 : 80,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
-                width: isMobile ? 60 : 80,
-                height: isMobile ? 60 : 80,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.white.withValues(alpha: 0.1),
-                ),
-                child: Icon(
-                  icon,
-                  size: isMobile ? 30 : 40,
-                  color: Colors.white,
-                ),
+              child: Icon(
+                icon,
+                size: isMobile ? 30 : 40,
+                color: Colors.white,
               ),
-              SizedBox(height: isMobile ? 16 : 24),
-              Text(
-                title,
-                style: GoogleFonts.poppins(
-                  fontSize: isMobile ? 18 : 20,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-                textAlign: TextAlign.center,
+            ),
+            SizedBox(height: isMobile ? 16 : 24),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: isMobile ? 18 : 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
               ),
-              const SizedBox(height: 12),
-              Text(
-                value,
-                style: GoogleFonts.poppins(
-                  fontSize: isMobile ? 14 : 16,
-                  color: Colors.white.withValues(alpha: 0.8),
-                  height: 1.4,
-                ),
-                textAlign: TextAlign.center,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: GoogleFonts.poppins(
+                fontSize: isMobile ? 14 : 16,
+                color: Colors.white.withValues(alpha: 0.8),
+                height: 1.4,
               ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
