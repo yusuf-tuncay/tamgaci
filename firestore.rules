@@ -220,11 +220,18 @@ service cloud.firestore {
 
     match /tenants/{tenantId}/invoices/{id} {
       allow get, list: if isSignedIn() && isTenantMember(tenantId);
-      allow create: if isSignedIn() && isTenantMember(tenantId) && 
-                       request.resource.data.tenantId == tenantId &&
-                       request.resource.data.createdBy == userId();
-      allow update: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
-      allow delete: if isSignedIn() && isTenantMember(tenantId) && isOwner(resource.data);
+      allow create: if isSignedIn() && isTenantMember(tenantId) &&
+                       request.resource.data.tenantId == tenantId;
+      allow update: if isSignedIn() && isTenantMember(tenantId);
+      allow delete: if isSignedIn() && isTenantMember(tenantId);
+    }
+
+    match /tenants/{tenantId}/invoice_items/{id} {
+      allow get, list: if isSignedIn() && isTenantMember(tenantId);
+      allow create: if isSignedIn() && isTenantMember(tenantId) &&
+                       request.resource.data.tenantId == tenantId;
+      allow update: if isSignedIn() && isTenantMember(tenantId);
+      allow delete: if isSignedIn() && isTenantMember(tenantId);
     }
 
     match /tenants/{tenantId}/inventory_items/{id} {

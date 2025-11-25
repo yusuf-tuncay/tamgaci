@@ -252,7 +252,7 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
   }
 
   /// Yeni satın alma oluşturur
-  Future<void> createPurchase(Purchase purchase) async {
+  Future<Purchase?> createPurchase(Purchase purchase) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -262,11 +262,13 @@ class PurchaseNotifier extends StateNotifier<PurchaseState> {
         isLoading: false,
         purchases: [...state.purchases, createdPurchase],
       );
+      return createdPurchase;
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
         error: e.toString(),
       );
+      return null;
     }
   }
 

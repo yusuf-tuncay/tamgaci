@@ -22,6 +22,7 @@ import '../../../../core/services/business/transaction_service.dart'
 import '../../../sales/presentation/providers/sale_providers.dart' as sales;
 import '../../../purchases/presentation/providers/purchase_providers.dart'
     as purchases;
+import '../../../purchases/domain/entities/purchase.dart' show PurchaseType;
 import '../../../../core/widgets/lifecycle_mixin.dart';
 import '../../../payment_collection/presentation/pages/transaction_form_screen.dart';
 import '../../../payment_collection/domain/entities/payment_enums.dart';
@@ -738,7 +739,7 @@ class _EnhancedCustomerDetailPageV2State
               label: 'Satışlar / Alışlar',
               isSelected: _selectedTabIndex == 1,
               isDark: isDark,
-              badgeCount: invoicesCount,
+              badgeCount: null,
             ),
             _buildPremiumTab(
               icon: Icons.payment_rounded,
@@ -872,6 +873,8 @@ class _EnhancedCustomerDetailPageV2State
     // Tüm işlemler: Faturalar + Ödemeler + İşlemler + Payment Transactions
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
+    final purchasesAsync =
+        ref.watch(purchases.customerPurchasesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
@@ -946,6 +949,10 @@ class _EnhancedCustomerDetailPageV2State
               data: (value) => value,
               orElse: () => <PaymentTransaction>[],
             );
+            final purchasesList = purchasesAsync.maybeWhen(
+              data: (value) => value,
+              orElse: () => <dynamic>[],
+            );
 
             final paymentTransactionIds =
                 paymentTransactions.map((e) => e.id).toSet();
@@ -963,6 +970,7 @@ class _EnhancedCustomerDetailPageV2State
             final invoiceKeys = <String>{};
             final paymentKeys = <String>{};
             final paymentTxnKeys = <String>{};
+            final purchaseKeys = <String>{};
             final transactionKeys = <String>{};
             final uniqueKeys = <String>{};
             final allItems = <Map<String, dynamic>>[];
@@ -974,6 +982,10 @@ class _EnhancedCustomerDetailPageV2State
             }
 
             for (final invoice in invoices) {
+              // Proformaları sayma ve ekstreye ekleme
+              if (_isInvoiceType(invoice, 'proforma')) {
+                continue;
+              }
               final invoiceId = invoice['id'] as String?;
               final invoiceNumber = invoice['invoiceNumber']?.toString();
               final key = 'invoice-${invoiceId ?? invoiceNumber ?? ''}';
@@ -1043,6 +1055,30 @@ class _EnhancedCustomerDetailPageV2State
               }
             }
 
+            for (final purchase in purchasesList) {
+              final purchaseId = purchase['id']?.toString() ??
+                  purchase['purchaseNumber'] ??
+                  '';
+              final key = 'purchase-$purchaseId';
+              if (purchaseKeys.add(key)) {
+                final date =
+                    _parseDateTime(purchase['purchaseDate']) ?? DateTime.now();
+                final purchaseTypeValue = purchase['type']?.toString() ?? '';
+                final entryType =
+                    purchaseTypeValue == 'PurchaseType.returnPurchase'
+                        ? 'RETURN'
+                        : 'PURCHASE';
+                addItem(
+                  key,
+                  {
+                    'type': entryType,
+                    'date': date,
+                    'data': purchase,
+                  },
+                );
+              }
+            }
+
             allItems.sort((a, b) {
               final dateA = a['date'] as DateTime?;
               final dateB = b['date'] as DateTime?;
@@ -1055,19 +1091,18 @@ class _EnhancedCustomerDetailPageV2State
             final invoicesCount = invoiceKeys.length;
             final paymentsCount = paymentKeys.length + paymentTxnKeys.length;
             final transactionsCount = uniqueKeys.length;
-            final statementCount = transactionsCount;
+            // statementCount artık _buildDetailedTransactionList içinde hesaplanıyor
 
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               if (_transactionsBadgeCount != transactionsCount ||
                   _invoicesBadgeCount != invoicesCount ||
-                  _paymentsBadgeCount != paymentsCount ||
-                  _statementBadgeCount != statementCount) {
+                  _paymentsBadgeCount != paymentsCount) {
                 setState(() {
                   _transactionsBadgeCount = transactionsCount;
                   _invoicesBadgeCount = invoicesCount;
                   _paymentsBadgeCount = paymentsCount;
-                  _statementBadgeCount = statementCount;
+                  // _statementBadgeCount artık _buildDetailedTransactionList içinde güncelleniyor
                 });
               }
             });
@@ -1152,6 +1187,19 @@ class _EnhancedCustomerDetailPageV2State
                         return GestureDetector(
                           onTap: () => _showPaymentTransactionDetail(pt),
                           child: _buildPaymentTransactionTile(pt, isDark),
+                        );
+                      } else if (type == 'PURCHASE' || type == 'RETURN') {
+                        final purchase = item['data'] as Map<String, dynamic>;
+                        final isReturn = type == 'RETURN';
+                        return GestureDetector(
+                          onTap: () {
+                            final purchaseId = purchase['id']?.toString() ?? '';
+                            if (purchaseId.isNotEmpty) {
+                              context.push('/purchases/detail/$purchaseId');
+                            }
+                          },
+                          child: _buildPurchaseActivityTile(
+                              purchase, isReturn, isDark),
                         );
                       } else {
                         final txn = item['data'] as Transaction;
@@ -1517,6 +1565,8 @@ class _EnhancedCustomerDetailPageV2State
     );
     final isLoading = purchasesAsync.isLoading;
     final hasError = purchasesAsync.hasError;
+    debugPrint(
+        'Purchases tab data count: ${purchasesList.length}, types: ${purchasesList.map((p) => p['type']).toList()}');
 
     return DefaultTabController(
       length: 2,
@@ -1527,14 +1577,14 @@ class _EnhancedCustomerDetailPageV2State
             isScrollable: true,
             labelColor: Theme.of(context).colorScheme.onSurface,
             tabs: const [
-              Tab(text: 'Normal Alış'),
-              Tab(text: 'Satıştan İade Alışı'),
+              Tab(text: 'PURCHASE'),
+              Tab(text: 'RETURN'),
             ],
           ),
           Expanded(
             child: TabBarView(
               children: [
-                // Normal Alış - normal purchase type ile filtrele
+                // PURCHASE - normal purchase type ile filtrele
                 Builder(
                   builder: (_) {
                     if (isLoading) {
@@ -1543,7 +1593,7 @@ class _EnhancedCustomerDetailPageV2State
                     if (hasError) {
                       return Center(
                         child: Text(
-                          'Normal alışlar yüklenemedi',
+                          'PURCHASE kayıtları yüklenemedi',
                           style: GoogleFonts.poppins(
                             color: Colors.red,
                           ),
@@ -1553,13 +1603,13 @@ class _EnhancedCustomerDetailPageV2State
 
                     // Normal purchase type'a göre filtrele
                     final filteredPurchases = purchasesList.where((purchase) {
-                      return _isPurchaseType(purchase, 'normal');
+                      return _isPurchaseType(purchase, PurchaseType.purchase);
                     }).toList();
 
                     if (filteredPurchases.isEmpty) {
                       return Center(
                         child: Text(
-                          'Normal alış bulunamadı',
+                          'Herhangi bir PURCHASE bulunamadı',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -1577,7 +1627,7 @@ class _EnhancedCustomerDetailPageV2State
                     );
                   },
                 ),
-                // Satıştan İade Alışı - returnFromSale purchase type ile filtrele
+                // RETURN - returnFromSale purchase type ile filtrele
                 Builder(
                   builder: (_) {
                     if (isLoading) {
@@ -1586,7 +1636,7 @@ class _EnhancedCustomerDetailPageV2State
                     if (hasError) {
                       return Center(
                         child: Text(
-                          'Satıştan iade alışları yüklenemedi',
+                          'RETURN kayıtları yüklenemedi',
                           style: GoogleFonts.poppins(
                             color: Colors.red,
                           ),
@@ -1596,13 +1646,14 @@ class _EnhancedCustomerDetailPageV2State
 
                     // ReturnFromSale purchase type'a göre filtrele
                     final filteredPurchases = purchasesList.where((purchase) {
-                      return _isPurchaseType(purchase, 'returnFromSale');
+                      return _isPurchaseType(
+                          purchase, PurchaseType.returnPurchase);
                     }).toList();
 
                     if (filteredPurchases.isEmpty) {
                       return Center(
                         child: Text(
-                          'Satıştan iade alışı bulunamadı',
+                          'Herhangi bir RETURN bulunamadı',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: isDark ? Colors.grey[400] : Colors.grey[600],
@@ -1649,8 +1700,9 @@ class _EnhancedCustomerDetailPageV2State
   // legacy invoice card (replaced by _buildInvoiceTile)
 
   Widget _buildPaymentTile(CashTransaction t, bool isDark) {
-    final color =
-        t.type == CashTransactionType.income ? Colors.green : Colors.red;
+    final isCredit = t.type == CashTransactionType.income;
+    final color = isCredit ? AppColors.success : AppColors.error;
+    final displayAmount = _formatSignedCurrency(t.amount, t.currency, isCredit);
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
@@ -1666,7 +1718,7 @@ class _EnhancedCustomerDetailPageV2State
           DateFormat('dd.MM.yyyy').format(t.transactionDate),
         ),
         trailing: Text(
-          CurrencyHelper.formatCurrency(t.amount, t.currency),
+          displayAmount,
           style: GoogleFonts.poppins(
             fontWeight: FontWeight.bold,
             color: color,
@@ -1678,17 +1730,19 @@ class _EnhancedCustomerDetailPageV2State
 
   // Transaction helper methods
   Color _getTransactionColor(dynamic type) {
+    const creditColor = AppColors.success;
+    const debitColor = AppColors.error;
     switch (type.toString()) {
       case 'TransactionType.sale':
-        return Colors.green;
+        return creditColor;
       case 'TransactionType.purchase':
-        return Colors.orange;
+        return debitColor;
       case 'TransactionType.payment':
-        return Colors.blue;
+        return creditColor;
       case 'TransactionType.refund':
-        return Colors.red;
+        return debitColor;
       default:
-        return Colors.grey;
+        return creditColor;
     }
   }
 
@@ -1710,15 +1764,57 @@ class _EnhancedCustomerDetailPageV2State
   String _getTransactionTypeText(dynamic type) {
     switch (type.toString()) {
       case 'TransactionType.sale':
-        return 'Satış';
+        return 'SALE';
       case 'TransactionType.purchase':
-        return 'Alış';
+        return 'PURCHASE';
       case 'TransactionType.payment':
-        return 'Ödeme';
+        return 'PAYMENT';
       case 'TransactionType.refund':
-        return 'İade';
+        return 'RETURN';
       default:
-        return 'İşlem';
+        return 'TRANSACTION';
+    }
+  }
+
+  bool _isCreditTransactionType(dynamic type) {
+    final typeStr = (type?.toString() ?? '').toLowerCase();
+
+    if (typeStr.contains('purchase') ||
+        typeStr.contains('return') ||
+        typeStr.contains('refund')) {
+      return false;
+    }
+
+    // Refund, sale, payment vb. işlemleri alacak (credit) olarak kabul et
+    return true;
+  }
+
+  String _formatSignedCurrency(double amount, String? currency, bool isCredit) {
+    final normalizedCurrency =
+        currency == null || currency.isEmpty ? 'TRY' : currency;
+    final formatted =
+        CurrencyHelper.formatCurrency(amount.abs(), normalizedCurrency);
+    if (amount == 0) return formatted;
+    final sign = isCredit ? '+' : '-';
+    return '$sign$formatted';
+  }
+
+  String _getTransactionTypeTextFromString(String typeStr) {
+    switch (typeStr) {
+      case 'TransactionType.sale':
+      case 'sale':
+        return 'SALE';
+      case 'TransactionType.purchase':
+      case 'purchase':
+        return 'PURCHASE';
+      case 'TransactionType.payment':
+      case 'payment':
+        return 'PAYMENT';
+      case 'TransactionType.refund':
+      case 'refund':
+        return 'RETURN';
+      default:
+        return 'TRANSACTION';
     }
   }
 
@@ -1744,32 +1840,25 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   // Purchase type filtreleme helper metodları
-  bool _isPurchaseType(dynamic purchase, String targetType) {
-    final type = purchase['type']?.toString() ?? '';
-    final purchaseType = purchase['purchaseType']?.toString() ?? '';
+  bool _isPurchaseType(dynamic purchase, PurchaseType targetType) {
+    final typeValue = purchase['type']?.toString() ?? '';
+    final purchaseTypeValue = purchase['purchaseType']?.toString() ?? '';
+    final targetName = targetType.name;
 
     // Debug için type'ları logla
     debugPrint(
-        'Purchase type: $type, purchaseType: $purchaseType, targetType: $targetType');
+        'Purchase type: $typeValue, purchaseType: $purchaseTypeValue, targetType: $targetName');
 
-    // PurchaseType enum kontrolü
-    if (type == 'PurchaseType.$targetType' ||
-        purchaseType == 'PurchaseType.$targetType') {
-      return true;
+    bool matches(String value) {
+      if (value.isEmpty) return false;
+      return value == targetName ||
+          value == 'PurchaseType.$targetName' ||
+          value == targetType.displayName ||
+          value == _capitalize(targetName) ||
+          _legacyPurchaseTypeAliases(targetType).contains(value);
     }
 
-    // String kontrolü
-    if (type == targetType || purchaseType == targetType) {
-      return true;
-    }
-
-    // Capitalize kontrolü
-    if (type == _capitalize(targetType) ||
-        purchaseType == _capitalize(targetType)) {
-      return true;
-    }
-
-    return false;
+    return matches(typeValue) || matches(purchaseTypeValue);
   }
 
   // Invoice type filtreleme helper metodları
@@ -1913,6 +2002,8 @@ class _EnhancedCustomerDetailPageV2State
                 final isPayment = entry['type'] == 'payment';
                 final isPaymentTransaction =
                     entry['type'] == 'payment_transaction';
+                final isPurchase = entry['type'] == 'PURCHASE';
+                final isPurchaseReturn = entry['type'] == 'RETURN';
                 final isOpeningBalance = entry['type'] == 'opening_balance';
 
                 // İşlem adı ve açıklama
@@ -1938,7 +2029,7 @@ class _EnhancedCustomerDetailPageV2State
                     debit = openingBalance.abs();
                   }
                 } else if (isInvoice) {
-                  // Fatura işlemi
+                  // Fatura işlemi (Satış)
                   transactionName = 'Fatura';
                   description = transaction['saleNumber'] ??
                       transaction['invoiceNumber'] ??
@@ -1947,71 +2038,159 @@ class _EnhancedCustomerDetailPageV2State
                       (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
                   currency = transaction['currencyCode'] ?? 'TRY';
 
-                  // Fatura borç (müşteri borçlu)
-                  debit = totalAmount;
+                  // Satış: Müşteri satış yapıyor, müşteri alacaklı → Credit (Alacak)
+                  credit = totalAmount;
                 } else if (isPayment) {
                   // Ödeme işlemi
                   transactionName = 'Ödeme';
-                  description = transaction.description ?? 'Ödeme';
-                  final amount = transaction.amount ?? 0.0;
-                  currency = transaction.currency ?? 'TRY';
-
-                  // Ödeme alacak (müşteri alacaklı)
-                  credit = amount;
+                  if (transaction is CashTransaction) {
+                    description = transaction.description ?? 'Ödeme';
+                    final amount = transaction.amount;
+                    currency = transaction.currency;
+                    credit = amount;
+                  } else if (transaction is Map<String, dynamic>) {
+                    description =
+                        transaction['description']?.toString() ?? 'Ödeme';
+                    final amount =
+                        (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+                    currency = transaction['currency']?.toString() ?? 'TRY';
+                    credit = amount;
+                  }
                 } else if (isPaymentTransaction) {
                   // Payment Transaction işlemi
-                  final pt = transaction as PaymentTransaction;
-                  // Ödeme türüne göre isim
-                  switch (pt.type) {
-                    case PaymentTransactionType.cash:
-                      transactionName = 'Nakit';
-                      break;
-                    case PaymentTransactionType.check:
-                      transactionName = 'Çek';
-                      break;
-                    case PaymentTransactionType.promissoryNote:
-                      transactionName = 'Senet';
-                      break;
-                    case PaymentTransactionType.eftTransfer:
-                      transactionName = 'Havale/EFT';
-                      break;
-                    case PaymentTransactionType.creditCard:
-                      transactionName = 'Kredi Kartı';
-                      break;
-                    case PaymentTransactionType.debtReceipt:
-                      transactionName = 'Borç Fişi';
-                      break;
-                    case PaymentTransactionType.creditReceipt:
-                      transactionName = 'Alacak Fişi';
-                      break;
-                    case PaymentTransactionType.accountTransfer:
-                      transactionName = 'Cari Virman';
-                      break;
+                  PaymentTransactionType? ptType;
+                  String? ptDescription;
+                  String? ptTransactionNumber;
+                  double ptAmount = 0.0;
+                  String ptCurrency = 'TRY';
+                  PaymentDirection? ptDirection;
+
+                  if (transaction is PaymentTransaction) {
+                    ptType = transaction.type;
+                    ptDescription = transaction.description;
+                    ptTransactionNumber = transaction.transactionNumber;
+                    ptAmount = transaction.amount;
+                    ptCurrency = transaction.currency;
+                    ptDirection = transaction.direction;
+                  } else if (transaction is Map<String, dynamic>) {
+                    final typeStr = transaction['type']?.toString() ?? '';
+                    ptType = PaymentTransactionType.values.firstWhere(
+                      (e) => e.name == typeStr,
+                      orElse: () => PaymentTransactionType.cash,
+                    );
+                    ptDescription = transaction['description']?.toString();
+                    ptTransactionNumber =
+                        transaction['transactionNumber']?.toString();
+                    ptAmount =
+                        (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+                    ptCurrency = transaction['currency']?.toString() ?? 'TRY';
+                    final directionStr =
+                        transaction['direction']?.toString() ?? '';
+                    ptDirection = PaymentDirection.values.firstWhere(
+                      (e) => e.name == directionStr,
+                      orElse: () => PaymentDirection.outgoing,
+                    );
+                  }
+
+                  if (ptType != null) {
+                    // Ödeme türüne göre isim
+                    switch (ptType) {
+                      case PaymentTransactionType.cash:
+                        transactionName = 'Nakit';
+                        break;
+                      case PaymentTransactionType.check:
+                        transactionName = 'Çek';
+                        break;
+                      case PaymentTransactionType.promissoryNote:
+                        transactionName = 'Senet';
+                        break;
+                      case PaymentTransactionType.eftTransfer:
+                        transactionName = 'Havale/EFT';
+                        break;
+                      case PaymentTransactionType.creditCard:
+                        transactionName = 'Kredi Kartı';
+                        break;
+                      case PaymentTransactionType.debtReceipt:
+                        transactionName = 'Borç Fişi';
+                        break;
+                      case PaymentTransactionType.creditReceipt:
+                        transactionName = 'Alacak Fişi';
+                        break;
+                      case PaymentTransactionType.accountTransfer:
+                        transactionName = 'Cari Virman';
+                        break;
+                    }
                   }
                   description =
-                      '${pt.transactionNumber} - ${pt.description ?? ""}';
-                  final amount = pt.amount;
-                  currency = pt.currency;
+                      '${ptTransactionNumber ?? ""} - ${ptDescription ?? ""}';
+                  final amount = ptAmount;
+                  currency = ptCurrency;
 
                   // Direction'a göre borç/alacak
-                  if (pt.direction == PaymentDirection.incoming) {
+                  if (ptDirection == PaymentDirection.incoming) {
                     credit = amount; // Tahsilat - alacak
                   } else {
                     debit = amount; // Ödeme - borç
                   }
+                } else if (isPurchase) {
+                  // Purchase işlemi
+                  transactionName = 'PURCHASE';
+                  if (transaction is Map<String, dynamic>) {
+                    description = transaction['purchaseNumber']?.toString() ??
+                        transaction['invoiceNumber']?.toString() ??
+                        'N/A';
+                    final totalAmount =
+                        (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+                    currency = transaction['currencyCode']?.toString() ??
+                        transaction['currency']?.toString() ??
+                        'TRY';
+                    debit = totalAmount;
+                  }
+                } else if (isPurchaseReturn) {
+                  // Return işlemi
+                  transactionName = 'RETURN';
+                  if (transaction is Map<String, dynamic>) {
+                    description = transaction['purchaseNumber']?.toString() ??
+                        transaction['invoiceNumber']?.toString() ??
+                        'N/A';
+                    final totalAmount =
+                        (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+                    currency = transaction['currencyCode']?.toString() ??
+                        transaction['currency']?.toString() ??
+                        'TRY';
+                    debit = totalAmount;
+                  }
                 } else {
-                  // Diğer işlemler
-                  transactionName = _getTransactionTypeText(transaction.type);
-                  description = transaction.description ?? '';
-                  final amount = transaction.amount ?? 0.0;
-                  currency = transaction.currency ?? 'TRY';
+                  // Diğer işlemler (Transaction nesnesi)
+                  if (transaction is Transaction) {
+                    transactionName = _getTransactionTypeText(transaction.type);
+                    description = transaction.description ?? '';
+                    final amount = transaction.amount;
+                    currency = transaction.currency;
 
-                  // İşlem tipine göre borç/alacak
-                  if (transaction.type.toString().contains('sale') ||
-                      transaction.type.toString().contains('purchase')) {
-                    debit = amount;
-                  } else {
-                    credit = amount;
+                    // İşlem tipine göre borç/alacak
+                    if (transaction.type.toString().contains('sale') ||
+                        transaction.type.toString().contains('purchase')) {
+                      debit = amount;
+                    } else {
+                      credit = amount;
+                    }
+                  } else if (transaction is Map<String, dynamic>) {
+                    final typeStr = transaction['type']?.toString() ?? '';
+                    transactionName =
+                        _getTransactionTypeTextFromString(typeStr);
+                    description = transaction['description']?.toString() ?? '';
+                    final amount =
+                        (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+                    currency = transaction['currency']?.toString() ?? 'TRY';
+
+                    // İşlem tipine göre borç/alacak
+                    if (typeStr.contains('sale') ||
+                        typeStr.contains('purchase')) {
+                      debit = amount;
+                    } else {
+                      credit = amount;
+                    }
                   }
                 }
 
@@ -2107,6 +2286,8 @@ class _EnhancedCustomerDetailPageV2State
         final isInvoice = entry['type'] == 'invoice';
         final isPayment = entry['type'] == 'payment';
         final isPaymentTransaction = entry['type'] == 'payment_transaction';
+        final isPurchase = entry['type'] == 'PURCHASE';
+        final isPurchaseReturn = entry['type'] == 'RETURN';
         final isOpeningBalance = entry['type'] == 'opening_balance';
 
         // İşlem adı ve açıklama
@@ -2128,6 +2309,7 @@ class _EnhancedCustomerDetailPageV2State
             debit = openingBalance.abs();
           }
         } else if (isInvoice) {
+          // Satış: Müşteri satış yapıyor, müşteri alacaklı → Credit (Alacak)
           transactionName = 'Fatura';
           description = transaction['saleNumber'] ??
               transaction['invoiceNumber'] ??
@@ -2135,59 +2317,137 @@ class _EnhancedCustomerDetailPageV2State
           final totalAmount =
               (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
           currency = transaction['currencyCode'] ?? 'TRY';
-          debit = totalAmount;
+          credit = totalAmount;
         } else if (isPayment) {
           transactionName = 'Ödeme';
-          description = transaction.description ?? 'Ödeme';
-          final amount = transaction.amount ?? 0.0;
-          currency = transaction.currency ?? 'TRY';
-          credit = amount;
-        } else if (isPaymentTransaction) {
-          final pt = transaction as PaymentTransaction;
-          switch (pt.type) {
-            case PaymentTransactionType.cash:
-              transactionName = 'Nakit';
-              break;
-            case PaymentTransactionType.check:
-              transactionName = 'Çek';
-              break;
-            case PaymentTransactionType.promissoryNote:
-              transactionName = 'Senet';
-              break;
-            case PaymentTransactionType.eftTransfer:
-              transactionName = 'Havale/EFT';
-              break;
-            case PaymentTransactionType.creditCard:
-              transactionName = 'Kredi Kartı';
-              break;
-            case PaymentTransactionType.debtReceipt:
-              transactionName = 'Borç Fişi';
-              break;
-            case PaymentTransactionType.creditReceipt:
-              transactionName = 'Alacak Fişi';
-              break;
-            case PaymentTransactionType.accountTransfer:
-              transactionName = 'Cari Virman';
-              break;
+          if (transaction is CashTransaction) {
+            description = transaction.description ?? 'Ödeme';
+            final amount = transaction.amount;
+            currency = transaction.currency;
+            credit = amount;
+          } else if (transaction is Map<String, dynamic>) {
+            description = transaction['description']?.toString() ?? 'Ödeme';
+            final amount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+            currency = transaction['currency']?.toString() ?? 'TRY';
+            credit = amount;
           }
-          description = '${pt.transactionNumber} - ${pt.description ?? ""}';
-          final amount = pt.amount;
-          currency = pt.currency;
-          if (pt.direction == PaymentDirection.incoming) {
+        } else if (isPaymentTransaction) {
+          PaymentTransactionType? ptType;
+          String? ptDescription;
+          String? ptTransactionNumber;
+          double ptAmount = 0.0;
+          String ptCurrency = 'TRY';
+          PaymentDirection? ptDirection;
+
+          if (transaction is PaymentTransaction) {
+            ptType = transaction.type;
+            ptDescription = transaction.description;
+            ptTransactionNumber = transaction.transactionNumber;
+            ptAmount = transaction.amount;
+            ptCurrency = transaction.currency;
+            ptDirection = transaction.direction;
+          } else if (transaction is Map<String, dynamic>) {
+            final typeStr = transaction['type']?.toString() ?? '';
+            ptType = PaymentTransactionType.values.firstWhere(
+              (e) => e.name == typeStr,
+              orElse: () => PaymentTransactionType.cash,
+            );
+            ptDescription = transaction['description']?.toString();
+            ptTransactionNumber = transaction['transactionNumber']?.toString();
+            ptAmount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+            ptCurrency = transaction['currency']?.toString() ?? 'TRY';
+            final directionStr = transaction['direction']?.toString() ?? '';
+            ptDirection = PaymentDirection.values.firstWhere(
+              (e) => e.name == directionStr,
+              orElse: () => PaymentDirection.outgoing,
+            );
+          }
+
+          if (ptType != null) {
+            switch (ptType) {
+              case PaymentTransactionType.cash:
+                transactionName = 'Nakit';
+                break;
+              case PaymentTransactionType.check:
+                transactionName = 'Çek';
+                break;
+              case PaymentTransactionType.promissoryNote:
+                transactionName = 'Senet';
+                break;
+              case PaymentTransactionType.eftTransfer:
+                transactionName = 'Havale/EFT';
+                break;
+              case PaymentTransactionType.creditCard:
+                transactionName = 'Kredi Kartı';
+                break;
+              case PaymentTransactionType.debtReceipt:
+                transactionName = 'Borç Fişi';
+                break;
+              case PaymentTransactionType.creditReceipt:
+                transactionName = 'Alacak Fişi';
+                break;
+              case PaymentTransactionType.accountTransfer:
+                transactionName = 'Cari Virman';
+                break;
+            }
+          }
+          description = '${ptTransactionNumber ?? ""} - ${ptDescription ?? ""}';
+          final amount = ptAmount;
+          currency = ptCurrency;
+          if (ptDirection == PaymentDirection.incoming) {
             credit = amount;
           } else {
             debit = amount;
+          }
+        } else if (isPurchase) {
+          transactionName = 'PURCHASE';
+          if (transaction is Map<String, dynamic>) {
+            description = transaction['purchaseNumber']?.toString() ??
+                transaction['invoiceNumber']?.toString() ??
+                'N/A';
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            currency = transaction['currencyCode']?.toString() ??
+                transaction['currency']?.toString() ??
+                'TRY';
+            debit = totalAmount;
+          }
+        } else if (isPurchaseReturn) {
+          transactionName = 'RETURN';
+          if (transaction is Map<String, dynamic>) {
+            description = transaction['purchaseNumber']?.toString() ??
+                transaction['invoiceNumber']?.toString() ??
+                'N/A';
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            currency = transaction['currencyCode']?.toString() ??
+                transaction['currency']?.toString() ??
+                'TRY';
+            debit = totalAmount;
           }
         } else {
-          transactionName = _getTransactionTypeText(transaction.type);
-          description = transaction.description ?? '';
-          final amount = transaction.amount ?? 0.0;
-          currency = transaction.currency ?? 'TRY';
-          if (transaction.type.toString().contains('sale') ||
-              transaction.type.toString().contains('purchase')) {
-            debit = amount;
-          } else {
-            credit = amount;
+          if (transaction is Transaction) {
+            transactionName = _getTransactionTypeText(transaction.type);
+            description = transaction.description ?? '';
+            final amount = transaction.amount;
+            currency = transaction.currency;
+            if (transaction.type.toString().contains('sale') ||
+                transaction.type.toString().contains('purchase')) {
+              debit = amount;
+            } else {
+              credit = amount;
+            }
+          } else if (transaction is Map<String, dynamic>) {
+            final typeStr = transaction['type']?.toString() ?? '';
+            transactionName = _getTransactionTypeTextFromString(typeStr);
+            description = transaction['description']?.toString() ?? '';
+            final amount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+            currency = transaction['currency']?.toString() ?? 'TRY';
+            if (typeStr.contains('sale') || typeStr.contains('purchase')) {
+              debit = amount;
+            } else {
+              credit = amount;
+            }
           }
         }
 
@@ -2342,9 +2602,12 @@ class _EnhancedCustomerDetailPageV2State
     final paymentStatus = purchase['paymentStatus']?.toString() ?? '';
     final status = purchase['status']?.toString() ?? '';
 
+    // Purchase type'ını kontrol et
+    final isReturn = _isPurchaseType(purchase, PurchaseType.returnPurchase);
+
     // Debug için payment bilgilerini logla
     debugPrint(
-        'Purchase payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status');
+        'Purchase payment - isPaid: $isPaid, paymentStatus: $paymentStatus, status: $status, isReturn: $isReturn');
 
     // Payment status'a göre isPaid hesapla
     // isPaid field'ı primary, diğerleri sadece fallback
@@ -2353,16 +2616,21 @@ class _EnhancedCustomerDetailPageV2State
         (status == 'PurchaseStatus.paid');
 
     debugPrint('Final result - actuallyPaid: $actuallyPaid');
-    final color = actuallyPaid ? Colors.green : Colors.orange;
+
+    // Return için farklı renk ve ikon
+    final titlePrefix = isReturn ? 'RETURN' : 'PURCHASE';
+    final color = isReturn ? AppColors.warning : AppColors.error;
+    final icon = isReturn ? Icons.keyboard_return : Icons.shopping_cart;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: color.withValues(alpha: 0.1),
-          child: const Icon(Icons.shopping_bag, color: Colors.orange),
+          child: Icon(icon, color: color),
         ),
         title: Text(
-          '${_getPurchaseTypeTitle(purchase)}: ${purchase['purchaseNumber'] ?? purchase['invoiceNumber'] ?? 'N/A'}',
+          '$titlePrefix: ${purchase['purchaseNumber'] ?? purchase['invoiceNumber'] ?? 'N/A'}',
           style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
         ),
         subtitle: Text(
@@ -2380,14 +2648,15 @@ class _EnhancedCustomerDetailPageV2State
                   purchase['currencyCode'] ?? 'TRY'),
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
-                color: Colors.orange,
+                color: color,
               ),
             ),
             Text(
-              actuallyPaid ? 'Ödendi' : 'Beklemede',
+              titlePrefix,
               style: GoogleFonts.poppins(
                 fontSize: 12,
-                color: actuallyPaid ? Colors.green : Colors.orange,
+                color: color,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
@@ -2396,42 +2665,27 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
-  // Purchase type'a göre başlık oluştur
-  String _getPurchaseTypeTitle(dynamic purchase) {
-    final type = purchase['type']?.toString() ?? '';
-    final purchaseType = purchase['purchaseType']?.toString() ?? '';
-
-    // Debug için type'ları logla
-    debugPrint('Purchase type for title: $type, purchaseType: $purchaseType');
-
-    // PurchaseType enum kontrolü
-    if (type == 'PurchaseType.normal' ||
-        purchaseType == 'PurchaseType.normal') {
-      return 'Normal Alış';
+  Set<String> _legacyPurchaseTypeAliases(PurchaseType target) {
+    switch (target) {
+      case PurchaseType.purchase:
+        return {
+          'normal',
+          'Normal',
+          'PurchaseType.normal',
+          'purchase_normal',
+        };
+      case PurchaseType.returnPurchase:
+        return {
+          'return',
+          'Return',
+          'RETURN',
+          'returnFromSale',
+          'ReturnFromSale',
+          'PurchaseType.returnFromSale',
+        };
+      default:
+        return {};
     }
-    if (type == 'PurchaseType.returnFromSale' ||
-        purchaseType == 'PurchaseType.returnFromSale') {
-      return 'Satıştan İade Alışı';
-    }
-
-    // String kontrolü
-    if (type == 'normal' || purchaseType == 'normal') {
-      return 'Normal Alış';
-    }
-    if (type == 'returnFromSale' || purchaseType == 'returnFromSale') {
-      return 'Satıştan İade Alışı';
-    }
-
-    // Capitalize kontrolü
-    if (type == 'Normal' || purchaseType == 'Normal') {
-      return 'Normal Alış';
-    }
-    if (type == 'ReturnFromSale' || purchaseType == 'ReturnFromSale') {
-      return 'Satıştan İade Alışı';
-    }
-
-    // Default fallback
-    return 'Normal Alış';
   }
 
   // Invoice type'a göre başlık oluştur
@@ -2520,8 +2774,10 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildPaymentTransactionTile(PaymentTransaction pt, bool isDark) {
     // Payment Transaction with detailed type information
-    final color =
-        pt.direction == PaymentDirection.incoming ? Colors.green : Colors.red;
+    final isCredit = pt.direction == PaymentDirection.incoming;
+    final color = isCredit ? AppColors.success : AppColors.error;
+    final displayAmount =
+        _formatSignedCurrency(pt.amount, pt.currency, isCredit);
 
     // Ödeme türüne göre ikon ve metin
     String typeText = '';
@@ -2638,7 +2894,7 @@ class _EnhancedCustomerDetailPageV2State
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              CurrencyHelper.formatCurrency(pt.amount, pt.currency),
+              displayAmount,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
@@ -2680,6 +2936,12 @@ class _EnhancedCustomerDetailPageV2State
 
   Widget _buildTransactionTile(dynamic t, bool isDark) {
     // Transaction object from TransactionService
+    final isCredit = _isCreditTransactionType(t.type);
+    final amount = (t.amount is num ? (t.amount as num).toDouble() : 0.0).abs();
+    final amountColor = isCredit ? AppColors.success : AppColors.error;
+    final displayAmount =
+        _formatSignedCurrency(amount, t.currency ?? 'TRY', isCredit);
+
     final color = _getTransactionColor(t.type);
     final icon = _getTransactionIcon(t.type);
     final typeText = _getTransactionTypeText(t.type);
@@ -2717,15 +2979,91 @@ class _EnhancedCustomerDetailPageV2State
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
-              CurrencyHelper.formatCurrency(
-                  t.amount ?? 0.0, t.currency ?? 'TRY'),
+              displayAmount,
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                color: amountColor,
+              ),
+            ),
+            Text(
+              typeText,
+              style: GoogleFonts.poppins(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPurchaseActivityTile(
+      Map<String, dynamic> purchase, bool isReturn, bool isDark) {
+    final purchaseNumber = (purchase['purchaseNumber'] ?? purchase['id'] ?? '')
+        .toString()
+        .toUpperCase();
+    final date = _parseDateTime(purchase['purchaseDate']) ?? DateTime.now();
+    final amount = (purchase['totalAmount'] as num?)?.toDouble() ?? 0.0;
+    final currency = (purchase['currency'] ??
+            purchase['currencyCode'] ??
+            purchase['paymentCurrency'] ??
+            'TRY')
+        .toString();
+
+    // Purchase verisinden de type kontrolü yap (güvenlik için)
+    final actualIsReturn =
+        isReturn || _isPurchaseType(purchase, PurchaseType.returnPurchase);
+
+    final titlePrefix = actualIsReturn ? 'RETURN' : 'PURCHASE';
+    final color = actualIsReturn ? AppColors.warning : AppColors.error;
+    final icon = actualIsReturn ? Icons.keyboard_return : Icons.shopping_cart;
+    final description = purchase['description']?.toString();
+    final displayAmount = _formatSignedCurrency(amount, currency, false);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color.withOpacity(0.1),
+          child: Icon(icon, color: color),
+        ),
+        title: Text(
+          '$titlePrefix - $purchaseNumber',
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(DateFormat('dd.MM.yyyy HH:mm').format(date)),
+            if ((description != null && description.isNotEmpty) ||
+                (purchase['notes'] != null &&
+                    purchase['notes'].toString().isNotEmpty))
+              Text(
+                description?.isNotEmpty == true
+                    ? description!
+                    : purchase['notes'].toString(),
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
+              ),
+          ],
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Text(
+              displayAmount,
               style: GoogleFonts.poppins(
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
             Text(
-              typeText,
+              titlePrefix,
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: color,
@@ -3183,6 +3521,8 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildAccountSummaryCard(Customer customer, bool isDark) {
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
+    final purchasesAsync =
+        ref.watch(purchases.customerPurchasesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
@@ -3202,15 +3542,34 @@ class _EnhancedCustomerDetailPageV2State
           orElse: () => <PaymentTransaction>[],
         );
 
+        final purchasesList = purchasesAsync.maybeWhen(
+          data: (value) => value,
+          orElse: () => <dynamic>[],
+        );
+
         // Hesap ekstresi toplamlarını hesapla
         double totalDebit = 0.0;
         double totalCredit = 0.0;
 
-        // Faturalardan borç
+        // Açılış bakiyesi
+        if (customer.openingBalance != null && customer.openingBalance != 0) {
+          if (customer.openingBalance! > 0) {
+            totalCredit += customer.openingBalance!;
+          } else {
+            totalDebit += customer.openingBalance!.abs();
+          }
+        }
+
+        // Faturalardan alacak (Satış: Müşteri alacaklı) - Proformalar hariç
         for (var invoice in invoices) {
+          // Proformaları filtrele
+          if (_isInvoiceType(invoice, 'proforma')) {
+            continue;
+          }
           final totalAmount =
               (invoice['totalAmount'] as num?)?.toDouble() ?? 0.0;
-          totalDebit += totalAmount;
+          // Satış: Credit (Alacak)
+          totalCredit += totalAmount;
         }
 
         // Ödemelerden alacak
@@ -3224,6 +3583,20 @@ class _EnhancedCustomerDetailPageV2State
             totalCredit += pt.amount;
           } else {
             totalDebit += pt.amount;
+          }
+        }
+
+        // Alış işlemlerinden borç
+        for (var purchase in purchasesList) {
+          final purchaseTypeValue = purchase['type']?.toString() ?? '';
+          final totalAmount =
+              (purchase['totalAmount'] as num?)?.toDouble() ?? 0.0;
+          if (purchaseTypeValue == 'PurchaseType.returnPurchase') {
+            // RETURN: Debit (Borç)
+            totalDebit += totalAmount;
+          } else {
+            // PURCHASE: Debit (Borç)
+            totalDebit += totalAmount;
           }
         }
 
@@ -3373,6 +3746,8 @@ class _EnhancedCustomerDetailPageV2State
   Widget _buildDetailedTransactionList(Customer customer, bool isDark) {
     final invoicesAsync =
         ref.watch(sales.customerInvoicesStreamProvider(customer.id));
+    final purchasesAsync =
+        ref.watch(purchases.customerPurchasesStreamProvider(customer.id));
     final cashState = ref.watch(cashManagementNotifierProvider);
     final paymentTransactionsAsync =
         ref.watch(customerPaymentTransactionsProvider(customer.id));
@@ -3392,6 +3767,11 @@ class _EnhancedCustomerDetailPageV2State
           orElse: () => <PaymentTransaction>[],
         );
 
+        final purchasesList = purchasesAsync.maybeWhen(
+          data: (value) => value,
+          orElse: () => <dynamic>[],
+        );
+
         final entries = <Map<String, dynamic>>[];
 
         // Açılış bakiyesi varsa ekle (en eski tarihli işlem olarak)
@@ -3408,9 +3788,9 @@ class _EnhancedCustomerDetailPageV2State
           });
         }
 
-        // Diğer işlemleri ekle
+        // Diğer işlemleri ekle (proformalar hariç)
         entries.addAll([
-          ...invoices.map((i) => {
+          ...invoices.where((i) => !_isInvoiceType(i, 'proforma')).map((i) => {
                 'type': 'invoice',
                 'date': i['invoiceDate'] ?? DateTime.now(),
                 'data': i,
@@ -3425,7 +3805,30 @@ class _EnhancedCustomerDetailPageV2State
                 'date': pt.transactionDate,
                 'data': pt,
               }),
+          ...purchasesList.map((purchase) {
+            final purchaseTypeValue = purchase['type']?.toString() ?? '';
+            final entryType = purchaseTypeValue == 'PurchaseType.returnPurchase'
+                ? 'RETURN'
+                : 'PURCHASE';
+            return {
+              'type': entryType,
+              'date':
+                  _parseDateTime(purchase['purchaseDate']) ?? DateTime.now(),
+              'data': purchase,
+            };
+          }),
         ]);
+
+        // Ekstre sayacını hesapla (açılış bakiyesi dahil, proformalar hariç)
+        final statementCount = entries.length;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (_statementBadgeCount != statementCount) {
+            setState(() {
+              _statementBadgeCount = statementCount;
+            });
+          }
+        });
 
         // Tarihe göre sırala (en eski en üstte)
         entries.sort((a, b) {
@@ -3444,6 +3847,8 @@ class _EnhancedCustomerDetailPageV2State
           final isInvoice = entry['type'] == 'invoice';
           final isPayment = entry['type'] == 'payment';
           final isPaymentTransaction = entry['type'] == 'payment_transaction';
+          final isPurchase = entry['type'] == 'PURCHASE';
+          final isPurchaseReturn = entry['type'] == 'RETURN';
           final isOpeningBalance = entry['type'] == 'opening_balance';
 
           double debit = 0.0;
@@ -3458,19 +3863,42 @@ class _EnhancedCustomerDetailPageV2State
               debit = openingBalance.abs();
             }
           } else if (isInvoice) {
+            // Satış: Müşteri satış yapıyor, müşteri alacaklı → Credit (Alacak)
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            credit = totalAmount;
+          } else if (isPayment) {
+            if (transaction is CashTransaction) {
+              credit = transaction.amount;
+            } else if (transaction is Map<String, dynamic>) {
+              final amount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+              credit = amount;
+            }
+          } else if (isPaymentTransaction) {
+            if (transaction is PaymentTransaction) {
+              if (transaction.direction == PaymentDirection.incoming) {
+                credit = transaction.amount;
+              } else {
+                debit = transaction.amount;
+              }
+            } else {
+              final amount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+              final direction = transaction['direction']?.toString() ?? '';
+              if (direction == 'PaymentDirection.incoming' ||
+                  direction == 'incoming') {
+                credit = amount;
+              } else {
+                debit = amount;
+              }
+            }
+          } else if (isPurchase) {
             final totalAmount =
                 (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
             debit = totalAmount;
-          } else if (isPayment) {
-            final amount = (transaction as CashTransaction).amount;
-            credit = amount;
-          } else if (isPaymentTransaction) {
-            final pt = transaction as PaymentTransaction;
-            if (pt.direction == PaymentDirection.incoming) {
-              credit = pt.amount;
-            } else {
-              debit = pt.amount;
-            }
+          } else if (isPurchaseReturn) {
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            debit = totalAmount;
           }
 
           finalBalance += credit - debit;
@@ -3632,6 +4060,8 @@ class _EnhancedCustomerDetailPageV2State
         final isInvoice = entry['type'] == 'invoice';
         final isPayment = entry['type'] == 'payment';
         final isPaymentTransaction = entry['type'] == 'payment_transaction';
+        final isPurchase = entry['type'] == 'PURCHASE';
+        final isPurchaseReturn = entry['type'] == 'RETURN';
         final isOpeningBalance = entry['type'] == 'opening_balance';
 
         String transactionName = '';
@@ -3650,62 +4080,142 @@ class _EnhancedCustomerDetailPageV2State
             debit = openingBalance.abs();
           }
         } else if (isInvoice) {
+          // Satış: Müşteri satış yapıyor, müşteri alacaklı → Credit (Alacak)
           transactionName = 'Fatura';
           description = transaction['saleNumber'] ??
               transaction['invoiceNumber'] ??
               'N/A';
           final totalAmount =
               (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
-          debit = totalAmount;
+          credit = totalAmount;
         } else if (isPayment) {
           transactionName = 'Ödeme';
-          description = transaction.description ?? 'Ödeme';
-          final amount = transaction.amount ?? 0.0;
-          credit = amount;
-        } else if (isPaymentTransaction) {
-          final pt = transaction as PaymentTransaction;
-          switch (pt.type) {
-            case PaymentTransactionType.cash:
-              transactionName = 'Nakit';
-              break;
-            case PaymentTransactionType.check:
-              transactionName = 'Çek';
-              break;
-            case PaymentTransactionType.promissoryNote:
-              transactionName = 'Senet';
-              break;
-            case PaymentTransactionType.eftTransfer:
-              transactionName = 'Havale/EFT';
-              break;
-            case PaymentTransactionType.creditCard:
-              transactionName = 'Kredi Kartı';
-              break;
-            case PaymentTransactionType.debtReceipt:
-              transactionName = 'Borç Fişi';
-              break;
-            case PaymentTransactionType.creditReceipt:
-              transactionName = 'Alacak Fişi';
-              break;
-            case PaymentTransactionType.accountTransfer:
-              transactionName = 'Cari Virman';
-              break;
+          if (transaction is CashTransaction) {
+            description = transaction.description ?? 'Ödeme';
+            final amount = transaction.amount;
+            credit = amount;
+          } else if (transaction is Map<String, dynamic>) {
+            description = transaction['description']?.toString() ?? 'Ödeme';
+            final amount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+            credit = amount;
           }
-          description = '${pt.transactionNumber} - ${pt.description ?? ""}';
-          final amount = pt.amount;
-          if (pt.direction == PaymentDirection.incoming) {
+        } else if (isPaymentTransaction) {
+          PaymentTransactionType? ptType;
+          String? ptDescription;
+          String? ptTransactionNumber;
+          double ptAmount = 0.0;
+          PaymentDirection? ptDirection;
+
+          if (transaction is PaymentTransaction) {
+            ptType = transaction.type;
+            ptDescription = transaction.description;
+            ptTransactionNumber = transaction.transactionNumber;
+            ptAmount = transaction.amount;
+            ptDirection = transaction.direction;
+          } else if (transaction is Map<String, dynamic>) {
+            final typeStr = transaction['type']?.toString() ?? '';
+            ptType = PaymentTransactionType.values.firstWhere(
+              (e) => e.name == typeStr,
+              orElse: () => PaymentTransactionType.cash,
+            );
+            ptDescription = transaction['description']?.toString();
+            ptTransactionNumber = transaction['transactionNumber']?.toString();
+            ptAmount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+            final directionStr = transaction['direction']?.toString() ?? '';
+            ptDirection = PaymentDirection.values.firstWhere(
+              (e) => e.name == directionStr,
+              orElse: () => PaymentDirection.outgoing,
+            );
+          }
+
+          if (ptType != null) {
+            switch (ptType) {
+              case PaymentTransactionType.cash:
+                transactionName = 'Nakit';
+                break;
+              case PaymentTransactionType.check:
+                transactionName = 'Çek';
+                break;
+              case PaymentTransactionType.promissoryNote:
+                transactionName = 'Senet';
+                break;
+              case PaymentTransactionType.eftTransfer:
+                transactionName = 'Havale/EFT';
+                break;
+              case PaymentTransactionType.creditCard:
+                transactionName = 'Kredi Kartı';
+                break;
+              case PaymentTransactionType.debtReceipt:
+                transactionName = 'Borç Fişi';
+                break;
+              case PaymentTransactionType.creditReceipt:
+                transactionName = 'Alacak Fişi';
+                break;
+              case PaymentTransactionType.accountTransfer:
+                transactionName = 'Cari Virman';
+                break;
+            }
+          }
+          description = '${ptTransactionNumber ?? ""} - ${ptDescription ?? ""}';
+          final amount = ptAmount;
+          if (ptDirection == PaymentDirection.incoming) {
             credit = amount;
           } else {
             debit = amount;
+          }
+        } else if (isPurchase) {
+          // PURCHASE: Müşteri tedarikçiye ödeme yapıyor → Debit (Borç)
+          transactionName = 'PURCHASE';
+          if (transaction is Map<String, dynamic>) {
+            description = transaction['purchaseNumber']?.toString() ??
+                transaction['invoiceNumber']?.toString() ??
+                'N/A';
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            debit = totalAmount;
+          }
+        } else if (isPurchaseReturn) {
+          // RETURN: Müşteri iade alıyor → Debit (Borç)
+          transactionName = 'RETURN';
+          if (transaction is Map<String, dynamic>) {
+            description = transaction['purchaseNumber']?.toString() ??
+                transaction['invoiceNumber']?.toString() ??
+                'N/A';
+            final totalAmount =
+                (transaction['totalAmount'] as num?)?.toDouble() ?? 0.0;
+            debit = totalAmount;
           }
         } else {
-          transactionName = _getTransactionTypeText(transaction.type);
-          description = transaction.description ?? '';
-          final amount = transaction.amount ?? 0.0;
-          if (transaction.type.toString().contains('sale') ||
-              transaction.type.toString().contains('purchase')) {
-            debit = amount;
-          } else {
-            credit = amount;
+          // Diğer işlemler (Transaction nesnesi)
+          if (transaction is Transaction) {
+            transactionName = _getTransactionTypeText(transaction.type);
+            description = transaction.description ?? '';
+            final amount = transaction.amount;
+            // Transaction tipine göre borç/alacak
+            if (transaction.type.toString().contains('sale')) {
+              // Satış: Credit
+              credit = amount;
+            } else if (transaction.type.toString().contains('purchase')) {
+              // Alış: Debit
+              debit = amount;
+            } else {
+              credit = amount;
+            }
+          } else if (transaction is Map<String, dynamic>) {
+            final typeStr = transaction['type']?.toString() ?? '';
+            transactionName = _getTransactionTypeTextFromString(typeStr);
+            description = transaction['description']?.toString() ?? '';
+            final amount = (transaction['amount'] as num?)?.toDouble() ?? 0.0;
+            // Transaction tipine göre borç/alacak
+            if (typeStr.contains('sale')) {
+              // Satış: Credit
+              credit = amount;
+            } else if (typeStr.contains('purchase')) {
+              // Alış: Debit
+              debit = amount;
+            } else {
+              credit = amount;
+            }
           }
         }
 

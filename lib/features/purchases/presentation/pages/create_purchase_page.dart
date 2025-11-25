@@ -73,6 +73,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   final _notesController = TextEditingController();
   final _paymentTermsController = TextEditingController();
   final _shippingCostController = TextEditingController(text: '0');
+  String? _selectedPaymentAccountId;
+  List<account_entity.Account> _availablePaymentAccounts = [];
+  String? _selectedShippingAccountId;
+  List<account_entity.Account> _availableShippingAccounts = [];
 
   // Customer management (satış modülünden)
   final _customerIdController = TextEditingController();
@@ -346,6 +350,55 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
                       const SizedBox(height: 24),
 
+                      // Alış Ürünleri
+                      _buildItemsCard(),
+
+                      const SizedBox(height: 24),
+
+                      // Özet Bölümü
+                      _buildSummaryCard(),
+
+                      const SizedBox(height: 24),
+
+                      // Vade ve Taksitler - Sadece normal alış için göster
+                      if (_purchaseType == PurchaseType.purchase) ...[
+                        const SizedBox(height: 24),
+                        _buildSectionCard(
+                          'Vade ve Taksitler',
+                          Icons.schedule,
+                          [
+                            SwitchListTile(
+                              value: _isInstallmentPurchase,
+                              onChanged: (v) =>
+                                  setState(() => _isInstallmentPurchase = v),
+                              title: const Text('Vadeli (taksitli) alış'),
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            if (_isInstallmentPurchase) ...[
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: OutlinedButton.icon(
+                                  onPressed: () => setState(() =>
+                                      _installments.add(_InstallmentForm())),
+                                  icon: const Icon(Icons.add),
+                                  label: const Text('Taksit Ekle'),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Column(
+                                children: [
+                                  for (int i = 0; i < _installments.length; i++)
+                                    _buildInstallmentRow(i),
+                                  if (_installments.isEmpty)
+                                    Text('Henüz taksit eklenmedi',
+                                        style: GoogleFonts.poppins(
+                                            color: AppColors.textSecondary)),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
                       // Ödeme Bilgileri - Sadece normal alış için göster
                       if (_purchaseType == PurchaseType.purchase) ...[
                         _buildSectionCard(
@@ -354,18 +407,38 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                           [
                             _buildCurrencyAndFxRow(),
                             const SizedBox(height: 16),
+                            _buildPaymentAccountDropdown(),
+                            const SizedBox(height: 16),
                             _buildTextField(
                               controller: _paymentTermsController,
                               label: 'Ödeme Koşulları',
+                              required: false,
                             ),
                             const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _shippingCostController,
-                              keyboardType: TextInputType.number,
-                              decoration: const InputDecoration(
-                                labelText: 'Kargo (Nakliye) Tutarı',
-                                border: OutlineInputBorder(),
-                              ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Focus(
+                                    onFocusChange: (hasFocus) {
+                                      if (!hasFocus) {
+                                        _formatShippingCostValue();
+                                      }
+                                    },
+                                    child: TextFormField(
+                                      controller: _shippingCostController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Kargo (Nakliye) Tutarı',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildShippingAccountDropdown(),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 16),
                             Row(
@@ -376,7 +449,6 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                                         ref.watch(warehousesProvider);
                                     return asyncWarehouses.when(
                                       data: (list) {
-                                        // unique values and safe initial
                                         final items =
                                             <DropdownMenuItem<String>>[
                                           const DropdownMenuItem(
@@ -464,55 +536,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
                         const SizedBox(height: 24),
                       ],
 
-                      // Vade ve Taksitler - Sadece normal alış için göster
-                      if (_purchaseType == PurchaseType.purchase) ...[
-                        const SizedBox(height: 24),
-                        _buildSectionCard(
-                          'Vade ve Taksitler',
-                          Icons.schedule,
-                          [
-                            SwitchListTile(
-                              value: _isInstallmentPurchase,
-                              onChanged: (v) =>
-                                  setState(() => _isInstallmentPurchase = v),
-                              title: const Text('Vadeli (taksitli) alış'),
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            if (_isInstallmentPurchase) ...[
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: OutlinedButton.icon(
-                                  onPressed: () => setState(() =>
-                                      _installments.add(_InstallmentForm())),
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Taksit Ekle'),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Column(
-                                children: [
-                                  for (int i = 0; i < _installments.length; i++)
-                                    _buildInstallmentRow(i),
-                                  if (_installments.isEmpty)
-                                    Text('Henüz taksit eklenmedi',
-                                        style: GoogleFonts.poppins(
-                                            color: AppColors.textSecondary)),
-                                ],
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-
-                      // Alış Ürünleri
-                      _buildItemsCard(),
-
-                      const SizedBox(height: 24),
-
-                      // Özet Bölümü
-                      _buildSummaryCard(),
-
-                      const SizedBox(height: 24),
+                      // Açıklama ve Notlar bloğu
 
                       _buildSectionCard(
                         'Açıklama ve Notlar',
@@ -741,6 +765,37 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       return;
     }
 
+    final shippingCost = double.tryParse(_shippingCostController.text) ?? 0.0;
+    if (shippingCost > 0 &&
+        (_selectedShippingAccountId == null ||
+            _selectedShippingAccountId!.isEmpty)) {
+      final scheme = Theme.of(context).colorScheme;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lütfen nakliye tutarı için kasa seçin',
+              style: TextStyle(color: scheme.onError)),
+          backgroundColor: scheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_purchaseType == PurchaseType.purchase &&
+        (_selectedPaymentAccountId == null ||
+            _selectedPaymentAccountId!.isEmpty)) {
+      final scheme = Theme.of(context).colorScheme;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lütfen ödeme kasasını seçin',
+              style: TextStyle(color: scheme.onError)),
+          backgroundColor: scheme.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       // Calculate totals
@@ -798,30 +853,18 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         updatedAt: DateTime.now(),
       );
 
-      await ref
+      final createdPurchase = await ref
           .read(purchaseNotifierProvider.notifier)
           .createPurchase(purchase);
 
-      // Alış listesini yeniden yükle (purchase ID'yi almak için)
-      await ref.read(purchaseNotifierProvider.notifier).getPurchases();
-
-      // Oluşturulan purchase'ı bul (ID'yi almak için)
-      final purchases = ref.read(purchaseNotifierProvider).purchases;
-      Purchase purchaseWithId = purchase;
-      try {
-        final createdPurchase = purchases.firstWhere(
-          (p) => p.purchaseNumber == purchase.purchaseNumber,
-        );
-        // Purchase ID'yi güncelle
-        if (createdPurchase.id.isNotEmpty) {
-          purchaseWithId = purchase.copyWith(id: createdPurchase.id);
-        }
-      } catch (e) {
-        AppLogger.warning(
-            'Could not find created purchase by number, using original purchase');
+      if (createdPurchase == null) {
+        throw Exception('Alış kaydedilemedi.');
       }
 
-      // Alış kaydedildikten sonra ilgili provider'ları invalidate et ve yenile
+      final purchaseWithId = createdPurchase;
+
+      // Alış listesini yeniden yükle ve provider'ları invalidate et
+      await ref.read(purchaseNotifierProvider.notifier).getPurchases();
       ref.invalidate(purchaseNotifierProvider);
       ref.invalidate(invoice_providers.invoicesProvider);
       ref.invalidate(invoice_providers.invoicesStreamProvider);
@@ -881,14 +924,20 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         }
       }
 
-      // Normal alış için transaction oluştur (iade alışı hariç)
-      if (_purchaseType != PurchaseType.returnPurchase) {
-        try {
-          await _createPurchaseTransactions(purchaseWithId);
-        } catch (e) {
-          AppLogger.error('Error creating transactions for purchase', e);
-          // Transaction hatası alış kaydını engellememeli
-        }
+      // İşlem kaydı oluştur (normal alış & satıştan iade için)
+      try {
+        await _createPurchaseTransactions(
+          purchaseWithId,
+          customerId: _customerIdController.text.isNotEmpty
+              ? _customerIdController.text
+              : null,
+          accountId: _purchaseType == PurchaseType.purchase
+              ? _selectedPaymentAccountId
+              : null,
+        );
+      } catch (e) {
+        AppLogger.error('Error creating transactions for purchase', e);
+        // Transaction hatası alış kaydını engellememeli
       }
 
       if (mounted) {
@@ -904,7 +953,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
         // Fatura önizleme sayfasına yönlendir
         final invoice =
-            UnifiedInvoiceConverter.convertPurchaseToInvoice(purchase);
+            UnifiedInvoiceConverter.convertPurchaseToInvoice(purchaseWithId);
         if (mounted) {
           Navigator.pushReplacement(
             context,
@@ -935,7 +984,8 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
     }
   }
 
-  Future<void> _createPurchaseTransactions(Purchase purchase) async {
+  Future<void> _createPurchaseTransactions(Purchase purchase,
+      {String? customerId, String? accountId}) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
@@ -954,31 +1004,42 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         return;
       }
 
-      // Önce TRY para birimli nakit kasayı bul
-      final targetAccount = accounts.firstWhere(
-        (acc) =>
-            acc.currency == 'TRY' &&
-            acc.type == account_entity.AccountType.cash,
-        orElse: () => accounts.firstWhere(
-          (acc) => acc.currency == purchase.currency,
-          orElse: () => accounts.first,
-        ),
-      );
+      account_entity.Account? targetAccount;
+      if (accountId != null && accountId.isNotEmpty) {
+        try {
+          targetAccount = accounts.firstWhere((acc) => acc.id == accountId);
+        } catch (_) {
+          targetAccount = null;
+        }
+      }
+
+      targetAccount ??= _pickDefaultPaymentAccount(accounts);
+
+      if (targetAccount == null) {
+        AppLogger.warning('Unable to find a suitable payment account');
+        return;
+      }
 
       final now = DateTime.now();
+      final isReturnPurchase = purchase.type == PurchaseType.returnPurchase;
       final amount = purchase.totalAmount;
+      final transactionCustomerId = customerId ?? '';
 
       // TransactionService ile müşteri transaction'ı oluştur
       try {
         final transactionService = transaction_service.TransactionService();
         final transaction = transaction_service.Transaction(
           id: '',
-          customerId: '', // Alış için customer yok
+          customerId: transactionCustomerId,
           supplierId: purchase.supplierId,
-          type: transaction_service.TransactionType.expense,
+          type: isReturnPurchase
+              ? transaction_service.TransactionType.refund
+              : transaction_service.TransactionType.purchase,
           amount: amount,
           currency: purchase.currency,
-          description: 'Alış ödemesi ${purchase.purchaseNumber}',
+          description: isReturnPurchase
+              ? 'Satıştan iade ${purchase.purchaseNumber}'
+              : 'Alış ödemesi ${purchase.purchaseNumber}',
           reference: purchase.purchaseNumber,
           transactionDate: purchase.purchaseDate,
           dueDate: purchase.dueDate,
@@ -1014,7 +1075,9 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           final accountData = accountDoc.data()!;
           final currentBalance =
               (accountData['balance'] as num?)?.toDouble() ?? 0.0;
-          final newBalance = currentBalance - amount; // Alış için çıkış
+          final newBalance = isReturnPurchase
+              ? currentBalance + amount // iade -> para girişi
+              : currentBalance - amount; // normal alış -> para çıkışı
 
           // AccountTransaction oluştur
           final accountTransaction = account_txn.AccountTransaction(
@@ -1022,14 +1085,17 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
             accountId: targetAccount.id,
             fromAccountId: null,
             toAccountId: null,
-            type: account_txn.TransactionType.expense,
+            type: isReturnPurchase
+                ? account_txn.TransactionType.income
+                : account_txn.TransactionType.expense,
             category: account_txn.TransactionCategory.other,
             amount: amount,
-            debitAmount: amount,
-            creditAmount: null,
+            debitAmount: isReturnPurchase ? null : amount,
+            creditAmount: isReturnPurchase ? amount : null,
             balanceAfter: newBalance,
-            description:
-                'Alış ödemesi ${purchase.purchaseNumber} (${purchase.currency})',
+            description: isReturnPurchase
+                ? 'Satıştan iade ${purchase.purchaseNumber} (${purchase.currency})'
+                : 'Alış ödemesi ${purchase.purchaseNumber} (${purchase.currency})',
             reference: purchase.purchaseNumber,
             transactionDate: now,
             userId: user.uid,
@@ -1072,6 +1138,178 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
       AppLogger.error('Error in _createPurchaseTransactions', e);
       rethrow;
     }
+  }
+
+  account_entity.Account? _pickDefaultPaymentAccount(
+      List<account_entity.Account> accounts) {
+    account_entity.Account? tryFind(
+        bool Function(account_entity.Account) test) {
+      try {
+        return accounts.firstWhere(test);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final preferred = tryFind((acc) =>
+        _isAllowedPaymentAccount(acc) &&
+        acc.type == account_entity.AccountType.cash);
+    if (preferred != null) return preferred;
+
+    final allowed = tryFind(_isAllowedPaymentAccount);
+    if (allowed != null) return allowed;
+
+    return accounts.first;
+  }
+
+  void _schedulePaymentAccountAlignment(String currency) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _updatePaymentAccountForCurrency(currency, force: false);
+    });
+  }
+
+  void _ensurePaymentAccountSelection() {
+    final currentId = _selectedPaymentAccountId;
+    final exists = currentId != null &&
+        _availablePaymentAccounts.any((acc) => acc.id == currentId);
+    if (!exists) {
+      _updatePaymentAccountForCurrency(_currencyCode, force: true);
+    } else {
+      _updatePaymentAccountForCurrency(_currencyCode, force: false);
+    }
+  }
+
+  void _updatePaymentAccountForCurrency(String currency, {bool force = false}) {
+    if (_availablePaymentAccounts.isEmpty) return;
+    final match = _findAccountForCurrency(currency);
+    if (match == null) return;
+
+    account_entity.Account? currentAccount;
+    if (_selectedPaymentAccountId != null) {
+      try {
+        currentAccount = _availablePaymentAccounts
+            .firstWhere((acc) => acc.id == _selectedPaymentAccountId);
+      } catch (_) {
+        currentAccount = null;
+      }
+    }
+
+    final alreadyMatching = currentAccount != null &&
+        currentAccount.currency == currency &&
+        _isAllowedPaymentAccount(currentAccount);
+
+    final shouldUpdate = force ||
+        _selectedPaymentAccountId == null ||
+        currentAccount == null ||
+        !alreadyMatching;
+    if (!shouldUpdate) return;
+    setState(() {
+      _selectedPaymentAccountId = match.id;
+    });
+  }
+
+  account_entity.Account? _findAccountForCurrency(String currency) {
+    account_entity.Account? tryFind(
+        bool Function(account_entity.Account) predicate) {
+      try {
+        return _availablePaymentAccounts.firstWhere(predicate);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final cashMatch = tryFind((acc) =>
+        acc.currency == currency &&
+        acc.type == account_entity.AccountType.cash);
+    if (cashMatch != null) return cashMatch;
+
+    final currencyMatch = tryFind(
+        (acc) => acc.currency == currency && _isAllowedPaymentAccount(acc));
+    if (currencyMatch != null) return currencyMatch;
+
+    return _pickDefaultPaymentAccount(_availablePaymentAccounts);
+  }
+
+  void _scheduleShippingAccountAlignment(String currency) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _updateShippingAccountForCurrency(currency, force: false);
+    });
+  }
+
+  void _ensureShippingAccountSelection() {
+    final currentId = _selectedShippingAccountId;
+    final exists = currentId != null &&
+        _availableShippingAccounts.any((acc) => acc.id == currentId);
+    if (!exists) {
+      _updateShippingAccountForCurrency(_currencyCode, force: true);
+    } else {
+      _updateShippingAccountForCurrency(_currencyCode, force: false);
+    }
+  }
+
+  void _updateShippingAccountForCurrency(String currency,
+      {bool force = false}) {
+    if (_availableShippingAccounts.isEmpty) return;
+    final match = _findShippingAccountForCurrency(currency);
+    if (match == null) return;
+
+    account_entity.Account? currentAccount;
+    if (_selectedShippingAccountId != null) {
+      try {
+        currentAccount = _availableShippingAccounts
+            .firstWhere((acc) => acc.id == _selectedShippingAccountId);
+      } catch (_) {
+        currentAccount = null;
+      }
+    }
+
+    final alreadyMatching =
+        currentAccount != null && currentAccount.currency == currency;
+
+    final shouldUpdate = force ||
+        _selectedShippingAccountId == null ||
+        currentAccount == null ||
+        !alreadyMatching;
+    if (!shouldUpdate) return;
+    setState(() {
+      _selectedShippingAccountId = match.id;
+    });
+  }
+
+  account_entity.Account? _findShippingAccountForCurrency(String currency) {
+    account_entity.Account? tryFind(
+        bool Function(account_entity.Account) predicate) {
+      try {
+        return _availableShippingAccounts.firstWhere(predicate);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final cashMatch = tryFind((acc) =>
+        acc.currency == currency &&
+        acc.type == account_entity.AccountType.cash);
+    if (cashMatch != null) return cashMatch;
+
+    final currencyMatch = tryFind(
+        (acc) => acc.currency == currency && _isAllowedShippingAccount(acc));
+    if (currencyMatch != null) return currencyMatch;
+
+    return _availableShippingAccounts.first;
+  }
+
+  void _formatShippingCostValue() {
+    final raw = _shippingCostController.text.trim();
+    if (raw.isEmpty) return;
+    final normalized = raw.replaceAll('.', '').replaceAll(',', '.');
+    final value = double.tryParse(normalized);
+    if (value == null) return;
+    final formatter =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 2);
+    final formatted = formatter.format(value).trim();
+    _shippingCostController.text = formatted;
   }
 
   Future<void> _syncInvoiceWithPurchase(Purchase purchase) async {
@@ -1290,7 +1528,12 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
               DropdownMenuItem(value: 'EUR', child: Text('EUR')),
               DropdownMenuItem(value: 'GBP', child: Text('GBP')),
             ],
-            onChanged: (v) => setState(() => _currencyCode = v ?? 'TRY'),
+            onChanged: (v) {
+              final newValue = v ?? 'TRY';
+              setState(() => _currencyCode = newValue);
+              _schedulePaymentAccountAlignment(newValue);
+              _scheduleShippingAccountAlignment(newValue);
+            },
           ),
         ),
         const SizedBox(width: 12),
@@ -1372,6 +1615,178 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
         ),
       ),
     );
+  }
+
+  Widget _buildPaymentAccountDropdown() {
+    return Consumer(builder: (context, ref, _) {
+      final accountsAsync = ref.watch(accountsProvider);
+      return accountsAsync.when(
+        data: (accounts) {
+          final allowedAccounts =
+              accounts.where(_isAllowedPaymentAccount).toList();
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _availablePaymentAccounts = allowedAccounts;
+            _ensurePaymentAccountSelection();
+          });
+
+          if (allowedAccounts.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              child: Text(
+                'Uygun kasa hesabı bulunamadı. Lütfen Hesaplar modülünden Nakit, Banka, Kredi Kartı, Çek veya Senet tipinde bir hesap ekleyin.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            );
+          }
+
+          final dropdownValue = _selectedPaymentAccountId;
+          return DropdownButtonFormField<String>(
+            value: dropdownValue,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Ödeme Kasası',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (final account in allowedAccounts)
+                DropdownMenuItem<String>(
+                  value: account.id,
+                  child: Text(
+                      '${_accountTypeLabel(account)} - ${account.name} (${account.currency})'),
+                )
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedPaymentAccountId = value;
+              });
+            },
+          );
+        },
+        loading: () => const SizedBox(
+          height: 56,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, _) => Text(
+          'Kasa hesapları yüklenemedi: $error',
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      );
+    });
+  }
+
+  Widget _buildShippingAccountDropdown() {
+    return Consumer(builder: (context, ref, _) {
+      final accountsAsync = ref.watch(accountsProvider);
+      return accountsAsync.when(
+        data: (accounts) {
+          final allowedAccounts =
+              accounts.where(_isAllowedShippingAccount).toList();
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            _availableShippingAccounts = allowedAccounts;
+            _ensureShippingAccountSelection();
+          });
+
+          if (allowedAccounts.isEmpty) {
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(TamgaciConstants.radiusMD),
+                border: Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant),
+              ),
+              child: Text(
+                'Nakliye için kullanılabilecek kasa/banka hesabı bulunamadı.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            );
+          }
+
+          return DropdownButtonFormField<String>(
+            value: _selectedShippingAccountId,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Nakliye Kasası',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              for (final account in allowedAccounts)
+                DropdownMenuItem<String>(
+                  value: account.id,
+                  child: Text(
+                      '${_accountTypeLabel(account)} - ${account.name} (${account.currency})'),
+                )
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedShippingAccountId = value;
+              });
+            },
+          );
+        },
+        loading: () => const SizedBox(
+          height: 56,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (error, _) => Text(
+          'Nakliye kasası yüklenemedi: $error',
+          style: TextStyle(color: Theme.of(context).colorScheme.error),
+        ),
+      );
+    });
+  }
+
+  bool _isAllowedPaymentAccount(account_entity.Account account) {
+    final lowerName = account.name.toLowerCase();
+    if (account.type == account_entity.AccountType.credit ||
+        lowerName.contains('pos')) {
+      return false;
+    }
+
+    final isBank = account.type == account_entity.AccountType.checking ||
+        account.type == account_entity.AccountType.savings ||
+        account.type == account_entity.AccountType.foreign;
+    final isCash = account.type == account_entity.AccountType.cash;
+    final isCard = account.type == account_entity.AccountType.creditCard;
+    final isCheck = account.isCheckAccount;
+    final isPromissory = account.isPromissoryAccount;
+
+    return isBank || isCash || isCard || isCheck || isPromissory;
+  }
+
+  String _accountTypeLabel(account_entity.Account account) {
+    if (account.isCheckAccount) return 'Çek';
+    if (account.isPromissoryAccount) return 'Senet';
+    switch (account.type) {
+      case account_entity.AccountType.cash:
+        return 'Nakit';
+      case account_entity.AccountType.creditCard:
+        return 'Kredi Kartı';
+      case account_entity.AccountType.checking:
+      case account_entity.AccountType.savings:
+      case account_entity.AccountType.foreign:
+        return 'Banka';
+      default:
+        return account.type.displayName;
+    }
+  }
+
+  bool _isAllowedShippingAccount(account_entity.Account account) {
+    if (account.type == account_entity.AccountType.credit) return false;
+    final isBank = account.type == account_entity.AccountType.checking ||
+        account.type == account_entity.AccountType.savings ||
+        account.type == account_entity.AccountType.foreign;
+    final isCash = account.type == account_entity.AccountType.cash;
+    final isCard = account.type == account_entity.AccountType.creditCard;
+    return isBank || isCash || isCard;
   }
 
   Widget _buildProductsTable() {
@@ -1742,10 +2157,10 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
       // Bu para birimi için hesaplamalar
       final subtotal = items.fold(
-          0.0, (sum, item) => sum + (item.unitPrice * item.quantity));
+          0.0, (acc, item) => acc + (item.unitPrice * item.quantity));
       final totalDiscount =
-          items.fold(0.0, (sum, item) => sum + item.discountAmount);
-      final totalTax = items.fold(0.0, (sum, item) => sum + item.taxAmount);
+          items.fold(0.0, (acc, item) => acc + item.discountAmount);
+      final totalTax = items.fold(0.0, (acc, item) => acc + item.taxAmount);
       final total = subtotal - totalDiscount + totalTax;
 
       // Debug: Özet hesaplama bilgilerini yazdır
@@ -2022,7 +2437,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
   Widget _buildGrandTotalCard(
       double totalInTargetCurrency, String targetCurrency) {
     // Toplam ürün miktarını hesapla
-    final totalQuantity = _items.fold(0.0, (sum, item) => sum + item.quantity);
+    final totalQuantity = _items.fold(0.0, (acc, item) => acc + item.quantity);
     debugPrint(
         'DEBUG: _buildGrandTotalCard - totalInTargetCurrency: $totalInTargetCurrency, targetCurrency: $targetCurrency');
 

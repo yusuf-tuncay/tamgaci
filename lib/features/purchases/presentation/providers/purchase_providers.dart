@@ -136,20 +136,25 @@ final customerPurchasesStreamProvider =
       return;
     }
 
-    // Müşteriye ait alışları getir
+    // Müşteriye ait alışları getir (satış iadeleri supplierId alanına yazılıyor)
     final snap = await firestore
         .collection('tenants')
         .doc(tenantId)
         .collection('purchases')
-        .where('customerId', isEqualTo: customerId)
-        .orderBy('createdAt', descending: true)
+        .where('supplierId', isEqualTo: customerId)
         .get();
 
     final purchases = snap.docs.map((doc) {
       final data = doc.data();
       data['id'] = doc.id;
       return data;
-    }).toList();
+    }).toList()
+      ..sort((a, b) {
+        final aDate = (a['createdAt'] as Timestamp?)?.toDate();
+        final bDate = (b['createdAt'] as Timestamp?)?.toDate();
+        if (aDate == null || bDate == null) return 0;
+        return bDate.compareTo(aDate);
+      });
 
     yield purchases;
   } catch (e) {

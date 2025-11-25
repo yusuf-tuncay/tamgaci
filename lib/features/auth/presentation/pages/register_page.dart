@@ -987,8 +987,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     if (localDigits.isEmpty) {
       return 'Telefon numarası zorunludur';
     }
-    if (!RegExp(r'^[0-9]+$').hasMatch(localDigits)) {
-      return 'Telefon numarası sadece rakam içermelidir';
+      if (!RegExp(r'^[0-9]+$').hasMatch(localDigits)) {
+        return 'Telefon numarası sadece rakam içermelidir';
     }
     if (_selectedCountry == 'TR') {
       if (localDigits.length != 10) {
@@ -2008,8 +2008,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                           value: _selectedDistrict,
                                           options: _selectedCity != null
                                               ? (_districtsByCity[
-                                                      _selectedCity!] ??
-                                                  [])
+                                                          _selectedCity!] ??
+                                                      [])
                                               : const [],
                                           allowClear: true,
                                           enabled: _selectedCity != null,
