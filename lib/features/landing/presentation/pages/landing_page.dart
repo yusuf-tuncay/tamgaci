@@ -48,9 +48,9 @@ class _LandingPageState extends State<LandingPage>
       MediaQuery.of(context).size.width < 768;
   bool _isTablet(BuildContext context) =>
       MediaQuery.of(context).size.width >= 768 &&
-      MediaQuery.of(context).size.width < 1024;
+      MediaQuery.of(context).size.width < 1200;
   bool _isDesktopSize(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 1024;
+      MediaQuery.of(context).size.width >= 1200;
 
   @override
   void initState() {
@@ -63,7 +63,9 @@ class _LandingPageState extends State<LandingPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Context hazır olduğunda device type kontrolü yap (sadece bir kez)
-    if (!_isDesktopCheckScheduled && _isDesktop == false && MediaQuery.of(context).size.width >= 768) {
+    if (!_isDesktopCheckScheduled &&
+        _isDesktop == false &&
+        MediaQuery.of(context).size.width >= 768) {
       _isDesktopCheckScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -138,15 +140,15 @@ class _LandingPageState extends State<LandingPage>
 
     // Start animations
     if (mounted) {
-    _fadeController.forward();
-    Future.delayed(const Duration(milliseconds: 300), () {
+      _fadeController.forward();
+      Future.delayed(const Duration(milliseconds: 300), () {
         if (mounted && !_slideController.isAnimating) {
-      _slideController.forward();
+          _slideController.forward();
         }
-    });
+      });
       if (mounted) {
-    _floatController.repeat(reverse: true);
-    _pulseController.repeat(reverse: true);
+        _floatController.repeat(reverse: true);
+        _pulseController.repeat(reverse: true);
       }
     }
   }
@@ -158,7 +160,7 @@ class _LandingPageState extends State<LandingPage>
     _slideController.stop();
     _floatController.stop();
     _pulseController.stop();
-    
+
     // Dispose controllers
     _fadeController.dispose();
     _slideController.dispose();
@@ -780,13 +782,13 @@ class _LandingPageState extends State<LandingPage>
                 ],
               )
             : const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Color(0xFFF8FAFC),
-            Color(0xFFE2E8F0),
-          ],
-        ),
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFF8FAFC),
+                  Color(0xFFE2E8F0),
+                ],
+              ),
       ),
       child: Column(
         children: [
@@ -800,41 +802,15 @@ class _LandingPageState extends State<LandingPage>
             textAlign: TextAlign.center,
           ),
           SizedBox(height: MediaQuery.of(context).size.width > 768 ? 80 : 40),
-          // Mobil için dikey düzen, desktop için yatay
-          MediaQuery.of(context).size.width > 768
-              ? Row(
-                  children: [
-                    Expanded(
-                      child: _buildBusinessFeatureCard(
-                        icon: Icons.speed,
-                        title: 'Hızlı ve Güvenilir',
-                        description:
-                            'İşlemlerinizi hızla tamamlayın, verileriniz güvende',
-                        color: const Color(0xFF3B82F6),
-                      ),
-                    ),
-                    const SizedBox(width: 40),
-                    Expanded(
-                      child: _buildBusinessFeatureCard(
-                        icon: Icons.security,
-                        title: 'Güvenli Altyapı',
-                        description:
-                            'Bank level güvenlik ile verilerinizi koruyun',
-                        color: const Color(0xFF2563EB),
-                      ),
-                    ),
-                    const SizedBox(width: 40),
-                    Expanded(
-                      child: _buildBusinessFeatureCard(
-                        icon: Icons.cloud_sync,
-                        title: 'Bulut Tabanlı',
-                        description: 'Her yerden erişim, otomatik yedekleme',
-                        color: const Color(0xFF0EA5E9),
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
+          // Mobil için dikey düzen, tablet için 2+1 düzen, desktop için yatay
+          Builder(
+            builder: (context) {
+              final width = MediaQuery.of(context).size.width;
+              final isMobile = width < 768;
+              final isTablet = width >= 768 && width < 1200;
+
+              if (isMobile) {
+                return Column(
                   children: [
                     _buildBusinessFeatureCard(
                       icon: Icons.speed,
@@ -859,7 +835,135 @@ class _LandingPageState extends State<LandingPage>
                       color: const Color(0xFF0EA5E9),
                     ),
                   ],
-                ),
+                );
+              }
+
+              if (isTablet) {
+                // Tablet için: İlk iki kart yan yana, üçüncü kart altında
+                final card1Data = {
+                  'icon': Icons.speed,
+                  'title': 'Hızlı ve Güvenilir',
+                  'description':
+                      'İşlemlerinizi hızla tamamlayın, verileriniz güvende',
+                  'color': const Color(0xFF3B82F6),
+                };
+                final card2Data = {
+                  'icon': Icons.security,
+                  'title': 'Güvenli Altyapı',
+                  'description': 'Bank level güvenlik ile verilerinizi koruyun',
+                  'color': const Color(0xFF2563EB),
+                };
+
+                final tabletTopRowMinHeight =
+                    _calculateTabletBusinessCardMinHeight(
+                  isDark,
+                  [
+                    card1Data,
+                    card2Data,
+                  ],
+                );
+
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildBusinessFeatureCard(
+                            icon: card1Data['icon'] as IconData,
+                            title: card1Data['title'] as String,
+                            description: card1Data['description'] as String,
+                            color: card1Data['color'] as Color,
+                            minHeight: tabletTopRowMinHeight,
+                          ),
+                        ),
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: _buildBusinessFeatureCard(
+                            icon: card2Data['icon'] as IconData,
+                            title: card2Data['title'] as String,
+                            description: card2Data['description'] as String,
+                            color: card2Data['color'] as Color,
+                            minHeight: tabletTopRowMinHeight,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _buildBusinessFeatureCard(
+                      icon: Icons.cloud_sync,
+                      title: 'Bulut Tabanlı',
+                      description: 'Her yerden erişim, otomatik yedekleme',
+                      color: const Color(0xFF0EA5E9),
+                    ),
+                  ],
+                );
+              }
+
+              // Desktop için: 3 kart yan yana
+              final card1Data = {
+                'icon': Icons.speed,
+                'title': 'Hızlı ve Güvenilir',
+                'description':
+                    'İşlemlerinizi hızla tamamlayın, verileriniz güvende',
+                'color': const Color(0xFF3B82F6),
+              };
+              final card2Data = {
+                'icon': Icons.security,
+                'title': 'Güvenli Altyapı',
+                'description': 'Bank level güvenlik ile verilerinizi koruyun',
+                'color': const Color(0xFF2563EB),
+              };
+              final card3Data = {
+                'icon': Icons.cloud_sync,
+                'title': 'Bulut Tabanlı',
+                'description': 'Her yerden erişim, otomatik yedekleme',
+                'color': const Color(0xFF0EA5E9),
+              };
+
+              final desktopMinHeight = _calculateDesktopBusinessCardMinHeight(
+                isDark,
+                [
+                  card1Data,
+                  card2Data,
+                  card3Data,
+                ],
+              );
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: _buildBusinessFeatureCard(
+                      icon: card1Data['icon'] as IconData,
+                      title: card1Data['title'] as String,
+                      description: card1Data['description'] as String,
+                      color: card1Data['color'] as Color,
+                      minHeight: desktopMinHeight,
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                  Expanded(
+                    child: _buildBusinessFeatureCard(
+                      icon: card2Data['icon'] as IconData,
+                      title: card2Data['title'] as String,
+                      description: card2Data['description'] as String,
+                      color: card2Data['color'] as Color,
+                      minHeight: desktopMinHeight,
+                    ),
+                  ),
+                  const SizedBox(width: 40),
+                  Expanded(
+                    child: _buildBusinessFeatureCard(
+                      icon: card3Data['icon'] as IconData,
+                      title: card3Data['title'] as String,
+                      description: card3Data['description'] as String,
+                      color: card3Data['color'] as Color,
+                      minHeight: desktopMinHeight,
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -871,6 +975,7 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String description,
     required Color color,
+    double? minHeight,
   }) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = _isMobile(context);
@@ -878,66 +983,173 @@ class _LandingPageState extends State<LandingPage>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final shouldExpandWidth = screenWidth <= 768;
 
-    return Container(
-      width: shouldExpandWidth ? double.infinity : null,
-      padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 32 : 40)),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: isDark
-            ? Border.all(color: Colors.white12, width: 1)
-            : null,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        minHeight: minHeight ?? 0,
       ),
-      child: Column(
-        children: [
-          Container(
-            width: isMobile ? 80 : (isTablet ? 90 : 100),
-            height: isMobile ? 80 : (isTablet ? 90 : 100),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(25),
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.1),
-                  color.withValues(alpha: 0.05),
-                ],
+      child: Container(
+        width: shouldExpandWidth ? double.infinity : null,
+        padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 32 : 40)),
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey[850] : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: isDark ? Border.all(color: Colors.white12, width: 1) : null,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: isMobile ? 80 : (isTablet ? 90 : 100),
+              height: isMobile ? 80 : (isTablet ? 90 : 100),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                gradient: LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.1),
+                    color.withValues(alpha: 0.05),
+                  ],
+                ),
+              ),
+              child: Icon(
+                icon,
+                size: isMobile ? 40 : (isTablet ? 45 : 50),
+                color: color,
               ),
             ),
-            child: Icon(
-              icon,
-              size: isMobile ? 40 : (isTablet ? 45 : 50),
-              color: color,
+            SizedBox(height: isMobile ? 24 : (isTablet ? 28 : 32)),
+            Text(
+              title,
+              style: GoogleFonts.poppins(
+                fontSize: isMobile ? 20 : (isTablet ? 22 : 24),
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-          SizedBox(height: isMobile ? 24 : (isTablet ? 28 : 32)),
-          Text(
-            title,
-            style: GoogleFonts.poppins(
-              fontSize: isMobile ? 20 : (isTablet ? 22 : 24),
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+            const SizedBox(height: 16),
+            Text(
+              description,
+              style: GoogleFonts.poppins(
+                fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
+                color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                height: 1.6,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            description,
-            style: GoogleFonts.poppins(
-              fontSize: isMobile ? 14 : (isTablet ? 15 : 16),
-              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
-              height: 1.6,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  double _calculateTabletBusinessCardMinHeight(
+    bool isDark,
+    List<Map<String, dynamic>> cards,
+  ) {
+    if (cards.isEmpty) return 0;
+
+    const double containerHorizontalPadding = 80; // tablet padding
+    const double cardPadding = 32;
+    const double iconHeight = 90;
+    const double spacingAfterIcon = 28;
+    const double spacingBetweenTexts = 16;
+    const double cardSpacing = 20; // between two cards
+
+    final double availableWidth =
+        MediaQuery.of(context).size.width - (containerHorizontalPadding * 2);
+    final double cardWidth = (availableWidth - cardSpacing) / 2;
+    final double textWidth = cardWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 22,
+      fontWeight: FontWeight.w600,
+      color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+    );
+
+    final descriptionStyle = GoogleFonts.poppins(
+      fontSize: 15,
+      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+      height: 1.6,
+    );
+
+    final double maxTitleHeight = cards
+        .map((card) =>
+            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
+        .reduce(math.max);
+
+    final double maxDescriptionHeight = cards
+        .map(
+          (card) => _measureTextHeight(
+              card['description'] as String, descriptionStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        maxTitleHeight +
+        spacingBetweenTexts +
+        maxDescriptionHeight;
+  }
+
+  double _calculateDesktopBusinessCardMinHeight(
+    bool isDark,
+    List<Map<String, dynamic>> cards,
+  ) {
+    if (cards.isEmpty) return 0;
+
+    const double containerHorizontalPadding = 80; // desktop padding
+    const double cardPadding = 40;
+    const double iconHeight = 100;
+    const double spacingAfterIcon = 32;
+    const double spacingBetweenTexts = 16;
+    const double cardSpacing = 40; // between cards
+
+    final double availableWidth =
+        MediaQuery.of(context).size.width - (containerHorizontalPadding * 2);
+    final double cardWidth = (availableWidth - cardSpacing * 2) / 3;
+    final double textWidth = cardWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 24,
+      fontWeight: FontWeight.w600,
+      color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+    );
+
+    final descriptionStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+      height: 1.6,
+    );
+
+    final double maxTitleHeight = cards
+        .map((card) =>
+            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
+        .reduce(math.max);
+
+    final double maxDescriptionHeight = cards
+        .map(
+          (card) => _measureTextHeight(
+              card['description'] as String, descriptionStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        maxTitleHeight +
+        spacingBetweenTexts +
+        maxDescriptionHeight;
   }
 
   /// Platform section
@@ -1065,9 +1277,8 @@ class _LandingPageState extends State<LandingPage>
                           .toList(),
                     );
                   }
-                  final spacing = isMediumWidth
-                      ? 20.0
-                      : (_isTablet(context) ? 16.0 : 24.0);
+                  final spacing =
+                      isMediumWidth ? 20.0 : (_isTablet(context) ? 16.0 : 24.0);
                   final minWidth = isMediumWidth
                       ? 180.0
                       : (_isTablet(context) ? 170.0 : 180.0);
@@ -1098,12 +1309,10 @@ class _LandingPageState extends State<LandingPage>
                     );
                   }
 
-                  final maxColumns =
-                      availableWidth ~/ (minWidth + spacing);
+                  final maxColumns = availableWidth ~/ (minWidth + spacing);
                   final columns = maxColumns.clamp(2, cards.length);
-                  final calculatedWidth = (availableWidth -
-                          spacing * (columns - 1)) /
-                      columns;
+                  final calculatedWidth =
+                      (availableWidth - spacing * (columns - 1)) / columns;
                   final cardWidth =
                       calculatedWidth.clamp(minWidth * 0.8, maxWidth);
 
@@ -1111,8 +1320,7 @@ class _LandingPageState extends State<LandingPage>
                     alignment: Alignment.center,
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth:
-                            columns * cardWidth + spacing * (columns - 1),
+                        maxWidth: columns * cardWidth + spacing * (columns - 1),
                       ),
                       child: Wrap(
                         spacing: spacing,
@@ -1148,8 +1356,7 @@ class _LandingPageState extends State<LandingPage>
   }) {
     final size = MediaQuery.of(context).size;
     final isMobile = size.width <= 768;
-    final isTablet =
-        size.width > 768 && size.width < 1024;
+    final isTablet = size.width > 768 && size.width < 1024;
     final isSmallMobile = size.width < 360;
 
     return AnimatedBuilder(
@@ -1162,12 +1369,10 @@ class _LandingPageState extends State<LandingPage>
             child: Container(
               width: double.infinity,
               padding: EdgeInsets.symmetric(
-                horizontal: isMobile
-                    ? (isSmallMobile ? 18 : 22)
-                    : (isTablet ? 30 : 34),
-                vertical: isMobile
-                    ? (isSmallMobile ? 20 : 24)
-                    : (isTablet ? 32 : 36),
+                horizontal:
+                    isMobile ? (isSmallMobile ? 18 : 22) : (isTablet ? 30 : 34),
+                vertical:
+                    isMobile ? (isSmallMobile ? 20 : 24) : (isTablet ? 32 : 36),
               ),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha: 0.1),
@@ -1206,8 +1411,9 @@ class _LandingPageState extends State<LandingPage>
                     ),
                   ),
                   SizedBox(
-                      height:
-                          isMobile ? (isSmallMobile ? 10 : 14) : (isTablet ? 16 : 18)),
+                      height: isMobile
+                          ? (isSmallMobile ? 10 : 14)
+                          : (isTablet ? 16 : 18)),
                   Text(
                     title,
                     style: GoogleFonts.poppins(
@@ -1227,9 +1433,7 @@ class _LandingPageState extends State<LandingPage>
                       child: Text(
                         description,
                         style: GoogleFonts.poppins(
-                          fontSize: isMobile
-                              ? (isSmallMobile ? 11 : 12)
-                              : 14,
+                          fontSize: isMobile ? (isSmallMobile ? 11 : 12) : 14,
                           height: 1.2,
                           color: Colors.white.withValues(alpha: 0.85),
                         ),
@@ -1318,7 +1522,9 @@ class _LandingPageState extends State<LandingPage>
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
                               return Container(
-                                color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
+                                color: isDark
+                                    ? Colors.grey[800]
+                                    : const Color(0xFFE2E8F0),
                                 child: Center(
                                   child: CircularProgressIndicator(
                                     value: loadingProgress.expectedTotalBytes !=
@@ -1334,12 +1540,16 @@ class _LandingPageState extends State<LandingPage>
                             },
                             errorBuilder: (context, error, stackTrace) {
                               return Container(
-                                color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
+                                color: isDark
+                                    ? Colors.grey[800]
+                                    : const Color(0xFFE2E8F0),
                                 child: Center(
                                   child: Icon(
                                     Icons.business_center,
                                     size: 100,
-                                    color: isDark ? Colors.grey[400] : const Color(0xFF3B82F6),
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : const Color(0xFF3B82F6),
                                   ),
                                 ),
                               );
@@ -1360,7 +1570,9 @@ class _LandingPageState extends State<LandingPage>
                             style: GoogleFonts.poppins(
                               fontSize: isTablet ? 36 : 42,
                               fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF1E3A8A),
                             ),
                           ),
                           const SizedBox(height: 20),
@@ -1370,7 +1582,9 @@ class _LandingPageState extends State<LandingPage>
                             'çözümler sunuyoruz.',
                             style: GoogleFonts.poppins(
                               fontSize: isTablet ? 16 : 18,
-                              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : const Color(0xFF64748B),
                               height: 1.8,
                             ),
                           ),
@@ -1381,7 +1595,9 @@ class _LandingPageState extends State<LandingPage>
                             've tutkunun bir ürünü olarak ortaya çıkmıştır.',
                             style: GoogleFonts.poppins(
                               fontSize: isTablet ? 16 : 18,
-                              color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                              color: isDark
+                                  ? Colors.grey[400]
+                                  : const Color(0xFF64748B),
                               height: 1.8,
                             ),
                           ),
@@ -1412,7 +1628,9 @@ class _LandingPageState extends State<LandingPage>
                           loadingBuilder: (context, child, loadingProgress) {
                             if (loadingProgress == null) return child;
                             return Container(
-                              color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
+                              color: isDark
+                                  ? Colors.grey[800]
+                                  : const Color(0xFFE2E8F0),
                               child: Center(
                                 child: CircularProgressIndicator(
                                   value: loadingProgress.expectedTotalBytes !=
@@ -1427,12 +1645,16 @@ class _LandingPageState extends State<LandingPage>
                           },
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
-                              color: isDark ? Colors.grey[800] : const Color(0xFFE2E8F0),
+                              color: isDark
+                                  ? Colors.grey[800]
+                                  : const Color(0xFFE2E8F0),
                               child: Center(
                                 child: Icon(
                                   Icons.business_center,
                                   size: 80,
-                                  color: isDark ? Colors.grey[400] : const Color(0xFF3B82F6),
+                                  color: isDark
+                                      ? Colors.grey[400]
+                                      : const Color(0xFF3B82F6),
                                 ),
                               ),
                             );
@@ -1457,7 +1679,8 @@ class _LandingPageState extends State<LandingPage>
                       'çözümler sunuyoruz.',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                        color:
+                            isDark ? Colors.grey[400] : const Color(0xFF64748B),
                         height: 1.8,
                       ),
                       textAlign: TextAlign.center,
@@ -1468,7 +1691,8 @@ class _LandingPageState extends State<LandingPage>
                       'ihtiyaçlarına çözüm üretmek için sürekli kendini geliştirmektedir.',
                       style: GoogleFonts.poppins(
                         fontSize: 16,
-                        color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                        color:
+                            isDark ? Colors.grey[400] : const Color(0xFF64748B),
                         height: 1.8,
                       ),
                       textAlign: TextAlign.center,
@@ -1487,7 +1711,11 @@ class _LandingPageState extends State<LandingPage>
                   ? _calculateMobileAboutCardMinHeight(isDark, cardData)
                   : null;
               final double? tabletTopRowMinHeight = _isTablet(context)
-                  ? _calculateTabletAboutCardMinHeight(isDark, cardData.take(2).toList())
+                  ? _calculateTabletAboutCardMinHeight(
+                      isDark, cardData.take(2).toList())
+                  : null;
+              final double? desktopMinHeight = isDesktop
+                  ? _calculateDesktopAboutCardMinHeight(isDark, cardData)
                   : null;
 
               if (isDesktop) {
@@ -1500,6 +1728,7 @@ class _LandingPageState extends State<LandingPage>
                           title: cardData[i].title,
                           description: cardData[i].description,
                           color: cardData[i].color,
+                          minHeight: desktopMinHeight,
                         ),
                       ),
                       if (i != cardData.length - 1)
@@ -1640,25 +1869,33 @@ class _LandingPageState extends State<LandingPage>
                         children: [
                           Flexible(
                             child: _buildStatisticItem(
-                              '1000+', 'Mutlu Müşteri', Icons.people,
+                              '1000+',
+                              'Mutlu Müşteri',
+                              Icons.people,
                               isTabletLayout: _isTablet(context),
                             ),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                              '50+', 'Ülkede Hizmet', Icons.language,
+                              '50+',
+                              'Ülkede Hizmet',
+                              Icons.language,
                               isTabletLayout: _isTablet(context),
                             ),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                              '99.9%', 'Uptime', Icons.cloud_done,
+                              '99.9%',
+                              'Uptime',
+                              Icons.cloud_done,
                               isTabletLayout: _isTablet(context),
                             ),
                           ),
                           Flexible(
                             child: _buildStatisticItem(
-                              '7/24', 'Destek', Icons.support_agent,
+                              '7/24',
+                              'Destek',
+                              Icons.support_agent,
                               isTabletLayout: _isTablet(context),
                             ),
                           ),
@@ -1697,9 +1934,7 @@ class _LandingPageState extends State<LandingPage>
         decoration: BoxDecoration(
           color: isDark ? Colors.grey[850] : Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: isDark
-              ? Border.all(color: Colors.white12, width: 1)
-              : null,
+          border: isDark ? Border.all(color: Colors.white12, width: 1) : null,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
@@ -1776,9 +2011,8 @@ class _LandingPageState extends State<LandingPage>
           title: 'Değerlerimiz',
           description:
               'Müşteri odaklılık, inovasyon, güvenilirlik ve sürekli gelişim değerlerimizle, '
-              'her işletmenin ihtiyacına özel çözümler üretmek için çalışıyoruz. İş ortaklarımızla '
-              'uzun soluklu ilişkiler kurarken etik değerlere bağlı kalıyor ve topluma fayda sağlayan '
-              'teknoloji çözümleri geliştirmeyi hedefliyoruz.',
+              'her işletmenin ihtiyacına özel çözümler üretmek için çalışıyoruz. Etik değerlere '
+              'bağlı kalarak topluma fayda sağlayan teknoloji çözümleri geliştirmeyi hedefliyoruz.',
           color: Color(0xFF0EA5E9),
         ),
       ];
@@ -1871,6 +2105,57 @@ class _LandingPageState extends State<LandingPage>
       fontSize: 15,
       color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
       height: 1.7,
+    );
+
+    final double maxTitleHeight = cards
+        .map((card) => _measureTextHeight(card.title, titleStyle, textWidth))
+        .reduce(math.max);
+
+    final double maxDescriptionHeight = cards
+        .map(
+          (card) =>
+              _measureTextHeight(card.description, descriptionStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        maxTitleHeight +
+        spacingBetweenTexts +
+        maxDescriptionHeight;
+  }
+
+  double _calculateDesktopAboutCardMinHeight(
+    bool isDark,
+    List<_AboutCardInfo> cards,
+  ) {
+    if (cards.isEmpty) return 0;
+
+    const double containerHorizontalPadding = 80; // desktop padding
+    const double cardPadding = 40;
+    const double iconHeight = 60;
+    const double spacingAfterIcon = 24;
+    const double spacingBetweenTexts = 16;
+    const double cardSpacing = 30; // between cards
+
+    final double availableWidth =
+        MediaQuery.of(context).size.width - (containerHorizontalPadding * 2);
+    final double cardWidth = (availableWidth - cardSpacing * 2) / 3;
+    final double textWidth = cardWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 24,
+      fontWeight: FontWeight.w700,
+      color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+    );
+
+    final descriptionStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+      height: 1.65,
     );
 
     final double maxTitleHeight = cards
@@ -2006,63 +2291,143 @@ class _LandingPageState extends State<LandingPage>
           SizedBox(height: isMobile ? 40 : (isTablet ? 60 : 100)),
           // Mobil için dikey düzen, tablet ve desktop için yatay
           isMobile
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildContactCard(
-                      icon: Icons.email,
-                      title: 'E-posta',
-                      value: 'info@seekitapps.com',
-                      onTap: () => _launchEmail(),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildContactCard(
-                      icon: Icons.phone,
-                      title: 'Telefon',
-                      value: '+90 212 976 4939',
-                      onTap: () => _launchPhone(),
-                    ),
-                    const SizedBox(height: 20),
-                    _buildContactCard(
-                      icon: Icons.location_on,
-                      title: 'Adres',
-                      value:
+              ? Builder(
+                  builder: (context) {
+                    final card1Data = {
+                      'icon': Icons.email,
+                      'title': 'E-posta',
+                      'value': 'info@seekitapps.com',
+                    };
+                    final card2Data = {
+                      'icon': Icons.phone,
+                      'title': 'Telefon',
+                      'value': '+90 212 976 4939',
+                    };
+                    final card3Data = {
+                      'icon': Icons.location_on,
+                      'title': 'Adres',
+                      'value':
                           'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
-                      onTap: null,
-                    ),
-                  ],
+                    };
+
+                    // İlk iki kart için yükseklik hesaplaması
+                    final mobileTopRowMinHeight =
+                        _calculateMobileContactCardMinHeight(
+                      [
+                        card1Data,
+                        card2Data,
+                      ],
+                      isTopRow: true,
+                    );
+
+                    return Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildContactCard(
+                                icon: card1Data['icon'] as IconData,
+                                title: card1Data['title'] as String,
+                                value: card1Data['value'] as String,
+                                onTap: () => _launchEmail(),
+                                minHeight: mobileTopRowMinHeight,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _buildContactCard(
+                                icon: card2Data['icon'] as IconData,
+                                title: card2Data['title'] as String,
+                                value: card2Data['value'] as String,
+                                onTap: () => _launchPhone(),
+                                minHeight: mobileTopRowMinHeight,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        _buildContactCard(
+                          icon: card3Data['icon'] as IconData,
+                          title: card3Data['title'] as String,
+                          value: card3Data['value'] as String,
+                          onTap: null,
+                        ),
+                      ],
+                    );
+                  },
                 )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Flexible(
-                      child: _buildContactCard(
-                        icon: Icons.email,
-                        title: 'E-posta',
-                        value: 'info@seekitapps.com',
-                        onTap: () => _launchEmail(),
-                      ),
-                    ),
-                    SizedBox(width: isTablet ? 16 : 20),
-                    Flexible(
-                      child: _buildContactCard(
-                        icon: Icons.phone,
-                        title: 'Telefon',
-                        value: '+90 212 976 4939',
-                        onTap: () => _launchPhone(),
-                      ),
-                    ),
-                    SizedBox(width: isTablet ? 16 : 20),
-                    Flexible(
-                      child: _buildContactCard(
-                        icon: Icons.location_on,
-                        title: 'Adres',
-                        value:
-                            'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
-                        onTap: null,
-                      ),
-                    ),
-                  ],
+              : Builder(
+                  builder: (context) {
+                    final card1Data = {
+                      'icon': Icons.email,
+                      'title': 'E-posta',
+                      'value': 'info@seekitapps.com',
+                    };
+                    final card2Data = {
+                      'icon': Icons.phone,
+                      'title': 'Telefon',
+                      'value': '+90 212 976 4939',
+                    };
+                    final card3Data = {
+                      'icon': Icons.location_on,
+                      'title': 'Adres',
+                      'value':
+                          'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
+                    };
+
+                    final tabletContactMinHeight = isTablet
+                        ? _calculateTabletContactCardMinHeight(
+                            [
+                              card1Data,
+                              card2Data,
+                              card3Data,
+                            ],
+                          )
+                        : _calculateDesktopContactCardMinHeight(
+                            [
+                              card1Data,
+                              card2Data,
+                              card3Data,
+                            ],
+                          );
+
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Flexible(
+                          child: _buildContactCard(
+                            icon: card1Data['icon'] as IconData,
+                            title: card1Data['title'] as String,
+                            value: card1Data['value'] as String,
+                            onTap: () => _launchEmail(),
+                            minHeight: tabletContactMinHeight,
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 16 : 20),
+                        Flexible(
+                          child: _buildContactCard(
+                            icon: card2Data['icon'] as IconData,
+                            title: card2Data['title'] as String,
+                            value: card2Data['value'] as String,
+                            onTap: () => _launchPhone(),
+                            minHeight: tabletContactMinHeight,
+                          ),
+                        ),
+                        SizedBox(width: isTablet ? 16 : 20),
+                        Flexible(
+                          child: _buildContactCard(
+                            icon: card3Data['icon'] as IconData,
+                            title: card3Data['title'] as String,
+                            value: card3Data['value'] as String,
+                            onTap: null,
+                            minHeight: tabletContactMinHeight,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
           SizedBox(height: isMobile ? 40 : (isTablet ? 60 : 80)),
 
@@ -2104,68 +2469,227 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String value,
     required VoidCallback? onTap,
+    double? minHeight,
   }) {
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: isMobile ? double.infinity : (isTablet ? 220 : 300),
-        padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 30 : 40)),
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.3),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: minHeight ?? 0,
         ),
-        child: Column(
-          children: [
-            Container(
-              width: isMobile ? 60 : 80,
-              height: isMobile ? 60 : 80,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white.withValues(alpha: 0.1),
-              ),
-              child: Icon(
-                icon,
-                size: isMobile ? 30 : 40,
-                color: Colors.white,
-              ),
+        child: Container(
+          width: isMobile ? double.infinity : (isTablet ? 220 : 300),
+          padding: EdgeInsets.all(isMobile ? 24 : (isTablet ? 30 : 40)),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.3),
+              width: 1,
             ),
-            SizedBox(height: isMobile ? 16 : 24),
-            Text(
-              title,
-              style: GoogleFonts.poppins(
-                fontSize: isMobile ? 18 : 20,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: GoogleFonts.poppins(
-                fontSize: isMobile ? 14 : 16,
-                color: Colors.white.withValues(alpha: 0.8),
-                height: 1.4,
+            ],
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: isMobile ? 60 : 80,
+                height: isMobile ? 60 : 80,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.white.withValues(alpha: 0.1),
+                ),
+                child: Icon(
+                  icon,
+                  size: isMobile ? 30 : 40,
+                  color: Colors.white,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+              SizedBox(height: isMobile ? 16 : 24),
+              Text(
+                title,
+                style: GoogleFonts.poppins(
+                  fontSize: isMobile ? 18 : 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: GoogleFonts.poppins(
+                  fontSize: isMobile ? 14 : 16,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  double _calculateMobileContactCardMinHeight(
+    List<Map<String, dynamic>> cards, {
+    bool isTopRow = false,
+  }) {
+    if (cards.isEmpty) return 0;
+
+    const double containerHorizontalPadding = 40; // mobile padding
+    const double cardPadding = 24;
+    const double iconHeight = 60;
+    const double spacingAfterIcon = 16;
+    const double spacingBetweenTexts = 12;
+    const double cardSpacing = 16; // between cards in top row
+
+    final double availableWidth =
+        MediaQuery.of(context).size.width - (containerHorizontalPadding * 2);
+
+    // İlk iki kart yan yana ise, her birinin genişliği (availableWidth - cardSpacing) / 2
+    // Tek kart ise, genişlik availableWidth
+    final double cardWidth =
+        isTopRow ? (availableWidth - cardSpacing) / 2 : availableWidth;
+    final double textWidth = cardWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 18,
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+
+    final valueStyle = GoogleFonts.poppins(
+      fontSize: 14,
+      color: Colors.white.withValues(alpha: 0.8),
+      height: 1.4,
+    );
+
+    final double maxTitleHeight = cards
+        .map((card) =>
+            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
+        .reduce(math.max);
+
+    final double maxValueHeight = cards
+        .map(
+          (card) => _measureTextHeight(
+              card['value'] as String, valueStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        maxTitleHeight +
+        spacingBetweenTexts +
+        maxValueHeight;
+  }
+
+  double _calculateTabletContactCardMinHeight(
+    List<Map<String, dynamic>> cards,
+  ) {
+    if (cards.isEmpty) return 0;
+
+    const double cardWidth = 220; // tablet card width is fixed
+    const double cardPadding = 30;
+    const double iconHeight = 80;
+    const double spacingAfterIcon = 24;
+    const double spacingBetweenTexts = 12;
+
+    final double textWidth = cardWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+
+    final valueStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      color: Colors.white.withValues(alpha: 0.8),
+      height: 1.4,
+    );
+
+    final double maxTitleHeight = cards
+        .map((card) =>
+            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
+        .reduce(math.max);
+
+    final double maxValueHeight = cards
+        .map(
+          (card) => _measureTextHeight(
+              card['value'] as String, valueStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        maxTitleHeight +
+        spacingBetweenTexts +
+        maxValueHeight;
+  }
+
+  double _calculateDesktopContactCardMinHeight(
+    List<Map<String, dynamic>> cards,
+  ) {
+    if (cards.isEmpty) return 0;
+
+    const double cardWidth = 300; // desktop card width is fixed
+    const double cardPadding = 40;
+    const double iconHeight = 80;
+    const double spacingAfterIcon = 24;
+    const double spacingBetweenTexts = 12;
+
+    final double textWidth = cardWidth - (cardPadding * 2);
+
+    final titleStyle = GoogleFonts.poppins(
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+      color: Colors.white,
+    );
+
+    final valueStyle = GoogleFonts.poppins(
+      fontSize: 16,
+      color: Colors.white.withValues(alpha: 0.8),
+      height: 1.4,
+    );
+
+    final double maxTitleHeight = cards
+        .map((card) =>
+            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
+        .reduce(math.max);
+
+    final double maxValueHeight = cards
+        .map(
+          (card) => _measureTextHeight(
+              card['value'] as String, valueStyle, textWidth),
+        )
+        .reduce(math.max);
+
+    const double verticalPadding = cardPadding * 2;
+
+    return verticalPadding +
+        iconHeight +
+        spacingAfterIcon +
+        maxTitleHeight +
+        spacingBetweenTexts +
+        maxValueHeight;
   }
 
   /// Professional footer
@@ -2501,16 +3025,16 @@ class _LandingPageState extends State<LandingPage>
                     if (!_isMobile(context))
                       Flexible(
                         child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Blog ve FAQ Butonları
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Blog ve FAQ Butonları
                             Flexible(
                               child: _buildBannerLinks(),
                             ),
-                          SizedBox(width: _isTablet(context) ? 8 : 12),
-                          // CTA Button - Sağda sabit
-                          _buildBannerCTA(),
-                        ],
+                            SizedBox(width: _isTablet(context) ? 8 : 12),
+                            // CTA Button - Sağda sabit
+                            _buildBannerCTA(),
+                          ],
                         ),
                       )
                     else
@@ -2638,7 +3162,7 @@ class _LandingPageState extends State<LandingPage>
 
   Future<void> _launchWebApp() async {
     if (!mounted) return;
-    
+
     // Firebase Auth durumunu kontrol et
     final user = FirebaseAuth.instance.currentUser;
 
@@ -2648,13 +3172,13 @@ class _LandingPageState extends State<LandingPage>
       // Kullanıcı giriş yapmış - dashboard'a yönlendir
       debugPrint('LandingPage: User is signed in, navigating to dashboard');
       if (mounted) {
-      context.go('/dashboard');
+        context.go('/dashboard');
       }
     } else {
       // Kullanıcı giriş yapmamış - login sayfasına yönlendir
       debugPrint('LandingPage: User is not signed in, navigating to login');
       if (mounted) {
-      context.go('/login');
+        context.go('/login');
       }
     }
   }
@@ -2944,7 +3468,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                         style: GoogleFonts.poppins(
                           fontSize: isMobile ? 24 : 28,
                           fontWeight: FontWeight.w700,
-                          color: isDark ? Colors.white : const Color(0xFF1E3A8A),
+                          color:
+                              isDark ? Colors.white : const Color(0xFF1E3A8A),
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -2953,7 +3478,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                     IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: () => Navigator.of(context).pop(),
-                      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                      color:
+                          isDark ? Colors.grey[400] : const Color(0xFF64748B),
                       constraints: const BoxConstraints(
                         minWidth: 40,
                         minHeight: 40,
@@ -3073,7 +3599,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                     '* E-posta veya telefon numarasından en az birisi gereklidir',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                      color:
+                          isDark ? Colors.grey[400] : const Color(0xFF64748B),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -3103,7 +3630,8 @@ class _FeedbackDialogState extends State<FeedbackDialog> {
                     '* Zorunlu alan',
                     style: GoogleFonts.poppins(
                       fontSize: 12,
-                      color: isDark ? Colors.grey[400] : const Color(0xFF64748B),
+                      color:
+                          isDark ? Colors.grey[400] : const Color(0xFF64748B),
                       fontStyle: FontStyle.italic,
                     ),
                   ),
