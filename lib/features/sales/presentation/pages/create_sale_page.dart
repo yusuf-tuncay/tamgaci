@@ -694,26 +694,26 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                     constraints: BoxConstraints(
                       maxWidth: maxWidth ?? constraints.maxWidth,
                     ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeaderCard(),
-                  const SizedBox(height: 16.0),
-                  _buildBasicInfoCard(),
-                  const SizedBox(height: 16.0),
-                  _buildItemsCard(),
-                  const SizedBox(height: 16.0),
-                  _buildSummaryCard(),
-                  const SizedBox(height: 16.0),
-                  _buildPaymentTypeCard(),
-                  if (_isCashPayment) ...[
-                    const SizedBox(height: 16.0),
-                    _buildPaymentCard(),
-                  ],
-                ],
-              ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeaderCard(),
+                          const SizedBox(height: 16.0),
+                          _buildBasicInfoCard(),
+                          const SizedBox(height: 16.0),
+                          _buildItemsCard(),
+                          const SizedBox(height: 16.0),
+                          _buildSummaryCard(),
+                          const SizedBox(height: 16.0),
+                          _buildPaymentTypeCard(),
+                          if (_isCashPayment) ...[
+                            const SizedBox(height: 16.0),
+                            _buildPaymentCard(),
+                          ],
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -2149,43 +2149,43 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 maxWidth: maxWidth ?? constraints.maxWidth,
-      ),
-      child: Column(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saveSale,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(TamgaciConstants.radiusMD),
-                ),
               ),
-              child: Text(
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _saveSale,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(TamgaciConstants.radiusMD),
+                        ),
+                      ),
+                      child: Text(
                         widget.saleId != null
                             ? 'Satışı Güncelle'
                             : 'Satışı Kaydet',
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _saveSaleDraft,
-              icon: const Icon(Icons.save_as),
-              label: const Text('Taslak Olarak Kaydet'),
-            ),
-          ),
-        ],
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _saveSaleDraft,
+                      icon: const Icon(Icons.save_as),
+                      label: const Text('Taslak Olarak Kaydet'),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -2394,33 +2394,33 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
     Future<void> afterSave(String saleId) async {
       // Depo seçilmişse stok hareketlerini kaydet
       if (_selectedWarehouseId != null) {
-      // Paralel stok hareketleri - Future.wait ile hızlandır
-      final stockMovements = _items.map((item) async {
-        try {
-          final movement = StockMovement(
-            id: '',
-            productId: item.productId,
-            warehouseId: _selectedWarehouseId!,
-            type: StockMovementType.stockOut,
-            quantity: item.quantity.round(),
-            reason: 'Satış',
-            reference: saleId,
-            notes: 'Satış hareketi',
-            createdBy: 'system',
-            createdAt: DateTime.now(),
-          );
-          await inventory.recordStockMovement(movement);
-          AppLogger.info(
-              'Stock movement recorded for product: ${item.productId}');
-        } catch (e) {
-          AppLogger.error(
-              'Error recording stock movement for product: ${item.productId}',
-              e);
-        }
-      }).toList();
+        // Paralel stok hareketleri - Future.wait ile hızlandır
+        final stockMovements = _items.map((item) async {
+          try {
+            final movement = StockMovement(
+              id: '',
+              productId: item.productId,
+              warehouseId: _selectedWarehouseId!,
+              type: StockMovementType.stockOut,
+              quantity: item.quantity.round(),
+              reason: 'Satış',
+              reference: saleId,
+              notes: 'Satış hareketi',
+              createdBy: 'system',
+              createdAt: DateTime.now(),
+            );
+            await inventory.recordStockMovement(movement);
+            AppLogger.info(
+                'Stock movement recorded for product: ${item.productId}');
+          } catch (e) {
+            AppLogger.error(
+                'Error recording stock movement for product: ${item.productId}',
+                e);
+          }
+        }).toList();
 
-      // Tüm stok hareketlerini paralel olarak çalıştır
-      await Future.wait(stockMovements);
+        // Tüm stok hareketlerini paralel olarak çalıştır
+        await Future.wait(stockMovements);
       } else {
         AppLogger.info('Depo seçilmediği için stok hareketi kaydedilmedi');
       }
@@ -2430,9 +2430,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       // NOT: İşlem tutarı olarak KDV dahil toplam (totalBase) kaydedilir
       // Çünkü müşteri borcu KDV dahil tutardır
       if (_selectedType != SaleType.proforma) {
-      try {
-        final transactionService = TransactionService();
-        final now = DateTime.now();
+        try {
+          final transactionService = TransactionService();
+          final now = DateTime.now();
 
           // Satış tipine göre açıklama belirle
           String description;
@@ -2464,44 +2464,44 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
               return;
           }
 
-        final t = Transaction(
-          id: '',
-          customerId: _customerIdController.text,
-          supplierId: null,
+          final t = Transaction(
+            id: '',
+            customerId: _customerIdController.text,
+            supplierId: null,
             type: transactionType,
-          amount: totalBase, // KDV dahil toplam - müşteri bu tutarı ödemeli
-          currency: _baseCurrencyCode,
+            amount: totalBase, // KDV dahil toplam - müşteri bu tutarı ödemeli
+            currency: _baseCurrencyCode,
             description: description,
-          reference: _saleNumberController.text,
-          transactionDate: now,
-          dueDate: _dueDate,
-          invoiceId: saleId,
-          paymentMethod: _paymentMethod,
-          documentNumber: _saleNumberController.text,
-          status: TransactionStatus.completed,
-          companyId: '',
-          createdAt: now,
-          updatedAt: now,
-          createdBy: 'system',
-          updatedBy: null,
-          metadata: {
-            'totalTry': totalTry,
-            'baseCurrency': _baseCurrencyCode,
-            'paymentCurrency': _paymentCurrencyCode,
-            'subtotal': _baseCurrencyCode == 'TRY'
-                ? subtotalTryBeforeTax
-                : ExchangeRateService().convertCurrency(
-                    subtotalTryBeforeTax, 'TRY', _baseCurrencyCode),
-            'taxAmount': _baseCurrencyCode == 'TRY'
-                ? taxAmountTry
-                : ExchangeRateService()
-                    .convertCurrency(taxAmountTry, 'TRY', _baseCurrencyCode),
-          },
-        );
-        await transactionService.createTransaction(t);
-        AppLogger.info('Transaction created successfully for sale: $saleId');
-      } catch (e) {
-        AppLogger.error('Error creating transaction for sale: $saleId', e);
+            reference: _saleNumberController.text,
+            transactionDate: now,
+            dueDate: _dueDate,
+            invoiceId: saleId,
+            paymentMethod: _paymentMethod,
+            documentNumber: _saleNumberController.text,
+            status: TransactionStatus.completed,
+            companyId: '',
+            createdAt: now,
+            updatedAt: now,
+            createdBy: 'system',
+            updatedBy: null,
+            metadata: {
+              'totalTry': totalTry,
+              'baseCurrency': _baseCurrencyCode,
+              'paymentCurrency': _paymentCurrencyCode,
+              'subtotal': _baseCurrencyCode == 'TRY'
+                  ? subtotalTryBeforeTax
+                  : ExchangeRateService().convertCurrency(
+                      subtotalTryBeforeTax, 'TRY', _baseCurrencyCode),
+              'taxAmount': _baseCurrencyCode == 'TRY'
+                  ? taxAmountTry
+                  : ExchangeRateService()
+                      .convertCurrency(taxAmountTry, 'TRY', _baseCurrencyCode),
+            },
+          );
+          await transactionService.createTransaction(t);
+          AppLogger.info('Transaction created successfully for sale: $saleId');
+        } catch (e) {
+          AppLogger.error('Error creating transaction for sale: $saleId', e);
         }
       } else {
         AppLogger.info(
@@ -2622,40 +2622,41 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                   : ExchangeRateService().convertCurrency(
                       _paymentAmount!, paymentCurrency, target.currency);
 
-          final useCase = ref.read(createCashTransactionUseCaseProvider);
-          final trx = cm.CashTransaction(
-            id: '',
-            transactionNumber: '',
-            type: cm.CashTransactionType.income,
-            category: cm.CashTransactionCategory.sales,
-            status: cm.CashTransactionStatus.completed,
-            fromAccountId: target.id, // Account ID'si kullanılıyor
-            toAccountId: null,
-            amount: amountInAccountCurrency,
-            currency: target.currency,
-            description: _getPaymentDescription(
-                _selectedType, _saleNumberController.text, paymentCurrency),
-            reference: _saleNumberController.text,
-            relatedDocumentId: saleId,
-            relatedDocumentType: 'sale',
-            transactionDate: now,
-            dueDate: null,
-            notes: null,
-            attachments: const [],
-            metadata: {
-              'baseCurrency': _baseCurrencyCode,
-              'paymentCurrency': paymentCurrency,
-              'fxToBase': fxRate,
-              'amountInBase': paymentAmountInBase,
-            },
-            createdAt: now,
-            updatedAt: now,
-            createdBy: 'system',
-            updatedBy: null,
-          );
-          await useCase.call(trx);
-          AppLogger.info(
-              'Cash transaction created successfully for sale: $saleId');
+          // CashTransaction oluşturmayı devre dışı bırak - sadece PaymentTransaction kullan
+          // final useCase = ref.read(createCashTransactionUseCaseProvider);
+          // final trx = cm.CashTransaction(
+          //   id: '',
+          //   transactionNumber: '',
+          //   type: cm.CashTransactionType.income,
+          //   category: cm.CashTransactionCategory.sales,
+          //   status: cm.CashTransactionStatus.completed,
+          //   fromAccountId: target.id, // Account ID'si kullanılıyor
+          //   toAccountId: null,
+          //   amount: amountInAccountCurrency,
+          //   currency: target.currency,
+          //   description: _getPaymentDescription(
+          //       _selectedType, _saleNumberController.text, paymentCurrency),
+          //   reference: _saleNumberController.text,
+          //   relatedDocumentId: saleId,
+          //   relatedDocumentType: 'sale',
+          //   transactionDate: now,
+          //   dueDate: null,
+          //   notes: null,
+          //   attachments: const [],
+          //   metadata: {
+          //     'baseCurrency': _baseCurrencyCode,
+          //     'paymentCurrency': paymentCurrency,
+          //     'fxToBase': fxRate,
+          //     'amountInBase': paymentAmountInBase,
+          //   },
+          //   createdAt: now,
+          //   updatedAt: now,
+          //   createdBy: 'system',
+          //   updatedBy: null,
+          // );
+          // final createdCashTrx = await useCase.call(trx);
+          // AppLogger.info(
+          //     'Cash transaction created successfully for sale: $saleId');
 
           // 3) PaymentTransaction oluştur (ödemeler modülüne)
           try {
@@ -3494,10 +3495,10 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
       final generated = await repo.generateSaleNumber(_selectedType);
       if (mounted) {
         if (force || _saleNumberController.text.isEmpty) {
-        setState(() {
-          _saleNumberController.text = generated;
-        });
-      }
+          setState(() {
+            _saleNumberController.text = generated;
+          });
+        }
       }
     } catch (e, stackTrace) {
       AppLogger.error('Satış numarası oluşturulurken hata', e, stackTrace);

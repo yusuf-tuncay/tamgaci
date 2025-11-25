@@ -1648,7 +1648,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
 
           final dropdownValue = _selectedPaymentAccountId;
           return DropdownButtonFormField<String>(
-            value: dropdownValue,
+            initialValue: dropdownValue,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Ödeme Kasası',
@@ -1711,7 +1711,7 @@ class _CreatePurchasePageState extends ConsumerState<CreatePurchasePage> {
           }
 
           return DropdownButtonFormField<String>(
-            value: _selectedShippingAccountId,
+            initialValue: _selectedShippingAccountId,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'Nakliye Kasası',

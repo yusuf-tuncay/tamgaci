@@ -173,9 +173,8 @@ class TransactionService {
                   ? userCompanyId
                   : tenantId ?? ''))
           .trim();
-      final createdBy = transaction.createdBy.isNotEmpty
-          ? transaction.createdBy
-          : user.uid;
+      final createdBy =
+          transaction.createdBy.isNotEmpty ? transaction.createdBy : user.uid;
 
       AppLogger.info('User tenant ID: $tenantId');
 
@@ -274,21 +273,25 @@ class TransactionService {
       double currentBalance =
           (customerData['currentBalance'] ?? 0.0).toDouble();
 
-      // İşlem türüne göre bakiye hesaplama
+      // İşlem türüne göre bakiye hesaplama (Ön Muhasebe Kuralları)
       switch (transaction.type) {
         case TransactionType.sale:
         case TransactionType.invoice:
+          // Satış: Müşteri firmaya borçlanır → Pozitif bakiye (Alacak)
+          currentBalance += transaction.amount;
+          break;
         case TransactionType.payment:
-          // Müşteri borcu artar (negatif bakiye)
+          // Ödeme: Müşteri borcunu azaltır → Negatif bakiye (Borç azalır)
           currentBalance -= transaction.amount;
           break;
         case TransactionType.refund:
         case TransactionType.credit:
-          // Müşteri alacağı artar (pozitif bakiye)
-          currentBalance += transaction.amount;
+          // İade/Kredi: Müşteri alacağı artar → Negatif bakiye
+          currentBalance -= transaction.amount;
           break;
         case TransactionType.purchase:
-          // Tedarikçi işlemi, müşteri bakiyesini etkilemez
+          // Alış: Firma müşteriye borçlanır → Negatif bakiye
+          currentBalance -= transaction.amount;
           break;
         default:
           break;
@@ -415,12 +418,21 @@ class TransactionService {
         switch (transaction.type) {
           case TransactionType.sale:
           case TransactionType.invoice:
+            // Satış: Müşteri firmaya borçlanır → Pozitif bakiye (Alacak)
+            balance += transaction.amount;
+            break;
           case TransactionType.payment:
+            // Ödeme: Müşteri borcunu azaltır → Negatif bakiye (Borç azalır)
             balance -= transaction.amount;
             break;
           case TransactionType.refund:
           case TransactionType.credit:
-            balance += transaction.amount;
+            // İade/Kredi: Müşteri alacağı artar → Negatif bakiye
+            balance -= transaction.amount;
+            break;
+          case TransactionType.purchase:
+            // Alış: Firma müşteriye borçlanır → Negatif bakiye
+            balance -= transaction.amount;
             break;
           default:
             break;
@@ -614,18 +626,25 @@ class TransactionService {
       double currentBalance =
           (customerData['currentBalance'] ?? 0.0).toDouble();
 
-      // İşlem türüne göre ters işlem yap
+      // İşlem türüne göre ters işlem yap (Ön Muhasebe Kuralları)
       switch (transaction.type) {
         case TransactionType.sale:
         case TransactionType.invoice:
+          // Satış iptali: Müşteri borcunu azaltır → Negatif bakiye
+          currentBalance -= transaction.amount;
+          break;
         case TransactionType.payment:
-          // Müşteri borcu azalır
+          // Ödeme iptali: Müşteri borcu artar → Pozitif bakiye
           currentBalance += transaction.amount;
           break;
         case TransactionType.refund:
         case TransactionType.credit:
-          // Müşteri alacağı azalır
-          currentBalance -= transaction.amount;
+          // İade/Kredi iptali: Müşteri alacağı azalır → Pozitif bakiye
+          currentBalance += transaction.amount;
+          break;
+        case TransactionType.purchase:
+          // Alış iptali: Firma borcu azalır → Pozitif bakiye
+          currentBalance += transaction.amount;
           break;
         default:
           break;

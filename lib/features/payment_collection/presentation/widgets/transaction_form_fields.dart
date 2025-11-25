@@ -2,6 +2,7 @@
 // lib/features/payment_collection/presentation/widgets/transaction_form_fields.dart
 
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../domain/entities/payment_enums.dart';
 import '../../domain/entities/payment_method.dart';
 import '../../domain/entities/payment_source.dart';
@@ -73,30 +74,69 @@ class TransactionFormFields {
     required PaymentTransactionFormModel formState,
     required Function(double?) onChanged,
   }) {
+    final controller = TextEditingController(
+      text: formState.amount?.toString() ?? '',
+    );
+
     return TextFormField(
-      initialValue: formState.amount?.toString(),
+      controller: controller,
       decoration: const InputDecoration(
         labelText: 'Tutar',
         border: OutlineInputBorder(),
         prefixIcon: Icon(Icons.attach_money),
-        hintText: '0.00',
+        hintText: '0,00',
       ),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       onChanged: (value) {
-        final amount = double.tryParse(value);
+        // Parse için Türkçe formatı temizle
+        final cleanValue = value
+            .replaceAll('.', '') // Binlik ayırıcıları kaldır
+            .replaceAll(',', '.'); // Virgülü nokta yap
+        final amount = double.tryParse(cleanValue);
         onChanged(amount);
+      },
+      onTapOutside: (event) {
+        // Odak kaybedilince Türkçe formatla
+        _formatAmountField(controller);
       },
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Tutar girilmelidir';
         }
-        final amount = double.tryParse(value);
+        // Validation için Türkçe formatı temizle
+        final cleanValue = value
+            .replaceAll('.', '') // Binlik ayırıcıları kaldır
+            .replaceAll(',', '.'); // Virgülü nokta yap
+        final amount = double.tryParse(cleanValue);
         if (amount == null || amount <= 0) {
           return 'Geçerli bir tutar girilmelidir';
         }
         return null;
       },
     );
+  }
+
+  /// Tutar alanını Türkçe formatla
+  static void _formatAmountField(TextEditingController controller) {
+    final value = controller.text;
+    if (value.isEmpty) return;
+
+    // Sadece rakam, virgül ve nokta içeren değerleri işle
+    final cleanValue = value.replaceAll(RegExp(r'[^\d,.]'), '');
+    if (cleanValue.isEmpty) return;
+
+    // Türkçe formatı parse et
+    final doubleValue = cleanValue
+        .replaceAll('.', '') // Binlik ayırıcıları kaldır
+        .replaceAll(',', '.'); // Virgülü nokta yap
+    final amount = double.tryParse(doubleValue);
+
+    if (amount != null && amount > 0) {
+      // Türkçe formatla (1.000,00)
+      final formatter = NumberFormat('#,##0.00', 'tr_TR');
+      final formatted = formatter.format(amount);
+      controller.text = formatted;
+    }
   }
 
   /// Para birimi alanı
@@ -141,7 +181,35 @@ class TransactionFormFields {
           lastDate: DateTime.now().add(const Duration(days: 365)),
         );
         if (date != null) {
-          onChanged(date);
+          // Saat seçici de göster
+          if (context.mounted) {
+            final time = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.fromDateTime(
+                  formState.transactionDate ?? DateTime.now()),
+            );
+            if (time != null) {
+              final dateTime = DateTime(
+                date.year,
+                date.month,
+                date.day,
+                time.hour,
+                time.minute,
+              );
+              onChanged(dateTime);
+            } else {
+              // Sadece tarih seçildiyse mevcut saati koru
+              final currentTime = formState.transactionDate ?? DateTime.now();
+              final dateTime = DateTime(
+                date.year,
+                date.month,
+                date.day,
+                currentTime.hour,
+                currentTime.minute,
+              );
+              onChanged(dateTime);
+            }
+          }
         }
       },
       child: InputDecorator(
@@ -491,6 +559,6 @@ class TransactionFormFields {
   }
 
   static String _formatDate(DateTime date) {
-    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+    return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
   }
 }
