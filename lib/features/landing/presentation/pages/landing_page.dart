@@ -2416,56 +2416,39 @@ class _LandingPageState extends State<LandingPage>
                           'Kocamustafapaşa Mah.\nPulcu Sokak, No:28\nFatih, İstanbul',
                     };
 
-                    final tabletContactMinHeight = isTablet
-                        ? _calculateTabletContactCardMinHeight(
-                            [
-                              card1Data,
-                              card2Data,
-                              card3Data,
-                            ],
-                          )
-                        : _calculateDesktopContactCardMinHeight(
-                            [
-                              card1Data,
-                              card2Data,
-                              card3Data,
-                            ],
-                          );
-
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Flexible(
-                          child: _buildContactCard(
-                            icon: card1Data['icon'] as IconData,
-                            title: card1Data['title'] as String,
-                            value: card1Data['value'] as String,
-                            onTap: () => _launchEmail(),
-                            minHeight: tabletContactMinHeight,
+                    return IntrinsicHeight(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(
+                            child: _buildContactCard(
+                              icon: card1Data['icon'] as IconData,
+                              title: card1Data['title'] as String,
+                              value: card1Data['value'] as String,
+                              onTap: () => _launchEmail(),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: isTablet ? 16 : 20),
-                        Flexible(
-                          child: _buildContactCard(
-                            icon: card2Data['icon'] as IconData,
-                            title: card2Data['title'] as String,
-                            value: card2Data['value'] as String,
-                            onTap: () => _launchPhone(),
-                            minHeight: tabletContactMinHeight,
+                          SizedBox(width: isTablet ? 16 : 20),
+                          Expanded(
+                            child: _buildContactCard(
+                              icon: card2Data['icon'] as IconData,
+                              title: card2Data['title'] as String,
+                              value: card2Data['value'] as String,
+                              onTap: () => _launchPhone(),
+                            ),
                           ),
-                        ),
-                        SizedBox(width: isTablet ? 16 : 20),
-                        Flexible(
-                          child: _buildContactCard(
-                            icon: card3Data['icon'] as IconData,
-                            title: card3Data['title'] as String,
-                            value: card3Data['value'] as String,
-                            onTap: null,
-                            minHeight: tabletContactMinHeight,
+                          SizedBox(width: isTablet ? 16 : 20),
+                          Expanded(
+                            child: _buildContactCard(
+                              icon: card3Data['icon'] as IconData,
+                              title: card3Data['title'] as String,
+                              value: card3Data['value'] as String,
+                              onTap: null,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -2518,7 +2501,6 @@ class _LandingPageState extends State<LandingPage>
     required String title,
     required String value,
     required VoidCallback? onTap,
-    double? minHeight,
   }) {
     final isMobile = _isMobile(context);
     final isTablet = _isTablet(context);
@@ -2584,100 +2566,6 @@ class _LandingPageState extends State<LandingPage>
         ),
       ),
     );
-  }
-
-  double _calculateTabletContactCardMinHeight(
-    List<Map<String, dynamic>> cards,
-  ) {
-    if (cards.isEmpty) return 0;
-
-    const double cardWidth = 220; // tablet card width is fixed
-    const double cardPadding = 30;
-    const double iconHeight = 80;
-    const double spacingAfterIcon = 24;
-    const double spacingBetweenTexts = 12;
-
-    final double textWidth = cardWidth - (cardPadding * 2);
-
-    final titleStyle = GoogleFonts.poppins(
-      fontSize: 20,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    );
-
-    final valueStyle = GoogleFonts.poppins(
-      fontSize: 16,
-      color: Colors.white.withValues(alpha: 0.8),
-      height: 1.4,
-    );
-
-    final double maxTitleHeight = cards
-        .map((card) =>
-            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
-        .reduce(math.max);
-
-    final double maxValueHeight = cards
-        .map(
-          (card) => _measureTextHeight(
-              card['value'] as String, valueStyle, textWidth),
-        )
-        .reduce(math.max);
-
-    const double verticalPadding = cardPadding * 2;
-
-    return verticalPadding +
-        iconHeight +
-        spacingAfterIcon +
-        maxTitleHeight +
-        spacingBetweenTexts +
-        maxValueHeight;
-  }
-
-  double _calculateDesktopContactCardMinHeight(
-    List<Map<String, dynamic>> cards,
-  ) {
-    if (cards.isEmpty) return 0;
-
-    const double cardWidth = 300; // desktop card width is fixed
-    const double cardPadding = 40;
-    const double iconHeight = 80;
-    const double spacingAfterIcon = 24;
-    const double spacingBetweenTexts = 12;
-
-    final double textWidth = cardWidth - (cardPadding * 2);
-
-    final titleStyle = GoogleFonts.poppins(
-      fontSize: 20,
-      fontWeight: FontWeight.w600,
-      color: Colors.white,
-    );
-
-    final valueStyle = GoogleFonts.poppins(
-      fontSize: 16,
-      color: Colors.white.withValues(alpha: 0.8),
-      height: 1.4,
-    );
-
-    final double maxTitleHeight = cards
-        .map((card) =>
-            _measureTextHeight(card['title'] as String, titleStyle, textWidth))
-        .reduce(math.max);
-
-    final double maxValueHeight = cards
-        .map(
-          (card) => _measureTextHeight(
-              card['value'] as String, valueStyle, textWidth),
-        )
-        .reduce(math.max);
-
-    const double verticalPadding = cardPadding * 2;
-
-    return verticalPadding +
-        iconHeight +
-        spacingAfterIcon +
-        maxTitleHeight +
-        spacingBetweenTexts +
-        maxValueHeight;
   }
 
   /// Professional footer
