@@ -44,6 +44,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
+  // Controller'lar fokus kaybını önlemek için
+  final _amountController = TextEditingController();
+  final _amountFocusNode = FocusNode();
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +80,13 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     }
   }
 
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _amountFocusNode.dispose();
+    super.dispose();
+  }
+
   void _populateForm(dynamic transaction) {
     final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
     formNotifier.updateField('type', transaction.type);
@@ -93,6 +104,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     formNotifier.updateField('revenueId', transaction.revenueId);
     formNotifier.updateField('expenseId', transaction.expenseId);
     formNotifier.updateField('accountId', transaction.accountId);
+
+    // Amount controller'ını başlangıç değeriyle doldur
+    if (transaction.amount != null) {
+      _amountController.text = transaction.amount.toString();
+    }
     formNotifier.updateField('targetAccountId', transaction.targetAccountId);
     formNotifier.updateField('paymentMethodId', transaction.paymentMethodId);
     formNotifier.updateField('paymentSourceId', transaction.paymentSourceId);
@@ -327,6 +343,47 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: customer.balance >= 0
+                                ? Colors.green.withValues(alpha: 0.1)
+                                : Colors.red.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: customer.balance >= 0
+                                  ? Colors.green.withValues(alpha: 0.3)
+                                  : Colors.red.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                customer.balance >= 0
+                                    ? Icons.trending_up
+                                    : Icons.trending_down,
+                                size: 14,
+                                color: customer.balance >= 0
+                                    ? Colors.green
+                                    : Colors.red,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Bakiye: ${_formatCurrency(customer.balance)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: customer.balance >= 0
+                                      ? Colors.green[700]
+                                      : Colors.red[700],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -581,6 +638,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     child: TransactionFormFields.buildAmountField(
                       formState: formState,
                       onChanged: (value) => _updateField('amount', value),
+                      controller: _amountController,
+                      focusNode: _amountFocusNode,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -922,6 +981,16 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   void _updateField(String field, dynamic value) {
     ref.read(paymentTransactionFormProvider.notifier).updateField(field, value);
+
+    // Amount controller'ını güncelle (sadece amount field'ı için)
+    if (field == 'amount' && value != null) {
+      // Eğer controller'ın değeri farklıysa güncelle
+      final currentText = _amountController.text;
+      final newText = value.toString();
+      if (currentText != newText) {
+        _amountController.text = newText;
+      }
+    }
   }
 
   /// İşlem türü değiştiğinde hesap seçimini güncelle
@@ -2400,6 +2469,16 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     );
 
     return result ?? false;
+  }
+
+  /// Para birimi formatla
+  String _formatCurrency(double amount) {
+    final formatter = NumberFormat.currency(
+      locale: 'tr_TR',
+      symbol: '₺',
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
   }
 }
 

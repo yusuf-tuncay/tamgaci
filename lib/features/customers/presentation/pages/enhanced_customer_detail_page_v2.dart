@@ -18,7 +18,7 @@ import '../../../cash_management/presentation/providers/cash_management_provider
 import '../../../cash_management/domain/entities/cash_transaction.dart';
 import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import '../../../../core/services/business/transaction_service.dart'
-    show TransactionService, Transaction, TransactionType;
+    show TransactionService, Transaction;
 import '../../../sales/presentation/providers/sale_providers.dart' as sales;
 import '../../../purchases/presentation/providers/purchase_providers.dart'
     as purchases;
@@ -948,7 +948,6 @@ class _EnhancedCustomerDetailPageV2State
             // Widget dispose edildiyse boş widget döndür
             if (!mounted) return const SizedBox.shrink();
 
-            final transactionsRaw = transactionSnapshot.data ?? [];
             final paymentTransactions = paymentTransactionsAsync.maybeWhen(
               data: (value) => value,
               orElse: () => <PaymentTransaction>[],
@@ -958,12 +957,10 @@ class _EnhancedCustomerDetailPageV2State
               orElse: () => <dynamic>[],
             );
 
-            final invoiceIds = invoices.map((e) => e['id'] as String).toSet();
             final invoiceKeys = <String>{};
             final paymentKeys = <String>{};
             final paymentTxnKeys = <String>{};
             final purchaseKeys = <String>{};
-            final transactionKeys = <String>{};
             final uniqueKeys = <String>{};
             final allItems = <Map<String, dynamic>>[];
 
@@ -1008,40 +1005,7 @@ class _EnhancedCustomerDetailPageV2State
               }
             }
 
-            for (final t in transactionsRaw.whereType<Transaction>()) {
-              final invoiceRef = t.invoiceId;
-              final docNumber = t.documentNumber;
-
-              // Fatura ile ilişkili işlemleri filtrele
-              if ((invoiceRef != null && invoiceIds.contains(invoiceRef)) ||
-                  (docNumber != null &&
-                      docNumber.isNotEmpty &&
-                      invoiceKeys.contains('invoice-$docNumber')) ||
-                  t.type == TransactionType.invoice ||
-                  t.type == TransactionType.sale) {
-                continue;
-              }
-
-              // PaymentTransaction ile ilişkili Transaction'ları filtrele - Artık gerekli değil
-              // final paymentTxnId =
-              //     t.metadata?['paymentTransactionId']?.toString();
-              // if (paymentTxnId != null &&
-              //     paymentTransactionIds.contains(paymentTxnId)) {
-              //   continue;
-              // }
-
-              final key = 'transaction-${docNumber ?? t.id}';
-              if (transactionKeys.add(key)) {
-                addItem(
-                  key,
-                  {
-                    'type': 'transaction',
-                    'date': _parseDateTime(t.transactionDate) ?? DateTime.now(),
-                    'data': t,
-                  },
-                );
-              }
-            }
+            // Transaction döngüsü kaldırıldı - duplikasyon önlendi
 
             for (final purchase in purchasesList) {
               final purchaseId = purchase['id']?.toString() ??
@@ -1188,13 +1152,8 @@ class _EnhancedCustomerDetailPageV2State
                           child: _buildPurchaseActivityTile(
                               purchase, isReturn, isDark),
                         );
-                      } else {
-                        final txn = item['data'] as Transaction;
-                        return GestureDetector(
-                          onTap: () => _showCustomerTransactionDetail(txn),
-                          child: _buildTransactionTile(txn, isDark),
-                        );
                       }
+                      return const SizedBox.shrink();
                     },
                   ),
                 ),
@@ -2978,7 +2937,8 @@ class _EnhancedCustomerDetailPageV2State
     }
   }
 
-  Widget _buildTransactionTile(dynamic t, bool isDark) {
+  // _buildTransactionTile fonksiyonu kaldırıldı - artık kullanılmıyor
+  Widget _removedBuildTransactionTile(dynamic t, bool isDark) {
     // Transaction object from TransactionService
     final isCredit = _isCreditTransactionType(t.type);
     final amount = (t.amount is num ? (t.amount as num).toDouble() : 0.0).abs();
@@ -3242,7 +3202,8 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
-  void _showCustomerTransactionDetail(Transaction transaction) {
+  // _showCustomerTransactionDetail fonksiyonu kaldırıldı - artık kullanılmıyor
+  void _removedShowCustomerTransactionDetail(Transaction transaction) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

@@ -73,13 +73,20 @@ class TransactionFormFields {
   static Widget buildAmountField({
     required PaymentTransactionFormModel formState,
     required Function(double?) onChanged,
+    TextEditingController? controller,
+    FocusNode? focusNode,
   }) {
-    final controller = TextEditingController(
-      text: formState.amount?.toString() ?? '',
-    );
+    final amountController = controller ?? TextEditingController();
+
+    // Sadece controller boşsa veya değer farklıysa güncelle
+    if (controller == null ||
+        amountController.text != (formState.amount?.toString() ?? '')) {
+      amountController.text = formState.amount?.toString() ?? '';
+    }
 
     return TextFormField(
-      controller: controller,
+      controller: amountController,
+      focusNode: focusNode,
       decoration: const InputDecoration(
         labelText: 'Tutar',
         border: OutlineInputBorder(),
@@ -97,7 +104,7 @@ class TransactionFormFields {
       },
       onTapOutside: (event) {
         // Odak kaybedilince Türkçe formatla
-        _formatAmountField(controller);
+        _formatAmountField(amountController);
       },
       validator: (value) {
         if (value == null || value.isEmpty) {
