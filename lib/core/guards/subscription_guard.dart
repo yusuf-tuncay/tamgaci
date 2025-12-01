@@ -39,6 +39,12 @@ class SubscriptionGuard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userAsync = ref.watch(currentUserProvider);
 
+    // Abonelik sayfasının kendisi için guard'ı pasifleştir (sonsuz yönlendirmeyi önle)
+    final currentLocation = GoRouterState.of(context).uri.path;
+    if (currentLocation.startsWith('/settings/subscription')) {
+      return child;
+    }
+
     return userAsync.when(
       data: (user) {
         if (user == null) {

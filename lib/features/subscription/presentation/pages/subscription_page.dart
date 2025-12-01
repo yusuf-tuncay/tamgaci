@@ -185,6 +185,22 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     });
   }
 
+  Future<void> _handleLogout() async {
+    try {
+      await ref.read(authProvider.notifier).signOut();
+      if (!mounted) return;
+      context.go('/login');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Çıkış yapılamadı: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final userAsync = ref.watch(currentUserProvider);
@@ -192,26 +208,20 @@ class _SubscriptionPageState extends ConsumerState<SubscriptionPage> {
     final plans = PricingConfig.getAllPlans();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final iconColor = isDark ? Colors.white : const Color(0xFF1A1A1A);
 
     return ResponsiveScaffold(
       drawerContent: const SizedBox.shrink(),
       appBar: CustomAppBar(
         title: 'Abonelik Planları',
         showBackButton: true,
-        onBackPressed: () {
-          try {
-            if (context.canPop()) {
-              context.pop();
-            } else {
-              // Fallback: Ana sayfaya git
-              context.go('/dashboard');
-            }
-          } catch (e) {
-            debugPrint('Navigation error: $e');
-            // Fallback navigation
-            context.go('/dashboard');
-          }
-        },
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout_rounded, color: iconColor),
+            tooltip: 'Çıkış yap',
+            onPressed: _handleLogout,
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(

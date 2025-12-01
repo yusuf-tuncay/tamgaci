@@ -2,13 +2,13 @@
 // lib/core/providers/subscription_state_provider.dart
 
 import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/subscription/firestore_subscription_service.dart';
 
-/// Global abonelik durumu state'i
-class SubscriptionState {
+  /// Global abonelik durumu state'i
+  class SubscriptionState {
   final SubscriptionCheckResult? subscriptionResult;
   final bool isLoading;
   final String? error;
@@ -66,7 +66,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
   /// Kullanıcının abonelik durumunu kontrol et ve cache'le
   Future<void> checkUserSubscription(String userId) async {
     if (!mounted) return; // StateNotifier dispose edilmişse işlem yapma
-    
+
     try {
       // Cache kontrolü - 2 dakika cache süresi
       if (state.lastChecked != null) {
@@ -93,7 +93,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
       );
     } catch (e) {
       if (!mounted) return;
-      debugPrint('❌ SubscriptionStateNotifier: Subscription check failed: $e');
+      debugPrint('SubscriptionStateNotifier: Subscription check failed: $e');
 
       state = state.copyWith(
         isLoading: false,
@@ -104,13 +104,14 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
 
   /// Cache'i temizle (çıkış yaparken)
   void clearCache() {
-    debugPrint('🗑️ SubscriptionStateNotifier: Clearing subscription cache');
+    debugPrint('SubscriptionStateNotifier: Clearing subscription cache');
+    stopListeners();
     state = const SubscriptionState();
   }
 
   /// Cache'i yenile (sadece real-time listener tetiklenmediğinde)
   Future<void> refreshSubscription(String userId) async {
-    debugPrint('🔄 SubscriptionStateNotifier: Manual refresh requested');
+    debugPrint('SubscriptionStateNotifier: Manual refresh requested');
 
     // Cache'i tamamen temizle
     state = const SubscriptionState();
@@ -131,15 +132,21 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
 
   /// Real-time abonelik güncellemelerini dinle
   void listenToSubscriptionUpdates(String userId) {
+    if (userId.isEmpty) {
+      debugPrint(
+          'SubscriptionStateNotifier: listenToSubscriptionUpdates skipped, empty userId');
+      return;
+    }
+
     // Listener zaten başlatılmışsa tekrar başlatma
     if (_userListener != null || _subscriptionUpdatesListener != null) {
       debugPrint(
-          '🔔 SubscriptionStateNotifier: Listener already active for user: $userId');
+          'SubscriptionStateNotifier: Listener already active for user: $userId');
       return;
     }
 
     debugPrint(
-        '🔔 SubscriptionStateNotifier: Starting real-time listener for user: $userId');
+        'SubscriptionStateNotifier: Starting real-time listener for user: $userId');
 
     // Önceki listener'ları temizle
     _userListener?.cancel();
@@ -152,7 +159,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         .snapshots()
         .listen((snapshot) {
       if (!mounted) return; // StateNotifier dispose edilmişse işlem yapma
-      
+
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
 
@@ -165,11 +172,11 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
 
         if (hasSubscriptionFields) {
           if (!mounted) return;
-          
+
           debugPrint(
-              '🔔 SubscriptionStateNotifier: User data updated for user: $userId');
+              'SubscriptionStateNotifier: User data updated for user: $userId');
           debugPrint(
-              '🔔 SubscriptionStateNotifier: Subscription fields detected, refreshing...');
+              'SubscriptionStateNotifier: Subscription fields detected, refreshing...');
 
           // Cache'i temizle ve abonelik durumunu yenile
           state = state.copyWith(
@@ -182,7 +189,7 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
     }, onError: (error) {
       if (!mounted) return;
       debugPrint(
-          '❌ SubscriptionStateNotifier: Users collection listener error: $error');
+          'SubscriptionStateNotifier: Users collection listener error: $error');
     });
 
     // Ek olarak subscription_updates collection'ını da dinle
@@ -192,15 +199,15 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
         .snapshots()
         .listen((snapshot) {
       if (!mounted) return; // StateNotifier dispose edilmişse işlem yapma
-      
+
       if (snapshot.exists && snapshot.data() != null) {
         final data = snapshot.data()!;
         if (data['status'] == 'updated') {
           if (!mounted) return;
-          
+
           // Sadece gerçek güncellemelerde logla
           debugPrint(
-              '🔔 SubscriptionStateNotifier: Real-time update received for user: $userId');
+              'SubscriptionStateNotifier: Real-time update received for user: $userId');
           // Cache'i temizle ve abonelik durumunu yenile
           state = state.copyWith(
             subscriptionResult: null,
@@ -212,18 +219,18 @@ class SubscriptionStateNotifier extends StateNotifier<SubscriptionState> {
     }, onError: (error) {
       if (!mounted) return;
       debugPrint(
-          '❌ SubscriptionStateNotifier: Subscription updates listener error: $error');
+          'SubscriptionStateNotifier: Subscription updates listener error: $error');
     });
 
     // Periyodik timer kaldırıldı - sadece real-time listener kullanılıyor
     // Real-time listener'lar zaten tüm değişiklikleri yakalıyor
     debugPrint(
-        '🔔 SubscriptionStateNotifier: Using only real-time listeners (no periodic timer)');
+        'SubscriptionStateNotifier: Using only real-time listeners (no periodic timer)');
   }
 
   /// Listener'ları durdur
   void stopListeners() {
-    debugPrint('🔔 SubscriptionStateNotifier: Stopping all listeners');
+    debugPrint('SubscriptionStateNotifier: Stopping all listeners');
     _userListener?.cancel();
     _subscriptionUpdatesListener?.cancel();
     _userListener = null;
