@@ -1976,37 +1976,3 @@ class _CreateCustomerPageState extends ConsumerState<CreateCustomerPage> {
     }
   }
 }
-
-// ========== DOSYA YERLEŞTİRME TALİMATLARI ==========
-
-/*
-📁 Bu dosyaların yerleştirilmesi gereken konumlar:
-
-1. 📄 customers_list_page.dart  
-   → lib/features/customers/presentation/pages/customers_list_page.dart
-   (Mevcut placeholder'ı değiştir)
-
-2. 📄 create_customer_page.dart
-   → lib/features/customers/presentation/pages/create_customer_page.dart  
-   (Mevcut placeholder'ı değiştir)
-
-========== SONRAKI ADIM ==========
-
-1. Code generation çalıştır:
-   flutter packages pub run build_runner build
-
-2. Database'i test etmek için bir kaç mock müşteri ekleyin
-
-3. Customer detail ve edit sayfalarını hazırlayacağım
-
-Bu sayfalar tamamen fonksiyonel:
-✅ Gerçek database CRUD işlemleri
-✅ Form validation
-✅ Error handling  
-✅ Search ve filtering
-✅ Responsive design
-✅ Loading states
-✅ Success/error messages
-
-Artık gerçek bir müşteri yönetim sistemine sahipsiniz! 🎉
-*/

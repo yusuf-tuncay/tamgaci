@@ -36,6 +36,9 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
   /// Yükseklik
   final double? height;
 
+  /// Özel leading widget
+  final Widget? leading;
+
   const CustomAppBar({
     super.key,
     this.title,
@@ -47,6 +50,7 @@ class CustomAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.backgroundColor,
     this.showShadow = true,
     this.height,
+    this.leading,
   });
 
   @override
@@ -205,6 +209,10 @@ class _CustomAppBarState extends State<CustomAppBar>
 
   /// Leading widget'ını oluşturur
   Widget? _buildLeadingWidget(BuildContext context, bool isDark) {
+    if (widget.leading != null) {
+      return widget.leading;
+    }
+
     final iconColor = isDark
         ? TamgaciConstants.textPrimaryDark
         : TamgaciConstants.textPrimary;
