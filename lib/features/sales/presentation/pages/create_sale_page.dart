@@ -28,6 +28,7 @@ import 'package:tamgaci/features/accounts/presentation/providers/account_transac
 import 'package:tamgaci/features/invoices/presentation/providers/invoice_providers.dart'
     as invoice_providers;
 import 'package:tamgaci/features/payment_collection/domain/entities/payment_transaction.dart';
+import 'package:tamgaci/core/utils/currency_helper.dart';
 import 'package:tamgaci/features/payment_collection/domain/entities/payment_enums.dart';
 import 'package:tamgaci/features/payment_collection/presentation/providers/payment_collection_providers.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -736,22 +737,17 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Satış',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _customerNameController.text.isNotEmpty
-                        ? _customerNameController.text
-                        : 'Müşteri seçiniz',
-                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                  ),
                   if (_hasSelectedCustomer) ...[
-                    const SizedBox(height: 16),
                     _buildCustomerCard(),
-                  ],
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 8),
+                  ] else
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 8.0),
+                      child: Text(
+                        'Müşteri seçiniz',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                    ),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
@@ -762,11 +758,6 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                         label: Text(_hasSelectedCustomer
                             ? 'Müşteri Değiştir'
                             : 'Müşteri Seç'),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: _createNewCustomer,
-                        icon: const Icon(Icons.person_add_alt_1),
-                        label: const Text('Yeni Müşteri'),
                       ),
                     ],
                   ),
@@ -816,6 +807,9 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
         return customerAsync.when(
           data: (customer) {
             if (customer == null) return const SizedBox.shrink();
+            final cc = customer.customerCurrency ?? '';
+            final bc = customer.balanceCurrency;
+            final currencyCode = cc.isNotEmpty ? cc : (bc.isNotEmpty ? bc : 'TRY');
 
             return Card(
               elevation: 2,
@@ -857,14 +851,22 @@ class _CreateSalePageState extends ConsumerState<CreateSalePage>
                         customer.taxNumber!.isNotEmpty)
                       _buildCustomerInfoRow('Vergi No', customer.taxNumber!),
                     if (customer.creditLimit > 0)
-                      _buildCustomerInfoRow('Kredi Limiti',
-                          '${customer.creditLimit.toStringAsFixed(2)} ${customer.balanceCurrency}'),
-                    if (customer.currentBalance != 0)
                       _buildCustomerInfoRow(
-                        'Mevcut Bakiye',
-                        '${customer.currentBalance.toStringAsFixed(2)} ${customer.balanceCurrency}',
-                        isBalance: true,
+                        'Kredi Limiti',
+                        CurrencyHelper.formatCurrency(
+                            customer.creditLimit, currencyCode),
                       ),
+                    () {
+                      final displayBalance = customer.balance;
+                      return _buildCustomerInfoRow(
+                        'Mevcut Bakiye',
+                        CurrencyHelper.formatCurrency(
+                          displayBalance,
+                          currencyCode,
+                        ),
+                        isBalance: true,
+                      );
+                    }(),
                   ],
                 ),
               ),

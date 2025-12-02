@@ -474,6 +474,7 @@ class CashManagementNotifier extends StateNotifier<CashManagementState> {
     int? limit,
     int? offset,
   }) async {
+    if (!mounted) return;
     if (kDebugMode) {
       print('🔄 Starting to load cash transactions...');
     }
@@ -488,6 +489,8 @@ class CashManagementNotifier extends StateNotifier<CashManagementState> {
         offset: offset,
       );
 
+      if (!mounted) return;
+
       if (kDebugMode) {
         print(
           '✅ Successfully loaded ${cashTransactions.length} cash transactions');
@@ -499,6 +502,7 @@ class CashManagementNotifier extends StateNotifier<CashManagementState> {
       );
       debugPrint('🐛 hasLoadedTransactions set to: ${state.hasLoadedTransactions}');
     } catch (e) {
+      if (!mounted) return;
       if (kDebugMode) {
         print('❌ Error loading cash transactions: $e');
       }

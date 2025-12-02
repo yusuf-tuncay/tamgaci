@@ -15,6 +15,7 @@ import '../../../accounts/presentation/providers/account_providers.dart';
 import '../../../accounts/domain/entities/account.dart';
 import '../../../../core/services/business/transaction_service.dart';
 import '../models/payment_transaction_form_model.dart';
+import '../../../cash_management/presentation/providers/cash_management_providers.dart';
 
 /// Tahsilat ve ödeme işlemi form ekranı
 class TransactionFormScreen extends ConsumerStatefulWidget {
@@ -47,10 +48,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   // Controller'lar fokus kaybını önlemek için
   final _amountController = TextEditingController();
   final _amountFocusNode = FocusNode();
+  double? _pendingAmount;
 
   @override
   void initState() {
     super.initState();
+    _amountFocusNode.addListener(() {
+      if (!_amountFocusNode.hasFocus) {
+        _syncAmountToForm();
+        _formatAmountDisplayFromController();
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeForm();
     });
@@ -109,6 +117,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     if (transaction.amount != null) {
       _amountController.text = transaction.amount.toString();
     }
+    _pendingAmount = transaction.amount?.toDouble();
     formNotifier.updateField('targetAccountId', transaction.targetAccountId);
     formNotifier.updateField('paymentMethodId', transaction.paymentMethodId);
     formNotifier.updateField('paymentSourceId', transaction.paymentSourceId);
@@ -125,6 +134,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
   void _setupNewTransaction() {
     final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
+    _pendingAmount = null;
 
     // İşlem yönü ve kategorisini ayarla
     formNotifier.updateField('direction', widget.direction);
@@ -637,7 +647,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                     flex: 2,
                     child: TransactionFormFields.buildAmountField(
                       formState: formState,
-                      onChanged: (value) => _updateField('amount', value),
+                      onChanged: (value) => _pendingAmount = value,
                       controller: _amountController,
                       focusNode: _amountFocusNode,
                     ),
@@ -983,7 +993,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     ref.read(paymentTransactionFormProvider.notifier).updateField(field, value);
 
     // Amount controller'ını güncelle (sadece amount field'ı için)
-    if (field == 'amount' && value != null) {
+    if (field == 'amount' && value != null && value is num) {
       // Eğer controller'ın değeri farklıysa güncelle
       final currentText = _amountController.text;
       final newText = value.toString();
@@ -991,6 +1001,27 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         _amountController.text = newText;
       }
     }
+  }
+
+  void _syncAmountToForm() {
+    // Controller'daki değeri parse et ve state'e yaz
+    final raw = _amountController.text;
+    final clean = raw.replaceAll('.', '').replaceAll(',', '.');
+    final parsed = double.tryParse(clean);
+    _pendingAmount = parsed;
+    _updateField('amount', parsed);
+  }
+
+  void _formatAmountDisplayFromController() {
+    final raw = _amountController.text;
+    if (raw.isEmpty) return;
+    final clean = raw.replaceAll('.', '').replaceAll(',', '.');
+    final parsed = double.tryParse(clean);
+    if (parsed == null) return;
+    final formatted = NumberFormat('#,##0.00', 'tr_TR').format(parsed);
+    _amountController.text = formatted;
+    _amountController.selection =
+        TextSelection.collapsed(offset: formatted.length);
   }
 
   /// İşlem türü değiştiğinde hesap seçimini güncelle
@@ -1290,6 +1321,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   }
 
   Future<void> _saveTransaction() async {
+    // Formu doğrulamadan önce pending amount'u state'e yaz
+    _syncAmountToForm();
     _ensureRequiredDefaults();
 
     final formNotifier = ref.read(paymentTransactionFormProvider.notifier);
@@ -1375,6 +1408,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
       if (createdTransaction != null) {
         await _recordCustomerTransaction(createdTransaction);
+        if (mounted) {
+          // Anlık listeler/görünümler güncellensin
+          if (createdTransaction.customerId != null &&
+              createdTransaction.customerId!.isNotEmpty) {
+            ref.invalidate(customerPaymentTransactionsProvider(
+                createdTransaction.customerId!));
+            ref.invalidate(customerProvider(createdTransaction.customerId!));
+            ref.invalidate(customersProvider);
+          }
+          ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -1491,6 +1535,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
             .updateTransaction(updatedTransaction);
 
         if (mounted) {
+          if (updatedTransaction.customerId != null &&
+              updatedTransaction.customerId!.isNotEmpty) {
+            ref.invalidate(customerPaymentTransactionsProvider(
+                updatedTransaction.customerId!));
+            ref.invalidate(customerProvider(updatedTransaction.customerId!));
+            ref.invalidate(customersProvider);
+          }
+          ref.read(cashManagementNotifierProvider.notifier).getCashTransactions();
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('İşlem başarıyla güncellendi'),

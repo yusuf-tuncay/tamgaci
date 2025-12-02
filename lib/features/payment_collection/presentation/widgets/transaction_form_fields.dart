@@ -78,10 +78,17 @@ class TransactionFormFields {
   }) {
     final amountController = controller ?? TextEditingController();
 
-    // Sadece controller boşsa veya değer farklıysa güncelle
-    if (controller == null ||
+    // Harici controller geldiyse metni dokunma; iç controller ise form state ile doldur
+    if (controller == null &&
         amountController.text != (formState.amount?.toString() ?? '')) {
       amountController.text = formState.amount?.toString() ?? '';
+    }
+
+    String? formatDisplay(String value) {
+      final clean = value.replaceAll('.', '').replaceAll(',', '.');
+      final amount = double.tryParse(clean);
+      if (amount == null) return null;
+      return NumberFormat('#,##0.00', 'tr_TR').format(amount);
     }
 
     return TextFormField(
@@ -93,7 +100,8 @@ class TransactionFormFields {
         prefixIcon: Icon(Icons.attach_money),
         hintText: '0,00',
       ),
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      // Web/masaüstü için serbest metin; tarayıcının HTML number kısıtlamasına takılmamak için
+      keyboardType: TextInputType.text,
       onChanged: (value) {
         // Parse için Türkçe formatı temizle
         final cleanValue = value
@@ -102,9 +110,23 @@ class TransactionFormFields {
         final amount = double.tryParse(cleanValue);
         onChanged(amount);
       },
+      onEditingComplete: () {
+        final formatted = formatDisplay(amountController.text);
+        if (formatted != null) {
+          amountController.text = formatted;
+          amountController.selection = TextSelection.collapsed(
+            offset: formatted.length,
+          );
+        }
+      },
       onTapOutside: (event) {
-        // Odak kaybedilince Türkçe formatla
-        _formatAmountField(amountController);
+        final formatted = formatDisplay(amountController.text);
+        if (formatted != null) {
+          amountController.text = formatted;
+          amountController.selection = TextSelection.collapsed(
+            offset: formatted.length,
+          );
+        }
       },
       validator: (value) {
         if (value == null || value.isEmpty) {
@@ -121,29 +143,6 @@ class TransactionFormFields {
         return null;
       },
     );
-  }
-
-  /// Tutar alanını Türkçe formatla
-  static void _formatAmountField(TextEditingController controller) {
-    final value = controller.text;
-    if (value.isEmpty) return;
-
-    // Sadece rakam, virgül ve nokta içeren değerleri işle
-    final cleanValue = value.replaceAll(RegExp(r'[^\d,.]'), '');
-    if (cleanValue.isEmpty) return;
-
-    // Türkçe formatı parse et
-    final doubleValue = cleanValue
-        .replaceAll('.', '') // Binlik ayırıcıları kaldır
-        .replaceAll(',', '.'); // Virgülü nokta yap
-    final amount = double.tryParse(doubleValue);
-
-    if (amount != null && amount > 0) {
-      // Türkçe formatla (1.000,00)
-      final formatter = NumberFormat('#,##0.00', 'tr_TR');
-      final formatted = formatter.format(amount);
-      controller.text = formatted;
-    }
   }
 
   /// Para birimi alanı
