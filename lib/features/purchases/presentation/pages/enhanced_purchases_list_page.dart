@@ -749,7 +749,18 @@ class _EnhancedPurchasesListPageState
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return DateFormat('dd.MM.yyyy HH:mm').format(date);
+  }
+
+  String _displayPurchaseNumberForList(String raw, bool isReturn) {
+    final upper = raw.toUpperCase();
+    if (isReturn && upper.startsWith('PURCHASE-')) {
+      return upper.replaceFirst('PURCHASE-', 'RETURN-');
+    }
+    if (!isReturn && upper.startsWith('RETURN-')) {
+      return upper.replaceFirst('RETURN-', 'PURCHASE-');
+    }
+    return upper;
   }
 
   Widget _buildPurchasesList(List<Purchase> purchases, String searchQuery) {
@@ -914,7 +925,7 @@ class _EnhancedPurchasesListPageState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      purchase.purchaseNumber,
+                      'İşlem No: ${_displayPurchaseNumberForList(purchase.purchaseNumber, purchase.type == PurchaseType.returnPurchase)}',
                       style: GoogleFonts.poppins(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,

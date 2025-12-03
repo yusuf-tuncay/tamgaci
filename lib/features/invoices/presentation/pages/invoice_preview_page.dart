@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../domain/entities/invoice.dart';
 import '../../domain/entities/invoice_item.dart';
+import '../../data/models/invoice_status.dart';
 import 'package:tamgaci/core/widgets/disposed_view_suppressor.dart';
 import 'package:tamgaci/core/errors/smart_error_suppressor.dart';
 import '../../../company/presentation/providers/company_providers.dart';
@@ -27,6 +30,8 @@ import 'package:web/web.dart' as web;
 import 'dart:js_interop';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
+
+enum _PaymentState { paid, partial, unpaid }
 
 /// Fatura önizleme sayfası
 class InvoicePreviewPage extends ConsumerStatefulWidget {
@@ -49,6 +54,37 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     with ConsumerDisposedViewSuppressorMixin, SmartErrorSuppressorMixin {
   bool _isEditing = false;
   final _formKey = GlobalKey<FormState>();
+  String get _docTypeCode {
+    final raw = (_currentInvoice.documentType ?? '').toLowerCase();
+    if (raw.isNotEmpty) return raw;
+    return 'invoice';
+  }
+
+  String get _docNumber =>
+      (_currentInvoice.invoiceNumber.isNotEmpty == true)
+          ? _currentInvoice.invoiceNumber
+          : (_currentInvoice.id.isNotEmpty ? _currentInvoice.id : 'N/A');
+
+  String get _docLabel {
+    switch (_docTypeCode) {
+      case 'waybill':
+        return 'İrsaliye';
+      case 'proforma':
+        return 'Proforma';
+      case 'estimate':
+        return 'Teklif';
+      case 'receipt':
+        return 'Fiş';
+      case 'sale':
+        return 'Satış';
+      case 'purchase':
+        return 'Alış';
+      case 'purchase_return':
+        return 'Alış İadesi';
+      default:
+        return 'Fatura';
+    }
+  }
   
   // PDF için logo ve font cache
   static pw.MemoryImage? _cachedTamgaciLogo;
@@ -186,7 +222,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       child: ResponsiveScaffold(
         drawerContent: const SizedBox.shrink(),
         appBar: CustomAppBar(
-          title: 'Fatura Önizleme',
+          title: '$_docLabel Önizleme',
           showBackButton: true,
           onBackPressed: widget.isFromSale
               ? () {
@@ -216,7 +252,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Fatura başlığı
+              // Belge başlığı
               _buildInvoiceHeader(),
               const SizedBox(height: 24),
 
@@ -276,7 +312,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'FATURA',
+                  _docLabel.toUpperCase(),
                   style: GoogleFonts.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -285,7 +321,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Fatura No: ${_currentInvoice.invoiceNumber}',
+                  '$_docLabel No: $_docNumber',
                   style: GoogleFonts.poppins(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -565,7 +601,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Fatura Edilecek',
+          '$_docLabel Edilecek',
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -604,7 +640,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Fatura Detayları',
+                  '$_docLabel Detayları',
                   style: GoogleFonts.poppins(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -625,7 +661,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                 children: [
                   _buildDetailRow(
                     icon: Icons.calendar_today,
-                    label: 'Fatura Tarihi',
+                    label: '$_docLabel Tarihi',
                     value: DateFormat('dd.MM.yyyy')
                         .format(widget.invoice.invoiceDate),
                   ),
@@ -656,37 +692,36 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                         ),
                       ),
                       const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: _getPaymentStatusColor(widget.invoice.isPaid),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              widget.invoice.isPaid
-                                  ? Icons.check_circle
-                                  : Icons.pending,
-                              size: 16,
-                              color: _getPaymentStatusTextColor(
-                                  widget.invoice.isPaid),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _getPaymentStatusText(widget.invoice.isPaid),
-                              style: GoogleFonts.poppins(
-                                color: _getPaymentStatusTextColor(
-                                    widget.invoice.isPaid),
-                                fontWeight: FontWeight.w600,
-                                fontSize: 12,
+                      Builder(builder: (context) {
+                        final paymentState = _resolvePaymentState(_currentInvoice);
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _getPaymentStatusColor(paymentState),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                _getPaymentStatusIcon(paymentState),
+                                size: 16,
+                                color: _getPaymentStatusTextColor(paymentState),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getPaymentStatusText(paymentState),
+                                style: GoogleFonts.poppins(
+                                  color: _getPaymentStatusTextColor(paymentState),
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ],
                   ),
                 ],
@@ -842,7 +877,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
   }
 
   Widget _buildReadOnlyItemsTable() {
-    return Table(
+    return _wrapTableForSmallScreens((scale) => Table(
       border: TableBorder.all(
         color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         width: 0.5,
@@ -861,11 +896,11 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             color: AppColors.primary.withValues(alpha: 0.05),
           ),
           children: [
-            _buildTableHeader('Ürün Adı'),
-            _buildTableHeader('Miktar'),
-            _buildTableHeader('Birim Fiyat'),
-            _buildTableHeader('KDV'),
-            _buildTableHeader('Toplam'),
+            _buildTableHeader('Ürün Adı', scale),
+            _buildTableHeader('Miktar', scale),
+            _buildTableHeader('Birim Fiyat', scale),
+            _buildTableHeader('KDV', scale),
+            _buildTableHeader('Toplam', scale),
           ],
         ),
         // Ürün satırları
@@ -875,12 +910,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           return TableRow(
             decoration: BoxDecoration(
               color: index.isEven 
-                  ? Theme.of(context).colorScheme.surface 
-                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+                ? Theme.of(context).colorScheme.surface 
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
             ),
             children: [
-              _buildTableCell(item.productName),
-              _buildTableCell(item.quantity.toString()),
+              _buildTableCell(item.productName, scale),
+              _buildTableCell(item.quantity.toString(), scale),
               _buildTableCell(
                 CurrencyHelper.formatCurrency(
                       item.unitPrice,
@@ -891,23 +926,25 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                             item.exchangeRate != null
                         ? ' (kur: ${item.exchangeRate!.toStringAsFixed(4)})'
                         : ''),
+                scale,
               ),
-              _buildTableCell('${item.taxRate.toStringAsFixed(1)}%'),
+              _buildTableCell('${item.taxRate.toStringAsFixed(1)}%', scale),
               _buildTableCell(
                 CurrencyHelper.formatCurrency(
                   item.lineTotal,
                   item.currencyCode,
                 ),
+                scale,
               ),
             ],
           );
         }),
       ],
-    );
+    ));
   }
 
   Widget _buildEditableItemsTable() {
-    return Column(
+    return _wrapTableForSmallScreens((scale) => Column(
       children: [
         // Başlık satırı
         Container(
@@ -920,11 +957,11 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           ),
           child: Row(
             children: [
-              Expanded(flex: 3, child: _buildTableHeader('Ürün Adı')),
-              Expanded(flex: 1, child: _buildTableHeader('Miktar')),
-              Expanded(flex: 1, child: _buildTableHeader('Birim Fiyat')),
-              Expanded(flex: 1, child: _buildTableHeader('KDV %')),
-              Expanded(flex: 1, child: _buildTableHeader('Toplam')),
+              Expanded(flex: 3, child: _buildTableHeader('Ürün Adı', scale)),
+              Expanded(flex: 1, child: _buildTableHeader('Miktar', scale)),
+              Expanded(flex: 1, child: _buildTableHeader('Birim Fiyat', scale)),
+              Expanded(flex: 1, child: _buildTableHeader('KDV %', scale)),
+              Expanded(flex: 1, child: _buildTableHeader('Toplam', scale)),
               const SizedBox(width: 40), // Silme butonu için alan
             ],
           ),
@@ -1041,7 +1078,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           );
         }),
       ],
-    );
+    ));
   }
 
   void _calculateLineTotal(int index) {
@@ -1068,7 +1105,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           existingItem?.currencyCode ?? _currentInvoice.currencyCode;
       return CurrencyHelper.formatCurrency(total, itemCurrency);
     } catch (e) {
-      return '0,00 ₺';
+      return CurrencyHelper.formatCurrency(0, _currentInvoice.currencyCode);
     }
   }
 
@@ -1384,25 +1421,27 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     );
   }
 
-  Widget _buildTableHeader(String text) {
+  Widget _buildTableHeader(String text, double scale) {
+    final fontSize = (14 * scale).clamp(12.0, 14.0);
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
       child: Text(
         text,
         style: GoogleFonts.poppins(
           fontWeight: FontWeight.bold,
-          fontSize: 14,
+          fontSize: fontSize,
         ),
       ),
     );
   }
 
-  Widget _buildTableCell(String text) {
+  Widget _buildTableCell(String text, double scale) {
+    final fontSize = (14 * scale).clamp(12.0, 14.0);
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
       child: Text(
         text,
-        style: GoogleFonts.poppins(fontSize: 14),
+        style: GoogleFonts.poppins(fontSize: fontSize),
       ),
     );
   }
@@ -1707,6 +1746,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     final taxAmount =
         _isEditing ? _calculateTaxAmount() : _currentInvoice.taxAmount;
     final total = _isEditing ? _calculateTotal() : _currentInvoice.totalAmount;
+    final subtotal =
+        _isEditing ? _calculateRawSubtotal() : _currentInvoice.subtotal;
+    final discountAmount = _currentInvoice.discountAmount;
     final customerCurrency = _getCustomerCurrency();
 
     return Card(
@@ -1735,9 +1777,9 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
                     color: AppColors.primary,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
+            ],
+          ),
+          const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -1747,189 +1789,40 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               ),
               child: Column(
                 children: [
-                  // Toplam ürün sayısı
                   _buildTotalRow(
                     label: 'Toplam Ürün Sayısı',
                     amount: '${_currentInvoice.items.length} adet',
                     isSubtotal: true,
                   ),
-                  const SizedBox(height: 8),
-                  // Ürün detayları (kur dönüşümleri ile)
-                  ...await _buildProductDetails(),
-                  const SizedBox(height: 8),
-                  // Ham ara toplam (iskonto öncesi)
+                  const SizedBox(height: 12),
                   _buildTotalRow(
                     label: 'Ara Toplam',
-                    amount: CurrencyHelper.formatCurrency(
-                        _calculateRawSubtotal(), customerCurrency),
+                    amount: CurrencyHelper.formatCurrency(subtotal, customerCurrency),
                     isSubtotal: true,
                   ),
-                  const SizedBox(height: 8),
-                  // Ürün iskontoları (varsa)
-                  if (_currentInvoice.items
-                      .any((item) => item.discountAmount > 0)) ...[
+                  if (discountAmount > 0) ...[
+                    const SizedBox(height: 8),
                     _buildTotalRow(
-                      label: 'Ürün İskontoları',
+                      label: 'İndirim',
                       amount:
-                          '-${CurrencyHelper.formatCurrency(_currentInvoice.items.fold(0.0, (sum, item) => sum + item.discountAmount), customerCurrency)}',
+                          '-${CurrencyHelper.formatCurrency(discountAmount, customerCurrency)}',
                       isSubtotal: true,
                     ),
-                    const SizedBox(height: 8),
                   ],
-                  // Müşteri iskontosu (varsa)
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final customersAsync = ref.watch(customersStreamProvider);
-                      return customersAsync.when(
-                        data: (customers) {
-                          final customer = customers.firstWhere(
-                            (c) => c.id == _currentInvoice.customerId,
-                            orElse: () => customers.first,
-                          );
-
-                          final customerDiscountRate =
-                              customer.fixedDiscountRate ?? 0.0;
-                          final rawSubtotal = _calculateRawSubtotal();
-                          final customerDiscountAmount =
-                              rawSubtotal * (customerDiscountRate / 100);
-
-                          if (customerDiscountAmount > 0) {
-                            return Column(
-                              children: [
-                                _buildTotalRow(
-                                  label:
-                                      'Müşteri İskontosu (%${customerDiscountRate.toStringAsFixed(1)})',
-                                  amount:
-                                      '-${CurrencyHelper.formatCurrency(customerDiscountAmount, customerCurrency)}',
-                                  isSubtotal: true,
-                                ),
-                                const SizedBox(height: 8),
-                              ],
-                            );
-                          }
-                          return const SizedBox.shrink();
-                        },
-                        loading: () => const SizedBox.shrink(),
-                        error: (error, stack) => const SizedBox.shrink(),
-                      );
-                    },
-                  ),
-                  // KDV (müşteri iskontosu sonrası hesaplanan)
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final customersAsync = ref.watch(customersStreamProvider);
-                      return customersAsync.when(
-                        data: (customers) {
-                          final customer = customers.firstWhere(
-                            (c) => c.id == _currentInvoice.customerId,
-                            orElse: () => customers.first,
-                          );
-
-                          final customerDiscountRate =
-                              customer.fixedDiscountRate ?? 0.0;
-                          final rawSubtotal = _calculateRawSubtotal();
-                          final customerDiscountAmount =
-                              rawSubtotal * (customerDiscountRate / 100);
-                          final taxAmountAfterCustomerDiscount =
-                              _calculateTaxAmountAfterCustomerDiscount(
-                                  customerDiscountAmount);
-
-                          return _buildTotalRow(
-                            label:
-                                'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
-                            amount: CurrencyHelper.formatCurrency(
-                                taxAmountAfterCustomerDiscount,
-                                customerCurrency),
-                            isSubtotal: true,
-                          );
-                        },
-                        loading: () => _buildTotalRow(
-                          label:
-                              'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
-                          amount: CurrencyHelper.formatCurrency(
-                              taxAmount, customerCurrency),
-                          isSubtotal: true,
-                        ),
-                        error: (error, stack) => _buildTotalRow(
-                          label:
-                              'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
-                          amount: CurrencyHelper.formatCurrency(
-                              taxAmount, customerCurrency),
-                          isSubtotal: true,
-                        ),
-                      );
-                    },
+                  const SizedBox(height: 8),
+                  _buildTotalRow(
+                    label:
+                        'KDV (%${_currentInvoice.items.isNotEmpty ? _currentInvoice.items.first.taxRate.toStringAsFixed(1) : '0'})',
+                    amount: CurrencyHelper.formatCurrency(
+                        taxAmount, customerCurrency),
+                    isSubtotal: true,
                   ),
                   const Divider(height: 24),
-
-                  // Genel toplam bölümü
-                  Container(
-                    padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3)),
-            ),
-                    child: Column(
-                      children: [
-                        // Toplam ürün miktarı
-                        _buildTotalRow(
-                          label: 'Toplam ürün miktarı:',
-                          amount: '${_currentInvoice.items.length}',
-                          isSubtotal: true,
-                        ),
-                        const SizedBox(height: 8),
-
-                        // GENEL TOPLAM (TL)
-                        Consumer(
-                          builder: (context, ref, child) {
-                            final customersAsync =
-                                ref.watch(customersStreamProvider);
-                            return customersAsync.when(
-                              data: (customers) {
-                                final customer = customers.firstWhere(
-                                  (c) => c.id == _currentInvoice.customerId,
-                                  orElse: () => customers.first,
-                                );
-
-                                final customerDiscountRate =
-                                    customer.fixedDiscountRate ?? 0.0;
-                                final rawSubtotal = _calculateRawSubtotal();
-                                final customerDiscountAmount =
-                                    rawSubtotal * (customerDiscountRate / 100);
-                                final taxAmountAfterCustomerDiscount =
-                                    _calculateTaxAmountAfterCustomerDiscount(
-                                        customerDiscountAmount);
-                                final subtotalAfterCustomerDiscount =
-                                    rawSubtotal - customerDiscountAmount;
-                                final finalTotal =
-                                    subtotalAfterCustomerDiscount +
-                                        taxAmountAfterCustomerDiscount;
-
-                                return _buildTotalRow(
-                                  label: 'GENEL TOPLAM (TL):',
-                                  amount: CurrencyHelper.formatCurrency(
-                                      finalTotal, customerCurrency),
-                                  isTotal: true,
-                                );
-                              },
-                              loading: () => _buildTotalRow(
-                                label: 'GENEL TOPLAM (TL):',
-                                amount: CurrencyHelper.formatCurrency(
-                                    total, customerCurrency),
-                                isTotal: true,
-                              ),
-                              error: (error, stack) => _buildTotalRow(
-                                label: 'GENEL TOPLAM (TL):',
-                                amount: CurrencyHelper.formatCurrency(
-                                    total, customerCurrency),
-                                isTotal: true,
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
+                  _buildTotalRow(
+                    label: 'GENEL TOPLAM',
+                    amount:
+                        CurrencyHelper.formatCurrency(total, customerCurrency),
+                    isTotal: true,
                   ),
                 ],
               ),
@@ -1966,6 +1859,22 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           ),
         ),
       ],
+    );
+  }
+
+  Widget _wrapTableForSmallScreens(Widget Function(double scale) childBuilder) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Ölçek yerine yatay scroll: içerik daraltılmadan tamamı görülsün
+        const scale = 1.0;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: constraints.maxWidth),
+            child: IntrinsicWidth(child: childBuilder(scale)),
+          ),
+        );
+      },
     );
   }
 
@@ -2140,7 +2049,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Fatura bilgileri güncellendi!',
+            '$_docLabel bilgileri güncellendi!',
             style: GoogleFonts.poppins(),
           ),
           backgroundColor: Colors.green,
@@ -2291,7 +2200,8 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
       // PDF'i kaydet
       final bytes = await pdf.save();
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
-      final fileName = 'Fatura_${_currentInvoice.invoiceNumber}_$timestamp.pdf';
+      final sanitizedLabel = _docLabel.replaceAll(' ', '_');
+      final fileName = '${sanitizedLabel}_${_docNumber}_$timestamp.pdf';
 
       if (kIsWeb) {
         // Web'de indirme
@@ -2424,12 +2334,12 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
               ),
           ],
         ),
-        // Sağ taraf: Fatura bilgileri
+        // Sağ taraf: Belge bilgileri
         pw.Column(
           crossAxisAlignment: pw.CrossAxisAlignment.end,
           children: [
             pw.Text(
-              _convertTurkishChars('FATURA'),
+              _convertTurkishChars(_docLabel.toUpperCase()),
               style: pw.TextStyle(
                 fontSize: 28,
                 fontWeight: pw.FontWeight.bold,
@@ -2439,7 +2349,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             ),
             pw.SizedBox(height: 8),
             pw.Text(
-              _convertTurkishChars('Fatura No: ${_currentInvoice.invoiceNumber}'),
+              _convertTurkishChars('$_docLabel No: $_docNumber'),
               style: pw.TextStyle(
                 fontSize: 16,
                 fontWeight: pw.FontWeight.bold,
@@ -2525,7 +2435,7 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
               pw.Text(
-                _convertTurkishChars('Fatura Tarihi:'),
+                _convertTurkishChars('$_docLabel Tarihi:'),
                 style: pw.TextStyle(
                   fontWeight: pw.FontWeight.bold,
                   font: _cachedRobotoBoldFont,
@@ -2560,22 +2470,24 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
           pw.Row(
             mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
             children: [
-              pw.Text(
-                _convertTurkishChars('Ödeme Durumu:'),
-                style: pw.TextStyle(
-                  fontWeight: pw.FontWeight.bold,
-                  font: _cachedRobotoBoldFont,
-                ),
-              ),
-              pw.Text(
-                _convertTurkishChars(_currentInvoice.isPaid ? 'Ödendi' : 'Beklemede'),
-                style: pw.TextStyle(
-                  color: _currentInvoice.isPaid ? PdfColors.green700 : PdfColors.orange700,
-                  font: _cachedRobotoFont,
-                ),
-              ),
-            ],
+          pw.Text(
+            _convertTurkishChars('Ödeme Durumu:'),
+            style: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              font: _cachedRobotoBoldFont,
+            ),
           ),
+          pw.Text(
+            _convertTurkishChars(_getPaymentStatusText(
+                _resolvePaymentState(_currentInvoice))),
+            style: pw.TextStyle(
+              color: _getPdfPaymentStatusColor(
+                  _resolvePaymentState(_currentInvoice)),
+              font: _cachedRobotoFont,
+            ),
+          ),
+        ],
+      ),
         ],
       ),
     );
@@ -2738,32 +2650,73 @@ class _InvoicePreviewPageState extends ConsumerState<InvoicePreviewPage>
     );
   }
 
+  _PaymentState _resolvePaymentState(Invoice invoice) {
+    if (invoice.isPaid || invoice.status == InvoiceStatus.paid) {
+      return _PaymentState.paid;
+    }
+    if (invoice.status == InvoiceStatus.partiallyPaid) {
+      return _PaymentState.partial;
+    }
+    return _PaymentState.unpaid;
+  }
+
   /// Ödeme durumu rengini döndürür
-  Color _getPaymentStatusColor(bool isPaid) {
+  Color _getPaymentStatusColor(_PaymentState state) {
     final theme = Theme.of(context);
-    if (isPaid) {
-      return theme.colorScheme.primaryContainer;
-    } else {
-      return theme.colorScheme.errorContainer;
+    switch (state) {
+      case _PaymentState.paid:
+        return theme.colorScheme.primaryContainer;
+      case _PaymentState.partial:
+        return theme.colorScheme.secondaryContainer;
+      case _PaymentState.unpaid:
+        return theme.colorScheme.errorContainer;
     }
   }
 
   /// Ödeme durumu metnini döndürür
-  String _getPaymentStatusText(bool isPaid) {
-    if (isPaid) {
-      return 'Ödendi';
-    } else {
-      return 'Beklemede';
+  String _getPaymentStatusText(_PaymentState state) {
+    switch (state) {
+      case _PaymentState.paid:
+        return 'Ödendi';
+      case _PaymentState.partial:
+        return 'Kısmen Ödendi';
+      case _PaymentState.unpaid:
+        return 'Ödenmedi';
+    }
+  }
+
+  IconData _getPaymentStatusIcon(_PaymentState state) {
+    switch (state) {
+      case _PaymentState.paid:
+        return Icons.check_circle;
+      case _PaymentState.partial:
+        return Icons.timelapse;
+      case _PaymentState.unpaid:
+        return Icons.cancel;
     }
   }
 
   /// Ödeme durumu metin rengini döndürür
-  Color _getPaymentStatusTextColor(bool isPaid) {
+  Color _getPaymentStatusTextColor(_PaymentState state) {
     final theme = Theme.of(context);
-    if (isPaid) {
-      return theme.colorScheme.onPrimaryContainer;
-    } else {
-      return theme.colorScheme.onErrorContainer;
+    switch (state) {
+      case _PaymentState.paid:
+        return theme.colorScheme.onPrimaryContainer;
+      case _PaymentState.partial:
+        return theme.colorScheme.onSecondaryContainer;
+      case _PaymentState.unpaid:
+        return theme.colorScheme.onErrorContainer;
+    }
+  }
+
+  PdfColor _getPdfPaymentStatusColor(_PaymentState state) {
+    switch (state) {
+      case _PaymentState.paid:
+        return PdfColors.green700;
+      case _PaymentState.partial:
+        return PdfColors.orange600;
+      case _PaymentState.unpaid:
+        return PdfColors.red700;
     }
   }
 

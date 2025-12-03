@@ -592,7 +592,10 @@ class PurchaseFirebaseDataSource {
       final month = now.month.toString().padLeft(2, '0');
       final day = now.day.toString().padLeft(2, '0');
 
-      final prefix = type.name.toUpperCase();
+      final prefix = switch (type) {
+        PurchaseType.returnPurchase => 'RETURN',
+        _ => 'PURCHASE',
+      };
       final datePrefix = '$year$month$day';
 
       // Firebase index hatası nedeniyle basit fallback kullan
@@ -607,7 +610,10 @@ class PurchaseFirebaseDataSource {
       final year = now.year.toString();
       final month = now.month.toString().padLeft(2, '0');
       final day = now.day.toString().padLeft(2, '0');
-      final prefix = type.name.toUpperCase();
+      final prefix = switch (type) {
+        PurchaseType.returnPurchase => 'RETURN',
+        _ => 'PURCHASE',
+      };
       final datePrefix = '$year$month$day';
       final timestamp = now.millisecondsSinceEpoch;
       final fallbackNumber = (timestamp % 10000).toString().padLeft(4, '0');

@@ -10,6 +10,8 @@ import '../../../../shared/widgets/custom_app_bar.dart';
 import '../../../../shared/widgets/drawer_menu.dart';
 import '../../../../shared/widgets/responsive_scaffold.dart';
 import '../../domain/entities/sale.dart';
+import 'package:tamgaci/features/invoices/presentation/pages/invoice_preview_page.dart';
+import 'package:tamgaci/core/services/unified_invoice_converter.dart';
 
 /// Gelişmiş satış detay sayfası
 class EnhancedSaleDetailPage extends ConsumerStatefulWidget {
@@ -398,7 +400,7 @@ class _EnhancedSaleDetailPageState extends ConsumerState<EnhancedSaleDetailPage>
             'İşlem Geçmişi',
             Icons.history,
             _getMockTransactions(sale.id)
-                .map((transaction) => _buildTransactionCard(transaction))
+                .map((transaction) => _buildTransactionCard(transaction, sale))
                 .toList(),
           ),
         ],
@@ -594,54 +596,58 @@ class _EnhancedSaleDetailPageState extends ConsumerState<EnhancedSaleDetailPage>
     );
   }
 
-  Widget _buildTransactionCard(Map<String, dynamic> transaction) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            _getTransactionIcon(transaction['type']),
-            color: _getTransactionColor(transaction['type']),
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  transaction['description'],
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                Text(
-                  _formatDate(transaction['date']),
-                  style: GoogleFonts.poppins(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            CurrencyHelper.formatCurrency(transaction['amount'], 'TRY'),
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+  Widget _buildTransactionCard(Map<String, dynamic> transaction, Sale sale) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => _openSalePreview(sale),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _getTransactionIcon(transaction['type']),
               color: _getTransactionColor(transaction['type']),
+              size: 20,
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    transaction['description'],
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    _formatDate(transaction['date']),
+                    style: GoogleFonts.poppins(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              CurrencyHelper.formatCurrency(transaction['amount'], 'TRY'),
+              style: GoogleFonts.poppins(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: _getTransactionColor(transaction['type']),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -836,6 +842,19 @@ class _EnhancedSaleDetailPageState extends ConsumerState<EnhancedSaleDetailPage>
         'date': DateTime.now().subtract(const Duration(days: 5)),
       },
     ];
+  }
+
+  void _openSalePreview(Sale sale) {
+    final invoice = UnifiedInvoiceConverter.convertSaleToInvoice(sale);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InvoicePreviewPage(
+          invoice: invoice,
+          isEditable: true,
+          isFromSale: true,
+        ),
+      ),
+    );
   }
 
   void _editSale(Sale sale) {

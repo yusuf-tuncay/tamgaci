@@ -19,7 +19,7 @@ class CurrencyHelper {
   static String getCurrencySymbol(String currencyCode) {
     switch (currencyCode.toUpperCase()) {
       case 'TRY':
-        return '₺';
+        return 'TRY';
       case 'USD':
         return '\$';
       case 'EUR':

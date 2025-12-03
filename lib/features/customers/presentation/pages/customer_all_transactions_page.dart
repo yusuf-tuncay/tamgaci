@@ -350,7 +350,7 @@ class _CustomerAllTransactionsPageState
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (txn.documentNumber != null && txn.documentNumber!.isNotEmpty)
-                _buildDetailRow('Belge No', txn.documentNumber!, isDark),
+                _buildDetailRow('İşlem No', txn.documentNumber!, isDark),
               _buildDetailRow(
                   'Tutar',
                   CurrencyHelper.formatCurrency(txn.amount, txn.currency),
@@ -722,7 +722,7 @@ class _CustomerAllTransactionsPageState
                             'type': 'invoice',
                             'date': _parseDateTime(invoice['saleDate']) ??
                                 _parseDateTime(invoice['invoiceDate']) ??
-                                DateTime.now(),
+                                DateTime.fromMillisecondsSinceEpoch(0),
                             'data': invoice,
                           },
                         );
@@ -776,7 +776,7 @@ class _CustomerAllTransactionsPageState
                           {
                             'type': 'transaction',
                             'date': _parseDateTime(t.transactionDate) ??
-                                DateTime.now(),
+                                DateTime.fromMillisecondsSinceEpoch(0),
                             'data': t,
                           },
                         );
@@ -992,41 +992,72 @@ class _CustomerAllTransactionsPageState
     final isPaid = invoice['isPaid'] as bool? ?? false;
     final actuallyPaid = isPaid;
     final color = actuallyPaid ? Colors.green : Colors.blue;
+    final docNo = invoice['saleNumber'] ?? invoice['invoiceNumber'] ?? 'N/A';
+    final date = _parseDateTime(invoice['saleDate']) ??
+        _parseDateTime(invoice['invoiceDate']) ??
+        DateTime.fromMillisecondsSinceEpoch(0);
+
+    final statusStr = (invoice['status']?.toString() ?? '').toLowerCase();
+    final typeStr = (invoice['type']?.toString() ?? '').toLowerCase();
+    final isWaybill =
+        statusStr.contains('waybill') || typeStr.contains('waybill');
+    final isProforma =
+        statusStr.contains('proforma') || typeStr.contains('proforma');
+    final titleText = isProforma
+        ? 'Proforma'
+        : isWaybill
+            ? 'İrsaliye'
+            : 'Satış Faturası';
 
     return ListTile(
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       leading: CircleAvatar(
         backgroundColor: color.withValues(alpha: 0.1),
         child: Icon(Icons.receipt, color: color),
       ),
       title: Text(
-        'Fatura - ${invoice['saleNumber'] ?? invoice['invoiceNumber'] ?? 'N/A'}',
+        titleText,
         style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(
-        DateFormat('dd.MM.yyyy').format(_parseDateTime(invoice['saleDate']) ??
-            _parseDateTime(invoice['invoiceDate']) ??
-            DateTime.now()),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'İşlem No: $docNo',
+            style: GoogleFonts.poppins(fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            DateFormat('dd.MM.yyyy HH:mm').format(date),
+            style: GoogleFonts.poppins(fontSize: 12),
+          ),
+        ],
       ),
       trailing: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
-            CurrencyHelper.formatCurrency(invoice['totalAmount'] ?? 0.0,
-                invoice['currencyCode'] ?? 'TRY'),
+            CurrencyHelper.formatCurrency(
+                invoice['totalAmount'] ?? 0.0, invoice['currencyCode'] ?? 'TRY'),
             style: GoogleFonts.poppins(
               fontWeight: FontWeight.bold,
               color: color,
             ),
           ),
-          Text(
-            actuallyPaid ? 'Ödendi' : 'Beklemede',
-            style: GoogleFonts.poppins(
-              fontSize: 12,
-              color: actuallyPaid ? Colors.green : Colors.orange,
+          if (!isProforma)
+            Text(
+              actuallyPaid ? 'Ödendi' : 'Beklemede',
+              style: GoogleFonts.poppins(
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: actuallyPaid ? Colors.green : Colors.orange,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -1034,27 +1065,60 @@ class _CustomerAllTransactionsPageState
 
   Widget _buildPaymentCard(
       CashTransaction payment, bool isDark, VoidCallback onTap) {
-    final color =
-        payment.type == CashTransactionType.income ? Colors.green : Colors.red;
+    final isIncome = payment.type == CashTransactionType.income;
+    final color = isIncome ? Colors.green : Colors.red;
+    final directionLabel =
+        isIncome ? 'Müşteriden Tahsilat' : 'Müşteriye Ödeme';
+    final statusText = payment.status.name.toUpperCase();
+
     return ListTile(
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       leading: CircleAvatar(
         backgroundColor: color.withValues(alpha: 0.1),
-        child: Icon(Icons.payment, color: color),
+        child: Icon(isIncome ? Icons.savings : Icons.outbond, color: color),
       ),
       title: Text(
-        payment.transactionNumber,
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+        directionLabel,
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       ),
-      subtitle: Text(
-        DateFormat('dd.MM.yyyy').format(payment.transactionDate),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'İşlem No: ${payment.transactionNumber}',
+            style: GoogleFonts.poppins(fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            DateFormat('dd.MM.yyyy HH:mm').format(payment.transactionDate),
+            style: GoogleFonts.poppins(fontSize: 12),
+          ),
+        ],
       ),
-      trailing: Text(
-        CurrencyHelper.formatCurrency(payment.amount, payment.currency),
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.bold,
-          color: color,
-        ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            CurrencyHelper.formatCurrency(payment.amount, payment.currency),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            statusText,
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1087,48 +1151,58 @@ class _CustomerAllTransactionsPageState
         icon = Icons.payment;
     }
 
+    final directionLabel =
+        pt.direction == PaymentDirection.incoming ? 'Tahsilat' : 'Ödeme';
+    final titleText = '$typeText - $directionLabel';
+
     return ListTile(
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       leading: CircleAvatar(
         backgroundColor: color.withValues(alpha: 0.1),
         child: Icon(icon, color: color),
       ),
-      title: Row(
+      title: Text(
+        titleText,
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              '$typeText - ${pt.direction == PaymentDirection.incoming ? "Tahsilat" : "Ödeme"}',
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
-            ),
+          Text(
+            'İşlem No: ${pt.transactionNumber}',
+            style: GoogleFonts.poppins(fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              pt.status.name.toUpperCase(),
-              style: GoogleFonts.poppins(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: color,
-              ),
-            ),
+          Text(
+            DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate),
+            style: GoogleFonts.poppins(fontSize: 12),
           ),
         ],
       ),
-      subtitle: Text(
-        DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate),
-        style: GoogleFonts.poppins(fontSize: 12),
-      ),
-      trailing: Text(
-        CurrencyHelper.formatCurrency(pt.amount, pt.currency),
-        style: GoogleFonts.poppins(
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-          color: color,
-        ),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            CurrencyHelper.formatCurrency(pt.amount, pt.currency),
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            pt.status.name.toUpperCase(),
+            style: GoogleFonts.poppins(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1137,18 +1211,34 @@ class _CustomerAllTransactionsPageState
       Transaction t, bool isDark, VoidCallback onTap) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
+    final titleText = _getTransactionTitle(t);
+    final docNo = t.documentNumber ?? t.id;
+    final date = t.transactionDate;
     return ListTile(
       onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       leading: CircleAvatar(
         backgroundColor: primaryColor.withValues(alpha: 0.1),
         child: Icon(Icons.receipt, color: primaryColor),
       ),
       title: Text(
-        t.documentNumber ?? t.id,
-        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+        titleText,
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
       ),
-      subtitle: Text(
-        DateFormat('dd.MM.yyyy HH:mm').format(t.transactionDate),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'İşlem No: $docNo',
+            style: GoogleFonts.poppins(fontSize: 12),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            DateFormat('dd.MM.yyyy HH:mm').format(date),
+            style: GoogleFonts.poppins(fontSize: 12),
+          ),
+        ],
       ),
       trailing: Text(
         CurrencyHelper.formatCurrency(t.amount, t.currency),
@@ -1158,5 +1248,39 @@ class _CustomerAllTransactionsPageState
         ),
       ),
     );
+  }
+
+  String _getTransactionTitle(Transaction t) {
+    switch (t.type) {
+      case TransactionType.sale:
+        return 'Satış';
+      case TransactionType.invoice:
+        return 'Satış Faturası';
+      case TransactionType.proforma:
+        return 'Proforma';
+      case TransactionType.waybill:
+        return 'İrsaliye';
+      case TransactionType.purchase:
+        return 'Alış';
+      case TransactionType.refund:
+        return 'İade';
+      case TransactionType.credit:
+        return 'Alacak';
+      case TransactionType.debit:
+        return 'Borç';
+      case TransactionType.payment:
+      case TransactionType.expense:
+        return 'Ödeme';
+      case TransactionType.income:
+        return 'Tahsilat';
+      case TransactionType.transfer:
+        return 'Virman';
+      case TransactionType.stockIn:
+        return 'Stok Girişi';
+      case TransactionType.stockOut:
+        return 'Stok Çıkışı';
+      case TransactionType.adjustment:
+        return 'Düzeltme';
+    }
   }
 }

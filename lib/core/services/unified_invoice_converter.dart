@@ -40,6 +40,7 @@ class UnifiedInvoiceConverter {
       status: sale.status == SaleStatus.draft
           ? inv_status.InvoiceStatus.draft
           : inv_status.InvoiceStatus.sent,
+      documentType: _mapSaleTypeToDocumentType(sale.type),
       subtotal: sale.subtotal,
       taxAmount: sale.taxAmount,
       discountAmount: sale.discountAmount,
@@ -50,6 +51,23 @@ class UnifiedInvoiceConverter {
       createdAt: sale.createdAt,
       updatedAt: sale.updatedAt,
     );
+  }
+
+  static String _mapSaleTypeToDocumentType(SaleType type) {
+    switch (type) {
+      case SaleType.invoice:
+        return 'invoice';
+      case SaleType.waybill:
+        return 'waybill';
+      case SaleType.proforma:
+        return 'proforma';
+      case SaleType.receipt:
+        return 'receipt';
+      case SaleType.estimate:
+        return 'estimate';
+      case SaleType.sale:
+        return 'sale';
+    }
   }
 
   /// Purchase'ı Invoice'a dönüştür

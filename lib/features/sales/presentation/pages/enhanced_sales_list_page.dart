@@ -39,7 +39,6 @@ class _EnhancedSalesListPageState extends ConsumerState<EnhancedSalesListPage> {
   final List<String> _types = [
     'Tümü',
     'Fatura',
-    'Proforma',
     'İrsaliye',
     'Fiş',
     'Teklif'

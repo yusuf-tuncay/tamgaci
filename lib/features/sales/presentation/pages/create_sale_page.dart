@@ -5090,8 +5090,9 @@ class _EditItemDialogState extends State<_EditItemDialog> {
   }
 
   String _formatTrCurrency(double value) {
-    final formatter =
-        NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 2);
+    // Allow up to 4 decimal digits so KDV dahil fiyatlardan çıkan vergisiz
+    // tutarlar yuvarlanırken değer kaybetmesin (ör: 1000/1.2 = 833.3333)
+    final formatter = NumberFormat('#,##0.00##', 'tr_TR');
     return formatter.format(value).trim();
   }
 
@@ -5137,8 +5138,9 @@ class _EditItemDialogState extends State<_EditItemDialog> {
 }
 
 String _formatTrCurrency(double value) {
-  final formatter =
-      NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 2);
+  // 4 ondalığa kadar göster, böylece KDV dahil fiyatların vergisiz
+  // dönüşümünde oluşan hassasiyet korunur
+  final formatter = NumberFormat('#,##0.00##', 'tr_TR');
   return formatter.format(value).trim();
 }
 

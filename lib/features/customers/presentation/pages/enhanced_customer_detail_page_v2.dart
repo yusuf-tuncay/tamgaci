@@ -1,3 +1,4 @@
+// ignore_for_file: unused_element
 // ========== ENHANCED CUSTOMER DETAIL PAGE V2 ==========
 // lib/features/customers/presentation/pages/enhanced_customer_detail_page_v2.dart
 
@@ -32,6 +33,10 @@ import '../../../../core/services/utils/export_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:web/web.dart' as web;
 import 'dart:js_interop';
+import '../../../invoices/presentation/pages/invoice_preview_page.dart';
+import '../../../invoices/domain/entities/invoice.dart' as inv;
+import '../../../invoices/domain/entities/invoice_item.dart' as inv_item;
+import '../../../invoices/data/models/invoice_status.dart' as inv_status;
 
 /// Gelişmiş müşteri detay sayfası
 class EnhancedCustomerDetailPageV2 extends ConsumerStatefulWidget {
@@ -1112,30 +1117,6 @@ class _EnhancedCustomerDetailPageV2State
 
             return Column(
               children: [
-                // Tümünü Gör butonu
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        context
-                            .push('/customers/${customer.id}/all-transactions');
-                      },
-                      icon: const Icon(Icons.list_alt),
-                      label: Text(
-                        'Tümünü Gör (${allItems.length} işlem)',
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                    ),
-                  ),
-                ),
                 // İşlemler listesi
                 Expanded(
                   child: ListView.builder(
@@ -1147,12 +1128,10 @@ class _EnhancedCustomerDetailPageV2State
                       if (type == 'invoice') {
                         final invoice = item['data'];
                         return GestureDetector(
-                          onTap: () {
-                            final invoiceId = invoice['id'] as String?;
-                            if (invoiceId != null && invoiceId.isNotEmpty) {
-                              context.push('/sales/detail/$invoiceId');
-                            }
-                          },
+                          onTap: () => _showInvoicePreview(
+                              invoice,
+                              isDark,
+                              invoiceCoverage[_invoiceKey(invoice)]),
                           child: _buildInvoiceTile(
                             invoice,
                             isDark,
@@ -1176,14 +1155,10 @@ class _EnhancedCustomerDetailPageV2State
                         final purchase = item['data'] as Map<String, dynamic>;
                         final isReturn = type == 'RETURN';
                         return GestureDetector(
-                          onTap: () {
-                            final purchaseId = purchase['id']?.toString() ?? '';
-                            if (purchaseId.isNotEmpty) {
-                              context.push('/purchases/detail/$purchaseId');
-                            }
-                          },
-                          child: _buildPurchaseActivityTile(
-                              purchase, isReturn, isDark),
+                          onTap: () =>
+                              _showPurchasePreview(purchase, isReturn, isDark),
+                          child:
+                              _buildPurchaseActivityTile(purchase, isReturn, isDark),
                         );
                       }
                       return const SizedBox.shrink();
@@ -1800,9 +1775,15 @@ class _EnhancedCustomerDetailPageV2State
 
   // legacy invoice card (replaced by _buildInvoiceTile)
 
-  Widget _buildPaymentTile(CashTransaction t, bool isDark) {
+  Widget _buildPaymentTile(CashTransaction t, bool isDark,
+      {bool showActions = false}) {
     const color = AppColors.success;
-    final displayAmount = _formatSignedCurrency(t.amount, t.currency, false);
+    final displayAmount = _formatCurrencyWithCode(
+      t.amount,
+      t.currency,
+      signed: true,
+      isCredit: false,
+    );
     const directionLabel = 'Müşteriden Tahsilat';
     final statusText = (t.status.name).toUpperCase();
     final subtitleText = (t.description?.trim().isNotEmpty ?? false)
@@ -1820,6 +1801,8 @@ class _EnhancedCustomerDetailPageV2State
       description: subtitleText,
       statusText: statusText,
       isDark: isDark,
+      showActions: showActions,
+      onPrint: () => _exportPaymentToPDF(t),
     );
   }
 
@@ -1834,6 +1817,11 @@ class _EnhancedCustomerDetailPageV2State
     String? description,
     String? statusText,
     bool isDark = false,
+    bool showActions = false,
+    VoidCallback? onEdit,
+    VoidCallback? onDelete,
+    VoidCallback? onPrint,
+    VoidCallback? onCancel,
   }) {
     final subtitleColor = isDark ? Colors.grey[400] : Colors.grey[600];
 
@@ -1908,6 +1896,51 @@ class _EnhancedCustomerDetailPageV2State
                   fontWeight: FontWeight.w600,
                 ),
               ),
+            if (showActions) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 2,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit, size: 18),
+                    tooltip: 'Düzenle',
+                    onPressed: onEdit ?? () => _showActionNotAvailable('Düzenle'),
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.print, size: 18),
+                    tooltip: 'Yazdır',
+                    onPressed: onPrint ?? () => _showActionNotAvailable('Yazdır'),
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.cancel, size: 18),
+                    tooltip: 'İptal Et',
+                    onPressed: onCancel ?? () => _showActionNotAvailable('İptal'),
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete, size: 18),
+                    tooltip: 'Sil',
+                    onPressed: onDelete ?? () => _showActionNotAvailable('Sil'),
+                    constraints:
+                        const BoxConstraints.tightFor(width: 32, height: 32),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -1915,7 +1948,6 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   // Transaction helper methods
-  // ignore: unused_element
   Color _getTransactionColor(dynamic type) {
     switch (type.toString()) {
       case 'TransactionType.sale':
@@ -1931,7 +1963,7 @@ class _EnhancedCustomerDetailPageV2State
     }
   }
 
-  // ignore: unused_element
+
   IconData _getTransactionIcon(dynamic type) {
     switch (type.toString()) {
       case 'TransactionType.sale':
@@ -1975,14 +2007,271 @@ class _EnhancedCustomerDetailPageV2State
     return true;
   }
 
-  String _formatSignedCurrency(double amount, String? currency, bool isCredit) {
+  void _showActionNotAvailable(String action) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$action işlemi bu kayıt için henüz tanımlı değil'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildDialogActions(List<Widget> buttons) {
+    if (buttons.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, right: 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < buttons.length; i++) ...[
+              if (i != 0) const SizedBox(width: 10),
+              buttons[i],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dialogIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+    Color? color,
+    Color? foregroundColor,
+  }) {
+    return FilledButton(
+      style: FilledButton.styleFrom(
+        backgroundColor:
+            color ?? Theme.of(context).colorScheme.primary.withValues(alpha: 0.9),
+        foregroundColor: foregroundColor ?? Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        padding: const EdgeInsets.all(12),
+        minimumSize: const Size(44, 44),
+      ),
+      onPressed: onPressed,
+      child: Icon(icon, size: 18),
+    );
+  }
+
+
+  Future<void> _exportInvoiceWithItems(dynamic invoice) async {
+    try {
+      final exportService = ExportService();
+      final docNo =
+          invoice['saleNumber'] ?? invoice['invoiceNumber'] ?? 'N/A';
+      final currency = (invoice['currencyCode'] ?? invoice['currency'] ?? 'TRY')
+          .toString();
+      final items = (invoice['items'] as List<dynamic>? ?? [])
+          .cast<Map<String, dynamic>>();
+
+      final headers = [
+        'Ürün',
+        'Miktar',
+        'Birim Fiyat',
+        'İndirim',
+        'KDV',
+        'Toplam'
+      ];
+
+      final data = items.map((item) {
+        final name = item['productName'] ??
+            item['name'] ??
+            item['description'] ??
+            'Kalem';
+        final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+        final unitPrice = (item['unitPrice'] as num?)?.toDouble() ?? 0.0;
+        final discount = (item['discountAmount'] as num?)?.toDouble() ?? 0.0;
+        final tax = (item['taxAmount'] as num?)?.toDouble() ?? 0.0;
+        final total = (item['totalAmount'] as num?)?.toDouble() ?? 0.0;
+        return [
+          name.toString(),
+          qty,
+          _formatCurrencyWithCode(unitPrice, currency),
+          _formatCurrencyWithCode(discount, currency),
+          _formatCurrencyWithCode(tax, currency),
+          _formatCurrencyWithCode(total, currency),
+        ];
+      }).toList();
+
+      final summary = {
+        'Ara Toplam': _formatCurrencyWithCode(
+            (invoice['subtotal'] as num?)?.toDouble() ?? 0.0, currency),
+        'İndirim': _formatCurrencyWithCode(
+            (invoice['discountAmount'] as num?)?.toDouble() ?? 0.0, currency),
+        'KDV': _formatCurrencyWithCode(
+            (invoice['taxAmount'] as num?)?.toDouble() ?? 0.0, currency),
+        'Genel Toplam': _formatCurrencyWithCode(
+            (invoice['totalAmount'] as num?)?.toDouble() ?? 0.0, currency),
+      };
+
+      final pdfBytes = await exportService.exportToPDF(
+        title: 'Satış Detayı - $docNo',
+        headers: headers,
+        data: data,
+        subtitle:
+            'Tarih: ${DateFormat('dd.MM.yyyy HH:mm').format(_parseDateTime(invoice['saleDate']) ?? DateTime.now())}',
+        summary: summary,
+      );
+
+      final fileName =
+          'satis_${docNo}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob((<Object?>[pdfBytes]) as dynamic);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        web.URL.revokeObjectURL(url);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _exportPurchaseWithItems(
+      Map<String, dynamic> purchase, bool isReturn) async {
+    try {
+      final exportService = ExportService();
+      final docNo =
+          (purchase['purchaseNumber'] ?? purchase['id'] ?? 'N/A').toString();
+      final currency = (purchase['currencyCode'] ??
+              purchase['currency'] ??
+              purchase['paymentCurrency'] ??
+              'TRY')
+          .toString();
+      final items = (purchase['items'] as List<dynamic>? ?? [])
+          .cast<Map<String, dynamic>>();
+
+      final headers = [
+        'Ürün',
+        'Miktar',
+        'Birim Fiyat',
+        'İndirim',
+        'KDV',
+        'Toplam'
+      ];
+
+      final data = items.map((item) {
+        final name = item['productName'] ??
+            item['name'] ??
+            item['description'] ??
+            'Kalem';
+        final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+        final unitPrice = (item['unitPrice'] as num?)?.toDouble() ?? 0.0;
+        final discount = (item['discountAmount'] as num?)?.toDouble() ?? 0.0;
+        final tax = (item['taxAmount'] as num?)?.toDouble() ?? 0.0;
+        final total = (item['totalAmount'] as num?)?.toDouble() ?? 0.0;
+        return [
+          name.toString(),
+          qty,
+          _formatCurrencyWithCode(unitPrice, currency),
+          _formatCurrencyWithCode(discount, currency),
+          _formatCurrencyWithCode(tax, currency),
+          _formatCurrencyWithCode(total, currency),
+        ];
+      }).toList();
+
+      final summary = {
+        'Ara Toplam': _formatCurrencyWithCode(
+            (purchase['subtotal'] as num?)?.toDouble() ?? 0.0, currency),
+        'İndirim': _formatCurrencyWithCode(
+            (purchase['discountAmount'] as num?)?.toDouble() ?? 0.0, currency),
+        'KDV': _formatCurrencyWithCode(
+            (purchase['taxAmount'] as num?)?.toDouble() ?? 0.0, currency),
+        'Genel Toplam': _formatCurrencyWithCode(
+            (purchase['totalAmount'] as num?)?.toDouble() ?? 0.0, currency),
+      };
+
+      final pdfBytes = await exportService.exportToPDF(
+        title: '${isReturn ? 'Alış İadesi' : 'Satın Alma'} - $docNo',
+        headers: headers,
+        data: data,
+        subtitle:
+            'Tarih: ${DateFormat('dd.MM.yyyy HH:mm').format(_parseDateTime(purchase['purchaseDate']) ?? DateTime.now())}',
+        summary: summary,
+      );
+
+      final fileName =
+          'alis_${docNo}_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
+
+      if (kIsWeb) {
+        final blob = web.Blob((<Object?>[pdfBytes]) as dynamic);
+        final url = web.URL.createObjectURL(blob);
+        final anchor = web.document.createElement('a') as web.HTMLAnchorElement;
+        anchor.href = url;
+        anchor.download = fileName;
+        anchor.click();
+        web.URL.revokeObjectURL(url);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('PDF indirme şu an sadece web üzerinde destekleniyor'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF oluşturulamadı: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatCurrencyWithCode(double amount, String? currency,
+      {bool signed = false, bool isCredit = false}) {
     final normalizedCurrency =
-        currency == null || currency.isEmpty ? 'TRY' : currency;
-    final formatted =
-        CurrencyHelper.formatCurrency(amount.abs(), normalizedCurrency);
-    if (amount == 0) return formatted;
+        (currency == null || currency.isEmpty) ? 'TRY' : currency;
+    final fmt = NumberFormat.currency(
+      locale: 'tr_TR',
+      symbol: normalizedCurrency,
+      name: normalizedCurrency,
+      decimalDigits: 2,
+    );
+    final formatted = fmt.format(amount.abs());
+    if (!signed || amount == 0) return formatted;
     final sign = isCredit ? '+' : '-';
     return '$sign$formatted';
+  }
+
+  String _displayPurchaseNumber(String raw, bool isReturn) {
+    final upper = raw.toUpperCase();
+    if (isReturn && upper.startsWith('PURCHASE-')) {
+      return upper.replaceFirst('PURCHASE-', 'RETURN-');
+    }
+    if (!isReturn && upper.startsWith('RETURN-')) {
+      return upper.replaceFirst('RETURN-', 'PURCHASE-');
+    }
+    return raw;
   }
 
   String _getTransactionTypeTextFromString(String typeStr) {
@@ -2853,7 +3142,7 @@ class _EnhancedCustomerDetailPageV2State
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Belge No: ${purchase['purchaseNumber'] ?? purchase['invoiceNumber'] ?? 'N/A'}',
+              'İşlem No: ${_displayPurchaseNumber(purchase['purchaseNumber']?.toString() ?? purchase['invoiceNumber']?.toString() ?? 'N/A', isReturn)}',
               style: GoogleFonts.poppins(
                 fontSize: 12,
                 color: isDark ? Colors.grey[300] : Colors.grey[700],
@@ -3001,16 +3290,18 @@ class _EnhancedCustomerDetailPageV2State
     return null;
   }
 
-  Widget _buildPaymentTransactionTile(PaymentTransaction pt, bool isDark) {
+  Widget _buildPaymentTransactionTile(PaymentTransaction pt, bool isDark,
+      {bool showActions = false}) {
     // Payment Transaction with detailed type information
     // Gelen tahsilat bakiyeyi azaltır (negatif), giden ödeme bakiyeyi artırır (pozitif)
     final color = pt.direction == PaymentDirection.incoming
         ? AppColors.success
         : AppColors.error;
-    final displayAmount = _formatSignedCurrency(
+    final displayAmount = _formatCurrencyWithCode(
       pt.amount,
       pt.currency,
-      pt.direction == PaymentDirection.outgoing,
+      signed: true,
+      isCredit: pt.direction == PaymentDirection.outgoing,
     );
 
     // Ödeme yönü ve tür bilgisi
@@ -3090,6 +3381,8 @@ class _EnhancedCustomerDetailPageV2State
       description: subtitleText,
       statusText: null,
       isDark: isDark,
+      showActions: showActions,
+      onPrint: () => _exportPaymentTransactionToPDF(pt),
     );
   }
 
@@ -3156,10 +3449,12 @@ class _EnhancedCustomerDetailPageV2State
   }
 
   Widget _buildPurchaseActivityTile(
-      Map<String, dynamic> purchase, bool isReturn, bool isDark) {
-    final purchaseNumber = (purchase['purchaseNumber'] ?? purchase['id'] ?? '')
-        .toString()
-        .toUpperCase();
+      Map<String, dynamic> purchase, bool isReturn, bool isDark,
+      {bool showActions = false}) {
+    final purchaseNumberRaw =
+        (purchase['purchaseNumber'] ?? purchase['id'] ?? '').toString();
+    final purchaseNumber =
+        _displayPurchaseNumber(purchaseNumberRaw, isReturn).toUpperCase();
     final date = _parseDateTime(purchase['purchaseDate']) ?? DateTime.now();
     final amount = (purchase['totalAmount'] as num?)?.toDouble() ?? 0.0;
     final currency = (purchase['currency'] ??
@@ -3176,7 +3471,12 @@ class _EnhancedCustomerDetailPageV2State
     final color = actualIsReturn ? AppColors.warning : AppColors.error;
     final icon = actualIsReturn ? Icons.keyboard_return : Icons.shopping_cart;
     final description = purchase['description']?.toString();
-    final displayAmount = _formatSignedCurrency(amount, currency, false);
+    final displayAmount = _formatCurrencyWithCode(
+      amount,
+      currency,
+      signed: true,
+      isCredit: false,
+    );
 
     return _buildUnifiedActivityTile(
       title: localizedTitle,
@@ -3185,58 +3485,97 @@ class _EnhancedCustomerDetailPageV2State
       amountText: displayAmount,
       amountColor: color,
       date: date,
-      line1: purchaseNumber,
+      line1: 'İşlem No: $purchaseNumber',
       description: (description?.isNotEmpty == true)
           ? description!
           : (purchase['notes']?.toString() ?? ''),
       statusText: null,
       isDark: isDark,
+      showActions: showActions,
     );
   }
 
   void _showPaymentDetail(CashTransaction payment) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Ödeme Detayı',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDetailRow('İşlem No', payment.transactionNumber),
-              _buildDetailRow(
-                  'Tutar',
-                  CurrencyHelper.formatCurrency(
-                      payment.amount, payment.currency)),
-              _buildDetailRow(
-                  'Tarih',
-                  DateFormat('dd.MM.yyyy HH:mm')
-                      .format(payment.transactionDate)),
-              if (payment.description != null &&
-                  payment.description!.isNotEmpty)
-                _buildDetailRow('Açıklama', payment.description!),
-              _buildDetailRow('Tip', payment.type.toString()),
-            ],
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Ödeme Detayı',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Kapat',
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(height: 16),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetailRow('İşlem No', payment.transactionNumber),
+                        _buildDetailRow(
+                            'Tutar',
+                            _formatCurrencyWithCode(
+                                payment.amount, payment.currency)),
+                        _buildDetailRow(
+                            'Tarih',
+                            DateFormat('dd.MM.yyyy HH:mm')
+                                .format(payment.transactionDate)),
+                        if (payment.description != null &&
+                            payment.description!.isNotEmpty)
+                          _buildDetailRow('Açıklama', payment.description!),
+                        _buildDetailRow('Tip', payment.type.toString()),
+                        const SizedBox(height: 12),
+                        _buildDialogActions([
+                          _dialogIconButton(
+                            icon: Icons.edit,
+                            color: Colors.blueAccent,
+                            onPressed: () =>
+                                _showActionNotAvailable('Düzenle'),
+                          ),
+                          _dialogIconButton(
+                            icon: Icons.cancel,
+                            color: Colors.orangeAccent,
+                            onPressed: () =>
+                                _showActionNotAvailable('İptal'),
+                          ),
+                          _dialogIconButton(
+                            icon: Icons.delete,
+                            color: Colors.redAccent,
+                            onPressed: () => _showActionNotAvailable('Sil'),
+                          ),
+                          _dialogIconButton(
+                            icon: Icons.print,
+                            color: Colors.green,
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _exportPaymentToPDF(payment);
+                            },
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              _exportPaymentToPDF(payment);
-            },
-            icon: const Icon(Icons.picture_as_pdf, size: 18),
-            label: const Text('PDF İndir'),
-          ),
-        ],
       ),
     );
   }
@@ -3244,55 +3583,335 @@ class _EnhancedCustomerDetailPageV2State
   void _showPaymentTransactionDetail(PaymentTransaction pt) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          'Tahsilat/Ödeme Detayı',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDetailRow('İşlem No', pt.transactionNumber),
-              _buildDetailRow('Tip', _getPaymentTypeName(pt.type)),
-              _buildDetailRow(
-                  'Yön',
-                  pt.direction == PaymentDirection.incoming
-                      ? 'Tahsilat'
-                      : 'Ödeme'),
-              _buildDetailRow('Tutar',
-                  CurrencyHelper.formatCurrency(pt.amount, pt.currency)),
-              _buildDetailRow('Tarih',
-                  DateFormat('dd.MM.yyyy HH:mm').format(pt.transactionDate)),
-              if (pt.dueDate != null)
-                _buildDetailRow('Vade Tarihi',
-                    DateFormat('dd.MM.yyyy').format(pt.dueDate!)),
-              _buildDetailRow('Durum', pt.status.name.toUpperCase()),
-              _buildDetailRow('Kategori', pt.category.name),
-              if (pt.description != null && pt.description!.isNotEmpty)
-                _buildDetailRow('Açıklama', pt.description!),
-              if (pt.referenceNumber != null && pt.referenceNumber!.isNotEmpty)
-                _buildDetailRow('Referans', pt.referenceNumber!),
-            ],
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Tahsilat/Ödeme Detayı',
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: 'Kapat',
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                const Divider(height: 16),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildDetailRow('İşlem No', pt.transactionNumber),
+                        _buildDetailRow('Tip', _getPaymentTypeName(pt.type)),
+                        _buildDetailRow(
+                            'Yön',
+                            pt.direction == PaymentDirection.incoming
+                                ? 'Tahsilat'
+                                : 'Ödeme'),
+                        _buildDetailRow(
+                            'Tutar',
+                            _formatCurrencyWithCode(pt.amount, pt.currency)),
+                        _buildDetailRow(
+                            'Tarih',
+                            DateFormat('dd.MM.yyyy HH:mm')
+                                .format(pt.transactionDate)),
+                        if (pt.dueDate != null)
+                          _buildDetailRow('Vade Tarihi',
+                              DateFormat('dd.MM.yyyy').format(pt.dueDate!)),
+                        _buildDetailRow('Durum', pt.status.name.toUpperCase()),
+                        _buildDetailRow('Kategori', pt.category.name),
+                        if (pt.description != null &&
+                            pt.description!.isNotEmpty)
+                          _buildDetailRow('Açıklama', pt.description!),
+                        if (pt.referenceNumber != null &&
+                            pt.referenceNumber!.isNotEmpty)
+                          _buildDetailRow('Referans', pt.referenceNumber!),
+                        const SizedBox(height: 12),
+                        _buildDialogActions([
+                          _dialogIconButton(
+                            icon: Icons.edit,
+                            color: Colors.blueAccent,
+                            onPressed: () =>
+                                _showActionNotAvailable('Düzenle'),
+                          ),
+                          _dialogIconButton(
+                            icon: Icons.cancel,
+                            color: Colors.orangeAccent,
+                            onPressed: () =>
+                                _showActionNotAvailable('İptal'),
+                          ),
+                          _dialogIconButton(
+                            icon: Icons.delete,
+                            color: Colors.redAccent,
+                            onPressed: () => _showActionNotAvailable('Sil'),
+                          ),
+                          _dialogIconButton(
+                            icon: Icons.print,
+                            color: Colors.green,
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _exportPaymentTransactionToPDF(pt);
+                            },
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Kapat'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pop(context);
-              _exportPaymentTransactionToPDF(pt);
-            },
-            icon: const Icon(Icons.picture_as_pdf, size: 18),
-            label: const Text('PDF İndir'),
-          ),
-        ],
       ),
     );
+  }
+
+  void _showInvoicePreview(dynamic invoice, bool isDark,
+      [bool? coveredFromPayments]) {
+    final entity = _mapInvoiceToEntity(invoice, coveredFromPayments);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InvoicePreviewPage(
+          invoice: entity,
+          isEditable: true,
+          isFromSale: true,
+        ),
+      ),
+    );
+  }
+
+  void _showPurchasePreview(
+      Map<String, dynamic> purchase, bool isReturn, bool isDark) {
+    final entity = _mapPurchaseToEntity(purchase, isReturn);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InvoicePreviewPage(
+          invoice: entity,
+          isEditable: true,
+          isFromSale: false,
+        ),
+      ),
+    );
+  }
+
+  inv.Invoice _mapInvoiceToEntity(dynamic invoice, bool? coveredFromPayments) {
+    final docType = _extractDocumentType(invoice);
+    final rawStatus = (invoice['status'] ?? '').toString().toLowerCase();
+    final rawPaymentStatus =
+        (invoice['paymentStatus'] ?? '').toString().toLowerCase();
+    final isPaidField = invoice['isPaid'] as bool? ?? false;
+    final actuallyPaid = coveredFromPayments ??
+        isPaidField ||
+        rawPaymentStatus.contains('paid') ||
+        rawStatus.contains('paid');
+
+    inv_status.InvoiceStatus status;
+    if (rawStatus.contains('draft')) {
+      status = inv_status.InvoiceStatus.draft;
+    } else if (rawStatus.contains('cancel')) {
+      status = inv_status.InvoiceStatus.cancelled;
+    } else if (rawStatus.contains('overdue')) {
+      status = inv_status.InvoiceStatus.overdue;
+    } else if (rawPaymentStatus.contains('partial')) {
+      status = inv_status.InvoiceStatus.partiallyPaid;
+    } else if (actuallyPaid) {
+      status = inv_status.InvoiceStatus.paid;
+    } else {
+      status = inv_status.InvoiceStatus.sent;
+    }
+
+    final items = (invoice['items'] as List<dynamic>? ?? [])
+        .asMap()
+        .entries
+        .map((entry) {
+          final idx = entry.key;
+          final item = entry.value as Map<String, dynamic>;
+          final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+          final unitPrice = (item['unitPrice'] as num?)?.toDouble() ?? 0.0;
+          final taxRate = (item['taxRate'] as num?)?.toDouble() ?? 0.0;
+          final discount = (item['discountAmount'] as num?)?.toDouble() ?? 0.0;
+          final taxAmount = (item['taxAmount'] as num?)?.toDouble() ??
+              (unitPrice * qty - discount) * (taxRate / 100);
+          final lineTotal = (item['totalAmount'] as num?)?.toDouble() ??
+              (item['lineTotal'] as num?)?.toDouble() ??
+              (unitPrice * qty);
+          final currency =
+              item['currencyCode'] ?? item['currency'] ?? invoice['currencyCode'] ?? 'TRY';
+
+          return inv_item.InvoiceItem(
+            id: '',
+            invoiceId: '',
+            itemOrder: idx + 1,
+            productId: (item['productId'] ?? '').toString(),
+            productName:
+                (item['productName'] ?? item['name'] ?? 'Kalem').toString(),
+            quantity: qty,
+            unitPrice: unitPrice,
+            taxRate: taxRate,
+            taxAmount: taxAmount,
+            lineTotal: lineTotal,
+            currencyCode: currency.toString(),
+            createdAt: DateTime.now(),
+          );
+        })
+        .toList();
+
+    final currency = (invoice['currencyCode'] ?? 'TRY').toString();
+    final docNo = (invoice['saleNumber'] ??
+            invoice['invoiceNumber'] ??
+            invoice['purchaseNumber'] ??
+            invoice['id'] ??
+            'N/A')
+        .toString();
+    final invoiceDate = _parseDateTime(invoice['saleDate']) ??
+        _parseDateTime(invoice['invoiceDate']) ??
+        DateTime.now();
+    final dueDate = _parseDateTime(invoice['dueDate']);
+
+    return inv.Invoice(
+      id: (invoice['id'] ?? '').toString(),
+      invoiceNumber: docNo,
+      customerId: (invoice['customerId'] ?? '').toString(),
+      customerName: invoice['customerName']?.toString(),
+      customerAddress: invoice['customerAddress']?.toString(),
+      customer: null,
+      invoiceDate: invoiceDate,
+      dueDate: dueDate,
+      status: status,
+      subtotal: (invoice['subtotal'] as num?)?.toDouble() ?? 0.0,
+      taxAmount: (invoice['taxAmount'] as num?)?.toDouble() ?? 0.0,
+      discountAmount: (invoice['discountAmount'] as num?)?.toDouble() ?? 0.0,
+      totalAmount: (invoice['totalAmount'] as num?)?.toDouble() ?? 0.0,
+      currencyCode: currency,
+      paymentTerms: invoice['paymentTerms']?.toString(),
+      notes: invoice['notes']?.toString(),
+      description: invoice['description']?.toString(),
+      isPaid: actuallyPaid,
+      paidDate: _parseDateTime(invoice['paidDate']),
+      items: items,
+      direction: invoice['direction']?.toString(),
+      documentType: docType,
+      createdAt:
+          _parseDateTime(invoice['createdAt']) ?? invoiceDate,
+      updatedAt:
+          _parseDateTime(invoice['updatedAt']) ?? invoiceDate,
+    );
+  }
+
+  String _extractDocumentType(dynamic invoice) {
+    final rawDoc =
+        (invoice['documentType'] ?? invoice['type'] ?? '').toString();
+    final lower = rawDoc.toLowerCase();
+    if (lower.contains('proforma')) return 'proforma';
+    if (lower.contains('waybill')) return 'waybill';
+    if (lower.contains('receipt')) return 'receipt';
+    if (lower.contains('estimate')) return 'estimate';
+    if (lower.contains('sale')) return 'sale';
+    if (lower.contains('purchase')) return 'purchase';
+    if (lower.contains('return')) return 'purchase_return';
+    if (lower.contains('invoice')) return 'invoice';
+    return '';
+  }
+
+  inv.Invoice _mapPurchaseToEntity(Map<String, dynamic> purchase, bool isReturn) {
+    final items = (purchase['items'] as List<dynamic>? ?? [])
+        .asMap()
+        .entries
+        .map((entry) {
+          final idx = entry.key;
+          final item = entry.value as Map<String, dynamic>;
+          final qty = (item['quantity'] as num?)?.toDouble() ?? 0.0;
+          final unitPrice = (item['unitPrice'] as num?)?.toDouble() ?? 0.0;
+          final taxRate = (item['taxRate'] as num?)?.toDouble() ?? 0.0;
+          final discount = (item['discountAmount'] as num?)?.toDouble() ?? 0.0;
+          final taxAmount = (item['taxAmount'] as num?)?.toDouble() ??
+              (unitPrice * qty - discount) * (taxRate / 100);
+          final lineTotal = (item['totalAmount'] as num?)?.toDouble() ??
+              (item['lineTotal'] as num?)?.toDouble() ??
+              (unitPrice * qty);
+          final currency =
+              item['currencyCode'] ?? item['currency'] ?? purchase['currency'] ?? 'TRY';
+
+          return inv_item.InvoiceItem(
+            id: '',
+            invoiceId: '',
+            itemOrder: idx + 1,
+            productId: (item['productId'] ?? '').toString(),
+            productName:
+                (item['productName'] ?? item['name'] ?? 'Kalem').toString(),
+            quantity: qty,
+            unitPrice: unitPrice,
+            taxRate: taxRate,
+            taxAmount: taxAmount,
+            lineTotal: lineTotal,
+            currencyCode: currency.toString(),
+            createdAt: DateTime.now(),
+          );
+        })
+        .toList();
+
+    final rawDocNo =
+        (purchase['purchaseNumber'] ?? purchase['id'] ?? 'N/A').toString();
+    final docNo = _normalizePurchaseDocNo(rawDocNo, isReturn);
+    final currency = (purchase['currencyCode'] ??
+            purchase['currency'] ??
+            purchase['paymentCurrency'] ??
+            'TRY')
+        .toString();
+    final invoiceDate =
+        _parseDateTime(purchase['purchaseDate']) ?? DateTime.now();
+    final dueDate = _parseDateTime(purchase['dueDate']);
+    final docType = isReturn ? 'purchase_return' : 'purchase';
+
+    return inv.Invoice(
+      id: (purchase['id'] ?? '').toString(),
+      invoiceNumber: docNo,
+      customerId: (purchase['supplierId'] ?? '').toString(),
+      customerName: purchase['supplierName']?.toString(),
+      customerAddress: null,
+      customer: null,
+      invoiceDate: invoiceDate,
+      dueDate: dueDate,
+      status: inv_status.InvoiceStatus.sent,
+      subtotal: (purchase['subtotal'] as num?)?.toDouble() ?? 0.0,
+      taxAmount: (purchase['taxAmount'] as num?)?.toDouble() ?? 0.0,
+      discountAmount:
+          (purchase['discountAmount'] as num?)?.toDouble() ?? 0.0,
+      totalAmount: (purchase['totalAmount'] as num?)?.toDouble() ?? 0.0,
+      currencyCode: currency,
+      paymentTerms: purchase['paymentTerms']?.toString(),
+      notes: purchase['notes']?.toString(),
+      description: purchase['description']?.toString(),
+      isPaid: false,
+      paidDate: _parseDateTime(purchase['paidDate']),
+      items: items,
+      direction: 'purchase',
+      documentType: docType,
+      createdAt:
+          _parseDateTime(purchase['createdAt']) ?? invoiceDate,
+      updatedAt:
+          _parseDateTime(purchase['updatedAt']) ?? invoiceDate,
+    );
+  }
+
+  String _normalizePurchaseDocNo(String raw, bool isReturn) {
+    if (!isReturn) return raw;
+    // Alış iadesinde PURCHASE prefix'ini RETURN ile değiştir
+    if (raw.toUpperCase().startsWith('PURCHASE')) {
+      return raw.replaceFirst(RegExp('^PURCHASE', caseSensitive: false), 'RETURN');
+    }
+    return raw;
   }
   void _exportPaymentToPDF(CashTransaction payment) async {
     final exportService = ExportService();
@@ -3406,7 +4025,6 @@ class _EnhancedCustomerDetailPageV2State
     }
   }
 
-  // ignore: unused_element
   void _exportCustomerTransactionToPDF(Transaction transaction) async {
     final exportService = ExportService();
 
@@ -3523,6 +4141,7 @@ class _EnhancedCustomerDetailPageV2State
     dynamic invoice,
     bool isDark, {
     bool? coveredFromPayments,
+    bool showActions = false,
   }) {
     // invoice entity with known fields
     final isPaid = invoice['isPaid'] as bool? ?? false;
@@ -3570,10 +4189,11 @@ class _EnhancedCustomerDetailPageV2State
       amountText: amountText,
       amountColor: color,
       date: date,
-      line1: 'Belge No: $docNo',
+      line1: 'İşlem No: $docNo',
       description: null,
       statusText: isProforma ? null : label,
       isDark: isDark,
+      showActions: showActions,
     );
   }
 
@@ -5068,7 +5688,7 @@ class _EnhancedCustomerDetailPageV2State
     });
   }
 
-  // ignore: unused_element
+
   Widget _removedBuildTransactionTile(dynamic t, bool isDark) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -5082,10 +5702,11 @@ class _EnhancedCustomerDetailPageV2State
               .format(_parseDateTime(t.transactionDate) ?? DateTime.now()),
         ),
         trailing: Text(
-          _formatSignedCurrency(
+          _formatCurrencyWithCode(
             (t.amount is num ? (t.amount as num).toDouble() : 0.0).abs(),
             t.currency ?? 'TRY',
-            _isCreditTransactionType(t.type),
+            signed: true,
+            isCredit: _isCreditTransactionType(t.type),
           ),
           style: GoogleFonts.poppins(fontWeight: FontWeight.bold),
         ),
@@ -5093,7 +5714,7 @@ class _EnhancedCustomerDetailPageV2State
     );
   }
 
-  // ignore: unused_element
+
   void _removedShowCustomerTransactionDetail(Transaction transaction) {
     showDialog(
       context: context,
@@ -5115,10 +5736,11 @@ class _EnhancedCustomerDetailPageV2State
               _buildDetailRow('Tür', _getTransactionTypeText(transaction.type)),
               _buildDetailRow(
                 'Tutar',
-                _formatSignedCurrency(
+                _formatCurrencyWithCode(
                   transaction.amount,
                   transaction.currency,
-                  _isCreditTransactionType(transaction.type),
+                  signed: true,
+                  isCredit: _isCreditTransactionType(transaction.type),
                 ),
               ),
               if (transaction.description != null &&

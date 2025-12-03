@@ -296,6 +296,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
   Widget build(BuildContext context) {
     final expenses = ref.watch(allExpensesProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.width <= 768;
 
     return ResponsiveScaffold(
       appBar: const CustomAppBar(
@@ -305,24 +306,93 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
       drawerContent: const TamgaciDrawerMenu(),
       persistentOnLarge: false,
       body: SafeArea(
-          top: false,
-          child: Column(
-            children: [
-              // Header kartı
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _buildWelcomeCard(expenses),
-              ),
+        top: false,
+        child: isMobile
+            ? _buildMobileScrollableBody(expenses, isDark)
+            : Column(
+                children: [
+                  // Header kartı
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: _buildWelcomeCard(expenses),
+                  ),
 
-              // Arama ve filtre çubuğu
-              Flexible(
-                child: _buildSearchAndFilters(isDark),
-              ),
+                  // Arama ve filtre çubuğu
+                  Flexible(
+                    child: _buildSearchAndFilters(isDark),
+                  ),
 
-              // Masraflar listesi
-              Expanded(child: _buildExpensesList(expenses, isDark)),
-            ],
-          )),
+                  // Masraflar listesi
+                  Expanded(child: _buildExpensesList(expenses, isDark)),
+                ],
+              ),
+      ),
+    );
+  }
+
+  /// Mobilde tüm sayfanın kaydırılabilmesi için oluşturulan gövde
+  Widget _buildMobileScrollableBody(
+      List<AccountTransaction> expenses, bool isDark) {
+    final filteredExpenses = _applyFilters(expenses);
+    final horizontalPadding = TamgaciConstants.paddingMedium(context).left;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        ref.invalidate(allExpensesProvider);
+      },
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: _buildWelcomeCard(expenses),
+            ),
+          ),
+          SliverToBoxAdapter(child: _buildSearchAndFilters(isDark)),
+          if (filteredExpenses.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: EmptyStateWidget(
+                icon: Icons.money_off,
+                title: 'Masraf Bulunamadı',
+                message: _searchQuery.isNotEmpty ||
+                        _selectedAccountId != 'all' ||
+                        _selectedCategory != 'Tümü'
+                    ? 'Arama kriterlerinize uygun masraf bulunamadı.'
+                    : 'Henüz masraf kaydı bulunmuyor.\nYeni masraf eklemek için + butonuna tıklayın.',
+                actionButton: _searchQuery.isEmpty &&
+                        _selectedAccountId == 'all' &&
+                        _selectedCategory == 'Tümü'
+                    ? ElevatedButton.icon(
+                        onPressed: _navigateToCreate,
+                        icon: const Icon(Icons.add),
+                        label: const Text('Masraf Ekle'),
+                      )
+                    : null,
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final expense = filteredExpenses[index];
+                  final isLast = index == filteredExpenses.length - 1;
+                  return Padding(
+                    padding: EdgeInsets.only(
+                      left: horizontalPadding,
+                      right: horizontalPadding,
+                      top: index == 0 ? TamgaciConstants.paddingMedium(context).top : 0,
+                      bottom: isLast ? 16 : 12,
+                    ),
+                    child: _buildExpenseRow(expense, isDark),
+                  );
+                },
+                childCount: filteredExpenses.length,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
